@@ -106,17 +106,50 @@ export function formatPence(pence: number): string {
   return `£${(pence / 100).toFixed(2)}`;
 }
 
+export function sampleLocationOpen(location: LocationKey, now = new Date()): boolean {
+  if (location === "luton") return true;
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(now);
+    const weekday = parts.find((part) => part.type === "weekday")?.value ?? "";
+    const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
+    const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
+    const minutes = hour * 60 + minute;
+    return ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(weekday) && minutes >= 540 && minutes < 960;
+  } catch {
+    return true;
+  }
+}
+
 export function resolveSampleServiceability(
   postcode: string,
   fulfilment: FulfilmentType,
-): { locationKey?: LocationKey; message: string } {
+): { locationKey?: LocationKey; message: string; alternativeFulfilments?: FulfilmentType[] } {
   const normalized = postcode.toUpperCase().replace(/\s+/g, "");
-  if (normalized.startsWith("LU")) return { locationKey: "luton", message: "Great news — MealDeck Luton serves your area." };
+  if (normalized.startsWith("LU")) {
+    return { locationKey: "luton", message: "Great news — MealDeck Luton serves your area." };
+  }
   if (normalized.startsWith("AL")) {
-    if (fulfilment !== "delivery") return { message: "MealDeck St Albans currently offers delivery only. Choose Delivery to continue." };
+    if (fulfilment !== "delivery") {
+      return {
+        message: "MealDeck St Albans currently offers delivery only. Choose Delivery to continue.",
+        alternativeFulfilments: ["delivery"],
+      };
+    }
     return { locationKey: "stalbans", message: "Great news — MealDeck St Albans serves your area." };
   }
-  return { message: "Sorry, MealDeck doesn't serve your area yet. We're expanding quickly — please check back soon." };
+  const manchester =
+    normalized.startsWith("M") || normalized.startsWith("OL") || normalized.startsWith("SK");
+  return {
+    message: manchester
+      ? "Sorry, MealDeck is not in Manchester yet — we are coming soon."
+      : "Sorry, MealDeck doesn't serve your area yet. We're expanding quickly — please check back soon.",
+  };
 }
 
 export function modifierOptionsFor(item: MenuItem): SelectedModifier[] {
