@@ -36,7 +36,6 @@ import {
   addItem,
   addonBrandsForLocation,
   brandById,
-  brands,
   formatPence,
   fulfilmentFeePence,
   fulfilmentLabels,
