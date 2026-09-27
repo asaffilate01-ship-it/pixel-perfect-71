@@ -26,7 +26,7 @@ import {
 } from "@/lib/mealdeck";
 import logo from "@/assets/mealdeck-logo.png.asset.json";
 
-type OrderSearch = { brand?: string };
+type OrderSearch = { brand?: string | undefined };
 
 export const Route = createFileRoute("/order")({
   validateSearch: (search: Record<string, unknown>): OrderSearch => ({

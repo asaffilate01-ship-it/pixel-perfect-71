@@ -21,10 +21,10 @@ export type MenuItem = {
   brandId: string;
   category: string;
   name: string;
-  description?: string;
+  description?: string | undefined;
   pricePence: number;
-  imageUrl?: string | null;
-  allergens?: string[];
+  imageUrl?: string | null | undefined;
+  allergens?: string[] | undefined;
 };
 
 export type CartLine = MenuItem & { quantity: number };
