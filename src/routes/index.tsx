@@ -386,7 +386,7 @@ function Landing() {
                 />
                 <div className="relative p-5">
                   {brand.logo ? (
-                    <div className="absolute -top-9 right-4 grid size-18 place-items-center rounded-2xl border border-border bg-white p-2 shadow-lg">
+                    <div className="absolute -top-9 right-4 grid size-[4.5rem] place-items-center rounded-2xl border border-border bg-white p-2 shadow-lg">
                       <img
                         src={brand.logo}
                         alt=""
