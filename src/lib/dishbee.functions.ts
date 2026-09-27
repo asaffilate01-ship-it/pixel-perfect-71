@@ -395,3 +395,74 @@ export const placeOrder = createServerFn({ method: "POST" })
       };
     }
   });
+
+
+export type OrderTrackingResult =
+  | {
+      found: true;
+      orderStatus: string;
+      fulfilment: string;
+      deliveryStatus?: string;
+      trackingUrl?: string;
+      updatedAt?: string;
+    }
+  | { found: false; message: string };
+
+export const getOrderTracking = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        orderId: z.string().uuid(),
+        handoffCode: z.string().trim().regex(/^\d{4}$/),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<OrderTrackingResult> => {
+    const base = readBase();
+    if (!base) {
+      return {
+        found: false,
+        message: "Live order tracking starts once the Dishbee runtime connection is configured.",
+      };
+    }
+
+    try {
+      const { data: rows, error } = await dishbeeClient(base).rpc(
+        "public_mealdeck_order_tracking",
+        {
+          p_order: data.orderId,
+          p_handoff_code: data.handoffCode,
+        },
+      );
+      if (error) throw new Error(error.message);
+
+      const row = ((rows ?? []) as Array<Record<string, unknown>>)[0];
+      if (!row) {
+        return {
+          found: false,
+          message: "We couldn't find an order with that reference and handoff code.",
+        };
+      }
+
+      return {
+        found: true,
+        orderStatus: String(row["order_status"] ?? ""),
+        fulfilment: String(row["fulfilment"] ?? ""),
+        deliveryStatus: row["delivery_status"]
+          ? String(row["delivery_status"])
+          : undefined,
+        trackingUrl: row["tracking_url"]
+          ? String(row["tracking_url"])
+          : undefined,
+        updatedAt: row["updated_at"]
+          ? String(row["updated_at"])
+          : undefined,
+      };
+    } catch (error) {
+      console.error("Dishbee order tracking failed", error);
+      return {
+        found: false,
+        message: "Order tracking is temporarily unavailable. Please try again.",
+      };
+    }
+  });
