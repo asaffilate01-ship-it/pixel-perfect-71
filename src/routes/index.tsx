@@ -121,9 +121,13 @@ function Landing() {
       {/* Brand strip */}
       <div className="border-y border-border/60 bg-card/50">
         <div className="mx-auto flex max-w-7xl flex-wrap justify-center gap-x-10 gap-y-4 px-4 py-6 sm:px-6">
-          {brands.slice(0, 11).map((brand) => (
-            <div key={brand.id} className="text-center">
-              <p className="font-display text-xl font-bold">{brand.name}</p>
+          {brands.map((brand) => (
+            <div key={brand.id} className="flex flex-col items-center text-center">
+              {brand.logo ? (
+                <img src={brand.logo} alt={`${brand.name} logo`} loading="lazy" className="h-14 w-auto max-w-[8rem] rounded-lg bg-foreground object-contain p-1.5" />
+              ) : (
+                <p className="font-display text-xl font-bold">{brand.name}</p>
+              )}
               <p className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
                 {brand.strapline}
               </p>
@@ -185,7 +189,7 @@ function Landing() {
           </p>
 
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {brands.slice(0, 11).map((brand) => (
+            {brands.map((brand) => (
               <Link
                 key={brand.id}
                 to="/order"
@@ -200,12 +204,20 @@ function Landing() {
                   loading="lazy"
                   className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="p-5">
+                <div className="relative p-5">
+                  {brand.logo ? (
+                    <img src={brand.logo} alt="" loading="lazy" className="absolute -top-8 right-4 size-16 rounded-full border border-border bg-foreground object-contain p-1.5 shadow-lg" />
+                  ) : null}
                   <p className="font-display text-xl font-bold">{brand.name}</p>
                   <p className="text-xs uppercase tracking-[0.16em] text-accent">
                     {brand.strapline}
                   </p>
                   <p className="mt-3 text-sm text-muted-foreground">{brand.tagline}</p>
+                  {brand.id === "icova" || brand.id === "moktl" ? (
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-gold">Add-on drinks</p>
+                  ) : brand.id === "cafe1" ? (
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-gold">St Albans only</p>
+                  ) : null}
                 </div>
               </Link>
             ))}
