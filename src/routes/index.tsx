@@ -63,6 +63,32 @@ const whyItems = [
   { icon: Sparkles, title: "Multi-Location Kitchens", copy: "Great food, nearer to you." },
 ];
 
+// Café1 is St Albans-only, so it only appears once a St Albans postcode is entered on the order page.
+const homeBrands = brands.filter((b) => b.id !== "cafe1");
+
+const pick = (id: string) => brands.find((b) => b.id === id)!;
+const basketDemo = [
+  { id: "a", brand: "Skorch Burgers", dish: "Double Smash Burger", price: "£9.99", image: pick("skorch-burgers").image },
+  { id: "b", brand: "Taconelle", dish: "Classic French Taco", price: "£8.49", image: pick("taconelle").image },
+  { id: "c", brand: "Icova", dish: "Iced Spanish Latte", price: "£4.50", image: pick("icova").image },
+];
+
+// Some logo files carry lots of empty margin; zoom them so all logos look the same size.
+const logoZoom: Record<string, string> = { "Tavo Chicken": "scale-[1.9]", Taconelle: "scale-[2.4]", "Skorch Burgers": "scale-[1.6]", Fyrra: "scale-125", Sabzora: "scale-125" };
+
+function LogoTile({ src, name, className = "" }: { src?: string | undefined; name: string; className?: string }) {
+  return (
+    <div className={`flex items-center justify-center overflow-hidden rounded-xl bg-foreground p-2 ${className}`}>
+      {src ? (
+        <img src={src} alt={`${name} logo`} loading="lazy" className={`max-h-full max-w-full object-contain ${logoZoom[name] ?? ""}`} />
+      ) : (
+        <span className="font-display text-sm font-bold text-background">{name}</span>
+      )}
+    </div>
+  );
+}
+
+
 function Landing() {
   return (
     <div className="min-h-screen bg-background">
@@ -120,16 +146,12 @@ function Landing() {
 
       {/* Brand strip */}
       <div className="border-y border-border/60 bg-card/50">
-        <div className="mx-auto flex max-w-7xl flex-wrap justify-center gap-x-10 gap-y-4 px-4 py-6 sm:px-6">
-          {brands.map((brand) => (
-            <div key={brand.id} className="flex flex-col items-center text-center">
-              {brand.logo ? (
-                <img src={brand.logo} alt={`${brand.name} logo`} loading="lazy" className="h-14 w-auto max-w-[8rem] rounded-lg bg-foreground object-contain p-1.5" />
-              ) : (
-                <p className="font-display text-xl font-bold">{brand.name}</p>
-              )}
-              <p className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
-                {brand.strapline}
+        <div className="mx-auto grid max-w-7xl grid-cols-3 gap-3 px-4 py-6 sm:grid-cols-4 sm:px-6 lg:grid-cols-11">
+          {homeBrands.map((brand) => (
+            <div key={brand.id} className="flex flex-col items-center gap-2 text-center">
+              <LogoTile src={brand.logo} name={brand.name} className="h-16 w-full" />
+              <p className="line-clamp-1 text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
+                {brand.category}
               </p>
             </div>
           ))}
@@ -138,7 +160,7 @@ function Landing() {
 
       {/* Mix brands */}
       <section className="ember-surface">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:items-center">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.1fr_0.7fr] lg:items-center">
           <div>
             <p className="eyebrow">Mix. Match. Enjoy.</p>
             <h2 className="mt-4 text-4xl font-extrabold leading-tight sm:text-5xl">
@@ -147,7 +169,7 @@ function Landing() {
               <span className="text-gold">In One Basket.</span>
             </h2>
             <p className="mt-5 max-w-md text-muted-foreground">
-              Burgers, tacos, desserts and more — from different brands, all in one order. Because
+              Burgers, tacos, curries and more — from different brands, all in one order. Because
               one craving is never enough.
             </p>
             <Button variant="gold" size="xl" className="mt-8" asChild>
@@ -158,21 +180,39 @@ function Landing() {
             </Button>
           </div>
 
-          <ul className="grid gap-4 sm:grid-cols-2">
-            {[
-              "Different brands",
-              "One delivery fee",
-              "One simple checkout",
-              "One amazing meal",
-            ].map((text) => (
-              <li key={text} className="card-elevated flex items-center gap-3 p-5">
-                <CheckCircle2 className="size-6 shrink-0 text-primary" />
+          <div className="rounded-2xl bg-foreground p-5 text-background shadow-2xl">
+            <div className="flex items-baseline justify-between">
+              <p className="font-display text-lg font-bold">Your Basket</p>
+              <p className="text-xs opacity-60">3 items from 3 brands</p>
+            </div>
+            <ul className="mt-4 divide-y divide-background/10">
+              {basketDemo.map((item) => (
+                <li key={item.id} className="flex items-center gap-3 py-3">
+                  <img src={item.image} alt="" width={816} height={816} loading="lazy" className="size-14 rounded-lg object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold uppercase tracking-wide text-primary">{item.brand}</p>
+                    <p className="truncate text-sm font-medium">{item.dish}</p>
+                  </div>
+                  <p className="font-semibold">{item.price}</p>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 flex items-center justify-between border-t border-background/10 pt-4">
+              <p className="font-display text-lg font-bold">Total £25.97</p>
+              <Button variant="hero" asChild>
+                <Link to="/order">Checkout Once <ArrowRight /></Link>
+              </Button>
+            </div>
+          </div>
+
+          <ul className="space-y-3">
+            {["Different brands", "One delivery fee", "One simple checkout", "One amazing meal"].map((text) => (
+              <li key={text} className="flex items-center gap-3">
+                <CheckCircle2 className="size-5 shrink-0 text-primary" />
                 <span className="font-medium">{text}</span>
               </li>
             ))}
-            <li className="script col-span-full text-center text-3xl text-accent">
-              Cravings belong together
-            </li>
+            <li className="script pt-2 text-3xl text-accent">Cravings belong together</li>
           </ul>
         </div>
       </section>
@@ -188,35 +228,31 @@ function Landing() {
             Unique brands. Distinct flavours. One seamless ordering experience.
           </p>
 
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {brands.map((brand) => (
+          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {homeBrands.map((brand) => (
               <Link
                 key={brand.id}
                 to="/order"
                 search={{ brand: brand.id }}
-                className="card-elevated group overflow-hidden transition-transform hover:-translate-y-1"
+                className="card-elevated group flex flex-col overflow-hidden transition-transform hover:-translate-y-1"
               >
-                <img
-                  src={brand.image}
-                  alt={brand.name}
-                  width={816}
-                  height={816}
-                  loading="lazy"
-                  className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="relative p-5">
-                  {brand.logo ? (
-                    <img src={brand.logo} alt="" loading="lazy" className="absolute -top-8 right-4 size-16 rounded-full border border-border bg-foreground object-contain p-1.5 shadow-lg" />
-                  ) : null}
-                  <p className="font-display text-xl font-bold">{brand.name}</p>
-                  <p className="text-xs uppercase tracking-[0.16em] text-accent">
-                    {brand.strapline}
-                  </p>
-                  <p className="mt-3 text-sm text-muted-foreground">{brand.tagline}</p>
+                <div className="p-3 pb-0">
+                  <LogoTile src={brand.logo} name={brand.name} className="h-16 w-full" />
+                </div>
+                <div className="aspect-square overflow-hidden p-3">
+                  <img
+                    src={brand.image}
+                    alt={`${brand.name} — ${brand.category}`}
+                    width={816}
+                    height={816}
+                    loading="lazy"
+                    className="size-full rounded-lg object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                </div>
+                <div className="mt-auto px-3 pb-4 text-center">
+                  <p className="text-sm text-muted-foreground">{brand.tagline}</p>
                   {brand.id === "icova" || brand.id === "moktl" ? (
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-gold">Add-on drinks</p>
-                  ) : brand.id === "cafe1" ? (
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-gold">St Albans only</p>
+                    <p className="mt-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-gold">Add-on drinks</p>
                   ) : null}
                 </div>
               </Link>
