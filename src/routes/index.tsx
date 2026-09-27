@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Order from Tavo, Loadd, Skorchd, Taconelle, Vyta, Icova and Shawarma Grill in one basket. One delivery fee, one checkout, delivered to your door.",
+          "Order from Taconelle, Tavo Chicken, Skorch Burgers, Load'd, Fyrra, Tarka Box, Vyta and more in one basket. One delivery fee, one checkout, delivered to your door.",
       },
       { property: "og:title", content: "MealDeck — One Order. Every Craving." },
       {
@@ -121,7 +121,7 @@ function Landing() {
       {/* Brand strip */}
       <div className="border-y border-border/60 bg-card/50">
         <div className="mx-auto flex max-w-7xl flex-wrap justify-center gap-x-10 gap-y-4 px-4 py-6 sm:px-6">
-          {brands.slice(0, 7).map((brand) => (
+          {brands.slice(0, 11).map((brand) => (
             <div key={brand.id} className="text-center">
               <p className="font-display text-xl font-bold">{brand.name}</p>
               <p className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
@@ -185,7 +185,7 @@ function Landing() {
           </p>
 
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {brands.slice(0, 7).map((brand) => (
+            {brands.slice(0, 11).map((brand) => (
               <Link
                 key={brand.id}
                 to="/order"
