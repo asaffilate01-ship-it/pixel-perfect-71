@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   addonBrandIds,
   allBrandIdsForLocation,
+  brands,
   locationByKey,
   lutonPrimaryBrandIds,
   sampleMenu,
@@ -49,6 +50,24 @@ function readConfig(
 
 function dishbeeClient(config: DishbeeBaseConfig) {
   return createClient(config.url, config.anonKey, { auth: { persistSession: false } });
+}
+
+function frontendBrandId(row: Record<string, unknown>): string {
+  const rawId = String(row["brand_id"] ?? "");
+  const rawName = String(row["brand_name"] ?? "").trim().toLowerCase();
+  const normalise = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "");
+
+  const match = brands.find(
+    (brand) =>
+      brand.id === rawId ||
+      brand.name.toLowerCase() === rawName ||
+      normalise(brand.name) === normalise(rawName),
+  );
+  return match?.id ?? rawId;
 }
 
 function normalisePostcode(value: string) {
@@ -286,7 +305,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
         items: list
           .map((row) => ({
             id: String(row["item_id"]),
-            brandId: String(row["brand_id"] ?? "unbranded"),
+            brandId: frontendBrandId(row),
             category: String(row["category_name"] ?? "Menu"),
             name: String(row["item_name"]),
             description: row["description"] ? String(row["description"]) : undefined,
