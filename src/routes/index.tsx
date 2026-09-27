@@ -124,7 +124,7 @@ function Landing() {
           {brands.map((brand) => (
             <div key={brand.id} className="flex flex-col items-center text-center">
               {brand.logo ? (
-                <img src={brand.logo} alt={`${brand.name} logo`} loading="lazy" className="h-12 w-auto max-w-[7rem] object-contain" />
+                <img src={brand.logo} alt={`${brand.name} logo`} loading="lazy" className="h-14 w-auto max-w-[8rem] rounded-lg bg-foreground object-contain p-1.5" />
               ) : (
                 <p className="font-display text-xl font-bold">{brand.name}</p>
               )}
@@ -206,7 +206,7 @@ function Landing() {
                 />
                 <div className="relative p-5">
                   {brand.logo ? (
-                    <img src={brand.logo} alt="" loading="lazy" className="absolute -top-8 right-4 size-16 rounded-full border border-border bg-card object-contain p-1.5 shadow-lg" />
+                    <img src={brand.logo} alt="" loading="lazy" className="absolute -top-8 right-4 size-16 rounded-full border border-border bg-foreground object-contain p-1.5 shadow-lg" />
                   ) : null}
                   <p className="font-display text-xl font-bold">{brand.name}</p>
                   <p className="text-xs uppercase tracking-[0.16em] text-accent">
