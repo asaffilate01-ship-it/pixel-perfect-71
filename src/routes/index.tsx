@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Order from Tavo, Loadd, Skorchd, Taconelle, Vyta, Icova and Shawarma Grill in one basket. One delivery fee, one checkout, delivered to your door.",
+          "Order from Taconelle, Tavo Chicken, Skorch Burgers, Load'd, Fyrra, Tarka Box, Vyta and more in one basket. One delivery fee, one checkout, delivered to your door.",
       },
       { property: "og:title", content: "MealDeck — One Order. Every Craving." },
       {
