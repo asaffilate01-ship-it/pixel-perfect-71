@@ -74,7 +74,7 @@ const basketDemo = [
 ];
 
 // Some logo files carry lots of empty margin; zoom them so all logos look the same size.
-const logoZoom: Record<string, string> = { "Tavo Chicken": "scale-[1.9]", Taconelle: "scale-[1.9]", "Skorch Burgers": "scale-[1.6]", Fyrra: "scale-125", Sabzora: "scale-125" };
+const logoZoom: Record<string, string> = { "Tavo Chicken": "scale-[1.9]", Taconelle: "scale-[2.4]", "Skorch Burgers": "scale-[1.6]", Fyrra: "scale-125", Sabzora: "scale-125" };
 
 function LogoTile({ src, name, className = "" }: { src?: string | undefined; name: string; className?: string }) {
   return (
