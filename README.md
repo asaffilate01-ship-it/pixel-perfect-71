@@ -1,24 +1,116 @@
-# Pixel Perfect (71)
+# MealDeck
 
-Implement exactly the screenshot and nothing else
+**One Order. Every Craving.**
 
-This project was built with [Lovable](https://lovable.dev).
+MealDeck is the customer-facing multi-brand ordering platform for the 313 Brands food portfolio. Customers enter a postcode, choose Delivery / Pickup / Kerbside where available, browse every active brand for that kitchen, keep one basket and checkout once.
 
-## Build with Lovable
+This project is connected to Lovable. Do not rewrite published Git history.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/2184585f-d92c-4d42-b25b-b7f87f98d0d8).
+## Runtime architecture
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+MealDeck is the consumer experience. Dishbee is the operational engine underneath.
+
+### MealDeck
+- postcode-first customer journey
+- brand switching and one cross-brand basket
+- customer checkout and tracking UI
+- loyalty/offers/account experience
+
+### Dishbee
+- tenant/location configuration
+- serviceability and live opening hours
+- brand/menu/channel availability
+- modifiers and pricing
+- payment state
+- paid-only KDS release
+- kitchen/station routing
+- delivery orchestration
+- subscription/add-on entitlement
+
+### Haccora
+Optional food-safety/compliance layer requested and billed through Dishbee.
+
+### Omniqora
+Optional AI/CRM/WhatsApp/voice/automation/analytics layer requested and billed through Dishbee.
+
+## Launch location rules
+
+### Luton
+9 primary brands:
+- Tavo Chicken
+- Paratique
+- Taconelle
+- Load'd
+- Vyta
+- Tarka Box
+- Fyrra
+- Sabzora
+- Skorch Burgers
+
+Icova and Moktl are cross-menu add-ons.
+
+Delivery, Pickup and Kerbside may be enabled by the location.
+
+### St Albans
+The same 9 primary brands + Café1 as the 10th.
+
+Icova and Moktl remain add-ons.
+
+Current MealDeck service:
+- Delivery only
+- Monday-Friday
+- 09:00-16:00
+
+Café1's direct/in-store menu remains separate from the curated Café1 MealDeck menu.
+
+## Order/KDS rule
+
+Checkout creates a Dishbee `payment_pending` order and a short handoff code.
+
+**Normal MealDeck orders do not appear on KDS until payment is confirmed server-side.**
+
+After payment:
+1. Dishbee marks the order paid.
+2. Dishbee creates KDS station tickets.
+3. KDS shows brand colour, customer name and handoff code.
+4. Kerbside additionally shows vehicle registration.
+5. Delivery additionally enters the Dishbee last-mile orchestration flow.
+
+## Delivery
+
+Dishbee delivery orchestration can compare:
+- MealDeck/Dishbee own fleet
+- Uber Direct
+- Deliveroo Express
+- Just Eat Go
+- Stuart where available
+
+The customer sees one MealDeck delivery experience. Provider selection is internal.
+
+## Customer tracking
+
+`/track` uses the Dishbee public tracking RPC with:
+- order UUID
+- 4-digit handoff code
+
+The public response is normalized and does not expose provider credentials or kitchen secrets.
+
+## Configuration
+
+Copy `.env.example` into your environment and add:
+
+- Dishbee Supabase URL
+- Dishbee public/anon key
+- Luton tenant + location IDs
+- St Albans tenant + location IDs
+
+Payment and courier provider secrets stay server-side and are configured separately.
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+```bash
+npm install
 npm run dev
+npm run build
+npm run lint
 ```

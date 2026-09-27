@@ -45,11 +45,21 @@ import {
 } from "@/lib/mealdeck";
 import logo from "@/assets/mealdeck-logo.png.asset.json";
 
-type OrderSearch = { brand?: string };
+type OrderSearch = { brand?: string; fulfilment?: FulfilmentType };
 
 export const Route = createFileRoute("/order")({
-  validateSearch: (search: Record<string, unknown>): OrderSearch =>
-    typeof search["brand"] === "string" ? { brand: search["brand"] } : {},
+  validateSearch: (search: Record<string, unknown>): OrderSearch => {
+    const next: OrderSearch = {};
+    if (typeof search["brand"] === "string") next.brand = search["brand"];
+    if (
+      search["fulfilment"] === "delivery" ||
+      search["fulfilment"] === "pickup" ||
+      search["fulfilment"] === "curbside"
+    ) {
+      next.fulfilment = search["fulfilment"];
+    }
+    return next;
+  },
   head: () => ({
     meta: [
       { title: "Order — MealDeck" },
@@ -91,8 +101,8 @@ function BrandMark({ brand, className = "" }: { brand: Brand; className?: string
 }
 
 function OrderPage() {
-  const { brand: brandFromSearch } = Route.useSearch();
-  const [fulfilment, setFulfilment] = useState<FulfilmentType>("delivery");
+  const { brand: brandFromSearch, fulfilment: fulfilmentFromSearch } = Route.useSearch();
+  const [fulfilment, setFulfilment] = useState<FulfilmentType>(fulfilmentFromSearch ?? "delivery");
   const [postcode, setPostcode] = useState("");
   const [checking, setChecking] = useState(false);
   const [serviceMessage, setServiceMessage] = useState<{ tone: "idle" | "ok" | "error"; text: string }>({
@@ -105,7 +115,7 @@ function OrderPage() {
   const [customer, setCustomer] = useState(emptyCustomer);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [placed, setPlaced] = useState<{ orderId: string; handoffCode: string } | null>(null);
+  const [paymentPending, setPaymentPending] = useState<{ orderId: string; handoffCode: string } | null>(null);
   const [customising, setCustomising] = useState<MenuItem | null>(null);
   const [chosen, setChosen] = useState<SelectedModifier[]>([]);
 
@@ -145,26 +155,42 @@ function OrderPage() {
   const deliveryPence = lines.length && fulfilment === "delivery" ? DELIVERY_FEE_PENCE : 0;
   const total = goods + deliveryPence;
 
-  async function checkArea() {
+  async function checkArea(nextFulfilment: FulfilmentType = fulfilment) {
     if (!postcode.trim()) {
       setServiceMessage({ tone: "error", text: "Enter a postcode to find your nearest MealDeck." });
       return;
     }
     setChecking(true);
     try {
-      const result = await runServiceability({ data: { postcode: postcode.trim(), fulfilment } });
+      const result = await runServiceability({
+        data: { postcode: postcode.trim(), fulfilment: nextFulfilment },
+      });
       if (!result.served) {
+        setLocation(null);
+        setActiveBrand(null);
+        setCheckoutOpen(false);
+        setPaymentPending(null);
         setServiceMessage({ tone: "error", text: result.message });
         return;
       }
       if (location && location !== result.location && lines.length) {
         setLines([]);
+        setCheckoutOpen(false);
         toast("Basket cleared", { description: "Your postcode moved you to a different MealDeck kitchen." });
       }
       setLocation(result.location);
-      setCustomer((prev) => ({ ...prev, postcode: prev.postcode || postcode.trim().toUpperCase() }));
-      setServiceMessage({ tone: "ok", text: result.message });
+      setCustomer((prev) => ({
+        ...prev,
+        postcode: postcode.trim().toUpperCase(),
+      }));
+      setServiceMessage({
+        tone: result.channelOpen ? "ok" : "idle",
+        text: result.channelOpen
+          ? result.message
+          : `${result.message} This kitchen is currently closed, but you can still browse.`,
+      });
     } catch {
+      setLocation(null);
       setServiceMessage({ tone: "error", text: "We couldn't check that postcode right now. Please try again." });
     } finally {
       setChecking(false);
@@ -173,6 +199,11 @@ function OrderPage() {
 
   function changeFulfilment(next: FulfilmentType) {
     setFulfilment(next);
+    setPaymentPending(null);
+    if (postcode.trim()) {
+      void checkArea(next);
+      return;
+    }
     if (currentLocation && !currentLocation.allowedFulfilments.includes(next)) {
       setServiceMessage({
         tone: "error",
@@ -223,11 +254,12 @@ function OrderPage() {
           customer,
         },
       });
-      if (result.status === "placed") {
-        setPlaced({ orderId: result.orderId, handoffCode: result.handoffCode });
-        setLines([]);
+      if (result.status === "payment_required") {
+        setPaymentPending({ orderId: result.orderId, handoffCode: result.handoffCode });
         setCheckoutOpen(false);
-        toast.success("Order created", { description: `Your handoff code is ${result.handoffCode}` });
+        toast.success("Order created", {
+          description: "Complete payment to send it to the kitchen.",
+        });
       } else if (result.status === "unconfigured") {
         toast.error("Kitchen service not connected yet", {
           description: "This is a preview — live orders start once the kitchen service is connected.",
@@ -323,13 +355,20 @@ function OrderPage() {
             ) : null}
           </section>
 
-          {placed ? (
-            <div className="mt-6 rounded-xl border border-primary/40 bg-primary/10 p-5">
-              <p className="font-display text-lg font-bold">Order received</p>
+          {paymentPending ? (
+            <div className="mt-6 rounded-xl border border-accent/40 bg-accent/10 p-5">
+              <p className="eyebrow">Payment required</p>
+              <p className="mt-2 font-display text-lg font-bold">
+                Your order is reserved, but it is not on the kitchen screen yet.
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Your handoff code is <strong className="text-2xl text-gold">{placed.handoffCode}</strong>. Give your name
-                {fulfilment === "curbside" ? ", car registration" : ""} and this code when you collect or receive your food.
-                The kitchen starts cooking once payment is confirmed.
+                Complete payment to release it to Dishbee KDS. Your handoff code is{" "}
+                <strong className="text-xl text-gold">
+                  {paymentPending.handoffCode || "----"}
+                </strong>.
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Order reference {paymentPending.orderId.slice(0, 8).toUpperCase()}.
               </p>
             </div>
           ) : null}
@@ -600,7 +639,7 @@ function OrderPage() {
                 onClick={handleCheckout}
               >
                 {submitting ? <Loader2 className="animate-spin" /> : null}
-                Place order · {formatPence(total)}
+                Continue to payment · {formatPence(total)}
               </Button>
             </div>
           ) : null}
