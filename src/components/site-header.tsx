@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import logo from "@/assets/mealdeck-logo.png.asset.json";
 
 const navItems = [
-  { label: "Home", to: "/", hash: undefined },
-  { label: "Brands", to: "/", hash: "brands" },
-  { label: "How It Works", to: "/", hash: "how" },
-  { label: "Offers", to: "/", hash: "offers" },
+  { label: "Brands", hash: "brands" },
+  { label: "How It Works", hash: "how" },
+  { label: "Offers", hash: "offers" },
 ];
 
 export function SiteHeader() {
@@ -19,10 +18,16 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
+          <Link
+            to="/"
+            className="font-display text-sm font-semibold text-foreground/85 transition-colors hover:text-accent"
+          >
+            Home
+          </Link>
           {navItems.map((item) => (
             <Link
               key={item.label}
-              to={item.to}
+              to="/"
               hash={item.hash}
               className="font-display text-sm font-semibold text-foreground/85 transition-colors hover:text-accent"
             >
