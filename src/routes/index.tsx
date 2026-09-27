@@ -73,11 +73,14 @@ const basketDemo = [
   { id: "c", brand: "Icova", dish: "Iced Spanish Latte", price: "£4.50", image: pick("icova").image },
 ];
 
+// Some logo files carry lots of empty margin; zoom them so all logos look the same size.
+const logoZoom: Record<string, string> = { "Tavo Chicken": "scale-[1.9]", Taconelle: "scale-[1.9]", "Skorch Burgers": "scale-[1.6]", Fyrra: "scale-125", Sabzora: "scale-125" };
+
 function LogoTile({ src, name, className = "" }: { src?: string | undefined; name: string; className?: string }) {
   return (
-    <div className={`flex items-center justify-center rounded-xl bg-foreground p-2 ${className}`}>
+    <div className={`flex items-center justify-center overflow-hidden rounded-xl bg-foreground p-2 ${className}`}>
       {src ? (
-        <img src={src} alt={`${name} logo`} loading="lazy" className="max-h-full max-w-full object-contain" />
+        <img src={src} alt={`${name} logo`} loading="lazy" className={`max-h-full max-w-full object-contain ${logoZoom[name] ?? ""}`} />
       ) : (
         <span className="font-display text-sm font-bold text-background">{name}</span>
       )}
