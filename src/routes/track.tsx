@@ -65,8 +65,36 @@ const statusCopy:Record<string,{label:string;copy:string;Icon:typeof Clock3}>={
   },
 };
 
+const passCopy:Record<string,{label:string;copy:string;Icon:typeof Clock3}>={
+  ready_to_pack:{
+    label:"Kitchen complete",
+    copy:"Every brand is ready and your order is moving to the MealDeck pass.",
+    Icon:PackageCheck,
+  },
+  packing:{
+    label:"Packing your order",
+    copy:"The MealDeck pass is bringing all brands together into one handoff.",
+    Icon:PackageCheck,
+  },
+  sealed:{
+    label:"Packed & sealed",
+    copy:"Your full multi-brand order is packed and being checked for handoff.",
+    Icon:CheckCircle2,
+  },
+  ready_for_handoff:{
+    label:"Ready for handoff",
+    copy:"Your complete order is ready for collection or delivery handoff.",
+    Icon:CheckCircle2,
+  },
+};
+
 const deliveryCopy:Record<string,string>={
   waiting_for_kitchen:"Waiting for kitchen",
+  waiting_for_ready:"Waiting for the full order to be packed",
+  pending_quote:"Finding the best available delivery",
+  quoted:"Delivery option selected",
+  booking:"Booking your driver",
+  booked:"Driver booking confirmed",
   requested:"Finding a delivery driver",
   accepted:"Delivery accepted",
   driver_assigned:"Driver assigned",
@@ -101,7 +129,9 @@ function TrackOrderPage(){
   }
 
   const status=result?.found
-    ? statusCopy[result.orderStatus]??{
+    ? (result.passStatus&&passCopy[result.passStatus])
+      ??statusCopy[result.orderStatus]
+      ??{
         label:result.orderStatus.replace(/_/g," "),
         copy:"Your order status has been updated.",
         Icon:Clock3,

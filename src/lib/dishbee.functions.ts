@@ -51,13 +51,15 @@ function normaliseName(value: string) {
 
 function frontendBrandId(row: Record<string, unknown>) {
   const rawId = String(row["brand_id"] ?? "");
+  const rawSlug = String(row["brand_slug"] ?? "");
   const rawName = String(row["brand_name"] ?? "");
   const matched = brands.find(
     (brand) =>
       brand.id === rawId ||
+      brand.id === rawSlug ||
       normaliseName(brand.name) === normaliseName(rawName),
   );
-  return matched?.id ?? rawId;
+  return matched?.id ?? rawSlug || rawId;
 }
 
 export type ServiceabilityResult =
@@ -179,43 +181,71 @@ export const getCatalogue = createServerFn({ method: "GET" })
     }
 
     try {
-      const { data: rows, error } = await dishbeeClient(config).rpc(
-        "public_location_catalogue",
+      const client=dishbeeClient(config);
+      let legacyCatalogue=false;
+      let {data:rows,error}=await client.rpc(
+        "public_mealdeck_catalogue",
         {
-          p_tenant: config.tenantId,
-          p_location: config.locationId,
-          p_channel: "mealdeck",
+          p_tenant:config.tenantId,
+          p_location:config.locationId,
         },
       );
-      if (error) throw new Error(error.message);
 
-      const list = (rows ?? []) as Array<Record<string, unknown>>;
+      // Backward-compatible fallback during staggered deployments.
+      if(error){
+        legacyCatalogue=true;
+        const fallback=await client.rpc(
+          "public_location_catalogue",
+          {
+            p_tenant:config.tenantId,
+            p_location:config.locationId,
+            p_channel:"mealdeck",
+          },
+        );
+        rows=fallback.data;
+        error=fallback.error;
+      }
+
+      if(error)throw new Error(error.message);
+
+      const list=(rows??[]) as Array<Record<string,unknown>>;
 
       return {
-        source: "live",
-        channelOpen: list.length
-          ? Boolean(list[0]!["channel_open"])
-          : false,
-        items: list.map((row) => {
-          const item: MenuItem = {
-            id: String(row["item_id"]),
-            brandId: frontendBrandId(row),
-            category: String(row["category_name"] ?? "Menu"),
-            name: String(row["item_name"]),
-            pricePence: Number(row["price_pence"] ?? 0),
-            imageUrl: row["image_url"]
-              ? String(row["image_url"])
-              : null,
-            allergens: Array.isArray(row["allergens"])
-              ? row["allergens"].map(String)
-              : [],
-            hasModifiers: true,
+        source:legacyCatalogue?"sample":"live",
+        channelOpen:list.length?Boolean(list[0]!["channel_open"]):false,
+        notice:legacyCatalogue
+          ?"Dishbee is serving the legacy catalogue while the live modifier runtime is updating. Checkout is temporarily disabled."
+          :undefined,
+        items:list.map((row)=>{
+          const groups=Array.isArray(row["modifier_groups"])
+            ? (row["modifier_groups"] as Array<Record<string,unknown>>).map((group)=>({
+                id:String(group["id"]),
+                name:String(group["name"]??"Options"),
+                minSelect:Number(group["minSelect"]??0),
+                maxSelect:Number(group["maxSelect"]??1),
+                options:Array.isArray(group["options"])
+                  ? (group["options"] as Array<Record<string,unknown>>).map((option)=>({
+                      id:String(option["id"]),
+                      name:String(option["name"]),
+                      priceDeltaPence:Number(option["priceDeltaPence"]??0),
+                    }))
+                  : [],
+              }))
+            : [];
+
+          const item:MenuItem={
+            id:String(row["item_id"]),
+            brandId:frontendBrandId(row),
+            category:String(row["category_name"]??"Menu"),
+            name:String(row["item_name"]),
+            pricePence:Number(row["price_pence"]??0),
+            imageUrl:row["image_url"]?String(row["image_url"]):null,
+            allergens:Array.isArray(row["allergens"])?row["allergens"].map(String):[],
+            hasModifiers:groups.length>0,
+            modifierGroups:groups,
           };
 
-          if (row["description"]) {
-            item.description = String(row["description"]);
-          }
-
+          if(row["description"])item.description=String(row["description"]);
           return item;
         }),
       };
@@ -243,6 +273,9 @@ const orderSchema = z
           modifiers: z
             .array(
               z.object({
+                id: z.string().min(1).max(80),
+                groupId: z.string().min(1).max(80),
+                groupName: z.string().max(120),
                 name: z.string().max(80),
                 priceDeltaPence: z.number().int(),
               }),
@@ -280,9 +313,9 @@ const orderSchema = z
         .or(z.literal("")),
       postcode: z
         .string()
-        .max(12)
-        .optional()
-        .or(z.literal("")),
+        .trim()
+        .min(2)
+        .max(12),
       notes: z
         .string()
         .max(400)
@@ -359,7 +392,7 @@ export const placeOrder = createServerFn({ method: "POST" })
           p_address:
             data.fulfilment === "delivery"
               ? data.customer
-              : null,
+              : { postcode: data.customer.postcode },
           p_vehicle_registration:
             data.fulfilment === "curbside"
               ? data.customer.vehicleRegistration
@@ -402,6 +435,7 @@ export type OrderTrackingResult =
       found: true;
       orderStatus: string;
       fulfilment: string;
+      passStatus?: string;
       deliveryStatus?: string;
       trackingUrl?: string;
       updatedAt?: string;
@@ -427,16 +461,30 @@ export const getOrderTracking = createServerFn({ method: "POST" })
     }
 
     try {
-      const { data: rows, error } = await dishbeeClient(base).rpc(
-        "public_mealdeck_order_tracking",
+      const client=dishbeeClient(base);
+      let {data:rows,error}=await client.rpc(
+        "public_mealdeck_order_tracking_v2",
         {
-          p_order: data.orderId,
-          p_handoff_code: data.handoffCode,
+          p_order:data.orderId,
+          p_handoff_code:data.handoffCode,
         },
       );
-      if (error) throw new Error(error.message);
 
-      const row = ((rows ?? []) as Array<Record<string, unknown>>)[0];
+      if(error){
+        const fallback=await client.rpc(
+          "public_mealdeck_order_tracking",
+          {
+            p_order:data.orderId,
+            p_handoff_code:data.handoffCode,
+          },
+        );
+        rows=fallback.data;
+        error=fallback.error;
+      }
+
+      if(error)throw new Error(error.message);
+
+      const row=((rows??[]) as Array<Record<string,unknown>>)[0];
       if (!row) {
         return {
           found: false,
@@ -448,6 +496,9 @@ export const getOrderTracking = createServerFn({ method: "POST" })
         found: true,
         orderStatus: String(row["order_status"] ?? ""),
         fulfilment: String(row["fulfilment"] ?? ""),
+        passStatus: row["pass_status"]
+          ? String(row["pass_status"])
+          : undefined,
         deliveryStatus: row["delivery_status"]
           ? String(row["delivery_status"])
           : undefined,
