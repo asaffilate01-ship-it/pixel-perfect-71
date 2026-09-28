@@ -182,6 +182,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
 
     try {
       const client=dishbeeClient(config);
+      let legacyCatalogue=false;
       let {data:rows,error}=await client.rpc(
         "public_mealdeck_catalogue",
         {
@@ -192,6 +193,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
 
       // Backward-compatible fallback during staggered deployments.
       if(error){
+        legacyCatalogue=true;
         const fallback=await client.rpc(
           "public_location_catalogue",
           {
@@ -209,8 +211,11 @@ export const getCatalogue = createServerFn({ method: "GET" })
       const list=(rows??[]) as Array<Record<string,unknown>>;
 
       return {
-        source:"live",
+        source:legacyCatalogue?"sample":"live",
         channelOpen:list.length?Boolean(list[0]!["channel_open"]):false,
+        notice:legacyCatalogue
+          ?"Dishbee is serving the legacy catalogue while the live modifier runtime is updating. Checkout is temporarily disabled."
+          :undefined,
         items:list.map((row)=>{
           const groups=Array.isArray(row["modifier_groups"])
             ? (row["modifier_groups"] as Array<Record<string,unknown>>).map((group)=>({
