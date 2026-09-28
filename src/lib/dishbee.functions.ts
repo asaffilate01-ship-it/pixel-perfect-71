@@ -435,6 +435,7 @@ export type OrderTrackingResult =
       found: true;
       orderStatus: string;
       fulfilment: string;
+      passStatus?: string;
       deliveryStatus?: string;
       trackingUrl?: string;
       updatedAt?: string;
@@ -460,16 +461,30 @@ export const getOrderTracking = createServerFn({ method: "POST" })
     }
 
     try {
-      const { data: rows, error } = await dishbeeClient(base).rpc(
-        "public_mealdeck_order_tracking",
+      const client=dishbeeClient(base);
+      let {data:rows,error}=await client.rpc(
+        "public_mealdeck_order_tracking_v2",
         {
-          p_order: data.orderId,
-          p_handoff_code: data.handoffCode,
+          p_order:data.orderId,
+          p_handoff_code:data.handoffCode,
         },
       );
-      if (error) throw new Error(error.message);
 
-      const row = ((rows ?? []) as Array<Record<string, unknown>>)[0];
+      if(error){
+        const fallback=await client.rpc(
+          "public_mealdeck_order_tracking",
+          {
+            p_order:data.orderId,
+            p_handoff_code:data.handoffCode,
+          },
+        );
+        rows=fallback.data;
+        error=fallback.error;
+      }
+
+      if(error)throw new Error(error.message);
+
+      const row=((rows??[]) as Array<Record<string,unknown>>)[0];
       if (!row) {
         return {
           found: false,
@@ -481,6 +496,9 @@ export const getOrderTracking = createServerFn({ method: "POST" })
         found: true,
         orderStatus: String(row["order_status"] ?? ""),
         fulfilment: String(row["fulfilment"] ?? ""),
+        passStatus: row["pass_status"]
+          ? String(row["pass_status"])
+          : undefined,
         deliveryStatus: row["delivery_status"]
           ? String(row["delivery_status"])
           : undefined,
