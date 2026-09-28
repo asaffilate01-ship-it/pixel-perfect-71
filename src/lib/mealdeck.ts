@@ -43,6 +43,20 @@ export type Brand = {
   logoVariant?: "standard" | "wide" | "square";
 };
 
+export type ModifierOption = {
+  id: string;
+  name: string;
+  priceDeltaPence: number;
+};
+
+export type ModifierGroup = {
+  id: string;
+  name: string;
+  minSelect: number;
+  maxSelect: number;
+  options: ModifierOption[];
+};
+
 export type MenuItem = {
   id: string;
   brandId: string;
@@ -53,9 +67,13 @@ export type MenuItem = {
   imageUrl?: string | null | undefined;
   allergens?: string[] | undefined;
   hasModifiers?: boolean | undefined;
+  modifierGroups?: ModifierGroup[] | undefined;
 };
 
-export type SelectedModifier = { name: string; priceDeltaPence: number };
+export type SelectedModifier = ModifierOption & {
+  groupId: string;
+  groupName: string;
+};
 
 export type CartLine = MenuItem & {
   lineId: string;
@@ -152,11 +170,51 @@ export function resolveSampleServiceability(
   };
 }
 
-export function modifierOptionsFor(item: MenuItem): SelectedModifier[] {
-  if (item.brandId === "icova") return [{ name: "Large", priceDeltaPence: 100 }, { name: "Oat milk", priceDeltaPence: 50 }, { name: "Extra shot", priceDeltaPence: 60 }, { name: "Less ice", priceDeltaPence: 0 }];
-  if (item.brandId === "moktl") return [{ name: "Large", priceDeltaPence: 100 }, { name: "Extra fruit", priceDeltaPence: 75 }, { name: "Less ice", priceDeltaPence: 0 }];
-  if (item.brandId === "cafe1") return [{ name: "Add chips", priceDeltaPence: 175 }, { name: "Add beans", priceDeltaPence: 125 }, { name: "Extra cheese", priceDeltaPence: 100 }, { name: "No onions", priceDeltaPence: 0 }];
-  return [{ name: "Extra cheese", priceDeltaPence: 100 }, { name: "Extra sauce", priceDeltaPence: 50 }, { name: "Make it spicy", priceDeltaPence: 0 }, { name: "No onions", priceDeltaPence: 0 }];
+function sampleOption(id: string, name: string, priceDeltaPence: number): ModifierOption {
+  return { id, name, priceDeltaPence };
+}
+
+export function modifierOptionsFor(item: MenuItem): ModifierOption[] {
+  if (item.brandId === "icova")
+    return [
+      sampleOption("sample-large", "Large", 100),
+      sampleOption("sample-oat-milk", "Oat milk", 50),
+      sampleOption("sample-extra-shot", "Extra shot", 60),
+      sampleOption("sample-less-ice", "Less ice", 0),
+    ];
+  if (item.brandId === "moktl")
+    return [
+      sampleOption("sample-large", "Large", 100),
+      sampleOption("sample-extra-fruit", "Extra fruit", 75),
+      sampleOption("sample-less-ice", "Less ice", 0),
+    ];
+  if (item.brandId === "cafe1")
+    return [
+      sampleOption("sample-chips", "Add chips", 175),
+      sampleOption("sample-beans", "Add beans", 125),
+      sampleOption("sample-cheese", "Extra cheese", 100),
+      sampleOption("sample-no-onions", "No onions", 0),
+    ];
+  return [
+    sampleOption("sample-cheese", "Extra cheese", 100),
+    sampleOption("sample-sauce", "Extra sauce", 50),
+    sampleOption("sample-spicy", "Make it spicy", 0),
+    sampleOption("sample-no-onions", "No onions", 0),
+  ];
+}
+
+export function modifierGroupsFor(item: MenuItem): ModifierGroup[] {
+  if (item.modifierGroups?.length) return item.modifierGroups;
+  if (!item.hasModifiers) return [];
+  return [
+    {
+      id: `sample-${item.id}`,
+      name: "Choose your extras",
+      minSelect: 0,
+      maxSelect: 4,
+      options: modifierOptionsFor(item),
+    },
+  ];
 }
 
 export function lineUnitPrice(line: Pick<CartLine, "pricePence" | "selectedModifiers">): number {
@@ -164,7 +222,7 @@ export function lineUnitPrice(line: Pick<CartLine, "pricePence" | "selectedModif
 }
 
 export function addItem(lines: CartLine[], item: MenuItem, selectedModifiers: SelectedModifier[] = []): CartLine[] {
-  const signature = selectedModifiers.map((m) => `${m.name}:${m.priceDeltaPence}`).sort().join("|");
+  const signature = selectedModifiers.map((m) => `${m.groupId}:${m.id}`).sort().join("|");
   const lineId = `${item.id}:${signature}`;
   const existing = lines.find((line) => line.lineId === lineId);
   if (!existing) return [...lines, { ...item, lineId, quantity: 1, selectedModifiers }];
