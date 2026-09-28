@@ -33,7 +33,7 @@ import {
   itemCount,
   lineUnitPrice,
   locations,
-  modifierOptionsFor,
+  modifierGroupsFor,
   setQuantity,
   subtotal,
   type Brand,
@@ -41,6 +41,8 @@ import {
   type FulfilmentType,
   type LocationKey,
   type MenuItem,
+  type ModifierGroup,
+  type ModifierOption,
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import logo from "@/assets/mealdeck-logo.png.asset.json";
@@ -213,7 +215,7 @@ function OrderPage() {
   }
 
   function beginAdd(item: MenuItem) {
-    if (item.hasModifiers) {
+    if (modifierGroupsFor(item).length) {
       setCustomising(item);
       setChosen([]);
       return;
@@ -221,13 +223,39 @@ function OrderPage() {
     setLines((prev) => addItem(prev, item));
   }
 
-  function toggleModifier(modifier: SelectedModifier) {
-    setChosen((current) =>
-      current.some((m) => m.name === modifier.name)
-        ? current.filter((m) => m.name !== modifier.name)
-        : [...current, modifier],
-    );
+  function toggleModifier(group: ModifierGroup, option: ModifierOption) {
+    setChosen((current) => {
+      const selected=current.some(
+        (modifier)=>modifier.groupId===group.id&&modifier.id===option.id,
+      );
+
+      if(selected){
+        return current.filter(
+          (modifier)=>!(modifier.groupId===group.id&&modifier.id===option.id),
+        );
+      }
+
+      const sameGroup=current.filter((modifier)=>modifier.groupId===group.id);
+      if(group.maxSelect===1){
+        return [
+          ...current.filter((modifier)=>modifier.groupId!==group.id),
+          {...option,groupId:group.id,groupName:group.name},
+        ];
+      }
+      if(sameGroup.length>=group.maxSelect)return current;
+
+      return [
+        ...current,
+        {...option,groupId:group.id,groupName:group.name},
+      ];
+    });
   }
+
+  const customiserGroups=customising?modifierGroupsFor(customising):[];
+  const customiserValid=customiserGroups.every((group)=>{
+    const count=chosen.filter((modifier)=>modifier.groupId===group.id).length;
+    return count>=group.minSelect&&count<=group.maxSelect;
+  });
 
   const fulfilmentAllowed = currentLocation?.allowedFulfilments.includes(fulfilment) ?? false;
 
@@ -235,6 +263,7 @@ function OrderPage() {
     !!location &&
     fulfilmentAllowed &&
     channelOpen &&
+    customer.postcode.trim().length >= 2 &&
     customer.name.trim() &&
     customer.phone.trim().length >= 5 &&
     (fulfilment !== "delivery" ||
@@ -243,6 +272,12 @@ function OrderPage() {
 
   async function handleCheckout() {
     if (!location) return;
+    if(catalogue.data?.source!=="live"){
+      toast.error("Live kitchen connection required",{
+        description:"The sample menu is for preview only. Live checkout starts when Dishbee catalogue data is available.",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       const result = await submitOrder({
@@ -654,25 +689,62 @@ function OrderPage() {
                 <DialogTitle className="font-display text-2xl">{customising.name}</DialogTitle>
                 <DialogDescription>{customising.description ?? "Customise your item."}</DialogDescription>
               </DialogHeader>
-              <div className="space-y-2">
-                {modifierOptionsFor(customising).map((modifier) => {
-                  const selected = chosen.some((m) => m.name === modifier.name);
+              <div className="space-y-6">
+                {customiserGroups.map((group)=>{
+                  const selectedCount=chosen.filter(
+                    (modifier)=>modifier.groupId===group.id,
+                  ).length;
                   return (
-                    <button
-                      key={modifier.name}
-                      onClick={() => toggleModifier(modifier)}
-                      className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
-                        selected ? "border-accent bg-accent/10" : "border-border hover:border-accent/60"
-                      }`}
-                    >
-                      <span>
-                        <span className="font-semibold">{modifier.name}</span>
-                        {modifier.priceDeltaPence > 0 ? (
-                          <span className="ml-2 text-sm text-muted-foreground">+{formatPence(modifier.priceDeltaPence)}</span>
-                        ) : null}
-                      </span>
-                      {selected ? <Check className="size-4 text-accent" /> : <Plus className="size-4 text-muted-foreground" />}
-                    </button>
+                    <section key={group.id}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-display font-bold">{group.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {group.minSelect>0
+                              ? group.maxSelect===1
+                                ? "Choose one"
+                                : `Choose at least ${group.minSelect} · up to ${group.maxSelect}`
+                              : group.maxSelect===1
+                                ? "Optional · choose one"
+                                : `Optional · choose up to ${group.maxSelect}`}
+                          </p>
+                        </div>
+                        {group.minSelect>0&&selectedCount>=group.minSelect?(
+                          <Check className="size-5 text-emerald-500"/>
+                        ):null}
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {group.options.map((option)=>{
+                          const selected=chosen.some(
+                            (modifier)=>modifier.groupId===group.id&&modifier.id===option.id,
+                          );
+                          return (
+                            <button
+                              key={option.id}
+                              onClick={()=>toggleModifier(group,option)}
+                              className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${
+                                selected
+                                  ?"border-accent bg-accent/10"
+                                  :"border-border hover:border-accent/60"
+                              }`}
+                            >
+                              <span>
+                                <span className="font-semibold">{option.name}</span>
+                                {option.priceDeltaPence!==0?(
+                                  <span className="ml-2 text-sm text-muted-foreground">
+                                    {option.priceDeltaPence>0?"+":""}{formatPence(option.priceDeltaPence)}
+                                  </span>
+                                ):null}
+                              </span>
+                              {selected
+                                ?<Check className="size-4 text-accent"/>
+                                :<Plus className="size-4 text-muted-foreground"/>
+                              }
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
                   );
                 })}
               </div>
@@ -680,9 +752,12 @@ function OrderPage() {
                 variant="hero"
                 size="lg"
                 className="w-full rounded-full"
+                disabled={!customiserValid}
                 onClick={() => {
+                  if(!customiserValid)return;
                   setLines((prev) => addItem(prev, customising, chosen));
                   setCustomising(null);
+                  setChosen([]);
                 }}
               >
                 Add to basket · {formatPence(lineUnitPrice({ pricePence: customising.pricePence, selectedModifiers: chosen }))}
