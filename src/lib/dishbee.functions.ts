@@ -59,7 +59,7 @@ function frontendBrandId(row: Record<string, unknown>) {
       brand.id === rawSlug ||
       normaliseName(brand.name) === normaliseName(rawName),
   );
-  return matched?.id ?? rawSlug || rawId;
+  return matched?.id ?? (rawSlug || rawId);
 }
 
 export type ServiceabilityResult =
@@ -72,7 +72,7 @@ export type ServiceabilityResult =
   | {
       served: false;
       message: string;
-      alternativeFulfilments?: FulfilmentType[];
+      alternativeFulfilments?: FulfilmentType[] | undefined;
     };
 
 export const checkServiceability = createServerFn({ method: "POST" })
@@ -160,7 +160,7 @@ export type CatalogueResult = {
   source: "live" | "sample";
   channelOpen: boolean;
   items: MenuItem[];
-  notice?: string;
+  notice?: string | undefined;
 };
 
 export const getCatalogue = createServerFn({ method: "GET" })
@@ -435,10 +435,10 @@ export type OrderTrackingResult =
       found: true;
       orderStatus: string;
       fulfilment: string;
-      passStatus?: string;
-      deliveryStatus?: string;
-      trackingUrl?: string;
-      updatedAt?: string;
+      passStatus?: string | undefined;
+      deliveryStatus?: string | undefined;
+      trackingUrl?: string | undefined;
+      updatedAt?: string | undefined;
     }
   | { found: false; message: string };
 
