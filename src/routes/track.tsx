@@ -129,7 +129,7 @@ function TrackOrderPage(){
   }
 
   const status=result?.found
-    ? (result.passStatus&&passCopy[result.passStatus])
+    ? (result.passStatus?passCopy[result.passStatus]:undefined)
       ??statusCopy[result.orderStatus]
       ??{
         label:result.orderStatus.replace(/_/g," "),
