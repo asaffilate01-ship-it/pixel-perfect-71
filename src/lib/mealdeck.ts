@@ -31,6 +31,7 @@ export const fulfilmentLabels: Record<FulfilmentType, string> = {
   delivery: "Delivery",
   pickup: "Pickup",
   curbside: "Kerbside",
+  dinein: "Dine in",
 };
 
 export type Brand = {
@@ -104,7 +105,7 @@ export const brands: Brand[] = [
   { id: "fyrra", name: "Fyrra", strapline: "Bold flavours. Together.", tagline: "Grill, shawarma and kebab.", image: brandFyrra, category: "Grill · shawarma · kebab", logo: logoFyrra.url },
   { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: logoSabzora.url, logoVariant: "square" },
   { id: "skorch-burgers", name: "Skorch Burgers", strapline: "Seared on steel.", tagline: "Smashed, seared, sensational.", image: brandSkorch, category: "Smash burgers", logo: logoSkorch.url },
-  { id: "cafe1", name: "Café1", strapline: "British café favourites", tagline: "All-day comfort classics.", image: brandCafe1, category: "Café" },
+  { id: "cafe1", name: "Café1", strapline: "Café Classics", tagline: "All-day comfort classics.", image: brandCafe1, category: "Café Classics", logo: logoCafe1.url },
   { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: logoIcova.url, logoVariant: "wide" },
   { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: logoMoktl.url, logoVariant: "wide" },
 ];
@@ -113,8 +114,8 @@ export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd
 export const addonBrandIds = ["icova", "moktl"];
 
 export const locations: MealDeckLocation[] = [
-  { key: "luton", name: "MealDeck Luton", town: "Luton", hoursLabel: "Opening hours set by the Luton kitchen", primaryBrandIds, addonBrandIds, allowedFulfilments: ["delivery", "pickup", "curbside"] },
-  { key: "stalbans", name: "MealDeck St Albans", town: "St Albans", hoursLabel: "Mon–Fri · 09:00–16:00 · Delivery only", primaryBrandIds: ["cafe1", ...primaryBrandIds], addonBrandIds, allowedFulfilments: ["delivery"] },
+  { key: "luton", name: "MealDeck Luton", town: "Luton", hoursLabel: "5pm–11pm · Monday to Sunday", primaryBrandIds, addonBrandIds, allowedFulfilments: ["delivery", "pickup", "curbside"] },
+  { key: "stalbans", name: "MealDeck St Albans", town: "St Albans", hoursLabel: "Mon–Fri · 09:00–16:00", primaryBrandIds: ["cafe1", ...primaryBrandIds], addonBrandIds, allowedFulfilments: ["delivery", "curbside", "pickup", "dinein"] },
 ];
 
 export function brandById(id: string): Brand | undefined {
