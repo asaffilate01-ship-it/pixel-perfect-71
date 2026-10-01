@@ -125,7 +125,7 @@ function BrandCard({ brand, index }: { brand: (typeof premiumBrands)[number]; in
 
 function DeckReveal() {
   return (
-    <section className="border-b border-border bg-card/30 py-20 sm:py-24" aria-label="Meet the MealDeck brands">
+    <section className="border-b border-border bg-card/30 py-14 sm:py-20" aria-label="Meet the MealDeck brands">
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr]">
         <div>
           <p className="eyebrow">Watch the deck unfold</p>
@@ -243,7 +243,7 @@ function Landing() {
 
         <DeckReveal />
 
-        <section id="brands" className="scroll-mt-24 py-20 sm:py-28">
+        <section id="brands" className="scroll-mt-24 py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -260,7 +260,7 @@ function Landing() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-card/35 py-20 sm:py-28">
+        <section className="border-y border-border bg-card/35 py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr]">
               <div>
@@ -289,7 +289,7 @@ function Landing() {
           </div>
         </section>
 
-        <section id="offers" className="scroll-mt-24 py-20 sm:py-28">
+        <section id="offers" className="scroll-mt-24 py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="text-center">
               <p className="eyebrow">Offers on the table</p>
@@ -315,31 +315,29 @@ function Landing() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-card/35 py-20 sm:py-24">
+        <section id="how" className="scroll-mt-24 border-y border-border bg-card/35 py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:items-center">
+            <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
               <div>
-                <p className="eyebrow">Order your way</p>
+                <p className="eyebrow">Order your way. Track every step.</p>
                 <h2 className="mt-3 text-4xl font-black sm:text-5xl">Every route leads to a full deck.</h2>
-                <p className="mt-4 max-w-lg leading-7 text-muted-foreground">Start on web, order by phone or WhatsApp, or keep favourites close in the app. Your delivery stays together from checkout to doorstep.</p>
+                <p className="mt-4 max-w-lg leading-7 text-muted-foreground">Start on web, order by phone or WhatsApp, or keep favourites close in the app — then follow your delivery from confirmation to doorstep without switching screens.</p>
+                <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {channels.map(({ icon: Icon, title, suit }) => (
+                    <div key={title} className="channel-tile">
+                      <span className="channel-chip"><Icon className="size-5" strokeWidth={2.25} /></span>
+                      <h3 className="mt-3 font-display text-sm font-bold">{title}</h3>
+                      <span className="suit-mark" aria-hidden="true">{suit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-7 flex flex-wrap gap-3 text-sm">
+                  <span className="feature-chip"><Share2 /> Share tracking</span>
+                  <span className="feature-chip"><Clock3 /> Live timings</span>
+                  <span className="feature-chip"><MapPin /> Driver progress</span>
+                </div>
+                <Button variant="gold" size="xl" className="mt-7" asChild><Link to="/track">Track an order <ArrowRight /></Link></Button>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {channels.map(({ icon: Icon, title, copy, suit }) => (
-                  <div key={title} className="channel-tile">
-                    <span className="channel-chip"><Icon className="size-6" strokeWidth={2.25} /></span>
-                    <h3 className="mt-5 font-display text-lg font-bold">{title}</h3>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">{copy}</p>
-                    <span className="suit-mark" aria-hidden="true">{suit}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="how" className="scroll-mt-24 py-20 sm:py-28">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
               <div className="relative mx-auto w-full max-w-xl">
                 <div className="tracking-panel">
                   <div className="flex items-center justify-between border-b border-border pb-5">
@@ -356,41 +354,7 @@ function Landing() {
                   </div>
                 </div>
               </div>
-              <div>
-                <p className="eyebrow">No bluffing. Full tracking.</p>
-                <h2 className="mt-3 text-4xl font-black sm:text-5xl">Know where your order stands.</h2>
-                <p className="mt-5 max-w-lg leading-7 text-muted-foreground">Different kitchens, one coordinated delivery. Follow every stage from confirmation to arrival without switching screens.</p>
-                <div className="mt-7 flex flex-wrap gap-3 text-sm">
-                  <span className="feature-chip"><Share2 /> Share tracking</span>
-                  <span className="feature-chip"><Clock3 /> Live timings</span>
-                  <span className="feature-chip"><MapPin /> Driver progress</span>
-                </div>
-                <Button variant="gold" size="xl" className="mt-8" asChild><Link to="/track">Track an order <ArrowRight /></Link></Button>
-              </div>
             </div>
-          </div>
-        </section>
-
-        <section className="border-t border-border bg-card/30 py-20 sm:py-24" aria-label="MealDeck coming soon locations">
-          <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
-            <p className="eyebrow">Dealing new hands soon</p>
-            <h2 className="mx-auto mt-3 max-w-2xl text-4xl font-black sm:text-5xl">The deck is spreading across the UK.</h2>
-            <p className="mx-auto mt-4 max-w-xl leading-7 text-muted-foreground">We're shuffling up new cities and getting ready to deal them in. Watch this space — your table could be next.</p>
-            <div className="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-3">
-              {[
-                { city: "Bedford", suit: "♠" },
-                { city: "Milton Keynes", suit: "♥" },
-                { city: "Manchester", suit: "♦" },
-                { city: "Birmingham", suit: "♣" },
-                { city: "Cardiff", suit: "♠" },
-                { city: "Across London", suit: "♥" },
-              ].map(({ city, suit }) => (
-                <span key={city} className="feature-chip !px-5 !py-3 text-sm font-bold">
-                  <span className="text-primary" aria-hidden="true">{suit}</span> {city} — coming soon
-                </span>
-              ))}
-            </div>
-            <p className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">No bluff — new tables are being set.</p>
           </div>
         </section>
 
@@ -398,6 +362,16 @@ function Landing() {
           <div className="mx-auto flex max-w-7xl flex-col items-center gap-8 px-4 text-center sm:px-6 lg:flex-row lg:justify-between lg:text-left">
             <div><p className="text-xs font-black uppercase">Ready to play your best hand?</p><h2 className="mt-2 text-3xl font-black sm:text-4xl">Shuffle less. Eat better.</h2><p className="mt-2 text-sm text-primary-foreground/75">Mix the brands you want and let MealDeck handle the rest.</p></div>
             <Button variant="gold" size="xl" asChild><Link to="/order">Start your order <Crown /></Link></Button>
+          </div>
+          <div className="mx-auto mt-10 max-w-7xl border-t border-primary-foreground/15 px-4 pt-8 sm:px-6">
+            <p className="text-center text-xs font-bold uppercase tracking-widest text-primary-foreground/70">Dealing new hands soon</p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {["Bedford", "Milton Keynes", "Manchester", "Birmingham", "Cardiff", "Across London"].map((city) => (
+                <span key={city} className="rounded-full border border-primary-foreground/25 px-4 py-1.5 text-sm font-semibold text-primary-foreground/85">
+                  {city}
+                </span>
+              ))}
+            </div>
           </div>
         </section>
       </main>
