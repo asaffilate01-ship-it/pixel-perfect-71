@@ -326,8 +326,8 @@ function Landing() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {channels.map(({ icon: Icon, title, copy, suit }) => (
                   <div key={title} className="channel-tile">
-                    <Icon className="size-7 text-accent" />
-                    <h3 className="mt-6 font-display text-lg font-bold">{title}</h3>
+                    <span className="channel-chip"><Icon className="size-6" strokeWidth={2.25} /></span>
+                    <h3 className="mt-5 font-display text-lg font-bold">{title}</h3>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">{copy}</p>
                     <span className="suit-mark" aria-hidden="true">{suit}</span>
                   </div>
