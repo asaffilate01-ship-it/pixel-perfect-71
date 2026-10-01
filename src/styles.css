@@ -62,21 +62,23 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
 }
 
 :root {
   --radius: 0.875rem;
 
-  --background: oklch(0.16 0.012 40);
+  --background: oklch(0.115 0.012 35);
   --foreground: oklch(0.97 0.006 80);
 
-  --card: oklch(0.21 0.014 42);
+  --card: oklch(0.17 0.016 38);
   --card-foreground: oklch(0.97 0.006 80);
-  --popover: oklch(0.19 0.014 42);
+  --popover: oklch(0.16 0.014 38);
   --popover-foreground: oklch(0.97 0.006 80);
 
   /* MealDeck red */
-  --primary: oklch(0.56 0.221 27.5);
+  --primary: oklch(0.5 0.205 27);
   --primary-foreground: oklch(0.99 0.004 90);
 
   --secondary: oklch(0.26 0.018 46);
@@ -86,7 +88,7 @@
   --muted-foreground: oklch(0.73 0.021 72);
 
   /* MealDeck gold */
-  --accent: oklch(0.83 0.166 85);
+  --accent: oklch(0.84 0.17 88);
   --accent-foreground: oklch(0.2 0.03 55);
 
   --destructive: oklch(0.58 0.23 27);
@@ -95,6 +97,9 @@
   --border: oklch(0.31 0.018 50);
   --input: oklch(0.31 0.018 50);
   --ring: oklch(0.83 0.166 85);
+
+  --paper: oklch(0.975 0.022 88);
+  --ink: oklch(0.17 0.014 35);
 
   --chart-1: oklch(0.56 0.221 27.5);
   --chart-2: oklch(0.83 0.166 85);
@@ -122,6 +127,7 @@
   --shadow-glow: 0 12px 34px -12px oklch(0.56 0.221 27.5 / 0.75);
   --shadow-gold: 0 12px 34px -12px oklch(0.83 0.166 85 / 0.55);
   --shadow-card: 0 18px 40px -22px oklch(0 0 0 / 0.9);
+  --card-drop: oklch(0 0 0 / 0.72);
 
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
@@ -149,7 +155,7 @@
   h3,
   h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 }
 
@@ -172,6 +178,227 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
+}
+
+@keyframes deck-reveal {
+  0% { opacity: 0; transform: translateY(40px) scale(0.86) rotateY(-28deg); }
+  65% { opacity: 1; transform: translateY(-5px) scale(1.025) rotateY(3deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotateY(0); }
+}
+
+@keyframes card-enter {
+  0% { opacity: 0; transform: translateY(22px) rotateY(-18deg); }
+  100% { opacity: 1; transform: translateY(0) rotateY(0); }
+}
+
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes brand-flip-sequence {
+  0%, 4% { opacity: 0; transform: rotateY(-180deg) scale(0.9); }
+  7%, 10% { opacity: 1; transform: rotateY(0) scale(1); }
+  13%, 100% { opacity: 0; transform: rotateY(180deg) scale(0.9); }
+}
+
+@keyframes deck-return {
+  0%, 91% { opacity: 0; transform: rotateY(-180deg) scale(0.9); }
+  95%, 100% { opacity: 1; transform: rotateY(0) scale(1); }
+}
+
+@utility hero-felt {
+  background:
+    linear-gradient(115deg, color-mix(in oklab, var(--color-background) 97%, transparent) 5%, color-mix(in oklab, var(--color-background) 55%, transparent) 72%),
+    radial-gradient(circle at 72% 45%, color-mix(in oklab, var(--color-primary) 24%, transparent), transparent 42%),
+    var(--color-background);
+}
+
+@utility deal-glow {
+  position: absolute;
+  width: min(34rem, 76vw);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, color-mix(in oklab, var(--color-accent) 16%, transparent), transparent 68%);
+  filter: blur(22px);
+}
+
+@utility hero-card-reveal {
+  perspective: 1000px;
+  animation: deck-reveal 1.15s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+}
+
+@utility ticker {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@utility ticker-track {
+  display: flex;
+  width: max-content;
+  gap: 2rem;
+  padding-inline: 1rem;
+  animation: ticker-scroll 28s linear infinite;
+}
+
+@utility brand-playing-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 2.5 / 3.5;
+  overflow: hidden;
+  border: 2px solid color-mix(in oklab, var(--color-paper) 82%, var(--color-accent));
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  box-shadow: 0 20px 45px -28px var(--card-drop);
+  animation: card-enter 0.55s ease-out both;
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+@utility card-corner {
+  position: absolute;
+  left: 0.65rem;
+  top: 0.5rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 900;
+  line-height: 0.8;
+}
+
+@utility card-corner-bottom {
+  inset: auto 0.65rem 0.5rem auto;
+  transform: rotate(180deg);
+}
+
+@utility offer-card {
+  border-radius: var(--radius-lg);
+  border: 2px solid color-mix(in oklab, var(--color-paper) 80%, var(--color-accent));
+  background: var(--color-paper);
+  box-shadow: 0 24px 55px -32px var(--card-drop);
+}
+
+@utility channel-tile {
+  min-height: 11rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  padding: 1.25rem;
+}
+
+@utility tracking-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+@utility feature-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  background: var(--color-card);
+  padding: 0.6rem 0.85rem;
+  color: var(--color-muted-foreground);
+}
+
+@utility brand-reveal-stage {
+  position: relative;
+  display: grid;
+  min-height: 26rem;
+  place-items: center;
+  perspective: 1200px;
+}
+
+@utility brand-reveal-card {
+  position: absolute;
+  display: flex;
+  width: min(15rem, 62vw);
+  aspect-ratio: 2.5 / 3.5;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  overflow: hidden;
+  border: 3px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  box-shadow: 0 30px 65px -30px var(--card-drop);
+  opacity: 0;
+  backface-visibility: hidden;
+  animation: brand-flip-sequence 24s ease-in-out infinite;
+}
+
+.brand-reveal-card:nth-of-type(4) { animation-delay: 1.4s; }
+.brand-reveal-card:nth-of-type(5) { animation-delay: 2.8s; }
+.brand-reveal-card:nth-of-type(6) { animation-delay: 4.2s; }
+.brand-reveal-card:nth-of-type(7) { animation-delay: 5.6s; }
+.brand-reveal-card:nth-of-type(8) { animation-delay: 7s; }
+.brand-reveal-card:nth-of-type(9) { animation-delay: 8.4s; }
+.brand-reveal-card:nth-of-type(10) { animation-delay: 9.8s; }
+.brand-reveal-card:nth-of-type(11) { animation-delay: 11.2s; }
+.brand-reveal-card:nth-of-type(12) { animation-delay: 12.6s; }
+.brand-reveal-card:nth-of-type(13) { animation-delay: 14s; }
+.brand-reveal-card:nth-of-type(14) { animation-delay: 15.4s; }
+.brand-reveal-card:nth-of-type(15) { animation-delay: 16.8s; }
+.brand-reveal-card:nth-of-type(16) { animation-delay: 18.2s; }
+.brand-reveal-card:nth-of-type(17) { animation-delay: 19.6s; }
+
+@utility brand-reveal-card-start {
+  padding: 0;
+  animation-delay: 0s;
+}
+
+@utility brand-reveal-card-end {
+  padding: 0;
+  animation: deck-return 24s ease-in-out infinite;
+}
+
+@utility brand-reveal-shadow {
+  position: absolute;
+  width: min(15rem, 62vw);
+  aspect-ratio: 2.5 / 3.5;
+  border: 2px solid color-mix(in oklab, var(--color-accent) 75%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  box-shadow: 0 25px 55px -30px var(--card-drop);
+}
+
+@utility brand-reveal-shadow-one { transform: translateX(-4.25rem) rotate(-11deg); }
+@utility brand-reveal-shadow-two { transform: translateX(4.25rem) rotate(11deg); }
+
+@utility reveal-corner {
+  position: absolute;
+  left: 1rem;
+  top: 0.8rem;
+  font-family: var(--font-display);
+  font-weight: 900;
+  color: var(--color-primary);
+}
+
+@media (hover: hover) {
+  .brand-playing-card:hover {
+    z-index: 2;
+    transform: translateY(-0.65rem) rotate(1deg);
+    border-color: var(--color-primary);
+    box-shadow: 0 28px 60px -28px color-mix(in oklab, var(--color-primary) 55%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-card-reveal,
+  .brand-playing-card,
+  .brand-reveal-card,
+  .ticker-track {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .brand-reveal-card:not(.brand-reveal-card-end) { display: none; }
 }
 
 @utility eyebrow {
