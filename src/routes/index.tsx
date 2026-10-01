@@ -77,19 +77,19 @@ const premiumBrands = [
 ] as const;
 
 const benefits = [
-  { icon: WalletCards, kicker: "Mix your hand", title: "One basket. Every craving.", copy: "Burgers for one, pasta for another, mocktails for the table — all dealt into one order." },
-  { icon: Truck, kicker: "One clean deal", title: "Just one delivery fee.", copy: "Mix across participating brands without stacking separate delivery charges." },
-  { icon: Users, kicker: "Bring the table", title: "Group ordering built in.", copy: "Share an invite, let everyone add their pick, then lock the order when the table is ready." },
-  { icon: CircleDollarSign, kicker: "Split the pot", title: "Simple split payments.", copy: "Friends pay their share without one person chasing the whole table afterwards." },
-  { icon: Star, kicker: "Stack the deck", title: "Points on every order.", copy: "Earn MealDeck loyalty points across brands and play them back on future favourites." },
-  { icon: MapPin, kicker: "Follow every move", title: "Full live tracking.", copy: "See confirmation, kitchen progress, driver updates and arrival — all in one place." },
+  { icon: WalletCards, kicker: "Mix your hand", title: "One basket. Every craving.", copy: "Burgers for one, pasta for another, mocktails for the table — all dealt into one order.", suit: "♦" },
+  { icon: Truck, kicker: "One clean deal", title: "Just one delivery fee.", copy: "Mix across participating brands without stacking separate delivery charges.", suit: "♥" },
+  { icon: Users, kicker: "Bring the table", title: "Group ordering built in.", copy: "Share an invite, let everyone add their pick, then lock the order when the table is ready.", suit: "♠" },
+  { icon: CircleDollarSign, kicker: "Split the pot", title: "Simple split payments.", copy: "Friends pay their share without one person chasing the whole table afterwards.", suit: "♣" },
+  { icon: Star, kicker: "Stack the deck", title: "Points on every order.", copy: "Earn MealDeck loyalty points across brands and play them back on future favourites.", suit: "♦" },
+  { icon: MapPin, kicker: "Follow every move", title: "Full live tracking.", copy: "See confirmation, kitchen progress, driver updates and arrival — all in one place.", suit: "♥" },
 ];
 
 const channels = [
-  { icon: MessageCircle, title: "WhatsApp", copy: "Message, choose and order." },
-  { icon: Globe2, title: "Web", copy: "The complete deck, no download." },
-  { icon: Phone, title: "Phone", copy: "Prefer a person? Call your order in." },
-  { icon: Smartphone, title: "App", copy: "Fast reorders, points and tracking." },
+  { icon: MessageCircle, title: "WhatsApp", copy: "Message, choose and order.", suit: "♣" },
+  { icon: Globe2, title: "Web", copy: "The complete deck, no download.", suit: "♦" },
+  { icon: Phone, title: "Phone", copy: "Prefer a person? Call your order in.", suit: "♥" },
+  { icon: Smartphone, title: "App", copy: "Fast reorders, points and tracking.", suit: "♠" },
 ];
 
 const offers = [
@@ -251,14 +251,15 @@ function Landing() {
                 </div>
               </div>
               <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
-                {benefits.map(({ icon: Icon, kicker, title, copy }) => (
-                  <article key={title} className="bg-background p-6 sm:p-7">
+                {benefits.map(({ icon: Icon, kicker, title, copy, suit }) => (
+                  <article key={title} className="relative bg-background p-6 sm:p-7">
                     <div className="flex items-center justify-between">
                       <Icon className="size-7 text-primary" />
                       <span className="text-xs font-bold uppercase text-accent">{kicker}</span>
                     </div>
                     <h3 className="mt-7 text-xl font-bold">{title}</h3>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy}</p>
+                    <span className="benefit-suit" aria-hidden="true">{suit}</span>
                   </article>
                 ))}
               </div>
@@ -298,11 +299,12 @@ function Landing() {
                 <p className="mt-4 max-w-lg leading-7 text-muted-foreground">Start on web, order by phone or WhatsApp, or keep favourites close in the app. Your delivery stays together from checkout to doorstep.</p>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {channels.map(({ icon: Icon, title, copy }) => (
+                {channels.map(({ icon: Icon, title, copy, suit }) => (
                   <div key={title} className="channel-tile">
                     <Icon className="size-7 text-accent" />
                     <h3 className="mt-6 font-display text-lg font-bold">{title}</h3>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">{copy}</p>
+                    <span className="suit-mark" aria-hidden="true">{suit}</span>
                   </div>
                 ))}
               </div>
