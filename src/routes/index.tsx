@@ -296,7 +296,7 @@ function Landing() {
               <h2 className="mt-3 text-4xl font-black sm:text-5xl">Good deals. Clearly dealt.</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">No mystery cards. Every promotion shows its limit before you order.</p>
             </div>
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 [perspective:1200px]">
               {offers.map((offer) => (
                 <article key={offer.label} className="offer-card">
                   <span className={`offer-corner ${offer.suit === "♠" || offer.suit === "♣" ? "text-ink" : ""}`}>{offer.rank}<small>{offer.suit}</small></span>
