@@ -1,5 +1,6 @@
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BackToTop } from "@/components/back-to-top";
+import { ThemeProvider } from "@/components/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -121,8 +122,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('mealdeck-theme');var d=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}})()`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>
@@ -138,11 +144,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
-      <BackToTop />
-      <MobileTabBar />
-      <Toaster position="top-center" richColors />
+      <ThemeProvider>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+        <BackToTop />
+        <MobileTabBar />
+        <Toaster position="top-center" richColors />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
