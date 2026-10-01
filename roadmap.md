@@ -47,3 +47,10 @@
 - [x] Hero dinner photo: realistic food, natural plate sizes
 - [x] SEO: favicon, share image, Luton/St Albans pages, sitemap, blog with sharing
 - [ ] Connect mealdeck.co.uk domain (needs user)
+## Location pages + order flow (latest)
+- [ ] Bundle brand logos as real files (asset CDN was 502ing)
+- [ ] Luton page: hours 5pm–11pm Mon–Sun, all Luton areas, no LU postcode mention, smaller cards
+- [ ] St Albans page: kerbside, pickup, dine-in; no AL postcode mention; add Café1 with uploaded logo + "Café Classics" caption
+- [ ] FAQ: remove "what is Café1", add dine-in at Café 1, St Albans, 6 Bricket Road, AL1 3JU
+- [ ] /order: add Dine in fulfilment for St Albans (at Café 1)
+- [ ] Hero image: nicer location/scenery
