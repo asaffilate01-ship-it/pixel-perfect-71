@@ -40,7 +40,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             const rank = ranks[i % ranks.length];
             const red = s === "♥" || s === "♦";
             return (
-              <div key={b.id} className="relative flex aspect-[2.5/3.5] flex-col items-center justify-center gap-1 rounded-lg border-2 border-accent/60 p-2 text-center shadow-lg" style={{ background: "#f6eedc", color: "#1a0d0d" }}>
+              <div key={b.id} className="relative flex aspect-[2.5/3.5] flex-col items-center justify-center gap-1 rounded-lg border-2 border-accent/60 bg-paper p-2 text-center text-ink shadow-lg">
                 <span className={`absolute left-1 top-0.5 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
                 <span className={`absolute bottom-0.5 right-1 rotate-180 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
                 {"logo" in b && b.logo ? (

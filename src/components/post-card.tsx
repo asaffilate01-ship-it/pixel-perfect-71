@@ -8,8 +8,7 @@ export function PostCard({ post }: { post: Post }) {
     <Link
       to="/blog/$slug"
       params={{ slug: post.slug }}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border-4 border-accent/70 bg-[hsl(var(--card))] shadow-xl transition-transform duration-300 hover:-translate-y-2 hover:rotate-[-1deg]"
-      style={{ background: "#f6eedc" }}
+      className="group relative flex flex-col overflow-hidden rounded-2xl border-4 border-accent/70 bg-paper text-ink shadow-xl transition-transform duration-300 hover:-translate-y-2 hover:rotate-[-1deg]"
     >
       <span className={`absolute left-3 top-2 z-10 flex flex-col items-center font-display text-xl font-black leading-none ${ink}`}>
         {post.rank}<span>{post.suit}</span>
@@ -22,8 +21,8 @@ export function PostCard({ post }: { post: Post }) {
       </div>
       <div className="flex flex-1 flex-col px-6 pb-12">
         <span className="text-xs font-bold uppercase tracking-widest text-primary">{post.tag}</span>
-        <h3 className="mt-2 font-display text-xl font-black leading-tight" style={{ color: "#1a0d0d" }}>{post.title}</h3>
-        <p className="mt-2 text-sm" style={{ color: "#4a3a33" }}>{post.excerpt}</p>
+        <h3 className="mt-2 font-display text-xl font-black leading-tight text-ink">{post.title}</h3>
+        <p className="mt-2 text-sm text-ink/75">{post.excerpt}</p>
       </div>
     </Link>
   );

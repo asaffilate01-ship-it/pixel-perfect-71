@@ -1,6 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, LayoutGrid, Tag, MapPin, UtensilsCrossed } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 type Tab = { label: string; to: "/" | "/order" | "/track"; hash?: string; icon: typeof Home };
 
@@ -56,7 +55,6 @@ export function MobileTabBar() {
         className="fixed inset-x-3 bottom-3 z-50 lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <ThemeToggle compact className="absolute -top-14 right-0 size-10 bg-background/95 shadow-xl" />
         <div className="relative flex items-stretch rounded-[1.75rem] border border-border/70 bg-card/95 px-1 shadow-2xl backdrop-blur-xl">
           {left.map(item)}
           <div className="flex flex-1 justify-center">

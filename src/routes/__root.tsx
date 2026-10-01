@@ -96,7 +96,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "MealDeck" },
       { property: "og:locale", content: "en_GB" },
-      { name: "theme-color", content: "#120a0a" },
+      { name: "theme-color", content: "#faf6ed", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "#120a0a", media: "(prefers-color-scheme: dark)" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [

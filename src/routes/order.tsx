@@ -514,7 +514,7 @@ function OrderPage() {
                               onClick={() => beginAdd(item)}
                               className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-accent disabled:opacity-50"
                             >
-                              {brand ? <BrandMark brand={brand} className="h-12 w-16 shrink-0 rounded-lg bg-foreground p-1" /> : null}
+                              {brand ? <BrandMark brand={brand} className="h-12 w-16 shrink-0 rounded-lg bg-ink p-1" /> : null}
                               <span className="min-w-0 flex-1">
                                 <span className="block truncate font-semibold">{item.name}</span>
                                 <span className="text-sm text-muted-foreground">{formatPence(item.pricePence)} · customise</span>
@@ -705,7 +705,7 @@ function OrderPage() {
                           </p>
                         </div>
                         {group.minSelect>0&&selectedCount>=group.minSelect?(
-                          <Check className="size-5 text-emerald-500"/>
+                          <Check className="size-5 text-accent"/>
                         ):null}
                       </div>
                       <div className="mt-3 space-y-2">
