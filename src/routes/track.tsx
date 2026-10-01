@@ -140,7 +140,6 @@ function TrackOrderPage(){
 
   return <div className="min-h-screen bg-background">
     <SiteHeader
-      nav={false}
       context={
         <Link to="/order" className="font-display text-sm font-black uppercase tracking-wide text-accent">
           Start an order
