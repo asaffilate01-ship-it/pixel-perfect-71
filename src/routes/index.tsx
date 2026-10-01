@@ -14,7 +14,6 @@ import {
   Phone,
   Share2,
   Smartphone,
-  Sparkles,
   Star,
   Truck,
   Users,
@@ -78,19 +77,19 @@ const premiumBrands = [
 ] as const;
 
 const benefits = [
-  { icon: WalletCards, kicker: "Mix your hand", title: "One basket. Every craving.", copy: "Burgers for one, pasta for another, mocktails for the table — all dealt into one order." },
-  { icon: Truck, kicker: "One clean deal", title: "Just one delivery fee.", copy: "Mix across participating brands without stacking separate delivery charges." },
-  { icon: Users, kicker: "Bring the table", title: "Group ordering built in.", copy: "Share an invite, let everyone add their pick, then lock the order when the table is ready." },
-  { icon: CircleDollarSign, kicker: "Split the pot", title: "Simple split payments.", copy: "Friends pay their share without one person chasing the whole table afterwards." },
-  { icon: Star, kicker: "Stack the deck", title: "Points on every order.", copy: "Earn MealDeck loyalty points across brands and play them back on future favourites." },
-  { icon: MapPin, kicker: "Follow every move", title: "Full live tracking.", copy: "See confirmation, kitchen progress, driver updates and arrival — all in one place." },
+  { icon: WalletCards, kicker: "Mix your hand", title: "One basket. Every craving.", copy: "Burgers for one, pasta for another, mocktails for the table — all dealt into one order.", suit: "♦" },
+  { icon: Truck, kicker: "One clean deal", title: "Just one delivery fee.", copy: "Mix across participating brands without stacking separate delivery charges.", suit: "♥" },
+  { icon: Users, kicker: "Bring the table", title: "Group ordering built in.", copy: "Share an invite, let everyone add their pick, then lock the order when the table is ready.", suit: "♠" },
+  { icon: CircleDollarSign, kicker: "Split the pot", title: "Simple split payments.", copy: "Friends pay their share without one person chasing the whole table afterwards.", suit: "♣" },
+  { icon: Star, kicker: "Stack the deck", title: "Points on every order.", copy: "Earn MealDeck loyalty points across brands and play them back on future favourites.", suit: "♦" },
+  { icon: MapPin, kicker: "Follow every move", title: "Full live tracking.", copy: "See confirmation, kitchen progress, driver updates and arrival — all in one place.", suit: "♥" },
 ];
 
 const channels = [
-  { icon: MessageCircle, title: "WhatsApp", copy: "Message, choose and order." },
-  { icon: Globe2, title: "Web", copy: "The complete deck, no download." },
-  { icon: Phone, title: "Phone", copy: "Prefer a person? Call your order in." },
-  { icon: Smartphone, title: "App", copy: "Fast reorders, points and tracking." },
+  { icon: MessageCircle, title: "WhatsApp", copy: "Message, choose and order.", suit: "♣" },
+  { icon: Globe2, title: "Web", copy: "The complete deck, no download.", suit: "♦" },
+  { icon: Phone, title: "Phone", copy: "Prefer a person? Call your order in.", suit: "♥" },
+  { icon: Smartphone, title: "App", copy: "Fast reorders, points and tracking.", suit: "♠" },
 ];
 
 const offers = [
@@ -99,7 +98,7 @@ const offers = [
   { label: "The Group Hand", value: "+ POINTS", title: "More people. More points.", copy: "Bring the group together and build your loyalty balance faster.", terms: "Selected group orders · Account required · Offer limits apply", rank: "K", suit: "♣" },
 ];
 
-const ticker = ["One order", "One delivery fee", "14 brands", "Split payments", "Loyalty points", "Live tracking", "Direct-order value"];
+const ticker = ["One order", "One delivery fee", "A growing brand deck", "Split payments", "Loyalty points", "Live tracking", "Direct-order value"];
 
 function BrandCard({ brand, index }: { brand: (typeof premiumBrands)[number]; index: number }) {
   const redSuit = brand.suit === "♥" || brand.suit === "♦";
@@ -131,15 +130,19 @@ function DeckReveal() {
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr]">
         <div>
           <p className="eyebrow">Watch the deck unfold</p>
-          <h2 className="mt-3 text-4xl font-black sm:text-5xl">Fourteen flavours. One unmistakable hand.</h2>
+          <h2 className="mt-3 text-4xl font-black sm:text-5xl">A growing deck of flavours. One unmistakable hand.</h2>
           <p className="mt-5 max-w-lg leading-7 text-muted-foreground">
             Every card brings its own character. Flip through the full collection, then bring your favourites back together with MealDeck.
           </p>
           <p className="mt-7 font-display text-sm font-black uppercase text-accent">The choice is yours. The order stays one.</p>
         </div>
         <div className="brand-reveal-stage" aria-hidden="true">
-          <div className="brand-reveal-shadow brand-reveal-shadow-one" />
-          <div className="brand-reveal-shadow brand-reveal-shadow-two" />
+          <div className="brand-reveal-shadow brand-reveal-shadow-one">
+            <img src={mealdeckDeck.url} alt="" className="size-full object-contain opacity-30" />
+          </div>
+          <div className="brand-reveal-shadow brand-reveal-shadow-two">
+            <img src={mealdeckDeck.url} alt="" className="size-full object-contain opacity-30" />
+          </div>
           <div className="brand-reveal-card brand-reveal-card-start">
             <img src={mealdeckDeck.url} alt="" className="size-full object-contain" />
           </div>
@@ -202,9 +205,6 @@ function Landing() {
                   fetchPriority="high"
                 />
               </div>
-              <div className="absolute bottom-4 right-0 hidden items-center gap-3 rounded-full border border-accent/25 bg-card/90 px-4 py-3 text-xs font-bold uppercase text-accent shadow-lg sm:flex">
-                <Sparkles className="size-4" /> 14 brands in the deck
-              </div>
             </div>
           </div>
         </section>
@@ -227,7 +227,7 @@ function Landing() {
               <div>
                 <p className="eyebrow">Pick your play</p>
                 <h2 className="mt-3 text-4xl font-black sm:text-5xl">The complete flavour deck.</h2>
-                <p className="mt-3 max-w-xl text-muted-foreground">Fourteen distinctive kitchens, drinks and daytime favourites — aligned as one premium collection.</p>
+                <p className="mt-3 max-w-xl text-muted-foreground">A growing deck of kitchens, drinks and daytime favourites — aligned as one premium collection.</p>
               </div>
               <Button variant="gold" size="lg" asChild><Link to="/order">Start a mixed order <ArrowRight /></Link></Button>
             </div>
@@ -251,14 +251,15 @@ function Landing() {
                 </div>
               </div>
               <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
-                {benefits.map(({ icon: Icon, kicker, title, copy }) => (
-                  <article key={title} className="bg-background p-6 sm:p-7">
+                {benefits.map(({ icon: Icon, kicker, title, copy, suit }) => (
+                  <article key={title} className="relative bg-background p-6 sm:p-7">
                     <div className="flex items-center justify-between">
                       <Icon className="size-7 text-primary" />
                       <span className="text-xs font-bold uppercase text-accent">{kicker}</span>
                     </div>
                     <h3 className="mt-7 text-xl font-bold">{title}</h3>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy}</p>
+                    <span className="benefit-suit" aria-hidden="true">{suit}</span>
                   </article>
                 ))}
               </div>
@@ -298,11 +299,12 @@ function Landing() {
                 <p className="mt-4 max-w-lg leading-7 text-muted-foreground">Start on web, order by phone or WhatsApp, or keep favourites close in the app. Your delivery stays together from checkout to doorstep.</p>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {channels.map(({ icon: Icon, title, copy }) => (
+                {channels.map(({ icon: Icon, title, copy, suit }) => (
                   <div key={title} className="channel-tile">
                     <Icon className="size-7 text-accent" />
                     <h3 className="mt-6 font-display text-lg font-bold">{title}</h3>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">{copy}</p>
+                    <span className="suit-mark" aria-hidden="true">{suit}</span>
                   </div>
                 ))}
               </div>
