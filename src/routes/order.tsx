@@ -315,7 +315,7 @@ function OrderPage() {
         context={
           <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm">
             <MapPin className="size-4 text-accent" />
-            <span className="font-medium">{currentLocation ? currentLocation.town : "Find your kitchen"}</span>
+            <span className="font-medium">{currentLocation ? currentLocation.town : "Find your local MealDeck"}</span>
             <span className="text-muted-foreground">· {fulfilmentLabels[fulfilment]}</span>
           </div>
         }
