@@ -6,9 +6,8 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border/60 bg-card/40">
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-12 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          <img src={logo.url} alt="" className="size-16 object-contain" width={64} height={64} loading="lazy" />
-          <div><p className="font-display text-xl font-black">MEAL<span className="text-accent">DECK</span></p><p className="text-xs text-muted-foreground">One Order. Every Craving.</p></div>
+        <div>
+          <img src={logo.url} alt="MealDeck — One Order. Every Craving." className="size-28 object-contain" width={112} height={112} loading="lazy" />
         </div>
 
         <nav className="flex flex-wrap gap-6 text-sm font-medium text-muted-foreground">
