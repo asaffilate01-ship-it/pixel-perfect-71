@@ -35,3 +35,10 @@
 - [ ] Hero: remove flying food images + logo card; add dinner-table photo with multiple cuisines
 - [ ] Improve site navigation and flow
 - [ ] Polish card rotation/reveal animation (premium)
+- [x] Bigger shared header logo on all pages
+- [x] Hero dinner-table photo, flying food removed
+- [x] Improved navigation (mobile menu, active states, Track link)
+- [x] Polished card rotation
+## Latest
+- [ ] Match reveal card back design to the logo's card back
+- [ ] Fix brand descriptions: Nusara (SE Asian fusion), Tavo (all chicken), Moktl (mocktails), Icova (iced coffee/tea/desserts), Tarka Box (desi), Load'd (French tacos + mac n cheese)
