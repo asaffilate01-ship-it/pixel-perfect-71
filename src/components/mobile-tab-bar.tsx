@@ -60,13 +60,13 @@ export function MobileTabBar() {
           <div className="flex flex-1 justify-center">
             <Link
               to="/order"
-              aria-label="Deal me in — order now"
+              aria-label="Order now"
               className={`-mt-7 flex h-[4.5rem] w-14 rotate-[-6deg] flex-col items-center justify-center rounded-xl border-2 border-accent bg-primary text-primary-foreground shadow-xl transition-transform duration-300 active:scale-90 ${
                 dealActive ? "rotate-0 scale-105" : "hover:rotate-0"
               }`}
             >
-              <Spade className="size-6 fill-current" />
-              <span className="mt-0.5 font-display text-[9px] font-bold uppercase tracking-widest">Deal</span>
+              <UtensilsCrossed className="size-6" />
+              <span className="mt-0.5 font-display text-[9px] font-bold uppercase tracking-widest">Order</span>
             </Link>
           </div>
           {right.map(item)}
