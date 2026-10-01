@@ -358,33 +358,20 @@ function Landing() {
           </div>
         </section>
 
-        <section className="border-t border-border bg-card/30 py-20 sm:py-24" aria-label="MealDeck coming soon locations">
-          <div className="mx-auto max-w-7xl px-4 text-center sm:px-6">
-            <p className="eyebrow">Dealing new hands soon</p>
-            <h2 className="mx-auto mt-3 max-w-2xl text-4xl font-black sm:text-5xl">The deck is spreading across the UK.</h2>
-            <p className="mx-auto mt-4 max-w-xl leading-7 text-muted-foreground">We're shuffling up new cities and getting ready to deal them in. Watch this space — your table could be next.</p>
-            <div className="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-3">
-              {[
-                { city: "Bedford", suit: "♠" },
-                { city: "Milton Keynes", suit: "♥" },
-                { city: "Manchester", suit: "♦" },
-                { city: "Birmingham", suit: "♣" },
-                { city: "Cardiff", suit: "♠" },
-                { city: "Across London", suit: "♥" },
-              ].map(({ city, suit }) => (
-                <span key={city} className="feature-chip !px-5 !py-3 text-sm font-bold">
-                  <span className="text-primary" aria-hidden="true">{suit}</span> {city} — coming soon
-                </span>
-              ))}
-            </div>
-            <p className="mt-8 text-xs font-bold uppercase tracking-widest text-muted-foreground">No bluff — new tables are being set.</p>
-          </div>
-        </section>
-
         <section className="bg-primary py-14 text-primary-foreground">
           <div className="mx-auto flex max-w-7xl flex-col items-center gap-8 px-4 text-center sm:px-6 lg:flex-row lg:justify-between lg:text-left">
             <div><p className="text-xs font-black uppercase">Ready to play your best hand?</p><h2 className="mt-2 text-3xl font-black sm:text-4xl">Shuffle less. Eat better.</h2><p className="mt-2 text-sm text-primary-foreground/75">Mix the brands you want and let MealDeck handle the rest.</p></div>
             <Button variant="gold" size="xl" asChild><Link to="/order">Start your order <Crown /></Link></Button>
+          </div>
+          <div className="mx-auto mt-10 max-w-7xl border-t border-primary-foreground/15 px-4 pt-8 sm:px-6">
+            <p className="text-center text-xs font-bold uppercase tracking-widest text-primary-foreground/70">Dealing new hands soon</p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {["Bedford", "Milton Keynes", "Manchester", "Birmingham", "Cardiff", "Across London"].map((city) => (
+                <span key={city} className="rounded-full border border-primary-foreground/25 px-4 py-1.5 text-sm font-semibold text-primary-foreground/85">
+                  {city}
+                </span>
+              ))}
+            </div>
           </div>
         </section>
       </main>
