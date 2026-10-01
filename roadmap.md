@@ -40,5 +40,6 @@
 - [x] Improved navigation (mobile menu, active states, Track link)
 - [x] Polished card rotation
 ## Latest
-- [ ] Match reveal card back design to the logo's card back
-- [ ] Fix brand descriptions: Nusara (SE Asian fusion), Tavo (all chicken), Moktl (mocktails), Icova (iced coffee/tea/desserts), Tarka Box (desi), Load'd (French tacos + mac n cheese)
+- [x] Match reveal card back design to the logo's card back (red field, ivory double frame, chef-hat + sparkle ornament pattern)
+- [x] Fix brand descriptions: Nusara (SE Asian fusion), Tavo (all chicken), Moktl (mocktails), Icova (iced coffee/tea/desserts), Tarka Box (desi), Load'd (French tacos + mac n cheese)
+- [x] Remove "Tip: try a Luton…" hint and "e.g. LU1 2AA" example from /order

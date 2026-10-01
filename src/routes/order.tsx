@@ -356,7 +356,7 @@ function OrderPage() {
                   value={postcode}
                   onChange={(event) => setPostcode(event.target.value)}
                   onKeyDown={(event) => event.key === "Enter" && void checkArea()}
-                  placeholder="Enter postcode, e.g. LU1 2AA"
+                  placeholder="Enter your postcode"
                   aria-label="Postcode"
                   className="h-12 pl-9"
                 />
@@ -402,11 +402,7 @@ function OrderPage() {
             </div>
           ) : null}
 
-          {!currentLocation ? (
-            <p className="mt-10 text-center text-muted-foreground">
-              Tip: try a Luton (LU…) or St Albans (AL…) postcode.
-            </p>
-          ) : (
+          {!currentLocation ? null : (
             <>
               {catalogue.data?.notice ? (
                 <p className="mt-6 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-accent">
