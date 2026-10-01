@@ -531,7 +531,12 @@
     repeating-linear-gradient(45deg, color-mix(in oklab, var(--color-paper) 10%, transparent) 0 2px, transparent 2px 12px),
     repeating-linear-gradient(-45deg, color-mix(in oklab, var(--color-paper) 10%, transparent) 0 2px, transparent 2px 12px),
     var(--color-primary);
-  box-shadow: inset 0 0 0 0.35rem var(--color-primary), inset 0 0 0 0.45rem var(--color-paper), 0 25px 55px -30px var(--card-drop);
+  box-shadow:
+    inset 0 0 0 0.3rem var(--color-primary),
+    inset 0 0 0 0.42rem var(--color-paper),
+    inset 0 0 0 0.52rem var(--color-primary),
+    inset 0 0 0 0.6rem color-mix(in oklab, var(--color-paper) 70%, transparent),
+    0 25px 55px -30px var(--card-drop);
 }
 
 @utility brand-reveal-shadow-one { transform: translateX(-4.25rem) rotate(-11deg); }
