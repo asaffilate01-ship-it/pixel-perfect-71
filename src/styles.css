@@ -197,9 +197,9 @@
 }
 
 @keyframes brand-flip-sequence {
-  0%, 4% { opacity: 0; transform: rotateY(-180deg) scale(0.9); }
-  7%, 10% { opacity: 1; transform: rotateY(0) scale(1); }
-  13%, 100% { opacity: 0; transform: rotateY(180deg) scale(0.9); }
+  0%, 2.5% { opacity: 0; transform: rotateY(-180deg) scale(0.9); }
+  5.5%, 10.5% { opacity: 1; transform: rotateY(0) scale(1); }
+  13.5%, 100% { opacity: 0; transform: rotateY(180deg) scale(0.9); }
 }
 
 
@@ -432,23 +432,23 @@
   box-shadow: 0 30px 65px -30px var(--card-drop);
   opacity: 0;
   backface-visibility: hidden;
-  animation: brand-flip-sequence 24s ease-in-out infinite;
+  animation: brand-flip-sequence 36s ease-in-out infinite;
 }
 
-.brand-reveal-card:nth-of-type(4) { animation-delay: 1.4s; }
-.brand-reveal-card:nth-of-type(5) { animation-delay: 2.8s; }
-.brand-reveal-card:nth-of-type(6) { animation-delay: 4.2s; }
-.brand-reveal-card:nth-of-type(7) { animation-delay: 5.6s; }
-.brand-reveal-card:nth-of-type(8) { animation-delay: 7s; }
-.brand-reveal-card:nth-of-type(9) { animation-delay: 8.4s; }
-.brand-reveal-card:nth-of-type(10) { animation-delay: 9.8s; }
-.brand-reveal-card:nth-of-type(11) { animation-delay: 11.2s; }
-.brand-reveal-card:nth-of-type(12) { animation-delay: 12.6s; }
-.brand-reveal-card:nth-of-type(13) { animation-delay: 14s; }
-.brand-reveal-card:nth-of-type(14) { animation-delay: 15.4s; }
-.brand-reveal-card:nth-of-type(15) { animation-delay: 16.8s; }
-.brand-reveal-card:nth-of-type(16) { animation-delay: 18.2s; }
-.brand-reveal-card:nth-of-type(17) { animation-delay: 19.6s; }
+.brand-reveal-card:nth-of-type(4) { animation-delay: 2.1s; }
+.brand-reveal-card:nth-of-type(5) { animation-delay: 4.2s; }
+.brand-reveal-card:nth-of-type(6) { animation-delay: 6.3s; }
+.brand-reveal-card:nth-of-type(7) { animation-delay: 8.4s; }
+.brand-reveal-card:nth-of-type(8) { animation-delay: 10.5s; }
+.brand-reveal-card:nth-of-type(9) { animation-delay: 12.6s; }
+.brand-reveal-card:nth-of-type(10) { animation-delay: 14.7s; }
+.brand-reveal-card:nth-of-type(11) { animation-delay: 16.8s; }
+.brand-reveal-card:nth-of-type(12) { animation-delay: 18.9s; }
+.brand-reveal-card:nth-of-type(13) { animation-delay: 21s; }
+.brand-reveal-card:nth-of-type(14) { animation-delay: 23.1s; }
+.brand-reveal-card:nth-of-type(15) { animation-delay: 25.2s; }
+.brand-reveal-card:nth-of-type(16) { animation-delay: 27.3s; }
+.brand-reveal-card:nth-of-type(17) { animation-delay: 29.4s; }
 
 @utility brand-reveal-card-start {
   padding: 0;
