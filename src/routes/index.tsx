@@ -112,11 +112,11 @@ function BrandCard({ brand, index }: { brand: (typeof premiumBrands)[number]; in
       <span className={redSuit ? "card-corner text-primary" : "card-corner text-ink"}>
         {brand.rank}<small>{brand.suit}</small>
       </span>
-      <div className="flex h-full flex-col items-center justify-center gap-3 px-3 text-center">
-        <div className="flex h-24 w-full items-center justify-center sm:h-28">
+      <div className="flex h-full flex-col items-center justify-center gap-1.5 px-3 text-center sm:gap-3">
+        <div className="flex h-14 w-full items-center justify-center sm:h-28">
           <img src={brand.logo} alt={`${brand.name} logo`} className="max-h-full max-w-full object-contain" loading="lazy" />
         </div>
-        <p className="text-[0.68rem] font-bold uppercase text-ink/65">{brand.category}</p>
+        <p className="text-[0.5rem] font-bold uppercase leading-tight text-ink/65 sm:text-[0.68rem]">{brand.category}</p>
       </div>
       <span className={redSuit ? "card-corner card-corner-bottom text-primary" : "card-corner card-corner-bottom text-ink"} aria-hidden="true">
         {brand.rank}<small>{brand.suit}</small>
@@ -143,7 +143,9 @@ function DeckReveal() {
           <div className="brand-reveal-card brand-reveal-card-start">
             <div className="brand-reveal-flip">
               <div className="brand-reveal-face brand-reveal-face-front">
-                <span className="reveal-corner">M♦</span>
+                <span className="reveal-frame" />
+                <span className="reveal-corner">M<small>♦</small></span>
+                <span className="reveal-corner reveal-corner-bottom">M<small>♦</small></span>
                 <img src={mealdeckLogo.url} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
                 <span className="font-display text-[0.65rem] font-black uppercase tracking-[0.18em] text-ink/60">One order. Every craving.</span>
               </div>
@@ -154,8 +156,10 @@ function DeckReveal() {
           </div>
           {premiumBrands.map((brand) => (
             <div key={brand.name} className="brand-reveal-card">
-              <span className="reveal-corner">{brand.rank}{brand.suit}</span>
-              <img src={brand.logo} alt="" className="max-h-32 max-w-[78%] object-contain" />
+              <span className="reveal-frame" />
+              <span className={`reveal-corner ${brand.suit === "♠" || brand.suit === "♣" ? "reveal-black" : ""}`}>{brand.rank}<small>{brand.suit}</small></span>
+              <span className={`reveal-corner reveal-corner-bottom ${brand.suit === "♠" || brand.suit === "♣" ? "reveal-black" : ""}`}>{brand.rank}<small>{brand.suit}</small></span>
+              <img src={brand.logo} alt="" className="max-h-40 max-w-[72%] object-contain" />
               <span className="font-display text-xs font-black uppercase text-ink/60">{brand.name}</span>
             </div>
           ))}
@@ -234,7 +238,7 @@ function Landing() {
               </div>
               <Button variant="gold" size="lg" asChild><Link to="/order">Start a mixed order <ArrowRight /></Link></Button>
             </div>
-            <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+            <div className="mt-10 grid grid-cols-3 gap-2 sm:mt-12 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
               {premiumBrands.map((brand, index) => <BrandCard key={brand.name} brand={brand} index={index} />)}
             </div>
             <p className="mt-6 text-center text-xs text-muted-foreground">Brand availability depends on your delivery area and service time.</p>
