@@ -96,7 +96,10 @@ const channels = [
 const offers = [
   { label: "The Burger Ace", value: "FREE", title: "Spend £21. Get a burger on us.", copy: "Choose one eligible burger from the offer hand.", terms: "One free burger per order · Participating brands · While available", rank: "A", suit: "♥" },
   { label: "Perfect Pair", value: "½ PRICE", title: "Buy one. Deal the second for half.", copy: "Pick two of the same eligible item and the second drops to half price.", terms: "Cheapest identical item discounted · One pair per order", rank: "2", suit: "♦" },
+  { label: "Snap!", value: "2 FOR 1", title: "Match two of the same. Pay for one.", copy: "When identical eligible items snap together in your basket, the second is on the house.", terms: "Selected items only · One snap per order · While available", rank: "S", suit: "♠" },
   { label: "The Group Hand", value: "+ POINTS", title: "More people. More points.", copy: "Bring the group together and build your loyalty balance faster.", terms: "Selected group orders · Account required · Offer limits apply", rank: "K", suit: "♣" },
+  { label: "Full House Feast", value: "£5 OFF", title: "Three brands. One basket. One saving.", copy: "Fill your hand with dishes from three different brands and we knock £5 off.", terms: "Min. spend £30 · One per order · Delivery orders", rank: "F", suit: "♥" },
+  { label: "The Loyalty Flush", value: "10× PTS", title: "Five orders. One flush of points.", copy: "Your fifth direct order in a month earns ten times the loyalty points.", terms: "Account required · Monthly reset · Points caps apply", rank: "10", suit: "♦" },
 ];
 
 const ticker = ["One order", "One delivery fee", "A growing brand deck", "Split payments", "Loyalty points", "Live tracking", "Direct-order value"];
@@ -292,15 +295,18 @@ function Landing() {
               <h2 className="mt-3 text-4xl font-black sm:text-5xl">Good deals. Clearly dealt.</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">No mystery cards. Every promotion shows its limit before you order.</p>
             </div>
-            <div className="mt-12 grid gap-5 lg:grid-cols-3">
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {offers.map((offer) => (
-                <article key={offer.label} className="offer-card relative overflow-hidden p-7">
-                  <span className="absolute right-5 top-4 text-3xl font-black text-primary/25">{offer.rank}{offer.suit}</span>
-                  <p className="text-xs font-black uppercase text-primary">{offer.label}</p>
-                  <p className="mt-8 font-display text-4xl font-black text-accent">{offer.value}</p>
-                  <h3 className="mt-3 text-2xl font-bold text-ink">{offer.title}</h3>
-                  <p className="mt-3 min-h-12 text-sm leading-6 text-ink/65">{offer.copy}</p>
-                  <div className="mt-7 border-t border-ink/10 pt-4 text-[0.68rem] font-bold uppercase text-ink/50">{offer.terms}</div>
+                <article key={offer.label} className="offer-card">
+                  <span className={`offer-corner ${offer.suit === "♠" || offer.suit === "♣" ? "text-ink" : ""}`}>{offer.rank}<small>{offer.suit}</small></span>
+                  <span className={`offer-corner offer-corner-bottom ${offer.suit === "♠" || offer.suit === "♣" ? "text-ink" : ""}`}>{offer.rank}<small>{offer.suit}</small></span>
+                  <div className="relative flex h-full flex-col items-center px-7 py-9 text-center">
+                    <p className="text-xs font-black uppercase text-primary">{offer.label}</p>
+                    <p className="mt-7 font-display text-4xl font-black text-accent">{offer.value}</p>
+                    <h3 className="mt-3 text-2xl font-bold text-ink">{offer.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-ink/65">{offer.copy}</p>
+                    <div className="mt-auto w-full border-t border-ink/10 pt-4 text-[0.68rem] font-bold uppercase text-ink/50">{offer.terms}</div>
+                  </div>
                 </article>
               ))}
             </div>

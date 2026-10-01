@@ -291,21 +291,62 @@
 @utility offer-card {
   position: relative;
   overflow: hidden;
+  aspect-ratio: 2.5 / 3.5;
+  max-width: 21rem;
+  margin-inline: auto;
+  width: 100%;
   border-radius: var(--radius-lg);
   border: 2px solid color-mix(in oklab, var(--color-paper) 80%, var(--color-accent));
   background:
     radial-gradient(110% 90% at 50% 0%, color-mix(in oklab, var(--color-primary) 7%, transparent), transparent 60%),
     var(--color-paper);
   box-shadow: 0 24px 55px -32px var(--card-drop);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+  &:hover {
+    transform: translateY(-6px) rotate(-0.5deg);
+    box-shadow: 0 34px 70px -34px var(--card-drop);
+  }
 
   &::before {
     content: "";
     position: absolute;
-    inset: 0.45rem;
-    border: 1px solid color-mix(in oklab, var(--color-ink) 14%, transparent);
+    inset: 0.6rem;
+    border: 1.5px solid color-mix(in oklab, var(--color-primary) 45%, transparent);
     border-radius: calc(var(--radius-lg) - 5px);
     pointer-events: none;
   }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0.95rem;
+    border: 1px solid color-mix(in oklab, var(--color-ink) 12%, transparent);
+    border-radius: calc(var(--radius-lg) - 8px);
+    pointer-events: none;
+  }
+}
+
+@utility offer-corner {
+  position: absolute;
+  left: 1.1rem;
+  top: 1rem;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 0.9;
+  color: var(--color-primary);
+
+  small { font-size: 1.15rem; line-height: 1; }
+}
+
+@utility offer-corner-bottom {
+  inset: auto 1.1rem 1rem auto;
+  transform: rotate(180deg);
 }
 
 @utility channel-tile {
