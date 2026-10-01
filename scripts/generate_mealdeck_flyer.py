@@ -107,7 +107,7 @@ md=ImageDraw.Draw(mask)
 for x in range(420):
     a=int(255*x/420)
     md.line((x,0,x,hero.height),fill=a)
-img.alpha_composite(hero,(W-1600,0),mask)
+img.paste(hero,(W-1600,0),mask)
 
 # dark red overlay across hero
 ov=Image.new("RGBA",(W,1660),(115,0,10,55))
