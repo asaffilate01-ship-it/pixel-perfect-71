@@ -1,19 +1,31 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { ArrowRight, Menu, ShoppingBasket, X } from "lucide-react";
+import { ArrowRight, ChevronDown, MapPin, Menu, Newspaper, ShoppingBasket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import logo from "@/assets/mealdeck-fan-logo.png";
 
-const navItems = [
+const sectionLinks = [
   { label: "Brands", hash: "brands" },
   { label: "How It Works", hash: "how" },
   { label: "Offers", hash: "offers" },
-  { label: "Luton", to: "/luton" },
-  { label: "St Albans", to: "/st-albans" },
-  { label: "Blog", to: "/blog" },
-  { label: "Track Order", to: "/track" },
-];
+] as const;
+
+const locationLinks = [
+  { label: "Luton", to: "/luton", hint: "Delivery, pickup & kerbside" },
+  { label: "St Albans", to: "/st-albans", hint: "Café1 · Delivery, pickup & dine-in" },
+] as const;
+
+const moreLinks = [
+  { label: "Blog", to: "/blog", icon: Newspaper },
+  { label: "Track Order", to: "/track", icon: MapPin },
+] as const;
 
 const navLinkClass =
   "font-display text-sm font-semibold text-foreground/85 transition-colors hover:text-accent data-[status=active]:text-accent";
