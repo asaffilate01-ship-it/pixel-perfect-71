@@ -197,9 +197,12 @@
 }
 
 @keyframes brand-flip-sequence {
-  0%, 2.5% { opacity: 0; transform: rotateY(-180deg) scale(0.9); }
-  5.5%, 10.5% { opacity: 1; transform: rotateY(0) scale(1); }
-  13.5%, 100% { opacity: 0; transform: rotateY(180deg) scale(0.9); }
+  0% { opacity: 0; transform: rotateY(-180deg) scale(0.9) translateY(12px); }
+  6% { opacity: 1; transform: rotateY(-16deg) scale(1.04) translateY(-4px); }
+  9.5% { opacity: 1; transform: rotateY(0deg) scale(1) translateY(0); }
+  30% { opacity: 1; transform: rotateY(0deg) scale(1) translateY(0); }
+  36% { opacity: 1; transform: rotateY(12deg) scale(1.03) translateY(-3px); }
+  43%, 100% { opacity: 0; transform: rotateY(180deg) scale(0.94) translateY(10px); }
 }
 
 
@@ -431,7 +434,8 @@
   font-size: 2.6rem;
   font-weight: 900;
   line-height: 1;
-  color: color-mix(in oklab, var(--color-primary) 16%, transparent);
+  color: color-mix(in oklab, var(--color-primary) 62%, var(--color-paper));
+  text-shadow: 0 0 14px color-mix(in oklab, var(--color-primary) 45%, transparent);
   pointer-events: none;
 }
 
@@ -551,13 +555,38 @@
 }
 
 @utility card-back-emblem {
-  width: 62%;
+  width: 64%;
   object-fit: contain;
-  opacity: 0.75;
-  padding: 0.5rem;
-  border: 2px solid color-mix(in oklab, var(--color-paper) 65%, transparent);
-  border-radius: var(--radius-md);
-  box-shadow: 0 0 0 0.35rem color-mix(in oklab, var(--color-primary) 55%, transparent);
+  opacity: 0.8;
+  filter:
+    drop-shadow(1px 0 0 color-mix(in oklab, var(--color-paper) 85%, transparent))
+    drop-shadow(-1px 0 0 color-mix(in oklab, var(--color-paper) 85%, transparent))
+    drop-shadow(0 1px 0 color-mix(in oklab, var(--color-paper) 85%, transparent))
+    drop-shadow(0 -1px 0 color-mix(in oklab, var(--color-paper) 85%, transparent))
+    drop-shadow(1.8px 1.2px 0 color-mix(in oklab, var(--color-paper) 55%, transparent))
+    drop-shadow(-1.8px -1.2px 0 color-mix(in oklab, var(--color-paper) 55%, transparent))
+    drop-shadow(1.8px -1.2px 0 color-mix(in oklab, var(--color-paper) 55%, transparent))
+    drop-shadow(-1.8px 1.2px 0 color-mix(in oklab, var(--color-paper) 55%, transparent))
+    drop-shadow(0 0 6px color-mix(in oklab, var(--color-paper) 30%, transparent));
+}
+
+@utility hero-table-card {
+  rotate: 1.5deg;
+  padding: 0.6rem;
+  border: 2px solid var(--color-paper);
+  border-radius: var(--radius-xl);
+  background: var(--color-paper);
+  box-shadow:
+    inset 0 0 0 2px color-mix(in oklab, var(--color-primary) 55%, transparent),
+    0 42px 80px -36px var(--card-drop),
+    0 18px 40px -24px color-mix(in oklab, var(--color-primary) 40%, transparent);
+}
+
+@utility hero-table-img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: calc(var(--radius-xl) - 8px);
 }
 
 @utility brand-reveal-shadow {

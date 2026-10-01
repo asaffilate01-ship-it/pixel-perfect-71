@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  ArrowLeft,
   Bike,
   CarFront,
   Check,
@@ -45,7 +44,7 @@ import {
   type ModifierOption,
   type SelectedModifier,
 } from "@/lib/mealdeck";
-import logo from "@/assets/mealdeck-logo.png.asset.json";
+import { SiteHeader } from "@/components/site-header";
 
 type OrderSearch = { brand?: string; fulfilment?: FulfilmentType };
 
@@ -311,21 +310,16 @@ function OrderPage() {
 
   return (
     <div className="min-h-screen bg-background pb-28 lg:pb-0">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logo.url} alt="MealDeck" className="h-12 w-auto" width={220} height={160} />
-            <span className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
-              <ArrowLeft className="size-4" /> Back home
-            </span>
-          </Link>
+      <SiteHeader
+        nav={false}
+        context={
           <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm">
             <MapPin className="size-4 text-accent" />
             <span className="font-medium">{currentLocation ? currentLocation.town : "Find your kitchen"}</span>
             <span className="text-muted-foreground">· {fulfilmentLabels[fulfilment]}</span>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <main className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_22rem]">
         <div className="min-w-0">

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ShoppingBasket } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowRight, Menu, ShoppingBasket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/mealdeck-fan-logo.png.asset.json";
 
@@ -7,56 +8,107 @@ const navItems = [
   { label: "Brands", hash: "brands" },
   { label: "How It Works", hash: "how" },
   { label: "Offers", hash: "offers" },
+  { label: "Track Order", to: "/track" },
 ];
 
-export function SiteHeader() {
+const navLinkClass =
+  "font-display text-sm font-semibold text-foreground/85 transition-colors hover:text-accent data-[status=active]:text-accent";
+
+export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?: boolean }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 backdrop-blur">
-      <div className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex h-20 sm:h-24 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" className="shrink-0" aria-label="MealDeck home">
-          <img src={logo.url} alt="MealDeck — One Order. Every Craving." className="size-16 object-contain sm:size-20" width={80} height={80} />
+          <img
+            src={logo.url}
+            alt="MealDeck — One Order. Every Craving."
+            className="size-18 object-contain sm:size-22"
+            width={88}
+            height={88}
+          />
         </Link>
 
-        <nav className="hidden items-center gap-7 lg:flex">
-          <Link
-            to="/"
-            className="font-display text-sm font-semibold text-foreground/85 transition-colors hover:text-accent"
-          >
-            Home
-          </Link>
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              to="/"
-              hash={item.hash}
-              className="font-display text-sm font-semibold text-foreground/85 transition-colors hover:text-accent"
-            >
-              {item.label}
+        {nav && (
+          <nav className="hidden items-center gap-7 lg:flex">
+            <Link to="/" className={navLinkClass}>
+              Home
             </Link>
-          ))}
-          <Link
-            to="/order"
-            className="font-display text-sm font-semibold text-foreground/85 transition-colors hover:text-accent"
-          >
-            Order Now
-          </Link>
-        </nav>
+            {navItems.map((item) =>
+              "to" in item ? (
+                <Link key={item.label} to={item.to} className={navLinkClass}>
+                  {item.label}
+                </Link>
+              ) : (
+                <Link key={item.label} to="/" hash={item.hash} className={navLinkClass}>
+                  {item.label}
+                </Link>
+              ),
+            )}
+            <Link to="/order" className={navLinkClass}>
+              Order Now
+            </Link>
+          </nav>
+        )}
 
         <div className="flex items-center gap-2">
-          <Button variant="glass" size="default" className="hidden rounded-full sm:inline-flex" asChild>
-            <Link to="/order" hash="basket">
-              <ShoppingBasket />
-              Basket
-            </Link>
-          </Button>
-          <Button variant="hero" size="default" className="hidden rounded-full sm:inline-flex" asChild>
-            <Link to="/order">
-              Deal Me In
-              <ArrowRight />
-            </Link>
-          </Button>
+          {context ?? (
+            <>
+              <Button variant="glass" size="default" className="hidden rounded-full sm:inline-flex" asChild>
+                <Link to="/order" hash="basket">
+                  <ShoppingBasket />
+                  Basket
+                </Link>
+              </Button>
+              <Button variant="hero" size="default" className="hidden rounded-full sm:inline-flex" asChild>
+                <Link to="/order">
+                  Deal Me In
+                  <ArrowRight />
+                </Link>
+              </Button>
+            </>
+          )}
+          {nav && (
+            <button
+              type="button"
+              onClick={() => setOpen((value) => !value)}
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+              className="inline-flex size-11 items-center justify-center rounded-full border border-border bg-card text-foreground lg:hidden"
+            >
+              {open ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          )}
         </div>
       </div>
+
+      {nav && open && (
+        <nav className="border-t border-border/70 bg-background/95 backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 sm:px-6">
+            <Link to="/" onClick={() => setOpen(false)} className={`${navLinkClass} rounded-lg px-3 py-3 text-base`}>
+              Home
+            </Link>
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                to={"to" in item ? item.to : "/"}
+                {...("to" in item ? {} : { hash: item.hash })}
+                onClick={() => setOpen(false)}
+                className={`${navLinkClass} rounded-lg px-3 py-3 text-base`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <Button variant="hero" size="default" className="mt-2 rounded-full" asChild>
+              <Link to="/order" onClick={() => setOpen(false)}>
+                Order Now
+                <ArrowRight />
+              </Link>
+            </Button>
+          </div>
+        </nav>
+      )}
     </header>
   );
 }

@@ -22,11 +22,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import mealdeckDeck from "@/assets/mealdeck-card-deck.png.asset.json";
 import mdWatermark from "@/assets/mealdeck-md-watermark.png.asset.json";
 import mdEmblem from "@/assets/mealdeck-emblem.png.asset.json";
-import heroBurger from "@/assets/hero-burger.png";
-import heroTacos from "@/assets/hero-tacos.png";
+import heroBackdrop from "@/assets/hero-backdrop.jpg";
+import heroTable from "@/assets/hero-table.jpg";
 import icova from "@/assets/premium-logos/icova-premium.png.asset.json";
 import loadd from "@/assets/premium-logos/loadd-premium.png.asset.json";
 import moktl from "@/assets/premium-logos/moktl-premium.png.asset.json";
@@ -192,8 +191,19 @@ function Landing() {
       <SiteHeader />
 
       <main>
-        <section className="hero-felt relative border-b border-border/70">
-          <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:min-h-[44rem] lg:grid-cols-[0.92fr_1.08fr] lg:py-14">
+        <section className="hero-felt relative overflow-hidden border-b border-border/70">
+          <img
+            src={heroBackdrop}
+            alt=""
+            aria-hidden="true"
+            width={1920}
+            height={1088}
+            fetchPriority="high"
+            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-55"
+          />
+          <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-background via-background/70 to-background/30" />
+          <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-t from-background via-transparent to-background/60" />
+          <div className="relative z-[1] mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:min-h-[44rem] lg:grid-cols-[0.92fr_1.08fr] lg:py-14">
             <div className="relative z-10 order-2 pb-6 lg:order-1 lg:pb-0">
               <p className="eyebrow">The full house of flavour</p>
               <h1 className="mt-4 max-w-3xl text-5xl font-black leading-[0.94] sm:text-6xl lg:text-7xl">
@@ -221,30 +231,18 @@ function Landing() {
 
             <div className="relative order-1 flex min-h-[22rem] items-center justify-center lg:order-2 lg:min-h-[38rem]">
               <div className="deal-glow" />
-              <img
-                src={heroBurger}
-                alt=""
-                aria-hidden="true"
-                width={816}
-                height={816}
-                className="hero-food hero-food-left pointer-events-none absolute -left-6 bottom-0 z-0 w-36 opacity-95 sm:-left-10 sm:w-48 lg:w-56"
-              />
-              <img
-                src={heroTacos}
-                alt=""
-                aria-hidden="true"
-                width={816}
-                height={816}
-                className="hero-food hero-food-right pointer-events-none absolute -right-6 top-2 z-0 w-32 opacity-95 sm:-right-10 sm:w-44 lg:w-52"
-              />
-              <div className="hero-card-reveal relative z-10 w-[min(82vw,34rem)] opacity-90">
+              <figure className="hero-table-card relative z-10 w-[min(90vw,30rem)] lg:w-[min(38vw,34rem)]">
+                <span className="reveal-corner">A<small>♦</small></span>
+                <span className="reveal-corner reveal-corner-bottom">A<small>♦</small></span>
                 <img
-                  src={mealdeckDeck.url}
-                  alt="MealDeck playing cards — One Order. Every Craving."
-                  className="h-auto w-full drop-shadow-[0_32px_30px_var(--card-drop)]"
+                  src={heroTable}
+                  alt="Friends sharing burgers, curry, fried chicken and fries around one dinner table"
+                  width={1024}
+                  height={1280}
                   fetchPriority="high"
+                  className="hero-table-img"
                 />
-              </div>
+              </figure>
             </div>
           </div>
         </section>
