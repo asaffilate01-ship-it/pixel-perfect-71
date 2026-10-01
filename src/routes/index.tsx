@@ -151,11 +151,11 @@ function DeckReveal() {
                 <span className="reveal-frame" />
                 <span className="reveal-corner">M<small>♦</small></span>
                 <span className="reveal-corner reveal-corner-bottom">M<small>♦</small></span>
-                <img src={mealdeckLogo.url} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
+                <img src={mdWatermark.url} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
                 <span className="font-display text-[0.65rem] font-black uppercase tracking-[0.18em] text-ink/60">One order. Every craving.</span>
               </div>
               <div className="brand-reveal-face brand-reveal-face-back">
-                <img src={mealdeckLogo.url} alt="" className="w-[58%] object-contain opacity-30" />
+                <img src={mdWatermark.url} alt="" className="w-[58%] object-contain opacity-30" />
               </div>
             </div>
           </div>
