@@ -98,7 +98,7 @@ export const brands: Brand[] = [
   { id: "paratique", name: "Paratique", strapline: "Signature parathas.", tagline: "Layered, loaded, lovely.", image: brandParatique, category: "Parathas", logo: logoParatique.url },
   { id: "taconelle", name: "Taconelle", strapline: "Beautifully loaded.", tagline: "French tacos with attitude.", image: brandTaconelle, category: "French tacos", logo: logoTaconelle.url, logoVariant: "square" },
   { id: "loadd", name: "Load'd", strapline: "Folded, loaded, cheesy.", tagline: "French tacos and mac n cheese.", image: brandLoadd, category: "French tacos · mac n cheese", logo: logoLoadd.url },
-  { id: "vyta", name: "Vyta", strapline: "Natural nutrition for a brighter you.", tagline: "Good food. Brighter you.", image: brandVyta, category: "Nutrition", logo: logoVyta.url },
+  { id: "vyta", name: "Vyta", strapline: "Fresh juices for a brighter you.", tagline: "Good food. Brighter you.", image: brandVyta, category: "Fresh juices", logo: logoVyta.url },
   { id: "tarka-box", name: "Tarka Box", strapline: "Big flavour. Boxed.", tagline: "Desi classics, done right.", image: brandTarka, category: "Desi food", logo: logoTarka.url },
   { id: "fyrra", name: "Fyrra", strapline: "Bold flavours. Together.", tagline: "Grill, shawarma and kebab.", image: brandFyrra, category: "Grill · shawarma · kebab", logo: logoFyrra.url },
   { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: logoSabzora.url, logoVariant: "square" },
