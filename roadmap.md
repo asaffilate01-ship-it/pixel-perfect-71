@@ -19,3 +19,4 @@
 - [x] Push playing-card styling further: polished card frames, suit icons, card motifs across sections
 - [x] Header/footer: use new fan-of-cards MealDeck logo
 - [ ] Use red MD watermark logo on card backs + first/last card in rotation
+- [ ] Polish /order menu UI to match premium playing-card theme
