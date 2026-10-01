@@ -450,6 +450,8 @@
   border: 0.55rem solid var(--color-paper);
   background:
     radial-gradient(110% 90% at 50% 40%, color-mix(in oklab, var(--color-paper) 10%, transparent), transparent 60%),
+    repeating-linear-gradient(45deg, color-mix(in oklab, var(--color-paper) 9%, transparent) 0 2px, transparent 2px 12px),
+    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--color-paper) 9%, transparent) 0 2px, transparent 2px 12px),
     var(--color-primary);
   box-shadow: inset 0 0 0 0.35rem var(--color-primary), inset 0 0 0 0.45rem var(--color-paper), 0 30px 65px -30px var(--card-drop);
 }
@@ -464,7 +466,10 @@
   aspect-ratio: 2.5 / 3.5;
   border: 0.55rem solid var(--color-paper);
   border-radius: var(--radius-lg);
-  background: var(--color-primary);
+  background:
+    repeating-linear-gradient(45deg, color-mix(in oklab, var(--color-paper) 9%, transparent) 0 2px, transparent 2px 12px),
+    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--color-paper) 9%, transparent) 0 2px, transparent 2px 12px),
+    var(--color-primary);
   box-shadow: inset 0 0 0 0.35rem var(--color-primary), inset 0 0 0 0.45rem var(--color-paper), 0 25px 55px -30px var(--card-drop);
 }
 
