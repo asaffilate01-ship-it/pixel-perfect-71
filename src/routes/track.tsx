@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  ArrowLeft,
   Bike,
   CheckCircle2,
   Clock3,
@@ -16,8 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { getOrderTracking, type OrderTrackingResult } from "@/lib/dishbee.functions";
-import logo from "@/assets/mealdeck-logo.png.asset.json";
 
 export const Route=createFileRoute("/track")({
   head:()=>({
@@ -140,19 +139,13 @@ function TrackOrderPage(){
   const StatusIcon=status?.Icon??Clock3;
 
   return <div className="min-h-screen bg-background">
-    <header className="border-b border-border/60 bg-background/95">
-      <div className="mx-auto flex h-20 max-w-5xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-3">
-          <img src={logo.url} alt="MealDeck" className="h-12 w-auto"/>
-          <span className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
-            <ArrowLeft className="size-4"/>Back home
-          </span>
-        </Link>
-        <Link to="/order" className="text-sm font-semibold text-accent">
+    <SiteHeader
+      context={
+        <Link to="/order" className="font-display text-sm font-black uppercase tracking-wide text-accent">
           Start an order
         </Link>
-      </div>
-    </header>
+      }
+    />
 
     <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <section className="card-elevated p-6 sm:p-8">

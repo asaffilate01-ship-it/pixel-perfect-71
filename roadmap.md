@@ -24,3 +24,22 @@
 - [x] Bigger header logo; realistic burger + French tacos food images floating in hero; hero artwork more transparent
 - [x] 3D gold icon chips on benefit cards
 - [x] Polish order page menu UI/UX (premium card theme)
+- [ ] Hero: add background image, more (smaller) food images, smaller hero logo
+- [ ] Card back: outline the emblem logo itself (not a box border), transparency 80%
+- [ ] Choice/benefit cards: red icons at bottom have near-zero visibility — brighten
+- [x] Hero: background image, more smaller food images, smaller hero logo (superseded)
+- [x] Card back emblem outline hugging artwork, 80% opacity
+- [x] Choice card suit icons brightened
+## Next round
+- [ ] Bigger header logo, identical across all pages
+- [ ] Hero: remove flying food images + logo card; add dinner-table photo with multiple cuisines
+- [ ] Improve site navigation and flow
+- [ ] Polish card rotation/reveal animation (premium)
+- [x] Bigger shared header logo on all pages
+- [x] Hero dinner-table photo, flying food removed
+- [x] Improved navigation (mobile menu, active states, Track link)
+- [x] Polished card rotation
+## Latest
+- [x] Match reveal card back design to the logo's card back (red field, ivory double frame, chef-hat + sparkle ornament pattern)
+- [x] Fix brand descriptions: Nusara (SE Asian fusion), Tavo (all chicken), Moktl (mocktails), Icova (iced coffee/tea/desserts), Tarka Box (desi), Load'd (French tacos + mac n cheese)
+- [x] Remove "Tip: try a Luton…" hint and "e.g. LU1 2AA" example from /order

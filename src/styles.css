@@ -197,9 +197,12 @@
 }
 
 @keyframes brand-flip-sequence {
-  0%, 2.5% { opacity: 0; transform: rotateY(-180deg) scale(0.9); }
-  5.5%, 10.5% { opacity: 1; transform: rotateY(0) scale(1); }
-  13.5%, 100% { opacity: 0; transform: rotateY(180deg) scale(0.9); }
+  0% { opacity: 0; transform: rotateY(-180deg) scale(0.9) translateY(12px); }
+  6% { opacity: 1; transform: rotateY(-16deg) scale(1.04) translateY(-4px); }
+  9.5% { opacity: 1; transform: rotateY(0deg) scale(1) translateY(0); }
+  30% { opacity: 1; transform: rotateY(0deg) scale(1) translateY(0); }
+  36% { opacity: 1; transform: rotateY(12deg) scale(1.03) translateY(-3px); }
+  43%, 100% { opacity: 0; transform: rotateY(180deg) scale(0.94) translateY(10px); }
 }
 
 
@@ -431,7 +434,8 @@
   font-size: 2.6rem;
   font-weight: 900;
   line-height: 1;
-  color: color-mix(in oklab, var(--color-primary) 16%, transparent);
+  color: color-mix(in oklab, var(--color-primary) 62%, var(--color-paper));
+  text-shadow: 0 0 14px color-mix(in oklab, var(--color-primary) 45%, transparent);
   pointer-events: none;
 }
 
@@ -536,11 +540,8 @@
   transform: rotateY(180deg);
   border: 0.55rem solid var(--color-paper);
   background:
-    radial-gradient(110% 90% at 50% 40%, color-mix(in oklab, var(--color-paper) 12%, transparent), transparent 62%),
-    radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--color-paper) 14%, transparent) 0 2px, transparent 2.5px) 0 0 / 22px 22px,
-    radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--color-paper) 10%, transparent) 0 1.5px, transparent 2px) 11px 11px / 22px 22px,
-    repeating-linear-gradient(45deg, color-mix(in oklab, var(--color-paper) 10%, transparent) 0 2px, transparent 2px 12px),
-    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--color-paper) 10%, transparent) 0 2px, transparent 2px 12px),
+    radial-gradient(110% 90% at 50% 40%, color-mix(in oklab, var(--color-paper) 10%, transparent), transparent 62%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='96'%3E%3Cg fill='%23F7EFDC' fill-opacity='0.5'%3E%3Cpath d='M36 8c2 8 6 12 14 14-8 2-12 6-14 14-2-8-6-12-14-14 8-2 12-6 14-14z'/%3E%3Cpath d='M36 48l3.2 10.8L50 62l-10.8 3.2L36 76l-3.2-10.8L22 62l10.8-3.2z'/%3E%3Cpath d='M27 80a7.5 7.5 0 0 1 2.4-14.6 9.4 9.4 0 0 1 17.2 0A7.5 7.5 0 0 1 49 80z'/%3E%3Crect x='28' y='81' width='20' height='5.5' rx='2'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 54px 72px,
     var(--color-primary);
   box-shadow:
     inset 0 0 0 0.3rem var(--color-primary),
@@ -551,13 +552,38 @@
 }
 
 @utility card-back-emblem {
-  width: 62%;
+  width: 64%;
   object-fit: contain;
-  opacity: 0.75;
-  padding: 0.5rem;
-  border: 2px solid color-mix(in oklab, var(--color-paper) 65%, transparent);
-  border-radius: var(--radius-md);
-  box-shadow: 0 0 0 0.35rem color-mix(in oklab, var(--color-primary) 55%, transparent);
+  opacity: 0.8;
+  filter:
+    drop-shadow(1px 0 0 color-mix(in oklab, var(--color-paper) 85%, transparent))
+    drop-shadow(-1px 0 0 color-mix(in oklab, var(--color-paper) 85%, transparent))
+    drop-shadow(0 1px 0 color-mix(in oklab, var(--color-paper) 85%, transparent))
+    drop-shadow(0 -1px 0 color-mix(in oklab, var(--color-paper) 85%, transparent))
+    drop-shadow(1.8px 1.2px 0 color-mix(in oklab, var(--color-paper) 55%, transparent))
+    drop-shadow(-1.8px -1.2px 0 color-mix(in oklab, var(--color-paper) 55%, transparent))
+    drop-shadow(1.8px -1.2px 0 color-mix(in oklab, var(--color-paper) 55%, transparent))
+    drop-shadow(-1.8px 1.2px 0 color-mix(in oklab, var(--color-paper) 55%, transparent))
+    drop-shadow(0 0 6px color-mix(in oklab, var(--color-paper) 30%, transparent));
+}
+
+@utility hero-table-card {
+  rotate: 1.5deg;
+  padding: 0.6rem;
+  border: 2px solid var(--color-paper);
+  border-radius: var(--radius-xl);
+  background: var(--color-paper);
+  box-shadow:
+    inset 0 0 0 2px color-mix(in oklab, var(--color-primary) 55%, transparent),
+    0 42px 80px -36px var(--card-drop),
+    0 18px 40px -24px color-mix(in oklab, var(--color-primary) 40%, transparent);
+}
+
+@utility hero-table-img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: calc(var(--radius-xl) - 8px);
 }
 
 @utility brand-reveal-shadow {
@@ -571,11 +597,8 @@
   border: 0.55rem solid var(--color-paper);
   border-radius: var(--radius-lg);
   background:
-    radial-gradient(110% 90% at 50% 40%, color-mix(in oklab, var(--color-paper) 12%, transparent), transparent 62%),
-    radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--color-paper) 14%, transparent) 0 2px, transparent 2.5px) 0 0 / 22px 22px,
-    radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--color-paper) 10%, transparent) 0 1.5px, transparent 2px) 11px 11px / 22px 22px,
-    repeating-linear-gradient(45deg, color-mix(in oklab, var(--color-paper) 10%, transparent) 0 2px, transparent 2px 12px),
-    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--color-paper) 10%, transparent) 0 2px, transparent 2px 12px),
+    radial-gradient(110% 90% at 50% 40%, color-mix(in oklab, var(--color-paper) 10%, transparent), transparent 62%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='96'%3E%3Cg fill='%23F7EFDC' fill-opacity='0.5'%3E%3Cpath d='M36 8c2 8 6 12 14 14-8 2-12 6-14 14-2-8-6-12-14-14 8-2 12-6 14-14z'/%3E%3Cpath d='M36 48l3.2 10.8L50 62l-10.8 3.2L36 76l-3.2-10.8L22 62l10.8-3.2z'/%3E%3Cpath d='M27 80a7.5 7.5 0 0 1 2.4-14.6 9.4 9.4 0 0 1 17.2 0A7.5 7.5 0 0 1 49 80z'/%3E%3Crect x='28' y='81' width='20' height='5.5' rx='2'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 54px 72px,
     var(--color-primary);
   box-shadow:
     inset 0 0 0 0.3rem var(--color-primary),
