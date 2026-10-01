@@ -27,20 +27,20 @@ import mdWatermark from "@/assets/mealdeck-md-watermark.png.asset.json";
 import mdEmblem from "@/assets/mealdeck-emblem.png.asset.json";
 import heroBackdrop from "@/assets/hero-backdrop.jpg";
 import heroTable from "@/assets/hero-table.jpg";
-import icova from "@/assets/premium-logos/icova-premium.png.asset.json";
-import loadd from "@/assets/premium-logos/loadd-premium.png.asset.json";
-import moktl from "@/assets/premium-logos/moktl-premium.png.asset.json";
-import nusara from "@/assets/premium-logos/nusara-premium.png.asset.json";
-import paratique from "@/assets/premium-logos/paratique-premium.png.asset.json";
-import pastarivo from "@/assets/premium-logos/pastarivo-premium.png.asset.json";
-import riseAndGriddle from "@/assets/premium-logos/rise-and-griddle-premium.png.asset.json";
-import sabzora from "@/assets/premium-logos/sabzora-premium.png.asset.json";
-import skorch from "@/assets/premium-logos/skorch-premium.png.asset.json";
-import souvano from "@/assets/premium-logos/souvano-premium.png.asset.json";
-import taconelle from "@/assets/premium-logos/taconelle-premium.png.asset.json";
-import tarkaBox from "@/assets/premium-logos/tarka-box-premium.png.asset.json";
-import tavoChicken from "@/assets/premium-logos/tavo-chicken-premium.png.asset.json";
-import vyta from "@/assets/premium-logos/vyta-premium.png.asset.json";
+import icova from "@/assets/premium-logos/icova-premium.png";
+import loadd from "@/assets/premium-logos/loadd-premium.png";
+import moktl from "@/assets/premium-logos/moktl-premium.png";
+import nusara from "@/assets/premium-logos/nusara-premium.png";
+import paratique from "@/assets/premium-logos/paratique-premium.png";
+import pastarivo from "@/assets/premium-logos/pastarivo-premium.png";
+import riseAndGriddle from "@/assets/premium-logos/rise-and-griddle-premium.png";
+import sabzora from "@/assets/premium-logos/sabzora-premium.png";
+import skorch from "@/assets/premium-logos/skorch-premium.png";
+import souvano from "@/assets/premium-logos/souvano-premium.png";
+import taconelle from "@/assets/premium-logos/taconelle-premium.png";
+import tarkaBox from "@/assets/premium-logos/tarka-box-premium.png";
+import tavoChicken from "@/assets/premium-logos/tavo-chicken-premium.png";
+import vyta from "@/assets/premium-logos/vyta-premium.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -56,20 +56,20 @@ export const Route = createFileRoute("/")({
 });
 
 const premiumBrands = [
-  { name: "Taconelle", category: "French tacos", logo: taconelle.url, rank: "A", suit: "♥" },
-  { name: "Tavo Chicken", category: "All things chicken", logo: tavoChicken.url, rank: "K", suit: "♦" },
-  { name: "Skorch", category: "Smash burgers", logo: skorch.url, rank: "Q", suit: "♠" },
-  { name: "Load'd", category: "French tacos & mac n cheese", logo: loadd.url, rank: "J", suit: "♣" },
-  { name: "Tarka Box", category: "Desi food", logo: tarkaBox.url, rank: "10", suit: "♥" },
-  { name: "Paratique", category: "Signature parathas", logo: paratique.url, rank: "9", suit: "♦" },
-  { name: "Sabzora", category: "Vegetarian Indian", logo: sabzora.url, rank: "8", suit: "♠" },
-  { name: "Vyta", category: "Fresh juices", logo: vyta.url, rank: "7", suit: "♣" },
-  { name: "Icova", category: "Iced coffee, chai & desserts", logo: icova.url, rank: "6", suit: "♥" },
-  { name: "Moktl", category: "Zero-alcohol mocktails", logo: moktl.url, rank: "5", suit: "♦" },
-  { name: "Souvano", category: "Mediterranean plates", logo: souvano.url, rank: "4", suit: "♠" },
-  { name: "Nusara", category: "South East Asian fusion", logo: nusara.url, rank: "3", suit: "♣" },
-  { name: "Pastarivo", category: "Fresh pasta", logo: pastarivo.url, rank: "2", suit: "♥" },
-  { name: "Rise & Griddle", category: "Breakfast & brunch", logo: riseAndGriddle.url, rank: "A", suit: "♦" },
+  { name: "Taconelle", category: "French tacos", logo: taconelle, rank: "A", suit: "♥" },
+  { name: "Tavo Chicken", category: "All things chicken", logo: tavoChicken, rank: "K", suit: "♦" },
+  { name: "Skorch", category: "Smash burgers", logo: skorch, rank: "Q", suit: "♠" },
+  { name: "Load'd", category: "French tacos & mac n cheese", logo: loadd, rank: "J", suit: "♣" },
+  { name: "Tarka Box", category: "Desi food", logo: tarkaBox, rank: "10", suit: "♥" },
+  { name: "Paratique", category: "Signature parathas", logo: paratique, rank: "9", suit: "♦" },
+  { name: "Sabzora", category: "Vegetarian Indian", logo: sabzora, rank: "8", suit: "♠" },
+  { name: "Vyta", category: "Fresh juices", logo: vyta, rank: "7", suit: "♣" },
+  { name: "Icova", category: "Iced coffee, chai & desserts", logo: icova, rank: "6", suit: "♥" },
+  { name: "Moktl", category: "Zero-alcohol mocktails", logo: moktl, rank: "5", suit: "♦" },
+  { name: "Souvano", category: "Mediterranean plates", logo: souvano, rank: "4", suit: "♠" },
+  { name: "Nusara", category: "South East Asian fusion", logo: nusara, rank: "3", suit: "♣" },
+  { name: "Pastarivo", category: "Fresh pasta", logo: pastarivo, rank: "2", suit: "♥" },
+  { name: "Rise & Griddle", category: "Breakfast & brunch", logo: riseAndGriddle, rank: "A", suit: "♦" },
 ] as const;
 
 const benefits = [
