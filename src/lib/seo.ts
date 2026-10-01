@@ -38,7 +38,7 @@ const business = (town: string, extra: Record<string, unknown> = {}) => ({
   name: `MealDeck ${town}`,
   url: `${SITE_URL}/${town.toLowerCase().replace(" ", "-")}`,
   image: OG_IMAGE,
-  servesCuisine: ["French tacos", "Smash burgers", "Chicken", "Desi", "Indian vegetarian", "Parathas", "Grill", "Kebab", "Fresh juices", "Iced coffee", "Mocktails"],
+  servesCuisine: ["French tacos", "Smash burgers", "Chicken", "Desi", "Indian vegetarian", "Parathas", "Fresh juices", "Iced coffee", "Mocktails"],
   address: { "@type": "PostalAddress", addressLocality: town, addressRegion: town === "Luton" ? "Bedfordshire" : "Hertfordshire", addressCountry: "GB" },
   areaServed: { "@type": "City", name: town },
   hasMenu: `${SITE_URL}/order`,

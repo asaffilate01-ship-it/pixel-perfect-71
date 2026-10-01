@@ -34,20 +34,19 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
         <Button asChild size="lg" className="mt-8"><Link to="/order">Order in {town}</Link></Button>
 
         <h2 className="mt-16 font-display text-3xl font-black">The {town} deck</h2>
-        <div className="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4 lg:grid-cols-6">
+        <div className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-5 sm:gap-3 lg:grid-cols-8">
           {list.map((b, i) => {
             const s = suits[i % 4];
             const rank = ranks[i % ranks.length];
             const red = s === "♥" || s === "♦";
             return (
-              <div key={b.id} className="relative flex aspect-[2.5/3.5] flex-col items-center justify-center gap-1.5 rounded-lg border-[3px] border-accent/60 p-2 text-center shadow-lg" style={{ background: "#f6eedc", color: "#1a0d0d" }}>
+              <div key={b.id} className="relative flex aspect-[2.5/3.5] flex-col items-center justify-center gap-1 rounded-lg border-2 border-accent/60 p-2 text-center shadow-lg" style={{ background: "#f6eedc", color: "#1a0d0d" }}>
                 <span className={`absolute left-1 top-0.5 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
                 <span className={`absolute bottom-0.5 right-1 rotate-180 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
                 {"logo" in b && b.logo ? (
-                  <img src={b.logo} alt={b.name} className="max-h-10 max-w-[70%] object-contain sm:max-h-12" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  <img src={b.logo} alt={b.name} className="h-[62%] w-[84%] object-contain" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 ) : null}
-                <h3 className="font-display text-xs font-black sm:text-sm">{b.name}</h3>
-                <p className="text-[0.6rem] leading-tight sm:text-xs" style={{ color: "#4a3a33" }}>{b.category}</p>
+                <h3 className="font-display text-[0.6rem] font-black leading-tight sm:text-xs">{b.name}</h3>
               </div>
             );
           })}
