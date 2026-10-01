@@ -166,7 +166,7 @@ function Landing() {
 
       <main>
         <section className="hero-felt relative border-b border-border/70">
-          <div className="mx-auto grid min-h-[calc(100svh-5rem)] max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:py-14">
+          <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:min-h-[44rem] lg:grid-cols-[0.92fr_1.08fr] lg:py-14">
             <div className="relative z-10 order-2 pb-6 lg:order-1 lg:pb-0">
               <p className="eyebrow">The full house of flavour</p>
               <h1 className="mt-4 max-w-3xl text-5xl font-black leading-[0.94] sm:text-6xl lg:text-7xl">
