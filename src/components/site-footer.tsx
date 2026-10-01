@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Instagram, Facebook, Youtube, Music2 } from "lucide-react";
-import logo from "@/assets/mealdeck-fan-logo.png.asset.json";
+import logo from "@/assets/mealdeck-fan-logo.png";
 
 export function SiteFooter() {
   return (

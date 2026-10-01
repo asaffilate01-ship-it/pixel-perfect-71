@@ -23,8 +23,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import mdWatermark from "@/assets/mealdeck-md-watermark.png.asset.json";
-import mdEmblem from "@/assets/mealdeck-emblem.png.asset.json";
+import mdWatermark from "@/assets/mealdeck-md-watermark.png";
+import mdEmblem from "@/assets/mealdeck-emblem.png";
 import heroBackdrop from "@/assets/hero-backdrop.jpg";
 import heroTable from "@/assets/hero-table.jpg";
 import icova from "@/assets/premium-logos/icova-premium.png";

@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { ArrowRight, Menu, ShoppingBasket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/mealdeck-fan-logo.png.asset.json";
+import logo from "@/assets/mealdeck-fan-logo.png";
 
 const navItems = [
   { label: "Brands", hash: "brands" },
