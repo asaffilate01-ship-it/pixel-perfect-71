@@ -55,7 +55,7 @@ export function MobileTabBar() {
         className="fixed inset-x-3 bottom-3 z-50 lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="relative flex items-stretch rounded-[1.75rem] border border-border/70 bg-background/85 px-1 shadow-2xl backdrop-blur-xl">
+        <div className="relative flex items-stretch rounded-[1.75rem] border border-border/70 bg-card/95 px-1 shadow-2xl backdrop-blur-xl">
           {left.map(item)}
           <div className="flex flex-1 justify-center">
             <Link
