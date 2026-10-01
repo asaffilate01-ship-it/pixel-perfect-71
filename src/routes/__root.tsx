@@ -1,3 +1,4 @@
+import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
