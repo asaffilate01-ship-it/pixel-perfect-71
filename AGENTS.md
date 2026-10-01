@@ -13,3 +13,4 @@
 
 - SEO head tags come from the shared `seo()` helper with mealdeck.co.uk as the canonical base — keeps canonical/og consistent per page.
 - Blog posts live in a static list and render as playing-card tiles — no backend needed for content yet.
+- Global light/dark appearance is controlled by the shared theme provider and semantic CSS tokens — keeps every route and overlay synchronized.
