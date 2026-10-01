@@ -125,7 +125,7 @@ function BrandCard({ brand, index }: { brand: (typeof premiumBrands)[number]; in
 
 function DeckReveal() {
   return (
-    <section className="border-b border-border bg-card/30 py-20 sm:py-24" aria-label="Meet the MealDeck brands">
+    <section className="border-b border-border bg-card/30 py-14 sm:py-20" aria-label="Meet the MealDeck brands">
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr]">
         <div>
           <p className="eyebrow">Watch the deck unfold</p>
@@ -243,7 +243,7 @@ function Landing() {
 
         <DeckReveal />
 
-        <section id="brands" className="scroll-mt-24 py-20 sm:py-28">
+        <section id="brands" className="scroll-mt-24 py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -260,7 +260,7 @@ function Landing() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-card/35 py-20 sm:py-28">
+        <section className="border-y border-border bg-card/35 py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr]">
               <div>
@@ -289,7 +289,7 @@ function Landing() {
           </div>
         </section>
 
-        <section id="offers" className="scroll-mt-24 py-20 sm:py-28">
+        <section id="offers" className="scroll-mt-24 py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="text-center">
               <p className="eyebrow">Offers on the table</p>
