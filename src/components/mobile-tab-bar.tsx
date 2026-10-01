@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, LayoutGrid, Tag, MapPin, Spade } from "lucide-react";
+import { Home, LayoutGrid, Tag, MapPin, UtensilsCrossed } from "lucide-react";
 
 type Tab = { label: string; to: "/" | "/order" | "/track"; hash?: string; icon: typeof Home };
 

@@ -138,8 +138,12 @@ function DeckReveal() {
           <p className="mt-7 font-display text-sm font-black uppercase text-accent">The choice is yours. The order stays one.</p>
         </div>
         <div className="brand-reveal-stage" aria-hidden="true">
-          <div className="brand-reveal-shadow brand-reveal-shadow-one" />
-          <div className="brand-reveal-shadow brand-reveal-shadow-two" />
+          <div className="brand-reveal-shadow brand-reveal-shadow-one">
+            <img src={mealdeckLogo.url} alt="" className="w-[55%] object-contain opacity-30" />
+          </div>
+          <div className="brand-reveal-shadow brand-reveal-shadow-two">
+            <img src={mealdeckLogo.url} alt="" className="w-[55%] object-contain opacity-30" />
+          </div>
           <div className="brand-reveal-card brand-reveal-card-start">
             <div className="brand-reveal-flip">
               <div className="brand-reveal-face brand-reveal-face-front">
