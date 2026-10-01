@@ -54,3 +54,6 @@
 - [ ] FAQ: remove "what is Café1", add dine-in at Café 1, St Albans, 6 Bricket Road, AL1 3JU
 - [ ] /order: add Dine in fulfilment for St Albans (at Café 1)
 - [ ] Hero image: nicer location/scenery
+
+- [x] Back-to-top with scroll progress + smaller hero image
+- [ ] Hero photo: MealDeck brown bag on far table, two logo napkins on main table
