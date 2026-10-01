@@ -224,9 +224,7 @@ function Landing() {
 
             <div className="relative order-1 flex min-h-[22rem] items-center justify-center lg:order-2 lg:min-h-[38rem]">
               <div className="deal-glow" />
-              <figure className="hero-table-card relative z-10 w-[min(58vw,15rem)] sm:w-[min(46vw,18rem)] lg:w-[min(30vw,26rem)]">
-                <span className="reveal-corner">A<small>♦</small></span>
-                <span className="reveal-corner reveal-corner-bottom">A<small>♦</small></span>
+              <figure className="hero-table-card relative z-10 w-[min(72vw,18rem)] sm:w-[min(52vw,20rem)] lg:w-[min(32vw,28rem)]">
                 <img
                   src={heroTable}
                   alt="Friends sharing burgers, curry, fried chicken and fries around one dinner table"
