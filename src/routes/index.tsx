@@ -202,9 +202,6 @@ function Landing() {
                   fetchPriority="high"
                 />
               </div>
-              <div className="absolute bottom-4 right-0 hidden items-center gap-3 rounded-full border border-accent/25 bg-card/90 px-4 py-3 text-xs font-bold uppercase text-accent shadow-lg sm:flex">
-                <Sparkles className="size-4" /> 14 brands in the deck
-              </div>
             </div>
           </div>
         </section>
