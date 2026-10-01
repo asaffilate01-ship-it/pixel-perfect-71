@@ -45,6 +45,7 @@ import {
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import { SiteHeader } from "@/components/site-header";
+import { seo } from "@/lib/seo";
 
 type OrderSearch = { brand?: string; fulfilment?: FulfilmentType };
 
