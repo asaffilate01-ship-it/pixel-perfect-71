@@ -202,10 +202,6 @@
   13%, 100% { opacity: 0; transform: rotateY(180deg) scale(0.9); }
 }
 
-@keyframes deck-return {
-  0%, 91% { opacity: 0; transform: rotateY(-180deg) scale(0.9); }
-  95%, 100% { opacity: 1; transform: rotateY(0) scale(1); }
-}
 
 @utility hero-felt {
   background:
@@ -500,7 +496,7 @@
     opacity: 1;
     transform: none;
   }
-  .brand-reveal-card:not(.brand-reveal-card-end) { display: none; }
+  .brand-reveal-card:not(.brand-reveal-card-start) { display: none; }
 }
 
 @utility eyebrow {
