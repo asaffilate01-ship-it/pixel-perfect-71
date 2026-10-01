@@ -96,7 +96,10 @@ const channels = [
 const offers = [
   { label: "The Burger Ace", value: "FREE", title: "Spend £21. Get a burger on us.", copy: "Choose one eligible burger from the offer hand.", terms: "One free burger per order · Participating brands · While available", rank: "A", suit: "♥" },
   { label: "Perfect Pair", value: "½ PRICE", title: "Buy one. Deal the second for half.", copy: "Pick two of the same eligible item and the second drops to half price.", terms: "Cheapest identical item discounted · One pair per order", rank: "2", suit: "♦" },
+  { label: "Snap!", value: "2 FOR 1", title: "Match two of the same. Pay for one.", copy: "When identical eligible items snap together in your basket, the second is on the house.", terms: "Selected items only · One snap per order · While available", rank: "S", suit: "♠" },
   { label: "The Group Hand", value: "+ POINTS", title: "More people. More points.", copy: "Bring the group together and build your loyalty balance faster.", terms: "Selected group orders · Account required · Offer limits apply", rank: "K", suit: "♣" },
+  { label: "Full House Feast", value: "£5 OFF", title: "Three brands. One basket. One saving.", copy: "Fill your hand with dishes from three different brands and we knock £5 off.", terms: "Min. spend £30 · One per order · Delivery orders", rank: "F", suit: "♥" },
+  { label: "The Loyalty Flush", value: "10× PTS", title: "Five orders. One flush of points.", copy: "Your fifth direct order in a month earns ten times the loyalty points.", terms: "Account required · Monthly reset · Points caps apply", rank: "10", suit: "♦" },
 ];
 
 const ticker = ["One order", "One delivery fee", "A growing brand deck", "Split payments", "Loyalty points", "Live tracking", "Direct-order value"];
