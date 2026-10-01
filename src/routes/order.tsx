@@ -436,7 +436,7 @@ function OrderPage() {
                 <button
                   onClick={() => setActiveBrand(null)}
                   className={`mini-card h-24 w-20 shrink-0 text-xs font-bold ${
-                    activeBrand === null ? "outline-2 outline-accent" : ""
+                    activeBrand === null ? "mini-card-selected" : ""
                   }`}
                 >
                   <span className="mini-card-corner">★<small>♦</small></span>
@@ -453,7 +453,7 @@ function OrderPage() {
                       onClick={() => setActiveBrand(brand.id)}
                       aria-label={brand.name}
                       className={`mini-card h-24 w-20 shrink-0 p-2 pt-4 ${
-                        activeBrand === brand.id ? "outline-2 outline-accent" : ""
+                        activeBrand === brand.id ? "mini-card-selected" : ""
                       }`}
                     >
                       <span className={`mini-card-corner ${suit === "♠" || suit === "♣" ? "text-ink" : ""}`}>{rank}<small>{suit}</small></span>
@@ -471,7 +471,10 @@ function OrderPage() {
                 <div className="mt-8 space-y-10">
                   {grouped.map(([group, groupItems]) => (
                     <section key={group}>
-                      <h3 className="font-display text-xl font-bold">{group}</h3>
+                      <h3 className="flex items-center gap-3 font-display text-xl font-bold">
+                        <span className="text-primary" aria-hidden="true">♦</span>{group}
+                        <span className="h-px flex-1 bg-gradient-to-r from-accent/40 to-transparent" aria-hidden="true" />
+                      </h3>
                       <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         {groupItems.map((item) => {
                           const brand = brandById(item.brandId);
@@ -485,7 +488,7 @@ function OrderPage() {
                                 width={816}
                                 height={816}
                                 loading="lazy"
-                                className="size-20 shrink-0 rounded-lg object-cover"
+                                className="size-24 shrink-0 rounded-xl object-cover ring-1 ring-accent/30"
                               />
                               <div className="flex min-w-0 flex-1 flex-col">
                                 <p className="text-xs uppercase tracking-[0.14em] text-accent">{brand?.name ?? "MealDeck"}</p>
@@ -494,7 +497,7 @@ function OrderPage() {
                                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
                                 ) : null}
                                 <div className="mt-auto flex items-center justify-between pt-3">
-                                  <span className="font-display font-bold">{formatPence(item.pricePence)}</span>
+                                  <span className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 font-display text-sm font-bold text-accent">{formatPence(item.pricePence)}</span>
                                   <Button
                                     variant="hero"
                                     size="sm"
