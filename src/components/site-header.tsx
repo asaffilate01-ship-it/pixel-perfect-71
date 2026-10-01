@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { ArrowRight, Menu, ShoppingBasket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import logo from "@/assets/mealdeck-fan-logo.png";
 
 const navItems = [
@@ -56,6 +57,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
         )}
 
         <div className="flex items-center gap-2">
+          <ThemeToggle className="hidden sm:inline-flex" />
           {context ?? (
             <>
               <Button variant="glass" size="default" className="hidden rounded-full sm:inline-flex" asChild>
@@ -83,6 +85,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
               {open ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
           )}
+          <ThemeToggle compact className="sm:hidden" />
         </div>
       </div>
 
