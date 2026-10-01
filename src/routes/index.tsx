@@ -295,15 +295,18 @@ function Landing() {
               <h2 className="mt-3 text-4xl font-black sm:text-5xl">Good deals. Clearly dealt.</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">No mystery cards. Every promotion shows its limit before you order.</p>
             </div>
-            <div className="mt-12 grid gap-5 lg:grid-cols-3">
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {offers.map((offer) => (
-                <article key={offer.label} className="offer-card relative overflow-hidden p-7">
-                  <span className="absolute right-5 top-4 text-3xl font-black text-primary/25">{offer.rank}{offer.suit}</span>
-                  <p className="text-xs font-black uppercase text-primary">{offer.label}</p>
-                  <p className="mt-8 font-display text-4xl font-black text-accent">{offer.value}</p>
-                  <h3 className="mt-3 text-2xl font-bold text-ink">{offer.title}</h3>
-                  <p className="mt-3 min-h-12 text-sm leading-6 text-ink/65">{offer.copy}</p>
-                  <div className="mt-7 border-t border-ink/10 pt-4 text-[0.68rem] font-bold uppercase text-ink/50">{offer.terms}</div>
+                <article key={offer.label} className="offer-card">
+                  <span className={`offer-corner ${offer.suit === "♠" || offer.suit === "♣" ? "text-ink" : ""}`}>{offer.rank}<small>{offer.suit}</small></span>
+                  <span className={`offer-corner offer-corner-bottom ${offer.suit === "♠" || offer.suit === "♣" ? "text-ink" : ""}`}>{offer.rank}<small>{offer.suit}</small></span>
+                  <div className="relative flex h-full flex-col items-center px-7 py-9 text-center">
+                    <p className="text-xs font-black uppercase text-primary">{offer.label}</p>
+                    <p className="mt-7 font-display text-4xl font-black text-accent">{offer.value}</p>
+                    <h3 className="mt-3 text-2xl font-bold text-ink">{offer.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-ink/65">{offer.copy}</p>
+                    <div className="mt-auto w-full border-t border-ink/10 pt-4 text-[0.68rem] font-bold uppercase text-ink/50">{offer.terms}</div>
+                  </div>
                 </article>
               ))}
             </div>
