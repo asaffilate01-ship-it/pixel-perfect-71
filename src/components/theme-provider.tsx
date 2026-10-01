@@ -36,6 +36,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
 export function useTheme() {
   const value = useContext(ThemeContext);
-  if (!value) throw new Error("useTheme must be used within ThemeProvider");
+  if (!value) {
+    return {
+      theme: readTheme(),
+      toggleTheme: () => {
+        const next = readTheme() === "dark" ? "light" : "dark";
+        document.documentElement.classList.toggle("dark", next === "dark");
+        document.documentElement.style.colorScheme = next;
+        window.localStorage.setItem("mealdeck-theme", next);
+      },
+    } satisfies ThemeContextValue;
+  }
   return value;
 }
