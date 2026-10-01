@@ -6,6 +6,7 @@
 - [ ] Add a motion-graphics logo reveal and sequential brand-card flip showcase.
 - [ ] Present group ordering, split payments, loyalty points and one-fee mixed-brand ordering.
 - [ ] Present WhatsApp, web, phone and app ordering plus full order tracking.
+- [ ] Position direct ordering as better value than aggregator sites without an unverified fixed saving.
 - [ ] Add a polished offer deck with clear limits and terms.
 - [ ] Keep Café1 hidden unless an St Albans postcode is entered.
 - [ ] Verify desktop and mobile presentation and fix all build issues.
