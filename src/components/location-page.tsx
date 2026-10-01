@@ -6,7 +6,6 @@ import { brands } from "@/lib/mealdeck";
 
 type Props = {
   town: string;
-  postcode: string;
   intro: string;
   hours: string;
   fulfilment: string;
@@ -16,8 +15,9 @@ type Props = {
 };
 
 const suits = ["♥", "♦", "♠", "♣"];
+const ranks = ["A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
 
-export function LocationPage({ town, postcode, intro, hours, fulfilment, areas, includeCafe1, faqs }: Props) {
+export function LocationPage({ town, intro, hours, fulfilment, areas, includeCafe1, faqs }: Props) {
   const list = brands.filter((b) => includeCafe1 || b.id !== "cafe1");
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -29,27 +29,31 @@ export function LocationPage({ town, postcode, intro, hours, fulfilment, areas, 
         <div className="mt-6 flex flex-wrap gap-3 text-sm">
           <span className="rounded-full border border-accent/50 px-4 py-2">{hours}</span>
           <span className="rounded-full border border-accent/50 px-4 py-2">{fulfilment}</span>
-          <span className="rounded-full border border-accent/50 px-4 py-2">{postcode} postcodes</span>
+          <span className="rounded-full border border-accent/50 px-4 py-2">Selected areas in &amp; around {town}</span>
         </div>
         <Button asChild size="lg" className="mt-8"><Link to="/order">Order in {town}</Link></Button>
 
         <h2 className="mt-16 font-display text-3xl font-black">The {town} deck</h2>
-        <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4 lg:grid-cols-6">
           {list.map((b, i) => {
             const s = suits[i % 4];
+            const rank = ranks[i % ranks.length];
             const red = s === "♥" || s === "♦";
             return (
-              <div key={b.id} className="relative rounded-xl border-4 border-accent/60 p-5 pt-9 shadow-lg" style={{ background: "#f6eedc", color: "#1a0d0d" }}>
-                <span className={`absolute left-2 top-1 font-display font-black ${red ? "text-primary" : ""}`}>{s}</span>
-                <span className={`absolute bottom-1 right-2 rotate-180 font-display font-black ${red ? "text-primary" : ""}`}>{s}</span>
-                <h3 className="font-display text-lg font-black">{b.name}</h3>
-                <p className="text-sm" style={{ color: "#4a3a33" }}>{b.category}</p>
+              <div key={b.id} className="relative flex aspect-[2.5/3.5] flex-col items-center justify-center gap-1.5 rounded-lg border-[3px] border-accent/60 p-2 text-center shadow-lg" style={{ background: "#f6eedc", color: "#1a0d0d" }}>
+                <span className={`absolute left-1 top-0.5 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
+                <span className={`absolute bottom-0.5 right-1 rotate-180 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
+                {"logo" in b && b.logo ? (
+                  <img src={b.logo} alt={b.name} className="max-h-10 max-w-[70%] object-contain sm:max-h-12" loading="lazy" />
+                ) : null}
+                <h3 className="font-display text-xs font-black sm:text-sm">{b.name}</h3>
+                <p className="text-[0.6rem] leading-tight sm:text-xs" style={{ color: "#4a3a33" }}>{b.category}</p>
               </div>
             );
           })}
         </div>
 
-        <h2 className="mt-16 font-display text-3xl font-black">Areas we deliver to</h2>
+        <h2 className="mt-16 font-display text-3xl font-black">Areas we serve</h2>
         <p className="mt-3 text-muted-foreground">{areas.join(" · ")}</p>
 
         <h2 className="mt-16 font-display text-3xl font-black">Why order direct in {town}?</h2>
