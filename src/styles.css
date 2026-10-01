@@ -593,6 +593,13 @@
     width: min(13rem, 56vw);
     gap: 0.75rem;
   }
+  .brand-reveal-shadow {
+    width: min(13rem, 56vw);
+    border-width: 0.4rem;
+  }
+  .brand-reveal-shadow-one { transform: translateX(-2.6rem) rotate(-11deg); }
+  .brand-reveal-shadow-two { transform: translateX(2.6rem) rotate(11deg); }
+  .card-back-emblem { width: 60%; }
 }
 
 @utility brand-reveal-shadow {
