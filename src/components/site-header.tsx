@@ -81,38 +81,31 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
                 {item.label}
               </Link>
             ))}
-            <DropdownMenu>
-              <DropdownMenuTrigger className={`${navLinkClass} inline-flex items-center gap-1 outline-none focus-visible:text-accent`}>
-                Locations
-                <ChevronDown className="size-3.5 opacity-70" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="min-w-56 border-border bg-popover">
-                {locationLinks.map((item) => (
-                  <DropdownMenuItem key={item.label} asChild>
-                    <Link to={item.to} className="flex flex-col gap-0.5 py-2.5">
-                      <span className="font-display text-sm font-semibold text-foreground">{item.label}</span>
-                      <span className="text-xs text-muted-foreground">{item.hint}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger className={`${navLinkClass} inline-flex items-center gap-1 outline-none focus-visible:text-accent`}>
-                More
-                <ChevronDown className="size-3.5 opacity-70" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="min-w-44 border-border bg-popover">
-                {moreLinks.map((item) => (
-                  <DropdownMenuItem key={item.label} asChild>
-                    <Link to={item.to} className="flex items-center gap-2.5 py-2">
-                      <item.icon className="size-4 text-accent" />
-                      <span className="font-display text-sm font-semibold text-foreground">{item.label}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <NavDropdown label="Locations">
+              {locationLinks.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  onClick={() => setOpen(false)}
+                  className="flex flex-col gap-0.5 rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/10"
+                >
+                  <span className="font-display text-sm font-semibold text-foreground">{item.label}</span>
+                  <span className="text-xs text-muted-foreground">{item.hint}</span>
+                </Link>
+              ))}
+            </NavDropdown>
+            <NavDropdown label="More">
+              {moreLinks.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/10"
+                >
+                  <item.icon className="size-4 text-accent" />
+                  <span className="font-display text-sm font-semibold text-foreground">{item.label}</span>
+                </Link>
+              ))}
+            </NavDropdown>
             <Link to="/order" className={navLinkClass}>
               Order Now
             </Link>
