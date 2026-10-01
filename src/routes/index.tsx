@@ -24,6 +24,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import mealdeckDeck from "@/assets/mealdeck-card-deck.png.asset.json";
 import mealdeckLogo from "@/assets/mealdeck-logo.png.asset.json";
+import mdWatermark from "@/assets/mealdeck-md-watermark.png.asset.json";
 import icova from "@/assets/premium-logos/icova-premium.png.asset.json";
 import loadd from "@/assets/premium-logos/loadd-premium.png.asset.json";
 import moktl from "@/assets/premium-logos/moktl-premium.png.asset.json";
@@ -139,10 +140,10 @@ function DeckReveal() {
         </div>
         <div className="brand-reveal-stage" aria-hidden="true">
           <div className="brand-reveal-shadow brand-reveal-shadow-one">
-            <img src={mealdeckLogo.url} alt="" className="w-[55%] object-contain opacity-30" />
+            <img src={mdWatermark.url} alt="" className="w-[55%] object-contain opacity-30" />
           </div>
           <div className="brand-reveal-shadow brand-reveal-shadow-two">
-            <img src={mealdeckLogo.url} alt="" className="w-[55%] object-contain opacity-30" />
+            <img src={mdWatermark.url} alt="" className="w-[55%] object-contain opacity-30" />
           </div>
           <div className="brand-reveal-card brand-reveal-card-start">
             <div className="brand-reveal-flip">
