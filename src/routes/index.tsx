@@ -139,10 +139,10 @@ function DeckReveal() {
         </div>
         <div className="brand-reveal-stage" aria-hidden="true">
           <div className="brand-reveal-shadow brand-reveal-shadow-one">
-            <img src={mdWatermark.url} alt="" className="w-[55%] object-contain opacity-30" />
+            <img src={mdWatermark.url} alt="" className="w-[55%] object-contain opacity-60" />
           </div>
           <div className="brand-reveal-shadow brand-reveal-shadow-two">
-            <img src={mdWatermark.url} alt="" className="w-[55%] object-contain opacity-30" />
+            <img src={mdWatermark.url} alt="" className="w-[55%] object-contain opacity-60" />
           </div>
           <div className="brand-reveal-card brand-reveal-card-start">
             <div className="brand-reveal-flip">
@@ -154,7 +154,7 @@ function DeckReveal() {
                 <span className="font-display text-[0.65rem] font-black uppercase tracking-[0.18em] text-ink/60">One order. Every craving.</span>
               </div>
               <div className="brand-reveal-face brand-reveal-face-back">
-                <img src={mdWatermark.url} alt="" className="w-[58%] object-contain opacity-30" />
+                <img src={mdWatermark.url} alt="" className="w-[58%] object-contain opacity-60" />
               </div>
             </div>
           </div>
