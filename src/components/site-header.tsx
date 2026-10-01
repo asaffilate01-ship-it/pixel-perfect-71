@@ -2,12 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { ArrowRight, ChevronDown, MapPin, Menu, Newspaper, ShoppingBasket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import logo from "@/assets/mealdeck-fan-logo.png";
 
@@ -26,6 +20,37 @@ const moreLinks = [
   { label: "Blog", to: "/blog", icon: Newspaper },
   { label: "Track Order", to: "/track", icon: MapPin },
 ] as const;
+
+function NavDropdown({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className={`${navLinkClass} inline-flex items-center gap-1`}
+      >
+        {label}
+        <ChevronDown className={`size-3.5 opacity-70 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div
+          onMouseEnter={() => setOpen(true)}
+          className="absolute top-full left-1/2 z-50 w-60 -translate-x-1/2 pt-3"
+        >
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-popover p-1.5 shadow-xl shadow-black/10">
+            {children}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const navLinkClass =
   "font-display text-sm font-semibold text-foreground/85 transition-colors hover:text-accent data-[status=active]:text-accent";
