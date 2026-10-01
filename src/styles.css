@@ -271,12 +271,14 @@
   flex-direction: column;
   align-items: center;
   font-family: var(--font-display);
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 900;
   line-height: 0.85;
 
+  @media (min-width: 640px) { font-size: 0.9rem; }
+
   small {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     line-height: 1;
   }
 }
@@ -368,7 +370,7 @@
 @utility brand-reveal-stage {
   position: relative;
   display: grid;
-  min-height: 26rem;
+  min-height: 30rem;
   place-items: center;
   perspective: 1200px;
 }
@@ -376,14 +378,14 @@
 @utility brand-reveal-card {
   position: absolute;
   display: flex;
-  width: min(15rem, 62vw);
+  width: min(18.5rem, 68vw);
   aspect-ratio: 2.5 / 3.5;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
   overflow: hidden;
-  border: 3px solid var(--color-accent);
+  border: 1px solid color-mix(in oklab, var(--color-ink) 18%, transparent);
   border-radius: var(--radius-lg);
   background: var(--color-paper);
   box-shadow: 0 30px 65px -30px var(--card-drop);
@@ -433,7 +435,7 @@
   justify-content: center;
   gap: 1rem;
   overflow: hidden;
-  border: 3px solid var(--color-accent);
+  border: 1px solid color-mix(in oklab, var(--color-ink) 18%, transparent);
   border-radius: var(--radius-lg);
   backface-visibility: hidden;
 }
@@ -445,11 +447,11 @@
 
 @utility brand-reveal-face-back {
   transform: rotateY(180deg);
+  border: 0.55rem solid var(--color-paper);
   background:
-    repeating-linear-gradient(45deg, color-mix(in oklab, var(--color-accent) 14%, transparent) 0 3px, transparent 3px 12px),
-    radial-gradient(120% 100% at 50% 0%, color-mix(in oklab, var(--color-paper) 12%, transparent), transparent 55%),
+    radial-gradient(110% 90% at 50% 40%, color-mix(in oklab, var(--color-paper) 10%, transparent), transparent 60%),
     var(--color-primary);
-  box-shadow: 0 30px 65px -30px var(--card-drop);
+  box-shadow: inset 0 0 0 0.35rem var(--color-primary), inset 0 0 0 0.45rem var(--color-paper), 0 30px 65px -30px var(--card-drop);
 }
 
 @utility brand-reveal-shadow {
@@ -458,25 +460,50 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  width: min(15rem, 62vw);
+  width: min(18.5rem, 68vw);
   aspect-ratio: 2.5 / 3.5;
-  border: 2px solid color-mix(in oklab, var(--color-accent) 75%, transparent);
+  border: 0.55rem solid var(--color-paper);
   border-radius: var(--radius-lg);
   background: var(--color-primary);
-  box-shadow: 0 25px 55px -30px var(--card-drop);
+  box-shadow: inset 0 0 0 0.35rem var(--color-primary), inset 0 0 0 0.45rem var(--color-paper), 0 25px 55px -30px var(--card-drop);
 }
 
 @utility brand-reveal-shadow-one { transform: translateX(-4.25rem) rotate(-11deg); }
 @utility brand-reveal-shadow-two { transform: translateX(4.25rem) rotate(11deg); }
 
+@utility reveal-frame {
+  position: absolute;
+  inset: 0.6rem;
+  border: 1.5px solid var(--color-primary);
+  border-radius: calc(var(--radius-lg) - 4px);
+  pointer-events: none;
+}
+
 @utility reveal-corner {
   position: absolute;
   left: 1rem;
-  top: 0.8rem;
+  top: 0.9rem;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-family: var(--font-display);
+  font-size: 1.6rem;
   font-weight: 900;
+  line-height: 0.9;
   color: var(--color-primary);
+  background: var(--color-paper);
+  padding: 0 0.1rem 0.1rem;
+
+  small { font-size: 1.25rem; line-height: 1; }
 }
+
+@utility reveal-corner-bottom {
+  inset: auto 1rem 0.9rem auto;
+  transform: rotate(180deg);
+}
+
+@utility reveal-black { color: var(--color-ink); }
 
 @media (hover: hover) {
   .brand-playing-card:hover {
