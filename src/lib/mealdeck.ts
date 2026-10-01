@@ -104,7 +104,7 @@ export const brands: Brand[] = [
   { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: logoSabzora.url, logoVariant: "square" },
   { id: "skorch-burgers", name: "Skorch Burgers", strapline: "Seared on steel.", tagline: "Smashed, seared, sensational.", image: brandSkorch, category: "Smash burgers", logo: logoSkorch.url },
   { id: "cafe1", name: "Café1", strapline: "British café favourites", tagline: "All-day comfort classics.", image: brandCafe1, category: "Café" },
-  { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, tea and desserts.", image: brandIcova, category: "Iced coffee · tea · desserts", logo: logoIcova.url, logoVariant: "wide" },
+  { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: logoIcova.url, logoVariant: "wide" },
   { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: logoMoktl.url, logoVariant: "wide" },
 ];
 
