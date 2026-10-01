@@ -26,7 +26,7 @@ export const coreMenu: MenuItem[] = [
   { id: "taconelle-1", brandId: "taconelle", category: "French tacos", name: "Beautifully Loaded Taco", description: "Loaded French taco packed with sauce, fillings and crunch.", pricePence: 949, hasModifiers: true },
   { id: "loadd-1", brandId: "loadd", category: "French tacos", name: "The Load'd French Tacos", description: "Grilled folded tortilla stacked with halal fried chicken, fries and cheese sauce.", pricePence: 849, hasModifiers: true },
   { id: "loadd-2", brandId: "loadd", category: "Mac n cheese", name: "Load'd Mac N Cheese", description: "Creamy mac n cheese baked with a golden cheesy crust and your choice of toppings.", pricePence: 799, hasModifiers: true },
-  { id: "vyta-1", brandId: "vyta", category: "Nutrition", name: "Vyta Nourish Bowl", description: "Fresh, natural nutrition built around clean ingredients.", pricePence: 799, hasModifiers: true },
+  { id: "vyta-1", brandId: "vyta", category: "Fresh juices", name: "Vyta Nourish Bowl", description: "Fresh, natural goodness built around clean ingredients.", pricePence: 799, hasModifiers: true },
   { id: "tarka-1", brandId: "tarka-box", category: "Box meals", name: "Tarka Curry Box", description: "Fast comfort in a box with layered spice and sauce.", pricePence: 845, hasModifiers: true },
   { id: "fyrra-1", brandId: "fyrra", category: "Shawarma", name: "Fyrra Shawarma Wrap", description: "Bold shawarma flavour with grill-finished character.", pricePence: 895, hasModifiers: true },
   { id: "sabzora-1", brandId: "sabzora", category: "Vegetarian", name: "Sabzora Veg Delight Box", description: "Indian vegetarian comfort with vibrant herb and spice notes.", pricePence: 825, hasModifiers: true },
