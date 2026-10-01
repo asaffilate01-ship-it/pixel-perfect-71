@@ -1,3 +1,3 @@
 # Roadmap
 
-- [in-progress] Condense homepage: merge "Order your way" + tracking sections, fold "coming soon" into final CTA, tighten section padding
+- [done] Condense homepage: merged "Order your way" + tracking into one section, folded "coming soon" into final CTA, tightened section padding
