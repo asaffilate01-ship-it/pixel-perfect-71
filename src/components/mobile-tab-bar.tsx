@@ -61,12 +61,19 @@ export function MobileTabBar() {
             <Link
               to="/order"
               aria-label="Order now"
-              className={`-mt-7 flex h-[4.5rem] w-14 rotate-[-6deg] flex-col items-center justify-center rounded-xl border-2 border-accent bg-primary text-primary-foreground shadow-xl transition-transform duration-300 active:scale-90 ${
+              className={`relative -mt-8 flex h-20 w-14 rotate-[-6deg] flex-col items-center justify-center rounded-lg border border-ink/15 bg-paper shadow-xl transition-transform duration-300 active:scale-90 ${
                 dealActive ? "rotate-0 scale-105" : "hover:rotate-0"
               }`}
             >
-              <UtensilsCrossed className="size-6" />
-              <span className="mt-0.5 font-display text-[9px] font-bold uppercase tracking-widest">Order</span>
+              <span className="pointer-events-none absolute inset-1 rounded-[6px] border-[1.5px] border-primary/70" />
+              <span className="absolute left-1.5 top-1 flex flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
+                A<small className="text-[9px]">♦</small>
+              </span>
+              <span className="absolute bottom-1 right-1.5 flex rotate-180 flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
+                A<small className="text-[9px]">♦</small>
+              </span>
+              <UtensilsCrossed className="size-5 text-primary" />
+              <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">Order</span>
             </Link>
           </div>
           {right.map(item)}
