@@ -432,27 +432,35 @@ function OrderPage() {
                 <h2 className="mt-2 text-3xl font-extrabold">Move between brands. Keep one basket.</h2>
               </div>
 
-              <div className="mt-5 flex gap-3 overflow-x-auto pb-2">
+              <div className="mt-5 flex gap-3 overflow-x-auto pb-3 pt-1">
                 <button
                   onClick={() => setActiveBrand(null)}
-                  className={`flex h-20 w-24 shrink-0 items-center justify-center rounded-xl border text-sm font-semibold transition-colors ${
-                    activeBrand === null ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground"
+                  className={`mini-card h-24 w-20 shrink-0 text-xs font-bold ${
+                    activeBrand === null ? "outline-2 outline-accent" : ""
                   }`}
                 >
+                  <span className="mini-card-corner">★<small>♦</small></span>
                   All brands
                 </button>
-                {primaryBrands.map((brand) => (
-                  <button
-                    key={brand.id}
-                    onClick={() => setActiveBrand(brand.id)}
-                    aria-label={brand.name}
-                    className={`flex h-20 w-24 shrink-0 items-center justify-center rounded-xl border bg-foreground p-2 transition-colors ${
-                      activeBrand === brand.id ? "border-accent ring-2 ring-accent" : "border-border hover:border-accent/60"
-                    }`}
-                  >
-                    <BrandMark brand={brand} className="h-full w-full text-sm" />
-                  </button>
-                ))}
+                {primaryBrands.map((brand, index) => {
+                  const ranks = ["A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
+                  const suits = ["♥", "♦", "♠", "♣"];
+                  const rank = ranks[index % ranks.length];
+                  const suit = suits[index % suits.length];
+                  return (
+                    <button
+                      key={brand.id}
+                      onClick={() => setActiveBrand(brand.id)}
+                      aria-label={brand.name}
+                      className={`mini-card h-24 w-20 shrink-0 p-2 pt-4 ${
+                        activeBrand === brand.id ? "outline-2 outline-accent" : ""
+                      }`}
+                    >
+                      <span className={`mini-card-corner ${suit === "♠" || suit === "♣" ? "text-ink" : ""}`}>{rank}<small>{suit}</small></span>
+                      <BrandMark brand={brand} className="h-full w-full text-sm" />
+                    </button>
+                  );
+                })}
               </div>
 
               {catalogue.isLoading ? (
@@ -468,7 +476,9 @@ function OrderPage() {
                         {groupItems.map((item) => {
                           const brand = brandById(item.brandId);
                           return (
-                            <article key={item.id} className="card-elevated flex gap-4 p-4">
+                            <article key={item.id} className="menu-card flex gap-4 p-4">
+                              <span className="menu-card-frame" />
+                              <span className="menu-card-pip">♦</span>
                               <img
                                 src={item.imageUrl || brand?.image}
                                 alt={item.name}
@@ -540,9 +550,10 @@ function OrderPage() {
 
         {/* Basket */}
         <aside id="basket" className="scroll-mt-24 lg:sticky lg:top-28 lg:self-start">
-          <div className="card-elevated p-5">
+          <div className="menu-card p-5">
+            <span className="menu-card-frame" />
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold">Your Basket</h2>
+              <h2 className="font-display text-lg font-bold">Your Hand <span className="text-primary">♦</span></h2>
               {lines.length ? (
                 <button onClick={() => setLines([])} className="text-xs text-muted-foreground hover:text-primary">
                   Clear all
