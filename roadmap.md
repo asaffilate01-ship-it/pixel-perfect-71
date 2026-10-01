@@ -20,3 +20,7 @@
 - [x] Header/footer: use new fan-of-cards MealDeck logo
 - [x] Use red MD watermark logo on card backs + first/last card in rotation
 - [x] Polish /order menu UI to match premium playing-card theme
+- [x] 3D offer cards (stacked edges, tilt, sheen) and 3D channel icon chips
+- [x] Bigger header logo; realistic burger + French tacos food images floating in hero; hero artwork more transparent
+- [x] 3D gold icon chips on benefit cards
+- [x] Polish order page menu UI/UX (premium card theme)
