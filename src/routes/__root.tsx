@@ -92,6 +92,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "Multi-brand food ordering. One basket, one delivery fee, every craving.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "MealDeck" },
+      { property: "og:locale", content: "en_GB" },
+      { name: "theme-color", content: "#120a0a" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
@@ -100,6 +103,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

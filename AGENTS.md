@@ -10,3 +10,6 @@
 <!-- LOVABLE:END -->
 
 - Keep the commercial homepage brand collection independent from location-filtered ordering menus, because marketing and operational availability can differ.
+
+- SEO head tags come from the shared `seo()` helper with mealdeck.co.uk as the canonical base — keeps canonical/og consistent per page.
+- Blog posts live in a static list and render as playing-card tiles — no backend needed for content yet.

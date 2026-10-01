@@ -61,23 +61,12 @@ export const Route = createFileRoute("/order")({
     }
     return next;
   },
-  head: () => ({
-    meta: [
-      { title: "Order — MealDeck" },
-      {
-        name: "description",
-        content:
-          "Choose delivery, pickup or kerbside, enter your postcode and build one MealDeck basket across every brand.",
-      },
-      { property: "og:title", content: "Order — MealDeck" },
-      {
-        property: "og:description",
-        content: "One basket across every MealDeck brand. Delivery, pickup or kerbside. One checkout.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Order Food Online — Luton & St Albans | MealDeck",
+      description: "Enter your postcode and build one basket across every MealDeck brand. Delivery, pickup or kerbside in Luton; weekday delivery in St Albans.",
+      path: "/order",
+    }),
   component: OrderPage,
 });
 

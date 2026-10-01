@@ -43,3 +43,7 @@
 - [x] Match reveal card back design to the logo's card back (red field, ivory double frame, chef-hat + sparkle ornament pattern)
 - [x] Fix brand descriptions: Nusara (SE Asian fusion), Tavo (all chicken), Moktl (mocktails), Icova (iced coffee/tea/desserts), Tarka Box (desi), Load'd (French tacos + mac n cheese)
 - [x] Remove "Tip: try a Luton…" hint and "e.g. LU1 2AA" example from /order
+
+- [x] Hero dinner photo: realistic food, natural plate sizes
+- [x] SEO: favicon, share image, Luton/St Albans pages, sitemap, blog with sharing
+- [ ] Connect mealdeck.co.uk domain (needs user)

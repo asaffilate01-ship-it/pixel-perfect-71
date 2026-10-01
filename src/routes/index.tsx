@@ -1,3 +1,4 @@
+import { seo, ldScript, orgJsonLd } from "@/lib/seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -43,21 +44,13 @@ import vyta from "@/assets/premium-logos/vyta-premium.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
-    meta: [
-      { title: "MealDeck — Play Your Cravings Right" },
-      {
-        name: "description",
-        content:
-          "Mix food from multiple brands in one basket, split the bill, earn loyalty points and track one delivery from kitchen to door.",
-      },
-      { property: "og:title", content: "MealDeck — One Order. Every Craving." },
-      {
-        property: "og:description",
-        content: "Pick your brands, build one order and pay one delivery fee. The full house of flavour is yours.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
+    ...seo({
+      title: "MealDeck — Food Delivery Luton & St Albans | One Order. Every Craving.",
+      description: "Order French tacos, smash burgers, chicken, desi, parathas, juices and mocktails from multiple brands in one basket. One delivery fee across Luton and St Albans.",
+      path: "/",
+      keywords: "food delivery Luton, takeaway Luton, food delivery St Albans, lunch delivery St Albans, French tacos Luton, smash burgers Luton, group food order, split bill food delivery",
+    }),
+    scripts: [ldScript(orgJsonLd)],
   }),
   component: Landing,
 });

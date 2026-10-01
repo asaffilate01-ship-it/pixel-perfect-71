@@ -8,6 +8,9 @@ const navItems = [
   { label: "Brands", hash: "brands" },
   { label: "How It Works", hash: "how" },
   { label: "Offers", hash: "offers" },
+  { label: "Luton", to: "/luton" },
+  { label: "St Albans", to: "/st-albans" },
+  { label: "Blog", to: "/blog" },
   { label: "Track Order", to: "/track" },
 ];
 
