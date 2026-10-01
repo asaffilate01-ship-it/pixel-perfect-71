@@ -14,7 +14,6 @@ import {
   Phone,
   Share2,
   Smartphone,
-  Sparkles,
   Star,
   Truck,
   Users,
@@ -99,7 +98,7 @@ const offers = [
   { label: "The Group Hand", value: "+ POINTS", title: "More people. More points.", copy: "Bring the group together and build your loyalty balance faster.", terms: "Selected group orders · Account required · Offer limits apply", rank: "K", suit: "♣" },
 ];
 
-const ticker = ["One order", "One delivery fee", "14 brands", "Split payments", "Loyalty points", "Live tracking", "Direct-order value"];
+const ticker = ["One order", "One delivery fee", "A growing brand deck", "Split payments", "Loyalty points", "Live tracking", "Direct-order value"];
 
 function BrandCard({ brand, index }: { brand: (typeof premiumBrands)[number]; index: number }) {
   const redSuit = brand.suit === "♥" || brand.suit === "♦";
@@ -131,7 +130,7 @@ function DeckReveal() {
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr]">
         <div>
           <p className="eyebrow">Watch the deck unfold</p>
-          <h2 className="mt-3 text-4xl font-black sm:text-5xl">Fourteen flavours. One unmistakable hand.</h2>
+          <h2 className="mt-3 text-4xl font-black sm:text-5xl">A growing deck of flavours. One unmistakable hand.</h2>
           <p className="mt-5 max-w-lg leading-7 text-muted-foreground">
             Every card brings its own character. Flip through the full collection, then bring your favourites back together with MealDeck.
           </p>
@@ -224,7 +223,7 @@ function Landing() {
               <div>
                 <p className="eyebrow">Pick your play</p>
                 <h2 className="mt-3 text-4xl font-black sm:text-5xl">The complete flavour deck.</h2>
-                <p className="mt-3 max-w-xl text-muted-foreground">Fourteen distinctive kitchens, drinks and daytime favourites — aligned as one premium collection.</p>
+                <p className="mt-3 max-w-xl text-muted-foreground">A growing deck of kitchens, drinks and daytime favourites — aligned as one premium collection.</p>
               </div>
               <Button variant="gold" size="lg" asChild><Link to="/order">Start a mixed order <ArrowRight /></Link></Button>
             </div>
