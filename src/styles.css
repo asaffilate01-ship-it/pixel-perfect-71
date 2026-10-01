@@ -498,7 +498,7 @@
   transform-origin: center center;
   transform-style: preserve-3d;
   will-change: transform, opacity;
-  animation: brand-flip-sequence 48s linear infinite;
+  animation: brand-flip-sequence 45s linear infinite;
 }
 
 .brand-reveal-card:nth-of-type(3) { animation-delay: 0s; }
@@ -516,7 +516,6 @@
 .brand-reveal-card:nth-of-type(15) { animation-delay: 36s; }
 .brand-reveal-card:nth-of-type(16) { animation-delay: 39s; }
 .brand-reveal-card:nth-of-type(17) { animation-delay: 42s; }
-.brand-reveal-card:nth-of-type(18) { animation-delay: 45s; }
 
 @utility brand-reveal-card-start {
   padding: 0;

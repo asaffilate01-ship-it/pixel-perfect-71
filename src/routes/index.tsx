@@ -165,13 +165,6 @@ function DeckReveal() {
               <span className="font-display text-xs font-black uppercase text-ink/60">{brand.name}</span>
             </div>
           ))}
-          <div className="brand-reveal-card">
-            <span className="reveal-frame" />
-            <span className="reveal-corner">M<small>♦</small></span>
-            <span className="reveal-corner reveal-corner-bottom">M<small>♦</small></span>
-            <img src={mdWatermark} alt="" className="max-h-40 max-w-[72%] object-contain" />
-            <span className="font-display text-xs font-black uppercase text-ink/60">MealDeck</span>
-          </div>
         </div>
       </div>
     </section>
