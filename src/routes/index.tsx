@@ -107,7 +107,6 @@ function BrandCard({ brand, index }: { brand: (typeof premiumBrands)[number]; in
     <Link
       to="/order"
       className="brand-playing-card group"
-      style={{ animationDelay: `${Math.min(index * 70, 900)}ms` }}
       aria-label={`Order from ${brand.name}`}
     >
       <span className={redSuit ? "card-corner text-primary" : "card-corner text-ink"}>
@@ -123,6 +122,40 @@ function BrandCard({ brand, index }: { brand: (typeof premiumBrands)[number]; in
         {brand.rank}<small>{brand.suit}</small>
       </span>
     </Link>
+  );
+}
+
+function DeckReveal() {
+  return (
+    <section className="border-b border-border bg-card/30 py-20 sm:py-24" aria-label="Meet the MealDeck brands">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr]">
+        <div>
+          <p className="eyebrow">Watch the deck unfold</p>
+          <h2 className="mt-3 text-4xl font-black sm:text-5xl">Fourteen flavours. One unmistakable hand.</h2>
+          <p className="mt-5 max-w-lg leading-7 text-muted-foreground">
+            Every card brings its own character. Flip through the full collection, then bring your favourites back together with MealDeck.
+          </p>
+          <p className="mt-7 font-display text-sm font-black uppercase text-accent">The choice is yours. The order stays one.</p>
+        </div>
+        <div className="brand-reveal-stage" aria-hidden="true">
+          <div className="brand-reveal-shadow brand-reveal-shadow-one" />
+          <div className="brand-reveal-shadow brand-reveal-shadow-two" />
+          <div className="brand-reveal-card brand-reveal-card-start">
+            <img src={mealdeckDeck.url} alt="" className="size-full object-contain" />
+          </div>
+          {premiumBrands.map((brand) => (
+            <div key={brand.name} className="brand-reveal-card">
+              <span className="reveal-corner">{brand.rank}{brand.suit}</span>
+              <img src={brand.logo} alt="" className="max-h-32 max-w-[78%] object-contain" />
+              <span className="font-display text-xs font-black uppercase text-ink/60">{brand.name}</span>
+            </div>
+          ))}
+          <div className="brand-reveal-card brand-reveal-card-end">
+            <img src={mealdeckDeck.url} alt="" className="size-full object-contain" />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -185,6 +218,8 @@ function Landing() {
             ))}
           </div>
         </div>
+
+        <DeckReveal />
 
         <section id="brands" className="scroll-mt-24 py-20 sm:py-28">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
