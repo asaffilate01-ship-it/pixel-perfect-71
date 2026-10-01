@@ -296,7 +296,7 @@ function Landing() {
               <h2 className="mt-3 text-4xl font-black sm:text-5xl">Good deals. Clearly dealt.</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">No mystery cards. Every promotion shows its limit before you order.</p>
             </div>
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 [perspective:1200px]">
               {offers.map((offer) => (
                 <article key={offer.label} className="offer-card">
                   <span className={`offer-corner ${offer.suit === "♠" || offer.suit === "♣" ? "text-ink" : ""}`}>{offer.rank}<small>{offer.suit}</small></span>
@@ -326,8 +326,8 @@ function Landing() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {channels.map(({ icon: Icon, title, copy, suit }) => (
                   <div key={title} className="channel-tile">
-                    <Icon className="size-7 text-accent" />
-                    <h3 className="mt-6 font-display text-lg font-bold">{title}</h3>
+                    <span className="channel-chip"><Icon className="size-6" strokeWidth={2.25} /></span>
+                    <h3 className="mt-5 font-display text-lg font-bold">{title}</h3>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">{copy}</p>
                     <span className="suit-mark" aria-hidden="true">{suit}</span>
                   </div>
