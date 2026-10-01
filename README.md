@@ -6,6 +6,10 @@ MealDeck is the customer-facing multi-brand ordering platform for the 313 Brands
 
 This project is connected to Lovable. Do not rewrite published Git history.
 
+## Homepage preview phase
+
+The homepage now presents the red-and-ivory MealDeck brand-card experience, location and menu previews, and a 15-offer promotional catalogue. Only three offers are featured at once. The interactive bundle picker uses illustrative prices; offers cannot be redeemed and the homepage takes no orders or payments. Dishbee/Omniqora/tenant/landlord integration is deferred. Existing ordering and tracking routes are preserved. See [homepage and promotions handoff](docs/homepage-promotions.md) for the integration boundaries, offer rules and verification steps.
+
 ## Runtime architecture
 
 MealDeck is the consumer experience. Dishbee is the operational engine underneath.
@@ -114,3 +118,4 @@ npm run dev
 npm run build
 npm run lint
 ```
+
