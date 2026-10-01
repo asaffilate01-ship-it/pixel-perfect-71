@@ -1,0 +1,32 @@
+name: Generate MealDeck A3 Flyer
+
+on:
+  push:
+    branches:
+      - flyer-a3-draft
+    paths:
+      - "scripts/generate_mealdeck_flyer.py"
+      - ".github/workflows/generate-mealdeck-flyer.yml"
+      - "src/assets/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install pillow qrcode reportlab
+      - run: python scripts/generate_mealdeck_flyer.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-a3-flyer
+          path: |
+            flyer-output/mealdeck-a3-flyer.png
+            flyer-output/mealdeck-a3-flyer.pdf
+          if-no-files-found: error
