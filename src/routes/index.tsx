@@ -294,7 +294,7 @@ function Landing() {
                 {benefits.map(({ icon: Icon, kicker, title, copy, suit }) => (
                   <article key={title} className="relative bg-background p-6 sm:p-7">
                     <div className="flex items-center justify-between">
-                      <Icon className="size-7 text-primary" />
+                      <span className="channel-chip chip-gold"><Icon className="size-6" strokeWidth={2.25} /></span>
                       <span className="text-xs font-bold uppercase text-accent">{kicker}</span>
                     </div>
                     <h3 className="mt-7 text-xl font-bold">{title}</h3>

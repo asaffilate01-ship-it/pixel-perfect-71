@@ -740,3 +740,11 @@
 @media (prefers-reduced-motion: reduce) {
   .hero-food { animation: none; }
 }
+
+@utility chip-gold {
+  color: var(--color-ink);
+  background:
+    radial-gradient(120% 120% at 30% 20%, color-mix(in oklab, var(--color-accent) 55%, var(--color-paper)), var(--color-accent) 55%, color-mix(in oklab, var(--color-accent) 65%, var(--color-ink)));
+  border-color: color-mix(in oklab, var(--color-paper) 60%, var(--color-accent));
+  text-shadow: none;
+}
