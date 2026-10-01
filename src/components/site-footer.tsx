@@ -15,6 +15,9 @@ export function SiteFooter() {
           <Link to="/" hash="brands" className="hover:text-accent">Brands</Link>
           <Link to="/" hash="how" className="hover:text-accent">How It Works</Link>
           <Link to="/" hash="offers" className="hover:text-accent">Offers</Link>
+          <Link to="/luton" className="hover:text-accent">Food Delivery Luton</Link>
+          <Link to="/st-albans" className="hover:text-accent">Food Delivery St Albans</Link>
+          <Link to="/blog" className="hover:text-accent">Blog</Link>
           <Link to="/order" className="hover:text-accent">Order Now</Link>
         </nav>
 

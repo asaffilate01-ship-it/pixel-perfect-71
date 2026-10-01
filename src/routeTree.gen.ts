@@ -10,12 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LutonRouteImport } from './routes/luton'
 import { Route as OrderRouteImport } from './routes/order'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StAlbansRouteImport } from './routes/st-albans'
 import { Route as TrackRouteImport } from './routes/track'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LutonRoute = LutonRouteImport.update({
+  id: '/luton',
+  path: '/luton',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrderRoute = OrderRouteImport.update({
@@ -23,40 +33,105 @@ const OrderRoute = OrderRouteImport.update({
   path: '/order',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StAlbansRoute = StAlbansRouteImport.update({
+  id: '/st-albans',
+  path: '/st-albans',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrackRoute = TrackRouteImport.update({
   id: '/track',
   path: '/track',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/luton': typeof LutonRoute
   '/order': typeof OrderRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/st-albans': typeof StAlbansRoute
   '/track': typeof TrackRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/blog/': typeof BlogIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/luton': typeof LutonRoute
   '/order': typeof OrderRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/st-albans': typeof StAlbansRoute
   '/track': typeof TrackRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/blog': typeof BlogIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/luton': typeof LutonRoute
   '/order': typeof OrderRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/st-albans': typeof StAlbansRoute
   '/track': typeof TrackRoute
+  '/blog/$slug': typeof BlogSlugRoute
+  '/blog/': typeof BlogIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/order' | '/track'
+  fullPaths:
+    | '/'
+    | '/luton'
+    | '/order'
+    | '/sitemap.xml'
+    | '/st-albans'
+    | '/track'
+    | '/blog/$slug'
+    | '/blog/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/order' | '/track'
-  id: '__root__' | '/' | '/order' | '/track'
+  to:
+    | '/'
+    | '/luton'
+    | '/order'
+    | '/sitemap.xml'
+    | '/st-albans'
+    | '/track'
+    | '/blog/$slug'
+    | '/blog'
+  id:
+    | '__root__'
+    | '/'
+    | '/luton'
+    | '/order'
+    | '/sitemap.xml'
+    | '/st-albans'
+    | '/track'
+    | '/blog/$slug'
+    | '/blog/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LutonRoute: typeof LutonRoute
   OrderRoute: typeof OrderRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StAlbansRoute: typeof StAlbansRoute
   TrackRoute: typeof TrackRoute
+  BlogSlugRoute: typeof BlogSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,11 +143,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/luton': {
+      id: '/luton'
+      path: '/luton'
+      fullPath: '/luton'
+      preLoaderRoute: typeof LutonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/order': {
       id: '/order'
       path: '/order'
       fullPath: '/order'
       preLoaderRoute: typeof OrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/st-albans': {
+      id: '/st-albans'
+      path: '/st-albans'
+      fullPath: '/st-albans'
+      preLoaderRoute: typeof StAlbansRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/track': {
@@ -82,13 +178,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LutonRoute: LutonRoute,
   OrderRoute: OrderRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StAlbansRoute: StAlbansRoute,
   TrackRoute: TrackRoute,
+  BlogSlugRoute: BlogSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
