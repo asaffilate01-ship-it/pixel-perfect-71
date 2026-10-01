@@ -127,7 +127,6 @@ export function formatPence(pence: number): string {
 }
 
 export function sampleLocationOpen(location: LocationKey, now = new Date()): boolean {
-  if (location === "luton") return true;
   try {
     const parts = new Intl.DateTimeFormat("en-GB", {
       timeZone: "Europe/London",
@@ -140,6 +139,7 @@ export function sampleLocationOpen(location: LocationKey, now = new Date()): boo
     const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
     const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
     const minutes = hour * 60 + minute;
+    if (location === "luton") return minutes >= 1020 && minutes < 1380; // 5pm–11pm, Monday to Sunday
     return ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(weekday) && minutes >= 540 && minutes < 960;
   } catch {
     return true;
@@ -155,12 +155,6 @@ export function resolveSampleServiceability(
     return { locationKey: "luton", message: "Great news — MealDeck Luton serves your area." };
   }
   if (normalized.startsWith("AL")) {
-    if (fulfilment !== "delivery") {
-      return {
-        message: "MealDeck St Albans currently offers delivery only. Choose Delivery to continue.",
-        alternativeFulfilments: ["delivery"],
-      };
-    }
     return { locationKey: "stalbans", message: "Great news — MealDeck St Albans serves your area." };
   }
   const manchester =
