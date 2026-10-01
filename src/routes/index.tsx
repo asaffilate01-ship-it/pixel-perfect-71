@@ -64,17 +64,17 @@ export const Route = createFileRoute("/")({
 
 const premiumBrands = [
   { name: "Taconelle", category: "French tacos", logo: taconelle.url, rank: "A", suit: "♥" },
-  { name: "Tavo Chicken", category: "Fried chicken", logo: tavoChicken.url, rank: "K", suit: "♦" },
+  { name: "Tavo Chicken", category: "All things chicken", logo: tavoChicken.url, rank: "K", suit: "♦" },
   { name: "Skorch", category: "Smash burgers", logo: skorch.url, rank: "Q", suit: "♠" },
-  { name: "Load'd", category: "Loaded fries", logo: loadd.url, rank: "J", suit: "♣" },
-  { name: "Tarka Box", category: "Indian street food", logo: tarkaBox.url, rank: "10", suit: "♥" },
+  { name: "Load'd", category: "French tacos & mac n cheese", logo: loadd.url, rank: "J", suit: "♣" },
+  { name: "Tarka Box", category: "Desi food", logo: tarkaBox.url, rank: "10", suit: "♥" },
   { name: "Paratique", category: "Signature parathas", logo: paratique.url, rank: "9", suit: "♦" },
   { name: "Sabzora", category: "Vegetarian Indian", logo: sabzora.url, rank: "8", suit: "♠" },
   { name: "Vyta", category: "Natural nutrition", logo: vyta.url, rank: "7", suit: "♣" },
-  { name: "Icova", category: "Iced coffee & matcha", logo: icova.url, rank: "6", suit: "♥" },
-  { name: "Moktl", category: "Zero-alcohol drinks", logo: moktl.url, rank: "5", suit: "♦" },
+  { name: "Icova", category: "Iced coffee, tea & desserts", logo: icova.url, rank: "6", suit: "♥" },
+  { name: "Moktl", category: "Zero-alcohol mocktails", logo: moktl.url, rank: "5", suit: "♦" },
   { name: "Souvano", category: "Mediterranean plates", logo: souvano.url, rank: "4", suit: "♠" },
-  { name: "Nusara", category: "South Asian kitchen", logo: nusara.url, rank: "3", suit: "♣" },
+  { name: "Nusara", category: "South East Asian fusion", logo: nusara.url, rank: "3", suit: "♣" },
   { name: "Pastarivo", category: "Fresh pasta", logo: pastarivo.url, rank: "2", suit: "♥" },
   { name: "Rise & Griddle", category: "Breakfast & brunch", logo: riseAndGriddle.url, rank: "A", suit: "♦" },
 ] as const;
