@@ -4,7 +4,7 @@ This phase delivers the consumer homepage only. `/` is a public marketing and me
 
 ## Frontend behaviour
 
-- Crimson/ivory card identity with the approved brand-reveal artwork and a generated transparent wordmark derived from the selected logo. Artwork is stored locally in `public/`; the homepage does not depend on Lovable's private asset resolver.
+- Crimson/ivory card identity with the approved brand-reveal artwork and the selected MealDeck logo kept intact on a fanned deck of cards, with a transparent background for the header and footer. Artwork is stored locally in `public/`; the homepage does not depend on Lovable's private asset resolver.
 - Responsive brand cards and food/drink/vegetarian filters. St Albans adds Café 1; other locations do not display it. Icova and Moktl remain cross-menu drinks.
 - A postcode selects an **illustrative** LU/AL location preview. This is not delivery-zone validation and makes no serviceability promise. Other valid UK postcodes show the general preview.
 - Accessible location, brand and offer dialogs; keyboard focus handling comes from the existing Radix Dialog component. Reduced-motion preferences are respected.

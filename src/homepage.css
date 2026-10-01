@@ -100,7 +100,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 26px;
-  min-height: 91px;
+  min-height: 104px;
 }
 .md-logo {
   display: inline-flex;
@@ -111,7 +111,7 @@
 }
 .md-logo img {
   width: 123px;
-  height: 83px;
+  height: 96px;
   object-fit: contain;
 }
 .md-desktop-nav {
@@ -1273,12 +1273,12 @@
     display: none;
   }
   .md-header-inner {
-    min-height: 74px;
+    min-height: 82px;
   }
   .md-logo,
   .md-logo img {
     width: 91px;
-    height: 66px;
+    height: 76px;
   }
   .md-header-actions {
     gap: 8px;

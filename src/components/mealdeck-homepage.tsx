@@ -208,10 +208,10 @@ export function MealDeckHomepage() {
         <div className="md-container md-header-inner">
           <a href="/" aria-label="MealDeck home" className="md-logo">
             <img
-              src="/mealdeck-wordmark.webp"
+              src="/mealdeck-deck-logo.webp"
               alt="MealDeck — One order. Every craving."
-              width={1478}
-              height={1064}
+              width={1254}
+              height={1254}
             />
           </a>
           <nav aria-label="Main navigation" className="md-desktop-nav">
@@ -581,10 +581,10 @@ export function MealDeckHomepage() {
           <div className="md-footer-top">
             <a href="/" className="md-logo" aria-label="MealDeck home">
               <img
-                src="/mealdeck-wordmark.webp"
+                src="/mealdeck-deck-logo.webp"
                 alt="MealDeck"
-                width={1478}
-                height={1064}
+                width={1254}
+                height={1254}
                 loading="lazy"
               />
             </a>
