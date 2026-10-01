@@ -6,16 +6,16 @@ export const Route = createFileRoute("/luton")({
   head: () => ({
     ...seo({
       title: "Food Delivery Luton — French Tacos, Burgers, Desi & More | MealDeck",
-      description: "Order takeaway in Luton from French tacos, smash burgers, chicken, desi, parathas, grill, juices and mocktails — one basket, one delivery fee. Open 5pm–11pm, Monday to Sunday.",
+      description: "Order takeaway in Luton from French tacos, smash burgers, chicken, desi, parathas, juices and mocktails — one basket, one delivery fee. Open 5pm–11pm, Monday to Sunday.",
       path: "/luton",
-      keywords: "food delivery Luton, takeaway Luton, French tacos Luton, smash burgers Luton, chicken Luton, desi food Luton, kebab Luton, halal food Luton, late night food Luton, mocktails Luton",
+      keywords: "food delivery Luton, takeaway Luton, French tacos Luton, smash burgers Luton, chicken Luton, desi food Luton, halal food Luton, late night food Luton, mocktails Luton",
     }),
     scripts: [ldScript({ "@context": "https://schema.org", ...lutonBusiness })],
   }),
   component: () => (
     <LocationPage
       town="Luton"
-      intro="MealDeck Luton brings every brand in the deck to your door: French tacos, smash burgers, all things chicken, desi boxes, parathas, grill, vegetarian Indian, fresh juices, iced coffee and zero-alcohol mocktails — mixed in one order."
+      intro="MealDeck Luton brings every brand in the deck to your door: French tacos, smash burgers, all things chicken, desi boxes, parathas, vegetarian Indian, fresh juices, iced coffee and zero-alcohol mocktails — mixed in one order."
       hours="5pm–11pm · Monday to Sunday"
       fulfilment="Delivery · Pickup · Kerbside"
       areas={["All areas across Luton", "Luton town centre", "Bury Park", "High Town", "Stopsley", "Leagrave", "Marsh Farm", "Wigmore", "Farley Hill", "and everywhere in between"]}
