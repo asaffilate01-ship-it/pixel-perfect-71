@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ShoppingBasket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/mealdeck-logo.png.asset.json";
+import logo from "@/assets/mealdeck-card-deck.png.asset.json";
 
 const navItems = [
   { label: "Brands", hash: "brands" },
@@ -11,10 +11,13 @@ const navItems = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" className="shrink-0">
-          <img src={logo.url} alt="MealDeck" className="h-14 w-auto" width={220} height={160} />
+          <span className="flex items-center gap-2">
+            <img src={logo.url} alt="" className="size-12 object-contain" width={48} height={48} />
+            <span className="hidden font-display text-lg font-black sm:inline">MEAL<span className="text-accent">DECK</span></span>
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
@@ -51,7 +54,7 @@ export function SiteHeader() {
           </Button>
           <Button variant="hero" size="default" className="rounded-full" asChild>
             <Link to="/order">
-              Start Ordering
+              Deal Me In
               <ArrowRight />
             </Link>
           </Button>
