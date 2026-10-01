@@ -23,4 +23,4 @@
 - [x] 3D offer cards (stacked edges, tilt, sheen) and 3D channel icon chips
 - [x] Bigger header logo; realistic burger + French tacos food images floating in hero; hero artwork more transparent
 - [x] 3D gold icon chips on benefit cards
-- [ ] Polish order page menu UI/UX (premium card theme)
+- [x] Polish order page menu UI/UX (premium card theme)
