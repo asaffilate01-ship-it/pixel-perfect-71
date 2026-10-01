@@ -21,10 +21,11 @@ import logoTarka from "@/assets/logos/tarka-box.png.asset.json";
 import logoSabzora from "@/assets/logos/sabzora.png.asset.json";
 import logoVyta from "@/assets/logos/vyta.png.asset.json";
 import logoMoktl from "@/assets/logos/moktl.png.asset.json";
+import logoCafe1 from "@/assets/cafe1-logo.png.asset.json";
 import { cafe1Menu, coreMenu } from "./sample-menus";
 
 export type LocationKey = "luton" | "stalbans";
-export type FulfilmentType = "delivery" | "pickup" | "curbside";
+export type FulfilmentType = "delivery" | "pickup" | "curbside" | "dinein";
 
 export const fulfilmentLabels: Record<FulfilmentType, string> = {
   delivery: "Delivery",
