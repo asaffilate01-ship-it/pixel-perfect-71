@@ -5,22 +5,20 @@ import brandTaconelle from "@/assets/brand-taconelle.jpg";
 import brandVyta from "@/assets/brand-vyta.jpg";
 import brandIcova from "@/assets/brand-icova.jpg";
 import brandParatique from "@/assets/brand-paratique.jpg";
-import brandFyrra from "@/assets/brand-fyrra.jpg";
 import brandTarka from "@/assets/brand-tarka.jpg";
 import brandSabzora from "@/assets/brand-sabzora.jpg";
 import brandMoktl from "@/assets/brand-moktl.jpg";
 import brandCafe1 from "@/assets/brand-cafe1.jpg";
-import logoTaconelle from "@/assets/logos/taconelle.png";
-import logoIcova from "@/assets/logos/icova.png";
-import logoParatique from "@/assets/logos/paratique.png";
-import logoTavo from "@/assets/logos/tavo-chicken.png";
-import logoSkorch from "@/assets/logos/skorch-burgers.png";
-import logoLoadd from "@/assets/logos/loadd.png";
-import logoFyrra from "@/assets/logos/fyrra.png";
-import logoTarka from "@/assets/logos/tarka-box.png";
-import logoSabzora from "@/assets/logos/sabzora.png";
-import logoVyta from "@/assets/logos/vyta.png";
-import logoMoktl from "@/assets/logos/moktl.png";
+import logoTaconelle from "@/assets/premium-logos/taconelle-premium.png";
+import logoIcova from "@/assets/premium-logos/icova-premium.png";
+import logoParatique from "@/assets/premium-logos/paratique-premium.png";
+import logoTavo from "@/assets/premium-logos/tavo-chicken-premium.png";
+import logoSkorch from "@/assets/premium-logos/skorch-premium.png";
+import logoLoadd from "@/assets/premium-logos/loadd-premium.png";
+import logoTarka from "@/assets/premium-logos/tarka-box-premium.png";
+import logoSabzora from "@/assets/premium-logos/sabzora-premium.png";
+import logoVyta from "@/assets/premium-logos/vyta-premium.png";
+import logoMoktl from "@/assets/premium-logos/moktl-premium.png";
 import logoCafe1 from "@/assets/cafe1-logo.png";
 import { cafe1Menu, coreMenu } from "./sample-menus";
 
@@ -98,19 +96,18 @@ export const DELIVERY_FEE_PENCE = 299;
 export const brands: Brand[] = [
   { id: "tavo-chicken", name: "Tavo Chicken", strapline: "Turn up the flavour.", tagline: "Big flavour. Bigger moments.", image: brandTavo, category: "All things chicken", logo: logoTavo },
   { id: "paratique", name: "Paratique", strapline: "Signature parathas.", tagline: "Layered, loaded, lovely.", image: brandParatique, category: "Parathas", logo: logoParatique },
-  { id: "taconelle", name: "Taconelle", strapline: "Beautifully loaded.", tagline: "French tacos with attitude.", image: brandTaconelle, category: "French tacos", logo: logoTaconelle, logoVariant: "square" },
+  { id: "taconelle", name: "Taconelle", strapline: "Beautifully loaded.", tagline: "French tacos with attitude.", image: brandTaconelle, category: "French tacos", logo: logoTaconelle },
   { id: "loadd", name: "Load'd", strapline: "Folded, loaded, cheesy.", tagline: "French tacos and mac n cheese.", image: brandLoadd, category: "French tacos · mac n cheese", logo: logoLoadd },
   { id: "vyta", name: "Vyta", strapline: "Fresh juices for a brighter you.", tagline: "Good food. Brighter you.", image: brandVyta, category: "Fresh juices", logo: logoVyta },
   { id: "tarka-box", name: "Tarka Box", strapline: "Big flavour. Boxed.", tagline: "Desi classics, done right.", image: brandTarka, category: "Desi food", logo: logoTarka },
-  { id: "fyrra", name: "Fyrra", strapline: "Bold flavours. Together.", tagline: "Grill, shawarma and kebab.", image: brandFyrra, category: "Grill · shawarma · kebab", logo: logoFyrra },
-  { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: logoSabzora, logoVariant: "square" },
+  { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: logoSabzora },
   { id: "skorch-burgers", name: "Skorch Burgers", strapline: "Seared on steel.", tagline: "Smashed, seared, sensational.", image: brandSkorch, category: "Smash burgers", logo: logoSkorch },
   { id: "cafe1", name: "Café1", strapline: "Café Classics", tagline: "All-day comfort classics.", image: brandCafe1, category: "Café Classics", logo: logoCafe1 },
-  { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: logoIcova, logoVariant: "wide" },
-  { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: logoMoktl, logoVariant: "wide" },
+  { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: logoIcova },
+  { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: logoMoktl },
 ];
 
-export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd", "vyta", "tarka-box", "fyrra", "sabzora", "skorch-burgers"];
+export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd", "vyta", "tarka-box", "sabzora", "skorch-burgers"];
 export const addonBrandIds = ["icova", "moktl"];
 
 export const locations: MealDeckLocation[] = [
