@@ -722,3 +722,21 @@
   text-transform: uppercase;
   color: var(--color-accent);
 }
+
+@utility hero-food {
+  filter: drop-shadow(0 22px 24px var(--card-drop));
+  animation: hero-food-float 7s ease-in-out infinite;
+}
+
+@utility hero-food-right {
+  animation-delay: -3.5s;
+}
+
+@keyframes hero-food-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-food { animation: none; }
+}
