@@ -33,7 +33,7 @@ export function seo({ title, description, path, image = OG_IMAGE, type = "websit
   };
 }
 
-const business = (town: string, postcodePrefix: string, extra: Record<string, unknown> = {}) => ({
+const business = (town: string, extra: Record<string, unknown> = {}) => ({
   "@type": "Restaurant",
   name: `MealDeck ${town}`,
   url: `${SITE_URL}/${town.toLowerCase().replace(" ", "-")}`,
@@ -45,12 +45,15 @@ const business = (town: string, postcodePrefix: string, extra: Record<string, un
   acceptsReservations: false,
   priceRange: "££",
   potentialAction: { "@type": "OrderAction", target: `${SITE_URL}/order` },
-  description: `Multi-brand food delivery in ${town} (${postcodePrefix} postcodes). One basket, one delivery fee.`,
+  description: `Multi-brand food delivery in ${town}. One basket, one delivery fee.`,
   ...extra,
 });
 
-export const lutonBusiness = business("Luton", "LU");
-export const stAlbansBusiness = business("St Albans", "AL", {
+export const lutonBusiness = business("Luton", {
+  openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], opens: "17:00", closes: "23:00" }],
+});
+export const stAlbansBusiness = business("St Albans", {
+  address: { "@type": "PostalAddress", streetAddress: "Café 1, 6 Bricket Road", addressLocality: "St Albans", addressRegion: "Hertfordshire", postalCode: "AL1 3JU", addressCountry: "GB" },
   openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "09:00", closes: "16:00" }],
 });
 
