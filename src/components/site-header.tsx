@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, ShoppingBasket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/mealdeck-card-deck.png.asset.json";
+import logo from "@/assets/mealdeck-fan-logo.png.asset.json";
 
 const navItems = [
   { label: "Brands", hash: "brands" },

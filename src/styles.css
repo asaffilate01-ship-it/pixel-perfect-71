@@ -450,6 +450,8 @@
   border: 0.55rem solid var(--color-paper);
   background:
     radial-gradient(110% 90% at 50% 40%, color-mix(in oklab, var(--color-paper) 10%, transparent), transparent 60%),
+    repeating-linear-gradient(45deg, color-mix(in oklab, var(--color-paper) 9%, transparent) 0 2px, transparent 2px 12px),
+    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--color-paper) 9%, transparent) 0 2px, transparent 2px 12px),
     var(--color-primary);
   box-shadow: inset 0 0 0 0.35rem var(--color-primary), inset 0 0 0 0.45rem var(--color-paper), 0 30px 65px -30px var(--card-drop);
 }
@@ -464,7 +466,10 @@
   aspect-ratio: 2.5 / 3.5;
   border: 0.55rem solid var(--color-paper);
   border-radius: var(--radius-lg);
-  background: var(--color-primary);
+  background:
+    repeating-linear-gradient(45deg, color-mix(in oklab, var(--color-paper) 9%, transparent) 0 2px, transparent 2px 12px),
+    repeating-linear-gradient(-45deg, color-mix(in oklab, var(--color-paper) 9%, transparent) 0 2px, transparent 2px 12px),
+    var(--color-primary);
   box-shadow: inset 0 0 0 0.35rem var(--color-primary), inset 0 0 0 0.45rem var(--color-paper), 0 25px 55px -30px var(--card-drop);
 }
 
@@ -504,6 +509,77 @@
 }
 
 @utility reveal-black { color: var(--color-ink); }
+
+@utility menu-card {
+  position: relative;
+  border: 1px solid color-mix(in oklab, var(--color-accent) 22%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+  box-shadow: 0 22px 45px -32px var(--card-drop);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+@utility menu-card-frame {
+  position: absolute;
+  inset: 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--color-accent) 28%, transparent);
+  border-radius: calc(var(--radius-lg) - 5px);
+  pointer-events: none;
+}
+
+@utility menu-card-pip {
+  position: absolute;
+  right: 0.85rem;
+  top: 0.7rem;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 900;
+  line-height: 1;
+  color: color-mix(in oklab, var(--color-primary) 70%, transparent);
+  pointer-events: none;
+}
+
+@utility mini-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in oklab, var(--color-ink) 15%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 14px 28px -20px var(--card-drop);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, outline-color 0.2s ease;
+}
+
+@utility mini-card-corner {
+  position: absolute;
+  left: 0.35rem;
+  top: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 900;
+  line-height: 0.95;
+  color: var(--color-primary);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .menu-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--color-accent) 45%, transparent);
+    box-shadow: 0 30px 55px -32px var(--card-drop);
+  }
+  .mini-card:hover {
+    transform: translateY(-4px) rotate(-2deg);
+    box-shadow: 0 22px 38px -22px var(--card-drop);
+  }
+}
 
 @media (hover: hover) {
   .brand-playing-card:hover {

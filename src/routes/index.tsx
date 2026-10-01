@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import mealdeckDeck from "@/assets/mealdeck-card-deck.png.asset.json";
-import mealdeckLogo from "@/assets/mealdeck-logo.png.asset.json";
+import mdWatermark from "@/assets/mealdeck-md-watermark.png.asset.json";
 import icova from "@/assets/premium-logos/icova-premium.png.asset.json";
 import loadd from "@/assets/premium-logos/loadd-premium.png.asset.json";
 import moktl from "@/assets/premium-logos/moktl-premium.png.asset.json";
@@ -138,19 +138,23 @@ function DeckReveal() {
           <p className="mt-7 font-display text-sm font-black uppercase text-accent">The choice is yours. The order stays one.</p>
         </div>
         <div className="brand-reveal-stage" aria-hidden="true">
-          <div className="brand-reveal-shadow brand-reveal-shadow-one" />
-          <div className="brand-reveal-shadow brand-reveal-shadow-two" />
+          <div className="brand-reveal-shadow brand-reveal-shadow-one">
+            <img src={mdWatermark.url} alt="" className="w-[55%] object-contain opacity-30" />
+          </div>
+          <div className="brand-reveal-shadow brand-reveal-shadow-two">
+            <img src={mdWatermark.url} alt="" className="w-[55%] object-contain opacity-30" />
+          </div>
           <div className="brand-reveal-card brand-reveal-card-start">
             <div className="brand-reveal-flip">
               <div className="brand-reveal-face brand-reveal-face-front">
                 <span className="reveal-frame" />
                 <span className="reveal-corner">M<small>♦</small></span>
                 <span className="reveal-corner reveal-corner-bottom">M<small>♦</small></span>
-                <img src={mealdeckLogo.url} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
+                <img src={mdWatermark.url} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
                 <span className="font-display text-[0.65rem] font-black uppercase tracking-[0.18em] text-ink/60">One order. Every craving.</span>
               </div>
               <div className="brand-reveal-face brand-reveal-face-back">
-                <img src={mealdeckLogo.url} alt="" className="w-[58%] object-contain opacity-30" />
+                <img src={mdWatermark.url} alt="" className="w-[58%] object-contain opacity-30" />
               </div>
             </div>
           </div>
@@ -163,6 +167,13 @@ function DeckReveal() {
               <span className="font-display text-xs font-black uppercase text-ink/60">{brand.name}</span>
             </div>
           ))}
+          <div className="brand-reveal-card">
+            <span className="reveal-frame" />
+            <span className="reveal-corner">M<small>♦</small></span>
+            <span className="reveal-corner reveal-corner-bottom">M<small>♦</small></span>
+            <img src={mdWatermark.url} alt="" className="max-h-40 max-w-[72%] object-contain" />
+            <span className="font-display text-xs font-black uppercase text-ink/60">MealDeck</span>
+          </div>
         </div>
       </div>
     </section>
