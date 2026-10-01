@@ -23,24 +23,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import mdWatermark from "@/assets/mealdeck-md-watermark.png.asset.json";
-import mdEmblem from "@/assets/mealdeck-emblem.png.asset.json";
+import mdWatermark from "@/assets/mealdeck-md-watermark.png";
+import mdEmblem from "@/assets/mealdeck-emblem.png";
 import heroBackdrop from "@/assets/hero-backdrop.jpg";
 import heroTable from "@/assets/hero-table.jpg";
-import icova from "@/assets/premium-logos/icova-premium.png.asset.json";
-import loadd from "@/assets/premium-logos/loadd-premium.png.asset.json";
-import moktl from "@/assets/premium-logos/moktl-premium.png.asset.json";
-import nusara from "@/assets/premium-logos/nusara-premium.png.asset.json";
-import paratique from "@/assets/premium-logos/paratique-premium.png.asset.json";
-import pastarivo from "@/assets/premium-logos/pastarivo-premium.png.asset.json";
-import riseAndGriddle from "@/assets/premium-logos/rise-and-griddle-premium.png.asset.json";
-import sabzora from "@/assets/premium-logos/sabzora-premium.png.asset.json";
-import skorch from "@/assets/premium-logos/skorch-premium.png.asset.json";
-import souvano from "@/assets/premium-logos/souvano-premium.png.asset.json";
-import taconelle from "@/assets/premium-logos/taconelle-premium.png.asset.json";
-import tarkaBox from "@/assets/premium-logos/tarka-box-premium.png.asset.json";
-import tavoChicken from "@/assets/premium-logos/tavo-chicken-premium.png.asset.json";
-import vyta from "@/assets/premium-logos/vyta-premium.png.asset.json";
+import icova from "@/assets/premium-logos/icova-premium.png";
+import loadd from "@/assets/premium-logos/loadd-premium.png";
+import moktl from "@/assets/premium-logos/moktl-premium.png";
+import nusara from "@/assets/premium-logos/nusara-premium.png";
+import paratique from "@/assets/premium-logos/paratique-premium.png";
+import pastarivo from "@/assets/premium-logos/pastarivo-premium.png";
+import riseAndGriddle from "@/assets/premium-logos/rise-and-griddle-premium.png";
+import sabzora from "@/assets/premium-logos/sabzora-premium.png";
+import skorch from "@/assets/premium-logos/skorch-premium.png";
+import souvano from "@/assets/premium-logos/souvano-premium.png";
+import taconelle from "@/assets/premium-logos/taconelle-premium.png";
+import tarkaBox from "@/assets/premium-logos/tarka-box-premium.png";
+import tavoChicken from "@/assets/premium-logos/tavo-chicken-premium.png";
+import vyta from "@/assets/premium-logos/vyta-premium.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -56,20 +56,20 @@ export const Route = createFileRoute("/")({
 });
 
 const premiumBrands = [
-  { name: "Taconelle", category: "French tacos", logo: taconelle.url, rank: "A", suit: "♥" },
-  { name: "Tavo Chicken", category: "All things chicken", logo: tavoChicken.url, rank: "K", suit: "♦" },
-  { name: "Skorch", category: "Smash burgers", logo: skorch.url, rank: "Q", suit: "♠" },
-  { name: "Load'd", category: "French tacos & mac n cheese", logo: loadd.url, rank: "J", suit: "♣" },
-  { name: "Tarka Box", category: "Desi food", logo: tarkaBox.url, rank: "10", suit: "♥" },
-  { name: "Paratique", category: "Signature parathas", logo: paratique.url, rank: "9", suit: "♦" },
-  { name: "Sabzora", category: "Vegetarian Indian", logo: sabzora.url, rank: "8", suit: "♠" },
-  { name: "Vyta", category: "Fresh juices", logo: vyta.url, rank: "7", suit: "♣" },
-  { name: "Icova", category: "Iced coffee, chai & desserts", logo: icova.url, rank: "6", suit: "♥" },
-  { name: "Moktl", category: "Zero-alcohol mocktails", logo: moktl.url, rank: "5", suit: "♦" },
-  { name: "Souvano", category: "Mediterranean plates", logo: souvano.url, rank: "4", suit: "♠" },
-  { name: "Nusara", category: "South East Asian fusion", logo: nusara.url, rank: "3", suit: "♣" },
-  { name: "Pastarivo", category: "Fresh pasta", logo: pastarivo.url, rank: "2", suit: "♥" },
-  { name: "Rise & Griddle", category: "Breakfast & brunch", logo: riseAndGriddle.url, rank: "A", suit: "♦" },
+  { name: "Taconelle", category: "French tacos", logo: taconelle, rank: "A", suit: "♥" },
+  { name: "Tavo Chicken", category: "All things chicken", logo: tavoChicken, rank: "K", suit: "♦" },
+  { name: "Skorch", category: "Smash burgers", logo: skorch, rank: "Q", suit: "♠" },
+  { name: "Load'd", category: "French tacos & mac n cheese", logo: loadd, rank: "J", suit: "♣" },
+  { name: "Tarka Box", category: "Desi food", logo: tarkaBox, rank: "10", suit: "♥" },
+  { name: "Paratique", category: "Signature parathas", logo: paratique, rank: "9", suit: "♦" },
+  { name: "Sabzora", category: "Vegetarian Indian", logo: sabzora, rank: "8", suit: "♠" },
+  { name: "Vyta", category: "Fresh juices", logo: vyta, rank: "7", suit: "♣" },
+  { name: "Icova", category: "Iced coffee, chai & desserts", logo: icova, rank: "6", suit: "♥" },
+  { name: "Moktl", category: "Zero-alcohol mocktails", logo: moktl, rank: "5", suit: "♦" },
+  { name: "Souvano", category: "Mediterranean plates", logo: souvano, rank: "4", suit: "♠" },
+  { name: "Nusara", category: "South East Asian fusion", logo: nusara, rank: "3", suit: "♣" },
+  { name: "Pastarivo", category: "Fresh pasta", logo: pastarivo, rank: "2", suit: "♥" },
+  { name: "Rise & Griddle", category: "Breakfast & brunch", logo: riseAndGriddle, rank: "A", suit: "♦" },
 ] as const;
 
 const benefits = [
@@ -137,10 +137,10 @@ function DeckReveal() {
         </div>
         <div className="brand-reveal-stage" aria-hidden="true">
           <div className="brand-reveal-shadow brand-reveal-shadow-one">
-            <img src={mdEmblem.url} alt="" className="card-back-emblem" />
+            <img src={mdEmblem} alt="" className="card-back-emblem" />
           </div>
           <div className="brand-reveal-shadow brand-reveal-shadow-two">
-            <img src={mdEmblem.url} alt="" className="card-back-emblem" />
+            <img src={mdEmblem} alt="" className="card-back-emblem" />
           </div>
           <div className="brand-reveal-card brand-reveal-card-start">
             <div className="brand-reveal-flip">
@@ -148,11 +148,11 @@ function DeckReveal() {
                 <span className="reveal-frame" />
                 <span className="reveal-corner">M<small>♦</small></span>
                 <span className="reveal-corner reveal-corner-bottom">M<small>♦</small></span>
-                <img src={mdWatermark.url} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
+                <img src={mdWatermark} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
                 <span className="font-display text-[0.65rem] font-black uppercase tracking-[0.18em] text-ink/60">One order. Every craving.</span>
               </div>
               <div className="brand-reveal-face brand-reveal-face-back">
-                <img src={mdEmblem.url} alt="" className="card-back-emblem" />
+                <img src={mdEmblem} alt="" className="card-back-emblem" />
               </div>
             </div>
           </div>
@@ -169,7 +169,7 @@ function DeckReveal() {
             <span className="reveal-frame" />
             <span className="reveal-corner">M<small>♦</small></span>
             <span className="reveal-corner reveal-corner-bottom">M<small>♦</small></span>
-            <img src={mdWatermark.url} alt="" className="max-h-40 max-w-[72%] object-contain" />
+            <img src={mdWatermark} alt="" className="max-h-40 max-w-[72%] object-contain" />
             <span className="font-display text-xs font-black uppercase text-ink/60">MealDeck</span>
           </div>
         </div>
@@ -224,7 +224,7 @@ function Landing() {
 
             <div className="relative order-1 flex min-h-[22rem] items-center justify-center lg:order-2 lg:min-h-[38rem]">
               <div className="deal-glow" />
-              <figure className="hero-table-card relative z-10 w-[min(90vw,30rem)] lg:w-[min(38vw,34rem)]">
+              <figure className="hero-table-card relative z-10 w-[min(72vw,20rem)] sm:w-[min(60vw,24rem)] lg:w-[min(38vw,34rem)]">
                 <span className="reveal-corner">A<small>♦</small></span>
                 <span className="reveal-corner reveal-corner-bottom">A<small>♦</small></span>
                 <img

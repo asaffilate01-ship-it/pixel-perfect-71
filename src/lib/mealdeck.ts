@@ -10,26 +10,28 @@ import brandTarka from "@/assets/brand-tarka.jpg";
 import brandSabzora from "@/assets/brand-sabzora.jpg";
 import brandMoktl from "@/assets/brand-moktl.jpg";
 import brandCafe1 from "@/assets/brand-cafe1.jpg";
-import logoTaconelle from "@/assets/logos/taconelle.png.asset.json";
-import logoIcova from "@/assets/logos/icova.png.asset.json";
-import logoParatique from "@/assets/logos/paratique.png.asset.json";
-import logoTavo from "@/assets/logos/tavo-chicken.png.asset.json";
-import logoSkorch from "@/assets/logos/skorch-burgers.png.asset.json";
-import logoLoadd from "@/assets/logos/loadd.png.asset.json";
-import logoFyrra from "@/assets/logos/fyrra.png.asset.json";
-import logoTarka from "@/assets/logos/tarka-box.png.asset.json";
-import logoSabzora from "@/assets/logos/sabzora.png.asset.json";
-import logoVyta from "@/assets/logos/vyta.png.asset.json";
-import logoMoktl from "@/assets/logos/moktl.png.asset.json";
+import logoTaconelle from "@/assets/logos/taconelle.png";
+import logoIcova from "@/assets/logos/icova.png";
+import logoParatique from "@/assets/logos/paratique.png";
+import logoTavo from "@/assets/logos/tavo-chicken.png";
+import logoSkorch from "@/assets/logos/skorch-burgers.png";
+import logoLoadd from "@/assets/logos/loadd.png";
+import logoFyrra from "@/assets/logos/fyrra.png";
+import logoTarka from "@/assets/logos/tarka-box.png";
+import logoSabzora from "@/assets/logos/sabzora.png";
+import logoVyta from "@/assets/logos/vyta.png";
+import logoMoktl from "@/assets/logos/moktl.png";
+import logoCafe1 from "@/assets/cafe1-logo.png";
 import { cafe1Menu, coreMenu } from "./sample-menus";
 
 export type LocationKey = "luton" | "stalbans";
-export type FulfilmentType = "delivery" | "pickup" | "curbside";
+export type FulfilmentType = "delivery" | "pickup" | "curbside" | "dinein";
 
 export const fulfilmentLabels: Record<FulfilmentType, string> = {
   delivery: "Delivery",
   pickup: "Pickup",
   curbside: "Kerbside",
+  dinein: "Dine in",
 };
 
 export type Brand = {
@@ -94,26 +96,26 @@ export type MealDeckLocation = {
 export const DELIVERY_FEE_PENCE = 299;
 
 export const brands: Brand[] = [
-  { id: "tavo-chicken", name: "Tavo Chicken", strapline: "Turn up the flavour.", tagline: "Big flavour. Bigger moments.", image: brandTavo, category: "All things chicken", logo: logoTavo.url },
-  { id: "paratique", name: "Paratique", strapline: "Signature parathas.", tagline: "Layered, loaded, lovely.", image: brandParatique, category: "Parathas", logo: logoParatique.url },
-  { id: "taconelle", name: "Taconelle", strapline: "Beautifully loaded.", tagline: "French tacos with attitude.", image: brandTaconelle, category: "French tacos", logo: logoTaconelle.url, logoVariant: "square" },
-  { id: "loadd", name: "Load'd", strapline: "Folded, loaded, cheesy.", tagline: "French tacos and mac n cheese.", image: brandLoadd, category: "French tacos · mac n cheese", logo: logoLoadd.url },
-  { id: "vyta", name: "Vyta", strapline: "Fresh juices for a brighter you.", tagline: "Good food. Brighter you.", image: brandVyta, category: "Fresh juices", logo: logoVyta.url },
-  { id: "tarka-box", name: "Tarka Box", strapline: "Big flavour. Boxed.", tagline: "Desi classics, done right.", image: brandTarka, category: "Desi food", logo: logoTarka.url },
-  { id: "fyrra", name: "Fyrra", strapline: "Bold flavours. Together.", tagline: "Grill, shawarma and kebab.", image: brandFyrra, category: "Grill · shawarma · kebab", logo: logoFyrra.url },
-  { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: logoSabzora.url, logoVariant: "square" },
-  { id: "skorch-burgers", name: "Skorch Burgers", strapline: "Seared on steel.", tagline: "Smashed, seared, sensational.", image: brandSkorch, category: "Smash burgers", logo: logoSkorch.url },
-  { id: "cafe1", name: "Café1", strapline: "British café favourites", tagline: "All-day comfort classics.", image: brandCafe1, category: "Café" },
-  { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: logoIcova.url, logoVariant: "wide" },
-  { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: logoMoktl.url, logoVariant: "wide" },
+  { id: "tavo-chicken", name: "Tavo Chicken", strapline: "Turn up the flavour.", tagline: "Big flavour. Bigger moments.", image: brandTavo, category: "All things chicken", logo: logoTavo },
+  { id: "paratique", name: "Paratique", strapline: "Signature parathas.", tagline: "Layered, loaded, lovely.", image: brandParatique, category: "Parathas", logo: logoParatique },
+  { id: "taconelle", name: "Taconelle", strapline: "Beautifully loaded.", tagline: "French tacos with attitude.", image: brandTaconelle, category: "French tacos", logo: logoTaconelle, logoVariant: "square" },
+  { id: "loadd", name: "Load'd", strapline: "Folded, loaded, cheesy.", tagline: "French tacos and mac n cheese.", image: brandLoadd, category: "French tacos · mac n cheese", logo: logoLoadd },
+  { id: "vyta", name: "Vyta", strapline: "Fresh juices for a brighter you.", tagline: "Good food. Brighter you.", image: brandVyta, category: "Fresh juices", logo: logoVyta },
+  { id: "tarka-box", name: "Tarka Box", strapline: "Big flavour. Boxed.", tagline: "Desi classics, done right.", image: brandTarka, category: "Desi food", logo: logoTarka },
+  { id: "fyrra", name: "Fyrra", strapline: "Bold flavours. Together.", tagline: "Grill, shawarma and kebab.", image: brandFyrra, category: "Grill · shawarma · kebab", logo: logoFyrra },
+  { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: logoSabzora, logoVariant: "square" },
+  { id: "skorch-burgers", name: "Skorch Burgers", strapline: "Seared on steel.", tagline: "Smashed, seared, sensational.", image: brandSkorch, category: "Smash burgers", logo: logoSkorch },
+  { id: "cafe1", name: "Café1", strapline: "Café Classics", tagline: "All-day comfort classics.", image: brandCafe1, category: "Café Classics", logo: logoCafe1 },
+  { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: logoIcova, logoVariant: "wide" },
+  { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: logoMoktl, logoVariant: "wide" },
 ];
 
 export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd", "vyta", "tarka-box", "fyrra", "sabzora", "skorch-burgers"];
 export const addonBrandIds = ["icova", "moktl"];
 
 export const locations: MealDeckLocation[] = [
-  { key: "luton", name: "MealDeck Luton", town: "Luton", hoursLabel: "Opening hours set by the Luton kitchen", primaryBrandIds, addonBrandIds, allowedFulfilments: ["delivery", "pickup", "curbside"] },
-  { key: "stalbans", name: "MealDeck St Albans", town: "St Albans", hoursLabel: "Mon–Fri · 09:00–16:00 · Delivery only", primaryBrandIds: ["cafe1", ...primaryBrandIds], addonBrandIds, allowedFulfilments: ["delivery"] },
+  { key: "luton", name: "MealDeck Luton", town: "Luton", hoursLabel: "5pm–11pm · Monday to Sunday", primaryBrandIds, addonBrandIds, allowedFulfilments: ["delivery", "pickup", "curbside"] },
+  { key: "stalbans", name: "MealDeck St Albans", town: "St Albans", hoursLabel: "Mon–Fri · 09:00–16:00", primaryBrandIds: ["cafe1", ...primaryBrandIds], addonBrandIds, allowedFulfilments: ["delivery", "curbside", "pickup", "dinein"] },
 ];
 
 export function brandById(id: string): Brand | undefined {
@@ -125,7 +127,6 @@ export function formatPence(pence: number): string {
 }
 
 export function sampleLocationOpen(location: LocationKey, now = new Date()): boolean {
-  if (location === "luton") return true;
   try {
     const parts = new Intl.DateTimeFormat("en-GB", {
       timeZone: "Europe/London",
@@ -138,6 +139,7 @@ export function sampleLocationOpen(location: LocationKey, now = new Date()): boo
     const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
     const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
     const minutes = hour * 60 + minute;
+    if (location === "luton") return minutes >= 1020 && minutes < 1380; // 5pm–11pm, Monday to Sunday
     return ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(weekday) && minutes >= 540 && minutes < 960;
   } catch {
     return true;
@@ -153,12 +155,6 @@ export function resolveSampleServiceability(
     return { locationKey: "luton", message: "Great news — MealDeck Luton serves your area." };
   }
   if (normalized.startsWith("AL")) {
-    if (fulfilment !== "delivery") {
-      return {
-        message: "MealDeck St Albans currently offers delivery only. Choose Delivery to continue.",
-        alternativeFulfilments: ["delivery"],
-      };
-    }
     return { locationKey: "stalbans", message: "Great news — MealDeck St Albans serves your area." };
   }
   const manchester =

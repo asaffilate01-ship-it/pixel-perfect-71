@@ -586,6 +586,12 @@
   border-radius: calc(var(--radius-xl) - 8px);
 }
 
+@media (max-width: 639px) {
+  .hero-table-img {
+    aspect-ratio: 4 / 3;
+  }
+}
+
 @utility brand-reveal-shadow {
   position: absolute;
   display: flex;

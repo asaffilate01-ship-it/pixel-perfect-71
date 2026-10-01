@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Bike,
   CarFront,
+  UtensilsCrossed,
   Check,
   Loader2,
   MapPin,
@@ -45,6 +46,7 @@ import {
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import { SiteHeader } from "@/components/site-header";
+import { seo } from "@/lib/seo";
 
 type OrderSearch = { brand?: string; fulfilment?: FulfilmentType };
 
@@ -55,7 +57,8 @@ export const Route = createFileRoute("/order")({
     if (
       search["fulfilment"] === "delivery" ||
       search["fulfilment"] === "pickup" ||
-      search["fulfilment"] === "curbside"
+      search["fulfilment"] === "curbside" ||
+      search["fulfilment"] === "dinein"
     ) {
       next.fulfilment = search["fulfilment"];
     }
@@ -64,13 +67,13 @@ export const Route = createFileRoute("/order")({
   head: () =>
     seo({
       title: "Order Food Online — Luton & St Albans | MealDeck",
-      description: "Enter your postcode and build one basket across every MealDeck brand. Delivery, pickup or kerbside in Luton; weekday delivery in St Albans.",
+      description: "Enter your postcode and build one basket across every MealDeck brand. Delivery, pickup or kerbside in Luton; delivery, kerbside, pickup or dine in at Café 1 in St Albans.",
       path: "/order",
     }),
   component: OrderPage,
 });
 
-const fulfilmentIcons = { delivery: Bike, pickup: Package, curbside: CarFront } as const;
+const fulfilmentIcons = { delivery: Bike, pickup: Package, curbside: CarFront, dinein: UtensilsCrossed } as const;
 
 const emptyCustomer = {
   name: "",

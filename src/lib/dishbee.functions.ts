@@ -12,7 +12,7 @@ import {
 } from "./mealdeck";
 
 const locationSchema = z.enum(["luton", "stalbans"]);
-const fulfilmentSchema = z.enum(["delivery", "pickup", "curbside"]);
+const fulfilmentSchema = z.enum(["delivery", "pickup", "curbside", "dinein"]);
 
 type DishbeeConfig = {
   url: string;
