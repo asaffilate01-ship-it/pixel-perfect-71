@@ -25,7 +25,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
       <div className="mx-auto flex h-20 sm:h-24 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" className="shrink-0" aria-label="MealDeck home">
           <img
-            src={logo.url}
+            src={logo}
             alt="MealDeck — One Order. Every Craving."
             className="size-18 object-contain sm:size-22"
             width={88}

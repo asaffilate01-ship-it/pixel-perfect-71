@@ -137,10 +137,10 @@ function DeckReveal() {
         </div>
         <div className="brand-reveal-stage" aria-hidden="true">
           <div className="brand-reveal-shadow brand-reveal-shadow-one">
-            <img src={mdEmblem.url} alt="" className="card-back-emblem" />
+            <img src={mdEmblem} alt="" className="card-back-emblem" />
           </div>
           <div className="brand-reveal-shadow brand-reveal-shadow-two">
-            <img src={mdEmblem.url} alt="" className="card-back-emblem" />
+            <img src={mdEmblem} alt="" className="card-back-emblem" />
           </div>
           <div className="brand-reveal-card brand-reveal-card-start">
             <div className="brand-reveal-flip">
@@ -148,11 +148,11 @@ function DeckReveal() {
                 <span className="reveal-frame" />
                 <span className="reveal-corner">M<small>♦</small></span>
                 <span className="reveal-corner reveal-corner-bottom">M<small>♦</small></span>
-                <img src={mdWatermark.url} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
+                <img src={mdWatermark} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
                 <span className="font-display text-[0.65rem] font-black uppercase tracking-[0.18em] text-ink/60">One order. Every craving.</span>
               </div>
               <div className="brand-reveal-face brand-reveal-face-back">
-                <img src={mdEmblem.url} alt="" className="card-back-emblem" />
+                <img src={mdEmblem} alt="" className="card-back-emblem" />
               </div>
             </div>
           </div>
@@ -169,7 +169,7 @@ function DeckReveal() {
             <span className="reveal-frame" />
             <span className="reveal-corner">M<small>♦</small></span>
             <span className="reveal-corner reveal-corner-bottom">M<small>♦</small></span>
-            <img src={mdWatermark.url} alt="" className="max-h-40 max-w-[72%] object-contain" />
+            <img src={mdWatermark} alt="" className="max-h-40 max-w-[72%] object-contain" />
             <span className="font-display text-xs font-black uppercase text-ink/60">MealDeck</span>
           </div>
         </div>
