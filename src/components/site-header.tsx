@@ -40,7 +40,7 @@ function NavDropdown({ label, children }: { label: string; children: ReactNode }
       </button>
       {open && (
         <div
-          onMouseEnter={() => setOpen(true)}
+          onClick={() => setOpen(false)}
           className="absolute top-full left-1/2 z-50 w-60 -translate-x-1/2 pt-3"
         >
           <div className="overflow-hidden rounded-xl border border-border/80 bg-popover p-1.5 shadow-xl shadow-black/10">
@@ -86,7 +86,6 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
                 <Link
                   key={item.label}
                   to={item.to}
-                  onClick={() => setOpen(false)}
                   className="flex flex-col gap-0.5 rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/10"
                 >
                   <span className="font-display text-sm font-semibold text-foreground">{item.label}</span>
