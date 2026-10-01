@@ -133,11 +133,37 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
             <Link to="/" onClick={() => setOpen(false)} className={`${navLinkClass} rounded-lg px-3 py-3 text-base`}>
               Home
             </Link>
-            {navItems.map((item) => (
+            {sectionLinks.map((item) => (
               <Link
                 key={item.label}
-                to={"to" in item ? item.to : "/"}
-                {...("to" in item ? {} : { hash: item.hash })}
+                to="/"
+                hash={item.hash}
+                onClick={() => setOpen(false)}
+                className={`${navLinkClass} rounded-lg px-3 py-3 text-base`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <p className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Locations
+            </p>
+            {locationLinks.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                onClick={() => setOpen(false)}
+                className={`${navLinkClass} rounded-lg px-3 py-3 text-base`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <p className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              More
+            </p>
+            {moreLinks.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
                 onClick={() => setOpen(false)}
                 className={`${navLinkClass} rounded-lg px-3 py-3 text-base`}
               >
