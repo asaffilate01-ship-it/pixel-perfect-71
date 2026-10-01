@@ -137,14 +137,19 @@ function DeckReveal() {
           <p className="mt-7 font-display text-sm font-black uppercase text-accent">The choice is yours. The order stays one.</p>
         </div>
         <div className="brand-reveal-stage" aria-hidden="true">
-          <div className="brand-reveal-shadow brand-reveal-shadow-one">
-            <img src={mealdeckDeck.url} alt="" className="size-full object-contain opacity-30" />
-          </div>
-          <div className="brand-reveal-shadow brand-reveal-shadow-two">
-            <img src={mealdeckDeck.url} alt="" className="size-full object-contain opacity-30" />
-          </div>
+          <div className="brand-reveal-shadow brand-reveal-shadow-one" />
+          <div className="brand-reveal-shadow brand-reveal-shadow-two" />
           <div className="brand-reveal-card brand-reveal-card-start">
-            <img src={mealdeckDeck.url} alt="" className="size-full object-contain" />
+            <div className="brand-reveal-flip">
+              <div className="brand-reveal-face brand-reveal-face-front">
+                <span className="reveal-corner">M♦</span>
+                <img src={mealdeckLogo.url} alt="" className="max-h-[46%] max-w-[72%] object-contain" />
+                <span className="font-display text-[0.65rem] font-black uppercase tracking-[0.18em] text-ink/60">One order. Every craving.</span>
+              </div>
+              <div className="brand-reveal-face brand-reveal-face-back">
+                <img src={mealdeckLogo.url} alt="" className="w-[58%] object-contain opacity-30" />
+              </div>
+            </div>
           </div>
           {premiumBrands.map((brand) => (
             <div key={brand.name} className="brand-reveal-card">
@@ -153,9 +158,6 @@ function DeckReveal() {
               <span className="font-display text-xs font-black uppercase text-ink/60">{brand.name}</span>
             </div>
           ))}
-          <div className="brand-reveal-card brand-reveal-card-end">
-            <img src={mealdeckDeck.url} alt="" className="size-full object-contain" />
-          </div>
         </div>
       </div>
     </section>
