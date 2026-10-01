@@ -44,7 +44,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
                 <span className={`absolute left-1 top-0.5 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
                 <span className={`absolute bottom-0.5 right-1 rotate-180 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
                 {"logo" in b && b.logo ? (
-                  <img src={b.logo} alt={b.name} className="max-h-10 max-w-[70%] object-contain sm:max-h-12" loading="lazy" />
+                  <img src={b.logo} alt={b.name} className="max-h-10 max-w-[70%] object-contain sm:max-h-12" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 ) : null}
                 <h3 className="font-display text-xs font-black sm:text-sm">{b.name}</h3>
                 <p className="text-[0.6rem] leading-tight sm:text-xs" style={{ color: "#4a3a33" }}>{b.category}</p>
