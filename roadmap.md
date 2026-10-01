@@ -13,7 +13,7 @@
 
 ## 2026-10-01 later
 - [x] Remove MEALDECK wordmark text; enlarge card logo in header and footer
-- [ ] Remove "14 brands in the deck" pill; make brand-count wording expansion-safe
-- [ ] Reveal deck: MealDeck card first (not deck artwork inside a card); red card backs show MealDeck logo at 30% transparency on both MealDeck cards
-- [ ] Fix root errorComponent typing error blocking build
-- [ ] Push playing-card styling further: polished card frames, suit icons, card motifs across sections
+- [x] Remove "14 brands in the deck" pill; make brand-count wording expansion-safe
+- [x] Reveal deck: MealDeck card first (not deck artwork inside a card); red card backs show MealDeck logo at 30% transparency on both MealDeck cards
+- [x] Fix root errorComponent typing error blocking build
+- [x] Push playing-card styling further: polished card frames, suit icons, card motifs across sections
