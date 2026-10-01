@@ -48,4 +48,4 @@ export function useTheme() {
     } satisfies ThemeContextValue;
   }
   return value;
-}
+}// theme context fallback keeps toggles safe outside the provider
