@@ -14,7 +14,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" className="shrink-0" aria-label="MealDeck home">
-          <img src={logo.url} alt="MealDeck — One Order. Every Craving." className="size-14 object-contain sm:size-16" width={64} height={64} />
+          <img src={logo.url} alt="MealDeck — One Order. Every Craving." className="size-16 object-contain sm:size-20" width={80} height={80} />
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
