@@ -315,31 +315,29 @@ function Landing() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-card/35 py-20 sm:py-24">
+        <section id="how" className="scroll-mt-24 border-y border-border bg-card/35 py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:items-center">
+            <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
               <div>
-                <p className="eyebrow">Order your way</p>
+                <p className="eyebrow">Order your way. Track every step.</p>
                 <h2 className="mt-3 text-4xl font-black sm:text-5xl">Every route leads to a full deck.</h2>
-                <p className="mt-4 max-w-lg leading-7 text-muted-foreground">Start on web, order by phone or WhatsApp, or keep favourites close in the app. Your delivery stays together from checkout to doorstep.</p>
+                <p className="mt-4 max-w-lg leading-7 text-muted-foreground">Start on web, order by phone or WhatsApp, or keep favourites close in the app — then follow your delivery from confirmation to doorstep without switching screens.</p>
+                <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {channels.map(({ icon: Icon, title, suit }) => (
+                    <div key={title} className="channel-tile">
+                      <span className="channel-chip"><Icon className="size-5" strokeWidth={2.25} /></span>
+                      <h3 className="mt-3 font-display text-sm font-bold">{title}</h3>
+                      <span className="suit-mark" aria-hidden="true">{suit}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-7 flex flex-wrap gap-3 text-sm">
+                  <span className="feature-chip"><Share2 /> Share tracking</span>
+                  <span className="feature-chip"><Clock3 /> Live timings</span>
+                  <span className="feature-chip"><MapPin /> Driver progress</span>
+                </div>
+                <Button variant="gold" size="xl" className="mt-7" asChild><Link to="/track">Track an order <ArrowRight /></Link></Button>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {channels.map(({ icon: Icon, title, copy, suit }) => (
-                  <div key={title} className="channel-tile">
-                    <span className="channel-chip"><Icon className="size-6" strokeWidth={2.25} /></span>
-                    <h3 className="mt-5 font-display text-lg font-bold">{title}</h3>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">{copy}</p>
-                    <span className="suit-mark" aria-hidden="true">{suit}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="how" className="scroll-mt-24 py-20 sm:py-28">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
               <div className="relative mx-auto w-full max-w-xl">
                 <div className="tracking-panel">
                   <div className="flex items-center justify-between border-b border-border pb-5">
@@ -355,17 +353,6 @@ function Landing() {
                     ))}
                   </div>
                 </div>
-              </div>
-              <div>
-                <p className="eyebrow">No bluffing. Full tracking.</p>
-                <h2 className="mt-3 text-4xl font-black sm:text-5xl">Know where your order stands.</h2>
-                <p className="mt-5 max-w-lg leading-7 text-muted-foreground">Different kitchens, one coordinated delivery. Follow every stage from confirmation to arrival without switching screens.</p>
-                <div className="mt-7 flex flex-wrap gap-3 text-sm">
-                  <span className="feature-chip"><Share2 /> Share tracking</span>
-                  <span className="feature-chip"><Clock3 /> Live timings</span>
-                  <span className="feature-chip"><MapPin /> Driver progress</span>
-                </div>
-                <Button variant="gold" size="xl" className="mt-8" asChild><Link to="/track">Track an order <ArrowRight /></Link></Button>
               </div>
             </div>
           </div>
