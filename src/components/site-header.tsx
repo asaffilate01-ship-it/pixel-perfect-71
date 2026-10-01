@@ -47,21 +47,47 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
         </Link>
 
         {nav && (
-          <nav className="hidden items-center gap-7 lg:flex">
+          <nav className="hidden items-center gap-6 lg:flex">
             <Link to="/" className={navLinkClass}>
               Home
             </Link>
-            {navItems.map((item) =>
-              "to" in item ? (
-                <Link key={item.label} to={item.to} className={navLinkClass}>
-                  {item.label}
-                </Link>
-              ) : (
-                <Link key={item.label} to="/" hash={item.hash} className={navLinkClass}>
-                  {item.label}
-                </Link>
-              ),
-            )}
+            {sectionLinks.map((item) => (
+              <Link key={item.label} to="/" hash={item.hash} className={navLinkClass}>
+                {item.label}
+              </Link>
+            ))}
+            <DropdownMenu>
+              <DropdownMenuTrigger className={`${navLinkClass} inline-flex items-center gap-1 outline-none focus-visible:text-accent`}>
+                Locations
+                <ChevronDown className="size-3.5 opacity-70" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="min-w-56 border-border bg-popover">
+                {locationLinks.map((item) => (
+                  <DropdownMenuItem key={item.label} asChild>
+                    <Link to={item.to} className="flex flex-col gap-0.5 py-2.5">
+                      <span className="font-display text-sm font-semibold text-foreground">{item.label}</span>
+                      <span className="text-xs text-muted-foreground">{item.hint}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger className={`${navLinkClass} inline-flex items-center gap-1 outline-none focus-visible:text-accent`}>
+                More
+                <ChevronDown className="size-3.5 opacity-70" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="min-w-44 border-border bg-popover">
+                {moreLinks.map((item) => (
+                  <DropdownMenuItem key={item.label} asChild>
+                    <Link to={item.to} className="flex items-center gap-2.5 py-2">
+                      <item.icon className="size-4 text-accent" />
+                      <span className="font-display text-sm font-semibold text-foreground">{item.label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Link to="/order" className={navLinkClass}>
               Order Now
             </Link>
