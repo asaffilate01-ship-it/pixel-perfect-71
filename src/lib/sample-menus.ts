@@ -30,6 +30,7 @@ export const coreMenu: MenuItem[] = [
   { id: "tarka-1", brandId: "tarka-box", category: "Box meals", name: "Tarka Curry Box", description: "Fast comfort in a box with layered spice and sauce.", pricePence: 845, hasModifiers: true },
   { id: "sabzora-1", brandId: "sabzora", category: "Vegetarian", name: "Sabzora Veg Delight Box", description: "Indian vegetarian comfort with vibrant herb and spice notes.", pricePence: 825, hasModifiers: true },
   { id: "skorch-1", brandId: "skorch-burgers", category: "Smash burgers", name: "Skorch Double Smash", description: "Two smashed patties, cheese and house sauce — seared on steel.", pricePence: 999, hasModifiers: true },
+  { id: "forvello-1", brandId: "forvello", category: "Artisan Pizza", name: "Forvello Margherita", description: "Hand-stretched artisan pizza with tomato, mozzarella and fresh basil.", pricePence: 1095, hasModifiers: true },
   { id: "icova-1", brandId: "icova", category: "Add-on drinks", name: "Icova Iced Latte", description: "Better over ice — smooth coffee served the Icova way.", pricePence: 395, hasModifiers: true },
   { id: "moktl-1", brandId: "moktl", category: "Add-on drinks", name: "Moktl Citrus Cooler", description: "Zero alcohol refreshment with a full-vibe finish.", pricePence: 425, hasModifiers: true },
 ]

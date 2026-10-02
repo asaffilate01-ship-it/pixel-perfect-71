@@ -375,7 +375,7 @@
 
 .md-brand-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0,1fr));
+  grid-template-columns: repeat(4, minmax(0,1fr));
   border-left: 1px solid var(--md-line);
   border-top: 1px solid var(--md-line);
 }
@@ -390,8 +390,8 @@
   transition: background .2s ease, transform .2s ease;
 }
 .md-brand-tile:hover { background: #fffaf2; transform: translateY(-4px); z-index: 1; }
-.md-brand-logo-wrap { flex: 1; min-height: 165px; padding: 18px; display: grid; place-items: center; }
-.md-brand-logo-wrap img { width: 100%; height: 100%; max-height: 150px; object-fit: contain; }
+.md-brand-logo-wrap { flex: 1; min-height: 165px; padding: 22px; display: grid; place-items: center; }
+.md-brand-logo-wrap img { width: 100%; height: 100%; max-width: 190px; max-height: 145px; object-fit: contain; object-position: center; }
 .md-brand-tile-meta { border-top: 1px solid var(--md-line); padding: 13px 14px 14px; text-align: center; }
 .md-brand-tile-meta strong { display: block; font-family: var(--md-display); font-size: 13px; }
 .md-brand-tile-meta span { display: block; margin-top: 3px; font-size: 10px; color: var(--md-muted); text-transform: uppercase; font-weight: 700; }
@@ -733,6 +733,7 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
   .md-direct-grid article { border-right: 0 !important; }
   .md-brand-grid { grid-template-columns: 1fr 1fr; }
   .md-brand-logo-wrap { min-height: 130px; }
+  .md-brand-logo-wrap img { max-width: 142px; max-height: 112px; }
   .md-brand-tile { min-height: 195px; }
   .md-offer-card { padding-left: 94px; }
   .md-offer-card h3 { font-size: 42px; }

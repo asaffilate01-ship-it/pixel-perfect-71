@@ -80,9 +80,9 @@ function LandingPage() {
                 <span>craving.</span>
               </h1>
               <p className="md-hero-lead">
-                Choose restaurant favourites across French tacos, grilled chicken, smash burgers, pasta, Indian food, desserts and drinks — all in one basket.
+                Choose restaurant favourites across artisan pizza, French tacos, grilled chicken, smash burgers, pasta, Indian food, desserts and drinks — all in one basket.
               </p>
-              <p className="md-hero-foods">French tacos · Parathas · Burgers · Pasta · Fresh juices · Chai · Desserts</p>
+              <p className="md-hero-foods">Artisan pizza · French tacos · Parathas · Burgers · Pasta · Fresh juices · Chai · Desserts</p>
               <p className="md-hero-tagline">One Order. Every Craving.</p>
               <div className="md-hero-actions">
                 <Link to="/order" className="md-btn md-btn-yellow">Order direct <ArrowRight /></Link>

@@ -6,4 +6,4 @@
 
 - [x] Make homepage hero food-led while preserving current colours; add food background and fan-to-deck card sequence.
 
-- [ ] Add Forvello (Artisan Pizza) to homepage and every location; align brand cards/logos across desktop and mobile.
+- [x] Add Forvello (Artisan Pizza) to homepage and every location; align brand cards/logos across desktop and mobile.

@@ -1,4 +1,5 @@
 import cafe1Logo from "@/assets/cafe1-logo.png";
+import forvelloAsset from "@/assets/premium-logos/forvello-logo.png.asset.json";
 import icova from "@/assets/premium-logos/icova-premium.png";
 import loadd from "@/assets/premium-logos/loadd-premium.png";
 import moktl from "@/assets/premium-logos/moktl-premium.png";
@@ -43,6 +44,7 @@ export const marketingBrands: MarketingBrand[] = [
   { id: "nusara", name: "Nusara", category: "South East Asian fusion", logo: nusara, rank: "3", suit: "♣" },
   { id: "rise-and-griddle", name: "Rise & Griddle", category: "Breakfast & brunch", logo: riseAndGriddle, rank: "2", suit: "♥" },
   { id: "souvano", name: "Souvano", category: "Eastern Mediterranean grill", logo: souvano, rank: "A", suit: "♦" },
+  { id: "forvello", name: "Forvello", category: "Artisan Pizza", logo: forvelloAsset.url, rank: "F", suit: "♣" },
 ];
 
 /**

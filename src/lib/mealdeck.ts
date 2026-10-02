@@ -9,6 +9,7 @@ import brandTarka from "@/assets/brand-tarka.jpg";
 import brandSabzora from "@/assets/brand-sabzora.jpg";
 import brandMoktl from "@/assets/brand-moktl.jpg";
 import brandCafe1 from "@/assets/brand-cafe1.jpg";
+import brandForvello from "@/assets/brand-forvello.jpg";
 import logoTaconelle from "@/assets/premium-logos/taconelle-premium.png";
 import logoIcova from "@/assets/premium-logos/icova-premium.png";
 import logoParatique from "@/assets/premium-logos/paratique-premium.png";
@@ -20,6 +21,7 @@ import logoSabzora from "@/assets/premium-logos/sabzora-premium.png";
 import logoVyta from "@/assets/premium-logos/vyta-premium.png";
 import logoMoktl from "@/assets/premium-logos/moktl-premium.png";
 import logoCafe1 from "@/assets/cafe1-logo.png";
+import logoForvelloAsset from "@/assets/premium-logos/forvello-logo.png.asset.json";
 import { cafe1Menu, coreMenu } from "./sample-menus";
 
 export type LocationKey = "luton" | "stalbans";
@@ -105,9 +107,10 @@ export const brands: Brand[] = [
   { id: "cafe1", name: "Café1", strapline: "Café Classics", tagline: "All-day comfort classics.", image: brandCafe1, category: "Café Classics", logo: logoCafe1 },
   { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: logoIcova },
   { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: logoMoktl },
+  { id: "forvello", name: "Forvello", strapline: "The art of great pizza.", tagline: "Artisan pizza, beautifully crafted.", image: brandForvello, category: "Artisan Pizza", logo: logoForvelloAsset.url },
 ];
 
-export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd", "vyta", "tarka-box", "sabzora", "skorch-burgers"];
+export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd", "vyta", "tarka-box", "sabzora", "skorch-burgers", "forvello"];
 export const addonBrandIds = ["icova", "moktl"];
 
 export const locations: MealDeckLocation[] = [
