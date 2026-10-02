@@ -118,7 +118,7 @@ function OrderPage() {
     setBrandMenuOpen(false);
     requestAnimationFrame(() => {
       const el = document.getElementById("menu-top");
-      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 190, behavior: "smooth" });
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 205, behavior: "smooth" });
     });
   };
   const [submitting, setSubmitting] = useState(false);
@@ -610,7 +610,7 @@ function OrderPage() {
                   aria-label="Open restaurant menu"
                   className="order-brand-pill is-browse lg:hidden"
                 >
-                  <span className="order-brand-logo grid place-items-center bg-ink text-gold"><PanelLeftOpen className="size-5" /></span>
+                  <span className="order-brand-logo grid place-items-center bg-accent text-accent-foreground"><PanelLeftOpen className="size-5" /></span>
                   <span className="truncate">Browse</span>
                 </Button>
                 <Button
@@ -854,7 +854,7 @@ function OrderPage() {
       ) : null}
 
       <Sheet open={basketOpen} onOpenChange={setBasketOpen}>
-        <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-3xl border-border bg-background p-3 pb-8 lg:hidden">
+        <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto z-[80] rounded-t-3xl border-border bg-background p-3 pb-8 lg:hidden">
           <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-muted" aria-hidden />
           <SheetTitle className="sr-only">Your basket</SheetTitle>
           {basketPanel}
@@ -862,7 +862,7 @@ function OrderPage() {
       </Sheet>
 
       <Sheet open={brandMenuOpen} onOpenChange={setBrandMenuOpen}>
-        <SheetContent side="left" className="flex w-[86vw] max-w-sm flex-col gap-0 border-border bg-background p-0 lg:hidden">
+        <SheetContent side="left" className="z-[80] flex w-[86vw] max-w-sm flex-col gap-0 border-border bg-background p-0 lg:hidden">
           <div className="border-b border-border px-5 pb-4 pt-6">
             <p className="eyebrow">Pick your next card</p>
             <SheetTitle className="font-display text-2xl font-extrabold">Restaurants</SheetTitle>

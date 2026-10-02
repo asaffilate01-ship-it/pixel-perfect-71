@@ -151,7 +151,7 @@ function RootComponent() {
       <Outlet />
       <BackToTop />
       <MobileTabBar />
-      <Toaster position="top-center" richColors />
+      <Toaster position="top-center" />
     </QueryClientProvider>
   );
 }
