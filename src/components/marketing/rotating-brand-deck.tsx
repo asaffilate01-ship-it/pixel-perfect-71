@@ -41,10 +41,12 @@ export function RotatingBrandDeck() {
                 <i>{card.suit}</i>
               </span>
               <img src={card.logo} alt="" className={index === 0 ? "md-deck-mealdeck-logo" : "md-deck-brand-logo"} />
-              <div className="md-deck-caption">
-                <strong>{card.name}</strong>
-                <span>{card.category}</span>
-              </div>
+              {index !== 0 && (
+                <div className="md-deck-caption">
+                  <strong>{card.name}</strong>
+                  <span>{card.category}</span>
+                </div>
+              )}
             </div>
           </div>
         );
