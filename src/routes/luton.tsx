@@ -15,7 +15,7 @@ export const Route = createFileRoute("/luton")({
   component: () => (
     <LocationPage
       town="Luton"
-      intro="MealDeck Luton brings every brand in the deck to your door: French tacos, smash burgers, all things chicken, desi boxes, parathas, vegetarian Indian, fresh juices, iced coffee and zero-alcohol mocktails — mixed in one order."
+      intro="MealDeck Luton brings every brand in the deck to your door: artisan pizza, French tacos, smash burgers, all things chicken, desi boxes, parathas, vegetarian Indian, fresh juices, iced coffee and zero-alcohol mocktails — mixed in one order."
       hours="5pm–11pm · Monday to Sunday"
       fulfilment="Delivery · Pickup · Kerbside"
       areas={["All areas across Luton", "Luton town centre", "Bury Park", "High Town", "Stopsley", "Leagrave", "Marsh Farm", "Wigmore", "Farley Hill", "and everywhere in between"]}

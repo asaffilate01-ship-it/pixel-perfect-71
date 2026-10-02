@@ -5,3 +5,5 @@
 - [x] Card flip: MealDeck card uses new uploaded emblem, "M" corner ranks, crossed-cutlery suit marks in corners
 
 - [x] Make homepage hero food-led while preserving current colours; add food background and fan-to-deck card sequence.
+
+- [x] Add Forvello (Artisan Pizza) to homepage and every location; align brand cards/logos across desktop and mobile.
