@@ -949,11 +949,12 @@
   border-radius: var(--radius-lg);
   background: var(--color-paper);
   color: var(--color-ink);
-  /* Scoped token overrides so child utilities read dark-on-ivory */
-  --color-foreground: var(--color-ink);
-  --color-muted-foreground: color-mix(in oklab, var(--color-ink) 62%, var(--color-paper));
-  --color-accent: color-mix(in oklab, var(--color-primary) 80%, var(--color-ink));
-  --color-border: color-mix(in oklab, var(--color-ink) 16%, var(--color-paper));
+  /* Scoped token overrides so child utilities read dark-on-ivory.
+     @theme inline bakes var(--token) into utilities, so raw tokens must be shadowed. */
+  --foreground: var(--ink);
+  --muted-foreground: color-mix(in oklab, var(--ink) 62%, var(--paper));
+  --accent: color-mix(in oklab, var(--primary) 80%, var(--ink));
+  --border: color-mix(in oklab, var(--ink) 16%, var(--paper));
   box-shadow: 0 14px 34px -30px var(--card-drop);
   transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 
