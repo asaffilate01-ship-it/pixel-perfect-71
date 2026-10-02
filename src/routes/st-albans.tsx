@@ -22,7 +22,7 @@ export const Route = createFileRoute("/st-albans")({
       includeCafe1
       faqs={[
         { q: "When does MealDeck deliver in St Albans?", a: "Monday to Friday, 09:00–16:00, to selected areas in and around St Albans." },
-        { q: "Can I dine in?", a: "Yes — dine in at Café 1, St Albans, 6 Bricket Road, AL1 3JU. Choose Dine in when you order." },
+        { q: "Can I dine in?", a: "Yes — dine in at Café 1, St Albans Crown Court, 6 Bricket Road, St Albans, AL1 3JU. Choose Dine in when you order." },
         { q: "Do you offer kerbside or pickup in St Albans?", a: "Yes. St Albans supports delivery, kerbside collection, pickup and dine in." },
         { q: "Can I order lunch for my office?", a: "Yes — use group ordering so everyone adds their picks, then split payments at checkout." },
       ]}
