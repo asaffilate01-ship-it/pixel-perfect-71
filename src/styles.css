@@ -911,6 +911,10 @@
 
   &:hover {
     transform: translateY(-3px);
+    background:
+      radial-gradient(120% 100% at 50% 0%, color-mix(in oklab, var(--color-accent) 12%, transparent), transparent 55%),
+      var(--color-paper) !important;
+    color: var(--color-ink) !important;
     box-shadow: 0 18px 34px -24px var(--card-drop);
   }
 
