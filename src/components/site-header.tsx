@@ -26,6 +26,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
             {navItems.map((item) => (
               <Link key={item.label} to={item.to} hash={item.hash}>{item.label}</Link>
             ))}
+            <Link to="/blog">Blog</Link>
             <Link to="/track">Track</Link>
           </nav>
         ) : null}
@@ -59,6 +60,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           ))}
           <Link to="/luton" onClick={() => setOpen(false)}>Luton</Link>
           <Link to="/st-albans" onClick={() => setOpen(false)}>St Albans</Link>
+          <Link to="/blog" onClick={() => setOpen(false)}>Blog</Link>
           <Link to="/track" onClick={() => setOpen(false)}>Track order</Link>
           <Link to="/order" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Order now <ArrowRight /></Link>
         </nav>
