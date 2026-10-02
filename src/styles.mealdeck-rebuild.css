@@ -240,7 +240,7 @@
   justify-content: center;
   align-items: center;
   padding: 34px;
-  border: 10px solid var(--md-paper);
+  border: 10px solid #9f1019;
   background: var(--md-paper);
   color: var(--md-black);
   box-shadow: 0 40px 90px rgba(0,0,0,.42);
