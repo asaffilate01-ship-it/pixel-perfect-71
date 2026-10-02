@@ -21,6 +21,14 @@ import logoSabzora from "@/assets/premium-logos/sabzora-premium.png";
 import logoVyta from "@/assets/premium-logos/vyta-premium.png";
 import logoMoktl from "@/assets/premium-logos/moktl-premium.png";
 import logoCafe1 from "@/assets/cafe1-logo.png";
+import brandPastarivo from "@/assets/brand-pastarivo.jpg";
+import brandNusara from "@/assets/brand-nusara.jpg";
+import brandRise from "@/assets/brand-rise-griddle.jpg";
+import brandSouvano from "@/assets/brand-souvano.jpg";
+import logoPastarivo from "@/assets/premium-logos/pastarivo-premium.png";
+import logoNusara from "@/assets/premium-logos/nusara-premium.png";
+import logoRise from "@/assets/premium-logos/rise-and-griddle-premium.png";
+import logoSouvano from "@/assets/premium-logos/souvano-premium.png";
 import logoForvelloAsset from "@/assets/premium-logos/forvello-logo.png.asset.json";
 import { cafe1Menu, coreMenu } from "./sample-menus";
 
@@ -108,9 +116,13 @@ export const brands: Brand[] = [
   { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: logoIcova },
   { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: logoMoktl },
   { id: "forvello", name: "Forvello", strapline: "The art of great pizza.", tagline: "Artisan pizza, beautifully crafted.", image: brandForvello, category: "Artisan Pizza", logo: logoForvelloAsset.url },
+  { id: "pastarivo", name: "Pastarivo", strapline: "Fresh pasta, freshly tossed.", tagline: "Pasta plates worth twirling.", image: brandPastarivo, category: "Fresh pasta", logo: logoPastarivo },
+  { id: "nusara", name: "Nusara", strapline: "South East Asian fusion.", tagline: "Bold bowls, bright flavours.", image: brandNusara, category: "South East Asian fusion", logo: logoNusara },
+  { id: "rise-and-griddle", name: "Rise & Griddle", strapline: "Breakfast & brunch.", tagline: "Stacks, eggs and good mornings.", image: brandRise, category: "Breakfast & brunch", logo: logoRise },
+  { id: "souvano", name: "Souvano", strapline: "Eastern Mediterranean grill.", tagline: "Fire-grilled and generous.", image: brandSouvano, category: "Eastern Mediterranean grill", logo: logoSouvano },
 ];
 
-export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd", "vyta", "tarka-box", "sabzora", "skorch-burgers", "forvello"];
+export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd", "vyta", "tarka-box", "sabzora", "skorch-burgers", "forvello", "pastarivo", "nusara", "rise-and-griddle", "souvano"];
 export const addonBrandIds = ["icova", "moktl"];
 
 export const locations: MealDeckLocation[] = [
