@@ -256,7 +256,7 @@ function LandingPage() {
             <article className="md-soon-card"><span className="md-soon-suit">♦</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Bedford</h3><p>Consider yourself dealt in.</p></article>
             <article className="md-soon-card"><span className="md-soon-suit">♠</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Milton Keynes</h3><p>A winning hand is on the table.</p></article>
             <article className="md-soon-card"><span className="md-soon-suit">♥</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Cardiff</h3><p>Hold tight — the cards are warm.</p></article>
-            <article className="md-soon-card md-soon-card-wild"><span className="md-soon-suit">★</span><h3>Your city</h3><p>Nominate it and we'll deal you in first.</p></article>
+            <article className="md-soon-card md-soon-card-wild"><span className="md-soon-suit">★</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Your city</h3><p>Nominate it and we'll deal you in first.</p></article>
           </div>
         </section>
 
