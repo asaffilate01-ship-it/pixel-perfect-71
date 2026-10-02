@@ -512,6 +512,12 @@
 }
 .md-soon-card > * { position: relative; z-index: 1; }
 .md-soon-suit { font-size: 22px; line-height: 1; color: var(--md-cream); opacity: .9; }
+.md-soon-emblem {
+  width: 52px;
+  margin: 10px auto 0;
+  opacity: .92;
+  filter: drop-shadow(0 0 1px rgba(255,246,232,.85)) drop-shadow(0 2px 4px rgba(0,0,0,.35));
+}
 .md-soon-card h3 {
   margin: auto 0 0;
   font-family: var(--md-display);

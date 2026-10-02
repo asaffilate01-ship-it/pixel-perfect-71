@@ -19,6 +19,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
+import backEmblem from "@/assets/mealdeck-back-emblem.png";
 import { ldScript, orgJsonLd, seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
