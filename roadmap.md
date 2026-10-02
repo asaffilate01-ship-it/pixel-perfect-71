@@ -4,4 +4,4 @@
 - [x] Reduce section gaps / inner gaps on homepage, keep polished mobile + desktop
 - [x] Card flip: MealDeck card uses new uploaded emblem, "M" corner ranks, crossed-cutlery suit marks in corners
 
-- [ ] Make homepage hero food-led while preserving current colours; add food background and fan-to-deck card sequence.
+- [x] Make homepage hero food-led while preserving current colours; add food background and fan-to-deck card sequence.
