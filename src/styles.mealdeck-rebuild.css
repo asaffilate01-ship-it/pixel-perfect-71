@@ -259,9 +259,9 @@
 .md-deck-corner i { font-style: normal; font-size: 20px; margin-top: 2px; }
 .md-deck-corner-tl { top: 8px; left: 9px; }
 .md-deck-corner-br { bottom: 8px; right: 9px; transform: rotate(180deg); }
-.md-deck-brand-logo { width: 76%; max-height: 54%; object-fit: contain; }
-.md-deck-mealdeck-logo { width: 94%; max-height: 70%; object-fit: contain; }
-.md-deck-caption { position: absolute; bottom: 48px; left: 34px; right: 34px; text-align: center; }
+.md-deck-brand-logo { width: 76%; flex: 1 1 auto; min-height: 0; object-fit: contain; }
+.md-deck-mealdeck-logo { width: 94%; flex: 1 1 auto; min-height: 0; object-fit: contain; }
+.md-deck-caption { flex: 0 0 auto; margin-top: auto; padding-top: 10px; width: 100%; text-align: center; }
 .md-deck-caption strong { display: block; font-family: var(--md-display); font-size: 17px; }
 .md-deck-caption span { display: block; margin-top: 4px; font-size: 12px; color: var(--md-muted); text-transform: uppercase; font-weight: 700; letter-spacing: .08em; }
 
