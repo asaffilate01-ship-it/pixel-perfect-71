@@ -458,9 +458,14 @@
 .md-location-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .md-location-meta span { display: inline-flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.25); font-size: 13px; font-weight: 700; }
 .md-location-meta svg { width: 18px; color: var(--md-yellow); }
-.md-location-hero-card { aspect-ratio: 2.5/3.5; max-width: 340px; width: 100%; justify-self: center; padding: 42px; display: flex; flex-direction: column; justify-content: center; background: var(--md-paper); color: var(--md-red); border: 12px solid white; outline: 3px solid var(--md-red); outline-offset: -28px; transform: rotate(5deg); box-shadow: 0 35px 70px rgba(0,0,0,.3); }
-.md-location-hero-card strong { font-family: var(--md-display); font-size: clamp(42px,5vw,72px); line-height: .9; text-transform: uppercase; }
-.md-location-hero-card span { font-family: var(--md-display); font-size: 19px; font-weight: 900; text-transform: uppercase; margin-top: 8px; }
+.md-location-hero-card { position: relative; aspect-ratio: 2.5/3.5; max-width: 340px; width: 100%; justify-self: center; padding: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; background: var(--md-paper); color: var(--md-red); border: 12px solid white; outline: 3px solid var(--md-red); outline-offset: -28px; transform: rotate(5deg); box-shadow: 0 35px 70px rgba(0,0,0,.3); }
+.md-location-hero-card strong { font-family: var(--md-display); font-size: clamp(30px,3.4vw,46px); line-height: 1; text-transform: uppercase; white-space: nowrap; }
+.md-location-hero-card > span:not(.md-location-card-corner) { font-family: var(--md-display); font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+.md-location-card-emblem { width: 46%; max-width: 130px; margin-bottom: 10px; }
+.md-location-card-corner { position: absolute; display: flex; flex-direction: column; align-items: center; font-family: var(--md-display); font-size: 26px; font-weight: 900; line-height: 1; color: var(--md-red); }
+.md-location-card-corner i { font-style: normal; font-size: 18px; }
+.md-location-card-corner-tl { top: 14px; left: 14px; }
+.md-location-card-corner-br { bottom: 14px; right: 14px; transform: rotate(180deg); }
 .md-cafe1-callout { margin-top: 28px !important; display: flex; align-items: center; gap: 28px; padding: 26px; background: white; border: 1px solid var(--md-line); }
 .md-cafe1-callout img { width: 150px; height: 110px; object-fit: contain; }
 .md-cafe1-callout h3 { margin: 0; font-family: var(--md-display); font-size: 30px; }

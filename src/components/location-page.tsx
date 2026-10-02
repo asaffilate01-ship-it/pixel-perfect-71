@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { marketingBrands, cafe1Brand } from "@/lib/marketing-brands";
 import cafe1Logo from "@/assets/cafe1-logo.png";
+import redEmblem from "@/assets/mealdeck-emblem.png";
 
 type Props = {
   town: string;
@@ -38,9 +39,11 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             </div>
           </div>
           <div className="md-location-hero-card">
+            <span className="md-location-card-corner md-location-card-corner-tl">{town[0]}<i>♦</i></span>
+            <span className="md-location-card-corner md-location-card-corner-br">{town[0]}<i>♦</i></span>
+            <img src={redEmblem} alt="" className="md-location-card-emblem" />
             <strong>{town}</strong>
-            <span>One Order.</span>
-            <span>Every Craving.</span>
+            <span>One Order. Every Craving.</span>
           </div>
         </section>
 
