@@ -1,4 +1,4 @@
 # Roadmap
 
-- [done] Add MealDeck emblem small on city card backs (homepage "Dealing new hands soon")
-- [done] Blog: two new posts with images, on-brand tracking image, social sharing and og tags verified
+- [ ] Footer: "Prefer the big apps?" strip with Deliveroo, Uber Eats & Just Eat logos (in progress)
+- [ ] Reduce section gaps / inner gaps on homepage, keep polished mobile + desktop
