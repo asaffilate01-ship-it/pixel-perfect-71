@@ -14,4 +14,4 @@
 
 - [x] Mobile ordering flow: sticky restaurant row, slide-up basket/checkout, scrollable dish options
 - [x] Add Pastarivo, Nusara, Rise & Griddle, Souvano to ordering
-- [ ] Branded in-app success messages (no browser popups)
+- [x] Branded in-app success messages

@@ -1048,3 +1048,17 @@
 
   &:hover { transform: translateY(-2px); }
 }
+
+/* Branded MealDeck notifications */
+[data-sonner-toast].mealdeck-toast {
+  border: 2px solid var(--color-primary) !important;
+  border-radius: var(--radius-lg) !important;
+  background:
+    radial-gradient(120% 100% at 0% 0%, color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 55%),
+    var(--color-paper) !important;
+  color: var(--color-ink) !important;
+  box-shadow: inset 0 0 0 4px var(--color-paper), inset 0 0 0 5px color-mix(in oklab, var(--color-ink) 14%, transparent), 0 18px 40px -18px var(--card-drop) !important;
+  padding: 0.9rem 1rem !important;
+}
+[data-sonner-toast].mealdeck-toast .mealdeck-toast-icon { color: var(--color-primary); }
+[data-sonner-toast][data-type="error"].mealdeck-toast { border-color: var(--color-destructive) !important; }
