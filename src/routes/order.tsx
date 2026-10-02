@@ -265,7 +265,7 @@ function OrderPage() {
     if (!location) return;
     if(catalogue.data?.source!=="live"){
       toast.error("Live ordering connection required",{
-        description:"The sample menu is for preview only. Live checkout starts when Dishbee catalogue data is available.",
+        description:"The preview menu is for browsing only. Checkout will be available when live ordering opens.",
       });
       return;
     }

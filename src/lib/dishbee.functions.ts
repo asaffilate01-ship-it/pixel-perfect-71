@@ -176,7 +176,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
         channelOpen: sampleLocationOpen(data.location),
         items: sampleMenu(data.location),
         notice:
-          "Showing a sample menu until the live Dishbee ordering connection is configured.",
+          "Showing a preview menu while live ordering is unavailable.",
       };
     }
 
@@ -214,7 +214,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
         source:legacyCatalogue?"sample":"live",
         channelOpen:list.length?Boolean(list[0]!["channel_open"]):false,
         notice:legacyCatalogue
-          ?"Dishbee is serving the legacy catalogue while the live modifier runtime is updating. Checkout is temporarily disabled."
+          ?"The live menu is updating. Checkout is temporarily disabled."
           :undefined,
         items:list.map((row)=>{
           const groups=Array.isArray(row["modifier_groups"])
@@ -256,7 +256,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
         channelOpen: sampleLocationOpen(data.location),
         items: sampleMenu(data.location),
         notice:
-          "The live Dishbee menu is temporarily unavailable, so a sample menu is shown.",
+          "The live menu is temporarily unavailable, so a preview menu is shown.",
       };
     }
   });
@@ -456,7 +456,7 @@ export const getOrderTracking = createServerFn({ method: "POST" })
     if (!base) {
       return {
         found: false,
-        message: "Live order tracking starts once the Dishbee runtime connection is configured.",
+        message: "Live order tracking is not available yet.",
       };
     }
 
