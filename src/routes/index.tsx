@@ -42,7 +42,7 @@ export const Route = createFileRoute("/")({
 
 const directBenefits = [
   { icon: ShoppingBasket, title: "One basket", copy: "Mix dishes from different MealDeck brands." },
-  { icon: Bike, title: "One delivery fee", copy: "One MealDeck order, not separate restaurant baskets." },
+  { icon: Bike, title: "One delivery fee", copy: "Order from your favourite brands in one go and pay a single delivery fee." },
   { icon: Users, title: "Group ordering", copy: "Invite everyone and build the order together." },
   { icon: WalletCards, title: "Split payments", copy: "Let friends pay their own share." },
   { icon: Star, title: "Loyalty rewards", copy: "Earn points and unlock direct-order offers." },
@@ -62,7 +62,7 @@ const steps = [
   { n: "01", title: "Choose how you want it", copy: "Delivery, pickup or kerbside. Select your area when ordering opens." },
   { n: "02", title: "Mix your cuisines", copy: "Build one basket from different MealDeck brands." },
   { n: "03", title: "Checkout once", copy: "One order, one payment flow and one delivery fee." },
-  { n: "04", title: "Track it together", copy: "Follow kitchen progress, packing and delivery in one place." },
+  { n: "04", title: "Track it together", copy: "Follow progress across every brand in your order, from preparation to delivery." },
 ];
 
 function LandingPage() {
@@ -275,7 +275,7 @@ function LandingPage() {
 
         <section className="md-final-cta">
           <Sparkles />
-          <p className="md-kicker md-kicker-light">Different cuisines. Same table.</p>
+          <p className="md-kicker md-kicker-light">Different cuisines. One checkout.</p>
           <h2>Ready to play your cravings right?</h2>
           <p>Mix your brands, build one basket and keep the whole order together.</p>
           <div>

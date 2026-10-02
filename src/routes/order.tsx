@@ -100,7 +100,7 @@ function OrderPage() {
   const [checking, setChecking] = useState(false);
   const [serviceMessage, setServiceMessage] = useState<{ tone: "idle" | "ok" | "error"; text: string }>({
     tone: "idle",
-    text: "Choose how you'd like your order and enter your postcode to see your MealDeck kitchen.",
+    text: "Choose how you'd like your order and enter your postcode to see what's cooking near you.",
   });
   const [location, setLocation] = useState<LocationKey | null>(null);
   const [activeBrand, setActiveBrand] = useState<string | null>(brandFromSearch ?? null);
@@ -169,7 +169,7 @@ function OrderPage() {
       if (location && location !== result.location && lines.length) {
         setLines([]);
         setCheckoutOpen(false);
-        toast("Basket cleared", { description: "Your postcode moved you to a different MealDeck kitchen." });
+        toast("Basket cleared", { description: "Your postcode changed the menus available, so we started a fresh basket." });
       }
       setLocation(result.location);
       setCustomer((prev) => ({
@@ -180,7 +180,7 @@ function OrderPage() {
         tone: result.channelOpen ? "ok" : "idle",
         text: result.channelOpen
           ? result.message
-          : `${result.message} This kitchen is currently closed, but you can still browse.`,
+          : `${result.message} Your local MealDeck is currently closed, but you can still browse.`,
       });
     } catch {
       setLocation(null);
@@ -264,7 +264,7 @@ function OrderPage() {
   async function handleCheckout() {
     if (!location) return;
     if(catalogue.data?.source!=="live"){
-      toast.error("Live kitchen connection required",{
+      toast.error("Live ordering connection required",{
         description:"The sample menu is for preview only. Live checkout starts when Dishbee catalogue data is available.",
       });
       return;
@@ -284,11 +284,11 @@ function OrderPage() {
         setPaymentPending({ orderId: result.orderId, handoffCode: result.handoffCode });
         setCheckoutOpen(false);
         toast.success("Order created", {
-          description: "Complete payment to send it to the kitchen.",
+          description: "Complete payment to send your order for preparation.",
         });
       } else if (result.status === "unconfigured") {
-        toast.error("Kitchen service not connected yet", {
-          description: "This is a preview — live orders start once the kitchen service is connected.",
+        toast.error("Ordering service not connected yet", {
+          description: "This is a preview — live orders start once the ordering service is connected.",
         });
       } else {
         toast.error(result.message);
@@ -379,10 +379,10 @@ function OrderPage() {
             <div className="mt-6 rounded-xl border border-accent/40 bg-accent/10 p-5">
               <p className="eyebrow">Payment required</p>
               <p className="mt-2 font-display text-lg font-bold">
-                Your order is reserved, but it is not on the kitchen screen yet.
+                Your order is reserved, but preparation has not started yet.
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Complete payment to release it to Dishbee KDS. Your handoff code is{" "}
+                Complete payment to release it for preparation. Your handoff code is{" "}
                 <strong className="text-xl text-gold">
                   {paymentPending.handoffCode || "----"}
                 </strong>.
@@ -659,7 +659,7 @@ function OrderPage() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                You'll get a 4-digit handoff code. The kitchen starts once payment is confirmed.
+                You'll get a 4-digit handoff code. Preparation starts once payment is confirmed.
               </p>
               <Button
                 variant="gold"

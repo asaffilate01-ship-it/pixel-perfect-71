@@ -176,7 +176,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
         channelOpen: sampleLocationOpen(data.location),
         items: sampleMenu(data.location),
         notice:
-          "Showing a sample menu until the live Dishbee kitchen connection is configured.",
+          "Showing a sample menu until the live Dishbee ordering connection is configured.",
       };
     }
 
