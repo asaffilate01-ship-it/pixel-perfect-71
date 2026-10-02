@@ -382,7 +382,7 @@ function OrderPage() {
                 Your order is reserved, but preparation has not started yet.
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Complete payment to release it to Dishbee KDS. Your handoff code is{" "}
+                Complete payment to release it for preparation. Your handoff code is{" "}
                 <strong className="text-xl text-gold">
                   {paymentPending.handoffCode || "----"}
                 </strong>.
