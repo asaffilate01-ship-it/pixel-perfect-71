@@ -631,6 +631,8 @@
   .md-location-grid { grid-template-columns: 1fr; }
   .md-footer-links { grid-template-columns: 1fr 1fr; }
   .md-footer-bottom { flex-direction: column; gap: 4px; text-align: center; }
+  .md-app-logo { width: 110px; height: 64px; padding: 11px 13px; }
+  .md-footer-apps-row { gap: 10px; }
   .md-location-hero { grid-template-columns: 1fr; padding-top: 58px; padding-bottom: 58px; }
   .md-location-hero-card { max-width: 270px; border-width: 6px; }
   .md-location-info-grid { grid-template-columns: 1fr; }
