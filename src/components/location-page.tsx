@@ -3,7 +3,7 @@ import { ArrowRight, Bike, Clock3, MapPin, Package, Store, UtensilsCrossed } fro
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
-import { marketingBrands } from "@/lib/marketing-brands";
+import { marketingBrands, cafe1Brand } from "@/lib/marketing-brands";
 import cafe1Logo from "@/assets/cafe1-logo.png";
 
 type Props = {
@@ -52,7 +52,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <p>Marketing brand collection shown independently of menu availability.</p>
             </div>
           </div>
-          <BrandLogoGrid brands={marketingBrands} />
+          <BrandLogoGrid brands={includeCafe1 ? [...marketingBrands, cafe1Brand] : marketingBrands} />
 
           {includeCafe1 ? (
             <div className="md-cafe1-callout">
