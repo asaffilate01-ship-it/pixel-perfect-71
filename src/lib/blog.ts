@@ -13,6 +13,43 @@ export type Post = {
 
 export const posts: Post[] = [
   {
+    slug: "cash-in-your-chips-loyalty-points",
+    title: "Cash In Your Chips: How MealDeck Loyalty Points Work",
+    excerpt: "Every order stacks your stack. Here's how MealDeck loyalty points build up across brands, group orders and monthly streaks.",
+    image: "/blog/loyalty-points.jpg",
+    date: "2026-10-01",
+    rank: "10",
+    suit: "♦",
+    tag: "Loyalty",
+    keywords: "food loyalty points Luton, takeaway rewards St Albans, food delivery rewards UK, MealDeck loyalty",
+    body: [
+      { p: "Most delivery apps let your rewards fold. At MealDeck, every order stacks your stack — points from every brand, sitting in one pot, ready to cash in on your next hand." },
+      { h: "One pot, every brand", p: "Order Skorch Burgers tonight and Tarka Box tomorrow — the points land in the same pot. Mix brands in one basket and they all count. That's the beauty of one deck." },
+      { h: "Group orders pay double dividends", p: "Deal the whole table in. Group orders with split payments still earn points for you as the host, and our Group Hand bonus adds extra points when you order together." },
+      { h: "Keep your streak on the table", p: "Order regularly and multipliers like 10× points on your fifth order of the month come into play. Check the Offers section for the current terms and limits." },
+      { h: "Ready to ante up?", p: "Order on the web, app, WhatsApp or phone — every channel earns. Your points, your pot, your play." },
+    ],
+  },
+  {
+    slug: "house-rules-every-offer-explained",
+    title: "House Rules: Every MealDeck Offer, Explained",
+    excerpt: "Snap, Perfect Pair, The Burger Ace — the offers on the table right now, with the limits spelled out so you always play with a full deck.",
+    image: "/blog/offers-explained.jpg",
+    date: "2026-09-30",
+    rank: "9",
+    suit: "♥",
+    tag: "Offers",
+    keywords: "food offers Luton, takeaway deals St Albans, buy one get one half price food, free burger offer UK",
+    body: [
+      { p: "Card games run on house rules, and so do good offers. Here's every hand MealDeck is dealing right now — with the limits written plainly, so there's no small print ambush at checkout." },
+      { h: "The Burger Ace", p: "Spend £21 or more and a burger's on the house. It's our flagship hand: one basket, multiple brands, and a free burger when the total tips over 21." },
+      { h: "Snap!", p: "Buy one and get the second of the same item at half price. Two karak chai? Two smash burgers? When the cards match, you snap the second for half." },
+      { h: "The Perfect Pair", p: "Two of the same item, one price cut — our 2-for-1 on matching items. Ideal for a table that agrees for once." },
+      { h: "The Group Hand and the Three-Brand Trifecta", p: "Group orders earn bonus loyalty points, and baskets that stack three or more brands in one deal take £5 off. Splitting the bill never split the value." },
+      { h: "Play it straight", p: "Every offer has clear limits — one deal per order, minimum spends apply, and full terms live on the Offers section. Shuffle up and pick your hand on the order page." },
+    ],
+  },
+  {
     slug: "deal-everyone-in-group-food-order-luton",
     title: "Deal Everyone In: How to Nail a Group Food Order in Luton",
     excerpt: "Burgers for one, desi for another, French tacos for the table. Here's how to play a group order without the drama — and split the bill fairly.",

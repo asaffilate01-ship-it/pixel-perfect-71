@@ -19,6 +19,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
+import backEmblem from "@/assets/mealdeck-back-emblem.png";
 import { ldScript, orgJsonLd, seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
@@ -248,13 +249,13 @@ function LandingPage() {
             <p>More cities are in the shuffle. MealDeck is stacking its next hands across the UK.</p>
           </div>
           <div className="md-soon-grid">
-            <article className="md-soon-card"><span className="md-soon-suit">♠</span><h3>London</h3><p>The ace up London's sleeve.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♥</span><h3>Manchester</h3><p>You're next up our sleeve.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♦</span><h3>Birmingham</h3><p>The deck is stacked in your favour.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♣</span><h3>Leicester</h3><p>We're shuffling your way.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♦</span><h3>Bedford</h3><p>Consider yourself dealt in.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♠</span><h3>Milton Keynes</h3><p>A winning hand is on the table.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♥</span><h3>Cardiff</h3><p>Hold tight — the cards are warm.</p></article>
+            <article className="md-soon-card"><span className="md-soon-suit">♠</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>London</h3><p>The ace up London's sleeve.</p></article>
+            <article className="md-soon-card"><span className="md-soon-suit">♥</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Manchester</h3><p>You're next up our sleeve.</p></article>
+            <article className="md-soon-card"><span className="md-soon-suit">♦</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Birmingham</h3><p>The deck is stacked in your favour.</p></article>
+            <article className="md-soon-card"><span className="md-soon-suit">♣</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Leicester</h3><p>We're shuffling your way.</p></article>
+            <article className="md-soon-card"><span className="md-soon-suit">♦</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Bedford</h3><p>Consider yourself dealt in.</p></article>
+            <article className="md-soon-card"><span className="md-soon-suit">♠</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Milton Keynes</h3><p>A winning hand is on the table.</p></article>
+            <article className="md-soon-card"><span className="md-soon-suit">♥</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Cardiff</h3><p>Hold tight — the cards are warm.</p></article>
             <article className="md-soon-card md-soon-card-wild"><span className="md-soon-suit">★</span><h3>Your city</h3><p>Nominate it and we'll deal you in first.</p></article>
           </div>
         </section>
