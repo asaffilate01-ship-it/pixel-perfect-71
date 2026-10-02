@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import backEmblem from "@/assets/mealdeck-back-emblem.png";
 import mealDeckEmblem from "@/assets/mealdeck-vintage-emblem.png.asset.json";
 import { marketingBrands } from "@/lib/marketing-brands";
 
 const cycleSeconds = 45;
 const stepSeconds = cycleSeconds / (marketingBrands.length + 1);
+const introDuration = 4600;
 
 function CutlerySuit() {
   return (
@@ -35,22 +37,38 @@ function CardBack({ side }: { side: "left" | "right" }) {
 }
 
 export function RotatingBrandDeck() {
+  const [introComplete, setIntroComplete] = useState(false);
   const cards = [
     { id: "mealdeck", name: "MealDeck", category: "One Order. Every Craving.", logo: mealDeckEmblem.url, rank: "M", suit: "cutlery" },
     ...marketingBrands,
   ];
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIntroComplete(true), introDuration);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="md-deck-stage" aria-label="MealDeck brand card showcase">
+    <div
+      className={`md-deck-stage ${introComplete ? "is-cycling" : "is-gathering"}`}
+      aria-label="Restaurant brand cards gathering into one MealDeck order"
+    >
       <CardBack side="left" />
       <CardBack side="right" />
       {cards.map((card, index) => {
         const black = card.suit === "♠" || card.suit === "♣";
+        const centeredIndex = index - (cards.length - 1) / 2;
         return (
           <div
             key={card.id}
             className="md-deck-card"
-            style={{ animationDelay: `${index * stepSeconds}s` }}
+            style={{
+              "--card-delay": `${index * stepSeconds}s`,
+              "--fan-x": `${centeredIndex * 15}px`,
+              "--fan-y": `${Math.abs(centeredIndex) * 3.2}px`,
+              "--fan-rotate": `${centeredIndex * 4.2}deg`,
+              "--fan-z": `${cards.length - Math.abs(centeredIndex)}`,
+            } as React.CSSProperties}
           >
             <div className={`md-deck-card-inner${black ? " is-black" : ""}`}>
               <span className="md-deck-corner md-deck-corner-tl" aria-hidden="true">
