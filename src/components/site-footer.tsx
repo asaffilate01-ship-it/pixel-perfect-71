@@ -1,38 +1,49 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, Facebook, Youtube, Music2 } from "lucide-react";
-import logo from "@/assets/mealdeck-fan-logo.png";
+import { Facebook, Instagram, Music2, Youtube } from "lucide-react";
+import mealDeckLogo from "@/assets/mealdeck-card-logo.png";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border/60 bg-card/40">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-12 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <img src={logo} alt="MealDeck — One Order. Every Craving." className="size-28 object-contain" width={112} height={112} loading="lazy" />
+    <footer className="md-site-footer">
+      <div className="md-footer-main">
+        <div className="md-footer-brand">
+          <img src={mealDeckLogo} alt="MealDeck" />
+          <p>Different cuisines. One basket. One delivery fee.</p>
+          <strong>One Order. Every Craving.</strong>
         </div>
 
-        <nav className="flex flex-wrap gap-6 text-sm font-medium text-muted-foreground">
-          <Link to="/" className="hover:text-accent">Home</Link>
-          <Link to="/" hash="brands" className="hover:text-accent">Brands</Link>
-          <Link to="/" hash="how" className="hover:text-accent">How It Works</Link>
-          <Link to="/" hash="offers" className="hover:text-accent">Offers</Link>
-          <Link to="/luton" className="hover:text-accent">Food Delivery Luton</Link>
-          <Link to="/st-albans" className="hover:text-accent">Food Delivery St Albans</Link>
-          <Link to="/blog" className="hover:text-accent">Blog</Link>
-          <Link to="/order" className="hover:text-accent">Order Now</Link>
-        </nav>
-
-        <div className="flex items-center gap-4 text-muted-foreground">
-          <Instagram className="size-5 transition-colors hover:text-accent" />
-          <Facebook className="size-5 transition-colors hover:text-accent" />
-          <Music2 className="size-5 transition-colors hover:text-accent" />
-          <Youtube className="size-5 transition-colors hover:text-accent" />
+        <div className="md-footer-links">
+          <div>
+            <h3>MealDeck</h3>
+            <Link to="/" hash="brands">Brands</Link>
+            <Link to="/" hash="offers">Offers</Link>
+            <Link to="/" hash="how">How it works</Link>
+            <Link to="/track">Track order</Link>
+          </div>
+          <div>
+            <h3>Locations</h3>
+            <Link to="/luton">Luton</Link>
+            <Link to="/st-albans">St Albans</Link>
+            <Link to="/order">Order direct</Link>
+          </div>
+          <div>
+            <h3>Luton collection</h3>
+            <p>314–318 Selbourne Road</p>
+            <p>Luton · LU4 8NU</p>
+            <p>Please bring your order reference.</p>
+          </div>
         </div>
 
-        <p className="font-display text-xl font-black leading-tight text-accent">A full house<br />of flavour.</p>
+        <div className="md-footer-social" aria-label="Social links">
+          <Instagram />
+          <Facebook />
+          <Music2 />
+          <Youtube />
+        </div>
       </div>
-
-      <div className="border-t border-border/60 py-5 text-center text-xs text-muted-foreground">
-        One Order. Every Craving. · © {new Date().getFullYear()} MealDeck. All rights reserved.
+      <div className="md-footer-bottom">
+        <span>© {new Date().getFullYear()} MealDeck.</span>
+        <span>Good food brings people together.</span>
       </div>
     </footer>
   );
