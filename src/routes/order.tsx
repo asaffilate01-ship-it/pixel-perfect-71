@@ -319,6 +319,150 @@ function OrderPage() {
     }
   }
 
+  const basketPanel = (
+    <>
+          <div className="marketplace-basket p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-lg font-bold">Your basket</h2>
+              {lines.length ? (
+                <button onClick={() => setLines([])} className="text-xs text-muted-foreground hover:text-primary">
+                  Clear all
+                </button>
+              ) : null}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {itemCount(lines)} items from {new Set(lines.map((line) => line.brandId)).size} brands
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {lines.map((line) => (
+                <div key={line.lineId} className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs text-accent">{brandById(line.brandId)?.name}</p>
+                    <p className="truncate text-sm font-medium">{line.name}</p>
+                    {line.selectedModifiers.length ? (
+                      <p className="truncate text-xs text-muted-foreground">
+                        {line.selectedModifiers.map((m) => m.name).join(", ")}
+                      </p>
+                    ) : null}
+                    <p className="text-sm text-muted-foreground">{formatPence(lineUnitPrice(line) * line.quantity)}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="glass"
+                      size="icon"
+                      className="size-8 rounded-full"
+                      aria-label="Remove one"
+                      onClick={() => setLines((prev) => setQuantity(prev, line.lineId, line.quantity - 1))}
+                    >
+                      {line.quantity === 1 ? <Trash2 /> : <Minus />}
+                    </Button>
+                    <span className="w-6 text-center text-sm font-semibold">{line.quantity}</span>
+                    <Button
+                      variant="glass"
+                      size="icon"
+                      className="size-8 rounded-full"
+                      aria-label="Add one"
+                      onClick={() => setLines((prev) => setQuantity(prev, line.lineId, line.quantity + 1))}
+                    >
+                      <Plus />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {lines.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                   Add dishes from any restaurant.
+                </p>
+              ) : null}
+            </div>
+
+            {lines.length ? (
+              <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>{formatPence(goods)}</span>
+                </div>
+                {fulfilment === "delivery" ? (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Delivery (one fee)</span>
+                    <span>{formatPence(deliveryPence)}</span>
+                  </div>
+                ) : null}
+                <div className="flex justify-between font-display text-lg font-bold">
+                  <span>Total</span>
+                  <span>{formatPence(total)}</span>
+                </div>
+                <Button
+                  variant="hero"
+                  size="lg"
+                  className="mt-3 w-full rounded-full"
+                  onClick={() => setCheckoutOpen((open) => !open)}
+                >
+                  Go to checkout
+                </Button>
+              </div>
+            ) : null}
+          </div>
+
+          {checkoutOpen && lines.length ? (
+            <div className="card-elevated mt-5 space-y-3 p-5">
+              <h3 className="font-display text-lg font-bold">{fulfilmentLabels[fulfilment]} details</h3>
+              {!fulfilmentAllowed && currentLocation ? (
+                <p className="text-sm text-destructive">
+                  {currentLocation.name} offers{" "}
+                  {currentLocation.allowedFulfilments.map((f) => fulfilmentLabels[f]).join(", ")} only.
+                </p>
+              ) : null}
+              {(
+                [
+                  ["name", "Name for handoff", true],
+                  ["phone", "Phone", true],
+                  ["email", "Email (optional)", true],
+                  ["carMake", "Car make", fulfilment === "curbside"],
+                  ["vehicleRegistration", "Registration", fulfilment === "curbside"],
+                  ["address1", "Address", fulfilment === "delivery"],
+                  ["city", "Town / city", fulfilment === "delivery"],
+                  ["postcode", "Postcode", fulfilment === "delivery"],
+                ] as const
+              )
+                .filter(([, , show]) => show)
+                .map(([field, label]) => (
+                  <div key={field} className="space-y-1">
+                    <Label htmlFor={field}>{label}</Label>
+                    <Input
+                      id={field}
+                      value={customer[field]}
+                      onChange={(event) => setCustomer((prev) => ({ ...prev, [field]: event.target.value }))}
+                    />
+                  </div>
+                ))}
+              <div className="space-y-1">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={customer.notes}
+                  onChange={(event) => setCustomer((prev) => ({ ...prev, notes: event.target.value }))}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                You'll get a 4-digit handoff code. Preparation starts once payment is confirmed.
+              </p>
+              <Button
+                variant="gold"
+                size="lg"
+                className="w-full rounded-full"
+                disabled={!canCheckout || submitting}
+                onClick={handleCheckout}
+              >
+                {submitting ? <Loader2 className="animate-spin" /> : null}
+                Continue to payment · {formatPence(total)}
+              </Button>
+            </div>
+          ) : null}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-background pb-28 lg:pb-0">
       <SiteHeader
@@ -560,146 +704,8 @@ function OrderPage() {
         </div>
 
         {/* Basket */}
-        <aside id="basket" className="scroll-mt-24 lg:sticky lg:top-28 lg:self-start">
-          <div className="marketplace-basket p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold">Your basket</h2>
-              {lines.length ? (
-                <button onClick={() => setLines([])} className="text-xs text-muted-foreground hover:text-primary">
-                  Clear all
-                </button>
-              ) : null}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {itemCount(lines)} items from {new Set(lines.map((line) => line.brandId)).size} brands
-            </p>
-
-            <div className="mt-4 space-y-3">
-              {lines.map((line) => (
-                <div key={line.lineId} className="flex items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs text-accent">{brandById(line.brandId)?.name}</p>
-                    <p className="truncate text-sm font-medium">{line.name}</p>
-                    {line.selectedModifiers.length ? (
-                      <p className="truncate text-xs text-muted-foreground">
-                        {line.selectedModifiers.map((m) => m.name).join(", ")}
-                      </p>
-                    ) : null}
-                    <p className="text-sm text-muted-foreground">{formatPence(lineUnitPrice(line) * line.quantity)}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="glass"
-                      size="icon"
-                      className="size-8 rounded-full"
-                      aria-label="Remove one"
-                      onClick={() => setLines((prev) => setQuantity(prev, line.lineId, line.quantity - 1))}
-                    >
-                      {line.quantity === 1 ? <Trash2 /> : <Minus />}
-                    </Button>
-                    <span className="w-6 text-center text-sm font-semibold">{line.quantity}</span>
-                    <Button
-                      variant="glass"
-                      size="icon"
-                      className="size-8 rounded-full"
-                      aria-label="Add one"
-                      onClick={() => setLines((prev) => setQuantity(prev, line.lineId, line.quantity + 1))}
-                    >
-                      <Plus />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {lines.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                   Add dishes from any restaurant.
-                </p>
-              ) : null}
-            </div>
-
-            {lines.length ? (
-              <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span>{formatPence(goods)}</span>
-                </div>
-                {fulfilment === "delivery" ? (
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Delivery (one fee)</span>
-                    <span>{formatPence(deliveryPence)}</span>
-                  </div>
-                ) : null}
-                <div className="flex justify-between font-display text-lg font-bold">
-                  <span>Total</span>
-                  <span>{formatPence(total)}</span>
-                </div>
-                <Button
-                  variant="hero"
-                  size="lg"
-                  className="mt-3 w-full rounded-full"
-                  onClick={() => setCheckoutOpen((open) => !open)}
-                >
-                  Go to checkout
-                </Button>
-              </div>
-            ) : null}
-          </div>
-
-          {checkoutOpen && lines.length ? (
-            <div className="card-elevated mt-5 space-y-3 p-5">
-              <h3 className="font-display text-lg font-bold">{fulfilmentLabels[fulfilment]} details</h3>
-              {!fulfilmentAllowed && currentLocation ? (
-                <p className="text-sm text-destructive">
-                  {currentLocation.name} offers{" "}
-                  {currentLocation.allowedFulfilments.map((f) => fulfilmentLabels[f]).join(", ")} only.
-                </p>
-              ) : null}
-              {(
-                [
-                  ["name", "Name for handoff", true],
-                  ["phone", "Phone", true],
-                  ["email", "Email (optional)", true],
-                  ["carMake", "Car make", fulfilment === "curbside"],
-                  ["vehicleRegistration", "Registration", fulfilment === "curbside"],
-                  ["address1", "Address", fulfilment === "delivery"],
-                  ["city", "Town / city", fulfilment === "delivery"],
-                  ["postcode", "Postcode", fulfilment === "delivery"],
-                ] as const
-              )
-                .filter(([, , show]) => show)
-                .map(([field, label]) => (
-                  <div key={field} className="space-y-1">
-                    <Label htmlFor={field}>{label}</Label>
-                    <Input
-                      id={field}
-                      value={customer[field]}
-                      onChange={(event) => setCustomer((prev) => ({ ...prev, [field]: event.target.value }))}
-                    />
-                  </div>
-                ))}
-              <div className="space-y-1">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={customer.notes}
-                  onChange={(event) => setCustomer((prev) => ({ ...prev, notes: event.target.value }))}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                You'll get a 4-digit handoff code. Preparation starts once payment is confirmed.
-              </p>
-              <Button
-                variant="gold"
-                size="lg"
-                className="w-full rounded-full"
-                disabled={!canCheckout || submitting}
-                onClick={handleCheckout}
-              >
-                {submitting ? <Loader2 className="animate-spin" /> : null}
-                Continue to payment · {formatPence(total)}
-              </Button>
-            </div>
-          ) : null}
+        <aside id="basket" className="hidden scroll-mt-24 lg:sticky lg:top-28 lg:block lg:self-start">
+          {basketPanel}
         </aside>
       </main>
 
