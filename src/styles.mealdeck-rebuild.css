@@ -194,14 +194,14 @@
 
 .md-deck-stage {
   position: relative;
-  min-height: 590px;
+  min-height: 480px;
   display: grid;
   place-items: center;
   perspective: 1200px;
 }
 .md-deck-shadow,
 .md-deck-card {
-  width: min(370px, 68vw);
+  width: min(290px, 60vw);
   aspect-ratio: 2.5 / 3.5;
 }
 .md-deck-shadow {
@@ -213,12 +213,16 @@
 .md-deck-shadow::after {
   content: "";
   position: absolute;
-  inset: 18px;
-  border: 2px solid rgba(255,246,232,.55);
-  background: repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,246,232,.06) 12px 14px);
+  inset: 12px;
+  border: 2px solid rgba(255,246,232,.6);
+  outline: 1px solid rgba(255,246,232,.35);
+  outline-offset: -7px;
+  background: repeating-linear-gradient(45deg, transparent 0 10px, rgba(255,246,232,.07) 10px 12px), repeating-linear-gradient(-45deg, transparent 0 10px, rgba(255,246,232,.07) 10px 12px);
 }
-.md-deck-shadow-left { transform: translateX(-92px) rotate(-12deg); }
-.md-deck-shadow-right { transform: translateX(92px) rotate(12deg); }
+.md-deck-shadow { display: grid; place-items: center; overflow: hidden; }
+.md-deck-back-emblem { position: relative; z-index: 1; width: 78%; opacity: .8; filter: drop-shadow(0 0 1px rgba(255,246,232,.9)) drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+.md-deck-shadow-left { transform: translateX(-74px) rotate(-12deg); }
+.md-deck-shadow-right { transform: translateX(74px) rotate(12deg); }
 
 .md-deck-card {
   position: absolute;
@@ -256,8 +260,12 @@
   font-family: var(--md-display);
   font-weight: 900;
 }
-.md-deck-index { top: 28px; font-size: 31px; }
-.md-deck-suit { top: 61px; font-size: 24px; }
+.md-deck-corner { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; color: var(--md-red); font-family: var(--md-display); z-index: 2; }
+.md-deck-card-inner.is-black .md-deck-corner { color: #151515; }
+.md-deck-corner b { font-size: 24px; font-weight: 900; }
+.md-deck-corner i { font-style: normal; font-size: 20px; margin-top: 2px; }
+.md-deck-corner-tl { top: 22px; left: 22px; }
+.md-deck-corner-br { bottom: 22px; right: 22px; transform: rotate(180deg); }
 .md-deck-brand-logo { width: 76%; max-height: 54%; object-fit: contain; }
 .md-deck-mealdeck-logo { width: 94%; max-height: 70%; object-fit: contain; }
 .md-deck-caption { position: absolute; bottom: 48px; left: 34px; right: 34px; text-align: center; }
@@ -476,10 +484,10 @@
   .md-header-actions > .md-btn { display: none; }
   .md-hero-inner { min-height: auto; grid-template-columns: 1fr; padding: 60px 0 50px; }
   .md-hero-copy { order: 1; }
-  .md-deck-stage { order: 2; min-height: 460px; }
-  .md-deck-shadow, .md-deck-card { width: min(290px, 62vw); }
-  .md-deck-shadow-left { transform: translateX(-64px) rotate(-11deg); }
-  .md-deck-shadow-right { transform: translateX(64px) rotate(11deg); }
+  .md-deck-stage { order: 2; min-height: 380px; }
+  .md-deck-shadow, .md-deck-card { width: min(240px, 54vw); }
+  .md-deck-shadow-left { transform: translateX(-52px) rotate(-11deg); }
+  .md-deck-shadow-right { transform: translateX(52px) rotate(11deg); }
   .md-direct-strip-title { flex-direction: column; align-items: flex-start; gap: 7px; }
   .md-direct-grid { grid-template-columns: 1fr 1fr; }
   .md-direct-grid article:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.12); }
@@ -517,10 +525,11 @@
   .md-hero-tagline { font-size: 28px; }
   .md-hero-actions { flex-direction: column; }
   .md-hero-actions .md-btn { width: 100%; }
-  .md-deck-stage { min-height: 390px; }
-  .md-deck-shadow, .md-deck-card { width: min(235px, 66vw); }
-  .md-deck-card-inner { padding: 24px; border-width: 8px; }
-  .md-deck-index { font-size: 24px; }
+  .md-deck-stage { min-height: 320px; }
+  .md-deck-shadow, .md-deck-card { width: min(190px, 52vw); }
+  .md-deck-corner b { font-size: 18px; } .md-deck-corner i { font-size: 15px; } .md-deck-corner-tl { top: 16px; left: 16px; } .md-deck-corner-br { bottom: 16px; right: 16px; } .md-deck-caption strong { font-size: 14px; } .md-deck-caption span { font-size: 10px; }
+  .md-deck-card-inner { padding: 20px; border-width: 6px; }
+  
   .md-deck-caption { bottom: 35px; }
   .md-direct-grid { grid-template-columns: 1fr; }
   .md-direct-grid article { border-right: 0 !important; }

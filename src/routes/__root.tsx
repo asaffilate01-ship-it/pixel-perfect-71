@@ -129,7 +129,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('mealdeck-theme');var d=s?s==='dark':true;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){document.documentElement.classList.add('dark')}})()`,
+            __html: `(function(){try{localStorage.removeItem('mealdeck-theme')}catch(e){}document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark'})()`,
           }}
         />
         <HeadContent />
