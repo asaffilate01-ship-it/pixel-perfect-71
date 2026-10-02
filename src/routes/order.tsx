@@ -334,12 +334,12 @@ function OrderPage() {
       <main className="mx-auto grid max-w-7xl gap-6 px-4 py-5 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0">
           <section className="order-control-bar">
-            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <div className="min-w-0">
                 <p className="eyebrow">Order direct</p>
-                <h1 className="truncate text-2xl font-extrabold sm:text-3xl">What are you craving?</h1>
+                <h1 className="text-2xl font-extrabold sm:text-3xl">What are you craving?</h1>
               </div>
-              <div className="flex shrink-0 rounded-lg border border-border bg-background p-1" aria-label="Browse location">
+              <div className="grid grid-cols-2 rounded-lg border border-border bg-background p-1" aria-label="Browse location">
                 {locations.map((entry) => (
                   <Button
                     key={entry.key}
