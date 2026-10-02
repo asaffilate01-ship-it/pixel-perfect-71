@@ -8,3 +8,6 @@
 - [x] Rework demo ordering into a browse-first restaurant marketplace on desktop and mobile.
 
 - [x] Add Forvello (Artisan Pizza) to homepage and every location; align brand cards/logos across desktop and mobile.
+
+## Open
+- [ ] Answer: how ordering layout scales with many menu items per brand (pending — answer after card restyle)
