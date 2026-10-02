@@ -477,6 +477,7 @@
 .md-footer-social a:hover { color: white; }
 .md-footer-apps-divider { width: 1px; height: 34px; background: rgba(255,255,255,.14); margin: 0 8px; }
 .md-footer-apps-logos { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.md-app-logo { display: flex; align-items: center; justify-content: center; width: 116px; height: 70px; padding: 13px 16px; background: #f7f1e3; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.06); transition: transform .2s ease, box-shadow .2s ease; }
 .md-app-logo:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.06); }
 .md-app-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .md-footer-bottom { padding: 16px 20px; display: flex; justify-content: center; gap: 28px; border-top: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.45); font-size: 12px; }
