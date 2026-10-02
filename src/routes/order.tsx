@@ -100,7 +100,7 @@ function OrderPage() {
   const [checking, setChecking] = useState(false);
   const [serviceMessage, setServiceMessage] = useState<{ tone: "idle" | "ok" | "error"; text: string }>({
     tone: "idle",
-    text: "Choose how you'd like your order and enter your postcode to see your MealDeck kitchen.",
+    text: "Choose how you'd like your order and enter your postcode to see what's cooking near you.",
   });
   const [location, setLocation] = useState<LocationKey | null>(null);
   const [activeBrand, setActiveBrand] = useState<string | null>(brandFromSearch ?? null);
@@ -169,7 +169,7 @@ function OrderPage() {
       if (location && location !== result.location && lines.length) {
         setLines([]);
         setCheckoutOpen(false);
-        toast("Basket cleared", { description: "Your postcode moved you to a different MealDeck kitchen." });
+        toast("Basket cleared", { description: "Your postcode changed the menus available, so we started a fresh basket." });
       }
       setLocation(result.location);
       setCustomer((prev) => ({
@@ -180,7 +180,7 @@ function OrderPage() {
         tone: result.channelOpen ? "ok" : "idle",
         text: result.channelOpen
           ? result.message
-          : `${result.message} This kitchen is currently closed, but you can still browse.`,
+          : `${result.message} Your local MealDeck is currently closed, but you can still browse.`,
       });
     } catch {
       setLocation(null);

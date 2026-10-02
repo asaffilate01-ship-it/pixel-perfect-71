@@ -34,22 +34,22 @@ export const Route=createFileRoute("/track")({
 const statusCopy:Record<string,{label:string;copy:string;Icon:typeof Clock3}>={
   payment_pending:{
     label:"Awaiting payment",
-    copy:"Payment has not confirmed yet, so the kitchen has not received the order.",
+    copy:"Payment has not confirmed yet, so your order has not been sent for preparation.",
     Icon:Clock3,
   },
   paid:{
     label:"Payment confirmed",
-    copy:"Payment is confirmed and Dishbee is preparing the kitchen release.",
+    copy:"Payment is confirmed and your order is being sent for preparation.",
     Icon:CheckCircle2,
   },
   accepted:{
-    label:"Sent to kitchen",
-    copy:"Your order has been released to the KDS.",
+    label:"Sent for preparation",
+    copy:"Your order has been sent to the chefs.",
     Icon:PackageCheck,
   },
   preparing:{
     label:"Preparing",
-    copy:"The kitchen is preparing your MealDeck order.",
+    copy:"Each brand is freshly preparing their dishes for your order.",
     Icon:PackageCheck,
   },
   ready:{
@@ -66,13 +66,13 @@ const statusCopy:Record<string,{label:string;copy:string;Icon:typeof Clock3}>={
 
 const passCopy:Record<string,{label:string;copy:string;Icon:typeof Clock3}>={
   ready_to_pack:{
-    label:"Kitchen complete",
-    copy:"Every brand is ready and your order is moving to the MealDeck pass.",
+    label:"Preparation complete",
+    copy:"Every brand's dishes are ready and your order is moving to the MealDeck pass.",
     Icon:PackageCheck,
   },
   packing:{
     label:"Packing your order",
-    copy:"The MealDeck pass is bringing all brands together into one handoff.",
+    copy:"Your MealDeck pass keeps every brand together for one delivery.",
     Icon:PackageCheck,
   },
   sealed:{
@@ -88,7 +88,7 @@ const passCopy:Record<string,{label:string;copy:string;Icon:typeof Clock3}>={
 };
 
 const deliveryCopy:Record<string,string>={
-  waiting_for_kitchen:"Waiting for kitchen",
+  waiting_for_kitchen:"Waiting for preparation",
   waiting_for_ready:"Waiting for the full order to be packed",
   pending_quote:"Finding the best available delivery",
   quoted:"Delivery option selected",
@@ -97,7 +97,7 @@ const deliveryCopy:Record<string,string>={
   requested:"Finding a delivery driver",
   accepted:"Delivery accepted",
   driver_assigned:"Driver assigned",
-  arriving_pickup:"Driver heading to the kitchen",
+  arriving_pickup:"Driver on the way to collect your order",
   picked_up:"Order collected by driver",
   arriving_customer:"Driver heading to you",
   delivered:"Delivered",
