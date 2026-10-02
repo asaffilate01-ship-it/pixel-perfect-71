@@ -861,6 +861,39 @@
   @media (min-width: 640px) { padding: 1.25rem; }
 }
 
+@utility order-brand-selector {
+  position: sticky;
+  top: 5.2rem;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  border: 2px solid color-mix(in oklab, var(--color-paper) 82%, var(--color-accent));
+  border-radius: var(--radius-lg);
+  padding: 0.55rem 0.65rem;
+  background:
+    radial-gradient(120% 100% at 50% 0%, color-mix(in oklab, var(--color-accent) 10%, transparent), transparent 55%),
+    var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 14px 30px -24px var(--card-drop);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0.3rem;
+    z-index: 1;
+    border: 1px solid color-mix(in oklab, var(--color-ink) 14%, transparent);
+    border-radius: calc(var(--radius-lg) - 0.25rem);
+    pointer-events: none;
+  }
+
+  &:active {
+    transform: translateY(-2px);
+  }
+}
+
 @utility order-brand-rail {
   display: grid;
   grid-auto-flow: column;

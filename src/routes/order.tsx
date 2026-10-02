@@ -147,6 +147,7 @@ function OrderPage() {
   const primaryItems = items.filter((item) => currentLocation?.primaryBrandIds.includes(item.brandId));
   const addonItems = items.filter((item) => currentLocation?.addonBrandIds.includes(item.brandId));
   const visibleItems = activeBrand ? primaryItems.filter((item) => item.brandId === activeBrand) : primaryItems;
+  const activeBrandObj = activeBrand ? brandById(activeBrand) ?? null : null;
 
   const grouped = useMemo(() => {
     const map = new Map<string, MenuItem[]>();
@@ -603,36 +604,51 @@ function OrderPage() {
                 <p className="mt-1 hidden text-sm text-muted-foreground sm:block">Choose a restaurant or discover dishes across them all.</p>
               </div>
 
-              <div className="order-brand-rail mt-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setBrandMenuOpen(true)}
-                  aria-label="Open restaurant menu"
-                  className="order-brand-pill is-browse lg:hidden"
-                >
-                  <span className="order-brand-logo grid place-items-center bg-accent text-accent-foreground"><PanelLeftOpen className="size-5" /></span>
-                  <span className="truncate">Browse</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => setActiveBrand(null)}
-                  className={`order-brand-pill ${activeBrand === null ? "is-active" : ""}`}
-                >
-                  <span className="order-brand-logo grid place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
-                  <span className="truncate">All</span>
-                </Button>
-                {primaryBrands.map((brand) => (
-                    <Button
-                      key={brand.id}
-                      variant="ghost"
-                      onClick={() => setActiveBrand(brand.id)}
-                      aria-label={brand.name}
-                      className={`order-brand-pill ${activeBrand === brand.id ? "is-active" : ""}`}
-                    >
-                      <span className="order-brand-logo"><BrandMark brand={brand} className="h-full w-full p-1.5 text-xs" /></span>
-                      <span className="w-full truncate">{brand.name}</span>
-                    </Button>
-                ))}
+              <button
+                type="button"
+                onClick={() => setBrandMenuOpen(true)}
+                aria-label="Choose a restaurant"
+                className="order-brand-selector mt-4 lg:hidden"
+              >
+                <span className="order-brand-logo">
+                  {activeBrandObj ? (
+                    <BrandMark brand={activeBrandObj} className="h-full w-full p-1.5 text-xs" />
+                  ) : (
+                    <span className="grid h-full w-full place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
+                  )}
+                </span>
+                <span className="min-w-0 flex-1 text-left">
+                  <span className="block text-[10px] font-bold uppercase tracking-[0.14em] opacity-60">Ordering from</span>
+                  <span className="block truncate font-display text-base font-extrabold">{activeBrandObj?.name ?? "All restaurants"}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">
+                  <PanelLeftOpen className="size-4" /> Menu
+                </span>
+              </button>
+
+              <div className="mt-4 hidden lg:block">
+                <div className="order-brand-rail">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setActiveBrand(null)}
+                    className={`order-brand-pill ${activeBrand === null ? "is-active" : ""}`}
+                  >
+                    <span className="order-brand-logo grid place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
+                    <span className="truncate">All</span>
+                  </Button>
+                  {primaryBrands.map((brand) => (
+                      <Button
+                        key={brand.id}
+                        variant="ghost"
+                        onClick={() => setActiveBrand(brand.id)}
+                        aria-label={brand.name}
+                        className={`order-brand-pill ${activeBrand === brand.id ? "is-active" : ""}`}
+                      >
+                        <span className="order-brand-logo"><BrandMark brand={brand} className="h-full w-full p-1.5 text-xs" /></span>
+                        <span className="w-full truncate">{brand.name}</span>
+                      </Button>
+                  ))}
+                </div>
               </div>
 
               {catalogue.isLoading ? (
