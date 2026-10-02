@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Music2, Youtube } from "lucide-react";
 import mealDeckLogo from "@/assets/mealdeck-card-logo.png";
+import deliverooLogo from "@/assets/Deliveroo_logo.svg";
+import uberEatsLogo from "@/assets/Uber_Eats_2020_logo.svg";
+import justEatLogo from "@/assets/Just_Eat_Takeaway_Logo_6.2020.svg";
 
 export function SiteFooter() {
   return (
@@ -33,14 +36,38 @@ export function SiteFooter() {
             <p>Please bring your order reference.</p>
           </div>
         </div>
+      </div>
 
-        <div className="md-footer-social" aria-label="Social links">
-          <Instagram />
-          <Facebook />
-          <Music2 />
-          <Youtube />
+      <div className="md-footer-apps">
+        <p className="md-footer-apps-copy">
+          <strong>Prefer the big apps?</strong> We're on{" "}
+          <a href="https://deliveroo.co.uk" target="_blank" rel="noopener noreferrer">Deliveroo</a>,{" "}
+          <a href="https://www.ubereats.com" target="_blank" rel="noopener noreferrer">Uber Eats</a> &{" "}
+          <a href="https://www.just-eat.co.uk" target="_blank" rel="noopener noreferrer">Just Eat</a> — but ordering direct
+          costs you less, and our offers &amp; loyalty points aren't available through them.
+        </p>
+        <div className="md-footer-apps-row" aria-label="Ordering channels and social links">
+          <div className="md-footer-social" aria-label="Social links">
+            <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram /></a>
+            <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><Facebook /></a>
+            <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><Music2 /></a>
+            <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><Youtube /></a>
+          </div>
+          <span className="md-footer-apps-divider" aria-hidden="true" />
+          <div className="md-footer-apps-logos">
+            <a className="md-app-logo" href="https://deliveroo.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Deliveroo">
+              <img src={deliverooLogo} alt="Deliveroo" />
+            </a>
+            <a className="md-app-logo" href="https://www.ubereats.com" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Uber Eats">
+              <img src={uberEatsLogo} alt="Uber Eats" />
+            </a>
+            <a className="md-app-logo" href="https://www.just-eat.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Just Eat">
+              <img src={justEatLogo} alt="Just Eat" />
+            </a>
+          </div>
         </div>
       </div>
+
       <div className="md-footer-bottom">
         <span>© {new Date().getFullYear()} MealDeck.</span>
         <span>Good food brings people together.</span>
