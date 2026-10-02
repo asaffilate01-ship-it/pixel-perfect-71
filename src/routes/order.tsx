@@ -101,9 +101,9 @@ function OrderPage() {
   const [checking, setChecking] = useState(false);
   const [serviceMessage, setServiceMessage] = useState<{ tone: "idle" | "ok" | "error"; text: string }>({
     tone: "idle",
-    text: "Choose how you'd like your order and enter your postcode to see what's cooking near you.",
+    text: "Browsing the Luton menu. Enter your postcode when you're ready to order.",
   });
-  const [location, setLocation] = useState<LocationKey | null>(null);
+  const [location, setLocation] = useState<LocationKey | null>("luton");
   const [activeBrand, setActiveBrand] = useState<string | null>(brandFromSearch ?? null);
   const [lines, setLines] = useState<CartLine[]>([]);
   const [customer, setCustomer] = useState(emptyCustomer);
@@ -204,6 +204,24 @@ function OrderPage() {
         text: `${currentLocation.name} offers ${currentLocation.allowedFulfilments.map((f) => fulfilmentLabels[f]).join(", ")} only.`,
       });
     }
+  }
+
+  function browseLocation(next: LocationKey) {
+    if (location === next) return;
+    if (lines.length) {
+      setLines([]);
+      toast("Basket cleared", { description: "We started a fresh basket for the new location." });
+    }
+    setLocation(next);
+    setActiveBrand(null);
+    setPostcode("");
+    setCustomer(emptyCustomer);
+    setCheckoutOpen(false);
+    setPaymentPending(null);
+    setServiceMessage({
+      tone: "idle",
+      text: `Browsing the ${locations.find((entry) => entry.key === next)?.town ?? "local"} menu. Enter your postcode when you're ready to order.`,
+    });
   }
 
   function beginAdd(item: MenuItem) {
@@ -313,35 +331,50 @@ function OrderPage() {
         }
       />
 
-      <main className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_22rem]">
+      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-5 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0">
-          {/* Step 1: fulfilment + postcode */}
-          <section className="card-elevated p-5 sm:p-6">
-            <p className="eyebrow">Find your MealDeck</p>
-            <h1 className="mt-2 text-3xl font-extrabold sm:text-4xl">How would you like your order?</h1>
-            <div className="mt-5 grid grid-cols-3 gap-2" role="tablist" aria-label="How you'd like your order">
+          <section className="order-control-bar">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="min-w-0">
+                <p className="eyebrow">Order direct</p>
+                <h1 className="text-2xl font-extrabold sm:text-3xl">What are you craving?</h1>
+              </div>
+              <div className="grid grid-cols-2 rounded-lg border border-border bg-background p-1" aria-label="Browse location">
+                {locations.map((entry) => (
+                  <Button
+                    key={entry.key}
+                    variant={location === entry.key ? "secondary" : "ghost"}
+                    size="sm"
+                    className={location === entry.key ? "text-accent" : "text-muted-foreground"}
+                    onClick={() => browseLocation(entry.key)}
+                  >
+                    {entry.town}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="How you'd like your order">
               {(Object.keys(fulfilmentLabels) as FulfilmentType[]).map((key) => {
                 const Icon = fulfilmentIcons[key];
                 const active = fulfilment === key;
                 return (
-                  <button
+                  <Button
                     key={key}
+                    type="button"
+                    variant={active ? "gold" : "glass"}
+                    size="sm"
                     role="tab"
                     aria-selected={active}
                     onClick={() => changeFulfilment(key)}
-                    className={`flex flex-col items-center gap-1 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${
-                      active
-                        ? "border-accent bg-accent text-accent-foreground"
-                        : "border-border bg-background text-muted-foreground hover:text-foreground"
-                    }`}
+                    className="h-10 shrink-0 rounded-full px-4"
                   >
-                    <Icon className="size-5" />
+                    <Icon />
                     {fulfilmentLabels[key]}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
               <div className="relative flex-1">
                 <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -350,12 +383,12 @@ function OrderPage() {
                   onKeyDown={(event) => event.key === "Enter" && void checkArea()}
                   placeholder="Enter your postcode"
                   aria-label="Postcode"
-                  className="h-12 pl-9"
+                  className="h-11 rounded-full pl-9"
                 />
               </div>
-              <Button variant="hero" size="lg" className="h-12 rounded-full" onClick={() => void checkArea()} disabled={checking}>
+              <Button variant="hero" className="h-11 rounded-full px-4 sm:px-6" onClick={() => void checkArea()} disabled={checking}>
                 {checking ? <Loader2 className="animate-spin" /> : <Search />}
-                Check area
+                <span className="hidden sm:inline">Check area</span>
               </Button>
             </div>
             <p
@@ -407,42 +440,33 @@ function OrderPage() {
                 </p>
               ) : null}
 
-              <div className="mt-8">
-                <p className="eyebrow">
-                  {currentLocation.town} · {primaryBrands.length} brands
-                </p>
-                <h2 className="mt-2 text-3xl font-extrabold">Move between brands. Keep one basket.</h2>
+              <div className="mt-7">
+                <p className="eyebrow">Restaurants in {currentLocation.town}</p>
+                <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">Explore every craving</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Choose a restaurant or discover dishes across them all.</p>
               </div>
 
-              <div className="mt-5 flex gap-3 overflow-x-auto pb-3 pt-1">
-                <button
+              <div className="order-brand-rail mt-4">
+                <Button
+                  variant="ghost"
                   onClick={() => setActiveBrand(null)}
-                  className={`mini-card h-24 w-20 shrink-0 text-xs font-bold ${
-                    activeBrand === null ? "mini-card-selected" : ""
-                  }`}
+                  className={`order-brand-pill ${activeBrand === null ? "is-active" : ""}`}
                 >
-                  <span className="mini-card-corner">★<small>♦</small></span>
-                  All brands
-                </button>
-                {primaryBrands.map((brand, index) => {
-                  const ranks = ["A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
-                  const suits = ["♥", "♦", "♠", "♣"];
-                  const rank = ranks[index % ranks.length];
-                  const suit = suits[index % suits.length];
-                  return (
-                    <button
+                  <span className="order-brand-logo grid place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
+                  <span className="truncate">All</span>
+                </Button>
+                {primaryBrands.map((brand) => (
+                    <Button
                       key={brand.id}
+                      variant="ghost"
                       onClick={() => setActiveBrand(brand.id)}
                       aria-label={brand.name}
-                      className={`mini-card h-24 w-20 shrink-0 p-2 pt-4 ${
-                        activeBrand === brand.id ? "mini-card-selected" : ""
-                      }`}
+                      className={`order-brand-pill ${activeBrand === brand.id ? "is-active" : ""}`}
                     >
-                      <span className={`mini-card-corner ${suit === "♠" || suit === "♣" ? "text-ink" : ""}`}>{rank}<small>{suit}</small></span>
-                      <BrandMark brand={brand} className="h-full w-full text-sm" />
-                    </button>
-                  );
-                })}
+                      <span className="order-brand-logo"><BrandMark brand={brand} className="h-full w-full p-1.5 text-xs" /></span>
+                      <span className="w-full truncate">{brand.name}</span>
+                    </Button>
+                ))}
               </div>
 
               {catalogue.isLoading ? (
@@ -450,45 +474,47 @@ function OrderPage() {
                   <Loader2 className="size-8 animate-spin text-accent" />
                 </div>
               ) : (
-                <div className="mt-8 space-y-10">
+                <div className="mt-7 space-y-9">
                   {grouped.map(([group, groupItems]) => (
-                    <section key={group}>
-                      <h3 className="flex items-center gap-3 font-display text-xl font-bold">
-                        <span className="text-primary" aria-hidden="true">♦</span>{group}
-                        <span className="h-px flex-1 bg-gradient-to-r from-accent/40 to-transparent" aria-hidden="true" />
-                      </h3>
-                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <section key={group} className="scroll-mt-32">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate font-display text-xl font-bold">{group}</h3>
+                          {!activeBrand ? <p className="text-xs text-muted-foreground">{brandById(groupItems[0]?.brandId ?? "")?.category}</p> : null}
+                        </div>
+                        <span className="text-xs font-semibold text-accent">{groupItems.length} {groupItems.length === 1 ? "dish" : "dishes"}</span>
+                      </div>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         {groupItems.map((item) => {
                           const brand = brandById(item.brandId);
+                          const directLine = lines.find((line) => line.id === item.id && line.selectedModifiers.length === 0);
                           return (
-                            <article key={item.id} className="menu-card flex gap-4 p-4">
-                              <span className="menu-card-frame" />
-                              <span className="menu-card-pip">♦</span>
+                            <article key={item.id} className="marketplace-dish-card">
                               <img
                                 src={item.imageUrl || brand?.image}
                                 alt={item.name}
                                 width={816}
                                 height={816}
                                 loading="lazy"
-                                className="size-24 shrink-0 rounded-xl object-cover ring-1 ring-accent/30"
+                                className="marketplace-dish-image"
                               />
-                              <div className="flex min-w-0 flex-1 flex-col">
-                                <p className="text-xs uppercase tracking-[0.14em] text-accent">{brand?.name ?? "MealDeck"}</p>
-                                <p className="font-display font-bold">{item.name}</p>
+                              <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
+                                <p className="text-[11px] font-bold uppercase text-accent">{brand?.name ?? "MealDeck"}</p>
+                                <p className="mt-0.5 font-display font-bold leading-tight">{item.name}</p>
                                 {item.description ? (
                                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
                                 ) : null}
                                 <div className="mt-auto flex items-center justify-between pt-3">
-                                  <span className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 font-display text-sm font-bold text-accent">{formatPence(item.pricePence)}</span>
-                                  <Button
-                                    variant="hero"
-                                    size="sm"
-                                    className="rounded-full"
-                                    disabled={!channelOpen}
-                                    onClick={() => beginAdd(item)}
-                                  >
-                                    <Plus /> {item.hasModifiers ? "Choose" : "Add"}
-                                  </Button>
+                                  <span className="font-display font-bold">{formatPence(item.pricePence)}</span>
+                                  {directLine ? (
+                                    <div className="flex items-center rounded-full bg-primary text-primary-foreground">
+                                      <Button variant="ghost" size="icon" className="size-8 rounded-full hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label={`Remove one ${item.name}`} onClick={() => setLines((prev) => setQuantity(prev, directLine.lineId, directLine.quantity - 1))}><Minus /></Button>
+                                      <span className="w-6 text-center text-sm font-bold">{directLine.quantity}</span>
+                                      <Button variant="ghost" size="icon" className="size-8 rounded-full hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label={`Add one ${item.name}`} onClick={() => setLines((prev) => setQuantity(prev, directLine.lineId, directLine.quantity + 1))}><Plus /></Button>
+                                    </div>
+                                  ) : (
+                                    <Button variant="hero" size="icon" className="size-9 rounded-full" disabled={!channelOpen} aria-label={`${item.hasModifiers ? "Choose options for" : "Add"} ${item.name}`} onClick={() => beginAdd(item)}><Plus /></Button>
+                                  )}
                                 </div>
                               </div>
                             </article>
@@ -535,10 +561,9 @@ function OrderPage() {
 
         {/* Basket */}
         <aside id="basket" className="scroll-mt-24 lg:sticky lg:top-28 lg:self-start">
-          <div className="menu-card p-5">
-            <span className="menu-card-frame" />
+          <div className="marketplace-basket p-5">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold">Your Hand <span className="text-primary">♦</span></h2>
+              <h2 className="font-display text-lg font-bold">Your basket</h2>
               {lines.length ? (
                 <button onClick={() => setLines([])} className="text-xs text-muted-foreground hover:text-primary">
                   Clear all
@@ -587,7 +612,7 @@ function OrderPage() {
               ))}
               {lines.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  Your basket is empty. Mix brands to your heart's content.
+                   Add dishes from any restaurant.
                 </p>
               ) : null}
             </div>
@@ -614,7 +639,7 @@ function OrderPage() {
                   className="mt-3 w-full rounded-full"
                   onClick={() => setCheckoutOpen((open) => !open)}
                 >
-                  Checkout Once
+                  Go to checkout
                 </Button>
               </div>
             ) : null}
@@ -765,11 +790,12 @@ function OrderPage() {
       </Dialog>
 
       {lines.length ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
-          <Button variant="hero" size="lg" className="w-full rounded-full" asChild>
+        <div className="fixed inset-x-3 bottom-24 z-40 rounded-xl border border-border bg-card/95 p-2 shadow-2xl backdrop-blur lg:hidden">
+          <Button variant="hero" size="lg" className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] rounded-lg px-4" asChild>
             <a href="#basket">
-              <ShoppingBasket />
-              {itemCount(lines)} items · {formatPence(total)}
+              <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-xs font-bold">{itemCount(lines)}</span>
+              <span className="truncate text-left">View basket</span>
+              <span>{formatPence(total)}</span>
             </a>
           </Button>
         </div>
