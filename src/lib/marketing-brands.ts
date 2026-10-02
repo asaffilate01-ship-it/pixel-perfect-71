@@ -1,3 +1,4 @@
+import cafe1Logo from "@/assets/cafe1-logo.png";
 import icova from "@/assets/premium-logos/icova-premium.png";
 import loadd from "@/assets/premium-logos/loadd-premium.png";
 import moktl from "@/assets/premium-logos/moktl-premium.png";
@@ -43,3 +44,16 @@ export const marketingBrands: MarketingBrand[] = [
   { id: "rise-and-griddle", name: "Rise & Griddle", category: "Breakfast & brunch", logo: riseAndGriddle, rank: "2", suit: "♥" },
   { id: "souvano", name: "Souvano", category: "Eastern Mediterranean grill", logo: souvano, rank: "A", suit: "♦" },
 ];
+
+/**
+ * Café1 is location-exclusive (St Albans only), so it is kept out of the
+ * shared homepage collection and appended only on the St Albans page.
+ */
+export const cafe1Brand: MarketingBrand = {
+  id: "cafe1",
+  name: "Café1",
+  category: "Café Classics",
+  logo: cafe1Logo,
+  rank: "A",
+  suit: "♣",
+};
