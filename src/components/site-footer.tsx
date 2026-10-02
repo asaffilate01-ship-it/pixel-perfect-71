@@ -54,15 +54,17 @@ export function SiteFooter() {
             <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><Youtube /></a>
           </div>
           <span className="md-footer-apps-divider" aria-hidden="true" />
-          <a className="md-app-logo" href="https://deliveroo.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Deliveroo">
-            <img src={deliverooLogo} alt="Deliveroo" />
-          </a>
-          <a className="md-app-logo" href="https://www.ubereats.com" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Uber Eats">
-            <img src={uberEatsLogo} alt="Uber Eats" />
-          </a>
-          <a className="md-app-logo" href="https://www.just-eat.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Just Eat">
-            <img src={justEatLogo} alt="Just Eat" />
-          </a>
+          <div className="md-footer-apps-logos">
+            <a className="md-app-logo" href="https://deliveroo.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Deliveroo">
+              <img src={deliverooLogo} alt="Deliveroo" />
+            </a>
+            <a className="md-app-logo" href="https://www.ubereats.com" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Uber Eats">
+              <img src={uberEatsLogo} alt="Uber Eats" />
+            </a>
+            <a className="md-app-logo" href="https://www.just-eat.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Just Eat">
+              <img src={justEatLogo} alt="Just Eat" />
+            </a>
+          </div>
         </div>
       </div>
 
