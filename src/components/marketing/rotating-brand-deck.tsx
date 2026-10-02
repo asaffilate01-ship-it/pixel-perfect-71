@@ -36,14 +36,29 @@ function CardBack({ side }: { side: "left" | "right" }) {
   );
 }
 
+function shuffleBrands<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = copy[i]!;
+    copy[i] = copy[j]!;
+    copy[j] = tmp;
+  }
+  return copy;
+}
+
 export function RotatingBrandDeck() {
   const [introComplete, setIntroComplete] = useState(false);
+  // Random starting order each load — shuffled after mount so SSR and the
+  // first client render stay identical (no hydration mismatch).
+  const [brandOrder, setBrandOrder] = useState(marketingBrands);
   const cards = [
     { id: "mealdeck", name: "MealDeck", category: "One Order. Every Craving.", logo: mealDeckEmblem.url, rank: "M", suit: "cutlery" },
-    ...marketingBrands,
+    ...brandOrder,
   ];
 
   useEffect(() => {
+    setBrandOrder(shuffleBrands(marketingBrands));
     const timer = window.setTimeout(() => setIntroComplete(true), introDuration);
     return () => window.clearTimeout(timer);
   }, []);
