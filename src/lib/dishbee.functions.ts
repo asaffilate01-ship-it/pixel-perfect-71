@@ -301,6 +301,12 @@ const orderSchema = z
         .max(12)
         .optional()
         .or(z.literal("")),
+      carMake: z
+        .string()
+        .trim()
+        .max(60)
+        .optional()
+        .or(z.literal("")),
       address1: z
         .string()
         .max(200)
@@ -346,11 +352,11 @@ const orderSchema = z
 
     if (
       value.fulfilment === "curbside" &&
-      !value.customer.vehicleRegistration
+      (!value.customer.carMake || !value.customer.vehicleRegistration)
     ) {
       ctx.addIssue({
         code: "custom",
-        message: "Vehicle registration required",
+        message: "Car make and registration required",
       });
     }
   });
@@ -395,7 +401,7 @@ export const placeOrder = createServerFn({ method: "POST" })
               : { postcode: data.customer.postcode },
           p_vehicle_registration:
             data.fulfilment === "curbside"
-              ? data.customer.vehicleRegistration
+              ? `${data.customer.carMake} · ${data.customer.vehicleRegistration}`
               : null,
         },
       );
