@@ -134,9 +134,13 @@ function LandingPage() {
               const red = offer.suit === "♥" || offer.suit === "♦";
               return (
                 <article key={offer.label} className="md-offer-card">
-                  <div className={`md-offer-rank ${red ? "md-offer-rank-red" : ""}`}>
+                  <div className={`md-offer-corner ${red ? "md-offer-corner-red" : ""}`}>
                     <strong>{offer.rank}</strong><span>{offer.suit}</span>
                   </div>
+                  <div className={`md-offer-corner md-offer-corner-br ${red ? "md-offer-corner-red" : ""}`} aria-hidden="true">
+                    <strong>{offer.rank}</strong><span>{offer.suit}</span>
+                  </div>
+                  <span className="md-offer-pip" aria-hidden="true">{offer.suit}</span>
                   <p className="md-offer-label">{offer.label}</p>
                   <h3>{offer.value}</h3>
                   <p>{offer.copy}</p>
