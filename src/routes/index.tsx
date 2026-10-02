@@ -115,7 +115,7 @@ function LandingPage() {
           <div className="md-section-heading md-section-heading-split">
             <div>
               <p className="md-kicker md-kicker-red">Our brands. Your cravings.</p>
-              <h2>Fourteen brands. One premium collection.</h2>
+              <h2>Multiple brands. One premium collection.</h2>
               <p>Every identity stays distinct. MealDeck brings them together in one ordering experience.</p>
             </div>
             <Link to="/order" className="md-btn md-btn-red">Start a mixed order <ArrowRight /></Link>
