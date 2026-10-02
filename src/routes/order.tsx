@@ -482,7 +482,7 @@ function OrderPage() {
           <section className="order-control-bar">
             <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <div className="min-w-0">
-                <p className="eyebrow">Order direct</p>
+                <p className="eyebrow hidden sm:block">Order direct</p>
                 <h1 className="text-2xl font-extrabold sm:text-3xl">What are you craving?</h1>
               </div>
               <div className="grid grid-cols-2 rounded-lg border border-border bg-background p-1" aria-label="Browse location">
@@ -589,7 +589,7 @@ function OrderPage() {
               <div className="mt-7">
                 <p className="eyebrow">Restaurants in {currentLocation.town}</p>
                 <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">Explore every craving</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Choose a restaurant or discover dishes across them all.</p>
+                <p className="mt-1 hidden text-sm text-muted-foreground sm:block">Choose a restaurant or discover dishes across them all.</p>
               </div>
 
               <div className="order-brand-rail mt-4">
@@ -712,7 +712,7 @@ function OrderPage() {
       </main>
 
       <Dialog open={customising !== null} onOpenChange={(open) => !open && setCustomising(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[88dvh] overflow-y-auto">
           {customising ? (
             <>
               <DialogHeader>
@@ -781,13 +781,14 @@ function OrderPage() {
               <Button
                 variant="hero"
                 size="lg"
-                className="w-full rounded-full"
+                className="sticky bottom-0 w-full rounded-full shadow-2xl"
                 disabled={!customiserValid}
                 onClick={() => {
                   if(!customiserValid)return;
                   setLines((prev) => addItem(prev, customising, chosen));
                   setCustomising(null);
                   setChosen([]);
+                  toast.success(`${customising.name} added to your hand`);
                 }}
               >
                 Add to basket · {formatPence(lineUnitPrice({ pricePence: customising.pricePence, selectedModifiers: chosen }))}
