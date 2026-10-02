@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { SiteFooter } from "@/components/site-footer";
 import { checkServiceability, getCatalogue, placeOrder } from "@/lib/dishbee.functions";
 import {
@@ -108,6 +109,7 @@ function OrderPage() {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [customer, setCustomer] = useState(emptyCustomer);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [basketOpen, setBasketOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [paymentPending, setPaymentPending] = useState<{ orderId: string; handoffCode: string } | null>(null);
   const [customising, setCustomising] = useState<MenuItem | null>(null);
@@ -319,248 +321,8 @@ function OrderPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-background pb-28 lg:pb-0">
-      <SiteHeader
-        context={
-          <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm">
-            <MapPin className="size-4 text-accent" />
-            <span className="font-medium">{currentLocation ? currentLocation.town : "Find your local MealDeck"}</span>
-            <span className="text-muted-foreground">· {fulfilmentLabels[fulfilment]}</span>
-          </div>
-        }
-      />
-
-      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-5 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0">
-          <section className="order-control-bar">
-            <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <div className="min-w-0">
-                <p className="eyebrow">Order direct</p>
-                <h1 className="text-2xl font-extrabold sm:text-3xl">What are you craving?</h1>
-              </div>
-              <div className="grid grid-cols-2 rounded-lg border border-border bg-background p-1" aria-label="Browse location">
-                {locations.map((entry) => (
-                  <Button
-                    key={entry.key}
-                    variant={location === entry.key ? "secondary" : "ghost"}
-                    size="sm"
-                    className={location === entry.key ? "text-accent" : "text-muted-foreground"}
-                    onClick={() => browseLocation(entry.key)}
-                  >
-                    {entry.town}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="How you'd like your order">
-              {(Object.keys(fulfilmentLabels) as FulfilmentType[]).map((key) => {
-                const Icon = fulfilmentIcons[key];
-                const active = fulfilment === key;
-                return (
-                  <Button
-                    key={key}
-                    type="button"
-                    variant={active ? "gold" : "glass"}
-                    size="sm"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => changeFulfilment(key)}
-                    className="h-10 shrink-0 rounded-full px-4"
-                  >
-                    <Icon />
-                    {fulfilmentLabels[key]}
-                  </Button>
-                );
-              })}
-            </div>
-            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-              <div className="relative flex-1">
-                <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={postcode}
-                  onChange={(event) => setPostcode(event.target.value)}
-                  onKeyDown={(event) => event.key === "Enter" && void checkArea()}
-                  placeholder="Enter your postcode"
-                  aria-label="Postcode"
-                  className="h-11 rounded-full pl-9"
-                />
-              </div>
-              <Button variant="hero" className="h-11 rounded-full px-4 sm:px-6" onClick={() => void checkArea()} disabled={checking}>
-                {checking ? <Loader2 className="animate-spin" /> : <Search />}
-                <span className="hidden sm:inline">Check area</span>
-              </Button>
-            </div>
-            <p
-              className={`mt-3 text-sm ${
-                serviceMessage.tone === "error"
-                  ? "text-destructive"
-                  : serviceMessage.tone === "ok"
-                    ? "text-gold"
-                    : "text-muted-foreground"
-              }`}
-            >
-              {serviceMessage.text}
-            </p>
-            {currentLocation ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {currentLocation.name} · {currentLocation.hoursLabel}
-              </p>
-            ) : null}
-          </section>
-
-          {paymentPending ? (
-            <div className="mt-6 rounded-xl border border-accent/40 bg-accent/10 p-5">
-              <p className="eyebrow">Payment required</p>
-              <p className="mt-2 font-display text-lg font-bold">
-                Your order is reserved, but preparation has not started yet.
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Complete payment to release it for preparation. Your handoff code is{" "}
-                <strong className="text-xl text-gold">
-                  {paymentPending.handoffCode || "----"}
-                </strong>.
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Order reference {paymentPending.orderId.slice(0, 8).toUpperCase()}.
-              </p>
-            </div>
-          ) : null}
-
-          {!currentLocation ? null : (
-            <>
-              {catalogue.data?.notice ? (
-                <p className="mt-6 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-accent">
-                  {catalogue.data.notice}
-                </p>
-              ) : null}
-              {!channelOpen ? (
-                <p className="mt-6 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">
-                  {currentLocation.name} is closed for orders right now.
-                </p>
-              ) : null}
-
-              <div className="mt-7">
-                <p className="eyebrow">Restaurants in {currentLocation.town}</p>
-                <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">Explore every craving</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Choose a restaurant or discover dishes across them all.</p>
-              </div>
-
-              <div className="order-brand-rail mt-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setActiveBrand(null)}
-                  className={`order-brand-pill ${activeBrand === null ? "is-active" : ""}`}
-                >
-                  <span className="order-brand-logo grid place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
-                  <span className="truncate">All</span>
-                </Button>
-                {primaryBrands.map((brand) => (
-                    <Button
-                      key={brand.id}
-                      variant="ghost"
-                      onClick={() => setActiveBrand(brand.id)}
-                      aria-label={brand.name}
-                      className={`order-brand-pill ${activeBrand === brand.id ? "is-active" : ""}`}
-                    >
-                      <span className="order-brand-logo"><BrandMark brand={brand} className="h-full w-full p-1.5 text-xs" /></span>
-                      <span className="w-full truncate">{brand.name}</span>
-                    </Button>
-                ))}
-              </div>
-
-              {catalogue.isLoading ? (
-                <div className="mt-16 flex justify-center">
-                  <Loader2 className="size-8 animate-spin text-accent" />
-                </div>
-              ) : (
-                <div className="mt-7 space-y-9">
-                  {grouped.map(([group, groupItems]) => (
-                    <section key={group} className="scroll-mt-32">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
-                        <div className="min-w-0">
-                          <h3 className="truncate font-display text-xl font-bold">{group}</h3>
-                          {!activeBrand ? <p className="text-xs text-muted-foreground">{brandById(groupItems[0]?.brandId ?? "")?.category}</p> : null}
-                        </div>
-                        <span className="text-xs font-semibold text-accent">{groupItems.length} {groupItems.length === 1 ? "dish" : "dishes"}</span>
-                      </div>
-                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                        {groupItems.map((item) => {
-                          const brand = brandById(item.brandId);
-                          const directLine = lines.find((line) => line.id === item.id && line.selectedModifiers.length === 0);
-                          return (
-                            <article key={item.id} className="marketplace-dish-card">
-                              <img
-                                src={item.imageUrl || brand?.image}
-                                alt={item.name}
-                                width={816}
-                                height={816}
-                                loading="lazy"
-                                className="marketplace-dish-image"
-                              />
-                              <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
-                                <p className="text-[11px] font-bold uppercase text-accent">{brand?.name ?? "MealDeck"}</p>
-                                <p className="mt-0.5 font-display font-bold leading-tight">{item.name}</p>
-                                {item.description ? (
-                                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
-                                ) : null}
-                                <div className="mt-auto flex items-center justify-between pt-3">
-                                  <span className="font-display font-bold">{formatPence(item.pricePence)}</span>
-                                  {directLine ? (
-                                    <div className="flex items-center rounded-full bg-primary text-primary-foreground">
-                                      <Button variant="ghost" size="icon" className="size-8 rounded-full hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label={`Remove one ${item.name}`} onClick={() => setLines((prev) => setQuantity(prev, directLine.lineId, directLine.quantity - 1))}><Minus /></Button>
-                                      <span className="w-6 text-center text-sm font-bold">{directLine.quantity}</span>
-                                      <Button variant="ghost" size="icon" className="size-8 rounded-full hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label={`Add one ${item.name}`} onClick={() => setLines((prev) => setQuantity(prev, directLine.lineId, directLine.quantity + 1))}><Plus /></Button>
-                                    </div>
-                                  ) : (
-                                    <Button variant="hero" size="icon" className="size-9 rounded-full" disabled={!channelOpen} aria-label={`${item.hasModifiers ? "Choose options for" : "Add"} ${item.name}`} onClick={() => beginAdd(item)}><Plus /></Button>
-                                  )}
-                                </div>
-                              </div>
-                            </article>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  ))}
-                  {grouped.length === 0 ? (
-                    <p className="text-muted-foreground">No dishes available from this brand right now.</p>
-                  ) : null}
-
-                  {addonItems.length ? (
-                    <section className="rounded-2xl border border-accent/30 bg-accent/5 p-5">
-                      <p className="eyebrow">Add something extra</p>
-                      <h3 className="mt-1 font-display text-xl font-bold">Icova + Moktl drinks</h3>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {addonItems.map((item) => {
-                          const brand = brandById(item.brandId);
-                          return (
-                            <button
-                              key={item.id}
-                              disabled={!channelOpen}
-                              onClick={() => beginAdd(item)}
-                              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-accent disabled:opacity-50"
-                            >
-                              {brand ? <BrandMark brand={brand} className="h-12 w-16 shrink-0 rounded-lg bg-ink p-1" /> : null}
-                              <span className="min-w-0 flex-1">
-                                <span className="block truncate font-semibold">{item.name}</span>
-                                <span className="text-sm text-muted-foreground">{formatPence(item.pricePence)} · customise</span>
-                              </span>
-                              <Plus className="size-5 text-accent" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  ) : null}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Basket */}
-        <aside id="basket" className="scroll-mt-24 lg:sticky lg:top-28 lg:self-start">
+  const basketPanel = (
+    <>
           <div className="marketplace-basket p-5">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-bold">Your basket</h2>
@@ -700,11 +462,257 @@ function OrderPage() {
               </Button>
             </div>
           ) : null}
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-background pb-28 lg:pb-0">
+      <SiteHeader
+        context={
+          <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm">
+            <MapPin className="size-4 text-accent" />
+            <span className="font-medium">{currentLocation ? currentLocation.town : "Find your local MealDeck"}</span>
+            <span className="text-muted-foreground">· {fulfilmentLabels[fulfilment]}</span>
+          </div>
+        }
+      />
+
+      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-5 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0">
+          <section className="order-control-bar">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="min-w-0">
+                <p className="eyebrow hidden sm:block">Order direct</p>
+                <h1 className="text-2xl font-extrabold sm:text-3xl">What are you craving?</h1>
+              </div>
+              <div className="grid grid-cols-2 rounded-lg border border-border bg-background p-1" aria-label="Browse location">
+                {locations.map((entry) => (
+                  <Button
+                    key={entry.key}
+                    variant={location === entry.key ? "secondary" : "ghost"}
+                    size="sm"
+                    className={location === entry.key ? "text-accent" : "text-muted-foreground"}
+                    onClick={() => browseLocation(entry.key)}
+                  >
+                    {entry.town}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="How you'd like your order">
+              {(Object.keys(fulfilmentLabels) as FulfilmentType[]).map((key) => {
+                const Icon = fulfilmentIcons[key];
+                const active = fulfilment === key;
+                return (
+                  <Button
+                    key={key}
+                    type="button"
+                    variant={active ? "gold" : "glass"}
+                    size="sm"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => changeFulfilment(key)}
+                    className="h-10 shrink-0 rounded-full px-4"
+                  >
+                    <Icon />
+                    {fulfilmentLabels[key]}
+                  </Button>
+                );
+              })}
+            </div>
+            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+              <div className="relative flex-1">
+                <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={postcode}
+                  onChange={(event) => setPostcode(event.target.value)}
+                  onKeyDown={(event) => event.key === "Enter" && void checkArea()}
+                  placeholder="Enter your postcode"
+                  aria-label="Postcode"
+                  className="h-11 rounded-full pl-9"
+                />
+              </div>
+              <Button variant="hero" className="h-11 rounded-full px-4 sm:px-6" onClick={() => void checkArea()} disabled={checking}>
+                {checking ? <Loader2 className="animate-spin" /> : <Search />}
+                <span className="hidden sm:inline">Check area</span>
+              </Button>
+            </div>
+            <p
+              className={`mt-3 text-sm ${
+                serviceMessage.tone === "error"
+                  ? "text-destructive"
+                  : serviceMessage.tone === "ok"
+                    ? "text-gold"
+                    : "text-muted-foreground"
+              }`}
+            >
+              {serviceMessage.text}
+            </p>
+            {currentLocation ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {currentLocation.name} · {currentLocation.hoursLabel}
+              </p>
+            ) : null}
+          </section>
+
+          {paymentPending ? (
+            <div className="mt-6 rounded-xl border border-accent/40 bg-accent/10 p-5">
+              <p className="eyebrow">Payment required</p>
+              <p className="mt-2 font-display text-lg font-bold">
+                Your order is reserved, but preparation has not started yet.
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Complete payment to release it for preparation. Your handoff code is{" "}
+                <strong className="text-xl text-gold">
+                  {paymentPending.handoffCode || "----"}
+                </strong>.
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Order reference {paymentPending.orderId.slice(0, 8).toUpperCase()}.
+              </p>
+            </div>
+          ) : null}
+
+          {!currentLocation ? null : (
+            <>
+              {catalogue.data?.notice ? (
+                <p className="mt-6 rounded-lg border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-accent">
+                  {catalogue.data.notice}
+                </p>
+              ) : null}
+              {!channelOpen ? (
+                <p className="mt-6 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">
+                  {currentLocation.name} is closed for orders right now.
+                </p>
+              ) : null}
+
+              <div className="mt-7">
+                <p className="eyebrow">Restaurants in {currentLocation.town}</p>
+                <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">Explore every craving</h2>
+                <p className="mt-1 hidden text-sm text-muted-foreground sm:block">Choose a restaurant or discover dishes across them all.</p>
+              </div>
+
+              <div className="order-brand-rail mt-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => setActiveBrand(null)}
+                  className={`order-brand-pill ${activeBrand === null ? "is-active" : ""}`}
+                >
+                  <span className="order-brand-logo grid place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
+                  <span className="truncate">All</span>
+                </Button>
+                {primaryBrands.map((brand) => (
+                    <Button
+                      key={brand.id}
+                      variant="ghost"
+                      onClick={() => setActiveBrand(brand.id)}
+                      aria-label={brand.name}
+                      className={`order-brand-pill ${activeBrand === brand.id ? "is-active" : ""}`}
+                    >
+                      <span className="order-brand-logo"><BrandMark brand={brand} className="h-full w-full p-1.5 text-xs" /></span>
+                      <span className="w-full truncate">{brand.name}</span>
+                    </Button>
+                ))}
+              </div>
+
+              {catalogue.isLoading ? (
+                <div className="mt-16 flex justify-center">
+                  <Loader2 className="size-8 animate-spin text-accent" />
+                </div>
+              ) : (
+                <div className="mt-7 space-y-9">
+                  {grouped.map(([group, groupItems]) => (
+                    <section key={group} className="scroll-mt-32">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate font-display text-xl font-bold">{group}</h3>
+                          {!activeBrand ? <p className="text-xs text-muted-foreground">{brandById(groupItems[0]?.brandId ?? "")?.category}</p> : null}
+                        </div>
+                        <span className="text-xs font-semibold text-accent">{groupItems.length} {groupItems.length === 1 ? "dish" : "dishes"}</span>
+                      </div>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        {groupItems.map((item) => {
+                          const brand = brandById(item.brandId);
+                          const directLine = lines.find((line) => line.id === item.id && line.selectedModifiers.length === 0);
+                          return (
+                            <article key={item.id} className="marketplace-dish-card">
+                              <img
+                                src={item.imageUrl || brand?.image}
+                                alt={item.name}
+                                width={816}
+                                height={816}
+                                loading="lazy"
+                                className="marketplace-dish-image"
+                              />
+                              <div className="flex min-w-0 flex-1 flex-col p-3 sm:p-4">
+                                <p className="text-[11px] font-bold uppercase text-accent">{brand?.name ?? "MealDeck"}</p>
+                                <p className="mt-0.5 font-display font-bold leading-tight">{item.name}</p>
+                                {item.description ? (
+                                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
+                                ) : null}
+                                <div className="mt-auto flex items-center justify-between pt-3">
+                                  <span className="font-display font-bold">{formatPence(item.pricePence)}</span>
+                                  {directLine ? (
+                                    <div className="flex items-center rounded-full bg-primary text-primary-foreground">
+                                      <Button variant="ghost" size="icon" className="size-8 rounded-full hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label={`Remove one ${item.name}`} onClick={() => setLines((prev) => setQuantity(prev, directLine.lineId, directLine.quantity - 1))}><Minus /></Button>
+                                      <span className="w-6 text-center text-sm font-bold">{directLine.quantity}</span>
+                                      <Button variant="ghost" size="icon" className="size-8 rounded-full hover:bg-primary-foreground/15 hover:text-primary-foreground" aria-label={`Add one ${item.name}`} onClick={() => setLines((prev) => setQuantity(prev, directLine.lineId, directLine.quantity + 1))}><Plus /></Button>
+                                    </div>
+                                  ) : (
+                                    <Button variant="hero" size="icon" className="size-9 rounded-full" disabled={!channelOpen} aria-label={`${item.hasModifiers ? "Choose options for" : "Add"} ${item.name}`} onClick={() => beginAdd(item)}><Plus /></Button>
+                                  )}
+                                </div>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
+                  {grouped.length === 0 ? (
+                    <p className="text-muted-foreground">No dishes available from this brand right now.</p>
+                  ) : null}
+
+                  {addonItems.length ? (
+                    <section className="rounded-2xl border border-accent/30 bg-accent/5 p-5">
+                      <p className="eyebrow">Add something extra</p>
+                      <h3 className="mt-1 font-display text-xl font-bold">Icova + Moktl drinks</h3>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {addonItems.map((item) => {
+                          const brand = brandById(item.brandId);
+                          return (
+                            <button
+                              key={item.id}
+                              disabled={!channelOpen}
+                              onClick={() => beginAdd(item)}
+                              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-accent disabled:opacity-50"
+                            >
+                              {brand ? <BrandMark brand={brand} className="h-12 w-16 shrink-0 rounded-lg bg-ink p-1" /> : null}
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate font-semibold">{item.name}</span>
+                                <span className="text-sm text-muted-foreground">{formatPence(item.pricePence)} · customise</span>
+                              </span>
+                              <Plus className="size-5 text-accent" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ) : null}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Basket */}
+        <aside id="basket" className="hidden scroll-mt-24 lg:sticky lg:top-28 lg:block lg:self-start">
+          {basketPanel}
         </aside>
       </main>
 
       <Dialog open={customising !== null} onOpenChange={(open) => !open && setCustomising(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[88dvh] overflow-y-auto">
           {customising ? (
             <>
               <DialogHeader>
@@ -773,13 +781,14 @@ function OrderPage() {
               <Button
                 variant="hero"
                 size="lg"
-                className="w-full rounded-full"
+                className="sticky bottom-0 w-full rounded-full shadow-2xl"
                 disabled={!customiserValid}
                 onClick={() => {
                   if(!customiserValid)return;
                   setLines((prev) => addItem(prev, customising, chosen));
                   setCustomising(null);
                   setChosen([]);
+                  toast.success(`${customising.name} added to your hand`);
                 }}
               >
                 Add to basket · {formatPence(lineUnitPrice({ pricePence: customising.pricePence, selectedModifiers: chosen }))}
@@ -790,16 +799,27 @@ function OrderPage() {
       </Dialog>
 
       {lines.length ? (
-        <div className="fixed inset-x-3 bottom-24 z-40 rounded-xl border border-border bg-card/95 p-2 shadow-2xl backdrop-blur lg:hidden">
-          <Button variant="hero" size="lg" className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] rounded-lg px-4" asChild>
-            <a href="#basket">
-              <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-xs font-bold">{itemCount(lines)}</span>
-              <span className="truncate text-left">View basket</span>
-              <span>{formatPence(total)}</span>
-            </a>
+        <div className="fixed inset-x-3 bottom-24 z-40 rounded-2xl border border-border bg-card/95 p-1.5 shadow-2xl backdrop-blur lg:hidden">
+          <Button
+            variant="hero"
+            size="lg"
+            className="grid h-12 w-full grid-cols-[auto_minmax(0,1fr)_auto] rounded-xl px-4"
+            onClick={() => setBasketOpen(true)}
+          >
+            <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-xs font-bold">{itemCount(lines)}</span>
+            <span className="truncate text-left">View your hand</span>
+            <span>{formatPence(total)}</span>
           </Button>
         </div>
       ) : null}
+
+      <Sheet open={basketOpen} onOpenChange={setBasketOpen}>
+        <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-3xl border-border bg-background p-3 pb-8 lg:hidden">
+          <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-muted" aria-hidden />
+          <SheetTitle className="sr-only">Your basket</SheetTitle>
+          {basketPanel}
+        </SheetContent>
+      </Sheet>
 
       <SiteFooter />
     </div>

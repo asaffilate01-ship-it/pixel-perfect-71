@@ -11,3 +11,6 @@
 
 ## Open
 - [x] Answered: ordering layout scales via brand filter + grouped sections; offered search/category chips when live menus go large
+
+- [x] Mobile ordering flow: sticky restaurant row, slide-up basket/checkout, scrollable dish options
+- [x] Add Pastarivo, Nusara, Rise & Griddle, Souvano to ordering

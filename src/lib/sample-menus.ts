@@ -31,6 +31,10 @@ export const coreMenu: MenuItem[] = [
   { id: "sabzora-1", brandId: "sabzora", category: "Vegetarian", name: "Sabzora Veg Delight Box", description: "Indian vegetarian comfort with vibrant herb and spice notes.", pricePence: 825, hasModifiers: true },
   { id: "skorch-1", brandId: "skorch-burgers", category: "Smash burgers", name: "Skorch Double Smash", description: "Two smashed patties, cheese and house sauce — seared on steel.", pricePence: 999, hasModifiers: true },
   { id: "forvello-1", brandId: "forvello", category: "Artisan Pizza", name: "Forvello Margherita", description: "Hand-stretched artisan pizza with tomato, mozzarella and fresh basil.", pricePence: 1095, hasModifiers: true },
+  { id: "pastarivo-1", brandId: "pastarivo", category: "Fresh pasta", name: "Pastarivo Creamy Rigatoni", description: "Rigatoni in a silky parmesan cream with spinach and basil.", pricePence: 949, hasModifiers: true },
+  { id: "nusara-1", brandId: "nusara", category: "Fusion bowls", name: "Nusara Satay Noodle Bowl", description: "Grilled chicken satay over peanut noodles with fresh herbs and chilli.", pricePence: 995, hasModifiers: true },
+  { id: "rise-1", brandId: "rise-and-griddle", category: "Brunch", name: "Rise & Griddle Big Brunch", description: "Fluffy pancakes, eggs, turkey rashers and smashed avocado toast.", pricePence: 1050, hasModifiers: true },
+  { id: "souvano-1", brandId: "souvano", category: "Grill", name: "Souvano Chicken Souvlaki Platter", description: "Fire-grilled chicken skewers with pitta, hummus, salad and fries.", pricePence: 1125, hasModifiers: true },
   { id: "icova-1", brandId: "icova", category: "Add-on drinks", name: "Icova Iced Latte", description: "Better over ice — smooth coffee served the Icova way.", pricePence: 395, hasModifiers: true },
   { id: "moktl-1", brandId: "moktl", category: "Add-on drinks", name: "Moktl Citrus Cooler", description: "Zero alcohol refreshment with a full-vibe finish.", pricePence: 425, hasModifiers: true },
 ]
