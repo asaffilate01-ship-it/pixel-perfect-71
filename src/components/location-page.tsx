@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { ArrowRight, Bike, Clock3, MapPin, Package, Store, UtensilsCrossed } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Button } from "@/components/ui/button";
-import { brands } from "@/lib/mealdeck";
+import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
+import { marketingBrands } from "@/lib/marketing-brands";
+import cafe1Logo from "@/assets/cafe1-logo.png";
 
 type Props = {
   town: string;
@@ -14,65 +16,111 @@ type Props = {
   faqs: { q: string; a: string }[];
 };
 
-const suits = ["♥", "♦", "♠", "♣"];
-const ranks = ["A", "K", "Q", "J", "10", "9", "8", "7", "6", "5", "4", "3", "2"];
-
 export function LocationPage({ town, intro, hours, fulfilment, areas, includeCafe1, faqs }: Props) {
-  const list = brands.filter((b) => includeCafe1 || b.id !== "cafe1");
+  const isLuton = town.toLowerCase() === "luton";
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="md-marketing-shell">
       <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
-        <p className="font-display text-sm font-bold uppercase tracking-[0.3em] text-accent">♦ MealDeck {town}</p>
-        <h1 className="mt-3 font-display text-4xl font-black sm:text-6xl">Food delivery in {town}.<br /><span className="text-accent">Every craving, one hand.</span></h1>
-        <p className="mt-5 max-w-3xl text-lg text-muted-foreground">{intro}</p>
-        <div className="mt-6 flex flex-wrap gap-3 text-sm">
-          <span className="rounded-full border border-accent/50 px-4 py-2">{hours}</span>
-          <span className="rounded-full border border-accent/50 px-4 py-2">{fulfilment}</span>
-          <span className="rounded-full border border-accent/50 px-4 py-2">Selected areas in &amp; around {town}</span>
-        </div>
-        <Button asChild size="lg" className="mt-8"><Link to="/order">Order in {town}</Link></Button>
+      <main>
+        <section className="md-location-hero">
+          <div>
+            <p className="md-kicker">MealDeck {town}</p>
+            <h1>Different cuisines.<br /><span>One {town} order.</span></h1>
+            <p>{intro}</p>
+            <div className="md-location-meta">
+              <span><Clock3 /> {hours}</span>
+              <span><Bike /> {fulfilment}</span>
+            </div>
+            <div className="md-hero-actions">
+              <Link to="/order" className="md-btn md-btn-yellow">Order in {town} <ArrowRight /></Link>
+              <Link to="/" hash="brands" className="md-btn md-btn-outline-light">See the full brand deck</Link>
+            </div>
+          </div>
+          <div className="md-location-hero-card">
+            <strong>{town}</strong>
+            <span>One Order.</span>
+            <span>Every Craving.</span>
+          </div>
+        </section>
 
-        <h2 className="mt-16 font-display text-3xl font-black">The {town} deck</h2>
-        <div className="mt-6 grid grid-cols-4 gap-2 sm:grid-cols-5 sm:gap-3 lg:grid-cols-8">
-          {list.map((b, i) => {
-            const s = suits[i % 4];
-            const rank = ranks[i % ranks.length];
-            const red = s === "♥" || s === "♦";
-            return (
-              <div key={b.id} className="relative flex aspect-[2.5/3.5] flex-col items-center justify-center gap-1 rounded-lg border-2 border-accent/60 bg-paper p-2 text-center text-ink shadow-lg">
-                <span className={`absolute left-1 top-0.5 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
-                <span className={`absolute bottom-0.5 right-1 rotate-180 font-display text-[0.65rem] font-black leading-none ${red ? "text-primary" : ""}`}>{rank}<br />{s}</span>
-                {"logo" in b && b.logo ? (
-                  <img src={b.logo} alt={b.name} className="h-[62%] w-[84%] object-contain" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                ) : null}
-                <h3 className="font-display text-[0.6rem] font-black leading-tight sm:text-xs">{b.name}</h3>
+        <section className="md-section md-section-cream">
+          <div className="md-section-heading md-section-heading-split">
+            <div>
+              <p className="md-kicker md-kicker-red">The {town} deck</p>
+              <h2>Pick your flavours.</h2>
+              <p>Marketing brand collection shown independently of menu availability.</p>
+            </div>
+          </div>
+          <BrandLogoGrid brands={marketingBrands} />
+
+          {includeCafe1 ? (
+            <div className="md-cafe1-callout">
+              <img src={cafe1Logo} alt="Café1" />
+              <div>
+                <p className="md-kicker md-kicker-red">St Albans exclusive</p>
+                <h3>Café1 classics join the MealDeck hand.</h3>
+                <p>Breakfast, lunch and café favourites alongside the MealDeck collection.</p>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          ) : null}
+        </section>
 
-        <h2 className="mt-16 font-display text-3xl font-black">Areas we serve</h2>
-        <p className="mt-3 text-muted-foreground">{areas.join(" · ")}</p>
+        <section className="md-location-info-grid">
+          <article className="md-location-info-panel md-location-info-panel-dark">
+            <MapPin />
+            <p className="md-kicker">Areas we serve</p>
+            <h2>Local first.</h2>
+            <p>{areas.join(" · ")}</p>
+          </article>
+          <article className="md-location-info-panel md-location-info-panel-red">
+            <Store />
+            <p className="md-kicker md-kicker-light">Ways to order</p>
+            <h2>{fulfilment}</h2>
+            <p>Choose your fulfilment method when you start your MealDeck order.</p>
+          </article>
+        </section>
 
-        <h2 className="mt-16 font-display text-3xl font-black">Why order direct in {town}?</h2>
-        <ul className="mt-4 grid gap-3 text-muted-foreground sm:grid-cols-2">
-          <li>♥ Mix brands in one basket with one delivery fee</li>
-          <li>♦ Group ordering and split payments</li>
-          <li>♠ Loyalty points and limited offers</li>
-          <li>♣ Order on web, app, WhatsApp or phone with live tracking</li>
-        </ul>
+        {isLuton ? (
+          <section className="md-collection-location">
+            <div>
+              <p className="md-kicker md-kicker-light">Pickup / kerbside collection</p>
+              <h2>314–318 Selbourne Road, Luton, LU4 8NU</h2>
+              <p>Please bring your order reference.</p>
+            </div>
+            <div className="md-collection-icons">
+              <span><Package /> Pickup</span>
+              <span><MapPin /> Kerbside</span>
+            </div>
+          </section>
+        ) : (
+          <section className="md-collection-location">
+            <div>
+              <p className="md-kicker md-kicker-light">St Albans</p>
+              <h2>Café1 · 6 Bricket Road, St Albans, AL1 3JU</h2>
+              <p>Delivery, pickup, kerbside and dine-in options can be presented here.</p>
+            </div>
+            <div className="md-collection-icons">
+              <span><UtensilsCrossed /> Dine in</span>
+              <span><Package /> Pickup</span>
+            </div>
+          </section>
+        )}
 
-        <h2 className="mt-16 font-display text-3xl font-black">{town} FAQs</h2>
-        <div className="mt-4 space-y-4">
-          {faqs.map((f) => (
-            <details key={f.q} className="rounded-xl border border-border bg-card p-5">
-              <summary className="cursor-pointer font-display font-bold">{f.q}</summary>
-              <p className="mt-2 text-muted-foreground">{f.a}</p>
-            </details>
-          ))}
-        </div>
-        <p className="mt-12 text-muted-foreground">Hungry for ideas? <Link to="/blog" className="text-accent underline">Read the Deck Blog</Link>.</p>
+        <section className="md-section md-section-cream">
+          <div className="md-section-heading">
+            <p className="md-kicker md-kicker-red">{town} FAQs</p>
+            <h2>Useful before you order.</h2>
+          </div>
+          <div className="md-faq-list">
+            {faqs.map((faq) => (
+              <details key={faq.q}>
+                <summary>{faq.q}</summary>
+                <p>{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
       </main>
       <SiteFooter />
     </div>
