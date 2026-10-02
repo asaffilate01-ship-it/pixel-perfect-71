@@ -6,6 +6,8 @@ import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { marketingBrands, cafe1Brand } from "@/lib/marketing-brands";
 import cafe1Logo from "@/assets/cafe1-logo.png";
 import redEmblem from "@/assets/mealdeck-emblem.png";
+import heroLuton from "@/assets/hero-luton.jpg";
+import heroStAlbans from "@/assets/hero-stalbans.jpg";
 
 type Props = {
   town: string;
@@ -19,12 +21,17 @@ type Props = {
 
 export function LocationPage({ town, intro, hours, fulfilment, areas, includeCafe1, faqs }: Props) {
   const isLuton = town.toLowerCase() === "luton";
+  const heroImage = isLuton ? heroLuton : heroStAlbans;
 
   return (
     <div className="md-marketing-shell">
       <SiteHeader />
       <main>
-        <section className="md-location-hero">
+        <section
+          className="md-location-hero"
+          style={{ ["--md-location-hero-img" as string]: `url(${heroImage})` }}
+        >
+          <div className="md-location-hero-shade" aria-hidden="true" />
           <div>
             <p className="md-kicker">MealDeck {town}</p>
             <h1>Different cuisines.<br /><span>One {town} order.</span></h1>
