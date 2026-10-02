@@ -56,13 +56,13 @@ export function SiteFooter() {
           <span className="md-footer-apps-divider" aria-hidden="true" />
           <div className="md-footer-apps-logos">
             <a className="md-app-logo" href="https://deliveroo.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Deliveroo">
-              <img src={deliverooLogo} alt="Deliveroo" />
+              <img src={deliverooLogo.url} alt="Deliveroo" />
             </a>
             <a className="md-app-logo" href="https://www.ubereats.com" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Uber Eats">
-              <img src={uberEatsLogo} alt="Uber Eats" />
+              <img src={uberEatsLogo.url} alt="Uber Eats" />
             </a>
             <a className="md-app-logo" href="https://www.just-eat.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Just Eat">
-              <img src={justEatLogo} alt="Just Eat" />
+              <img src={justEatLogo.url} alt="Just Eat" />
             </a>
           </div>
         </div>
