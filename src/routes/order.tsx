@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { SiteFooter } from "@/components/site-footer";
 import { checkServiceability, getCatalogue, placeOrder } from "@/lib/dishbee.functions";
 import {
@@ -108,6 +109,7 @@ function OrderPage() {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [customer, setCustomer] = useState(emptyCustomer);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [basketOpen, setBasketOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [paymentPending, setPaymentPending] = useState<{ orderId: string; handoffCode: string } | null>(null);
   const [customising, setCustomising] = useState<MenuItem | null>(null);
@@ -796,16 +798,27 @@ function OrderPage() {
       </Dialog>
 
       {lines.length ? (
-        <div className="fixed inset-x-3 bottom-24 z-40 rounded-xl border border-border bg-card/95 p-2 shadow-2xl backdrop-blur lg:hidden">
-          <Button variant="hero" size="lg" className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] rounded-lg px-4" asChild>
-            <a href="#basket">
-              <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-xs font-bold">{itemCount(lines)}</span>
-              <span className="truncate text-left">View basket</span>
-              <span>{formatPence(total)}</span>
-            </a>
+        <div className="fixed inset-x-3 bottom-24 z-40 rounded-2xl border border-border bg-card/95 p-1.5 shadow-2xl backdrop-blur lg:hidden">
+          <Button
+            variant="hero"
+            size="lg"
+            className="grid h-12 w-full grid-cols-[auto_minmax(0,1fr)_auto] rounded-xl px-4"
+            onClick={() => setBasketOpen(true)}
+          >
+            <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-xs font-bold">{itemCount(lines)}</span>
+            <span className="truncate text-left">View your hand</span>
+            <span>{formatPence(total)}</span>
           </Button>
         </div>
       ) : null}
+
+      <Sheet open={basketOpen} onOpenChange={setBasketOpen}>
+        <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-3xl border-border bg-background p-3 pb-8 lg:hidden">
+          <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-muted" aria-hidden />
+          <SheetTitle className="sr-only">Your basket</SheetTitle>
+          {basketPanel}
+        </SheetContent>
+      </Sheet>
 
       <SiteFooter />
     </div>
