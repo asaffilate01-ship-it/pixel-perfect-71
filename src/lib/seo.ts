@@ -53,7 +53,7 @@ export const lutonBusiness = business("Luton", {
   openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], opens: "17:00", closes: "23:00" }],
 });
 export const stAlbansBusiness = business("St Albans", {
-  address: { "@type": "PostalAddress", streetAddress: "Café 1, 6 Bricket Road", addressLocality: "St Albans", addressRegion: "Hertfordshire", postalCode: "AL1 3JU", addressCountry: "GB" },
+  address: { "@type": "PostalAddress", streetAddress: "Café 1, St Albans Crown Court, 6 Bricket Road", addressLocality: "St Albans", addressRegion: "Hertfordshire", postalCode: "AL1 3JU", addressCountry: "GB" },
   openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "09:00", closes: "16:00" }],
 });
 

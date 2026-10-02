@@ -97,7 +97,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
           <section className="md-collection-location">
             <div>
               <p className="md-kicker md-kicker-light">St Albans</p>
-              <h2>Café1 · 6 Bricket Road, St Albans, AL1 3JU</h2>
+              <h2>Café1 · St Albans Crown Court, 6 Bricket Road, St Albans, AL1 3JU</h2>
               <p>Delivery, pickup, kerbside and dine-in options can be presented here.</p>
             </div>
             <div className="md-collection-icons">
