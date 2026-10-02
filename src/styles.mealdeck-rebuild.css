@@ -520,7 +520,7 @@
   .md-hero-actions .md-btn { width: 100%; }
   .md-deck-stage { min-height: 320px; }
   .md-deck-shadow, .md-deck-card { width: min(190px, 52vw); }
-  .md-deck-corner b { font-size: 18px; } .md-deck-corner i { font-size: 15px; } .md-deck-corner-tl { top: 16px; left: 16px; } .md-deck-corner-br { bottom: 16px; right: 16px; } .md-deck-caption strong { font-size: 14px; } .md-deck-caption span { font-size: 10px; }
+  .md-deck-corner b { font-size: 18px; } .md-deck-corner i { font-size: 15px; } .md-deck-corner-tl { top: 6px; left: 7px; } .md-deck-corner-br { bottom: 6px; right: 7px; } .md-deck-caption strong { font-size: 14px; } .md-deck-caption span { font-size: 10px; }
   .md-deck-card-inner { padding: 20px; border-width: 6px; }
   
   .md-deck-caption { bottom: 35px; }
