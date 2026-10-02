@@ -456,7 +456,7 @@
 .md-final-cta > div { margin-top: 28px; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 
 .md-site-footer { background: #080808; color: white; border-top: 1px solid rgba(255,255,255,.1); }
-.md-footer-main { width: min(1440px,calc(100% - 40px)); margin: 0 auto; padding: 65px 0; display: grid; grid-template-columns: 1fr 1.6fr auto; gap: 60px; }
+.md-footer-main { width: min(1440px,calc(100% - 40px)); margin: 0 auto; padding: 55px 0 40px; display: grid; grid-template-columns: 1fr 2fr; gap: 50px; }
 .md-footer-brand img { width: 150px; height: 120px; object-fit: contain; }
 .md-footer-brand p { max-width: 310px; color: rgba(255,255,255,.6); }
 .md-footer-brand strong { color: var(--md-yellow); font-family: var(--md-display); }
@@ -464,9 +464,21 @@
 .md-footer-links h3 { margin: 0 0 16px; font-family: var(--md-display); color: var(--md-yellow); font-size: 13px; text-transform: uppercase; letter-spacing: .12em; }
 .md-footer-links a, .md-footer-links p { display: block; margin: 0 0 10px; color: rgba(255,255,255,.67); font-size: 14px; }
 .md-footer-links a:hover { color: white; }
-.md-footer-social { display: flex; gap: 14px; color: rgba(255,255,255,.6); }
+.md-footer-apps { width: min(1440px,calc(100% - 40px)); margin: 0 auto; padding: 26px 0 36px; border-top: 1px solid rgba(255,255,255,.08); }
+.md-footer-apps-copy { margin: 0 0 22px; text-align: center; color: rgba(255,255,255,.6); font-size: 14px; line-height: 1.6; }
+.md-footer-apps-copy strong { color: var(--md-yellow); font-family: var(--md-display); }
+.md-footer-apps-copy a { color: rgba(255,255,255,.85); text-decoration: underline; text-decoration-color: rgba(255,255,255,.3); text-underline-offset: 3px; }
+.md-footer-apps-copy a:hover { color: var(--md-yellow); }
+.md-footer-apps-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 14px; }
+.md-footer-social { display: flex; gap: 14px; color: rgba(255,255,255,.6); align-items: center; }
 .md-footer-social svg { width: 20px; }
-.md-footer-bottom { padding: 18px 20px; display: flex; justify-content: center; gap: 28px; border-top: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.45); font-size: 12px; }
+.md-footer-social a { color: inherit; transition: color .2s ease; }
+.md-footer-social a:hover { color: white; }
+.md-footer-apps-divider { width: 1px; height: 34px; background: rgba(255,255,255,.14); margin: 0 8px; }
+.md-app-logo { display: flex; align-items: center; justify-content: center; width: 116px; height: 70px; padding: 13px 16px; background: #f7f1e3; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.06); transition: transform .2s ease, box-shadow .2s ease; }
+.md-app-logo:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.06); }
+.md-app-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.md-footer-bottom { padding: 16px 20px; display: flex; justify-content: center; gap: 28px; border-top: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.45); font-size: 12px; }
 
 /* Location pages */
 .md-location-hero { min-height: 600px; padding: 80px max(20px, calc((100vw - 1440px)/2)); display: grid; grid-template-columns: 1.25fr .75fr; align-items: center; gap: 50px; background: var(--md-red-deep); color: white; border-bottom: 8px solid var(--md-yellow); }
