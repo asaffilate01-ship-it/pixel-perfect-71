@@ -147,6 +147,7 @@ function OrderPage() {
   const primaryItems = items.filter((item) => currentLocation?.primaryBrandIds.includes(item.brandId));
   const addonItems = items.filter((item) => currentLocation?.addonBrandIds.includes(item.brandId));
   const visibleItems = activeBrand ? primaryItems.filter((item) => item.brandId === activeBrand) : primaryItems;
+  const activeBrandObj = activeBrand ? brandById(activeBrand) ?? null : null;
 
   const grouped = useMemo(() => {
     const map = new Map<string, MenuItem[]>();
