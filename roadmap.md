@@ -10,4 +10,4 @@
 - [x] Add Forvello (Artisan Pizza) to homepage and every location; align brand cards/logos across desktop and mobile.
 
 ## Open
-- [ ] Answer: how ordering layout scales with many menu items per brand (pending — answer after card restyle)
+- [x] Answered: ordering layout scales via brand filter + grouped sections; offered search/category chips when live menus go large
