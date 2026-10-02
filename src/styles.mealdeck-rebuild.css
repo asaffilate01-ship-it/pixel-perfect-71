@@ -458,7 +458,7 @@
 .md-location-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .md-location-meta span { display: inline-flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.25); font-size: 13px; font-weight: 700; }
 .md-location-meta svg { width: 18px; color: var(--md-yellow); }
-.md-location-hero-card { position: relative; aspect-ratio: 2.5/3.5; max-width: 340px; width: 100%; justify-self: center; padding: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; background: var(--md-paper); color: var(--md-red); border: 12px solid white; outline: 3px solid var(--md-red); outline-offset: -28px; transform: rotate(5deg); box-shadow: 0 35px 70px rgba(0,0,0,.3); }
+.md-location-hero-card { position: relative; aspect-ratio: 2.5/3.5; max-width: 340px; width: 100%; justify-self: center; padding: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; background: var(--md-paper); color: var(--md-red); border: 10px solid #9f1019; transform: rotate(5deg); box-shadow: 0 40px 90px rgba(0,0,0,.42); }
 .md-location-hero-card strong { font-family: var(--md-display); font-size: clamp(30px,3.4vw,46px); line-height: 1; text-transform: uppercase; white-space: nowrap; }
 .md-location-hero-card > span:not(.md-location-card-corner) { font-family: var(--md-display); font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
 .md-location-card-emblem { width: 46%; max-width: 130px; margin-bottom: 10px; }
@@ -597,7 +597,7 @@
   .md-footer-links { grid-template-columns: 1fr 1fr; }
   .md-footer-bottom { flex-direction: column; gap: 4px; text-align: center; }
   .md-location-hero { grid-template-columns: 1fr; padding-top: 58px; padding-bottom: 58px; }
-  .md-location-hero-card { max-width: 270px; }
+  .md-location-hero-card { max-width: 270px; border-width: 6px; }
   .md-location-info-grid { grid-template-columns: 1fr; }
   .md-collection-location { flex-direction: column; align-items: flex-start; }
 }
