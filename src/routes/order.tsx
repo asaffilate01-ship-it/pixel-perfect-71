@@ -15,6 +15,8 @@ import {
   Search,
   ShoppingBasket,
   Trash2,
+  PanelLeftOpen,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { SiteFooter } from "@/components/site-footer";
 import { checkServiceability, getCatalogue, placeOrder } from "@/lib/dishbee.functions";
 import {
@@ -110,6 +112,15 @@ function OrderPage() {
   const [customer, setCustomer] = useState(emptyCustomer);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
+  const [brandMenuOpen, setBrandMenuOpen] = useState(false);
+  const pickBrand = (id: string | null) => {
+    setActiveBrand(id);
+    setBrandMenuOpen(false);
+    requestAnimationFrame(() => {
+      const el = document.getElementById("menu-top");
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 190, behavior: "smooth" });
+    });
+  };
   const [submitting, setSubmitting] = useState(false);
   const [paymentPending, setPaymentPending] = useState<{ orderId: string; handoffCode: string } | null>(null);
   const [customising, setCustomising] = useState<MenuItem | null>(null);
@@ -595,6 +606,15 @@ function OrderPage() {
               <div className="order-brand-rail mt-4">
                 <Button
                   variant="ghost"
+                  onClick={() => setBrandMenuOpen(true)}
+                  aria-label="Open restaurant menu"
+                  className="order-brand-pill is-browse lg:hidden"
+                >
+                  <span className="order-brand-logo grid place-items-center bg-ink text-gold"><PanelLeftOpen className="size-5" /></span>
+                  <span className="truncate">Browse</span>
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={() => setActiveBrand(null)}
                   className={`order-brand-pill ${activeBrand === null ? "is-active" : ""}`}
                 >
@@ -620,7 +640,7 @@ function OrderPage() {
                   <Loader2 className="size-8 animate-spin text-accent" />
                 </div>
               ) : (
-                <div className="mt-7 space-y-9">
+                <div id="menu-top" className="mt-7 space-y-9">
                   {grouped.map(([group, groupItems]) => (
                     <section key={group} className="scroll-mt-32">
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
