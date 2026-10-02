@@ -74,14 +74,15 @@ function LandingPage() {
           <div className="md-hero-pattern" aria-hidden="true" />
           <div className="md-hero-inner">
             <div className="md-hero-copy">
-              <p className="md-kicker">The full house of flavour</p>
+              <p className="md-kicker">Different restaurants. One easy order.</p>
               <h1>
-                Play your<br />
-                <span>cravings right.</span>
+                Food for every<br />
+                <span>craving.</span>
               </h1>
               <p className="md-hero-lead">
-                Pick from different food brands, deal them into one basket and pay one delivery fee.
+                Choose restaurant favourites across French tacos, grilled chicken, smash burgers, pasta, Indian food, desserts and drinks — all in one basket.
               </p>
+              <p className="md-hero-foods">French tacos · Parathas · Burgers · Pasta · Fresh juices · Chai · Desserts</p>
               <p className="md-hero-tagline">One Order. Every Craving.</p>
               <div className="md-hero-actions">
                 <Link to="/order" className="md-btn md-btn-yellow">Order direct <ArrowRight /></Link>
