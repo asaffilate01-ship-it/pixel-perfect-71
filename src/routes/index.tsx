@@ -7,9 +7,12 @@ import {
   Clock3,
   Crown,
   MapPin,
+  MessageCircle,
   Package,
+  Phone,
   Share2,
   ShoppingBasket,
+  Smartphone,
   Sparkles,
   Star,
   Users,
@@ -208,6 +211,16 @@ function LandingPage() {
             <article><Bike /><h3>Delivery</h3><p>One MealDeck order delivered together where available.</p></article>
             <article><Package /><h3>Pickup</h3><p>Order ahead and collect using your order reference.</p></article>
             <article><MapPin /><h3>Kerbside collection</h3><p>Collect without leaving your vehicle where the service is offered.</p></article>
+          </div>
+          <div className="md-channels">
+            <p className="md-kicker md-kicker-light">Order your way</p>
+            <h3>Every route leads to a full deck.</h3>
+            <div className="md-channels-grid">
+              <article><span className="md-channels-suit">♣</span><MessageCircle /><h4>WhatsApp</h4><p>Message, choose and order.</p></article>
+              <article><span className="md-channels-suit">♦</span><Share2 /><h4>Website</h4><p>The complete deck, no download.</p></article>
+              <article><span className="md-channels-suit">♥</span><Phone /><h4>Phone</h4><p>Prefer a person? Call it in.</p></article>
+              <article><span className="md-channels-suit">♠</span><Smartphone /><h4>Mobile app</h4><p>Fast reorders, points and tracking.</p></article>
+            </div>
           </div>
           <div className="md-collection-band">
             <div>
