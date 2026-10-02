@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Music2, Youtube } from "lucide-react";
 import mealDeckLogo from "@/assets/mealdeck-card-logo.png";
-import deliverooLogo from "@/assets/Deliveroo_logo.svg";
-import uberEatsLogo from "@/assets/Uber_Eats_2020_logo.svg";
-import justEatLogo from "@/assets/Just_Eat_Takeaway_Logo_6.2020.svg";
+import deliverooLogo from "@/assets/deliveroo-app.png.asset.json";
+import uberEatsLogo from "@/assets/ubereats-app.png.asset.json";
+import justEatLogo from "@/assets/justeat-app.png.asset.json";
 
 export function SiteFooter() {
   return (
@@ -56,13 +56,13 @@ export function SiteFooter() {
           <span className="md-footer-apps-divider" aria-hidden="true" />
           <div className="md-footer-apps-logos">
             <a className="md-app-logo" href="https://deliveroo.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Deliveroo">
-              <img src={deliverooLogo} alt="Deliveroo" />
+              <img src={deliverooLogo.url} alt="Deliveroo" />
             </a>
             <a className="md-app-logo" href="https://www.ubereats.com" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Uber Eats">
-              <img src={uberEatsLogo} alt="Uber Eats" />
+              <img src={uberEatsLogo.url} alt="Uber Eats" />
             </a>
             <a className="md-app-logo" href="https://www.just-eat.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Just Eat">
-              <img src={justEatLogo} alt="Just Eat" />
+              <img src={justEatLogo.url} alt="Just Eat" />
             </a>
           </div>
         </div>
