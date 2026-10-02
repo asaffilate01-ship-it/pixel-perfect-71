@@ -79,6 +79,7 @@ const emptyCustomer = {
   name: "",
   phone: "",
   email: "",
+  carMake: "",
   vehicleRegistration: "",
   address1: "",
   city: "",
@@ -259,7 +260,7 @@ function OrderPage() {
     customer.phone.trim().length >= 5 &&
     (fulfilment !== "delivery" ||
       (customer.address1.trim() && customer.city.trim() && customer.postcode.trim().length >= 3)) &&
-    (fulfilment !== "curbside" || customer.vehicleRegistration.trim());
+    (fulfilment !== "curbside" || (customer.carMake.trim() && customer.vehicleRegistration.trim()));
 
   async function handleCheckout() {
     if (!location) return;
@@ -633,7 +634,8 @@ function OrderPage() {
                   ["name", "Name for handoff", true],
                   ["phone", "Phone", true],
                   ["email", "Email (optional)", true],
-                  ["vehicleRegistration", "Car registration", fulfilment === "curbside"],
+                  ["carMake", "Car make", fulfilment === "curbside"],
+                  ["vehicleRegistration", "Registration", fulfilment === "curbside"],
                   ["address1", "Address", fulfilment === "delivery"],
                   ["city", "Town / city", fulfilment === "delivery"],
                   ["postcode", "Postcode", fulfilment === "delivery"],
