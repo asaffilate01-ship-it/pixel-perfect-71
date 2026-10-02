@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Music2, Youtube } from "lucide-react";
 import mealDeckLogo from "@/assets/mealdeck-card-logo.png";
-import deliverooLogo from "@/assets/Deliveroo_logo.svg";
-import uberEatsLogo from "@/assets/Uber_Eats_2020_logo.svg";
-import justEatLogo from "@/assets/Just_Eat_Takeaway_Logo_6.2020.svg";
+import deliverooLogo from "@/assets/deliveroo-app.png.asset.json";
+import uberEatsLogo from "@/assets/ubereats-app.png.asset.json";
+import justEatLogo from "@/assets/justeat-app.png.asset.json";
 
 export function SiteFooter() {
   return (
