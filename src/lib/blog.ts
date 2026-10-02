@@ -115,7 +115,7 @@ export const posts: Post[] = [
       { p: "Aggregator apps add their own costs on top. When you order direct with MealDeck, you skip the middleman and keep more value in your hand." },
       { h: "One delivery fee, every brand", p: "Mix as many MealDeck brands as you like and still pay one delivery fee." },
       { h: "Loyalty that's actually yours", p: "Points from every order, plus offers like The Burger Ace and Perfect Pair — each with clear limits and terms." },
-      { h: "Order your way, track every move", p: "Order on the web, app, WhatsApp or phone, then follow your order live from kitchen to door." },
+      { h: "Order your way, track every move", p: "Order on the web, app, WhatsApp or phone, then follow your order live from preparation to door." },
     ],
   },
 ];
