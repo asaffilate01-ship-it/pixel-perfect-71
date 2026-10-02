@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { ArrowRight, MapPin, Menu, X } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import mealDeckLogo from "@/assets/mealdeck-card-logo.png";
 
 const navItems = [
@@ -31,6 +32,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
         ) : null}
 
         <div className="md-header-actions">
+          <ThemeToggle />
           {context ?? (
             <>
               <Link to="/luton" className="md-header-location"><MapPin /> Luton</Link>
