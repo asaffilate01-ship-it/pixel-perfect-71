@@ -67,7 +67,7 @@ export const Route = createFileRoute("/order")({
   head: () =>
     seo({
       title: "Order Food Online — Luton & St Albans | MealDeck",
-      description: "Enter your postcode and build one basket across every MealDeck brand. Delivery, pickup or kerbside in Luton; delivery, kerbside, pickup or dine in at Café 1 in St Albans.",
+      description: "Enter your postcode and build one basket across every MealDeck brand. Delivery, pickup or kerbside in Luton; delivery, kerbside, pickup or dine in at Café 1, St Albans Crown Court.",
       path: "/order",
     }),
   component: OrderPage,
