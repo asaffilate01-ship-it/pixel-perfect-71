@@ -245,13 +245,6 @@
   color: var(--md-black);
   box-shadow: 0 40px 90px rgba(0,0,0,.42);
 }
-.md-deck-card-inner::before {
-  content: "";
-  position: absolute;
-  inset: 15px;
-  border: 3px solid var(--md-red);
-  pointer-events: none;
-}
 .md-deck-index,
 .md-deck-suit {
   position: absolute;
@@ -264,8 +257,8 @@
 .md-deck-card-inner.is-black .md-deck-corner { color: #151515; }
 .md-deck-corner b { font-size: 24px; font-weight: 900; }
 .md-deck-corner i { font-style: normal; font-size: 20px; margin-top: 2px; }
-.md-deck-corner-tl { top: 22px; left: 22px; }
-.md-deck-corner-br { bottom: 22px; right: 22px; transform: rotate(180deg); }
+.md-deck-corner-tl { top: 8px; left: 9px; }
+.md-deck-corner-br { bottom: 8px; right: 9px; transform: rotate(180deg); }
 .md-deck-brand-logo { width: 76%; max-height: 54%; object-fit: contain; }
 .md-deck-mealdeck-logo { width: 94%; max-height: 70%; object-fit: contain; }
 .md-deck-caption { position: absolute; bottom: 48px; left: 34px; right: 34px; text-align: center; }
