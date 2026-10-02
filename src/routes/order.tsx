@@ -689,6 +689,26 @@ function OrderPage() {
                       </div>
                     </section>
                   ))}
+                  {activeBrand ? (() => {
+                    const idx = primaryBrands.findIndex((b) => b.id === activeBrand);
+                    const next = primaryBrands[(idx + 1) % primaryBrands.length];
+                    if (!next || next.id === activeBrand) return null;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => pickBrand(next.id)}
+                        className="next-brand-card"
+                      >
+                        <span className="order-brand-logo size-14"><BrandMark brand={next} className="h-full w-full p-1.5 text-xs" /></span>
+                        <span className="min-w-0 flex-1 text-left">
+                          <span className="block text-[11px] font-bold uppercase tracking-wider opacity-70">Next restaurant</span>
+                          <span className="block truncate font-display text-lg font-bold">{next.name}</span>
+                          <span className="block truncate text-xs opacity-70">{next.category}</span>
+                        </span>
+                        <ChevronRight className="size-6 shrink-0" />
+                      </button>
+                    );
+                  })() : null}
                   {grouped.length === 0 ? (
                     <p className="text-muted-foreground">No dishes available from this brand right now.</p>
                   ) : null}
@@ -838,6 +858,58 @@ function OrderPage() {
           <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-muted" aria-hidden />
           <SheetTitle className="sr-only">Your basket</SheetTitle>
           {basketPanel}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={brandMenuOpen} onOpenChange={setBrandMenuOpen}>
+        <SheetContent side="left" className="flex w-[86vw] max-w-sm flex-col gap-0 border-border bg-background p-0 lg:hidden">
+          <div className="border-b border-border px-5 pb-4 pt-6">
+            <p className="eyebrow">Pick your next card</p>
+            <SheetTitle className="font-display text-2xl font-extrabold">Restaurants</SheetTitle>
+            <SheetDescription className="text-xs">
+              {currentLocation?.town ?? ""} · mix dishes from any restaurant into one basket
+            </SheetDescription>
+          </div>
+          <div className="flex-1 space-y-2 overflow-y-auto p-3">
+            {[{ id: null as string | null }, ...primaryBrands.map((b) => ({ id: b.id as string | null }))].map(({ id }) => {
+              const brand = id ? brandById(id) : null;
+              const dishCount = id ? primaryItems.filter((i) => i.brandId === id).length : primaryItems.length;
+              const inBasket = lines.filter((l) => (id ? l.brandId === id : true)).reduce((n, l) => n + l.quantity, 0);
+              const active = activeBrand === id;
+              return (
+                <button
+                  key={id ?? "all"}
+                  type="button"
+                  onClick={() => pickBrand(id)}
+                  className={`brand-drawer-row ${active ? "is-active" : ""}`}
+                >
+                  <span className="order-brand-logo size-14">
+                    {brand ? (
+                      <BrandMark brand={brand} className="h-full w-full p-1.5 text-xs" />
+                    ) : (
+                      <span className="grid h-full w-full place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block truncate font-display font-bold">{brand?.name ?? "All restaurants"}</span>
+                    <span className="block truncate text-xs opacity-70">{brand?.category ?? "Browse everything"} · {dishCount} {dishCount === 1 ? "dish" : "dishes"}</span>
+                  </span>
+                  {inBasket && id ? (
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">{inBasket}</span>
+                  ) : (
+                    <ChevronRight className="size-4 shrink-0 opacity-50" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {lines.length ? (
+            <div className="border-t border-border p-3">
+              <Button variant="hero" size="lg" className="w-full rounded-xl" onClick={() => { setBrandMenuOpen(false); setBasketOpen(true); }}>
+                View your hand · {itemCount(lines)} · {formatPence(total)}
+              </Button>
+            </div>
+          ) : null}
         </SheetContent>
       </Sheet>
 
