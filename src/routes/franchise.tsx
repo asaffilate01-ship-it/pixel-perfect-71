@@ -30,16 +30,16 @@ const fallbackMarkets=[
   {name:"Islington / Camden",status:"taken",note:"Caledonian Road area"}
 ];
 
-const fallbackAvailable=[
-  {name:"Elephant & Castle / Bermondsey / Southwark",fee:25000,status:"available"},
-  {name:"Battersea / Clapham / Vauxhall",fee:25000,status:"available"},
-  {name:"Leyton / Stratford",fee:22500,status:"available"},
-  {name:"Lewisham / Deptford / Greenwich West",fee:22500,status:"available"},
-  {name:"Alperton / Wembley / Park Royal",fee:22500,status:"available"},
-  {name:"Southall / Hayes",fee:20000,status:"available"},
-  {name:"Edmonton / Tottenham / Enfield South",fee:20000,status:"available"},
-  {name:"Barking / Ilford",fee:20000,status:"available"},
-  {name:"Thornton Heath / Croydon",fee:20000,status:"available"},
+const fallbackAvailable:Territory[]=[
+  {code:"MD-002",name:"Elephant & Castle / Bermondsey / Southwark",region:"London",fee:25000,status:"available",currency:"GBP",isSellable:true},
+  {code:"MD-003",name:"Battersea / Clapham / Vauxhall",region:"London",fee:25000,status:"available",currency:"GBP",isSellable:true},
+  {code:"MD-004",name:"Leyton / Stratford",region:"London",fee:22500,status:"available",currency:"GBP",isSellable:true},
+  {code:"MD-005",name:"Lewisham / Deptford / Greenwich West",region:"London",fee:22500,status:"available",currency:"GBP",isSellable:true},
+  {code:"MD-006",name:"Alperton / Wembley / Park Royal",region:"London",fee:22500,status:"available",currency:"GBP",isSellable:true},
+  {code:"MD-007",name:"Southall / Hayes",region:"London",fee:20000,status:"available",currency:"GBP",isSellable:true},
+  {code:"MD-008",name:"Edmonton / Tottenham / Enfield South",region:"London",fee:20000,status:"available",currency:"GBP",isSellable:true},
+  {code:"MD-009",name:"Barking / Ilford",region:"London",fee:20000,status:"available",currency:"GBP",isSellable:true},
+  {code:"MD-010",name:"Thornton Heath / Croydon",region:"London",fee:20000,status:"available",currency:"GBP",isSellable:true},
 ];
 
 const whatWeProvide=[
