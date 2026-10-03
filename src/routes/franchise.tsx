@@ -19,7 +19,7 @@ export const Route=createFileRoute("/franchise")({
 });
 
 type Territory={code:string;name:string;region:string;status:string;fee:number;currency:string;isSellable:boolean;note?:string|null;score?:number|null};
-type Programme={key:string;name:string;currency:string;feeMin:number;feeMax:number;royaltyPercent:number;marketingPercent:number;techFeePerOrder:number;supplyMarkupPercent:number;offer?:any};
+type Programme={key:string;name:string;currency:string;feeMin:number;feeMax:number;royaltyPercent:number;marketingPercent:number;techFeePerOrder:number;supplyMarkupPercent:number;managedFranchiseAvailable?:boolean;managedProfitSharePercent?:number;managedProfitBasis?:string;offer?:any};
 type ApiData={programme:Programme;territories:Territory[]};
 
 const fallbackMarkets=[
@@ -71,7 +71,7 @@ function money(n:number){return new Intl.NumberFormat("en-GB",{style:"currency",
 function FranchisePage(){
   const[data,setData]=useState<ApiData|null>(null),[loadError,setLoadError]=useState(""),[query,setQuery]=useState("");
   const[selected,setSelected]=useState<Territory|null>(null),[submitted,setSubmitted]=useState(false),[sending,setSending]=useState(false),[formError,setFormError]=useState("");
-  const[form,setForm]=useState({name:"",email:"",phone:"",area:"",existingKitchen:false,existingBusiness:"",capital:"",launchTiming:"",multiUnit:false,consent:false,website:""});
+  const[form,setForm]=useState({name:"",email:"",phone:"",area:"",operatorModel:"owner_operator" as "owner_operator"|"managed_investor"|"multi_unit_operator",existingKitchen:false,existingBusiness:"",capital:"",launchTiming:"",multiUnit:false,consent:false,website:""});
 
   useEffect(()=>{
     fetch("/api/franchise?programme=mealdeck-england-wales")
@@ -81,7 +81,7 @@ function FranchisePage(){
 
   const programme=data?.programme??{
     key:"mealdeck-england-wales",name:"MealDeck England & Wales",currency:"GBP",feeMin:7500,feeMax:25000,
-    royaltyPercent:5.5,marketingPercent:1.5,techFeePerOrder:.25,supplyMarkupPercent:10,offer:{featuredMarkets:fallbackMarkets}
+    royaltyPercent:5.5,marketingPercent:1.5,techFeePerOrder:.25,supplyMarkupPercent:10,managedFranchiseAvailable:true,managedProfitSharePercent:20,managedProfitBasis:"managed_operating_profit",offer:{featuredMarkets:fallbackMarkets}
   };
   const markets=programme.offer?.featuredMarkets?.length?programme.offer.featuredMarkets:fallbackMarkets;
   const availableLondon=(data?.territories??[]).filter(t=>t.region==="London"&&t.status==="available"&&t.isSellable);
@@ -109,7 +109,7 @@ function FranchisePage(){
         programmeKey:"mealdeck-england-wales",territoryCode:selected?.code??null,name:form.name,email:form.email,phone:form.phone||null,
         preferredArea:form.area,existingKitchen:form.existingKitchen,existingBusiness:form.existingBusiness||null,
         availableCapitalMinor:form.capital?Math.round(Number(form.capital)*100):null,launchTiming:form.launchTiming||null,
-        multiUnitInterest:form.multiUnit,source:"mealdeck-franchise-page",utm,answers:{selectedTerritory:selected?.name??null},
+        multiUnitInterest:form.multiUnit,operatorModel:form.operatorModel,source:"mealdeck-franchise-page",utm,answers:{selectedTerritory:selected?.name??null},
         consent:true,website:form.website
       })});
       const j=await r.json();if(!r.ok)throw new Error(j.error||"Application could not be submitted.");
@@ -174,6 +174,27 @@ function FranchisePage(){
           <p className="md-kicker md-kicker-red">The operator funds</p>
           <ul>{operatorFunds.map(x=><li key={x}><Check/>{x}</li>)}</ul>
         </article>
+      </section>
+
+      <section className="md-section md-section-cream">
+        <div className="md-section-heading">
+          <p className="md-kicker md-kicker-red">Two ways to own a MealDeck franchise</p>
+          <h2>Operate it yourself — or invest and let an approved MealDeck operations company manage it.</h2>
+          <p>The franchise economics stay separate from the management arrangement. A managed investor still funds the franchise, premises, staff, utilities, supplies and working capital; the operations company runs the day-to-day kitchen under a separate management agreement.</p>
+        </div>
+        <div className="md-franchise-model-grid">
+          <article>
+            <span>01</span><h3>Owner-operator franchise</h3>
+            <p>You or your team manage the kitchen directly. MealDeck provides the brands, technology, marketing, training, admin, oversight and supply system.</p>
+            <strong>Standard franchise fees apply.</strong>
+          </article>
+          <article>
+            <span>02</span><h3>Managed investor franchise</h3>
+            <p>You fund and own the franchise opportunity, while a separately contracted MealDeck operations company manages staffing, shifts, kitchen performance and day-to-day operations.</p>
+            <strong>Indicative management share: {programme.managedProfitSharePercent??20}% of Managed Operating Profit.</strong>
+          </article>
+        </div>
+        <p className="md-franchise-model-note">Managed Operating Profit is calculated after the site's operating costs and standard franchise charges, but before the management fee, finance costs, corporation tax, depreciation and investor distributions. Final terms are set out in a separate management agreement.</p>
       </section>
 
       <section className="md-section md-section-black">
@@ -250,6 +271,7 @@ function FranchisePage(){
               <label><span>Phone</span><input value={form.phone} onChange={e=>setForm(v=>({...v,phone:e.target.value}))}/></label>
             </div>
             <label><span>Preferred town / territory</span><input required value={form.area} onChange={e=>{setSelected(null);setForm(v=>({...v,area:e.target.value}));}} placeholder="e.g. Leeds, Croydon, Bristol"/></label>
+            <label><span>How do you want to operate?</span><select value={form.operatorModel} onChange={e=>setForm(v=>({...v,operatorModel:e.target.value as any}))}><option value="owner_operator">Owner-operator franchise</option><option value="managed_investor">Managed investor franchise</option><option value="multi_unit_operator">Multi-unit operator</option></select></label>
             <label><span>Existing food business / kitchen (optional)</span><input value={form.existingBusiness} onChange={e=>setForm(v=>({...v,existingBusiness:e.target.value}))} placeholder="Business or kitchen name"/></label>
             <div className="md-franchise-form-pair">
               <label><span>Available investment / working capital £</span><input type="number" min="0" value={form.capital} onChange={e=>setForm(v=>({...v,capital:e.target.value}))}/></label>
