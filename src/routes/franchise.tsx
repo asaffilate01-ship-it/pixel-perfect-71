@@ -19,10 +19,13 @@ export const Route=createFileRoute("/franchise")({
 });
 
 type Territory={code:string;name:string;region:string;status:string;fee:number;currency:string;isSellable:boolean;note?:string|null;score?:number|null};
-type Programme={key:string;name:string;currency:string;feeMin:number;feeMax:number;royaltyPercent:number;marketingPercent:number;techFeePerOrder:number;supplyMarkupPercent:number;managedFranchiseAvailable?:boolean;managedProfitSharePercent?:number;managedProfitBasis?:string;offer?:any};
+type FeaturedMarket={name:string;status:"available"|"coming_soon"|"taken"|string;note?:string|null};
+type ProgrammeOffer={featuredMarkets?:FeaturedMarket[];[key:string]:unknown};
+type Programme={key:string;name:string;currency:string;feeMin:number;feeMax:number;royaltyPercent:number;marketingPercent:number;techFeePerOrder:number;supplyMarkupPercent:number;managedFranchiseAvailable?:boolean;managedProfitSharePercent?:number;managedProfitBasis?:string;offer?:ProgrammeOffer};
+type OperatorModel="owner_operator"|"managed_investor"|"multi_unit_operator";
 type ApiData={programme:Programme;territories:Territory[]};
 
-const fallbackMarkets=[
+const fallbackMarkets:FeaturedMarket[]=[
   {name:"Luton",status:"coming_soon"},
   {name:"St Albans",status:"coming_soon"},
   {name:"Bedford",status:"taken"},
@@ -72,7 +75,7 @@ function techFee(n:number){return Math.round(n*100)+"p";}
 function FranchisePage(){
   const[data,setData]=useState<ApiData|null>(null),[loadError,setLoadError]=useState(""),[query,setQuery]=useState("");
   const[selected,setSelected]=useState<Territory|null>(null),[submitted,setSubmitted]=useState(false),[sending,setSending]=useState(false),[formError,setFormError]=useState("");
-  const[form,setForm]=useState({name:"",email:"",phone:"",area:"",operatorModel:"owner_operator" as "owner_operator"|"managed_investor"|"multi_unit_operator",existingKitchen:false,existingBusiness:"",capital:"",launchTiming:"",multiUnit:false,consent:false,website:""});
+  const[form,setForm]=useState({name:"",email:"",phone:"",area:"",operatorModel:"owner_operator" as OperatorModel,existingKitchen:false,existingBusiness:"",capital:"",launchTiming:"",multiUnit:false,consent:false,website:""});
 
   useEffect(()=>{
     fetch("/api/franchise?programme=mealdeck-england-wales")
@@ -205,7 +208,7 @@ function FranchisePage(){
           <p>We show prospects only the public territory status. Internal ownership arrangements are not displayed.</p>
         </div>
         <div className="md-franchise-market-grid">
-          {markets.map((m:any)=><article key={m.name} className={"md-franchise-market "+(m.status==="taken"?"is-taken":m.status==="coming_soon"?"is-soon":"is-open")}>
+          {markets.map((m)=><article key={m.name} className={"md-franchise-market "+(m.status==="taken"?"is-taken":m.status==="coming_soon"?"is-soon":"is-open")}>
             <MapPin/><div><h3>{m.name}</h3><strong>{statusText(m.status)}</strong>{m.note&&<p>{m.note}</p>}</div>
           </article>)}
         </div>
@@ -218,7 +221,7 @@ function FranchisePage(){
           <p>Islington / Camden around Caledonian Road is taken. These London territories remain part of the franchise opportunity, subject to final availability.</p>
         </div>
         <div className="md-franchise-territory-grid">
-          {londonCards.map((t:any)=><button key={t.code??t.name} type="button" onClick={()=>choose(t as Territory)} className="md-franchise-territory-card">
+          {londonCards.map((t)=><button key={t.code??t.name} type="button" onClick={()=>choose(t)} className="md-franchise-territory-card">
             <span>London</span><h3>{t.name}</h3><p>Indicative fee</p><strong>{money(t.fee)}</strong><em>Available</em>
           </button>)}
         </div>
@@ -284,7 +287,7 @@ function FranchisePage(){
               <label><span>Phone</span><input value={form.phone} onChange={e=>setForm(v=>({...v,phone:e.target.value}))}/></label>
             </div>
             <label><span>Preferred town / territory</span><input required value={form.area} onChange={e=>{setSelected(null);setForm(v=>({...v,area:e.target.value}));}} placeholder="e.g. Leeds, Croydon, Bristol"/></label>
-            <label><span>How do you want to operate?</span><select value={form.operatorModel} onChange={e=>setForm(v=>({...v,operatorModel:e.target.value as any}))}><option value="owner_operator">Owner-operator franchise</option><option value="managed_investor">Managed investor franchise</option><option value="multi_unit_operator">Multi-unit operator</option></select></label>
+            <label><span>How do you want to operate?</span><select value={form.operatorModel} onChange={e=>setForm(v=>({...v,operatorModel:e.target.value as OperatorModel}))}><option value="owner_operator">Owner-operator franchise</option><option value="managed_investor">Managed investor franchise</option><option value="multi_unit_operator">Multi-unit operator</option></select></label>
             <label><span>Existing food business / kitchen (optional)</span><input value={form.existingBusiness} onChange={e=>setForm(v=>({...v,existingBusiness:e.target.value}))} placeholder="Business or kitchen name"/></label>
             <div className="md-franchise-form-pair">
               <label><span>Available investment / working capital £</span><input type="number" min="0" value={form.capital} onChange={e=>setForm(v=>({...v,capital:e.target.value}))}/></label>
