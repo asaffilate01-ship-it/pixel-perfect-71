@@ -237,6 +237,18 @@ function FranchisePage(){
         </div>
       </section>
 
+      <section className="md-section md-section-cream">
+        <div className="md-section-heading">
+          <p className="md-kicker md-kicker-red">Fair territory protection</p>
+          <h2>Your protected area is mapped — not guessed by postcode.</h2>
+          <p>Omniqora uses the kitchen anchor, road travel times, population/household data and neighbouring MealDeck kitchens to create the final protected territory. The approved polygon version is referenced in the franchise agreement.</p>
+        </div>
+        <div className="md-franchise-model-grid">
+          <article><span>CORE</span><h3>Protected territory</h3><p>The exclusive franchise core. Another MealDeck franchise is not sold inside the approved polygon while protection remains in force.</p><strong>Contractual boundary</strong></article>
+          <article><span>EDGE</span><h3>Shared + overflow zones</h3><p>Neighbouring kitchens can share a controlled boundary and extend delivery farther when ETA, capacity and courier economics allow.</p><strong>Operational, not additional exclusivity</strong></article>
+        </div>
+      </section>
+
       <section className="md-section md-section-black">
         <div className="md-section-heading md-section-heading-light"><p className="md-kicker">How launch works</p><h2>From territory to trading kitchen.</h2></div>
         <div className="md-franchise-step-grid">
