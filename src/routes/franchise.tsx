@@ -66,7 +66,7 @@ const operatorFunds=[
 function statusText(value:string){
   return value==="coming_soon"?"Coming soon":value==="taken"?"Taken":value==="available"?"Available":value.replaceAll("_"," ");
 }
-function money(n:number){return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(n);}
+function money(n:number){return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(n);}\nfunction techFee(n:number){return Math.round(n*100)+"p";}
 
 function FranchisePage(){
   const[data,setData]=useState<ApiData|null>(null),[loadError,setLoadError]=useState(""),[query,setQuery]=useState("");
@@ -149,7 +149,7 @@ function FranchisePage(){
         <div><strong>{money(programme.feeMin)}–{money(programme.feeMax)}</strong><span>initial territory fee</span></div>
         <div><strong>{programme.royaltyPercent}%</strong><span>royalty on net sales</span></div>
         <div><strong>{programme.marketingPercent}%</strong><span>marketing contribution</span></div>
-        <div><strong>{money(programme.techFeePerOrder)}</strong><span>technology per completed order</span></div>
+        <div><strong>{techFee(programme.techFeePerOrder)}</strong><span>technology per completed order</span></div>
         <div><strong>Cost + {programme.supplyMarkupPercent}%</strong><span>central supplied goods</span></div>
       </section>
 
@@ -258,7 +258,7 @@ function FranchisePage(){
             <p>Your application is sent into Omniqora Franchise Sales, where territory availability, qualification, documents, training and launch are managed.</p>
             <div className="md-franchise-fee-box">
               <span>Franchise fee</span><strong>{selected?money(selected.fee):money(programme.feeMin)+"–"+money(programme.feeMax)}</strong>
-              <small>Plus ongoing {programme.royaltyPercent}% royalty, {programme.marketingPercent}% marketing, {money(programme.techFeePerOrder)} per completed order technology fee and central supplies at fully loaded delivered cost + {programme.supplyMarkupPercent}%.</small>
+              <small>Plus ongoing {programme.royaltyPercent}% royalty, {programme.marketingPercent}% marketing, {techFee(programme.techFeePerOrder)} per completed order technology fee and central supplies at fully loaded delivered cost + {programme.supplyMarkupPercent}%.</small>
             </div>
           </div>
 
