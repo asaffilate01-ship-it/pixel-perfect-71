@@ -22,6 +22,7 @@ export function SiteFooter() {
             <Link to="/" hash="offers">Offers</Link>
             <Link to="/" hash="how">How it works</Link>
             <Link to="/track">Track order</Link>
+            <Link to="/franchise">Franchise</Link>
           </div>
           <div>
             <h3>Locations</h3>
