@@ -11,7 +11,7 @@ import { seo } from "@/lib/seo";
 export const Route=createFileRoute("/franchise")({
   head:()=>seo({
     title:"MealDeck Franchise — Run 15+ Brands From One Kitchen",
-    description:"Explore MealDeck franchise territories across England and Wales. 15+ brands, Dishbee + Omniqora technology, central marketing, training, support and supply.",
+    description:"Explore MealDeck franchise territories across England and Wales. 15+ brands, proprietary MealDeck technology, central marketing, training, support and supply.",
     path:"/franchise",
     keywords:"MealDeck franchise, cloud kitchen franchise UK, dark kitchen franchise, food franchise UK, multi brand food franchise, takeaway franchise"
   }),
@@ -26,11 +26,11 @@ type OperatorModel="owner_operator"|"managed_investor"|"multi_unit_operator";
 type ApiData={programme:Programme;territories:Territory[]};
 
 const fallbackMarkets:FeaturedMarket[]=[
-  {name:"Luton",status:"coming_soon"},
-  {name:"St Albans",status:"coming_soon"},
+  {name:"Luton",status:"taken",note:"LU4 8NU"},
+  {name:"St Albans",status:"taken",note:"AL1 3JU"},
   {name:"Bedford",status:"taken"},
   {name:"Milton Keynes",status:"taken"},
-  {name:"Islington / Camden",status:"taken",note:"Caledonian Road area"}
+  {name:"Islington / Camden",status:"taken",note:"N7 8XH · Caledonian Road area"}
 ];
 
 const fallbackAvailable:Territory[]=[
@@ -47,7 +47,7 @@ const fallbackAvailable:Territory[]=[
 
 const whatWeProvide=[
   {icon:Boxes,title:"15+ brands and growing",copy:"A growing portfolio of MealDeck food and beverage concepts from one kitchen."},
-  {icon:MonitorSmartphone,title:"Dishbee + Omniqora",copy:"Ordering, KDS, CRM, geofencing, intelligence, analytics, automation and franchise operations."},
+  {icon:MonitorSmartphone,title:"Proprietary MealDeck technology",copy:"Ordering, KDS, CRM, geofencing, intelligence, analytics, automation and franchise operations through our integrated technology stack."},
   {icon:Truck,title:"Delivery orchestration",copy:"Direct-delivery and courier integrations where commercially available, including the providers configured for each market."},
   {icon:Sparkles,title:"Marketing engine",copy:"National creative, local geo campaigns, SEO, paid media, CRM, social and launch marketing."},
   {icon:ChefHat,title:"Training & operating system",copy:"Recipes, brand standards, SOPs, onboarding, launch training and ongoing operational support."},
@@ -130,7 +130,7 @@ function FranchisePage(){
           <div>
             <p className="md-kicker">MealDeck franchise</p>
             <h1>15+ brands.<br/><span>One kitchen.</span></h1>
-            <p className="md-franchise-hero-lead">Run a growing portfolio of delivery-first food and beverage brands from one approved kitchen, powered by Dishbee and Omniqora.</p>
+            <p className="md-franchise-hero-lead">Run a growing portfolio of delivery-first food and beverage brands from one approved kitchen, powered by MealDeck’s integrated proprietary technology.</p>
             <div className="md-franchise-hero-actions">
               <a href="#territories" className="md-btn md-btn-yellow">Check a territory <ArrowRight/></a>
               <a href="#model" className="md-btn md-btn-outline-light">See the model</a>
@@ -144,7 +144,7 @@ function FranchisePage(){
           <div className="md-franchise-stack" aria-label="MealDeck franchise model">
             <div className="md-franchise-card md-franchise-card-a"><span>15+</span><b>BRANDS</b><small>and growing</small></div>
             <div className="md-franchise-card md-franchise-card-b"><span>1</span><b>KITCHEN</b><small>shared operations</small></div>
-            <div className="md-franchise-card md-franchise-card-c"><span>1</span><b>TECH STACK</b><small>Dishbee + Omniqora</small></div>
+            <div className="md-franchise-card md-franchise-card-c"><span>1</span><b>TECH STACK</b><small>proprietary MealDeck platform</small></div>
           </div>
         </div>
       </section>
@@ -161,7 +161,7 @@ function FranchisePage(){
         <div className="md-section-heading">
           <p className="md-kicker md-kicker-red">What MealDeck provides</p>
           <h2>You run the kitchen. We run the system around it.</h2>
-          <p>MealDeck provides the brands and franchise framework. Dishbee runs hospitality operations. Omniqora provides shared control, intelligence, CRM, growth, territory and franchise-sales capabilities.</p>
+          <p>MealDeck provides the brands, franchise framework and integrated technology environment. Our hospitality and proprietary intelligence systems provide ordering, kitchen operations, CRM, growth, territory control, analytics and franchise-sales capabilities.</p>
         </div>
         <div className="md-franchise-benefit-grid">
           {whatWeProvide.map(({icon:Icon,title,copy})=><article key={title}><Icon/><h3>{title}</h3><p>{copy}</p></article>)}
@@ -227,7 +227,7 @@ function FranchisePage(){
         </div>
 
         <div className="md-franchise-search">
-          <div><p className="md-kicker md-kicker-red">England & Wales</p><h2>Search the national network.</h2><p>Search by town, city, region or territory code. Live availability is controlled by Omniqora Franchise Sales.</p></div>
+          <div><p className="md-kicker md-kicker-red">England & Wales</p><h2>Search the national network.</h2><p>Search by town, city, region or territory code. Live availability is controlled centrally by MealDeck.</p></div>
           <label><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="e.g. Manchester, Cardiff, Bristol…"/></label>
           {loadError&&<p className="md-franchise-search-note">{loadError}</p>}
           {!!query&&<div className="md-franchise-search-results">
@@ -244,7 +244,7 @@ function FranchisePage(){
         <div className="md-section-heading">
           <p className="md-kicker md-kicker-red">Fair territory protection</p>
           <h2>Your protected area is mapped — not guessed by postcode.</h2>
-          <p>Omniqora uses the kitchen anchor, road travel times, population/household data and neighbouring MealDeck kitchens to create the final protected territory. The approved polygon version is referenced in the franchise agreement.</p>
+          <p>MealDeck’s proprietary territory system uses the kitchen anchor, road travel times, population/household data and neighbouring MealDeck kitchens to create the final protected territory. The approved polygon version is referenced in the franchise agreement.</p>
         </div>
         <div className="md-franchise-model-grid">
           <article><span>CORE</span><h3>Protected territory</h3><p>The exclusive franchise core. Another MealDeck franchise is not sold inside the approved polygon while protection remains in force.</p><strong>Contractual boundary</strong></article>
@@ -259,7 +259,7 @@ function FranchisePage(){
             ["01","Choose territory","Check availability and submit your application."],
             ["02","Qualify & approve","We assess operator fit, territory and kitchen/site."],
             ["03","Agreement & setup","Complete documents, fee, kitchen gap-check and supply setup."],
-            ["04","Train & configure","Brands, recipes, Dishbee, Omniqora, KDS and delivery channels are configured."],
+            ["04","Train & configure","Brands, recipes, KDS, ordering, delivery channels and MealDeck’s proprietary technology are configured."],
             ["05","Launch marketing","MealDeck runs launch creative, local geo campaigns, CRM and digital acquisition."],
             ["06","Operate & grow","You run the kitchen; we provide oversight, tech, marketing, admin and supply support."],
           ].map(([n,title,copy])=><article key={n}><span>{n}</span><h3>{title}</h3><p>{copy}</p></article>)}
@@ -271,7 +271,7 @@ function FranchisePage(){
           <div>
             <p className="md-kicker md-kicker-red">Apply for MealDeck</p>
             <h2>{selected?"Apply for "+selected.name:"Tell us where you want to operate."}</h2>
-            <p>Your application is sent into Omniqora Franchise Sales, where territory availability, qualification, documents, training and launch are managed.</p>
+            <p>Your application enters MealDeck’s franchise sales system, where territory availability, qualification, documents, training and launch are managed.</p>
             <div className="md-franchise-fee-box">
               <span>Franchise fee</span><strong>{selected?money(selected.fee):money(programme.feeMin)+"–"+money(programme.feeMax)}</strong>
               <small>Plus ongoing {programme.royaltyPercent}% royalty, {programme.marketingPercent}% marketing, {techFee(programme.techFeePerOrder)} per completed order technology fee and central supplies at fully loaded delivered cost + {programme.supplyMarkupPercent}%.</small>
