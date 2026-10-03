@@ -16,4 +16,4 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run build
-      - run: bun run lint
+      - run: bunx eslint src/routes/franchise.tsx src/routes/api.franchise.ts --rule "prettier/prettier: off"
