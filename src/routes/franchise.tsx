@@ -66,7 +66,8 @@ const operatorFunds=[
 function statusText(value:string){
   return value==="coming_soon"?"Coming soon":value==="taken"?"Taken":value==="available"?"Available":value.replaceAll("_"," ");
 }
-function money(n:number){return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(n);}\nfunction techFee(n:number){return Math.round(n*100)+"p";}
+function money(n:number){return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:0}).format(n);}
+function techFee(n:number){return Math.round(n*100)+"p";}
 
 function FranchisePage(){
   const[data,setData]=useState<ApiData|null>(null),[loadError,setLoadError]=useState(""),[query,setQuery]=useState("");
