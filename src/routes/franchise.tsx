@@ -246,19 +246,14 @@ const faqs = [
       "MealDeck brings together the shared brand portfolio and menus, a selected location and agreed territory, equipment and opening supplies, the full technology offer including Haccora, training, compliance support, administration, marketing and accountancy. We coordinate the setup and systems around an agreed launch plan. You run the kitchen, employ and manage the team, and fund the agreed operating costs. Opening follows the location's setup, approvals and readiness checks.",
   },
   {
-    question: "What does the base franchise fee cover?",
+    question: "What does the upfront investment cover?",
     answer:
-      "The base fee is for entry to the MealDeck franchise programme and the agreed brand and territory rights. It is payable upfront and currently ranges from " + money(DEFAULT_PROGRAMME.feeMin) + " to " + money(DEFAULT_PROGRAMME.feeMax) + ", with the fee confirmed for your location. The " + money(DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + " equipment and opening supplies/packaging package is also paid upfront. Your written quote itemises the package and any agreed additional startup costs.",
+      "One upfront investment covers entry to the MealDeck franchise programme, the agreed brand and territory rights, and your complete kitchen fit-out — equipment, opening supplies and branded packaging. We fit out the kitchen and provide a full itemised inventory. The total fee is " + money(DEFAULT_PROGRAMME.feeMin + DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + "–" + money(DEFAULT_PROGRAMME.feeMax + DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + ", depending on location and territory, and is confirmed in your written quote.",
   },
   {
     question: "Does MealDeck provide the equipment?",
     answer:
-      "Yes. MealDeck supplies the equipment listed in the upfront package schedule alongside the opening supplies and packaging. The schedule identifies equipment, including any KDS screens and printers, installation scope, ownership or hire terms, warranty, maintenance and replacement responsibilities. An item already included in the package is not charged again in technology setup. Any additional hardware or site work requires an explicit itemised quote.",
-  },
-  {
-    question: "What does the " + money(DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + " upfront package cover?",
-    answer:
-      "The package covers the agreed kitchen equipment and opening supplies and packaging together. Both are itemised within that single " + money(DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + " charge. Adding the reduced territory fee gives " + money(DEFAULT_PROGRAMME.feeMin + DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + "–" + money(DEFAULT_PROGRAMME.feeMax + DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + " payable upfront for the base fee and package. Any additional agreed implementation or hardware, premises and deposits, applicable VAT, and working capital are additional. The written quote confirms all inclusions and costs before commitment.",
+      "Yes. We fit out your kitchen and provide a full itemised inventory covering the equipment, including any KDS screens and printers, alongside the opening supplies and packaging. The schedule confirms installation scope, ownership or hire terms, warranty, maintenance and replacement responsibilities.",
   },
   {
     question: "How are supplies and packaging charged?",
@@ -273,22 +268,7 @@ const faqs = [
   {
     question: "What does the technology fee include?",
     answer:
-      "The " + technologyPrice + " fee per completed customer order covers the full listed software offer: KDS and printing, web and app ordering, WhatsApp and phone ordering, delivery management, aggregator connections, AI tools and Haccora food safety software. There is no separate Haccora subscription or monthly MealDeck technology fee. Hardware and any additional implementation are itemised in the setup quote, with each item charged once. We configure and test the agreed tools and complete any required provider onboarding before activation.",
-  },
-  {
-    question: "What counts as one chargeable order?",
-    answer:
-      DEFAULT_PROGRAMME.techOrderDefinition + " A basket containing several MealDeck brands from the same kitchen attracts one technology charge. The billing schedule defines statement timing and any adjustments.",
-  },
-  {
-    question: "Is Haccora included?",
-    answer:
-      "Yes. Haccora food safety and compliance software is covered by the same " + technologyPrice + " technology fee per completed customer order, with no separate Haccora subscription. We configure the tools and arrange onboarding for the checks and records agreed for your kitchen. Any separately agreed human compliance support is itemised in the service quote. Your team completes the required checks and operating records.",
-  },
-  {
-    question: "Which third-party charges are separate?",
-    answer:
-      "Card processing fees charged by third parties are separate from the MealDeck software fee. Marketplace commissions and actual courier delivery fees follow the relevant provider's terms. Any exceptional voice, AI or messaging usage charge requires an explicit written quote defining the allowances, rates and limits before activation.",
+      "The technology fee covers the full listed software offer: KDS and printing, web and app ordering, WhatsApp and phone ordering, delivery management, aggregator connections, AI tools and Haccora food safety software. Your written quote confirms the basis and any agreed allowances before activation.",
   },
   {
     question: "Are all brands available in every kitchen immediately?",
