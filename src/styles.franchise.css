@@ -1,23 +1,404 @@
-/* MealDeck franchise recruitment */
-.md-franchise-hero{position:relative;overflow:hidden;background:radial-gradient(circle at 82% 25%,rgba(244,193,59,.18),transparent 28%),linear-gradient(135deg,#180304,#050505 72%);color:#fff;border-bottom:8px solid var(--md-yellow)}
-.md-franchise-hero-grid{width:min(1440px,calc(100% - 40px));min-height:650px;margin:0 auto;display:grid;grid-template-columns:1.05fr .75fr;align-items:center;gap:72px;padding:70px 0}
-.md-franchise-hero h1{margin:0;font-family:var(--md-display);font-size:clamp(62px,7vw,112px);line-height:.88;letter-spacing:-.06em;text-transform:uppercase;font-weight:900}.md-franchise-hero h1 span{color:var(--md-yellow)}
-.md-franchise-hero-lead{max-width:720px;margin:26px 0 0;font-size:clamp(18px,1.5vw,24px);line-height:1.5;color:rgba(255,255,255,.82)}
-.md-franchise-hero-actions,.md-franchise-proof{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}.md-franchise-proof{gap:22px;font-size:14px;font-weight:800}.md-franchise-proof span{display:flex;align-items:center;gap:7px}.md-franchise-proof svg{width:17px;color:var(--md-yellow)}
-.md-franchise-stack{position:relative;min-height:470px;display:grid;place-items:center;perspective:1200px}.md-franchise-card{position:absolute;width:min(300px,70vw);aspect-ratio:2.5/3.5;display:flex;flex-direction:column;align-items:center;justify-content:center;border:10px solid var(--md-paper);outline:3px solid var(--md-yellow);outline-offset:-18px;background:var(--md-red);color:#fff;box-shadow:0 35px 80px rgba(0,0,0,.46)}
-.md-franchise-card span{font-family:var(--md-display);font-size:88px;line-height:.8;font-weight:900;color:var(--md-yellow)}.md-franchise-card b{margin-top:20px;font-family:var(--md-display);font-size:27px;letter-spacing:.08em}.md-franchise-card small{margin-top:8px;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.68)}
-.md-franchise-card-a{transform:translateX(-72px) rotate(-11deg)}.md-franchise-card-b{transform:translateY(-12px) rotate(1deg);z-index:2;background:#111}.md-franchise-card-c{transform:translateX(72px) rotate(11deg);background:#741016}
-.md-franchise-stat-strip{display:grid;grid-template-columns:repeat(5,1fr);background:var(--md-yellow);color:var(--md-black)}.md-franchise-stat-strip>div{padding:27px 22px;text-align:center;border-right:1px solid rgba(0,0,0,.16)}.md-franchise-stat-strip strong{display:block;font-family:var(--md-display);font-size:25px}.md-franchise-stat-strip span{display:block;margin-top:4px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:800}
-.md-franchise-benefit-grid{display:grid;grid-template-columns:repeat(4,1fr);border-left:1px solid var(--md-line);border-top:1px solid var(--md-line)}.md-franchise-benefit-grid article{min-height:260px;padding:30px;background:#fff;border-right:1px solid var(--md-line);border-bottom:1px solid var(--md-line)}.md-franchise-benefit-grid svg{width:28px;color:var(--md-red)}.md-franchise-benefit-grid h3{margin:34px 0 9px;font-family:var(--md-display);font-size:22px}.md-franchise-benefit-grid p{margin:0;color:var(--md-muted);line-height:1.55}
-.md-franchise-split{display:grid;grid-template-columns:1fr 1fr}.md-franchise-split>article{min-height:540px;padding:clamp(48px,6vw,88px)}.md-franchise-split-dark{background:var(--md-red);color:#fff}.md-franchise-split-paper{background:var(--md-paper);color:var(--md-black)}.md-franchise-split h2{margin:0;font-family:var(--md-display);font-size:clamp(42px,4vw,70px);line-height:.96}.md-franchise-split-dark>p:last-child{max-width:680px;margin-top:24px;font-size:18px;line-height:1.65;color:rgba(255,255,255,.78)}.md-franchise-split-paper ul{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:16px}.md-franchise-split-paper li{display:flex;gap:12px;align-items:flex-start;font-size:17px;font-weight:700}.md-franchise-split-paper li svg{width:20px;flex:0 0 auto;color:var(--md-red)}
-.md-franchise-market-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.md-franchise-market{min-height:165px;padding:24px;display:flex;gap:15px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.035)}.md-franchise-market>svg{width:22px;color:var(--md-yellow);flex:0 0 auto}.md-franchise-market h3{margin:0;font-family:var(--md-display);font-size:21px}.md-franchise-market strong{display:inline-block;margin-top:20px;font-size:12px;text-transform:uppercase;letter-spacing:.12em}.md-franchise-market p{margin:6px 0 0;font-size:12px;color:rgba(255,255,255,.52)}.md-franchise-market.is-taken strong{color:#aaa}.md-franchise-market.is-soon strong{color:var(--md-yellow)}
-.md-franchise-territory-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.md-franchise-territory-card{min-height:225px;padding:26px;text-align:left;background:#fff;border:1px solid var(--md-line);color:var(--md-black);cursor:pointer;transition:.2s}.md-franchise-territory-card:hover{transform:translateY(-4px);border-color:var(--md-red);box-shadow:0 18px 40px rgba(0,0,0,.09)}.md-franchise-territory-card>span{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--md-red);font-weight:900}.md-franchise-territory-card h3{margin:30px 0 14px;font-family:var(--md-display);font-size:25px}.md-franchise-territory-card p{margin:0;color:var(--md-muted);font-size:12px}.md-franchise-territory-card strong{display:block;font-family:var(--md-display);font-size:28px}.md-franchise-territory-card em{display:inline-block;margin-top:14px;font-style:normal;font-size:11px;text-transform:uppercase;color:#247741;font-weight:900}
-.md-franchise-search{margin-top:48px!important;padding:36px;background:#fff;border:1px solid var(--md-line)}.md-franchise-search h2{margin:0;font-family:var(--md-display);font-size:clamp(36px,4vw,58px)}.md-franchise-search>label{margin-top:24px;height:58px;display:flex;align-items:center;gap:12px;border:2px solid var(--md-black);padding:0 18px}.md-franchise-search>label svg{width:22px;color:var(--md-red)}.md-franchise-search input{width:100%;border:0;outline:0;background:transparent;font:inherit}.md-franchise-search-note{font-size:13px;color:#8b6514}.md-franchise-search-results{margin-top:8px;border:1px solid var(--md-line)}.md-franchise-search-results button{width:100%;display:flex;justify-content:space-between;gap:20px;align-items:center;padding:15px 18px;text-align:left;background:#fff;border:0;border-bottom:1px solid var(--md-line);cursor:pointer;color:inherit}.md-franchise-search-results button:disabled{cursor:not-allowed;opacity:.5}.md-franchise-search-results button>div{display:flex;flex-direction:column}.md-franchise-search-results button>div:last-child{text-align:right}.md-franchise-search-results span{font-size:11px;color:var(--md-muted)}
-.md-franchise-step-grid{display:grid;grid-template-columns:repeat(3,1fr);border-left:1px solid rgba(255,255,255,.15);border-top:1px solid rgba(255,255,255,.15)}.md-franchise-step-grid article{min-height:225px;padding:28px;border-right:1px solid rgba(255,255,255,.15);border-bottom:1px solid rgba(255,255,255,.15)}.md-franchise-step-grid span{font-family:var(--md-display);font-size:20px;color:var(--md-yellow);font-weight:900}.md-franchise-step-grid h3{margin:38px 0 8px;font-family:var(--md-display);font-size:25px}.md-franchise-step-grid p{margin:0;color:rgba(255,255,255,.58);line-height:1.5}
-.md-franchise-apply-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:54px;align-items:start}.md-franchise-apply-grid h2{margin:0;font-family:var(--md-display);font-size:clamp(40px,4vw,66px);line-height:.98}.md-franchise-apply-grid>div>p:not(.md-kicker){max-width:620px;color:var(--md-muted);font-size:17px;line-height:1.6}.md-franchise-fee-box{margin-top:28px;padding:26px;background:#fff;border:1px solid var(--md-line)}.md-franchise-fee-box>span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--md-red);font-weight:900}.md-franchise-fee-box strong{display:block;margin-top:5px;font-family:var(--md-display);font-size:42px}.md-franchise-fee-box small{display:block;margin-top:10px;color:var(--md-muted);line-height:1.5}
-.md-franchise-form{display:grid;gap:15px;padding:30px;background:#fff;border:1px solid var(--md-line)}.md-franchise-form label:not(.md-franchise-check){display:grid;gap:6px}.md-franchise-form label>span{font-size:12px;font-weight:800}.md-franchise-form input,.md-franchise-form select{width:100%;height:48px;border:1px solid var(--md-line);background:#fff;color:var(--md-black);padding:0 13px;font:inherit}.md-franchise-form-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}.md-franchise-check{display:flex;gap:10px;align-items:flex-start}.md-franchise-check input{width:18px;height:18px;flex:0 0 auto}.md-franchise-check span{font-size:13px!important;line-height:1.4}.md-franchise-form-error{margin:0;color:#a00000;font-size:13px}.md-franchise-form-small{margin:0;color:var(--md-muted);font-size:11px;line-height:1.5}.md-franchise-honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important}.md-franchise-success{min-height:360px;padding:48px;display:grid;align-content:center;background:var(--md-red);color:#fff}.md-franchise-success svg{width:42px;color:var(--md-yellow)}.md-franchise-success h3{margin:18px 0 8px;font-family:var(--md-display);font-size:38px}.md-franchise-success p{color:rgba(255,255,255,.75);line-height:1.6}
-@media(max-width:1100px){.md-franchise-hero-grid{grid-template-columns:1fr;gap:20px}.md-franchise-stack{min-height:430px}.md-franchise-stat-strip{grid-template-columns:repeat(2,1fr)}.md-franchise-stat-strip>div:last-child{grid-column:1/-1}.md-franchise-benefit-grid{grid-template-columns:repeat(2,1fr)}.md-franchise-market-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:760px){.md-franchise-hero-grid{width:min(100% - 28px,1440px);padding:54px 0}.md-franchise-hero h1{font-size:clamp(52px,17vw,78px)}.md-franchise-stack{min-height:360px}.md-franchise-card{width:220px}.md-franchise-card span{font-size:66px}.md-franchise-card b{font-size:20px}.md-franchise-card-a{transform:translateX(-48px) rotate(-10deg)}.md-franchise-card-c{transform:translateX(48px) rotate(10deg)}.md-franchise-stat-strip{grid-template-columns:1fr}.md-franchise-stat-strip>div:last-child{grid-column:auto}.md-franchise-benefit-grid,.md-franchise-split,.md-franchise-territory-grid,.md-franchise-step-grid,.md-franchise-apply-grid{grid-template-columns:1fr}.md-franchise-market-grid{grid-template-columns:1fr}.md-franchise-form-pair{grid-template-columns:1fr}.md-franchise-search{padding:24px}.md-franchise-apply-grid{gap:28px}}
+/* MealDeck franchise recruitment.
+   Neutral surfaces follow the shared theme. Fixed red, yellow and paper are
+   reserved for branded playing cards and the existing marketing shell. */
 
-.md-franchise-model-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.md-franchise-model-grid article{min-height:290px;padding:34px;background:#fff;border:1px solid var(--md-line)}.md-franchise-model-grid article>span{font-family:var(--md-display);font-size:18px;font-weight:900;color:var(--md-red)}.md-franchise-model-grid h3{margin:38px 0 12px;font-family:var(--md-display);font-size:30px;line-height:1}.md-franchise-model-grid p{margin:0;color:var(--md-muted);line-height:1.6}.md-franchise-model-grid strong{display:block;margin-top:24px;color:var(--md-red);font-size:14px}.md-franchise-model-note{margin-top:18px!important;padding:18px 20px;background:#fff;border-left:4px solid var(--md-yellow);color:var(--md-muted);font-size:13px;line-height:1.55}
-@media(max-width:760px){.md-franchise-model-grid{grid-template-columns:1fr}}
+.md-franchise-page {
+  --ff-surface: var(--card);
+  --ff-background: var(--background);
+  --ff-foreground: var(--foreground);
+  --ff-muted: var(--muted-foreground);
+  --ff-border: var(--border);
+  --ff-highlight: var(--primary);
+  --ff-success: oklch(0.43 0.11 150);
+  --ff-danger: oklch(0.45 0.18 27);
+  background: var(--ff-background);
+  color: var(--ff-foreground);
+}
+.dark .md-franchise-page {
+  --ff-highlight: oklch(0.73 0.18 27);
+  --ff-success: oklch(0.77 0.13 150);
+  --ff-danger: oklch(0.8 0.13 27);
+}
+.md-franchise-page .md-section-cream { background: var(--ff-background); color: var(--ff-foreground); }
+.md-franchise-page .md-kicker-red { color: var(--ff-highlight); }
+.md-franchise-page .md-section-heading > p:last-child { color: var(--ff-muted); }
+.md-franchise-page .md-section-heading-light > p:last-child { color: oklch(0.82 0.008 80); }
+.md-franchise-page .md-section-heading { max-width: 960px; }
+.md-franchise-page .md-section-heading h2 { font-size: clamp(36px, 4.2vw, 66px); line-height: 1.03; }
+.md-franchise-page section[id] { scroll-margin-top: 100px; }
+.md-franchise-page :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 4px;
+}
+.md-franchise-page .md-btn:disabled { opacity: 0.65; cursor: wait; }
+.md-franchise-page .md-btn:disabled:hover { transform: none; }
+.md-franchise-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.md-franchise-divider { border-top: 1px solid var(--ff-border); }
+
+.md-franchise-hero {
+  position: relative;
+  overflow: hidden;
+  color: oklch(0.99 0.004 85);
+  background:
+    radial-gradient(circle at 82% 25%, oklch(0.8 0.14 85 / 0.12), transparent 30%),
+    linear-gradient(130deg, oklch(0.22 0.07 22), oklch(0.11 0.01 20) 74%);
+  border-bottom: 8px solid var(--md-yellow);
+}
+.md-franchise-hero-grid {
+  width: min(1440px, calc(100% - 40px));
+  min-height: 650px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  align-items: center;
+  gap: 54px;
+  padding: 66px 0;
+}
+.md-franchise-hero h1 {
+  margin: 0;
+  font-family: var(--md-display);
+  font-size: clamp(56px, 7.3vw, 108px);
+  line-height: 0.93;
+  letter-spacing: -0.055em;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+.md-franchise-hero h1 span { color: var(--md-yellow); }
+.md-franchise-hero-lead {
+  max-width: 720px;
+  margin: 26px 0 0;
+  font-size: clamp(18px, 1.5vw, 22px);
+  line-height: 1.6;
+  color: oklch(0.9 0.008 80);
+}
+.md-franchise-hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.md-franchise-proof { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 28px; font-size: 13px; font-weight: 700; }
+.md-franchise-proof span { display: inline-flex; align-items: center; gap: 6px; }
+.md-franchise-proof svg { width: 17px; height: 17px; color: var(--md-yellow); flex: 0 0 auto; }
+.md-franchise-hero-cost { margin: 28px 0 0; padding-top: 20px; border-top: 1px solid oklch(0.99 0 0 / 0.2); line-height: 1.55; }
+.md-franchise-hero-cost strong { display: block; font-size: 16px; color: var(--md-yellow); }
+.md-franchise-hero-cost > span { display: block; margin-top: 5px; max-width: 570px; font-size: 13px; color: oklch(0.84 0.008 80); }
+.md-franchise-stack { position: relative; min-height: 490px; display: grid; place-items: center; }
+.md-franchise-card-back {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 274px;
+  aspect-ratio: 2.5 / 3.5;
+  border: 9px solid var(--md-paper);
+  background:
+    repeating-linear-gradient(45deg, transparent 0 10px, oklch(0.99 0 0 / 0.09) 10px 12px),
+    var(--md-red-deep);
+  box-shadow: 0 24px 65px oklch(0 0 0 / 0.35);
+}
+.md-franchise-card-back::after { content: ""; position: absolute; inset: 11px; border: 1px solid oklch(0.99 0 0 / 0.5); }
+.md-franchise-card-back > span { font-size: 112px; color: var(--md-yellow); }
+.md-franchise-card-back-left { transform: translateX(-68px) rotate(-13deg); }
+.md-franchise-card-back-right { transform: translateX(68px) rotate(13deg); }
+.md-franchise-deal-card {
+  position: relative;
+  width: 290px;
+  aspect-ratio: 2.5 / 3.5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  border: 9px solid var(--md-red-deep);
+  outline: 1px solid oklch(0.98 0.01 80 / 0.55);
+  outline-offset: -13px;
+  background: var(--md-paper);
+  color: var(--md-black);
+  box-shadow: 0 30px 65px oklch(0 0 0 / 0.38);
+  transform: rotate(-2deg);
+}
+.md-franchise-card-corner { position: absolute; top: 12px; left: 15px; display: flex; flex-direction: column; text-align: center; font: 900 26px/1 var(--md-display); color: var(--md-red-deep); }
+.md-franchise-card-corner > small { font-size: 19px; line-height: 1; }
+.md-franchise-card-corner-bottom { top: auto; left: auto; right: 15px; bottom: 12px; transform: rotate(180deg); }
+.md-franchise-card-count { font: 900 110px/0.9 var(--md-display); letter-spacing: -0.075em; }
+.md-franchise-deal-card > strong { margin-top: 9px; font: 900 27px/1 var(--md-display); letter-spacing: 0.13em; }
+.md-franchise-card-rule { width: 74%; height: 3px; margin: 23px 0; background: var(--md-red); }
+.md-franchise-deal-card > b { font: 900 22px/1 var(--md-display); }
+.md-franchise-deal-card > small { margin-top: 8px; color: var(--md-red-deep); font-size: 10px; font-weight: 800; letter-spacing: 0.15em; }
+
+.md-franchise-section-nav { background: var(--ff-surface); border-bottom: 1px solid var(--ff-border); }
+.md-franchise-section-nav > div { width: min(1440px, calc(100% - 40px)); display: flex; gap: 26px; margin: 0 auto; overflow-x: auto; padding: 0 4px; }
+.md-franchise-section-nav a { padding: 20px 0; flex: 0 0 auto; color: var(--ff-foreground); font-family: var(--md-display); font-size: 14px; font-weight: 700; }
+.md-franchise-section-nav a:hover { color: var(--ff-highlight); }
+
+.md-franchise-benefit-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-left: 1px solid var(--ff-border); border-top: 1px solid var(--ff-border); }
+.md-franchise-benefit-grid article { min-height: 255px; padding: 28px; background: var(--ff-surface); border-right: 1px solid var(--ff-border); border-bottom: 1px solid var(--ff-border); }
+.md-franchise-benefit-grid article > svg { width: 29px; height: 29px; color: var(--ff-highlight); }
+.md-franchise-benefit-grid h3 { margin: 28px 0 10px; font-family: var(--md-display); font-size: 23px; font-weight: 800; line-height: 1.15; }
+.md-franchise-benefit-grid p { margin: 0; color: var(--ff-muted); font-size: 15px; line-height: 1.6; }
+
+.md-franchise-brand-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.md-franchise-brand { min-width: 0; border: 1px solid var(--ff-border); background: var(--ff-surface); }
+.md-franchise-brand-art { position: relative; display: grid; place-items: center; height: 138px; padding: 22px; background: var(--md-paper); color: var(--md-black); border-bottom: 1px solid var(--ff-border); }
+.md-franchise-brand-art img { display: block; width: 100%; height: 94px; max-width: 160px; object-fit: contain; }
+.md-franchise-brand-corner { position: absolute; top: 8px; left: 9px; display: flex; flex-direction: column; text-align: center; font: 900 13px/1 var(--md-display); color: var(--md-red-deep); }
+.md-franchise-brand-corner > small { font-size: 11px; }
+.md-franchise-brand > div:last-child { padding: 16px 12px; text-align: center; }
+.md-franchise-brand h3 { margin: 0; font: 800 17px/1.2 var(--md-display); }
+.md-franchise-brand p { margin: 5px 0 0; color: var(--ff-muted); font-size: 12px; line-height: 1.4; }
+.md-franchise-note { margin-top: 20px !important; color: var(--ff-muted); font-size: 13px; line-height: 1.6; }
+
+.md-franchise-tech-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.md-franchise-tech-grid article { min-height: 254px; padding: 25px; border: 1px solid oklch(0.99 0 0 / 0.18); background: oklch(0.99 0 0 / 0.03); }
+.md-franchise-tech-top { display: flex; align-items: center; gap: 12px; }
+.md-franchise-tech-top svg { width: 28px; height: 28px; color: var(--md-yellow); flex: 0 0 auto; }
+.md-franchise-tech-top > span { font-size: 10px; line-height: 1.4; text-transform: uppercase; letter-spacing: 0.12em; color: oklch(0.84 0.008 80); }
+.md-franchise-tech-grid h3 { margin: 28px 0 10px; font: 800 24px/1.12 var(--md-display); }
+.md-franchise-tech-grid p { margin: 0; color: oklch(0.82 0.008 80); font-size: 14px; line-height: 1.6; }
+.md-franchise-tech-note { display: flex; align-items: flex-start; gap: 16px; margin-top: 24px !important; padding: 22px 24px; border-left: 3px solid var(--md-yellow); background: oklch(0.99 0 0 / 0.055); }
+.md-franchise-tech-note > svg { width: 24px; height: 24px; flex: 0 0 auto; color: var(--md-yellow); }
+.md-franchise-tech-note p { margin: 0; color: oklch(0.82 0.008 80); font-size: 14px; line-height: 1.7; }
+.md-franchise-tech-note strong { color: oklch(0.98 0.008 80); }
+
+.md-franchise-setup-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.md-franchise-setup-grid article { display: flex; flex-direction: column; min-height: 310px; padding: 28px; border: 1px solid var(--ff-border); border-top: 4px solid var(--md-red); background: var(--ff-surface); }
+.md-franchise-number { font: 900 18px/1 var(--md-display); color: var(--ff-highlight); }
+.md-franchise-setup-grid h3 { margin: 31px 0 14px; font: 800 25px/1.1 var(--md-display); }
+.md-franchise-setup-grid article > strong { font: 800 21px/1.2 var(--md-display); color: var(--ff-highlight); }
+.md-franchise-setup-grid p { margin: 16px 0 0; color: var(--ff-muted); font-size: 14px; line-height: 1.6; }
+.md-franchise-investment-note { margin-top: 20px !important; padding: 26px; border-left: 4px solid var(--md-yellow); background: var(--ff-surface); }
+.md-franchise-investment-note h3 { margin: 0; font: 800 23px/1.2 var(--md-display); }
+.md-franchise-investment-note p { margin: 10px 0 0; color: var(--ff-muted); line-height: 1.65; font-size: 15px; }
+.md-franchise-fee-heading { margin-top: 54px !important; margin-bottom: 22px; }
+.md-franchise-fee-heading h3 { margin: 0; font: 900 clamp(30px, 3vw, 44px)/1.08 var(--md-display); letter-spacing: -0.025em; }
+.md-franchise-fee-heading > p:last-child { margin: 12px 0 0; color: var(--ff-muted); line-height: 1.6; }
+.md-franchise-table-wrap { overflow-x: auto; border: 1px solid var(--ff-border); background: var(--ff-surface); }
+.md-franchise-table { width: 100%; min-width: 700px; border-collapse: collapse; text-align: left; color: var(--ff-foreground); }
+.md-franchise-table caption { padding: 12px 20px; font-size: 12px; line-height: 1.4; color: var(--ff-muted); text-align: left; }
+.md-franchise-table thead { background: var(--muted); color: var(--ff-foreground); }
+.md-franchise-table th, .md-franchise-table td { padding: 20px; border-bottom: 1px solid var(--ff-border); line-height: 1.55; vertical-align: top; }
+.md-franchise-table thead th { font: 800 14px/1.4 var(--md-display); }
+.md-franchise-table tbody th { width: 24%; font: 800 16px/1.4 var(--md-display); }
+.md-franchise-table td { font-size: 14px; color: var(--ff-muted); }
+.md-franchise-table td:nth-child(2) { width: 29%; }
+.md-franchise-table td strong { color: var(--ff-foreground); font-weight: 700; }
+.md-franchise-table tbody tr:last-child > * { border-bottom: 0; }
+.md-franchise-responsibilities tbody th { width: 22%; }
+.md-franchise-responsibilities td:nth-child(2), .md-franchise-responsibilities td:nth-child(3) { width: 39%; }
+
+.md-franchise-model-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 26px !important; }
+.md-franchise-model-grid article { padding: 30px; background: var(--ff-surface); border: 1px solid var(--ff-border); }
+.md-franchise-model-grid article > span { color: var(--ff-highlight); font: 900 13px/1.2 var(--md-display); letter-spacing: 0.12em; }
+.md-franchise-model-grid h3 { margin: 26px 0 12px; font: 800 29px/1.1 var(--md-display); }
+.md-franchise-model-grid p { margin: 0; color: var(--ff-muted); font-size: 15px; line-height: 1.65; }
+
+.md-franchise-market-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.md-franchise-market { min-height: 175px; display: flex; gap: 13px; padding: 22px; border: 1px solid oklch(0.99 0 0 / 0.18); background: oklch(0.99 0 0 / 0.03); }
+.md-franchise-market > svg { width: 20px; height: 20px; flex: 0 0 auto; color: var(--md-yellow); }
+.md-franchise-market h3 { margin: 0; font: 800 22px/1.12 var(--md-display); }
+.md-franchise-market strong { display: inline-block; margin-top: 20px; color: oklch(0.8 0.01 80); font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.md-franchise-market p { margin: 6px 0 0; color: oklch(0.8 0.008 80); font-size: 12px; line-height: 1.5; }
+.md-franchise-availability { display: flex; align-items: center; gap: 14px; padding: 18px 20px; margin-bottom: 22px; background: var(--ff-surface); border: 1px solid var(--ff-border); }
+.md-franchise-availability > svg { width: 22px; height: 22px; flex: 0 0 auto; color: var(--ff-highlight); }
+.md-franchise-availability p { flex: 1; margin: 0; color: var(--ff-muted); font-size: 14px; line-height: 1.6; }
+.md-franchise-availability button { min-height: 42px; flex: 0 0 auto; padding: 8px 12px; border: 1px solid var(--ff-border); background: var(--ff-background); color: var(--ff-foreground); cursor: pointer; font: 700 13px var(--md-body); }
+.md-franchise-territory-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.md-franchise-territory-card { display: flex; flex-direction: column; min-height: 295px; padding: 25px; border: 1px solid var(--ff-border); background: var(--ff-surface); color: var(--ff-foreground); }
+.md-franchise-territory-top { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.md-franchise-territory-top > span:first-child { font-size: 10px; text-transform: uppercase; letter-spacing: 0.13em; color: var(--ff-highlight); font-weight: 800; }
+.md-franchise-status { display: inline-block; font-size: 10px; line-height: 1.4; color: var(--ff-muted); border: 1px solid var(--ff-border); padding: 5px 8px; font-weight: 800; }
+.md-franchise-status.is-available { color: var(--ff-success); border-color: currentColor; }
+.md-franchise-territory-card h3 { margin: 26px 0 14px; font: 800 26px/1.12 var(--md-display); }
+.md-franchise-territory-card > p { margin: 0; color: var(--ff-muted); font-size: 13px; line-height: 1.55; }
+.md-franchise-territory-fee { margin-top: auto; padding-top: 21px; }
+.md-franchise-territory-fee > span { display: block; color: var(--ff-muted); font-size: 12px; line-height: 1.5; }
+.md-franchise-territory-fee > strong { display: block; margin-top: 4px; font: 800 28px/1.1 var(--md-display); }
+.md-franchise-territory-action { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 20px; min-height: 46px; padding: 12px 0 0; border: 0; border-top: 1px solid var(--ff-border); background: transparent; color: var(--ff-highlight); font: 800 14px/1.4 var(--md-display); text-align: left; cursor: pointer; }
+.md-franchise-territory-action svg { width: 19px; height: 19px; flex: 0 0 auto; transition: transform 150ms ease; }
+.md-franchise-territory-action:hover svg { transform: translateX(3px); }
+.md-franchise-territory-action:disabled { color: var(--ff-muted); cursor: not-allowed; }
+.md-franchise-search { margin-top: 40px !important; padding: 32px; border: 1px solid var(--ff-border); background: var(--ff-surface); }
+.md-franchise-search h3 { margin: 0; font: 900 clamp(28px, 3vw, 44px)/1.08 var(--md-display); }
+.md-franchise-search > div:first-child > p:last-child { color: var(--ff-muted); font-size: 15px; line-height: 1.6; margin: 12px 0 24px; }
+.md-franchise-search > label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+.md-franchise-search-field { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 16px; border: 1px solid var(--input); background: var(--ff-background); }
+.md-franchise-search-field > svg { width: 21px; height: 21px; flex: 0 0 auto; color: var(--ff-highlight); }
+.md-franchise-search-field input { width: 100%; min-width: 0; min-height: 48px; padding: 8px 0; border: 0; background: transparent; color: var(--ff-foreground); font: inherit; }
+.md-franchise-search-field input:focus-visible { outline-offset: 0; }
+.md-franchise-search-status { margin: 12px 0; font-size: 13px; line-height: 1.5; color: var(--ff-muted); }
+.md-franchise-search-results { padding: 0; margin: 16px 0 0; list-style: none; border: 1px solid var(--ff-border); }
+.md-franchise-search-results li + li { border-top: 1px solid var(--ff-border); }
+.md-franchise-search-results button { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: 100%; min-height: 76px; padding: 16px 18px; border: 0; background: var(--ff-surface); color: var(--ff-foreground); text-align: left; cursor: pointer; font: inherit; }
+.md-franchise-search-results button:hover:not(:disabled) { background: var(--muted); }
+.md-franchise-search-results button:disabled { cursor: not-allowed; }
+.md-franchise-search-results button > span { display: grid; gap: 5px; }
+.md-franchise-search-results button > span:last-child { text-align: right; }
+.md-franchise-search-results strong { font: 800 16px/1.3 var(--md-display); }
+.md-franchise-search-results b { font-size: 12px; }
+.md-franchise-search-results small { font-size: 11px; color: var(--ff-muted); }
+.md-franchise-text-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; min-height: 42px; color: var(--ff-highlight); font: 800 14px var(--md-display); }
+.md-franchise-text-link svg { width: 18px; height: 18px; }
+.md-franchise-territory-explainer { margin-top: 24px !important; }
+
+.md-franchise-step-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-left: 1px solid oklch(0.99 0 0 / 0.18); border-top: 1px solid oklch(0.99 0 0 / 0.18); }
+.md-franchise-step-grid article { min-height: 245px; padding: 28px; border-right: 1px solid oklch(0.99 0 0 / 0.18); border-bottom: 1px solid oklch(0.99 0 0 / 0.18); }
+.md-franchise-step-grid article > span { font: 900 20px/1 var(--md-display); color: var(--md-yellow); }
+.md-franchise-step-grid h3 { margin: 30px 0 12px; font: 800 26px/1.1 var(--md-display); }
+.md-franchise-step-grid p { margin: 0; color: oklch(0.82 0.008 80); font-size: 15px; line-height: 1.6; }
+.md-franchise-faq-list { display: grid; gap: 12px; max-width: 960px; }
+.md-franchise-faq-list details { border: 1px solid var(--ff-border); padding: 20px 24px; background: var(--ff-surface); }
+.md-franchise-faq-list summary { cursor: pointer; padding: 4px 0; font: 800 19px/1.4 var(--md-display); }
+.md-franchise-faq-list summary::marker { color: var(--ff-highlight); }
+.md-franchise-faq-list p { margin: 16px 0 0; color: var(--ff-muted); font-size: 15px; line-height: 1.7; }
+
+.md-franchise-apply-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 52px; align-items: start; }
+.md-franchise-apply-grid h2 { margin: 0; font: 900 clamp(40px, 4.4vw, 68px)/1 var(--md-display); letter-spacing: -0.035em; }
+.md-franchise-apply-grid > div > p:not(.md-kicker) { margin-top: 20px; color: var(--ff-muted); font-size: 17px; line-height: 1.65; }
+.md-franchise-fee-box { margin-top: 28px; padding: 26px; border: 1px solid var(--ff-border); border-top: 4px solid var(--md-red); background: var(--ff-surface); }
+.md-franchise-fee-box > span { display: block; color: var(--ff-highlight); font-size: 11px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
+.md-franchise-fee-box > strong { display: block; margin-top: 10px; font: 900 clamp(30px, 3.2vw, 44px)/1.1 var(--md-display); }
+.md-franchise-fee-box > p { margin: 16px 0 0; font-size: 15px; font-weight: 700; line-height: 1.6; }
+.md-franchise-fee-box > small { display: block; margin-top: 14px; color: var(--ff-muted); font-size: 12px; line-height: 1.6; }
+.md-franchise-selection { display: flex; gap: 13px; align-items: flex-start; margin-top: 24px; padding: 18px; background: var(--ff-surface); border-left: 3px solid var(--md-yellow); }
+.md-franchise-selection > svg { width: 22px; height: 22px; flex: 0 0 auto; color: var(--ff-highlight); }
+.md-franchise-selection p { margin: 0; }
+.md-franchise-selection strong { display: block; font: 800 18px/1.3 var(--md-display); }
+.md-franchise-selection span { display: block; margin-top: 6px; color: var(--ff-muted); font-size: 13px; line-height: 1.55; }
+.md-franchise-apply-grid .md-franchise-application-note { font-size: 13px; }
+.md-franchise-form { position: relative; display: grid; gap: 20px; min-width: 0; padding: 30px; border: 1px solid var(--ff-border); background: var(--ff-surface); }
+.md-franchise-form-intro { margin: 0; color: var(--ff-muted); font-size: 12px; line-height: 1.5; }
+.md-franchise-form-fields { display: grid; gap: 18px; min-width: 0; padding: 0; margin: 0; border: 0; }
+.md-franchise-form label:not(.md-franchise-check):not(.md-franchise-honeypot) { display: grid; gap: 8px; }
+.md-franchise-form label > span { font-size: 12px; font-weight: 700; line-height: 1.5; }
+.md-franchise-form input:not([type="checkbox"]), .md-franchise-form select, .md-franchise-form textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--input);
+  border-radius: 2px;
+  background: var(--ff-background);
+  color: var(--ff-foreground);
+  font: 400 16px/1.4 var(--md-body);
+}
+.md-franchise-form textarea { resize: vertical; min-height: 115px; }
+.md-franchise-form input::placeholder, .md-franchise-form textarea::placeholder { color: var(--ff-muted); opacity: 0.9; }
+.md-franchise-form-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; align-items: start; }
+.md-franchise-check { display: flex; align-items: flex-start; gap: 11px; cursor: pointer; }
+.md-franchise-check input { width: 19px; height: 19px; flex: 0 0 auto; margin: 2px 0 0; accent-color: var(--md-red); }
+.md-franchise-check span { font-size: 13px !important; font-weight: 500 !important; line-height: 1.6 !important; }
+.md-franchise-acknowledgements { display: grid; gap: 17px; padding: 22px 0; border-top: 1px solid var(--ff-border); border-bottom: 1px solid var(--ff-border); }
+.md-franchise-acknowledgements > p { margin: 0; font: 800 16px/1.3 var(--md-display); }
+.md-franchise-privacy { padding: 18px; background: var(--muted); }
+.md-franchise-privacy h3 { margin: 0; font: 800 14px/1.4 var(--md-display); }
+.md-franchise-privacy p { margin: 8px 0 0; color: var(--ff-muted); font-size: 12px; line-height: 1.7; }
+.md-franchise-form-small { margin: 0; color: var(--ff-muted); font-size: 12px; line-height: 1.6; }
+.md-franchise-form-error { margin: 0; padding: 16px; border-left: 3px solid currentColor; color: var(--ff-danger); background: var(--ff-background); font-size: 14px; line-height: 1.6; }
+.md-franchise-honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden; }
+.md-franchise-success { min-height: 390px; padding: 42px; display: grid; align-content: center; background: var(--md-red-deep); color: oklch(0.99 0.004 85); border: 2px solid var(--md-yellow); }
+.md-franchise-success > svg { width: 40px; height: 40px; color: var(--md-yellow); }
+.md-franchise-success h3 { margin: 24px 0 10px; font: 900 40px/1.05 var(--md-display); }
+.md-franchise-apply-grid .md-franchise-success p { margin-top: 14px; color: oklch(0.92 0.008 80); font-size: 15px; line-height: 1.7; }
+.md-franchise-success .md-franchise-reference { padding: 12px 0; border-top: 1px solid oklch(0.99 0 0 / 0.3); border-bottom: 1px solid oklch(0.99 0 0 / 0.3); overflow-wrap: anywhere; }
+
+@media (max-width: 1180px) {
+  .md-franchise-hero-grid { gap: 28px; }
+  .md-franchise-card-back { width: 232px; }
+  .md-franchise-deal-card { width: 248px; }
+  .md-franchise-card-back-left { transform: translateX(-42px) rotate(-12deg); }
+  .md-franchise-card-back-right { transform: translateX(42px) rotate(12deg); }
+  .md-franchise-card-count { font-size: 91px; }
+  .md-franchise-deal-card > strong { font-size: 23px; }
+  .md-franchise-deal-card > b { font-size: 19px; }
+  .md-franchise-card-rule { margin: 19px 0; }
+  .md-franchise-setup-grid, .md-franchise-tech-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md-franchise-market-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .md-franchise-brand-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  .md-franchise-apply-grid { gap: 30px; }
+  .md-franchise-form { padding: 24px; }
+}
+@media (max-width: 960px) {
+  .md-franchise-hero-grid { grid-template-columns: 1fr; padding: 52px 0 28px; }
+  .md-franchise-hero h1 { font-size: clamp(56px, 9vw, 92px); }
+  .md-franchise-stack { min-height: 415px; }
+  .md-franchise-benefit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md-franchise-brand-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .md-franchise-territory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md-franchise-step-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md-franchise-apply-grid { grid-template-columns: 1fr; gap: 30px; }
+  .md-franchise-apply-grid > div:first-child { max-width: 720px; }
+}
+@media (max-width: 640px) {
+  .md-franchise-hero-grid { width: calc(100% - 28px); padding-top: 42px; }
+  .md-franchise-hero h1 { font-size: clamp(46px, 13.4vw, 78px); }
+  .md-franchise-hero-lead { margin-top: 23px; font-size: 17px; }
+  .md-franchise-hero-actions { flex-direction: column; }
+  .md-franchise-hero-actions > a { width: 100%; }
+  .md-franchise-hero-cost strong { font-size: 15px; }
+  .md-franchise-proof { font-size: 12px; gap: 12px; }
+  .md-franchise-stack { min-height: 360px; }
+  .md-franchise-card-back { width: 207px; }
+  .md-franchise-deal-card { width: 220px; border-width: 7px; }
+  .md-franchise-card-count { font-size: 82px; }
+  .md-franchise-deal-card > strong { font-size: 20px; }
+  .md-franchise-deal-card > b { font-size: 17px; }
+  .md-franchise-card-corner { font-size: 20px; }
+  .md-franchise-card-corner > small { font-size: 15px; }
+  .md-franchise-deal-card > small { font-size: 8px; }
+  .md-franchise-card-back-left { transform: translateX(-37px) rotate(-10deg); }
+  .md-franchise-card-back-right { transform: translateX(37px) rotate(10deg); }
+  .md-franchise-section-nav > div { width: calc(100% - 28px); gap: 22px; }
+  .md-franchise-section-nav a { padding: 17px 0; font-size: 13px; }
+  .md-franchise-page .md-section-heading > p:last-child { font-size: 16px; }
+  .md-franchise-benefit-grid, .md-franchise-tech-grid, .md-franchise-setup-grid,
+  .md-franchise-model-grid, .md-franchise-territory-grid, .md-franchise-step-grid { grid-template-columns: 1fr; }
+  .md-franchise-benefit-grid article { min-height: auto; padding: 25px; }
+  .md-franchise-benefit-grid h3 { margin-top: 22px; }
+  .md-franchise-tech-grid article { min-height: auto; padding: 25px; }
+  .md-franchise-tech-grid h3 { margin-top: 22px; }
+  .md-franchise-setup-grid article { min-height: auto; padding: 25px; }
+  .md-franchise-setup-grid h3 { margin-top: 25px; }
+  .md-franchise-brand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md-franchise-brand-art { height: 128px; padding: 19px; }
+  .md-franchise-brand-art img { height: 86px; }
+  .md-franchise-market-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md-franchise-market { padding: 20px 16px; gap: 8px; }
+  .md-franchise-market h3 { font-size: 19px; }
+  .md-franchise-market > svg { width: 17px; height: 17px; }
+  .md-franchise-tech-note { padding: 20px; gap: 12px; }
+  .md-franchise-table th, .md-franchise-table td { padding: 17px; }
+  .md-franchise-investment-note { padding: 23px; }
+  .md-franchise-availability { flex-wrap: wrap; align-items: flex-start; padding: 16px; }
+  .md-franchise-availability p { flex-basis: calc(100% - 40px); }
+  .md-franchise-availability button { margin-left: 36px; }
+  .md-franchise-search { padding: 23px; }
+  .md-franchise-search-results button { align-items: flex-start; gap: 16px; padding: 16px 13px; }
+  .md-franchise-search-results button > span:first-child { max-width: 65%; }
+  .md-franchise-search-results strong { font-size: 14px; }
+  .md-franchise-search-results b { font-size: 11px; }
+  .md-franchise-step-grid article { min-height: 200px; }
+  .md-franchise-faq-list details { padding: 18px 20px; }
+  .md-franchise-faq-list summary { font-size: 17px; }
+  .md-franchise-fee-box { padding: 23px; }
+  .md-franchise-form { padding: 23px; }
+  .md-franchise-form-pair { grid-template-columns: 1fr; gap: 18px; }
+  .md-franchise-success { padding: 30px; }
+  .md-franchise-success h3 { font-size: 34px; }
+}
+@media (max-width: 390px) {
+  .md-franchise-market-grid { grid-template-columns: 1fr; }
+  .md-franchise-market { min-height: 130px; padding: 22px; gap: 14px; }
+  .md-franchise-form { padding: 19px; }
+  .md-franchise-search { padding: 20px; }
+  .md-franchise-brand h3 { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .md-franchise-page *, .md-franchise-page *::before, .md-franchise-page *::after { scroll-behavior: auto !important; }
+  .md-franchise-page .md-btn, .md-franchise-territory-action svg { transition: none; }
+  .md-franchise-territory-action:hover svg { transform: none; }
+}

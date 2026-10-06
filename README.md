@@ -114,3 +114,11 @@ npm run dev
 npm run build
 npm run lint
 ```
+
+## Franchise recruitment
+
+The public `/franchise` offer covers the shared brand portfolio, location/territory, chargeable equipment and technology setup, opening supplies/packaging, and ongoing operator responsibilities. The full commercial structure and integration notes are in [docs/franchise-offer.md](docs/franchise-offer.md).
+
+Set `OMNIQORA_PUBLIC_API_URL` on the server to the complete deployed franchise intake endpoint. Missing configuration produces an honest service-unavailable response; the site never confirms an application that has not been accepted by the service.
+
+Run the franchise regressions with `bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts`. The verification workflow also builds the site and checks the franchise implementation with ESLint.
