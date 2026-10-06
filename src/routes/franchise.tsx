@@ -797,8 +797,7 @@ function FranchisePage() {
             Marketing is calculated on net sales;
             the agreement defines the treatment of refunds, discounts and sales channels. Card processing fees charged
             by third parties, marketplace commissions and actual courier delivery charges follow the relevant provider
-            terms. The supply catalogue identifies bought-in and manufactured items and their cost basis. The royalty
-            and additional human services terms require a written quote.
+            terms. The royalty and additional human services terms require a written quote.
           </p>
         </section>
 
