@@ -191,7 +191,7 @@ const responsibilities = [
   {
     area: "Premises & territory",
     mealdeck: "Source and assess the location; document the approved premises and territory.",
-    operator: "Pay the agreed rent, premises deposit, utilities, rates and site operating costs.",
+    operator: "Pay the agreed rent, utilities, rates, salaries and site operating costs.",
   },
   {
     area: "Equipment",
@@ -248,12 +248,12 @@ const faqs = [
   {
     question: "What does the upfront investment cover?",
     answer:
-      "One upfront investment covers entry to the MealDeck franchise programme, the agreed brand and territory rights, and your complete kitchen fit-out — equipment, opening supplies and branded packaging. We fit out the kitchen and provide a full itemised inventory. The total fee is " + money(DEFAULT_PROGRAMME.feeMin + DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + "–" + money(DEFAULT_PROGRAMME.feeMax + DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + ", depending on location and territory, and is confirmed in your written quote.",
+      "One upfront investment covers entry to the MealDeck franchise programme, the agreed brand and territory rights, and the equipment and opening supplies your kitchen needs to trade — itemised in full, alongside branded packaging. The total fee is " + money(DEFAULT_PROGRAMME.feeMin + DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + "–" + money(DEFAULT_PROGRAMME.feeMax + DEFAULT_PROGRAMME.equipmentOpeningSuppliesFee) + ", depending on location and territory, and is confirmed in your written quote.",
   },
   {
     question: "Does MealDeck provide the equipment?",
     answer:
-      "Yes. We fit out your kitchen and provide a full itemised inventory covering the equipment, including any KDS screens and printers, alongside the opening supplies and packaging. The schedule confirms installation scope, ownership or hire terms, warranty, maintenance and replacement responsibilities.",
+      "Yes. We supply the equipment your kitchen needs to run, including any KDS screens and printers, itemised in full alongside the opening supplies and packaging. The schedule confirms installation scope, ownership or hire terms, warranty, maintenance and replacement responsibilities.",
   },
   {
     question: "How are supplies and packaging charged?",
@@ -644,7 +644,7 @@ function FranchisePage() {
               </div>
               <p className="md-franchise-hero-cost">
                 <strong>Total upfront investment {money(programme.feeMin + programme.equipmentOpeningSuppliesFee)}–{money(programme.feeMax + programme.equipmentOpeningSuppliesFee)}, depending on location & territory</strong>
-                <span>We fit out your kitchen and provide a full itemised inventory covering equipment, opening supplies and branded packaging. Any additional startup costs are confirmed in your written quote.</span>
+                <span>We supply the equipment your kitchen needs to run, with a full itemised inventory covering equipment, opening supplies and branded packaging. Any additional startup costs are confirmed in your written quote.</span>
               </p>
             </div>
             <div className="md-franchise-stack" aria-hidden="true">
@@ -762,9 +762,9 @@ function FranchisePage() {
             </article>
             <article>
               <span className="md-franchise-number">02</span>
-              <h3>Kitchen fit-out</h3>
-              <strong>Fitted out by MealDeck</strong>
-              <p>We equip and fit out your kitchen, including any specified KDS screens and printers, and provide a full itemised inventory. The schedule confirms installation, ownership, warranty and maintenance.</p>
+              <h3>Kitchen equipment</h3>
+              <strong>Supplied by MealDeck</strong>
+              <p>We supply the equipment your kitchen needs to run, including any specified KDS screens and printers, itemised in full. The schedule confirms installation, ownership, warranty and maintenance.</p>
             </article>
             <article>
               <span className="md-franchise-number">03</span>
@@ -776,13 +776,13 @@ function FranchisePage() {
           <div className="md-franchise-investment-note">
             <h3>Total upfront investment: {money(programme.feeMin + programme.equipmentOpeningSuppliesFee)}–{money(programme.feeMax + programme.equipmentOpeningSuppliesFee)}, depending on location and territory.</h3>
             <p>
-              Your upfront investment covers franchise entry, the complete kitchen fit-out and your opening supplies
-              and packaging. MealDeck fits out the kitchen and provides a full itemised inventory, so you can see
+              Your upfront investment covers franchise entry, the equipment to run your kitchen and your opening supplies
+              and packaging. MealDeck supplies the equipment and provides a full itemised inventory, so you can see
               exactly what your investment includes.
             </p>
             <p>
-              Budget additionally for premises and deposits, applicable VAT, and working capital. You also fund
-              recruitment, salaries, utilities and other operating costs. The written quote confirms all inclusions
+              Budget additionally for premises rent, applicable VAT, and working capital. You also fund
+              recruitment, salaries, utilities, food, packaging and other ongoing operating costs. The written quote confirms all inclusions
               and the payment terms.
             </p>
           </div>
@@ -979,7 +979,7 @@ function FranchisePage() {
               <div className="md-franchise-fee-box">
                 <span>Total upfront investment · paid upfront</span>
                 <strong>{selectedLive?.fee != null ? money(selectedLive.fee + programme.equipmentOpeningSuppliesFee) : money(programme.feeMin + programme.equipmentOpeningSuppliesFee) + "–" + money(programme.feeMax + programme.equipmentOpeningSuppliesFee)}</strong>
-                <p>Covers franchise entry, your complete kitchen fit-out and opening supplies & packaging. We provide a full itemised inventory.</p>
+                <p>Covers franchise entry, the equipment to run your kitchen and opening supplies & packaging. We provide a full itemised inventory.</p>
                 <small>
                   Depending on location and territory. Premises, applicable VAT and working capital are additional.
                 </small>
