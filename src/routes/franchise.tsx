@@ -196,7 +196,7 @@ const responsibilities = [
   {
     area: "Equipment",
     mealdeck: "Supply the equipment listed in the setup package and agree installation arrangements.",
-    operator: "Pay the upfront package charge and fulfil the agreed equipment care, maintenance and replacement duties.",
+    operator: "Fund the agreed upfront investment and fulfil the agreed equipment care, maintenance and replacement duties.",
   },
   {
     area: "Technology",
@@ -584,7 +584,7 @@ function FranchisePage() {
     {
       name: "Full technology, including Haccora",
       price: technologyPrice + " per completed order",
-      copy: "Covers all listed MealDeck software, including Haccora. " + programme.techOrderDefinition,
+      copy: "Covers all listed MealDeck software, including Haccora, across every ordering channel.",
     },
     {
       name: "Accountancy",
@@ -616,11 +616,6 @@ function FranchisePage() {
       price: "Provider terms",
       copy: "Actual marketplace commissions and courier delivery charges are separate from the software used to connect and manage those services.",
     },
-    {
-      name: "Exceptional voice, AI or messaging usage",
-      price: "Only if agreed in writing",
-      copy: "Any exceptional usage charge requires an explicit written quote setting out allowances, rates and limits before activation.",
-    },
   ];
 
   return (
@@ -648,8 +643,8 @@ function FranchisePage() {
                 <span><Check aria-hidden="true" /> You operate the kitchen</span>
               </div>
               <p className="md-franchise-hero-cost">
-                <strong>Base franchise fee {money(programme.feeMin)}–{money(programme.feeMax)}, payable upfront</strong>
-                <span>Plus a {money(programme.equipmentOpeningSuppliesFee)} upfront package for itemised equipment and opening supplies & packaging. Any additional startup costs are confirmed in your written quote.</span>
+                <strong>Total upfront investment {money(programme.feeMin + programme.equipmentOpeningSuppliesFee)}–{money(programme.feeMax + programme.equipmentOpeningSuppliesFee)}, depending on location & territory</strong>
+                <span>We fit out your kitchen and provide a full itemised inventory covering equipment, opening supplies and branded packaging. Any additional startup costs are confirmed in your written quote.</span>
               </p>
             </div>
             <div className="md-franchise-stack" aria-hidden="true">
@@ -746,15 +741,6 @@ function FranchisePage() {
               </article>
             ))}
           </div>
-          <div className="md-franchise-tech-note">
-            <ClipboardCheck aria-hidden="true" />
-            <p>
-              <strong>{technologyPrice} per completed order covers the full software offer, including Haccora.</strong>{" "}
-              {programme.techOrderDefinition} There is no separate Haccora subscription or monthly MealDeck technology fee.
-              We configure and test the agreed tools and complete any required provider onboarding before activation.
-              Physical hardware is itemised once in your setup schedule. Exceptional voice, AI or messaging usage
-              charges require an explicit written quote.
-            </p>
           </div>
         </section>
 
