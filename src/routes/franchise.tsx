@@ -966,7 +966,7 @@ function FranchisePage() {
                 The team will review your enquiry, assess the area and discuss the full package.
               </p>
               <div className="md-franchise-fee-box">
-                <span>Total upfront investment · paid upfront</span>
+                <span>Total upfront investment</span>
                 <strong>{selectedLive?.fee != null ? money(selectedLive.fee + programme.equipmentOpeningSuppliesFee) : money(programme.feeMin + programme.equipmentOpeningSuppliesFee) + "–" + money(programme.feeMax + programme.equipmentOpeningSuppliesFee)}</strong>
                 <p>Covers franchise entry, the equipment to run your kitchen and opening supplies & packaging. We provide a full itemised inventory.</p>
                 <small>
