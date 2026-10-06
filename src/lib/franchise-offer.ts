@@ -48,7 +48,7 @@ export const TAKEN_MARKETS = [
   { name: "Islington/Camden" },
 ] as const;
 
-const planned = (code: string, name: string, note: string): Territory => ({
+const planned = (code: string, name: string): Territory => ({
   code: "planned-" + code,
   name,
   region: "London",
@@ -56,23 +56,22 @@ const planned = (code: string, name: string, note: string): Territory => ({
   fee: null,
   currency: "GBP",
   isSellable: false,
-  note,
 });
 
 /** Search areas only: none of these entries represents a live availability claim or reservation. */
 export const PLANNED_TERRITORIES: Territory[] = [
-  planned("southall", "Southall", "Outer-west search area. The exact site and territory are assessed together."),
-  planned("battersea", "Battersea", "South-west search area around suitable Battersea Park Road / Queenstown Road premises."),
-  planned("bow-mile-end", "Bow / Mile End", "Inner-east search area. Delivery boundaries are assessed from the selected kitchen."),
-  planned("acton", "Acton / North Acton", "Compare suitable premises with Park Royal and Alperton before selecting the initial western kitchen."),
-  planned("central-south", "Borough / west Bermondsey", "Central-south search area; Elephant & Castle is an alternative site orientation."),
-  planned("deptford", "Deptford / New Cross", "South-east search area, with its boundary assessed against the central-south kitchen."),
-  planned("kilburn", "Kilburn", "A later north-west candidate, subject to incremental demand and neighbouring territories."),
-  planned("alperton", "Alperton / Wembley", "An alternative western search area to compare with Acton / North Acton / Park Royal."),
-  planned("stratford-leyton", "Stratford / Leyton", "A further east / north-east candidate, assessed alongside the first eastern kitchen."),
-  planned("tottenham-edmonton", "Tottenham / Edmonton", "A future northern search area, subject to site and territory assessment."),
-  planned("barking-ilford", "Barking / Ilford", "A future eastern search area, subject to site and territory assessment."),
-  planned("croydon", "Thornton Heath / Croydon", "A future southern search area, subject to site and territory assessment."),
+  planned("southall", "Southall"),
+  planned("battersea", "Battersea / Clapham"),
+  planned("bow-mile-end", "Bow / Mile End"),
+  planned("acton", "Acton / North Acton"),
+  planned("central-south", "Borough / west Bermondsey"),
+  planned("deptford", "Deptford / New Cross"),
+  planned("kilburn", "Kilburn"),
+  planned("alperton", "Alperton / Wembley"),
+  planned("stratford-leyton", "Stratford / Leyton"),
+  planned("tottenham-edmonton", "Tottenham / Edmonton"),
+  planned("barking-ilford", "Barking / Ilford"),
+  planned("croydon", "Thornton Heath / Croydon"),
 ];
 
 function record(value: unknown): value is Record<string, unknown> {

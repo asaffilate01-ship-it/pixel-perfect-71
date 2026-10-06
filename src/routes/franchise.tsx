@@ -258,7 +258,7 @@ const faqs = [
   {
     question: "How are supplies and packaging charged?",
     answer:
-      "Items MealDeck buys directly are supplied at their purchase cost, with a " + DEFAULT_PROGRAMME.boughtInSupplyMarkupPercent + "% supply markup. MealDeck-manufactured products use the total of ingredients, production labour and other allocable production costs, then add a " + DEFAULT_PROGRAMME.manufacturedSupplyMarkupPercent + "% markup to that total. The supply catalogue and written quote identify each item's category, cost basis and any separately agreed delivery or tax charges.",
+      "Items MealDeck buys directly are supplied at their purchase cost. MealDeck-manufactured products are priced on their fully costed production total — ingredients, production labour and other allocable production costs. The supply catalogue and written quote confirm each item's pricing, and any separately agreed delivery or tax charges.",
   },
   {
     question: "Who runs the kitchen and employs the staff?",
@@ -593,13 +593,13 @@ function FranchisePage() {
     },
     {
       name: "Bought-in supplies & packaging",
-      price: "Purchase cost (" + programme.boughtInSupplyMarkupPercent + "% markup)",
+      price: "Purchase cost",
       copy: "Items MealDeck buys directly are supplied at their purchase cost.",
     },
     {
       name: "MealDeck-manufactured products",
-      price: "Production cost + " + programme.manufacturedSupplyMarkupPercent + "%",
-      copy: "Ingredients, production labour and other allocable production costs are totalled first; the markup applies to that fully costed production total.",
+      price: "Fully costed production price",
+      copy: "Priced on ingredients, production labour and other allocable production costs, confirmed in your written quote.",
     },
     {
       name: "Administration & human compliance support",
