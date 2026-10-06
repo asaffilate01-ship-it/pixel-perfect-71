@@ -45,7 +45,7 @@ export const TAKEN_MARKETS = [
   { name: "St Albans" },
   { name: "Bedford" },
   { name: "Milton Keynes 1" },
-  { name: "North London" },
+  { name: "Islington/Camden" },
 ] as const;
 
 const planned = (code: string, name: string, note: string): Territory => ({
