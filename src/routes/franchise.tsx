@@ -741,7 +741,6 @@ function FranchisePage() {
               </article>
             ))}
           </div>
-          </div>
         </section>
 
         <section id="fees" className="md-section md-section-cream">
