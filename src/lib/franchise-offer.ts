@@ -41,11 +41,11 @@ export const DEFAULT_PROGRAMME = Object.freeze({
 });
 
 export const TAKEN_MARKETS = [
-  { name: "Luton", status: "taken", note: "LU4 8NU" },
-  { name: "St Albans", status: "taken", note: "AL1 3JU" },
-  { name: "Bedford", status: "taken", note: "Elstow Road" },
-  { name: "Milton Keynes", status: "taken", note: "Existing network allocation" },
-  { name: "Islington / Camden", status: "taken", note: "N7 8XH · Caledonian Road area" },
+  { name: "Luton" },
+  { name: "St Albans" },
+  { name: "Bedford" },
+  { name: "Milton Keynes 1" },
+  { name: "North London" },
 ] as const;
 
 const planned = (code: string, name: string, note: string): Territory => ({

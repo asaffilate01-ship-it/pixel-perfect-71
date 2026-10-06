@@ -848,7 +848,7 @@ function FranchisePage() {
             {TAKEN_MARKETS.map((market) => (
               <article key={market.name} className="md-franchise-market">
                 <MapPin aria-hidden="true" />
-                <div><h3>{market.name}</h3><strong>Taken</strong>{market.note && <p>{market.note}</p>}</div>
+                <div><h3>{market.name}</h3><strong>Taken</strong></div>
               </article>
             ))}
           </div>
