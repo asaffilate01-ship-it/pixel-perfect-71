@@ -923,7 +923,7 @@ function FranchisePage() {
                     <li key={territory.code}>
                       <button type="button" disabled={!canRegisterInterest(territory)} onClick={() => choose(territory)}>
                         <span><strong>{territory.name}</strong><small>{territory.region} · {territory.code}</small></span>
-                        <span><b>{territoryStatus(territory, confirmed)}</b>{confirmed && territory.fee !== null && <small>{money(territory.fee)} base fee</small>}</span>
+                        <span><b>{territoryStatus(territory, confirmed)}</b>{confirmed && territory.fee !== null && <small>{money(territory.fee + programme.equipmentOpeningSuppliesFee)} upfront</small>}</span>
                       </button>
                     </li>
                   );
@@ -978,17 +978,14 @@ function FranchisePage() {
                 The team will review your enquiry, assess the area and discuss the full package.
               </p>
               <div className="md-franchise-fee-box">
-                <span>Base franchise fee · paid upfront</span>
-                <strong>{selectedLive?.fee != null ? money(selectedLive.fee) : money(programme.feeMin) + "–" + money(programme.feeMax)}</strong>
-                <p>Plus the {money(programme.equipmentOpeningSuppliesFee)} upfront package for itemised equipment and opening supplies & packaging.</p>
+                <span>Total upfront investment · paid upfront</span>
+                <strong>{selectedLive?.fee != null ? money(selectedLive.fee + programme.equipmentOpeningSuppliesFee) : money(programme.feeMin + programme.equipmentOpeningSuppliesFee) + "–" + money(programme.feeMax + programme.equipmentOpeningSuppliesFee)}</strong>
+                <p>Covers franchise entry, your complete kitchen fit-out and opening supplies & packaging. We provide a full itemised inventory.</p>
                 <small>
-                  Base fee + package upfront: {selectedLive?.fee != null
-                    ? money(selectedLive.fee + programme.equipmentOpeningSuppliesFee)
-                    : money(programme.feeMin + programme.equipmentOpeningSuppliesFee) + "–" + money(programme.feeMax + programme.equipmentOpeningSuppliesFee)}.
-                  Any separately agreed setup/hardware outside the package, premises, applicable VAT and working capital are additional.
+                  Depending on location and territory. Premises, applicable VAT and working capital are additional.
                 </small>
                 <small>
-                  Full technology including Haccora: {technologyPrice} per completed order. Accountancy: {money(programme.accountancyFeePerMonth)}/month.
+                  Technology package including Haccora: {technologyPrice} per completed order. Accountancy: {money(programme.accountancyFeePerMonth)}/month.
                   Marketing: {programme.marketingPercent}% of net sales excluding VAT. Royalty: {programme.royaltyDisplay}.
                 </small>
               </div>
@@ -1042,7 +1039,7 @@ function FranchisePage() {
                   <label className="md-franchise-check"><input name="multiUnitInterest" type="checkbox" checked={form.multiUnit} onChange={(event) => setForm((value) => ({ ...value, multiUnit: event.target.checked }))} /><span>I would also like to discuss multiple territories.</span></label>
                   <div className="md-franchise-acknowledgements">
                     <p>Please confirm *</p>
-                    <label className="md-franchise-check"><input name="setupPackageAcknowledged" type="checkbox" required checked={form.setupPackageAcknowledged} onChange={(event) => setForm((value) => ({ ...value, setupPackageAcknowledged: event.target.checked }))} /><span>I understand that the {money(programme.equipmentOpeningSuppliesFee)} equipment and opening supplies/packaging package plus the reduced territory fee are payable upfront. Any separately agreed extra setup or hardware, premises, applicable VAT and working capital are additional.</span></label>
+                    <label className="md-franchise-check"><input name="setupPackageAcknowledged" type="checkbox" required checked={form.setupPackageAcknowledged} onChange={(event) => setForm((value) => ({ ...value, setupPackageAcknowledged: event.target.checked }))} /><span>I understand that the total upfront investment of {money(programme.feeMin + programme.equipmentOpeningSuppliesFee)}–{money(programme.feeMax + programme.equipmentOpeningSuppliesFee)}, depending on location and territory, is payable upfront. Any separately agreed extra setup, premises, applicable VAT and working capital are additional.</span></label>
                     <label className="md-franchise-check"><input name="operatorResponsibilitiesAcknowledged" type="checkbox" required checked={form.operatorResponsibilitiesAcknowledged} onChange={(event) => setForm((value) => ({ ...value, operatorResponsibilitiesAcknowledged: event.target.checked }))} /><span>I will be responsible for running and staffing the kitchen, rent, salaries, utilities, stock and packaging purchases, and the agreed franchise and service fees.</span></label>
                   </div>
                   <div className="md-franchise-privacy">
