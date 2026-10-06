@@ -747,57 +747,51 @@ function FranchisePage() {
         <section id="fees" className="md-section md-section-cream">
           <div className="md-section-heading">
             <p className="md-kicker md-kicker-red">Your investment</p>
-            <h2>A clear upfront package.</h2>
+            <h2>One upfront investment.</h2>
             <p>
-              Pay the reduced territory fee plus {money(programme.equipmentOpeningSuppliesFee)} upfront for the
-              itemised equipment and opening supplies & packaging package. The quote records the full scope,
-              including hardware and any additional setup work, so every item is charged once.
+              MealDeck fits out your kitchen and provides a full itemised inventory. The total fee is
+              {" "}{money(programme.feeMin + programme.equipmentOpeningSuppliesFee)}–{money(programme.feeMax + programme.equipmentOpeningSuppliesFee)},
+              depending on your location and territory, and is confirmed in your written quote.
             </p>
           </div>
           <div className="md-franchise-setup-grid">
             <article>
               <span className="md-franchise-number">01</span>
-              <h3>Base franchise fee</h3>
-              <strong>{money(programme.feeMin)}–{money(programme.feeMax)}</strong>
-              <p>Payable {programme.franchiseFeePaymentTiming} for entry to the franchise programme and agreed brand and territory rights. The final fee is confirmed for the approved location.</p>
+              <h3>Franchise entry</h3>
+              <strong>Brand & territory rights</strong>
+              <p>Entry to the franchise programme with the agreed brand portfolio and territory rights, confirmed for your approved location.</p>
             </article>
             <article>
               <span className="md-franchise-number">02</span>
-              <h3>Equipment package</h3>
-              <strong>Part of the {money(programme.equipmentOpeningSuppliesFee)} package</strong>
-              <p>Equipment is itemised within the package, including any specified KDS screens and printers. The schedule confirms installation, ownership, warranty and maintenance.</p>
+              <h3>Kitchen fit-out</h3>
+              <strong>Fitted out by MealDeck</strong>
+              <p>We equip and fit out your kitchen, including any specified KDS screens and printers, and provide a full itemised inventory. The schedule confirms installation, ownership, warranty and maintenance.</p>
             </article>
             <article>
               <span className="md-franchise-number">03</span>
-              <h3>Technology setup</h3>
-              <strong>Scope confirmed in writing</strong>
-              <p>Configuration, onboarding and training follow the agreed setup plan. Hardware included in the package is charged once; any additional implementation or hardware must be separately itemised and agreed.</p>
-            </article>
-            <article>
-              <span className="md-franchise-number">04</span>
               <h3>Opening supplies & packaging</h3>
-              <strong>Part of the same package</strong>
-              <p>The initial food, ingredients, consumables and branded packaging are itemised alongside equipment within the single {money(programme.equipmentOpeningSuppliesFee)} package, payable {programme.equipmentOpeningSuppliesPaymentTiming}.</p>
+              <strong>Ready to trade</strong>
+              <p>Your initial food, ingredients, consumables and branded packaging are provided so the kitchen opens ready to trade from day one.</p>
             </article>
           </div>
           <div className="md-franchise-investment-note">
-            <h3>Base fee + package: {money(programme.feeMin + programme.equipmentOpeningSuppliesFee)}–{money(programme.feeMax + programme.equipmentOpeningSuppliesFee)} upfront.</h3>
+            <h3>Total upfront investment: {money(programme.feeMin + programme.equipmentOpeningSuppliesFee)}–{money(programme.feeMax + programme.equipmentOpeningSuppliesFee)}, depending on location and territory.</h3>
             <p>
-              The {money(programme.equipmentOpeningSuppliesFee)} charge covers the itemised equipment and opening supplies
-              & packaging together. The reduced territory fee is additional. Equipment and opening stock are not
-              each charged a separate package fee, and listed hardware is not charged again.
+              Your upfront investment covers franchise entry, the complete kitchen fit-out and your opening supplies
+              and packaging. MealDeck fits out the kitchen and provides a full itemised inventory, so you can see
+              exactly what your investment includes.
             </p>
             <p>
-              Budget additionally for any separately agreed setup work or hardware outside the package, premises
-              and deposits, applicable VAT, and working capital. You also fund recruitment, salaries, utilities
-              and other operating costs. The written quote confirms all inclusions, any extra costs and the payment terms.
+              Budget additionally for premises and deposits, applicable VAT, and working capital. You also fund
+              recruitment, salaries, utilities and other operating costs. The written quote confirms all inclusions
+              and the payment terms.
             </p>
           </div>
 
           <div className="md-franchise-fee-heading">
             <p className="md-kicker md-kicker-red">Once you are trading</p>
             <h3>Ongoing fees, clearly separated.</h3>
-            <p>The technology fee covers the full listed software offer, including Haccora. Accountancy remains a monthly service. Your written quote confirms the royalty, service scope and any explicitly agreed exceptional usage.</p>
+            <p>The technology package covers the full software offer. Accountancy remains a monthly service. Your written quote confirms the royalty and service scope.</p>
           </div>
           <div className="md-franchise-table-wrap" tabIndex={0} role="region" aria-label="Ongoing franchise fee comparison">
             <table className="md-franchise-table">
@@ -814,8 +808,8 @@ function FranchisePage() {
             Business fees shown exclude VAT where applicable. Marketing is calculated on net sales excluding VAT;
             the agreement defines the treatment of refunds, discounts and sales channels. Card processing fees charged
             by third parties, marketplace commissions and actual courier delivery charges follow the relevant provider
-            terms. The supply catalogue identifies bought-in and manufactured items and their cost basis. The royalty,
-            additional human services and any exceptional voice, AI or messaging usage terms require a written quote.
+            terms. The supply catalogue identifies bought-in and manufactured items and their cost basis. The royalty
+            and additional human services terms require a written quote.
           </p>
         </section>
 
@@ -894,7 +888,7 @@ function FranchisePage() {
                   {territory.note && <p>{territory.note}</p>}
                   <div className="md-franchise-territory-fee">
                     {confirmed && territory.fee !== null
-                      ? <><span>Base franchise fee</span><strong>{money(territory.fee)}</strong></>
+                      ? <><span>Upfront investment</span><strong>{money(territory.fee + programme.equipmentOpeningSuppliesFee)}</strong></>
                       : <span>Location, boundary & fee to be confirmed.</span>}
                   </div>
                   <button type="button" className="md-franchise-territory-action" disabled={!canRegisterInterest(territory)} onClick={() => choose(territory)}>
