@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   DEFAULT_PROGRAMME,
+  FRANCHISE_FEE_VERSION,
   OFFER_VERSION,
   normaliseTerritories,
 } from "./franchise-offer";
@@ -310,7 +311,7 @@ function adaptUpstreamFees(programme: Record<string, unknown>, rows: unknown[]):
     const rawFee = row["fee"];
     let fee: number | null = null;
     if (typeof rawFee === "number" && Number.isFinite(rawFee)) {
-      if (version === OFFER_VERSION) {
+      if (version === FRANCHISE_FEE_VERSION) {
         if (rawFee >= DEFAULT_PROGRAMME.feeMin && rawFee <= DEFAULT_PROGRAMME.feeMax) fee = rawFee;
       } else if (version === "legacy" || (version === undefined && knownLegacyProgramme)) {
         if (rawFee >= 7500 && rawFee <= 25000) {
@@ -322,7 +323,7 @@ function adaptUpstreamFees(programme: Record<string, unknown>, rows: unknown[]):
     }
     // A programme revision alone cannot certify that an individual row migrated.
     // Unknown, missing or contradictory price provenance leaves the fee unquoted.
-    return { ...row, fee, franchiseFeeVersion: fee === null ? undefined : OFFER_VERSION };
+    return { ...row, fee, franchiseFeeVersion: fee === null ? undefined : FRANCHISE_FEE_VERSION };
   });
 }
 
@@ -383,7 +384,8 @@ export async function handleFranchiseRequest(
       throw new PublicError(400, INVALID_DETAILS);
     }
     const submittedAnswers = isRecord(input) ? input["answers"] : null;
-    if (isRecord(submittedAnswers) && submittedAnswers["offerVersion"] === "2026-10-06") {
+    const submittedVersion = isRecord(submittedAnswers) ? submittedAnswers["offerVersion"] : undefined;
+    if (submittedVersion === "2026-10-06" || submittedVersion === "2026-10-06-r2") {
       throw new PublicError(409, STALE_OFFER);
     }
     const parsed = validateFranchiseEnquiry(input);
