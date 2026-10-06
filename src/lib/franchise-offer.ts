@@ -146,5 +146,5 @@ export function normaliseTerritories(input: unknown): Territory[] {
 }
 
 export function money(value: number): string {
-  return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value);
 }
