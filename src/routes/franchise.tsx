@@ -92,7 +92,7 @@ const provision = [
   {
     icon: MonitorSmartphone,
     title: "A connected technology package",
-    copy: "KDS, printers, ordering channels, delivery, integrations and AI capabilities, configured for your location.",
+    copy: "KDS, printers, ordering channels, delivery, integrations, AI and Haccora food safety tools, configured for your location.",
   },
   {
     icon: PackageCheck,
@@ -102,7 +102,7 @@ const provision = [
   {
     icon: ShieldCheck,
     title: "Compliance support",
-    copy: "Food safety procedures, allergen guidance, record keeping, training and operational review within the agreed service.",
+    copy: "Haccora food safety tools, procedures, allergen guidance, record keeping, training and operational review within the agreed service.",
   },
   {
     icon: ClipboardCheck,
@@ -159,6 +159,12 @@ const technology = [
     label: "Connected channels",
   },
   {
+    icon: ShieldCheck,
+    title: "Haccora food safety",
+    copy: "Haccora food safety and compliance tools for the checks and records agreed for your kitchen, with access, setup and training arranged during onboarding.",
+    label: "Compliance tools",
+  },
+  {
     icon: BrainCircuit,
     title: "AI & business insights",
     copy: "The agreed AI tools can support ordering, customer enquiries, sales analysis and demand planning.",
@@ -190,7 +196,7 @@ const responsibilities = [
   },
   {
     area: "Technology",
-    mealdeck: "Provide the agreed hardware, platform setup, channel configuration and ongoing support.",
+    mealdeck: "Provide the agreed hardware, platform setup, channel configuration, Haccora access and ongoing support.",
     operator: "Pay setup and recurring technology charges, use the system and fund agreed provider or usage costs.",
   },
   {
@@ -200,7 +206,7 @@ const responsibilities = [
   },
   {
     area: "Compliance",
-    mealdeck: "Provide the agreed food safety, allergen, training and compliance support.",
+    mealdeck: "Provide Haccora food safety tools and the agreed allergen, training and compliance support.",
     operator: "Carry out the required daily checks, keep records and meet the responsibilities of the kitchen operator.",
   },
   {
@@ -248,7 +254,12 @@ const faqs = [
   {
     question: "How is the technology activated?",
     answer:
-      "The technology offer covers KDS and printers, web and app ordering, WhatsApp and phone, delivery management, aggregator integration and AI tools. We agree the scope, configure and test each channel, and complete any provider onboarding before activation. Hardware quantities, setup, subscriptions, provider charges and any additional usage costs are recorded in your technology schedule.",
+      "The technology offer covers KDS and printers, web and app ordering, WhatsApp and phone, delivery management, aggregator integration, AI tools and Haccora food safety and compliance software. We agree the scope, configure and test the agreed tools and channels, and complete any provider onboarding before activation. Hardware quantities, setup, subscriptions, provider charges and any additional usage costs are recorded in your technology schedule.",
+  },
+  {
+    question: "Is Haccora part of the technology package?",
+    answer:
+      "Yes. Haccora food safety and compliance tools are part of the MealDeck technology offer. We agree access, setup, training and service scope for your kitchen during onboarding. Your technology and compliance schedules record the applicable charges. Your team carries out the required checks and keeps the operating records.",
   },
   {
     question: "Are all brands available in every kitchen immediately?",
@@ -695,7 +706,7 @@ function FranchisePage() {
             <h2>From the first order<br />to the final handover.</h2>
             <p>
               KDS and printers. Website, app, WhatsApp and phone ordering. Delivery, aggregator integrations
-              and AI. The complete offer is scoped and configured for your kitchen.
+              and AI, plus Haccora food safety and compliance tools. The complete offer is scoped and configured for your kitchen.
             </p>
           </div>
           <div className="md-franchise-tech-grid">

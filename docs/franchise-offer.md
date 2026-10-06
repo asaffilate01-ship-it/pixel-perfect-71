@@ -49,8 +49,11 @@ Compliance support does not transfer the operator's day-to-day food-business res
 - WhatsApp and phone ordering.
 - Delivery management and configured delivery-provider connections.
 - Aggregator order integrations.
+- Haccora food safety and compliance tools for the checks and records agreed for each kitchen, with access, setup and training arranged during onboarding.
 - AI-assisted ordering/support, reporting and operational insights according to the agreed rollout.
 - Training, configuration and support for the agreed channels.
+
+Haccora forms part of the technology offer and supports the agreed compliance provision. The technology and compliance service schedules specify software access, configuration, training, ongoing human support and applicable charges. This addition introduces no separate Haccora tariff and does not change the existing published rates. Kitchen teams remain responsible for completing checks and maintaining operating records.
 
 The public page describes the offered package. It is not evidence that every external provider, native app, AI feature or tenant configuration is already live. Provider approvals, accounts, hardware quantities, subscriptions and usage allowances are specified during onboarding.
 
