@@ -28,9 +28,9 @@ This revision sets the technology fee at **35p per completed customer order**, c
 | £3,750 base fee + £15,000 equipment/opening-stock package | £18,750 |
 | £12,500 base fee + £15,000 equipment/opening-stock package | £27,500 |
 
-**£18,750–£27,500 is the upfront subtotal for the reduced base fee and package.** Any separately agreed implementation or hardware outside the package, premises rent, VAT where applicable, and working capital are additional. The franchisee also funds recruitment, wages, utilities and other operating costs; the premises deposit is paid by MealDeck, which recovers it at the end of the term. The full written quote confirms the selected location's base fee, package contents and all agreed additional costs before commitment.
+**£18,750–£27,500 is the upfront subtotal for the reduced base fee and package.** Any separately agreed implementation or hardware outside the package, premises rent and working capital are additional. The franchisee also funds recruitment, wages, utilities and other operating costs; the premises deposit is paid by MealDeck, which recovers it at the end of the term. The full written quote confirms the selected location's base fee, package contents and all agreed additional costs before commitment.
 
-Each quotation must identify the equipment/stock itemisation, setup and training scope, applicable VAT treatment, equipment ownership or hire/finance terms, installation and site works, warranties, maintenance and replacement responsibilities, the premises deposit arrangement and working-capital requirement. The territory fee and £15,000 package are payable upfront. Equipment and opening stock must not each be presented as a separate £15,000 charge. Hardware is recorded once: any KDS screen, printer or other item already included in the package must not be charged again under technology setup.
+Each quotation must identify the equipment/stock itemisation, setup and training scope, VAT treatment, equipment ownership or hire/finance terms, installation and site works, warranties, maintenance and replacement responsibilities, the premises deposit arrangement and working-capital requirement. The territory fee and £15,000 package are payable upfront. Equipment and opening stock must not each be presented as a separate £15,000 charge. Hardware is recorded once: any KDS screen, printer or other item already included in the package must not be charged again under technology setup.
 
 All shared MealDeck brands are part of the operator offer. The existing 15-brand marketing collection shows the portfolio without changing operational menus or promising every menu is active at every location. Café1 remains specific to St Albans. Site activation must match the agreed equipment, training, supply and menu readiness.
 
@@ -39,7 +39,7 @@ All shared MealDeck brands are part of the operator offer. The existing 15-brand
 | Charge | Current commercial basis | Scope to confirm |
 | --- | --- | --- |
 | Royalty | **To be confirmed in written quote** | Numerical rate, net-sales definition, applicable channels and billing terms |
-| Marketing contribution | **1.5% of Net Sales excluding VAT** | Contract-defined treatment of refunds, discounts, sales channels, campaign budgets and any extra local media spend |
+| Marketing contribution | **1.5% of Net Sales** | Contract-defined treatment of refunds, discounts, sales channels, campaign budgets and any extra local media spend |
 | Full technology, including Haccora | **35p per completed customer order** | All listed MealDeck software, configured tools and channels, onboarding and support scope |
 | Accountancy | **£100 per month** | Included work, reporting frequency, transaction/payroll limits and any additional work |
 | Bought-in supplies and packaging | **Purchase cost; 0% supply markup** | Relevant item purchase-cost basis, catalogue classification and any explicitly agreed separate charges |
@@ -57,7 +57,7 @@ The £100 monthly accountancy price requires a clear service scope; no unlimited
 
 The unconfirmed royalty is stored as `royaltyPercent: null`, `royaltyStatus: "quote_required"` and `royaltyDisplay: "To be confirmed in written quote"`. Public copy, API responses and enquiry snapshots must not substitute an earlier or privately recommended numerical rate.
 
-Business fees are displayed excluding VAT where applicable. Agreements and catalogues define the cost basis, billing intervals, any separately agreed delivery charges and the treatment of refunds and discounts.
+Agreements and catalogues define the cost basis, billing intervals, any separately agreed delivery charges and the treatment of refunds and discounts.
 
 ### Supply pricing
 
