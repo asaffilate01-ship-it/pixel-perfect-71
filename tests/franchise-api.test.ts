@@ -4,7 +4,7 @@ import {
   validateFranchiseEnquiry,
   type FranchiseFetch,
 } from "../src/lib/franchise-api";
-import { DEFAULT_PROGRAMME, OFFER_VERSION, normaliseTerritories } from "../src/lib/franchise-offer";
+import { DEFAULT_PROGRAMME, FRANCHISE_FEE_VERSION, OFFER_VERSION, normaliseTerritories } from "../src/lib/franchise-offer";
 
 const FORM_URL = "https://mealdeck.example.invalid/api/franchise";
 const API_URL = "https://franchise.example.invalid/api/public/network-expansion";
@@ -117,6 +117,7 @@ describe("franchise enquiry validation", () => {
     ["an oversized experience", enquiry({ answers: { ...answers, operatingExperience: "a".repeat(2001) } })],
     ["an obsolete offer", enquiry({ answers: { ...answers, offerVersion: "2026-01-01" } })],
     ["the superseded pre-repricing offer", enquiry({ answers: { ...answers, offerVersion: "2026-10-06" } })],
+    ["the superseded monthly-technology offer", enquiry({ answers: { ...answers, offerVersion: "2026-10-06-r2" } })],
     ["missing setup acknowledgement", enquiry({ answers: { ...answers, setupPackageAcknowledged: false } })],
     ["missing operations acknowledgement", enquiry({ answers: { ...answers, operatorResponsibilitiesAcknowledged: false } })],
   ];
@@ -242,22 +243,24 @@ describe("franchise request boundary", () => {
     expect((await response.json()).ok).toBe(false);
   });
 
-  test("asks an old browser form to refresh and review the revised offer before any submission", async () => {
-    let calls = 0;
-    const response = await handleFranchiseRequest(post(enquiry({
-      answers: { ...answers, offerVersion: "2026-10-06" },
-    })), {
-      apiUrl: API_URL,
-      fetchImpl: async () => { calls++; return Response.json({ applicationId: "unexpected" }); },
+  for (const supersededVersion of ["2026-10-06", "2026-10-06-r2"]) {
+    test("asks browser offer " + supersededVersion + " to refresh before any submission", async () => {
+      let calls = 0;
+      const response = await handleFranchiseRequest(post(enquiry({
+        answers: { ...answers, offerVersion: supersededVersion },
+      })), {
+        apiUrl: API_URL,
+        fetchImpl: async () => { calls++; return Response.json({ applicationId: "unexpected" }); },
+      });
+      expect(response.status).toBe(409);
+      expect(calls).toBe(0);
+      const result = await response.json();
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain("Refresh this page");
+      expect(result.error).toContain("review the revised fees");
+      expect(result.error).toContain("acknowledgements again");
     });
-    expect(response.status).toBe(409);
-    expect(calls).toBe(0);
-    const result = await response.json();
-    expect(result.ok).toBe(false);
-    expect(result.error).toContain("Refresh this page");
-    expect(result.error).toContain("review the revised fees");
-    expect(result.error).toContain("acknowledgements again");
-  });
+  }
 
   test("only the public programme query is accepted", async () => {
     for (const query of ["?programme=other", "?target=https://elsewhere.example.invalid", "?q=arbitrary", "?programme=mealdeck-england-wales&programme=other"]) {
@@ -289,7 +292,7 @@ describe("public franchise data", () => {
     expect(response.status).toBe(200);
     const result = await response.json();
     expect(result.programme).toEqual(DEFAULT_PROGRAMME);
-    expect(result.territories[0]).toEqual(territory({ fee: 10000, franchiseFeeVersion: OFFER_VERSION }));
+    expect(result.territories[0]).toEqual(territory({ fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }));
     expect(JSON.stringify(result)).not.toContain("SECRET");
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
@@ -340,7 +343,7 @@ describe("versioned territory prices", () => {
     const result = await response.json();
     expect(result.territories.map((item: { fee: number }) => item.fee)).toEqual(currentTiers);
     expect(result.territories.every((item: { franchiseFeeVersion: string }) =>
-      item.franchiseFeeVersion === OFFER_VERSION)).toBe(true);
+      item.franchiseFeeVersion === FRANCHISE_FEE_VERSION)).toBe(true);
     const browserRows = normaliseTerritories(result.territories);
     expect(browserRows).toEqual(result.territories);
     expect(normaliseTerritories(browserRows)).toEqual(result.territories);
@@ -350,10 +353,35 @@ describe("versioned territory prices", () => {
     const response = await handleFranchiseRequest(new Request(FORM_URL), {
       apiUrl: API_URL,
       fetchImpl: async () => publicResponse(currentTiers.map((fee, index) =>
-        territory({ code: "MD-" + index, fee, franchiseFeeVersion: OFFER_VERSION })), DEFAULT_PROGRAMME),
+        territory({ code: "MD-" + index, fee, franchiseFeeVersion: FRANCHISE_FEE_VERSION })), DEFAULT_PROGRAMME),
     });
     const result = await response.json();
+    expect(result.programme.offerVersion).toBe("2026-10-06-r3");
+    expect(result.programme.franchiseFeeVersion).toBe("2026-10-06-r2");
     expect(result.territories.map((item: { fee: number }) => item.fee)).toEqual(currentTiers);
+    expect(result.territories.every((item: { franchiseFeeVersion: string }) =>
+      item.franchiseFeeVersion === FRANCHISE_FEE_VERSION)).toBe(true);
+    expect(normaliseTerritories(normaliseTerritories(result.territories))).toEqual(result.territories);
+  });
+
+  test("publishes the r3 offer while retaining r2 fees from an older upstream offer", async () => {
+    const response = await handleFranchiseRequest(new Request(FORM_URL), {
+      apiUrl: API_URL,
+      fetchImpl: async () => publicResponse([
+        territory({ fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
+      ], {
+        feeMin: 3750, feeMax: 12500, offerVersion: "2026-10-06-r2",
+        franchiseFeeVersion: FRANCHISE_FEE_VERSION, techFeePerMonth: 199,
+        equipmentOpeningSuppliesEstimate: 15000,
+      }),
+    });
+    const result = await response.json();
+    expect(result.programme).toEqual(DEFAULT_PROGRAMME);
+    expect(result.programme.techFeePerOrder).toBe(0.35);
+    expect("techFeePerMonth" in result.programme).toBe(false);
+    expect("equipmentOpeningSuppliesEstimate" in result.programme).toBe(false);
+    expect(result.territories[0].fee).toBe(10000);
+    expect(result.territories[0].franchiseFeeVersion).toBe(FRANCHISE_FEE_VERSION);
   });
 
   test("uses each row's revision for overlapping amounts during a staged deployment", async () => {
@@ -361,7 +389,7 @@ describe("versioned territory prices", () => {
       apiUrl: API_URL,
       fetchImpl: async () => publicResponse([
         territory({ code: "MD-OLD", fee: 10000 }),
-        territory({ code: "MD-CURRENT", fee: 10000, franchiseFeeVersion: OFFER_VERSION }),
+        territory({ code: "MD-CURRENT", fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
       ]),
     });
     expect((await response.json()).territories.map((item: { fee: number }) => item.fee)).toEqual([5000, 10000]);
@@ -372,7 +400,7 @@ describe("versioned territory prices", () => {
       apiUrl: API_URL,
       fetchImpl: async () => publicResponse([
         territory({ code: "MD-OLD-CUSTOM", fee: 12345.67 }),
-        territory({ code: "MD-CURRENT-CUSTOM", fee: 6172.84, franchiseFeeVersion: OFFER_VERSION }),
+        territory({ code: "MD-CURRENT-CUSTOM", fee: 6172.84, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
       ]),
     });
     const result = await response.json();
@@ -395,7 +423,7 @@ describe("versioned territory prices", () => {
     { feeMin: undefined, feeMax: undefined },
     { feeMin: 7500, feeMax: 30000 },
     { feeMin: 3750, feeMax: 12500 },
-    { franchiseFeeVersion: OFFER_VERSION },
+    { franchiseFeeVersion: FRANCHISE_FEE_VERSION },
     { franchiseFeeVersion: "future-revision" },
   ]) {
     test("leaves an unversioned price unquoted when its programme cannot prove a legacy basis", async () => {
@@ -417,7 +445,7 @@ describe("versioned territory prices", () => {
         territory({ code: "MD-NULL", fee: 10000, franchiseFeeVersion: null }),
         territory({ code: "MD-LOW", fee: 5000 }),
         territory({ code: "MD-HIGH", fee: 30000 }),
-        territory({ code: "MD-NEW-HIGH", fee: 20000, franchiseFeeVersion: OFFER_VERSION }),
+        territory({ code: "MD-NEW-HIGH", fee: 20000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
         territory({ code: "MD-TEXT", fee: "10000" }),
       ]),
     });
@@ -426,8 +454,8 @@ describe("versioned territory prices", () => {
 
   test("duplicate overlapping prices with different revisions cannot publish a guessed fee", async () => {
     for (const rows of [
-      [territory({ fee: 10000 }), territory({ fee: 10000, franchiseFeeVersion: OFFER_VERSION })],
-      [territory({ fee: 10000, franchiseFeeVersion: OFFER_VERSION }), territory({ fee: 10000 })],
+      [territory({ fee: 10000 }), territory({ fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION })],
+      [territory({ fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }), territory({ fee: 10000 })],
     ]) {
       const response = await handleFranchiseRequest(new Request(FORM_URL), {
         apiUrl: API_URL,

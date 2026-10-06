@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_PROGRAMME, OFFER_VERSION, PLANNED_TERRITORIES, TAKEN_MARKETS, money, normaliseTerritories } from "../src/lib/franchise-offer";
+import { DEFAULT_PROGRAMME, FRANCHISE_FEE_VERSION, OFFER_VERSION, PLANNED_TERRITORIES, TAKEN_MARKETS, money, normaliseTerritories } from "../src/lib/franchise-offer";
 
 const available = (overrides: Record<string, unknown> = {}) => ({
   code: "MD-TEST", name: "Example town", region: "London",
@@ -7,18 +7,24 @@ const available = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("public franchise offer", () => {
-  test("separates revised fees from an unagreed royalty and the opening estimate", () => {
-    expect(OFFER_VERSION).toBe("2026-10-06-r2");
+  test("keeps r3 technology and upfront payment terms separate from territory pricing", () => {
+    expect(OFFER_VERSION).toBe("2026-10-06-r3");
+    expect(FRANCHISE_FEE_VERSION).toBe("2026-10-06-r2");
+    expect(OFFER_VERSION).not.toBe(FRANCHISE_FEE_VERSION);
     expect(DEFAULT_PROGRAMME).toMatchObject({
-      offerVersion: OFFER_VERSION, franchiseFeeVersion: OFFER_VERSION,
+      offerVersion: OFFER_VERSION, franchiseFeeVersion: FRANCHISE_FEE_VERSION,
       feeMin: 3750, feeMax: 12500, royaltyPercent: null, marketingPercent: 1.5,
       royaltyStatus: "quote_required", royaltyDisplay: "To be confirmed in written quote",
-      techFeePerMonth: 199, accountancyFeePerMonth: 100,
+      techFeePerOrder: 0.35, techIncludesHaccora: true, techFeeBasis: "per_completed_order",
+      techOrderDefinition: "One completed customer order per kitchen, regardless of brand count or ordering channel; cancelled and fully refunded orders are excluded.",
+      accountancyFeePerMonth: 100,
       boughtInSupplyMarkupPercent: 0, manufacturedSupplyMarkupPercent: 15,
       manufacturedSupplyCostBasis: "fully_costed_production",
-      equipmentOpeningSuppliesEstimate: 15000,
+      equipmentOpeningSuppliesFee: 15000,
+      equipmentOpeningSuppliesPaymentTiming: "upfront", franchiseFeePaymentTiming: "upfront",
     });
-    expect("techFeePerOrder" in DEFAULT_PROGRAMME).toBe(false);
+    expect("techFeePerMonth" in DEFAULT_PROGRAMME).toBe(false);
+    expect("equipmentOpeningSuppliesEstimate" in DEFAULT_PROGRAMME).toBe(false);
     expect("supplyMarkupPercent" in DEFAULT_PROGRAMME).toBe(false);
   });
 
@@ -90,8 +96,8 @@ describe("public territory boundary", () => {
 
   test("browser normalisation never discounts a fee and is idempotent", () => {
     const once = normaliseTerritories([
-      available({ franchiseFeeVersion: OFFER_VERSION }),
-      available({ code: "MD-LOW", fee: 3750, franchiseFeeVersion: OFFER_VERSION }),
+      available({ franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
+      available({ code: "MD-LOW", fee: 3750, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
       available({ code: "MD-HIGH", fee: 12500 }),
     ]);
     expect(once.map((item) => item.fee)).toEqual([10000, 3750, 12500]);
@@ -107,9 +113,9 @@ describe("public territory boundary", () => {
 
   test("conflicting duplicate prices require a quote in either order and stay unresolved", () => {
     const rows = [
-      available({ franchiseFeeVersion: OFFER_VERSION }),
-      available({ fee: 5000, franchiseFeeVersion: OFFER_VERSION }),
-      available({ franchiseFeeVersion: OFFER_VERSION }),
+      available({ franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
+      available({ fee: 5000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
+      available({ franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
     ];
     for (const input of [rows, rows.toReversed()]) {
       const canonical = normaliseTerritories(input);

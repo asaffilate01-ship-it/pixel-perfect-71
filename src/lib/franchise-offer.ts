@@ -1,4 +1,6 @@
-export const OFFER_VERSION = "2026-10-06-r2";
+export const OFFER_VERSION = "2026-10-06-r3";
+/** The entry-fee reduction is independent from later changes to the offer. */
+export const FRANCHISE_FEE_VERSION = "2026-10-06-r2";
 
 export type Territory = {
   code: string;
@@ -6,7 +8,7 @@ export type Territory = {
   region: string;
   status: string;
   fee: number | null;
-  franchiseFeeVersion?: typeof OFFER_VERSION;
+  franchiseFeeVersion?: typeof FRANCHISE_FEE_VERSION;
   currency: string;
   isSellable: boolean;
   note?: string;
@@ -18,19 +20,24 @@ export const DEFAULT_PROGRAMME = Object.freeze({
   name: "MealDeck England & Wales",
   currency: "GBP",
   offerVersion: OFFER_VERSION,
-  franchiseFeeVersion: OFFER_VERSION,
+  franchiseFeeVersion: FRANCHISE_FEE_VERSION,
   feeMin: 3750,
   feeMax: 12500,
   royaltyPercent: null,
   royaltyStatus: "quote_required",
   royaltyDisplay: "To be confirmed in written quote",
   marketingPercent: 1.5,
-  techFeePerMonth: 199,
+  techFeePerOrder: 0.35,
+  techIncludesHaccora: true,
+  techFeeBasis: "per_completed_order",
+  techOrderDefinition: "One completed customer order per kitchen, regardless of brand count or ordering channel; cancelled and fully refunded orders are excluded.",
   accountancyFeePerMonth: 100,
   boughtInSupplyMarkupPercent: 0,
   manufacturedSupplyMarkupPercent: 15,
   manufacturedSupplyCostBasis: "fully_costed_production",
-  equipmentOpeningSuppliesEstimate: 15000,
+  equipmentOpeningSuppliesFee: 15000,
+  equipmentOpeningSuppliesPaymentTiming: "upfront",
+  franchiseFeePaymentTiming: "upfront",
 });
 
 export const TAKEN_MARKETS = [
@@ -122,12 +129,12 @@ export function normaliseTerritories(input: unknown): Territory[] {
     let status = knownStatuses.includes(rawStatus) ? rawStatus : "planned";
     if (allocatedAnchor(item)) status = "taken";
     if (status === "available" && item["isSellable"] !== true) status = "unavailable";
-    const currentPriceBasis = item["franchiseFeeVersion"] === undefined || item["franchiseFeeVersion"] === OFFER_VERSION;
+    const currentPriceBasis = item["franchiseFeeVersion"] === undefined || item["franchiseFeeVersion"] === FRANCHISE_FEE_VERSION;
     const fee = currentPriceBasis && typeof item["fee"] === "number" && Number.isFinite(item["fee"]) && item["fee"] >= DEFAULT_PROGRAMME.feeMin && item["fee"] <= DEFAULT_PROGRAMME.feeMax ? item["fee"] : null;
     const territory: Territory = {
       code, name, region, status, fee, currency: "GBP",
       isSellable: status === "available" && item["isSellable"] === true,
-      ...(item["franchiseFeeVersion"] === OFFER_VERSION ? { franchiseFeeVersion: OFFER_VERSION } : {}),
+      ...(item["franchiseFeeVersion"] === FRANCHISE_FEE_VERSION ? { franchiseFeeVersion: FRANCHISE_FEE_VERSION } : {}),
     };
     const previous = result.get(code);
     if (previous) {
