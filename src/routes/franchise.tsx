@@ -256,11 +256,6 @@ const faqs = [
       "Yes. We supply the equipment your kitchen needs to run, including any KDS screens and printers, itemised in full alongside the opening supplies and packaging. The schedule confirms installation scope, ownership or hire terms, warranty, maintenance and replacement responsibilities.",
   },
   {
-    question: "How are supplies and packaging charged?",
-    answer:
-      "Items MealDeck buys directly are supplied at their purchase cost. MealDeck-manufactured products are priced on their fully costed production total — ingredients, production labour and other allocable production costs. The supply catalogue and written quote confirm each item's pricing, and any separately agreed delivery or tax charges.",
-  },
-  {
     question: "Who runs the kitchen and employs the staff?",
     answer:
       "The franchisee runs the kitchen, recruits and manages the team, and pays staffing and operating costs. The offer is designed for an owner-operator or a business operating several kitchens. A multi-unit operator remains responsible for the teams and performance of each location.",
@@ -592,14 +587,9 @@ function FranchisePage() {
       copy: "The agreed monthly accountancy package. Your quote defines included work, frequency, service limits and charges for additional work.",
     },
     {
-      name: "Bought-in supplies & packaging",
-      price: "Purchase cost",
-      copy: "Items MealDeck buys directly are supplied at their purchase cost.",
-    },
-    {
-      name: "MealDeck-manufactured products",
-      price: "Fully costed production price",
-      copy: "Priced on ingredients, production labour and other allocable production costs, confirmed in your written quote.",
+      name: "Supplies & packaging",
+      price: "Per written quote",
+      copy: "Opening supplies and packaging are itemised in full. Ongoing supplies are charged at the prices confirmed in your written quote.",
     },
     {
       name: "Administration & human compliance support",
@@ -807,8 +797,7 @@ function FranchisePage() {
             Marketing is calculated on net sales;
             the agreement defines the treatment of refunds, discounts and sales channels. Card processing fees charged
             by third parties, marketplace commissions and actual courier delivery charges follow the relevant provider
-            terms. The supply catalogue identifies bought-in and manufactured items and their cost basis. The royalty
-            and additional human services terms require a written quote.
+            terms. The royalty and additional human services terms require a written quote.
           </p>
         </section>
 
