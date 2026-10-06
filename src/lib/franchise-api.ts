@@ -16,6 +16,8 @@ const UNCONFIRMED =
   "We could not confirm that your enquiry was received. Please contact the team before submitting again.";
 const INVALID_DETAILS =
   "Please check your details and confirm the required acknowledgements.";
+const STALE_OFFER =
+  "The franchise offer has changed. Refresh this page, review the revised fees and confirm the required acknowledgements again.";
 const TERRITORY_UNAVAILABLE =
   "That territory is not currently open for applications. Choose another area or send a general enquiry.";
 
@@ -290,8 +292,34 @@ async function currentTerritories(
   ) {
     throw new PublicError(502, UNAVAILABLE);
   }
-  // This allowlist also enforces the five already committed MealDeck markets.
-  return normaliseTerritories(payload["territories"]);
+  // Convert the verified upstream price basis exactly once, at the server edge.
+  // The browser normaliser must never apply the entry-fee reduction again.
+  return normaliseTerritories(adaptUpstreamFees(programme, payload["territories"]));
+}
+
+/** Never infer a fee's revision from its amount: old and new ranges overlap. */
+function adaptUpstreamFees(programme: Record<string, unknown>, rows: unknown[]): unknown[] {
+  const programmeVersion = programme["franchiseFeeVersion"];
+  const knownLegacyProgramme =
+    (programmeVersion === undefined || programmeVersion === "legacy") &&
+    programme["feeMin"] === 7500 && programme["feeMax"] === 25000;
+
+  return rows.slice(0, 500).map((row) => {
+    if (!isRecord(row)) return row;
+    const version = row["franchiseFeeVersion"];
+    const rawFee = row["fee"];
+    let fee: number | null = null;
+    if (typeof rawFee === "number" && Number.isFinite(rawFee)) {
+      if (version === OFFER_VERSION) {
+        if (rawFee >= DEFAULT_PROGRAMME.feeMin && rawFee <= DEFAULT_PROGRAMME.feeMax) fee = rawFee;
+      } else if (version === "legacy" || (version === undefined && knownLegacyProgramme)) {
+        if (rawFee >= 7500 && rawFee <= 25000) fee = rawFee / 2;
+      }
+    }
+    // A programme revision alone cannot certify that an individual row migrated.
+    // Unknown, missing or contradictory price provenance leaves the fee unquoted.
+    return { ...row, fee, franchiseFeeVersion: fee === null ? undefined : OFFER_VERSION };
+  });
 }
 
 function receiptReference(payload: Record<string, unknown>): string | null {
@@ -350,9 +378,22 @@ export async function handleFranchiseRequest(
       }
       throw new PublicError(400, INVALID_DETAILS);
     }
+    const submittedAnswers = isRecord(input) ? input["answers"] : null;
+    if (isRecord(submittedAnswers) && submittedAnswers["offerVersion"] === "2026-10-06") {
+      throw new PublicError(409, STALE_OFFER);
+    }
     const parsed = validateFranchiseEnquiry(input);
     if (!parsed.success) throw new PublicError(400, INVALID_DETAILS);
-    const enquiry = parsed.data;
+    const enquiry = {
+      ...parsed.data,
+      answers: {
+        ...parsed.data.answers,
+        // The upstream answers record accepts this server-authored offer snapshot.
+        // Caller-supplied prices and snapshots are stripped by enquirySchema.
+        offerSnapshot: DEFAULT_PROGRAMME,
+        selectedTerritoryFee: null as number | null,
+      },
+    };
     const target = endpoint(options.apiUrl, options.allowInsecureLocalhost === true);
 
     // Always replace caller-supplied territory labels with the verified record.
@@ -364,6 +405,7 @@ export async function handleFranchiseRequest(
         throw new PublicError(409, TERRITORY_UNAVAILABLE);
       }
       enquiry.answers.selectedTerritory = territory.name;
+      enquiry.answers.selectedTerritoryFee = territory.fee;
     }
     enquiry.answers.offerVersion = OFFER_VERSION;
     enquiry.answers.setupPackageAcknowledged = true;
