@@ -313,7 +313,11 @@ function adaptUpstreamFees(programme: Record<string, unknown>, rows: unknown[]):
       if (version === OFFER_VERSION) {
         if (rawFee >= DEFAULT_PROGRAMME.feeMin && rawFee <= DEFAULT_PROGRAMME.feeMax) fee = rawFee;
       } else if (version === "legacy" || (version === undefined && knownLegacyProgramme)) {
-        if (rawFee >= 7500 && rawFee <= 25000) fee = rawFee / 2;
+        if (rawFee >= 7500 && rawFee <= 25000) {
+          // Match the database migration: halve integer pence, then round to a penny.
+          const previousFeeMinor = Math.round(rawFee * 100);
+          fee = Math.round(previousFeeMinor / 2) / 100;
+        }
       }
     }
     // A programme revision alone cannot certify that an individual row migrated.

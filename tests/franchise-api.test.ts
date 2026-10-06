@@ -367,6 +367,19 @@ describe("versioned territory prices", () => {
     expect((await response.json()).territories.map((item: { fee: number }) => item.fee)).toEqual([5000, 10000]);
   });
 
+  test("legacy odd-penny conversion matches the already migrated custom fee", async () => {
+    const response = await handleFranchiseRequest(new Request(FORM_URL), {
+      apiUrl: API_URL,
+      fetchImpl: async () => publicResponse([
+        territory({ code: "MD-OLD-CUSTOM", fee: 12345.67 }),
+        territory({ code: "MD-CURRENT-CUSTOM", fee: 6172.84, franchiseFeeVersion: OFFER_VERSION }),
+      ]),
+    });
+    const result = await response.json();
+    expect(result.territories.map((item: { fee: number }) => item.fee)).toEqual([6172.84, 6172.84]);
+    expect(normaliseTerritories(result.territories)).toEqual(result.territories);
+  });
+
   test("only an explicit legacy row marker can convert a row under a current programme", async () => {
     const response = await handleFranchiseRequest(new Request(FORM_URL), {
       apiUrl: API_URL,

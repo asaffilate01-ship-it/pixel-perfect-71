@@ -20,7 +20,12 @@ describe("public franchise offer", () => {
     });
     expect("techFeePerOrder" in DEFAULT_PROGRAMME).toBe(false);
     expect("supplyMarkupPercent" in DEFAULT_PROGRAMME).toBe(false);
+  });
+
+  test("formats custom fee pennies without adding decimals to whole-pound tiers", () => {
     expect(money(3750)).toBe("£3,750");
+    expect(money(12500)).toBe("£12,500");
+    expect(money(6172.84)).toBe("£6,172.84");
   });
 
   test("planned search areas never claim confirmed availability or a priced territory", () => {
