@@ -30,7 +30,6 @@ import {
   TAKEN_MARKETS,
   money,
   normaliseTerritories,
-  techFee,
   type Territory,
 } from "@/lib/franchise-offer";
 
@@ -117,7 +116,7 @@ const provision = [
   {
     icon: ReceiptText,
     title: "Accountancy",
-    copy: "Accountancy support with bookkeeping, payroll and reporting services scoped and priced for your business.",
+    copy: "A monthly accountancy package with its included bookkeeping, payroll, reporting work and service limits agreed in writing.",
   },
 ];
 
@@ -221,7 +220,7 @@ const responsibilities = [
   },
   {
     area: "Accountancy & administration",
-    mealdeck: "Deliver the accountancy, payroll, reporting and administration services included in the service quote.",
+    mealdeck: "Deliver the included accountancy work within the agreed monthly package, plus separately scoped administration and additional services.",
     operator: "Pay the service fees and provide complete, timely business records and approvals.",
   },
 ];
@@ -239,12 +238,22 @@ const faqs = [
   {
     question: "What does the base franchise fee cover?",
     answer:
-      "The base fee is for entry to the MealDeck franchise programme and the agreed brand and territory rights. Equipment, technology setup and hardware, and opening supplies and packaging are separate setup charges. The full scope and total investment are confirmed in your written quote.",
+      "The base fee is for entry to the MealDeck franchise programme and the agreed brand and territory rights. The current range is " + money(DEFAULT_PROGRAMME.feeMin) + "–" + money(DEFAULT_PROGRAMME.feeMax) + ", with the fee confirmed for your location. Equipment and opening supplies/packaging share a separate combined planning budget. Technology setup and hardware are quoted separately. The written quote confirms the full investment.",
   },
   {
     question: "Does MealDeck provide the equipment?",
     answer:
       "Yes. MealDeck supplies the equipment agreed for the approved kitchen, and the franchisee pays the quoted equipment package charge. The schedule specifies the equipment, installation scope, ownership or hire terms, warranty, maintenance and replacement responsibilities.",
+  },
+  {
+    question: "What does the approximately " + money(DEFAULT_PROGRAMME.equipmentOpeningSuppliesEstimate) + " setup estimate cover?",
+    answer:
+      "The approximately " + money(DEFAULT_PROGRAMME.equipmentOpeningSuppliesEstimate) + " estimate covers kitchen equipment and opening supplies and packaging combined. The quote itemises both within that one budget; no fixed split between equipment and stock is assumed. Adding the base fee gives an approximate planning subtotal of " + money(DEFAULT_PROGRAMME.feeMin + DEFAULT_PROGRAMME.equipmentOpeningSuppliesEstimate) + "–" + money(DEFAULT_PROGRAMME.feeMax + DEFAULT_PROGRAMME.equipmentOpeningSuppliesEstimate) + ". Technology setup and hardware, premises and deposits, applicable VAT, and working capital are additional. The final site quote may differ from this planning estimate.",
+  },
+  {
+    question: "How are supplies and packaging charged?",
+    answer:
+      "Items MealDeck buys directly are supplied at their purchase cost, with a " + DEFAULT_PROGRAMME.boughtInSupplyMarkupPercent + "% supply markup. MealDeck-manufactured products use the total of ingredients, production labour and other allocable production costs, then add a " + DEFAULT_PROGRAMME.manufacturedSupplyMarkupPercent + "% markup to that total. The supply catalogue and written quote identify each item's category, cost basis and any separately agreed delivery or tax charges.",
   },
   {
     question: "Who runs the kitchen and employs the staff?",
@@ -254,12 +263,12 @@ const faqs = [
   {
     question: "How is the technology activated?",
     answer:
-      "The technology offer covers KDS and printers, web and app ordering, WhatsApp and phone, delivery management, aggregator integration, AI tools and Haccora food safety and compliance software. We agree the scope, configure and test the agreed tools and channels, and complete any provider onboarding before activation. Hardware quantities, setup, subscriptions, provider charges and any additional usage costs are recorded in your technology schedule.",
+      "The monthly technology package is " + money(DEFAULT_PROGRAMME.techFeePerMonth) + ". The offer covers KDS and printers, web and app ordering, WhatsApp and phone, delivery management, aggregator integration, AI tools and Haccora food safety software. Setup and hardware are quoted separately. We agree the included software access, channels, allowances and support, then configure and test the agreed tools and complete provider onboarding before activation. Additional provider or usage charges are recorded in your technology schedule.",
   },
   {
     question: "Is Haccora part of the technology package?",
     answer:
-      "Yes. Haccora food safety and compliance tools are part of the MealDeck technology offer. We agree access, setup, training and service scope for your kitchen during onboarding. Your technology and compliance schedules record the applicable charges. Your team carries out the required checks and keeps the operating records.",
+      "Yes. Haccora food safety and compliance tools form part of the MealDeck technology offer. The " + money(DEFAULT_PROGRAMME.techFeePerMonth) + " monthly technology package has a written scope defining Haccora access, included features, training and support. Any separately agreed implementation or human compliance support is itemised in the quote. Your team carries out the required checks and keeps the operating records.",
   },
   {
     question: "Are all brands available in every kitchen immediately?",
@@ -279,7 +288,7 @@ const faqs = [
   {
     question: "What do compliance and accountancy support include?",
     answer:
-      "The agreed service schedule sets out the training, procedures, record keeping, bookkeeping, payroll and reporting support provided. You continue to run the business, keep accurate records and carry out the operator's required checks and responsibilities. The accountancy and support charges are confirmed in your quote.",
+      "The accountancy package is " + money(DEFAULT_PROGRAMME.accountancyFeePerMonth) + " per month. Its written scope specifies the included work, reporting frequency, transaction or payroll limits and charges for additional work. The compliance schedule defines the tools, training and support provided. You continue to run the business, provide accurate records and carry out the operator's required checks and responsibilities.",
   },
   {
     question: "Does the offer guarantee sales or profit?",
@@ -564,33 +573,38 @@ function FranchisePage() {
   const feeRows = [
     {
       name: "Royalty",
-      price: programme.royaltyPercent + "% of net sales",
-      copy: "Ongoing brand and franchise programme charge.",
+      price: programme.royaltyDisplay,
+      copy: "The royalty rate and calculation basis are confirmed in your written quote before agreement.",
     },
     {
       name: "Marketing contribution",
       price: programme.marketingPercent + "% of net sales",
-      copy: "The agreed central marketing programme. Additional local media spend is agreed separately.",
+      copy: "Net sales exclude VAT; the agreement defines the calculation basis. Additional local media spend is agreed separately.",
     },
     {
-      name: "Core technology",
-      price: techFee(programme.techFeePerOrder) + " per completed order",
-      copy: "The standard platform charge. Your technology schedule lists any additional subscriptions or usage.",
-    },
-    {
-      name: "Supplies & packaging",
-      price: "Delivered cost + " + programme.supplyMarkupPercent + "%",
-      copy: "Based on the agreed fully loaded landed and delivered cost of supplied goods.",
+      name: "Technology",
+      price: money(programme.techFeePerMonth) + " per month",
+      copy: "The monthly kitchen technology package. Your schedule defines included platform and Haccora access, support and usage allowances. Setup and hardware are quoted separately.",
     },
     {
       name: "Accountancy",
-      price: "Service quote",
-      copy: "Bookkeeping, payroll, reporting and other accountancy work within your selected service scope.",
+      price: money(programme.accountancyFeePerMonth) + " per month",
+      copy: "The agreed monthly accountancy package. Your quote defines included work, frequency, service limits and charges for additional work.",
+    },
+    {
+      name: "Bought-in supplies & packaging",
+      price: "Purchase cost (" + programme.boughtInSupplyMarkupPercent + "% markup)",
+      copy: "Items MealDeck buys directly are supplied at their purchase cost.",
+    },
+    {
+      name: "MealDeck-manufactured products",
+      price: "Production cost + " + programme.manufacturedSupplyMarkupPercent + "%",
+      copy: "Ingredients, production labour and other allocable production costs are totalled first; the markup applies to that fully costed production total.",
     },
     {
       name: "Administration & compliance support",
       price: "Service quote",
-      copy: "The support and compliance services specified for your kitchen.",
+      copy: "Any administration and human compliance support beyond the included package is specified and priced in your written service schedule.",
     },
     {
       name: "Provider & additional channel costs",
@@ -623,7 +637,7 @@ function FranchisePage() {
               </div>
               <p className="md-franchise-hero-cost">
                 <strong>Base franchise fee {money(programme.feeMin)}–{money(programme.feeMax)}</strong>
-                <span>Plus equipment, technology setup and hardware, and opening supplies & packaging.</span>
+                <span>Plus approximately {money(programme.equipmentOpeningSuppliesEstimate)} combined for equipment and opening supplies & packaging. Technology setup and hardware are quoted separately.</span>
               </p>
             </div>
             <div className="md-franchise-stack" aria-hidden="true">
@@ -721,10 +735,11 @@ function FranchisePage() {
           <div className="md-franchise-tech-note">
             <ClipboardCheck aria-hidden="true" />
             <p>
-              <strong>Configured and checked before activation.</strong> We agree the channels and AI features for
-              your location, then complete setup, testing and any provider onboarding. Hardware, implementation,
-              third-party approvals, regional availability and any additional subscription or usage costs are
-              confirmed in your technology schedule.
+              <strong>Technology: {money(programme.techFeePerMonth)} per month.</strong> Your written schedule defines
+              the included platform, Haccora access, channels, AI features, support and usage allowances.
+              Setup and hardware are quoted separately. We configure and test the agreed tools before activation,
+              including any provider onboarding. Third-party approvals, regional availability and additional
+              provider or usage charges are confirmed in the schedule.
             </p>
           </div>
         </section>
@@ -734,8 +749,9 @@ function FranchisePage() {
             <p className="md-kicker md-kicker-red">Your investment</p>
             <h2>Four parts to your setup.</h2>
             <p>
-              The base franchise fee is one part of the total investment. MealDeck provides the equipment,
-              technology and opening stock through separately priced setup packages.
+              The equipment and opening supplies & packaging share one combined planning estimate of approximately{" "}
+              {money(programme.equipmentOpeningSuppliesEstimate)}. The base franchise fee is additional, and technology
+              setup and hardware are quoted separately. All four lines are itemised for your location.
             </p>
           </div>
           <div className="md-franchise-setup-grid">
@@ -748,35 +764,41 @@ function FranchisePage() {
             <article>
               <span className="md-franchise-number">02</span>
               <h3>Equipment package</h3>
-              <strong>Itemised quote</strong>
-              <p>The agreed kitchen equipment supplied by MealDeck, with installation and site requirements identified.</p>
+              <strong>Within the combined budget</strong>
+              <p>Kitchen equipment supplied by MealDeck and itemised within the combined equipment and opening-stock estimate. Installation and site requirements are agreed in the quote.</p>
             </article>
             <article>
               <span className="md-franchise-number">03</span>
               <h3>Technology setup</h3>
-              <strong>Itemised quote</strong>
+              <strong>Separate itemised quote</strong>
               <p>KDS screens, printers, platform and channel setup, menu configuration, onboarding and training within the agreed scope.</p>
             </article>
             <article>
               <span className="md-franchise-number">04</span>
               <h3>Opening supplies & packaging</h3>
-              <strong>Itemised quote</strong>
-              <p>The initial food, ingredients, consumables and branded packaging required for your agreed launch menu.</p>
+              <strong>Within the combined budget</strong>
+              <p>The initial food, ingredients, consumables and branded packaging are itemised within the same combined equipment and opening-stock estimate.</p>
             </article>
           </div>
           <div className="md-franchise-investment-note">
-            <h3>Build the full opening budget.</h3>
+            <h3>Planning subtotal: approximately {money(programme.feeMin + programme.equipmentOpeningSuppliesEstimate)}–{money(programme.feeMax + programme.equipmentOpeningSuppliesEstimate)}.</h3>
             <p>
-              You also fund rent and premises deposits, recruitment, salaries, utilities and working capital.
-              The written quote sets out the total setup cost, payment schedule, equipment ownership or hire,
-              warranty, maintenance and replacement terms.
+              This adds the base franchise fee to the single approximate {money(programme.equipmentOpeningSuppliesEstimate)}{" "}
+              equipment and opening supplies & packaging budget. Equipment and stock are itemised within that
+              combined estimate, with no fixed split assumed.
+            </p>
+            <p>
+              Technology setup and hardware, premises and deposits, applicable VAT, and working capital are
+              additional. You also fund recruitment, salaries, utilities and other operating costs.
+              The final site quote confirms the full investment, payment schedule, equipment ownership or hire,
+              installation, warranty, maintenance and replacement responsibilities.
             </p>
           </div>
 
           <div className="md-franchise-fee-heading">
             <p className="md-kicker md-kicker-red">Once you are trading</p>
             <h3>Ongoing fees, clearly separated.</h3>
-            <p>Standard programme terms below. Your agreement and service schedules confirm the final scope and charges.</p>
+            <p>The monthly technology and accountancy prices are shown below. Your written quote confirms the royalty, included services, allowances and any additional charges.</p>
           </div>
           <div className="md-franchise-table-wrap" tabIndex={0} role="region" aria-label="Ongoing franchise fee comparison">
             <table className="md-franchise-table">
@@ -790,9 +812,10 @@ function FranchisePage() {
             </table>
           </div>
           <p className="md-franchise-note">
-            Business fees shown exclude VAT where applicable. Net sales, completed orders and the cost basis for
-            supplied goods are defined in the agreement. Provider charges and any additional services are itemised
-            before you commit.
+            Business fees shown exclude VAT where applicable. Marketing is calculated on net sales excluding VAT;
+            the agreement defines the treatment of refunds, discounts and sales channels. The supply catalogue identifies
+            bought-in and manufactured items and their cost basis. Any separately agreed delivery, provider or additional
+            service charges are itemised before you commit. The royalty is confirmed in the written quote.
           </p>
         </section>
 
@@ -963,8 +986,17 @@ function FranchisePage() {
               <div className="md-franchise-fee-box">
                 <span>Base franchise fee</span>
                 <strong>{selectedLive?.fee != null ? money(selectedLive.fee) : money(programme.feeMin) + "–" + money(programme.feeMax)}</strong>
-                <p>Plus equipment package + technology setup and hardware + opening supplies & packaging.</p>
-                <small>Budget separately for premises, staffing, utilities and working capital. Your full quote is confirmed before agreement.</small>
+                <p>Plus approximately {money(programme.equipmentOpeningSuppliesEstimate)} combined for equipment and opening supplies & packaging.</p>
+                <small>
+                  Planning subtotal: approximately {selectedLive?.fee != null
+                    ? money(selectedLive.fee + programme.equipmentOpeningSuppliesEstimate)
+                    : money(programme.feeMin + programme.equipmentOpeningSuppliesEstimate) + "–" + money(programme.feeMax + programme.equipmentOpeningSuppliesEstimate)}.
+                  Technology setup and hardware, premises, applicable VAT and working capital are additional.
+                </small>
+                <small>
+                  Technology {money(programme.techFeePerMonth)}/month · Accountancy {money(programme.accountancyFeePerMonth)}/month.
+                  Marketing {programme.marketingPercent}% of net sales excluding VAT. Royalty: {programme.royaltyDisplay}.
+                </small>
               </div>
               {selected && (
                 <div className="md-franchise-selection" role="status">
@@ -1016,7 +1048,7 @@ function FranchisePage() {
                   <label className="md-franchise-check"><input name="multiUnitInterest" type="checkbox" checked={form.multiUnit} onChange={(event) => setForm((value) => ({ ...value, multiUnit: event.target.checked }))} /><span>I would also like to discuss multiple territories.</span></label>
                   <div className="md-franchise-acknowledgements">
                     <p>Please confirm *</p>
-                    <label className="md-franchise-check"><input name="setupPackageAcknowledged" type="checkbox" required checked={form.setupPackageAcknowledged} onChange={(event) => setForm((value) => ({ ...value, setupPackageAcknowledged: event.target.checked }))} /><span>I understand that setup comprises the base franchise fee plus equipment, technology setup and hardware, and opening supplies and packaging.</span></label>
+                    <label className="md-franchise-check"><input name="setupPackageAcknowledged" type="checkbox" required checked={form.setupPackageAcknowledged} onChange={(event) => setForm((value) => ({ ...value, setupPackageAcknowledged: event.target.checked }))} /><span>I understand that approximately {money(programme.equipmentOpeningSuppliesEstimate)} covers equipment and opening supplies/packaging combined. The base franchise fee, separately quoted technology setup and hardware, premises, applicable VAT and working capital are additional.</span></label>
                     <label className="md-franchise-check"><input name="operatorResponsibilitiesAcknowledged" type="checkbox" required checked={form.operatorResponsibilitiesAcknowledged} onChange={(event) => setForm((value) => ({ ...value, operatorResponsibilitiesAcknowledged: event.target.checked }))} /><span>I will be responsible for running and staffing the kitchen, rent, salaries, utilities, stock and packaging purchases, and the agreed franchise and service fees.</span></label>
                   </div>
                   <div className="md-franchise-privacy">

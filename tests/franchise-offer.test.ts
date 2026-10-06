@@ -1,20 +1,26 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_PROGRAMME, OFFER_VERSION, PLANNED_TERRITORIES, TAKEN_MARKETS, money, normaliseTerritories, techFee } from "../src/lib/franchise-offer";
+import { DEFAULT_PROGRAMME, OFFER_VERSION, PLANNED_TERRITORIES, TAKEN_MARKETS, money, normaliseTerritories } from "../src/lib/franchise-offer";
 
 const available = (overrides: Record<string, unknown> = {}) => ({
   code: "MD-TEST", name: "Example town", region: "London",
-  status: "available", isSellable: true, fee: 15000, currency: "GBP", ...overrides,
+  status: "available", isSellable: true, fee: 10000, currency: "GBP", ...overrides,
 });
 
 describe("public franchise offer", () => {
-  test("preserves the agreed ongoing pricing and base fee separately from setup", () => {
-    expect(OFFER_VERSION).toBe("2026-10-06");
+  test("separates revised fees from an unagreed royalty and the opening estimate", () => {
+    expect(OFFER_VERSION).toBe("2026-10-06-r2");
     expect(DEFAULT_PROGRAMME).toMatchObject({
-      feeMin: 7500, feeMax: 25000, royaltyPercent: 5.5, marketingPercent: 1.5,
-      techFeePerOrder: 0.25, supplyMarkupPercent: 10,
+      offerVersion: OFFER_VERSION, franchiseFeeVersion: OFFER_VERSION,
+      feeMin: 3750, feeMax: 12500, royaltyPercent: null, marketingPercent: 1.5,
+      royaltyStatus: "quote_required", royaltyDisplay: "To be confirmed in written quote",
+      techFeePerMonth: 199, accountancyFeePerMonth: 100,
+      boughtInSupplyMarkupPercent: 0, manufacturedSupplyMarkupPercent: 15,
+      manufacturedSupplyCostBasis: "fully_costed_production",
+      equipmentOpeningSuppliesEstimate: 15000,
     });
-    expect(money(7500)).toBe("£7,500");
-    expect(techFee(0.25)).toBe("25p");
+    expect("techFeePerOrder" in DEFAULT_PROGRAMME).toBe(false);
+    expect("supplyMarkupPercent" in DEFAULT_PROGRAMME).toBe(false);
+    expect(money(3750)).toBe("£3,750");
   });
 
   test("planned search areas never claim confirmed availability or a priced territory", () => {
@@ -57,7 +63,7 @@ describe("public territory boundary", () => {
     })]);
     expect(territory).toEqual({
       code: "MD-TEST", name: "Example town", region: "London", status: "available",
-      isSellable: true, fee: 15000, currency: "GBP",
+      isSellable: true, fee: 10000, currency: "GBP",
     });
     expect(normaliseTerritories([available({ isSellable: "true" })])[0].isSellable).toBe(false);
     expect(normaliseTerritories([available({ status: "draft" })])[0].status).toBe("planned");
@@ -72,8 +78,38 @@ describe("public territory boundary", () => {
   });
 
   test("invalid fees cannot enter a published calculation", () => {
-    for (const fee of [NaN, Infinity, -1, 0, 7000, 30000, "25000"]) {
+    for (const fee of [NaN, Infinity, -1, 0, 3749, 12501, 30000, "10000"]) {
       expect(normaliseTerritories([available({ fee })])[0].fee).toBeNull();
+    }
+  });
+
+  test("browser normalisation never discounts a fee and is idempotent", () => {
+    const once = normaliseTerritories([
+      available({ franchiseFeeVersion: OFFER_VERSION }),
+      available({ code: "MD-LOW", fee: 3750, franchiseFeeVersion: OFFER_VERSION }),
+      available({ code: "MD-HIGH", fee: 12500 }),
+    ]);
+    expect(once.map((item) => item.fee)).toEqual([10000, 3750, 12500]);
+    expect(normaliseTerritories(once)).toEqual(once);
+    expect(normaliseTerritories(normaliseTerritories(once))).toEqual(once);
+  });
+
+  test("historical or unknown price markers cannot be treated as canonical prices", () => {
+    for (const franchiseFeeVersion of ["legacy", "future", null]) {
+      expect(normaliseTerritories([available({ franchiseFeeVersion })])[0].fee).toBeNull();
+    }
+  });
+
+  test("conflicting duplicate prices require a quote in either order and stay unresolved", () => {
+    const rows = [
+      available({ franchiseFeeVersion: OFFER_VERSION }),
+      available({ fee: 5000, franchiseFeeVersion: OFFER_VERSION }),
+      available({ franchiseFeeVersion: OFFER_VERSION }),
+    ];
+    for (const input of [rows, rows.toReversed()]) {
+      const canonical = normaliseTerritories(input);
+      expect(canonical[0].fee).toBeNull();
+      expect(normaliseTerritories(canonical)).toEqual(canonical);
     }
   });
 });
