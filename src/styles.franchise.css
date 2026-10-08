@@ -84,7 +84,7 @@
 .md-franchise-bundle-bar .md-btn { white-space: nowrap; flex-shrink: 0; }
 .md-franchise-home-promo { display: grid; grid-template-columns: 1.1fr 1fr; gap: 70px; align-items: center; border-top: 1px solid var(--border); }
 .md-franchise-home-promo h2 { font-family: var(--md-display); font-size: clamp(38px, 4.8vw, 70px); line-height: 1; margin: 0 0 24px; letter-spacing: -.04em; }
-.md-franchise-home-promo > div > p:not(.md-kicker) { max-width: 580px; font-size: 17px; line-height: 1.7; color: var(--muted-foreground); margin-bottom: 28px; }
+.md-franchise-home-promo > div > p:not(.md-kicker) { max-width: 580px; font-size: 17px; line-height: 1.7; color: #62594f; margin-bottom: 28px; }
 .md-franchise-home-routes { display: grid; gap: 18px; }
 .md-franchise-home-routes > a { position: relative; display: block; padding: 30px 58px 30px 30px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); color: var(--foreground); text-decoration: none; transition: border-color .2s, transform .2s; }
 .md-franchise-home-routes > a:hover { border-color: var(--md-red); transform: translateY(-3px); }
