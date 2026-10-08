@@ -179,6 +179,13 @@
   object-fit: cover;
   transition: transform 0.35s ease;
 }
+
+.md-franchise-brand-card.is-identity .md-franchise-brand-card-photo { background: var(--md-paper); }
+.md-franchise-brand-card.is-identity .md-franchise-brand-card-photo > img { object-fit: contain; padding: 24px; }
+.md-franchise-brand-card.is-identity .md-franchise-brand-card-logo { display: none; }
+.md-franchise-brand-promo-card.is-identity .md-franchise-brand-promo-logo { min-height: 360px; }
+.md-franchise-brand-promo-card.is-identity .md-franchise-brand-promo-logo img { width: min(320px, 85%); max-height: 300px; }
+.md-franchise-brand-promo-card.is-identity .md-franchise-brand-promo-food { display: none; }
 .md-franchise-brand-card:hover .md-franchise-brand-card-photo > img {
   transform: scale(1.025);
 }

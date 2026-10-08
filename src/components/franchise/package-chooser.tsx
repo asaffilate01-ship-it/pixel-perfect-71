@@ -1,4 +1,5 @@
 import { ArrowRight, Check, ChefHat, Layers3, Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { DEFAULT_PROGRAMME, money } from "@/lib/franchise-offer";
 import { marketingBrands } from "@/lib/marketing-brands";
 import type { FranchiseBrandId, FranchisePackage } from "@/lib/franchise-selection";
@@ -204,7 +205,17 @@ export function FranchiseSelectionBar({
 }: {
   selectedBrandIds: readonly FranchiseBrandId[];
 }) {
-  if (selectedBrandIds.length === 0) return null;
+  const [atEnquiry, setAtEnquiry] = useState(false);
+  useEffect(() => {
+    const form = document.getElementById("apply");
+    if (!form) return;
+    const observer = new IntersectionObserver(([entry]) => setAtEnquiry(entry?.isIntersecting ?? false), {
+      rootMargin: "0px 0px -80px 0px",
+    });
+    observer.observe(form);
+    return () => observer.disconnect();
+  }, []);
+  if (selectedBrandIds.length === 0 || atEnquiry) return null;
   return (
     <aside className="md-franchise-bundle-bar" aria-label="Your brand enquiry">
       <div>

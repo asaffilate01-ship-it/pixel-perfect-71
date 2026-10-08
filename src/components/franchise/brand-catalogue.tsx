@@ -118,7 +118,7 @@ export function BrandFranchiseCatalogue({
               const selected = selection.has(brand.id);
               return (
                 <article
-                  className={`md-franchise-brand-card${selected ? " is-selected" : ""}`}
+                  className={`md-franchise-brand-card${selected ? " is-selected" : ""}${brand.artwork === "identity" ? " is-identity" : ""}`}
                   key={brand.id}
                   aria-labelledby={`franchise-brand-${brand.id}`}
                 >

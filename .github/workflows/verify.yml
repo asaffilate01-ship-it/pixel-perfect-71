@@ -17,13 +17,14 @@ jobs:
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - run: bun run build
+      - name: TypeScript validation
+        run: bunx tsc --noEmit
       - name: Franchise implementation lint
         run: >
           bunx eslint src/routes/franchise.tsx src/routes/api.franchise.ts
           src/lib/franchise-offer.ts src/lib/franchise-api.ts
           src/lib/franchise-selection.ts src/lib/franchise-brands.ts
-          src/components/franchise/brand-catalogue.tsx src/components/franchise/package-chooser.tsx
-          src/components/franchise/brand-logo.tsx
+          src/components/franchise/*.tsx
           'src/routes/franchise_.$brandId.tsx'
           tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
           --rule 'prettier/prettier: off'
