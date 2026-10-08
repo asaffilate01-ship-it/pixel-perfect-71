@@ -1,4 +1,4 @@
-export const OFFER_VERSION = "2026-10-08-brand-choice";
+export const OFFER_VERSION = "2026-10-08-rent-deposit";
 /** The entry-fee reduction is independent from later changes to the offer. */
 export const FRANCHISE_FEE_VERSION = "2026-10-06-r2";
 
@@ -24,8 +24,10 @@ export const DEFAULT_PROGRAMME = Object.freeze({
   currency: "GBP",
   offerVersion: OFFER_VERSION,
   franchiseFeeVersion: FRANCHISE_FEE_VERSION,
-  upfrontFeeMin: 18750,
-  upfrontFeeMax: 27500,
+  upfrontFeeMin: 21050,
+  upfrontFeeMax: 33500,
+  upfrontFeeStatus: "indicative_quote_required",
+  upfrontFeeIncludesPremisesDeposit: true,
   upfrontPaymentTiming: "upfront",
   upfrontFeeVatBasis: "exclusive_where_applicable",
   ongoingFeesStatus: "quote_required",

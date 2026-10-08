@@ -97,7 +97,7 @@ const provision = [
   {
     icon: MapPin,
     title: "Location & territory",
-    copy: "We source and assess the location, agree your territory, hold the premises lease and pay the premises deposit.",
+    copy: "We source and assess the location, agree your territory and hold the premises lease. The agreed rent deposit is funded through your launch quote and paid to the landlord by MealDeck.",
   },
   {
     icon: ChefHat,
@@ -203,9 +203,9 @@ const responsibilities = [
   {
     area: "Premises & territory",
     mealdeck:
-      "Source and assess the location, agree the territory, hold the lease and pay the premises deposit.",
+      "Source and assess the location, agree the territory, hold the lease and pay the landlord the deposit included in your launch quote.",
     operator:
-      "Pay the agreed rent, utilities, rates and site operating costs. You do not pay the premises deposit.",
+      "Fund the agreed premises deposit through your upfront launch quote, with no duplicate deposit charge. Pay rent, utilities, rates and site operating costs.",
   },
   {
     area: "Equipment",
@@ -345,7 +345,12 @@ const brandFaqs = [
   {
     question: "What does an individual-brand franchise cost?",
     answer:
-      "Individual brands and custom combinations are price on application. Your written proposal sets out the brand rights, setup and training, equipment requirements, opening costs and ongoing charges. Existing equipment and shared kitchen requirements are assessed as part of that proposal; there is no automatic price per added brand.",
+      "Individual brands and custom combinations are price on application. Your written proposal sets out the brand rights, setup and training, equipment requirements, opening costs and ongoing charges. Existing equipment and premises are reflected in the quote. A new landlord deposit is included only where MealDeck supplies premises and one is required. There is no automatic price per added brand.",
+  },
+  {
+    question: "What happens to the premises deposit if the kitchen closes?",
+    answer:
+      "Where your quote includes a deposit for premises supplied by MealDeck, the deposit remains in place while the premises arrangement continues. If the kitchen closes because of a kitchen or MealDeck issue, you receive 50% of any premises deposit actually returned to MealDeck by the landlord. If you choose to leave voluntarily, no premises-deposit refund is payable to you. This concerns the recovered landlord deposit, not a refund of the franchise or total launch fee. Your written premises terms confirm these conditions.",
   },
   {
     question: "Does selecting a brand reserve a territory or guarantee launch?",
@@ -358,17 +363,17 @@ const faqs = [
   {
     question: "What makes MealDeck a turnkey franchise?",
     answer:
-      "MealDeck brings together the shared brands and menus, a selected location and agreed territory, kitchen equipment, opening stock and packaging, technology, onboarding and training. Ongoing support brings together the systems, supply coordination, compliance support, marketing, accounts and administration within your agreed service scope. You focus on good food, timely dispatch and running your team, while funding the kitchen's operating costs. Opening follows the location's approvals and readiness checks.",
+      "MealDeck brings together the shared brands and menus, a selected location and agreed territory, the agreed premises rent deposit, kitchen equipment, opening stock and packaging, technology, onboarding and training. Ongoing support brings together the systems, supply coordination, compliance support, marketing, accounts and administration within your agreed service scope. You focus on good food, timely dispatch and running your team, while funding the kitchen's operating costs. Opening follows the location's approvals and readiness checks.",
   },
   {
     question: "What does the upfront investment cover?",
     answer:
-      "Your all-inclusive launch package covers franchise entry, the agreed brand and territory rights, location onboarding, the agreed kitchen equipment and hardware, opening stock and branded packaging, technology setup and launch training. The final package and inventory are confirmed for your location in a written quote before you commit. Rent, staffing, ongoing supplies and other running costs are funded by your kitchen.",
+      "Your all-inclusive launch quote covers franchise entry, the agreed brand and territory rights, location onboarding, the agreed premises rent deposit, kitchen equipment and hardware, opening stock and branded packaging, technology setup and launch training. The published range is indicative and includes a two-month rent deposit allowance. The actual landlord deposit, location and agreed launch scope determine your final quote, which may fall outside the range. Rent, including the first month, staffing, ongoing supplies and other running costs are funded separately by your kitchen.",
   },
   {
     question: "Who holds the lease and pays the premises deposit?",
     answer:
-      "MealDeck holds the premises lease and pays the premises deposit, which MealDeck recovers at the end of the term. You do not pay the premises deposit. Your written premises arrangement confirms the rent you pay and the responsibilities for rates, utilities, repairs and access.",
+      "For a MealDeck-arranged site, MealDeck holds the premises lease and pays the landlord using the deposit included in your upfront launch quote. The included deposit is not charged again separately. Your written proposal confirms the actual deposit and premises terms. If you provide suitable existing premises, the proposal reflects that arrangement and includes a new landlord deposit only if MealDeck supplies premises and one is required. Your business funds rent, including the first month, rates, utilities and other agreed operating costs.",
   },
   {
     question: "Does MealDeck provide the equipment?",
@@ -976,17 +981,18 @@ function FranchisePage() {
 
             <section id="fees" className="md-section md-section-cream">
               <div className="md-section-heading">
-                <p className="md-kicker md-kicker-red">Full MealDeck investment</p>
+                <p className="md-kicker md-kicker-red">Full MealDeck · indicative investment</p>
                 <h2>One all-inclusive launch package.</h2>
                 <p className="md-franchise-full-price">
                   {money(programme.upfrontFeeMin)}–{money(programme.upfrontFeeMax)}
                 </p>
                 <p>
-                  Franchise entry, brand and territory rights, the agreed equipment and hardware,
-                  opening stock, branded packaging, technology setup and training, brought together
-                  in a single launch quote. We confirm the complete inventory and setup scope for
-                  your approved location before you commit. The range depends on location and
-                  territory and excludes VAT where applicable. Ongoing charges are POA.
+                  Franchise entry, brand and territory rights, the agreed premises rent deposit,
+                  equipment and hardware, opening stock, branded packaging, technology setup and
+                  training, brought together in a single launch quote. This indicative range
+                  includes a two-month rent deposit allowance. Your actual landlord deposit,
+                  location and launch scope determine the final quote, which may fall outside the
+                  range. VAT is additional where applicable. Ongoing charges are POA.
                 </p>
               </div>
               <div className="md-franchise-setup-grid">
@@ -1022,9 +1028,10 @@ function FranchisePage() {
               <div className="md-franchise-investment-note">
                 <h3>A complete setup, agreed for your location.</h3>
                 <p>
-                  MealDeck arranges the premises, holds the lease and pays the premises deposit. You
-                  do not pay the premises deposit. We coordinate the agreed setup, equipment,
-                  systems and training around your kitchen's launch plan.
+                  MealDeck arranges the premises, holds the lease and pays the landlord from the
+                  deposit included in your upfront quote, with no duplicate deposit charge. We
+                  coordinate the agreed setup, equipment, systems and training around your
+                  kitchen's launch plan.
                 </p>
                 <p>
                   Your kitchen funds rent, staffing, utilities, ongoing stock and packaging, other
@@ -1359,12 +1366,12 @@ function FranchisePage() {
                 <p>
                   {isCustom
                     ? "Your quote will cover the selected brand rights, suitable existing equipment, any additional setup, training and the agreed services."
-                    : "Brands, location and territory, equipment, opening supplies and packaging, technology setup and training, with a full agreed inventory."}
+                    : "Brands, location and territory, the agreed premises rent deposit, equipment, opening supplies and packaging, technology setup and training, with a full agreed inventory."}
                 </p>
                 <small>
                   {isCustom
                     ? "Equipment and premises requirements are assessed for your kitchen. The proposal confirms what is included, what you already provide and all additional costs before you commit."
-                    : "Your quoted launch package is payable upfront. MealDeck holds the lease and pays the premises deposit. You fund the kitchen's rent, staffing, running costs and working capital."}
+                    : "The published range is indicative. Your written quote confirms the actual premises deposit and complete upfront price. MealDeck holds the lease and pays the landlord from the included deposit. Your business funds rent, including the first month, and its working capital."}
                 </small>
                 <small>
                   Ongoing fees are POA. Your business funds its staffing, running costs and working
@@ -1680,7 +1687,7 @@ function FranchisePage() {
                       <span>
                         {isCustom
                           ? "I understand that my selected brands, equipment requirements, brand rights, launch costs and ongoing fees will be confirmed in a written proposal, and I need working capital for running costs."
-                          : "I understand that the quoted launch package is payable upfront, ongoing services are price on application, and I need working capital for my kitchen's running costs."}
+                          : "I understand that the range is indicative, my written upfront quote confirms the agreed premises deposit and launch scope, ongoing services are price on application, and I need funds for rent and running costs."}
                       </span>
                     </label>
                     <label className="md-franchise-check">

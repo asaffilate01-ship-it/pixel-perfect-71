@@ -7,24 +7,25 @@ const available = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("public franchise offer", () => {
-  test("publishes only the complete launch range and quote-required ongoing services", () => {
-    expect(OFFER_VERSION).toBe("2026-10-08-brand-choice");
+  test("publishes only the indicative deposit-inclusive range and quote-required ongoing services", () => {
+    expect(OFFER_VERSION).toBe("2026-10-08-rent-deposit");
     expect(FRANCHISE_FEE_VERSION).toBe("2026-10-06-r2");
     expect(OFFER_VERSION).not.toBe(FRANCHISE_FEE_VERSION);
     expect(DEFAULT_PROGRAMME).toEqual({
       key: "mealdeck-england-wales", name: "MealDeck England & Wales", currency: "GBP",
       offerVersion: OFFER_VERSION, franchiseFeeVersion: FRANCHISE_FEE_VERSION,
-      upfrontFeeMin: 18750, upfrontFeeMax: 27500,
+      upfrontFeeMin: 21050, upfrontFeeMax: 33500,
+      upfrontFeeStatus: "indicative_quote_required", upfrontFeeIncludesPremisesDeposit: true,
       upfrontPaymentTiming: "upfront", upfrontFeeVatBasis: "exclusive_where_applicable",
       ongoingFeesStatus: "quote_required", ongoingFeesDisplay: "POA",
       techIncludesHaccora: true,
     });
-    expect(Object.values(DEFAULT_PROGRAMME).filter((value) => typeof value === "number")).toEqual([18750, 27500]);
+    expect(Object.values(DEFAULT_PROGRAMME).filter((value) => typeof value === "number")).toEqual([21050, 33500]);
   });
 
   test("formats the overall launch range without unnecessary decimals", () => {
-    expect(money(DEFAULT_PROGRAMME.upfrontFeeMin)).toBe("£18,750");
-    expect(money(DEFAULT_PROGRAMME.upfrontFeeMax)).toBe("£27,500");
+    expect(money(DEFAULT_PROGRAMME.upfrontFeeMin)).toBe("£21,050");
+    expect(money(DEFAULT_PROGRAMME.upfrontFeeMax)).toBe("£33,500");
     expect(money(6172.84)).toBe("£6,172.84");
   });
 
