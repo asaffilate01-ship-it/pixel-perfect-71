@@ -45,18 +45,19 @@ export function FranchisePackageChooser({
           </div>
           <h3>Full MealDeck</h3>
           <p>
-            The shared brand portfolio, an agreed location and territory, equipment, opening
-            supplies, technology, training and coordinated support.
+            The shared brand portfolio, an agreed location and territory, premises rent deposit,
+            equipment, opening supplies, technology, training and coordinated support.
           </p>
           <div className="md-franchise-choice-price">
             <strong>
               {money(DEFAULT_PROGRAMME.upfrontFeeMin)}–{money(DEFAULT_PROGRAMME.upfrontFeeMax)}
             </strong>
-            <span>All-inclusive launch package · ongoing fees POA</span>
+            <span>Indicative all-inclusive launch range · ongoing fees POA</span>
           </div>
           <p className="md-franchise-choice-terms">
-            Depending on location and territory. Excludes VAT where applicable. Your quote confirms
-            the inventory and scope; running costs and working capital are funded separately.
+            Includes a two-month rent deposit allowance. Your final quote depends on the premises,
+            actual deposit and launch scope and may fall outside this range. Excludes VAT where
+            applicable; rent, running costs and working capital are funded separately.
           </p>
           <button
             type="button"
@@ -130,7 +131,8 @@ export function CustomFranchiseSetup() {
           <p>
             Use suitable equipment you already own, subject to assessment. We identify the changes,
             additional equipment and training needed for your chosen brands, with itemised setup
-            requirements in your proposal.
+            requirements in your proposal. A new premises deposit is included only where MealDeck
+            supplies premises and the landlord requires one.
           </p>
         </article>
         <article>

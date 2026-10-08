@@ -6,7 +6,7 @@ The homepage and Franchises navigation lead to `/franchise`. Applicants can expl
 
 The catalogue supports brand/cuisine search, food and drinks filters, a selected-only view and accessible add/remove controls. A selection summary leads to the enquiry. Brand pages preserve the existing choices and add the viewed brand when the applicant requests a proposal. The URL keeps selections across refresh and links; a local draft preserves the custom shortlist while comparing full MealDeck within the same hub visit.
 
-Applicants select their starting point: an existing commercial kitchen or a new food business. Custom-package content explains equipment assessment and reuse, premises, training and a written proposal. Full-package content retains the existing launch range and its specifically agreed premises, equipment and support offer. Selecting all individual brands remains a custom proposal, not automatic access to the full MealDeck contract or identity.
+Applicants select their starting point: an existing commercial kitchen or a new food business. Custom-package content explains equipment assessment and reuse, premises, training and a written proposal. Full-package content presents the indicative deposit-inclusive launch range and its specifically agreed premises, equipment and support offer. Selecting all individual brands remains a custom proposal, not automatic access to the full MealDeck contract or identity.
 
 ## Approved catalogue
 
@@ -16,7 +16,10 @@ Café1 remains St Albans-specific. The legacy ordering entry for Fyrra is not pa
 
 ## Pricing and scope
 
-- The full MealDeck route retains the approved £18,750–£27,500 all-inclusive launch range and existing VAT treatment.
+- The full MealDeck route displays an indicative £21,050–£33,500 all-inclusive launch range, including a two-month rent deposit allowance, with existing VAT treatment. The actual landlord deposit, location and scope determine the final written quote, which may fall outside the range. The private commercial brief records the illustrative basis; it is not a confirmed nationwide rent schedule.
+- MealDeck holds the lease for its arranged premises and pays the landlord from the deposit included in the upfront quote. Do not charge it again separately. Rent, including the first month, is funded separately by the operator.
+- Reflect premises an existing operator already provides. Include a new landlord deposit only where MealDeck supplies premises and one is required.
+- If closure is due to a kitchen or MealDeck issue, the franchisee receives 50% of the landlord deposit actually recovered by MealDeck. Voluntary departure has no premises-deposit refund. The written premises terms confirm the conditions; the launch fee is not refundable under this deposit rule.
 - Individual franchises, custom combinations and all ongoing charges are POA.
 - The site does not calculate a price per added brand or quote additional territory rights.
 - Existing territorial allocations apply to every enquiry route. Choosing a brand does not reserve or approve a location.
@@ -30,7 +33,7 @@ The existing same-origin `/api/franchise` endpoint forwards the validated enquir
 {
   "existingKitchen": true,
   "answers": {
-    "offerVersion": "2026-10-08-brand-choice",
+    "offerVersion": "2026-10-08-rent-deposit",
     "franchisePackage": "selected_brands",
     "selectedBrandIds": ["loadd", "skorch"],
     "setupPackageAcknowledged": true,

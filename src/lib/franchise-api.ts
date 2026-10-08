@@ -373,7 +373,7 @@ export async function handleFranchiseRequest(
     const submittedVersion = isRecord(submittedAnswers) ? submittedAnswers["offerVersion"] : undefined;
     if (
       typeof submittedVersion === "string" &&
-      ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3", "2026-10-08-poa"].includes(submittedVersion)
+      ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3", "2026-10-08-poa", "2026-10-08-brand-choice"].includes(submittedVersion)
     ) {
       throw new PublicError(409, STALE_OFFER);
     }

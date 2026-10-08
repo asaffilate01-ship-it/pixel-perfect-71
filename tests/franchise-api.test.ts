@@ -303,7 +303,7 @@ describe("franchise request boundary", () => {
     expect((await response.json()).ok).toBe(false);
   });
 
-  for (const supersededVersion of ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3", "2026-10-08-poa"]) {
+  for (const supersededVersion of ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3", "2026-10-08-poa", "2026-10-08-brand-choice"]) {
     test("asks browser offer " + supersededVersion + " to refresh before any submission", async () => {
       let calls = 0;
       const response = await handleFranchiseRequest(post(enquiry({
@@ -498,13 +498,15 @@ describe("public POA pricing", () => {
       expect(response.status).toBe(200);
       const result = await response.json();
       expect(result.programme).toEqual(DEFAULT_PROGRAMME);
-      expect(result.programme.offerVersion).toBe("2026-10-08-brand-choice");
+      expect(result.programme.offerVersion).toBe("2026-10-08-rent-deposit");
       expect(result.programme.franchiseFeeVersion).toBe(FRANCHISE_FEE_VERSION);
-      expect(result.programme.upfrontFeeMin).toBe(18750);
-      expect(result.programme.upfrontFeeMax).toBe(27500);
+      expect(result.programme.upfrontFeeMin).toBe(21050);
+      expect(result.programme.upfrontFeeMax).toBe(33500);
+      expect(result.programme.upfrontFeeStatus).toBe("indicative_quote_required");
+      expect(result.programme.upfrontFeeIncludesPremisesDeposit).toBe(true);
       expect(result.programme.ongoingFeesDisplay).toBe("POA");
       expect(result.programme.ongoingFeesStatus).toBe("quote_required");
-      expect(Object.values(result.programme).filter((value) => typeof value === "number")).toEqual([18750, 27500]);
+      expect(Object.values(result.programme).filter((value) => typeof value === "number")).toEqual([21050, 33500]);
       expect(result.territories).toHaveLength(1);
       expect(result.territories[0]).toMatchObject(territory({ fee: null }));
       expect(Object.values(result.territories[0]).some((value) => typeof value === "number")).toBe(false);
