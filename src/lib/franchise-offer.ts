@@ -1,4 +1,4 @@
-export const OFFER_VERSION = "2026-10-08-poa";
+export const OFFER_VERSION = "2026-10-08-brand-choice";
 /** The entry-fee reduction is independent from later changes to the offer. */
 export const FRANCHISE_FEE_VERSION = "2026-10-06-r2";
 

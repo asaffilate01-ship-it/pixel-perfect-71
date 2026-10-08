@@ -5,6 +5,7 @@ import {
   type FranchiseFetch,
 } from "../src/lib/franchise-api";
 import { DEFAULT_PROGRAMME, FRANCHISE_FEE_VERSION, OFFER_VERSION, normaliseTerritories } from "../src/lib/franchise-offer";
+import { FRANCHISE_BRAND_IDS } from "../src/lib/franchise-selection";
 
 const FORM_URL = "https://mealdeck.example.invalid/api/franchise";
 const API_URL = "https://franchise.example.invalid/api/public/network-expansion";
@@ -15,6 +16,24 @@ const answers = {
   operatorResponsibilitiesAcknowledged: true,
   selectedTerritory: null,
 };
+
+const selectionDefaults = { franchisePackage: "full_mealdeck", selectedBrandIds: [] };
+const invalidSelections: Array<[string, Record<string, unknown>]> = [
+  ["unknown package", { franchisePackage: "all_brands" }],
+  ["null package", { franchisePackage: null }],
+  ["empty custom selection", { franchisePackage: "selected_brands", selectedBrandIds: [] }],
+  ["missing custom IDs", { franchisePackage: "selected_brands" }],
+  ["unknown brand", { franchisePackage: "selected_brands", selectedBrandIds: ["skorch", "unknown-brand"] }],
+  ["non-franchise brand", { franchisePackage: "selected_brands", selectedBrandIds: ["cafe1"] }],
+  ["retired brand", { franchisePackage: "selected_brands", selectedBrandIds: ["fyrra"] }],
+  ["duplicate brand", { franchisePackage: "selected_brands", selectedBrandIds: ["skorch", "skorch"] }],
+  ["more than fifteen brands", { franchisePackage: "selected_brands", selectedBrandIds: [...FRANCHISE_BRAND_IDS, "skorch"] }],
+  ["non-array brand IDs", { franchisePackage: "selected_brands", selectedBrandIds: "skorch,loadd" }],
+  ["null brand IDs", { franchisePackage: "selected_brands", selectedBrandIds: null }],
+  ["non-string brand ID", { franchisePackage: "selected_brands", selectedBrandIds: [1] }],
+  ["full package mixed with individual brands", { franchisePackage: "full_mealdeck", selectedBrandIds: ["skorch"] }],
+  ["individual brands without an explicit package", { selectedBrandIds: ["skorch"] }],
+];
 
 function enquiry(overrides: Record<string, unknown> = {}) {
   return {
@@ -72,6 +91,36 @@ function forbiddenFetch(): FranchiseFetch {
 }
 
 describe("franchise enquiry validation", () => {
+  test("legacy omitted package fields default to the full MealDeck enquiry", () => {
+    const result = validateFranchiseEnquiry(enquiry());
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error("Expected a valid legacy enquiry");
+    expect(result.data.answers).toMatchObject(selectionDefaults);
+  });
+
+  for (const brandIds of [["skorch"], ["skorch", "loadd"], ["skorch", "loadd", "moktl"], [...FRANCHISE_BRAND_IDS]]) {
+    test("accepts and preserves " + brandIds.length + " approved individual brand choices", () => {
+      const result = validateFranchiseEnquiry(enquiry({
+        answers: { ...answers, franchisePackage: "selected_brands", selectedBrandIds: brandIds },
+      }));
+      expect(result.success).toBe(true);
+      if (!result.success) throw new Error("Expected a valid brand enquiry");
+      expect(result.data.answers.franchisePackage).toBe("selected_brands");
+      expect(result.data.answers.selectedBrandIds).toEqual(brandIds);
+    });
+  }
+
+  test("accepts an explicitly selected full MealDeck package", () => {
+    const result = validateFranchiseEnquiry(enquiry({ answers: { ...answers, ...selectionDefaults } }));
+    expect(result.success).toBe(true);
+  });
+
+  for (const [name, selection] of invalidSelections) {
+    test("rejects " + name, () => {
+      expect(validateFranchiseEnquiry(enquiry({ answers: { ...answers, ...selection } })).success).toBe(false);
+    });
+  }
+
   test("trims details, keeps zero capital and strips unapproved fields", () => {
     const result = validateFranchiseEnquiry(enquiry({
       name: "  Example Operator  ",
@@ -254,7 +303,7 @@ describe("franchise request boundary", () => {
     expect((await response.json()).ok).toBe(false);
   });
 
-  for (const supersededVersion of ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3"]) {
+  for (const supersededVersion of ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3", "2026-10-08-poa"]) {
     test("asks browser offer " + supersededVersion + " to refresh before any submission", async () => {
       let calls = 0;
       const response = await handleFranchiseRequest(post(enquiry({
@@ -287,6 +336,76 @@ describe("franchise request boundary", () => {
     const response = await handleFranchiseRequest(new Request(FORM_URL, { method: "DELETE" }));
     expect(response.status).toBe(405);
     expect(response.headers.get("allow")).toBe("GET, POST");
+  });
+});
+
+describe("individual brand enquiry forwarding", () => {
+  for (const [name, selection] of invalidSelections) {
+    test("rejects " + name + " before any upstream access", async () => {
+      let calls = 0;
+      const response = await handleFranchiseRequest(post(enquiry({
+        territoryCode: "MD-999",
+        answers: { ...answers, ...selection },
+      })), {
+        apiUrl: API_URL,
+        fetchImpl: async () => { calls++; return Response.json({ applicationId: "unexpected" }); },
+      });
+      expect(response.status).toBe(400);
+      expect(calls).toBe(0);
+    });
+  }
+
+  for (const existingKitchen of [false, true]) {
+    test("forwards the approved selection for " + (existingKitchen ? "an existing kitchen" : "a new entrant"), async () => {
+      const selectedBrandIds = ["skorch", "loadd", "moktl"];
+      const calls: string[] = [];
+      const response = await handleFranchiseRequest(post(enquiry({
+        territoryCode: "MD-999",
+        existingKitchen,
+        answers: {
+          ...answers,
+          franchisePackage: "selected_brands",
+          selectedBrandIds,
+          selectedTerritory: "Forged name",
+          selectedTerritoryFee: 1,
+          brandPrice: 500,
+        },
+      })), {
+        apiUrl: API_URL,
+        fetchImpl: async (_url, init) => {
+          calls.push(String(init.method));
+          if (init.method === "GET") return publicResponse([territory()]);
+          const forwarded = JSON.parse(String(init.body));
+          expect(forwarded.existingKitchen).toBe(existingKitchen);
+          expect(forwarded.answers.franchisePackage).toBe("selected_brands");
+          expect(forwarded.answers.selectedBrandIds).toEqual(selectedBrandIds);
+          expect(forwarded.answers.selectedTerritory).toBe("Example territory");
+          expect(forwarded.answers.selectedTerritoryFee).toBeNull();
+          expect(forwarded.answers.offerVersion).toBe(OFFER_VERSION);
+          expect("brandPrice" in forwarded.answers).toBe(false);
+          return Response.json({ applicationId: "brand-enquiry-123" }, { status: 201 });
+        },
+      });
+      expect(response.status).toBe(201);
+      expect(calls).toEqual(["GET", "POST"]);
+      expect(await response.json()).toEqual({ ok: true, reference: "brand-enquiry-123" });
+    });
+  }
+
+  test("individual brands cannot bypass an allocated territory", async () => {
+    const calls: string[] = [];
+    const response = await handleFranchiseRequest(post(enquiry({
+      territoryCode: "MD-999",
+      answers: { ...answers, franchisePackage: "selected_brands", selectedBrandIds: ["skorch"] },
+    })), {
+      apiUrl: API_URL,
+      fetchImpl: async (_url, init) => {
+        calls.push(String(init.method));
+        return publicResponse([territory({ name: "St Albans", status: "available", isSellable: true })]);
+      },
+    });
+    expect(response.status).toBe(409);
+    expect(calls).toEqual(["GET"]);
   });
 });
 
@@ -379,7 +498,7 @@ describe("public POA pricing", () => {
       expect(response.status).toBe(200);
       const result = await response.json();
       expect(result.programme).toEqual(DEFAULT_PROGRAMME);
-      expect(result.programme.offerVersion).toBe("2026-10-08-poa");
+      expect(result.programme.offerVersion).toBe("2026-10-08-brand-choice");
       expect(result.programme.franchiseFeeVersion).toBe(FRANCHISE_FEE_VERSION);
       expect(result.programme.upfrontFeeMin).toBe(18750);
       expect(result.programme.upfrontFeeMax).toBe(27500);
@@ -461,7 +580,7 @@ describe("submission, territory verification and receipts", () => {
     expect(headers.has("cookie")).toBe(false);
     expect(calls[1]!.init.redirect).toBe("error");
     const sent = JSON.parse(String(calls[1]!.init.body));
-    expect(sent.answers).toEqual({ ...answers, selectedTerritory: "Example territory", selectedTerritoryFee: null, offerSnapshot: DEFAULT_PROGRAMME });
+    expect(sent.answers).toEqual({ ...answers, ...selectionDefaults, selectedTerritory: "Example territory", selectedTerritoryFee: null, offerSnapshot: DEFAULT_PROGRAMME });
     expect(sent.marketingConsent).toBe(false);
     expect(sent.source).toBe("mealdeck-franchise-page");
   });

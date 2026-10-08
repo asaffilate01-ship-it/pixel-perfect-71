@@ -17,6 +17,8 @@ export function MobileTabBar() {
     select: (s) => ({ pathname: s.location.pathname, hash: s.location.hash }),
   });
 
+  if (pathname === "/franchise" || pathname.startsWith("/franchise/")) return null;
+
   const isActive = (t: Tab) =>
     t.to === pathname && (t.hash ? hash === t.hash : !hash || t.to !== "/");
 

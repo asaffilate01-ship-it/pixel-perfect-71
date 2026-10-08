@@ -1,0 +1,1027 @@
+/* Individual franchise promotion and selection. Shared semantic colours keep
+   the catalogue in step with the site theme; paper frames identify each brand. */
+.md-franchise-brands-inner {
+  width: min(1360px, calc(100% - 48px));
+  margin-inline: auto;
+}
+.md-franchise-brands-section {
+  padding: 76px 0;
+  background: var(--ff-background);
+  border-top: 1px solid var(--ff-border);
+}
+.md-franchise-brands-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 34px;
+}
+.md-franchise-brands-heading .md-section-heading {
+  margin: 0;
+  max-width: 850px;
+}
+.md-franchise-brands-heading .md-section-heading > p:last-child {
+  max-width: 760px;
+}
+.md-franchise-brands-pricing {
+  max-width: 280px;
+  flex-shrink: 0;
+  border-left: 3px solid var(--md-yellow);
+  padding: 4px 0 4px 20px;
+}
+.md-franchise-brands-pricing > span {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--ff-muted);
+}
+.md-franchise-brands-pricing strong {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--md-display);
+  font-size: 44px;
+  line-height: 1.1;
+}
+.md-franchise-brands-pricing p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ff-muted);
+}
+.md-franchise-brands-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.md-franchise-brands-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.md-franchise-brands-filters button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 9px 15px;
+  background: var(--ff-surface);
+  border: 1px solid var(--ff-border);
+  color: var(--ff-foreground);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.md-franchise-brands-filters button > span {
+  min-width: 20px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  background: color-mix(in oklch, var(--ff-foreground) 9%, transparent);
+}
+.md-franchise-brands-filters button[aria-pressed="true"] {
+  background: var(--md-yellow);
+  color: var(--md-black);
+  border-color: var(--md-yellow);
+}
+.md-franchise-brands-filters button:hover {
+  border-color: var(--ff-foreground);
+}
+.md-franchise-brands-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 13px;
+  width: min(310px, 100%);
+  flex-shrink: 0;
+  border: 1px solid var(--ff-border);
+  border-radius: 4px;
+  background: var(--ff-surface);
+}
+.md-franchise-brands-search > svg {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  color: var(--ff-muted);
+}
+.md-franchise-brands-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--ff-foreground);
+  font: inherit;
+  font-size: 13px;
+}
+.md-franchise-brands-search input::placeholder {
+  color: var(--ff-muted);
+}
+.md-franchise-brands-search:focus-within {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+.md-franchise-page .md-franchise-brands-search input:focus-visible {
+  outline: 0;
+}
+.md-franchise-brands-result {
+  margin: 15px 0 22px;
+  font-size: 12px;
+  color: var(--ff-muted);
+}
+.md-franchise-brands-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.md-franchise-brand-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ff-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--ff-surface);
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s;
+}
+.md-franchise-brand-card:hover {
+  border-color: color-mix(in oklch, var(--ff-foreground) 40%, var(--ff-border));
+}
+.md-franchise-brand-card.is-selected {
+  border-color: var(--md-yellow);
+  box-shadow: 0 0 0 2px var(--md-yellow);
+}
+.md-franchise-brand-card-photo {
+  position: relative;
+  aspect-ratio: 1.9;
+  overflow: hidden;
+  background: var(--md-black);
+}
+.md-franchise-brand-card-photo > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+.md-franchise-brand-card:hover .md-franchise-brand-card-photo > img {
+  transform: scale(1.025);
+}
+.md-franchise-brand-card-suit {
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 34px;
+  padding: 6px 7px;
+  color: var(--md-red-deep);
+  background: var(--md-paper);
+  font-family: var(--md-display);
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 800;
+  box-shadow: 0 3px 12px #0003;
+  border-radius: 3px;
+}
+.md-franchise-brand-card-suit > span {
+  font-size: 15px;
+}
+.md-franchise-brand-card-selected {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  background: var(--md-yellow);
+  color: var(--md-black);
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.md-franchise-brand-card-selected svg {
+  width: 14px;
+  height: 14px;
+}
+.md-franchise-brand-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 22px;
+}
+.md-franchise-brand-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.md-franchise-brand-card-logo {
+  width: 84px;
+  height: 70px;
+  flex: 0 0 auto;
+  padding: 6px;
+  display: grid;
+  place-items: center;
+  background: var(--md-paper);
+  border: 1px solid var(--md-line);
+  border-radius: 3px;
+}
+.md-franchise-brand-card-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.md-franchise-logo-fallback { color: var(--md-black); font-family: var(--md-display); font-size: 15px; font-weight: 900; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+.md-franchise-brand-promo-logo .md-franchise-logo-fallback { font-size: clamp(28px, 4vw, 52px); }
+.md-franchise-brand-card-identity h3 {
+  margin: 0;
+  font-family: var(--md-display);
+  font-size: clamp(22px, 1.9vw, 28px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+.md-franchise-brand-card-identity p {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ff-muted);
+}
+.md-franchise-brand-card-body h4 {
+  margin: 22px 0 9px;
+  font-family: var(--md-display);
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.13;
+  letter-spacing: -0.02em;
+}
+.md-franchise-brand-card-pitch {
+  flex: 1;
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ff-muted);
+}
+.md-franchise-brand-card-price {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--ff-border);
+  padding-top: 15px;
+  margin-top: auto;
+}
+.md-franchise-brand-card-price span {
+  font-size: 11px;
+  color: var(--ff-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 700;
+}
+.md-franchise-brand-card-price strong {
+  font-family: var(--md-display);
+  font-size: 22px;
+}
+.md-franchise-brand-card-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+}
+.md-franchise-brand-explore {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ff-foreground);
+}
+.md-franchise-brand-explore:hover {
+  color: var(--ff-highlight);
+}
+.md-franchise-brand-explore svg {
+  width: 16px;
+  height: 16px;
+}
+.md-franchise-brand-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--ff-border);
+  border-radius: 4px;
+  background: var(--ff-background);
+  color: var(--ff-foreground);
+  font-family: var(--md-display);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.md-franchise-brand-toggle svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.md-franchise-brand-toggle:hover {
+  border-color: var(--ff-foreground);
+}
+.md-franchise-brand-toggle[aria-pressed="true"] {
+  background: var(--md-yellow);
+  color: var(--md-black);
+  border-color: var(--md-yellow);
+}
+.md-franchise-brand-toggle:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.md-franchise-brands-note {
+  max-width: 980px;
+  margin: 27px 0 0;
+  color: var(--ff-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.md-franchise-brands-empty {
+  padding: 58px 24px;
+  border: 1px dashed var(--ff-border);
+  text-align: center;
+}
+.md-franchise-brands-empty > span {
+  color: var(--ff-highlight);
+  font-size: 44px;
+}
+.md-franchise-brands-empty h3 {
+  margin: 12px 0;
+  font-family: var(--md-display);
+  font-size: 30px;
+}
+.md-franchise-brands-empty p {
+  color: var(--ff-muted);
+  max-width: 540px;
+  margin: 0 auto 23px;
+  line-height: 1.6;
+}
+
+.md-franchise-brand-hero {
+  color: #fffdf7;
+  background: radial-gradient(ellipse at 85% 20%, #7019216b, transparent 52%), #140f0f;
+  border-bottom: 7px solid var(--md-yellow);
+  overflow: hidden;
+}
+.md-franchise-brand-hero-inner {
+  width: min(1360px, calc(100% - 48px));
+  margin-inline: auto;
+  padding: 28px 0 66px;
+}
+.md-franchise-brand-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  font-size: 12px;
+  color: #e4d8c7;
+}
+.md-franchise-brand-back:hover {
+  color: var(--md-yellow);
+}
+.md-franchise-brand-back svg {
+  width: 15px;
+  height: 15px;
+}
+.md-franchise-brand-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 72px;
+  align-items: center;
+  padding-top: 32px;
+}
+.md-franchise-brand-hero-copy > .md-kicker {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.md-franchise-brand-hero h1 {
+  margin: 18px 0 0;
+  font-family: var(--md-display);
+  font-weight: 900;
+  font-size: clamp(48px, 6vw, 86px);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  overflow-wrap: anywhere;
+}
+.md-franchise-brand-hero h1 span {
+  display: block;
+  margin-top: 7px;
+  color: var(--md-yellow);
+}
+.md-franchise-brand-hero h2 {
+  margin: 27px 0 0;
+  font-family: var(--md-display);
+  font-size: clamp(25px, 2.5vw, 35px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+.md-franchise-brand-hero-lead {
+  max-width: 620px;
+  margin: 17px 0 0;
+  color: #dfd9d4;
+  font-size: 17px;
+  line-height: 1.65;
+}
+.md-franchise-brand-hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+  margin-top: 23px;
+}
+.md-franchise-brand-hero-tags > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.md-franchise-brand-hero-tags svg {
+  width: 17px;
+  height: 17px;
+  color: var(--md-yellow);
+}
+.md-franchise-brand-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+.md-franchise-brand-hero-actions .md-btn {
+  font-size: 13px;
+}
+.md-franchise-brand-hero-price {
+  border-top: 1px solid #ffffff25;
+  padding-top: 22px;
+  margin-top: 28px;
+}
+.md-franchise-brand-hero-price > span {
+  display: block;
+  color: #dfd9d4;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.md-franchise-brand-hero-price strong {
+  display: block;
+  margin-top: 7px;
+  color: var(--md-yellow);
+  font-family: var(--md-display);
+  font-size: 25px;
+  font-weight: 800;
+}
+.md-franchise-brand-hero-price p {
+  margin: 7px 0 0;
+  color: #c7bcb2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.md-franchise-brand-promo-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  justify-self: center;
+  padding: 13px;
+  border: 1px solid var(--md-line);
+  border-radius: 12px;
+  background: var(--md-paper);
+  color: var(--md-black);
+  transform: rotate(3deg);
+  box-shadow: 0 24px 75px #0006;
+}
+.md-franchise-brand-promo-logo {
+  display: grid;
+  place-items: center;
+  height: 190px;
+  padding: 10px 36px;
+}
+.md-franchise-brand-promo-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.md-franchise-brand-promo-food {
+  aspect-ratio: 1.14;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.md-franchise-brand-promo-food img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.md-franchise-brand-promo-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 10px 7px;
+}
+.md-franchise-brand-promo-caption > span {
+  font-family: var(--md-display);
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.md-franchise-brand-promo-caption > strong {
+  color: var(--md-red-deep);
+  font-family: var(--md-display);
+  font-size: 32px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.md-franchise-brand-promo-status {
+  position: absolute;
+  right: -14px;
+  top: 27px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  background: var(--md-yellow);
+  color: var(--md-black);
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 4px 15px #0002;
+  transform: rotate(-3deg);
+}
+.md-franchise-brand-promo-status svg {
+  width: 16px;
+  height: 16px;
+}
+.md-franchise-brand-fit {
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+.md-franchise-brand-fit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.md-franchise-brand-fit-grid article {
+  position: relative;
+  padding: 34px;
+  border: 1px solid var(--ff-border);
+  border-top: 4px solid var(--md-yellow);
+  background: var(--ff-surface);
+  border-radius: 6px;
+}
+.md-franchise-brand-fit-grid article > svg {
+  width: 31px;
+  height: 31px;
+  color: var(--ff-highlight);
+  margin-bottom: 25px;
+}
+.md-franchise-brand-eyebrow {
+  color: var(--ff-muted);
+  margin: 0 0 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.md-franchise-brand-fit-grid h3 {
+  margin: 0 0 16px;
+  font-family: var(--md-display);
+  font-size: 31px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.md-franchise-brand-fit-grid article > p:not(.md-franchise-brand-eyebrow) {
+  margin: 12px 0 0;
+  color: var(--ff-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.md-franchise-brand-proposal {
+  background: var(--ff-surface);
+  border-block: 1px solid var(--ff-border);
+  padding: 72px 0;
+}
+.md-franchise-brand-proposal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 72px;
+}
+.md-franchise-brand-proposal .md-section-heading {
+  margin: 0;
+}
+.md-franchise-brand-proposal .md-section-heading > p:not(.md-kicker) {
+  color: var(--ff-muted);
+  font-size: 17px;
+  line-height: 1.7;
+  margin: 20px 0;
+}
+.md-franchise-brand-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ff-foreground);
+}
+.md-franchise-brand-text-link:hover {
+  color: var(--ff-highlight);
+}
+.md-franchise-brand-text-link svg {
+  width: 17px;
+  height: 17px;
+}
+.md-franchise-brand-scope {
+  padding: 30px;
+  border: 1px solid var(--ff-border);
+  border-radius: 6px;
+  background: var(--ff-background);
+}
+.md-franchise-brand-scope > svg {
+  width: 28px;
+  height: 28px;
+  color: var(--ff-highlight);
+}
+.md-franchise-brand-scope h3 {
+  font-family: var(--md-display);
+  font-size: 25px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 18px 0;
+}
+.md-franchise-brand-scope ul {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.md-franchise-brand-scope li {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.md-franchise-brand-scope li svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ff-success);
+}
+.md-franchise-brand-scope > p {
+  margin: 24px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--ff-border);
+  font-size: 12px;
+  color: var(--ff-muted);
+  line-height: 1.6;
+}
+.md-franchise-brand-next {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 48px;
+  padding-top: 72px;
+  padding-bottom: 80px;
+}
+.md-franchise-brand-next h2 {
+  font-family: var(--md-display);
+  font-size: clamp(32px, 3.6vw, 50px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  margin: 18px 0;
+}
+.md-franchise-brand-next p:not(.md-kicker) {
+  max-width: 780px;
+  color: var(--ff-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.md-franchise-brand-next-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.md-franchise-brand-next-actions .md-btn {
+  white-space: nowrap;
+}
+.md-franchise-brand-selection-summary {
+  display: flex;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ff-border);
+}
+.md-franchise-brand-selection-summary svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  flex-shrink: 0;
+  color: var(--ff-success);
+}
+.md-franchise-brand-selection-summary strong {
+  color: var(--ff-foreground);
+}
+.md-franchise-brand-not-found {
+  min-height: 60vh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: 80px 24px;
+  text-align: center;
+}
+.md-franchise-brand-not-found h1 {
+  font-family: var(--md-display);
+  font-size: clamp(36px, 5vw, 64px);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin: 15px 0;
+}
+.md-franchise-brand-not-found > p:not(.md-kicker) {
+  color: var(--ff-muted);
+  margin-bottom: 28px;
+}
+
+@media (max-width: 1100px) {
+  .md-franchise-brands-grid {
+    gap: 18px;
+  }
+  .md-franchise-brand-card-body {
+    padding: 18px;
+  }
+  .md-franchise-brand-card-identity {
+    gap: 10px;
+  }
+  .md-franchise-brand-card-logo {
+    width: 68px;
+    height: 60px;
+  }
+  .md-franchise-brand-card-actions {
+    flex-wrap: wrap;
+  }
+  .md-franchise-brand-card-actions > * {
+    flex: 1 1 auto;
+  }
+  .md-franchise-brand-hero-grid {
+    gap: 42px;
+  }
+  .md-franchise-brand-promo-logo {
+    height: 155px;
+  }
+  .md-franchise-brands-toolbar {
+    align-items: flex-start;
+  }
+  .md-franchise-brands-search {
+    width: 260px;
+  }
+}
+@media (max-width: 900px) {
+  .md-franchise-brands-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 26px;
+  }
+  .md-franchise-brands-pricing {
+    max-width: none;
+  }
+  .md-franchise-brands-pricing strong {
+    display: inline-block;
+    font-size: 30px;
+  }
+  .md-franchise-brands-pricing p {
+    display: inline-block;
+    margin-left: 14px;
+  }
+  .md-franchise-brands-toolbar {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .md-franchise-brands-search {
+    width: 100%;
+  }
+  .md-franchise-brands-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+  .md-franchise-brand-card-body {
+    padding: 22px;
+  }
+  .md-franchise-brand-card-actions {
+    flex-wrap: nowrap;
+  }
+  .md-franchise-brand-card-actions > * {
+    flex: initial;
+  }
+  .md-franchise-brand-hero-grid {
+    gap: 32px;
+  }
+  .md-franchise-brand-hero h1 {
+    font-size: clamp(42px, 6.5vw, 65px);
+  }
+  .md-franchise-brand-hero h2 {
+    font-size: 26px;
+  }
+  .md-franchise-brand-hero-lead {
+    font-size: 15px;
+  }
+  .md-franchise-brand-proposal-grid {
+    gap: 34px;
+  }
+  .md-franchise-brand-fit-grid article {
+    padding: 26px;
+  }
+  .md-franchise-brand-next {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .md-franchise-brand-next-actions {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 26px;
+  }
+}
+@media (max-width: 650px) {
+  .md-franchise-brands-inner,
+  .md-franchise-brand-hero-inner {
+    width: calc(100% - 32px);
+  }
+  .md-franchise-brands-section {
+    padding: 52px 0;
+  }
+  .md-franchise-brands-heading {
+    margin-bottom: 27px;
+  }
+  .md-franchise-brands-heading .md-section-heading h2 {
+    font-size: 38px;
+  }
+  .md-franchise-brands-heading .md-section-heading > p:last-child {
+    font-size: 16px;
+  }
+  .md-franchise-brands-filters {
+    gap: 7px;
+  }
+  .md-franchise-brands-filters button {
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+  .md-franchise-brands-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+  .md-franchise-brand-card-photo {
+    aspect-ratio: 1.9;
+  }
+  .md-franchise-brand-card-body {
+    padding: 21px;
+  }
+  .md-franchise-brand-card-logo {
+    width: 84px;
+    height: 70px;
+  }
+  .md-franchise-brand-card-identity h3 {
+    font-size: 28px;
+  }
+  .md-franchise-brand-card-body h4 {
+    font-size: 24px;
+  }
+  .md-franchise-brand-card-actions {
+    gap: 14px;
+  }
+  .md-franchise-brand-explore {
+    font-size: 13px;
+  }
+  .md-franchise-brand-toggle {
+    padding: 10px 14px;
+  }
+  .md-franchise-brands-note {
+    font-size: 11px;
+  }
+  .md-franchise-brand-hero-inner {
+    padding: 18px 0 45px;
+  }
+  .md-franchise-brand-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 38px;
+    padding-top: 22px;
+  }
+  .md-franchise-brand-hero h1 {
+    font-size: clamp(45px, 12vw, 68px);
+  }
+  .md-franchise-brand-hero h2 {
+    font-size: 28px;
+  }
+  .md-franchise-brand-hero-copy > .md-kicker {
+    font-size: 10px;
+  }
+  .md-franchise-brand-hero-actions .md-btn {
+    justify-content: center;
+    width: 100%;
+  }
+  .md-franchise-brand-promo-card {
+    width: 87%;
+    max-width: 365px;
+    transform: rotate(2deg);
+    padding: 10px;
+  }
+  .md-franchise-brand-promo-logo {
+    height: 125px;
+    padding: 5px 24px;
+  }
+  .md-franchise-brand-promo-food {
+    aspect-ratio: 1.4;
+  }
+  .md-franchise-brand-promo-caption {
+    padding: 14px 6px 6px;
+  }
+  .md-franchise-brand-promo-caption > span {
+    font-size: 13px;
+  }
+  .md-franchise-brand-fit {
+    padding-top: 52px;
+    padding-bottom: 52px;
+  }
+  .md-franchise-brand-fit-grid,
+  .md-franchise-brand-proposal-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .md-franchise-brand-fit-grid article {
+    padding: 26px;
+  }
+  .md-franchise-brand-fit-grid h3 {
+    font-size: 30px;
+  }
+  .md-franchise-brand-proposal {
+    padding: 52px 0;
+  }
+  .md-franchise-brand-scope {
+    padding: 25px;
+  }
+  .md-franchise-brand-next {
+    padding-top: 48px;
+    padding-bottom: 60px;
+  }
+  .md-franchise-brand-next h2 {
+    font-size: 35px;
+  }
+  .md-franchise-brand-next-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .md-franchise-brand-next-actions .md-btn {
+    width: 100%;
+    white-space: normal;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .md-franchise-brand-card,
+  .md-franchise-brand-card-photo > img,
+  .md-franchise-brand-toggle,
+  .md-franchise-brands-filters button {
+    transition: none;
+  }
+  .md-franchise-brand-card:hover .md-franchise-brand-card-photo > img {
+    transform: none;
+  }
+}
