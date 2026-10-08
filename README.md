@@ -117,11 +117,15 @@ npm run lint
 
 ## Franchise recruitment
 
-The public `/franchise` offer presents one all-inclusive franchise launch range and describes the brands, location/territory, equipment, technology setup, opening supplies/packaging and ongoing support. All ongoing charges are **POA**; no monthly prices, percentages, per-order charges, individual territory prices or launch-price components are exposed by the page or its public API.
+The public `/franchise` hub offers two routes: the **full MealDeck concept** or **one, two, three or more individual brands**. The full concept retains its approved all-inclusive launch range, with the location/territory, equipment, technology setup, opening supplies and support described within that option. Individual brands and custom combinations are **POA**, as are all ongoing charges. No monthly prices, percentages, per-order charges, individual territory prices or launch-price components are exposed by the page or its public API.
+
+Each of the 15 approved shared brands has its own promotional page at `/franchise/{brandId}`, including `/franchise/skorch`. Applicants can select and remove brands, compare the full package without losing their custom shortlist during the visit, and identify an existing kitchen or a new food business. Café1 remains exclusive to St Albans and is not offered as a standalone franchise in this catalogue; legacy ordering brands do not enter recruitment automatically.
+
+Package selections use shareable `package=brands&brands=skorch,loadd` or `package=full` query parameters. Canonical SEO URLs stay specific to the hub or brand page, and supported campaign tags follow the applicant into the enquiry. The intake validates `answers.franchisePackage` and `answers.selectedBrandIds` before forwarding them to the configured service. A selected-brand enquiry requires at least one approved, unique ID; full MealDeck carries an empty individual-brand list. All existing territory protections still apply. See [brand recruitment integration notes](docs/franchise-brand-recruitment.md).
 
 The private commercial brief and integration notes are in [docs/franchise-offer.md](docs/franchise-offer.md). They cover the revised channel fees, card-processing-first calculation, delivered-cost supply pricing and accounts/admin package. This document is for internal quotation and implementation planning; it is not imported into the website or an active billing configuration.
 
 Set `OMNIQORA_PUBLIC_API_URL` on the server to the complete deployed franchise intake endpoint. Missing configuration produces an honest service-unavailable response; the site never confirms an application that has not been accepted by the service.
 
-Run the franchise regressions with `bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts`. The verification workflow also builds the site and checks the franchise implementation with ESLint.
+Run the franchise regressions with `bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts`. The verification workflow also builds the site and checks the franchise implementation with ESLint.
 

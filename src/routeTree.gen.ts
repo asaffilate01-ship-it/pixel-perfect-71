@@ -19,6 +19,7 @@ import { Route as TrackRouteImport } from './routes/track'
 import { Route as ApiFranchiseRouteImport } from './routes/api.franchise'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FranchiseBrandIdRoute = FranchiseBrandIdRouteImport.update({
+  id: '/franchise_/$brandId',
+  path: '/franchise/$brandId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/track': typeof TrackRoute
   '/api/franchise': typeof ApiFranchiseRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/track': typeof TrackRoute
   '/api/franchise': typeof ApiFranchiseRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog': typeof BlogIndexRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/track': typeof TrackRoute
   '/api/franchise': typeof ApiFranchiseRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/franchise_/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/api/franchise'
     | '/blog/$slug'
+    | '/franchise/$brandId'
     | '/blog/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/api/franchise'
     | '/blog/$slug'
+    | '/franchise/$brandId'
     | '/blog'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/api/franchise'
     | '/blog/$slug'
+    | '/franchise_/$brandId'
     | '/blog/'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   TrackRoute: typeof TrackRoute
   ApiFranchiseRoute: typeof ApiFranchiseRoute
   BlogSlugRoute: typeof BlogSlugRoute
+  FranchiseBrandIdRoute: typeof FranchiseBrandIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
 }
 
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/franchise_/$brandId': {
+      id: '/franchise_/$brandId'
+      path: '/franchise/$brandId'
+      fullPath: '/franchise/$brandId'
+      preLoaderRoute: typeof FranchiseBrandIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrackRoute: TrackRoute,
   ApiFranchiseRoute: ApiFranchiseRoute,
   BlogSlugRoute: BlogSlugRoute,
+  FranchiseBrandIdRoute: FranchiseBrandIdRoute,
   BlogIndexRoute: BlogIndexRoute,
 }
 export const routeTree = rootRouteImport

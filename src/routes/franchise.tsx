@@ -23,6 +23,20 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { seo } from "@/lib/seo";
 import { marketingBrands } from "@/lib/marketing-brands";
+import { BrandFranchiseCatalogue } from "@/components/franchise/brand-catalogue";
+import {
+  CustomFranchiseSetup,
+  FranchiseBrandSelection,
+  FranchisePackageChooser,
+  FranchiseSelectionBar,
+} from "@/components/franchise/package-chooser";
+import {
+  franchiseSearchForSelection,
+  franchiseSelectionFromSearch,
+  parseFranchiseSearch,
+  type FranchiseBrandId,
+  type FranchisePackage,
+} from "@/lib/franchise-selection";
 import {
   DEFAULT_PROGRAMME,
   OFFER_VERSION,
@@ -34,11 +48,12 @@ import {
 } from "@/lib/franchise-offer";
 
 export const Route = createFileRoute("/franchise")({
+  validateSearch: parseFranchiseSearch,
   head: () =>
     seo({
-      title: "MealDeck Franchise — Turnkey Kitchen, " + marketingBrands.length + " Shared Brands",
+      title: "MealDeck Franchises — Full Concept or Individual Brands",
       description:
-        "Launch a turnkey MealDeck kitchen with shared brands, a location and territory, equipment, opening stock, technology including Haccora, training and business support.",
+        "Explore the full MealDeck franchise or choose one, two, three or more individual brands. Options for existing kitchens and new food businesses, with tailored proposals.",
       path: "/franchise",
       keywords:
         "MealDeck franchise, turnkey kitchen franchise, cloud kitchen franchise UK, multi brand food franchise, takeaway franchise, kitchen franchise England Wales",
@@ -61,6 +76,7 @@ type EnquiryForm = {
   area: string;
   operatorModel: OperatorModel;
   existingKitchen: boolean;
+  startingPoint: "" | "existing_kitchen" | "new_entrant";
   existingBusiness: string;
   operatingExperience: string;
   capital: string;
@@ -181,57 +197,161 @@ const responsibilities = [
   {
     area: "Brands & kitchen standards",
     mealdeck: "Provide shared brand access, recipes, training and operating procedures.",
-    operator: "Prepare good quality food, pack accurately and dispatch orders on time to the agreed brand standards.",
+    operator:
+      "Prepare good quality food, pack accurately and dispatch orders on time to the agreed brand standards.",
   },
   {
     area: "Premises & territory",
-    mealdeck: "Source and assess the location, agree the territory, hold the lease and pay the premises deposit.",
-    operator: "Pay the agreed rent, utilities, rates and site operating costs. You do not pay the premises deposit.",
+    mealdeck:
+      "Source and assess the location, agree the territory, hold the lease and pay the premises deposit.",
+    operator:
+      "Pay the agreed rent, utilities, rates and site operating costs. You do not pay the premises deposit.",
   },
   {
     area: "Equipment",
-    mealdeck: "Supply the equipment listed in the setup package and agree installation arrangements.",
-    operator: "Fund the agreed upfront investment and fulfil the agreed equipment care, maintenance and replacement duties.",
+    mealdeck:
+      "Supply the equipment listed in the setup package and agree installation arrangements.",
+    operator:
+      "Fund the agreed upfront investment and fulfil the agreed equipment care, maintenance and replacement duties.",
   },
   {
     area: "Technology",
-    mealdeck: "Provide the agreed hardware, platform setup, channel configuration, Haccora access and ongoing support.",
-    operator: "Use the systems, pay the agreed ongoing fees and fund third-party card, marketplace and delivery charges.",
+    mealdeck:
+      "Provide the agreed hardware, platform setup, channel configuration, Haccora access and ongoing support.",
+    operator:
+      "Use the systems, pay the agreed ongoing fees and fund third-party card, marketplace and delivery charges.",
   },
   {
     area: "Supplies & packaging",
-    mealdeck: "Provide opening stock and packaging, and coordinate ongoing procurement and replenishment.",
+    mealdeck:
+      "Provide opening stock and packaging, and coordinate ongoing procurement and replenishment.",
     operator: "Pay for stock, order replenishment and manage storage, stock control and wastage.",
   },
   {
     area: "Compliance",
-    mealdeck: "Provide Haccora food safety tools and the agreed allergen, training and compliance support.",
-    operator: "Carry out the required daily checks, keep records and meet the responsibilities of the kitchen operator.",
+    mealdeck:
+      "Provide Haccora food safety tools and the agreed allergen, training and compliance support.",
+    operator:
+      "Carry out the required daily checks, keep records and meet the responsibilities of the kitchen operator.",
   },
   {
     area: "People & daily operations",
     mealdeck: "Provide training, operational guidance and ongoing franchise support.",
-    operator: "Recruit, employ, schedule, supervise and pay the kitchen team; run daily kitchen operations.",
+    operator:
+      "Recruit, employ, schedule, supervise and pay the kitchen team; run daily kitchen operations.",
   },
   {
     area: "Marketing",
     mealdeck: "Manage the agreed brand, launch, local and national marketing programme.",
-    operator: "Pay the marketing contribution, fund any agreed additional local spend and support local activity.",
+    operator:
+      "Pay the marketing contribution, fund any agreed additional local spend and support local activity.",
   },
   {
     area: "Accountancy & administration",
-    mealdeck: "Manage agreed bookkeeping, reconciliations, reporting, payroll, routine menu administration and approved bill and salary payment administration.",
-    operator: "Provide accurate records, timesheets and approvals, and fund bills, wages and taxes. You remain the employer and responsible for the business's liabilities.",
+    mealdeck:
+      "Manage agreed bookkeeping, reconciliations, reporting, payroll, routine menu administration and approved bill and salary payment administration.",
+    operator:
+      "Provide accurate records, timesheets and approvals, and fund bills, wages and taxes. You remain the employer and responsible for the business's liabilities.",
   },
 ];
 
 const launchSteps = [
-  ["01", "Tell us about your plans", "Share your preferred area, operating experience and investment budget."],
-  ["02", "Assess the fit", "We review the operator, proposed location, territory and equipment needs."],
-  ["03", "Agree the full package", "Review your all-inclusive launch quote, monthly service scope, territory and agreements."],
-  ["04", "Equip, train & configure", "Prepare the kitchen, supply equipment and stock, train the team and test the agreed channels."],
-  ["05", "Complete launch checks", "Confirm operating readiness, delivery arrangements and your launch marketing plan."],
-  ["06", "Open & operate", "You manage the team and daily service, with MealDeck's ongoing supply and business support."],
+  [
+    "01",
+    "Tell us about your plans",
+    "Share your preferred area, operating experience and investment budget.",
+  ],
+  [
+    "02",
+    "Assess the fit",
+    "We review the operator, proposed location, territory and equipment needs.",
+  ],
+  [
+    "03",
+    "Agree the full package",
+    "Review your all-inclusive launch quote, monthly service scope, territory and agreements.",
+  ],
+  [
+    "04",
+    "Equip, train & configure",
+    "Prepare the kitchen, supply equipment and stock, train the team and test the agreed channels.",
+  ],
+  [
+    "05",
+    "Complete launch checks",
+    "Confirm operating readiness, delivery arrangements and your launch marketing plan.",
+  ],
+  [
+    "06",
+    "Open & operate",
+    "You manage the team and daily service, with MealDeck's ongoing supply and business support.",
+  ],
+];
+
+const customLaunchSteps = [
+  [
+    "01",
+    "Choose your brands",
+    "Select one brand or build a combination and tell us your preferred area.",
+  ],
+  [
+    "02",
+    "Assess your starting point",
+    "Review the location, existing equipment, capacity and training requirements.",
+  ],
+  [
+    "03",
+    "Review your proposal",
+    "Confirm the selected brand rights, itemised setup, service scope and ongoing fees.",
+  ],
+  [
+    "04",
+    "Prepare your kitchen",
+    "Complete the agreed premises, equipment and supply arrangements.",
+  ],
+  [
+    "05",
+    "Train & check readiness",
+    "Prepare the team, configure the agreed systems and complete launch checks.",
+  ],
+  [
+    "06",
+    "Launch your selected brands",
+    "Operate to the brand standards with the support set out in your agreement.",
+  ],
+];
+
+const brandFaqs = [
+  {
+    question: "Can I franchise just one brand, or choose two or three?",
+    answer:
+      "Yes. Enquire about any one of the shared brands, choose two or three, or build a larger selection. Each brand has its own promotional page and can be added to your enquiry. Your proposed combination is assessed for kitchen suitability, location, training and supply before it is agreed.",
+  },
+  {
+    question: "How is a brand selection different from full MealDeck?",
+    answer:
+      "Full MealDeck is the complete multi-brand concept with its agreed launch package and territory terms. An individual or multi-brand proposal covers the brands and services listed in that proposal. Selecting every brand does not automatically grant the full MealDeck identity, lease arrangements or territory rights.",
+  },
+  {
+    question: "Can I use equipment I already own?",
+    answer:
+      "Suitable existing equipment can be considered for an individual-brand or custom package. We assess condition, capacity, food safety and the requirements of your selected menus. The quote identifies any additional equipment, setup and training needed. Franchise rights and ongoing services are quoted separately from the equipment you already provide.",
+  },
+  {
+    question: "Can I apply if I am new to running a food business?",
+    answer:
+      "Yes. Choose the new food business option in the enquiry and share your proposed location, budget and any relevant experience. We discuss premises, equipment, practical training, staffing and your launch plan. You will need to assess the full setup costs and working capital and take responsibility for operating the business.",
+  },
+  {
+    question: "What does an individual-brand franchise cost?",
+    answer:
+      "Individual brands and custom combinations are price on application. Your written proposal sets out the brand rights, setup and training, equipment requirements, opening costs and ongoing charges. Existing equipment and shared kitchen requirements are assessed as part of that proposal; there is no automatic price per added brand.",
+  },
+  {
+    question: "Does selecting a brand reserve a territory or guarantee launch?",
+    answer:
+      "No. This is an enquiry. Applicant, location, brand combination and kitchen readiness need approval, and existing territory commitments apply. Any brand rights, location restrictions and support are confirmed in the agreement. No orders, sales or profit level is guaranteed.",
+  },
 ];
 
 const faqs = [
@@ -320,7 +440,11 @@ const territoryNameGroups = [
   ["Battersea", "Battersea / Clapham / Vauxhall", "Battersea / Nine Elms"],
   ["Bow / Mile End", "Mile End / Bow"],
   ["Acton / North Acton", "Acton / Park Royal", "Acton / North Acton / Park Royal"],
-  ["Borough / west Bermondsey", "Elephant & Castle / Bermondsey / Southwark", "Borough / Bermondsey"],
+  [
+    "Borough / west Bermondsey",
+    "Elephant & Castle / Bermondsey / Southwark",
+    "Borough / Bermondsey",
+  ],
   ["Deptford / New Cross", "Lewisham / Deptford / Greenwich West"],
   ["Alperton / Wembley", "Alperton / Wembley / Park Royal"],
   ["Stratford / Leyton", "Leyton / Stratford"],
@@ -340,9 +464,11 @@ function territoryNameKey(value: string) {
 }
 
 function canRegisterInterest(territory: Territory) {
-  return territory.status === "available" ||
+  return (
+    territory.status === "available" ||
     territory.status === "planned" ||
-    territory.status === "coming_soon";
+    territory.status === "coming_soon"
+  );
 }
 
 function territoryStatus(territory: Territory, confirmed: boolean) {
@@ -355,12 +481,23 @@ function territoryStatus(territory: Territory, confirmed: boolean) {
 
 function FranchisePage() {
   const programme = DEFAULT_PROGRAMME;
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { franchisePackage, selectedBrandIds } = franchiseSelectionFromSearch(search);
+  const isCustom = franchisePackage === "selected_brands";
+  const customDraftRef = useRef<readonly FranchiseBrandId[]>(selectedBrandIds);
+  const campaignRef = useRef<Record<string, string>>({});
   const [liveTerritories, setLiveTerritories] = useState<Territory[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [reloadCount, setReloadCount] = useState(0);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Territory | null>(null);
-  const [submitted, setSubmitted] = useState<{ reference: string | null } | null>(null);
+  const [submitted, setSubmitted] = useState<{
+    reference: string | null;
+    packageName: string;
+    brandNames: string[];
+    startingPoint: string;
+  } | null>(null);
   const [sending, setSending] = useState(false);
   const [formError, setFormError] = useState("");
   const errorRef = useRef<HTMLParagraphElement>(null);
@@ -372,6 +509,7 @@ function FranchisePage() {
     area: "",
     operatorModel: "owner_operator",
     existingKitchen: false,
+    startingPoint: "",
     existingBusiness: "",
     operatingExperience: "",
     capital: "",
@@ -382,6 +520,50 @@ function FranchisePage() {
     consent: false,
     website: "",
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+      const value = params.get(key);
+      if (value) campaignRef.current[key] = value.slice(0, 200);
+    }
+  }, []);
+
+  function changeSelection(nextPackage: FranchisePackage, ids: readonly FranchiseBrandId[]) {
+    if (sending || submitted) return Promise.resolve();
+    setForm((value) => ({ ...value, setupPackageAcknowledged: false }));
+    if (isCustom) customDraftRef.current = selectedBrandIds;
+    if (nextPackage === "selected_brands") customDraftRef.current = ids;
+    const nextSearch = franchiseSearchForSelection(nextPackage, ids, search);
+    return navigate({
+      search: nextSearch,
+      replace: true,
+      resetScroll: false,
+      hash: window.location.hash.slice(1),
+      hashScrollIntoView: false,
+    });
+  }
+
+  function choosePackage(nextPackage: FranchisePackage) {
+    if (sending || submitted) return;
+    void changeSelection(
+      nextPackage,
+      nextPackage === "selected_brands" ? customDraftRef.current : [],
+    ).then(() => {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document
+        .getElementById(nextPackage === "full_mealdeck" ? "full-package" : "brands")
+        ?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    });
+  }
+
+  function toggleBrand(id: FranchiseBrandId) {
+    const currentIds = isCustom ? selectedBrandIds : customDraftRef.current;
+    const ids = currentIds.includes(id)
+      ? currentIds.filter((brandId) => brandId !== id)
+      : [...currentIds, id];
+    void changeSelection("selected_brands", ids);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -432,7 +614,8 @@ function FranchisePage() {
     const byCode = new Map<string, Territory>();
     for (const territory of PLANNED_TERRITORIES) {
       // Live records take precedence even when unavailable or using a different code.
-      if (liveCodes.has(territory.code) || liveNames.has(territoryNameKey(territory.name))) continue;
+      if (liveCodes.has(territory.code) || liveNames.has(territoryNameKey(territory.name)))
+        continue;
       byCode.set(territory.code, territory);
     }
     for (const territory of liveTerritories) byCode.set(territory.code, territory);
@@ -490,8 +673,20 @@ function FranchisePage() {
       setFormError("Please add your name, email address and preferred area.");
       return;
     }
+    if (isCustom && selectedBrandIds.length === 0) {
+      setFormError(
+        "Choose at least one brand for your enquiry, or select the full MealDeck franchise.",
+      );
+      return;
+    }
+    if (!form.startingPoint) {
+      setFormError("Tell us whether you already have a kitchen or are starting a new business.");
+      return;
+    }
     if (!form.setupPackageAcknowledged || !form.operatorResponsibilitiesAcknowledged) {
-      setFormError("Please confirm that you understand the launch package and operator responsibilities.");
+      setFormError(
+        "Please confirm that you understand the launch package and operator responsibilities.",
+      );
       return;
     }
     if (!form.consent) {
@@ -510,7 +705,7 @@ function FranchisePage() {
     const timeout = window.setTimeout(() => controller.abort(), 30000);
     try {
       const params = new URLSearchParams(window.location.search);
-      const utm: Record<string, string> = {};
+      const utm: Record<string, string> = { ...campaignRef.current };
       for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
         const value = params.get(key);
         if (value) utm[key] = value.slice(0, 200);
@@ -523,7 +718,7 @@ function FranchisePage() {
         body: JSON.stringify({
           programmeKey: programme.key,
           // Planned areas are enquiries only. Only live, sellable inventory carries a territory code.
-          territoryCode: selectedIsConfirmed ? selected?.code ?? null : null,
+          territoryCode: selectedIsConfirmed ? (selected?.code ?? null) : null,
           name: form.name.trim(),
           email: form.email.trim(),
           phone: form.phone.trim() || null,
@@ -538,6 +733,8 @@ function FranchisePage() {
           utm,
           answers: {
             offerVersion: OFFER_VERSION,
+            franchisePackage,
+            selectedBrandIds,
             operatingExperience: form.operatingExperience.trim(),
             setupPackageAcknowledged: form.setupPackageAcknowledged,
             operatorResponsibilitiesAcknowledged: form.operatorResponsibilitiesAcknowledged,
@@ -556,9 +753,17 @@ function FranchisePage() {
         throw new Error(message);
       }
       setSubmitted({
-        reference: typeof payload.reference === "string" && payload.reference.trim()
-          ? payload.reference
-          : null,
+        packageName: isCustom ? "Individual brand package" : "Full MealDeck franchise",
+        brandNames: isCustom
+          ? marketingBrands
+              .filter((brand) => selectedBrandIds.includes(brand.id as FranchiseBrandId))
+              .map((brand) => brand.name)
+          : [],
+        startingPoint: form.existingKitchen ? "Existing kitchen" : "New food business",
+        reference:
+          typeof payload.reference === "string" && payload.reference.trim()
+            ? payload.reference
+            : null,
       });
     } catch (error) {
       setFormError(
@@ -604,45 +809,81 @@ function FranchisePage() {
   ];
 
   return (
-    <div className="md-marketing-shell md-franchise-page">
-      <SiteHeader context={<a href="#apply" className="md-btn md-btn-yellow">Register interest <ArrowRight aria-hidden="true" /></a>} />
+    <div
+      className={
+        "md-marketing-shell md-franchise-page" +
+        (isCustom && selectedBrandIds.length > 0 && !submitted ? " md-franchise-has-bundle" : "")
+      }
+    >
+      <SiteHeader
+        context={
+          <a href="#apply" className="md-btn md-btn-yellow">
+            Register interest <ArrowRight aria-hidden="true" />
+          </a>
+        }
+      />
       <main id="franchise-main">
         <section className="md-franchise-hero" aria-labelledby="franchise-title">
           <div className="md-franchise-hero-grid">
             <div>
-              <p className="md-kicker">Turnkey MealDeck franchise · England & Wales</p>
-              <h1 id="franchise-title">{marketingBrands.length} brands.<br /><span>Your kitchen.</span></h1>
+              <p className="md-kicker">Food franchises · England & Wales</p>
+              <h1 id="franchise-title">
+                Your kitchen.
+                <br />
+                <span>Your choice.</span>
+              </h1>
               <p className="md-franchise-hero-lead">
-                A turnkey multi-brand kitchen franchise with {marketingBrands.length} shared brands, menus,
-                an agreed location and territory, equipment, opening stock and packaging.
-                We bring the technology, marketing, accounts and support together.
-                You focus on good food, timely dispatch and running your kitchen team.
+                Open the full MealDeck concept or choose one, two, three or more brands for your own
+                package. Explore your next food business, whether you already operate a kitchen or
+                are starting fresh.
               </p>
               <div className="md-franchise-hero-actions">
-                <a href="#apply" className="md-btn md-btn-yellow">Register your interest <ArrowRight aria-hidden="true" /></a>
-                <a href="#fees" className="md-btn md-btn-outline-light">Explore the package</a>
+                <a href="#brands" className="md-btn md-btn-yellow">
+                  Explore the brands <ArrowRight aria-hidden="true" />
+                </a>
+                <a href="#franchise-options" className="md-btn md-btn-outline-light">
+                  Compare franchise options
+                </a>
               </div>
               <div className="md-franchise-proof">
-                <span><Check aria-hidden="true" /> {marketingBrands.length} shared brands</span>
-                <span><Check aria-hidden="true" /> Turnkey setup & support</span>
-                <span><Check aria-hidden="true" /> You operate the kitchen</span>
+                <span>
+                  <Check aria-hidden="true" /> {marketingBrands.length} shared brands
+                </span>
+                <span>
+                  <Check aria-hidden="true" /> Single or multiple brands
+                </span>
+                <span>
+                  <Check aria-hidden="true" /> Existing kitchens & new entrants
+                </span>
               </div>
               <p className="md-franchise-hero-cost">
-                <strong>All-inclusive launch package {money(programme.upfrontFeeMin)}–{money(programme.upfrontFeeMax)}</strong>
-                <span>Depending on location and territory. Excludes VAT where applicable. Your written quote confirms the complete launch inventory and scope. Ongoing services are price on application; your kitchen funds its running costs and working capital.</span>
+                <strong>Start with a brand. Build your own combination.</strong>
+                <span>
+                  Individual franchises and custom packages are price on application. Explore the
+                  full MealDeck launch package below, with all costs and inclusions confirmed in
+                  your written proposal.
+                </span>
               </p>
             </div>
             <div className="md-franchise-stack" aria-hidden="true">
-              <div className="md-franchise-card-back md-franchise-card-back-left"><span>♥</span></div>
-              <div className="md-franchise-card-back md-franchise-card-back-right"><span>♣</span></div>
+              <div className="md-franchise-card-back md-franchise-card-back-left">
+                <span>♥</span>
+              </div>
+              <div className="md-franchise-card-back md-franchise-card-back-right">
+                <span>♣</span>
+              </div>
               <div className="md-franchise-deal-card">
-                <span className="md-franchise-card-corner">M<small>♦</small></span>
-                <span className="md-franchise-card-count">{marketingBrands.length}</span>
-                <strong>BRANDS</strong>
+                <span className="md-franchise-card-corner">
+                  M<small>♦</small>
+                </span>
+                <span className="md-franchise-card-count md-franchise-card-choice">1, 2, 3+</span>
+                <strong>BUILD YOUR DECK</strong>
                 <span className="md-franchise-card-rule" />
-                <b>ONE KITCHEN.</b>
+                <b>YOUR BRANDS.</b>
                 <small>YOUR NEXT CHAPTER.</small>
-                <span className="md-franchise-card-corner md-franchise-card-corner-bottom">M<small>♦</small></span>
+                <span className="md-franchise-card-corner md-franchise-card-corner-bottom">
+                  M<small>♦</small>
+                </span>
               </div>
             </div>
           </div>
@@ -650,193 +891,269 @@ function FranchisePage() {
 
         <nav className="md-franchise-section-nav" aria-label="Franchise information">
           <div>
-            <a href="#model">The offer</a>
-            <a href="#brands">The brands</a>
-            <a href="#technology">Technology</a>
-            <a href="#fees">Launch & monthly support</a>
-            <a href="#responsibilities">Your role</a>
+            <a href="#franchise-options">Franchise options</a>
+            <a href="#brands">Choose brands</a>
+            <a href={isCustom ? "#custom-package" : "#full-package"}>Setup & support</a>
+            {!isCustom && <a href="#fees">Full MealDeck investment</a>}
+            {!isCustom && <a href="#responsibilities">Your role</a>}
             <a href="#territories">Territories</a>
             <a href="#franchise-faqs">FAQs</a>
           </div>
         </nav>
 
-        <section id="model" className="md-section md-section-cream">
-          <div className="md-section-heading">
-            <p className="md-kicker md-kicker-red">The turnkey MealDeck offer</p>
-            <h2>Your kitchen.<br />Our brands, systems & support.</h2>
-            <p>
-              The shared brands, location and territory, equipment, opening supplies and launch training form
-              your turnkey setup. MealDeck, Dishbee, Dishbee Buzz and Haccora connect your kitchen with ongoing
-              marketing, compliance support, accounts and administration. You run the kitchen and team
-              and fund the agreed operating costs.
-            </p>
-          </div>
-          <div className="md-franchise-benefit-grid">
-            {provision.map(({ icon: Icon, title, copy }) => (
-              <article key={title}>
-                <Icon aria-hidden="true" />
-                <h3>{title}</h3>
-                <p>{copy}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+        <FranchisePackageChooser
+          franchisePackage={franchisePackage}
+          selectedBrandIds={selectedBrandIds}
+          onChoose={choosePackage}
+          disabled={sending || submitted !== null}
+        />
+        <BrandFranchiseCatalogue
+          selectedBrandIds={selectedBrandIds}
+          onToggle={toggleBrand}
+          disabled={sending || submitted !== null}
+        />
 
-        <section id="brands" className="md-section md-section-cream md-franchise-divider">
-          <div className="md-section-heading">
-            <p className="md-kicker md-kicker-red">The shared MealDeck portfolio</p>
-            <h2>{marketingBrands.length} brands.<br />One kitchen business.</h2>
-            <p>
-              Access all {marketingBrands.length} shared MealDeck concepts through the franchise programme.
-              Your location's launch menu is agreed around equipment, training, supply and readiness.
-            </p>
-          </div>
-          <div className="md-franchise-brand-grid">
-            {marketingBrands.map((brand) => (
-              <article className="md-franchise-brand" key={brand.id}>
-                <div className="md-franchise-brand-art">
-                  <span className="md-franchise-brand-corner" aria-hidden="true">{brand.rank}<small>{brand.suit}</small></span>
-                  <img src={brand.logo} alt="" loading="lazy" width={160} height={100} />
-                </div>
-                <div><h3>{brand.name}</h3><p>{brand.category}</p></div>
-              </article>
-            ))}
-          </div>
-          <p className="md-franchise-note">
-            This is the shared brand portfolio. Customer ordering menus reflect each kitchen's actual availability.
-            Café1 is exclusive to St Albans.
-          </p>
-        </section>
+        {isCustom ? (
+          <CustomFranchiseSetup />
+        ) : (
+          <section id="full-package" className="md-section md-section-cream">
+            <div className="md-section-heading">
+              <p className="md-kicker md-kicker-red">The full MealDeck franchise</p>
+              <h2>
+                Your kitchen.
+                <br />
+                Our brands, systems & support.
+              </h2>
+              <p>
+                The shared brands, location and territory, equipment, opening supplies and launch
+                training form your turnkey setup. MealDeck, Dishbee, Dishbee Buzz and Haccora
+                connect your kitchen with ongoing marketing, compliance support, accounts and
+                administration. You run the kitchen and team and fund the agreed operating costs.
+              </p>
+            </div>
+            <div className="md-franchise-benefit-grid">
+              {provision.map(({ icon: Icon, title, copy }) => (
+                <article key={title}>
+                  <Icon aria-hidden="true" />
+                  <h3>{title}</h3>
+                  <p>{copy}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
-        <section id="technology" className="md-section md-section-black">
-          <div className="md-section-heading md-section-heading-light">
-            <p className="md-kicker">Your technology package</p>
-            <h2>From the first order<br />to the final handover.</h2>
-            <p>
-              MealDeck, Dishbee integration, Dishbee Buzz and Haccora. KDS and printers. Website, app,
-              WhatsApp and phone workflows. Delivery, supported aggregator connections and AI tools.
-              Your complete technology package is scoped and configured for your kitchen.
-            </p>
-          </div>
-          <div className="md-franchise-tech-grid">
-            {technology.map(({ icon: Icon, title, copy, label }) => (
-              <article key={title}>
-                <div className="md-franchise-tech-top"><Icon aria-hidden="true" /><span>{label}</span></div>
-                <h3>{title}</h3>
-                <p>{copy}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="fees" className="md-section md-section-cream">
-          <div className="md-section-heading">
-            <p className="md-kicker md-kicker-red">Your investment</p>
-            <h2>One all-inclusive launch package.</h2>
-            <p>
-              Franchise entry, brand and territory rights, the agreed equipment and hardware, opening stock,
-              branded packaging, technology setup and training, brought together in a single launch quote.
-              We confirm the complete inventory and setup scope for your approved location before you commit.
-            </p>
-          </div>
-          <div className="md-franchise-setup-grid">
-            <article>
-              <span className="md-franchise-number">01</span>
-              <h3>Franchise entry</h3>
-              <strong>Brand & territory rights</strong>
-              <p>Your agreed brand portfolio and territory rights, location onboarding, technology setup and launch training, confirmed for your approved kitchen.</p>
-            </article>
-            <article>
-              <span className="md-franchise-number">02</span>
-              <h3>Kitchen equipment</h3>
-              <strong>Supplied by MealDeck</strong>
-              <p>We supply the equipment your kitchen needs to run, including any specified KDS screens and printers, itemised in full. The schedule confirms installation, ownership, warranty and maintenance.</p>
-            </article>
-            <article>
-              <span className="md-franchise-number">03</span>
-              <h3>Opening supplies & packaging</h3>
-              <strong>Ready to trade</strong>
-              <p>Your agreed opening food, ingredients, consumables and branded packaging are supplied as part of the launch inventory.</p>
-            </article>
-          </div>
-          <div className="md-franchise-investment-note">
-            <h3>A complete setup, agreed for your location.</h3>
-            <p>
-              MealDeck arranges the premises, holds the lease and pays the premises deposit.
-              You do not pay the premises deposit. We coordinate the agreed setup, equipment,
-              systems and training around your kitchen's launch plan.
-            </p>
-            <p>
-              Your kitchen funds rent, staffing, utilities, ongoing stock and packaging, other operating bills
-              and working capital. The written quote confirms the launch inclusions and upfront payment terms.
-            </p>
-          </div>
-
-          <div className="md-franchise-fee-heading">
-            <p className="md-kicker md-kicker-red">Once you are trading</p>
-            <h3>Monthly support. Pricing on application.</h3>
-            <p>
-              Keep your attention on food and service. Our ongoing package brings together the support below,
-              with the royalty, technology, marketing, accounts and administration terms agreed in your written quote.
-              All ongoing fees are POA.
-            </p>
-          </div>
-          <div className="md-franchise-table-wrap" tabIndex={0} role="region" aria-label="Ongoing MealDeck services">
-            <table className="md-franchise-table md-franchise-services">
-              <caption>Ongoing services within your agreed monthly package</caption>
-              <thead><tr><th scope="col">Service</th><th scope="col">What we provide</th></tr></thead>
-              <tbody>
-                {serviceRows.map((service) => (
-                  <tr key={service.name}><th scope="row">{service.name}</th><td>{service.copy}</td></tr>
+        {!isCustom && (
+          <>
+            <section id="technology" className="md-section md-section-black">
+              <div className="md-section-heading md-section-heading-light">
+                <p className="md-kicker">Your technology package</p>
+                <h2>
+                  From the first order
+                  <br />
+                  to the final handover.
+                </h2>
+                <p>
+                  MealDeck, Dishbee integration, Dishbee Buzz and Haccora. KDS and printers.
+                  Website, app, WhatsApp and phone workflows. Delivery, supported aggregator
+                  connections and AI tools. Your complete technology package is scoped and
+                  configured for your kitchen.
+                </p>
+              </div>
+              <div className="md-franchise-tech-grid">
+                {technology.map(({ icon: Icon, title, copy, label }) => (
+                  <article key={title}>
+                    <div className="md-franchise-tech-top">
+                      <Icon aria-hidden="true" />
+                      <span>{label}</span>
+                    </div>
+                    <h3>{title}</h3>
+                    <p>{copy}</p>
+                  </article>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="md-franchise-note">
-            Your service schedule confirms the included work, approvals and service limits.
-            Card processing fees charged by third parties, marketplace commissions and actual courier delivery charges
-            follow the relevant provider terms. Bill and salary payment administration uses your kitchen's funds;
-            you remain responsible for your staff and business liabilities.
-          </p>
-        </section>
+              </div>
+            </section>
 
-        <section id="responsibilities" className="md-section md-section-cream md-franchise-divider">
-          <div className="md-section-heading">
-            <p className="md-kicker md-kicker-red">How we work together</p>
-            <h2>A clear role on both sides.</h2>
-            <p>
-              Prepare good quality food, send orders out on time and lead your team.
-              MealDeck coordinates the agreed setup and business support around your kitchen.
-            </p>
-          </div>
-          <div className="md-franchise-table-wrap" tabIndex={0} role="region" aria-label="MealDeck and franchise operator responsibilities">
-            <table className="md-franchise-table md-franchise-responsibilities">
-              <caption>What MealDeck provides and what the franchisee operates or funds</caption>
-              <thead><tr><th scope="col">Area</th><th scope="col">MealDeck provides</th><th scope="col">You operate or fund</th></tr></thead>
-              <tbody>
-                {responsibilities.map((row) => (
-                  <tr key={row.area}><th scope="row">{row.area}</th><td>{row.mealdeck}</td><td>{row.operator}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="md-franchise-model-grid">
-            <article><span>01</span><h3>Owner-operator</h3><p>Lead your kitchen directly, hire the team and manage service, stock and local execution with MealDeck support.</p></article>
-            <article><span>02</span><h3>Multi-unit operator</h3><p>Operate several approved kitchens through your own management teams. Each location has its own agreed territory, setup and operating responsibilities.</p></article>
-          </div>
-        </section>
+            <section id="fees" className="md-section md-section-cream">
+              <div className="md-section-heading">
+                <p className="md-kicker md-kicker-red">Full MealDeck investment</p>
+                <h2>One all-inclusive launch package.</h2>
+                <p className="md-franchise-full-price">
+                  {money(programme.upfrontFeeMin)}–{money(programme.upfrontFeeMax)}
+                </p>
+                <p>
+                  Franchise entry, brand and territory rights, the agreed equipment and hardware,
+                  opening stock, branded packaging, technology setup and training, brought together
+                  in a single launch quote. We confirm the complete inventory and setup scope for
+                  your approved location before you commit. The range depends on location and
+                  territory and excludes VAT where applicable. Ongoing charges are POA.
+                </p>
+              </div>
+              <div className="md-franchise-setup-grid">
+                <article>
+                  <span className="md-franchise-number">01</span>
+                  <h3>Franchise entry</h3>
+                  <strong>Brand & territory rights</strong>
+                  <p>
+                    Your agreed brand portfolio and territory rights, location onboarding,
+                    technology setup and launch training, confirmed for your approved kitchen.
+                  </p>
+                </article>
+                <article>
+                  <span className="md-franchise-number">02</span>
+                  <h3>Kitchen equipment</h3>
+                  <strong>Supplied by MealDeck</strong>
+                  <p>
+                    We supply the equipment your kitchen needs to run, including any specified KDS
+                    screens and printers, itemised in full. The schedule confirms installation,
+                    ownership, warranty and maintenance.
+                  </p>
+                </article>
+                <article>
+                  <span className="md-franchise-number">03</span>
+                  <h3>Opening supplies & packaging</h3>
+                  <strong>Ready to trade</strong>
+                  <p>
+                    Your agreed opening food, ingredients, consumables and branded packaging are
+                    supplied as part of the launch inventory.
+                  </p>
+                </article>
+              </div>
+              <div className="md-franchise-investment-note">
+                <h3>A complete setup, agreed for your location.</h3>
+                <p>
+                  MealDeck arranges the premises, holds the lease and pays the premises deposit. You
+                  do not pay the premises deposit. We coordinate the agreed setup, equipment,
+                  systems and training around your kitchen's launch plan.
+                </p>
+                <p>
+                  Your kitchen funds rent, staffing, utilities, ongoing stock and packaging, other
+                  operating bills and working capital. The written quote confirms the launch
+                  inclusions and upfront payment terms.
+                </p>
+              </div>
+
+              <div className="md-franchise-fee-heading">
+                <p className="md-kicker md-kicker-red">Once you are trading</p>
+                <h3>Monthly support. Pricing on application.</h3>
+                <p>
+                  Keep your attention on food and service. Our ongoing package brings together the
+                  support below, with the royalty, technology, marketing, accounts and
+                  administration terms agreed in your written quote. All ongoing fees are POA.
+                </p>
+              </div>
+              <div
+                className="md-franchise-table-wrap"
+                tabIndex={0}
+                role="region"
+                aria-label="Ongoing MealDeck services"
+              >
+                <table className="md-franchise-table md-franchise-services">
+                  <caption>Ongoing services within your agreed monthly package</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Service</th>
+                      <th scope="col">What we provide</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {serviceRows.map((service) => (
+                      <tr key={service.name}>
+                        <th scope="row">{service.name}</th>
+                        <td>{service.copy}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="md-franchise-note">
+                Your service schedule confirms the included work, approvals and service limits. Card
+                processing fees charged by third parties, marketplace commissions and actual courier
+                delivery charges follow the relevant provider terms. Bill and salary payment
+                administration uses your kitchen's funds; you remain responsible for your staff and
+                business liabilities.
+              </p>
+            </section>
+
+            <section
+              id="responsibilities"
+              className="md-section md-section-cream md-franchise-divider"
+            >
+              <div className="md-section-heading">
+                <p className="md-kicker md-kicker-red">How we work together</p>
+                <h2>A clear role on both sides.</h2>
+                <p>
+                  Prepare good quality food, send orders out on time and lead your team. MealDeck
+                  coordinates the agreed setup and business support around your kitchen.
+                </p>
+              </div>
+              <div
+                className="md-franchise-table-wrap"
+                tabIndex={0}
+                role="region"
+                aria-label="MealDeck and franchise operator responsibilities"
+              >
+                <table className="md-franchise-table md-franchise-responsibilities">
+                  <caption>
+                    What MealDeck provides and what the franchisee operates or funds
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Area</th>
+                      <th scope="col">MealDeck provides</th>
+                      <th scope="col">You operate or fund</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {responsibilities.map((row) => (
+                      <tr key={row.area}>
+                        <th scope="row">{row.area}</th>
+                        <td>{row.mealdeck}</td>
+                        <td>{row.operator}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="md-franchise-model-grid">
+                <article>
+                  <span>01</span>
+                  <h3>Owner-operator</h3>
+                  <p>
+                    Lead your kitchen directly, hire the team and manage service, stock and local
+                    execution with MealDeck support.
+                  </p>
+                </article>
+                <article>
+                  <span>02</span>
+                  <h3>Multi-unit operator</h3>
+                  <p>
+                    Operate several approved kitchens through your own management teams. Each
+                    location has its own agreed territory, setup and operating responsibilities.
+                  </p>
+                </article>
+              </div>
+            </section>
+          </>
+        )}
 
         <section className="md-section md-section-black">
           <div className="md-section-heading md-section-heading-light">
             <p className="md-kicker">Existing allocations</p>
             <h2>These locations are taken.</h2>
-            <p>The areas below are already allocated and are not being offered for sale through this enquiry form.</p>
+            <p>
+              The areas below are already allocated and are not being offered for sale through this
+              enquiry form.
+            </p>
           </div>
           <div className="md-franchise-market-grid">
             {TAKEN_MARKETS.map((market) => (
               <article key={market.name} className="md-franchise-market">
                 <MapPin aria-hidden="true" />
-                <div><h3>{market.name}</h3><strong>Taken</strong></div>
+                <div>
+                  <h3>{market.name}</h3>
+                  <strong>Taken</strong>
+                </div>
               </article>
             ))}
           </div>
@@ -845,10 +1162,15 @@ function FranchisePage() {
         <section id="territories" className="md-section md-section-cream">
           <div className="md-section-heading">
             <p className="md-kicker md-kicker-red">Find your area</p>
-            <h2>Where would you<br />like to operate?</h2>
+            <h2>
+              Where would you
+              <br />
+              like to operate?
+            </h2>
             <p>
               Explore the London rollout areas or tell us your preferred town in England or Wales.
-              Planned areas are open for registering interest; a location, boundary and fee are confirmed after assessment.
+              Planned areas are open for registering interest; a location, boundary and fee are
+              confirmed after assessment.
             </p>
           </div>
           <div className="md-franchise-availability" role="status" aria-live="polite">
@@ -860,7 +1182,11 @@ function FranchisePage() {
                   ? "Live availability could not be checked. Areas shown below are for registering interest only."
                   : "Live territory information checked. An enquiry does not reserve a territory or take a payment."}
             </p>
-            {loadState === "error" && <button type="button" onClick={() => setReloadCount((value) => value + 1)}>Check again</button>}
+            {loadState === "error" && (
+              <button type="button" onClick={() => setReloadCount((value) => value + 1)}>
+                Check again
+              </button>
+            )}
           </div>
           <div className="md-franchise-territory-grid">
             {londonCards.map((territory) => {
@@ -869,15 +1195,26 @@ function FranchisePage() {
                 <article key={territory.code} className="md-franchise-territory-card">
                   <div className="md-franchise-territory-top">
                     <span>{territory.region}</span>
-                    <span className={"md-franchise-status" + (confirmed ? " is-available" : "")}>{territoryStatus(territory, confirmed)}</span>
+                    <span className={"md-franchise-status" + (confirmed ? " is-available" : "")}>
+                      {territoryStatus(territory, confirmed)}
+                    </span>
                   </div>
                   <h3>{territory.name}</h3>
                   {territory.note && <p>{territory.note}</p>}
                   <div className="md-franchise-territory-fee">
                     <span>Location, boundary and launch package confirmed after assessment.</span>
                   </div>
-                  <button type="button" className="md-franchise-territory-action" disabled={!canRegisterInterest(territory)} onClick={() => choose(territory)}>
-                    {canRegisterInterest(territory) ? (confirmed ? "Enquire about this area" : "Register interest") : territoryStatus(territory, false)}
+                  <button
+                    type="button"
+                    className="md-franchise-territory-action"
+                    disabled={!canRegisterInterest(territory)}
+                    onClick={() => choose(territory)}
+                  >
+                    {canRegisterInterest(territory)
+                      ? confirmed
+                        ? "Enquire about this area"
+                        : "Register interest"
+                      : territoryStatus(territory, false)}
                     {canRegisterInterest(territory) && <ArrowRight aria-hidden="true" />}
                     <span className="md-franchise-sr-only"> in {territory.name}</span>
                   </button>
@@ -895,10 +1232,27 @@ function FranchisePage() {
             <label htmlFor="franchise-territory-search">Search the territory list</label>
             <div className="md-franchise-search-field">
               <Search aria-hidden="true" />
-              <input id="franchise-territory-search" type="search" maxLength={120} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="e.g. Manchester, Cardiff, Bristol…" aria-describedby="franchise-search-status" />
+              <input
+                id="franchise-territory-search"
+                type="search"
+                maxLength={120}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="e.g. Manchester, Cardiff, Bristol…"
+                aria-describedby="franchise-search-status"
+              />
             </div>
-            <p id="franchise-search-status" className="md-franchise-search-status" role="status" aria-live="polite">
-              {query.trim() ? (matches.length ? matches.length + " matching areas shown." : "No matching area found. Add your preferred town in the enquiry form.") : "Search by place, region or territory code."}
+            <p
+              id="franchise-search-status"
+              className="md-franchise-search-status"
+              role="status"
+              aria-live="polite"
+            >
+              {query.trim()
+                ? matches.length
+                  ? matches.length + " matching areas shown."
+                  : "No matching area found. Add your preferred town in the enquiry form."
+                : "Search by place, region or territory code."}
             </p>
             {query.trim() && matches.length > 0 && (
               <ul className="md-franchise-search-results">
@@ -906,25 +1260,48 @@ function FranchisePage() {
                   const confirmed = confirmedCodes.has(territory.code);
                   return (
                     <li key={territory.code}>
-                      <button type="button" disabled={!canRegisterInterest(territory)} onClick={() => choose(territory)}>
-                        <span><strong>{territory.name}</strong><small>{territory.region} · {territory.code}</small></span>
-                        <span><b>{territoryStatus(territory, confirmed)}</b></span>
+                      <button
+                        type="button"
+                        disabled={!canRegisterInterest(territory)}
+                        onClick={() => choose(territory)}
+                      >
+                        <span>
+                          <strong>{territory.name}</strong>
+                          <small>
+                            {territory.region} · {territory.code}
+                          </small>
+                        </span>
+                        <span>
+                          <b>{territoryStatus(territory, confirmed)}</b>
+                        </span>
                       </button>
                     </li>
                   );
                 })}
               </ul>
             )}
-            <a href="#apply" className="md-franchise-text-link">Tell us another area <ArrowRight aria-hidden="true" /></a>
+            <a href="#apply" className="md-franchise-text-link">
+              Tell us another area <ArrowRight aria-hidden="true" />
+            </a>
           </div>
           <div className="md-franchise-model-grid md-franchise-territory-explainer">
             <article>
-              <span>YOUR CORE</span><h3>A defined territory.</h3>
-              <p>We assess practical delivery routes, local households and neighbouring kitchens. The final mapped core and any exclusivity conditions are set out in your agreement.</p>
+              <span>{isCustom ? "YOUR LOCATION" : "YOUR CORE"}</span>
+              <h3>{isCustom ? "A location assessment." : "A defined territory."}</h3>
+              <p>
+                {isCustom
+                  ? "We assess your chosen brands against the proposed location and existing territory commitments. Brand rights and any geographical restrictions are confirmed in your individual agreement."
+                  : "We assess practical delivery routes, local households and neighbouring kitchens. The final mapped core and any exclusivity conditions are set out in your agreement."}
+              </p>
             </article>
             <article>
-              <span>YOUR DELIVERY EDGE</span><h3>Practical local coverage.</h3>
-              <p>Shared delivery edges and overflow depend on journey time, kitchen capacity and service quality. They are agreed separately from your protected core.</p>
+              <span>YOUR DELIVERY EDGE</span>
+              <h3>Practical local coverage.</h3>
+              <p>
+                {isCustom
+                  ? "Delivery coverage and permitted channels depend on the location, selected brands and kitchen capacity. Choosing brands here does not reserve an area or promise exclusivity."
+                  : "Shared delivery edges and overflow depend on journey time, kitchen capacity and service quality. They are agreed separately from your protected core."}
+              </p>
             </article>
           </div>
         </section>
@@ -935,8 +1312,12 @@ function FranchisePage() {
             <h2>From enquiry to opening day.</h2>
           </div>
           <div className="md-franchise-step-grid">
-            {launchSteps.map(([number, title, copy]) => (
-              <article key={number}><span>{number}</span><h3>{title}</h3><p>{copy}</p></article>
+            {(isCustom ? customLaunchSteps : launchSteps).map(([number, title, copy]) => (
+              <article key={number}>
+                <span>{number}</span>
+                <h3>{title}</h3>
+                <p>{copy}</p>
+              </article>
             ))}
           </div>
         </section>
@@ -947,8 +1328,11 @@ function FranchisePage() {
             <h2>Your franchise questions.</h2>
           </div>
           <div className="md-franchise-faq-list">
-            {faqs.map((faq) => (
-              <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>
+            {[...brandFaqs, ...(isCustom ? [] : faqs)].map((faq) => (
+              <details key={faq.question}>
+                <summary>{faq.question}</summary>
+                <p>{faq.answer}</p>
+              </details>
             ))}
           </div>
         </section>
@@ -957,92 +1341,405 @@ function FranchisePage() {
           <div className="md-franchise-apply-grid">
             <div>
               <p className="md-kicker md-kicker-red">Register your interest</p>
-              <h2>Let's discuss<br />your kitchen.</h2>
+              <h2>
+                Let's discuss
+                <br />
+                your kitchen.
+              </h2>
               <p>
-                Tell us where you want to operate and the experience you bring.
-                The team will review your enquiry, assess the area and discuss the full package.
+                Tell us which franchise you want to explore, where you want to operate and your
+                starting point. The team will assess your plans and discuss a proposal for your
+                selected package.
               </p>
               <div className="md-franchise-fee-box">
-                <span>Your turnkey kitchen</span>
-                <strong>One complete launch package.</strong>
-                <p>Brands, location and territory, equipment, opening supplies and packaging, technology setup and training, with a full agreed inventory.</p>
+                <span>{isCustom ? "Your chosen brands" : "The full MealDeck franchise"}</span>
+                <strong>
+                  {isCustom ? "A tailored brand package. POA." : "One complete launch package."}
+                </strong>
+                <p>
+                  {isCustom
+                    ? "Your quote will cover the selected brand rights, suitable existing equipment, any additional setup, training and the agreed services."
+                    : "Brands, location and territory, equipment, opening supplies and packaging, technology setup and training, with a full agreed inventory."}
+                </p>
                 <small>
-                  Your quoted launch package is payable upfront. MealDeck holds the lease and pays the premises deposit.
-                  You fund the kitchen's rent, staffing, running costs and working capital.
+                  {isCustom
+                    ? "Equipment and premises requirements are assessed for your kitchen. The proposal confirms what is included, what you already provide and all additional costs before you commit."
+                    : "Your quoted launch package is payable upfront. MealDeck holds the lease and pays the premises deposit. You fund the kitchen's rent, staffing, running costs and working capital."}
                 </small>
                 <small>
-                  Ongoing technology, marketing, franchise support, accounts and administration: POA.
-                  We will discuss your service scope and confirm all charges in writing.
+                  Ongoing fees are POA. Your business funds its staffing, running costs and working
+                  capital. We confirm the service scope and charges in writing.
                 </small>
               </div>
               {selected && (
                 <div className="md-franchise-selection" role="status">
                   <MapPin aria-hidden="true" />
-                  <p><strong>{selected.name}</strong><span>{selectedIsConfirmed ? "Selected for an availability enquiry." : "Selected for registering interest. Location and availability need confirmation."}</span></p>
+                  <p>
+                    <strong>{selected.name}</strong>
+                    <span>
+                      {selectedIsConfirmed
+                        ? "Selected for an availability enquiry."
+                        : "Selected for registering interest. Location and availability need confirmation."}
+                    </span>
+                  </p>
                 </div>
               )}
-              <p className="md-franchise-application-note">This is an enquiry. It does not reserve an area, create a franchise agreement or take a payment.</p>
+              <p className="md-franchise-application-note">
+                This is an enquiry. It does not reserve an area, create a franchise agreement or
+                take a payment.
+              </p>
             </div>
 
             {submitted ? (
               <div ref={successRef} tabIndex={-1} className="md-franchise-success" role="status">
                 <Sparkles aria-hidden="true" />
                 <h3>Enquiry received.</h3>
-                <p>Thank you. Your enquiry has been recorded for the MealDeck team to review and follow up.</p>
-                {submitted.reference && <p className="md-franchise-reference">Your reference: <strong>{submitted.reference}</strong></p>}
-                <p>Your preferred area remains subject to assessment and availability.</p>
+                <p>
+                  Thank you. Your enquiry has been recorded for the MealDeck team to review and
+                  follow up.
+                </p>
+                {submitted.reference && (
+                  <p className="md-franchise-reference">
+                    Your reference: <strong>{submitted.reference}</strong>
+                  </p>
+                )}
+                <p>
+                  <strong>{submitted.packageName}</strong>
+                  {submitted.brandNames.length > 0 && (
+                    <>
+                      <br />
+                      {submitted.brandNames.join(", ")}
+                    </>
+                  )}
+                </p>
+                <p>{submitted.startingPoint}</p>
+                <p>
+                  Your preferred area and selected brands remain subject to assessment and
+                  availability.
+                </p>
               </div>
             ) : (
               <form className="md-franchise-form" onSubmit={submit} aria-busy={sending}>
-                <p className="md-franchise-form-intro">Required fields are marked with an asterisk (*).</p>
-                {formError && <p ref={errorRef} tabIndex={-1} id="franchise-form-error" className="md-franchise-form-error" role="alert">{formError}</p>}
+                <p className="md-franchise-form-intro">
+                  Required fields are marked with an asterisk (*).
+                </p>
+                {formError && (
+                  <p
+                    ref={errorRef}
+                    tabIndex={-1}
+                    id="franchise-form-error"
+                    className="md-franchise-form-error"
+                    role="alert"
+                  >
+                    {formError}
+                  </p>
+                )}
                 <fieldset disabled={sending} className="md-franchise-form-fields">
                   <legend className="md-franchise-sr-only">Your franchise enquiry</legend>
-                  <label className="md-franchise-honeypot" aria-hidden="true">Website
-                    <input name="website" tabIndex={-1} autoComplete="off" maxLength={200} value={form.website} onChange={(event) => setForm((value) => ({ ...value, website: event.target.value }))} />
+                  <label className="md-franchise-honeypot" aria-hidden="true">
+                    Website
+                    <input
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      maxLength={200}
+                      value={form.website}
+                      onChange={(event) =>
+                        setForm((value) => ({ ...value, website: event.target.value }))
+                      }
+                    />
                   </label>
-                  <label htmlFor="franchise-name"><span>Full name *</span><input id="franchise-name" name="name" required autoComplete="name" maxLength={120} value={form.name} onChange={(event) => setForm((value) => ({ ...value, name: event.target.value }))} /></label>
-                  <div className="md-franchise-form-pair">
-                    <label htmlFor="franchise-email"><span>Email *</span><input id="franchise-email" name="email" required type="email" autoComplete="email" maxLength={254} value={form.email} onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))} /></label>
-                    <label htmlFor="franchise-phone"><span>Phone (optional)</span><input id="franchise-phone" name="phone" type="tel" autoComplete="tel" maxLength={40} value={form.phone} onChange={(event) => setForm((value) => ({ ...value, phone: event.target.value }))} /></label>
+                  <div className="md-franchise-enquiry-choice">
+                    <label htmlFor="franchise-package">
+                      <span>Which franchise would you like to explore? *</span>
+                      <select
+                        id="franchise-package"
+                        name="franchisePackage"
+                        value={franchisePackage}
+                        onChange={(event) => {
+                          void changeSelection(
+                            event.target.value as FranchisePackage,
+                            event.target.value === "selected_brands" ? customDraftRef.current : [],
+                          );
+                        }}
+                      >
+                        <option value="full_mealdeck">Full MealDeck franchise</option>
+                        <option value="selected_brands">Choose individual brands</option>
+                      </select>
+                    </label>
+                    {isCustom ? (
+                      <FranchiseBrandSelection
+                        selectedBrandIds={selectedBrandIds}
+                        onRemove={toggleBrand}
+                        disabled={sending}
+                      />
+                    ) : (
+                      <p className="md-franchise-form-small">
+                        The complete MealDeck concept with the agreed shared portfolio and launch
+                        package.
+                      </p>
+                    )}
                   </div>
-                  <label htmlFor="franchise-area"><span>Preferred town or territory *</span><input id="franchise-area" name="preferredArea" required maxLength={160} value={form.area} onChange={(event) => { setSelected(null); setForm((value) => ({ ...value, area: event.target.value })); }} placeholder="e.g. Southall, Leeds, Bristol" /></label>
-                  <label htmlFor="franchise-operator-model">
-                    <span>How will you operate? *</span>
-                    <select id="franchise-operator-model" name="operatorModel" required value={form.operatorModel} onChange={(event) => setForm((value) => ({ ...value, operatorModel: event.target.value as OperatorModel }))}>
-                      <option value="owner_operator">Owner-operator — one kitchen</option>
-                      <option value="multi_unit_operator">Multi-unit operator — several kitchens</option>
+                  <label htmlFor="franchise-starting-point">
+                    <span>Your starting point *</span>
+                    <select
+                      id="franchise-starting-point"
+                      name="startingPoint"
+                      required
+                      value={form.startingPoint}
+                      onChange={(event) =>
+                        setForm((value) => ({
+                          ...value,
+                          startingPoint: event.target.value as EnquiryForm["startingPoint"],
+                          existingKitchen: event.target.value === "existing_kitchen",
+                        }))
+                      }
+                    >
+                      <option value="">Select your starting point</option>
+                      <option value="existing_kitchen">
+                        I already operate or have access to a kitchen
+                      </option>
+                      <option value="new_entrant">I am starting a new food business</option>
                     </select>
                   </label>
-                  <label htmlFor="franchise-business"><span>Existing business or kitchen (optional)</span><input id="franchise-business" name="existingBusiness" autoComplete="organization" maxLength={200} value={form.existingBusiness} onChange={(event) => setForm((value) => ({ ...value, existingBusiness: event.target.value }))} placeholder="Business name or current kitchen" /></label>
-                  <label htmlFor="franchise-experience"><span>Operating or management experience (optional)</span><textarea id="franchise-experience" name="operatingExperience" rows={4} maxLength={2000} value={form.operatingExperience} onChange={(event) => setForm((value) => ({ ...value, operatingExperience: event.target.value }))} placeholder="Tell us about your experience running a team or a food business." /></label>
+                  <label htmlFor="franchise-name">
+                    <span>Full name *</span>
+                    <input
+                      id="franchise-name"
+                      name="name"
+                      required
+                      autoComplete="name"
+                      maxLength={120}
+                      value={form.name}
+                      onChange={(event) =>
+                        setForm((value) => ({ ...value, name: event.target.value }))
+                      }
+                    />
+                  </label>
                   <div className="md-franchise-form-pair">
-                    <label htmlFor="franchise-capital"><span>Total investment budget, £ (optional)</span><input id="franchise-capital" name="capital" type="number" inputMode="decimal" min={0} max={10000000} step="0.01" value={form.capital} onChange={(event) => setForm((value) => ({ ...value, capital: event.target.value }))} aria-describedby="franchise-capital-help" /></label>
-                    <label htmlFor="franchise-timing"><span>Target launch timing (optional)</span><select id="franchise-timing" name="launchTiming" value={form.launchTiming} onChange={(event) => setForm((value) => ({ ...value, launchTiming: event.target.value }))}><option value="">Select timing</option><option>0–3 months</option><option>3–6 months</option><option>6–12 months</option><option>12+ months</option><option>Exploring my options</option></select></label>
+                    <label htmlFor="franchise-email">
+                      <span>Email *</span>
+                      <input
+                        id="franchise-email"
+                        name="email"
+                        required
+                        type="email"
+                        autoComplete="email"
+                        maxLength={254}
+                        value={form.email}
+                        onChange={(event) =>
+                          setForm((value) => ({ ...value, email: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label htmlFor="franchise-phone">
+                      <span>Phone (optional)</span>
+                      <input
+                        id="franchise-phone"
+                        name="phone"
+                        type="tel"
+                        autoComplete="tel"
+                        maxLength={40}
+                        value={form.phone}
+                        onChange={(event) =>
+                          setForm((value) => ({ ...value, phone: event.target.value }))
+                        }
+                      />
+                    </label>
                   </div>
-                  <p id="franchise-capital-help" className="md-franchise-form-small">Your budget should cover setup and working capital. This field is not a payment instruction.</p>
-                  <label className="md-franchise-check"><input name="existingKitchen" type="checkbox" checked={form.existingKitchen} onChange={(event) => setForm((value) => ({ ...value, existingKitchen: event.target.checked }))} /><span>I already have access to a commercial kitchen.</span></label>
-                  <label className="md-franchise-check"><input name="multiUnitInterest" type="checkbox" checked={form.multiUnit} onChange={(event) => setForm((value) => ({ ...value, multiUnit: event.target.checked }))} /><span>I would also like to discuss multiple territories.</span></label>
+                  <label htmlFor="franchise-area">
+                    <span>Preferred town or territory *</span>
+                    <input
+                      id="franchise-area"
+                      name="preferredArea"
+                      required
+                      maxLength={160}
+                      value={form.area}
+                      onChange={(event) => {
+                        setSelected(null);
+                        setForm((value) => ({ ...value, area: event.target.value }));
+                      }}
+                      placeholder="e.g. Southall, Leeds, Bristol"
+                    />
+                  </label>
+                  <label htmlFor="franchise-operator-model">
+                    <span>How will you operate? *</span>
+                    <select
+                      id="franchise-operator-model"
+                      name="operatorModel"
+                      required
+                      value={form.operatorModel}
+                      onChange={(event) =>
+                        setForm((value) => ({
+                          ...value,
+                          operatorModel: event.target.value as OperatorModel,
+                        }))
+                      }
+                    >
+                      <option value="owner_operator">Owner-operator — one kitchen</option>
+                      <option value="multi_unit_operator">
+                        Multi-unit operator — several kitchens
+                      </option>
+                    </select>
+                  </label>
+                  <label htmlFor="franchise-business">
+                    <span>Existing business or kitchen (optional)</span>
+                    <input
+                      id="franchise-business"
+                      name="existingBusiness"
+                      autoComplete="organization"
+                      maxLength={200}
+                      value={form.existingBusiness}
+                      onChange={(event) =>
+                        setForm((value) => ({ ...value, existingBusiness: event.target.value }))
+                      }
+                      placeholder="Business name or current kitchen"
+                    />
+                  </label>
+                  <label htmlFor="franchise-experience">
+                    <span>Operating or management experience (optional)</span>
+                    <textarea
+                      id="franchise-experience"
+                      name="operatingExperience"
+                      rows={4}
+                      maxLength={2000}
+                      value={form.operatingExperience}
+                      onChange={(event) =>
+                        setForm((value) => ({ ...value, operatingExperience: event.target.value }))
+                      }
+                      placeholder="Tell us about your experience running a team or a food business."
+                    />
+                  </label>
+                  <div className="md-franchise-form-pair">
+                    <label htmlFor="franchise-capital">
+                      <span>Total investment budget, £ (optional)</span>
+                      <input
+                        id="franchise-capital"
+                        name="capital"
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        max={10000000}
+                        step="0.01"
+                        value={form.capital}
+                        onChange={(event) =>
+                          setForm((value) => ({ ...value, capital: event.target.value }))
+                        }
+                        aria-describedby="franchise-capital-help"
+                      />
+                    </label>
+                    <label htmlFor="franchise-timing">
+                      <span>Target launch timing (optional)</span>
+                      <select
+                        id="franchise-timing"
+                        name="launchTiming"
+                        value={form.launchTiming}
+                        onChange={(event) =>
+                          setForm((value) => ({ ...value, launchTiming: event.target.value }))
+                        }
+                      >
+                        <option value="">Select timing</option>
+                        <option>0–3 months</option>
+                        <option>3–6 months</option>
+                        <option>6–12 months</option>
+                        <option>12+ months</option>
+                        <option>Exploring my options</option>
+                      </select>
+                    </label>
+                  </div>
+                  <p id="franchise-capital-help" className="md-franchise-form-small">
+                    Your budget should cover setup and working capital. This field is not a payment
+                    instruction.
+                  </p>
+                  <label className="md-franchise-check">
+                    <input
+                      name="multiUnitInterest"
+                      type="checkbox"
+                      checked={form.multiUnit}
+                      onChange={(event) =>
+                        setForm((value) => ({ ...value, multiUnit: event.target.checked }))
+                      }
+                    />
+                    <span>I would also like to discuss multiple territories.</span>
+                  </label>
                   <div className="md-franchise-acknowledgements">
                     <p>Please confirm *</p>
-                    <label className="md-franchise-check"><input name="setupPackageAcknowledged" type="checkbox" required checked={form.setupPackageAcknowledged} onChange={(event) => setForm((value) => ({ ...value, setupPackageAcknowledged: event.target.checked }))} /><span>I understand that the quoted launch package is payable upfront, ongoing services are price on application, and I need working capital for my kitchen's running costs.</span></label>
-                    <label className="md-franchise-check"><input name="operatorResponsibilitiesAcknowledged" type="checkbox" required checked={form.operatorResponsibilitiesAcknowledged} onChange={(event) => setForm((value) => ({ ...value, operatorResponsibilitiesAcknowledged: event.target.checked }))} /><span>I will be responsible for running and staffing the kitchen, rent, salaries, utilities, stock and packaging purchases, and the agreed franchise and service fees.</span></label>
+                    <label className="md-franchise-check">
+                      <input
+                        name="setupPackageAcknowledged"
+                        type="checkbox"
+                        required
+                        checked={form.setupPackageAcknowledged}
+                        onChange={(event) =>
+                          setForm((value) => ({
+                            ...value,
+                            setupPackageAcknowledged: event.target.checked,
+                          }))
+                        }
+                      />
+                      <span>
+                        {isCustom
+                          ? "I understand that my selected brands, equipment requirements, brand rights, launch costs and ongoing fees will be confirmed in a written proposal, and I need working capital for running costs."
+                          : "I understand that the quoted launch package is payable upfront, ongoing services are price on application, and I need working capital for my kitchen's running costs."}
+                      </span>
+                    </label>
+                    <label className="md-franchise-check">
+                      <input
+                        name="operatorResponsibilitiesAcknowledged"
+                        type="checkbox"
+                        required
+                        checked={form.operatorResponsibilitiesAcknowledged}
+                        onChange={(event) =>
+                          setForm((value) => ({
+                            ...value,
+                            operatorResponsibilitiesAcknowledged: event.target.checked,
+                          }))
+                        }
+                      />
+                      <span>
+                        I will be responsible for running and staffing the kitchen, rent, salaries,
+                        utilities, stock and packaging purchases, and the agreed franchise and
+                        service fees.
+                      </span>
+                    </label>
                   </div>
                   <div className="md-franchise-privacy">
                     <h3>How your enquiry is used</h3>
-                    <p>MealDeck uses these details to review your franchise enquiry and arrange follow-up. Access is limited to the team and service providers handling the application process. You can ask MealDeck to update your details or stop contact.</p>
+                    <p>
+                      MealDeck uses these details to review your franchise enquiry and arrange
+                      follow-up. Access is limited to the team and service providers handling the
+                      application process. You can ask MealDeck to update your details or stop
+                      contact.
+                    </p>
                   </div>
-                  <label className="md-franchise-check"><input name="consent" type="checkbox" required checked={form.consent} onChange={(event) => setForm((value) => ({ ...value, consent: event.target.checked }))} /><span>MealDeck may contact me about this enquiry and its follow-up. *</span></label>
+                  <label className="md-franchise-check">
+                    <input
+                      name="consent"
+                      type="checkbox"
+                      required
+                      checked={form.consent}
+                      onChange={(event) =>
+                        setForm((value) => ({ ...value, consent: event.target.checked }))
+                      }
+                    />
+                    <span>MealDeck may contact me about this enquiry and its follow-up. *</span>
+                  </label>
                 </fieldset>
-                <button type="submit" className="md-btn md-btn-red" disabled={sending}>{sending ? "Sending your enquiry…" : "Submit franchise enquiry"} {!sending && <ArrowRight aria-hidden="true" />}</button>
-                <p className="md-franchise-form-small">Your enquiry is confirmed only when the receipt message appears. No territory reservation or payment is made here.</p>
+                <button type="submit" className="md-btn md-btn-red" disabled={sending}>
+                  {sending ? "Sending your enquiry…" : "Submit franchise enquiry"}{" "}
+                  {!sending && <ArrowRight aria-hidden="true" />}
+                </button>
+                <p className="md-franchise-form-small">
+                  Your enquiry is confirmed only when the receipt message appears. No territory
+                  reservation or payment is made here.
+                </p>
               </form>
             )}
           </div>
         </section>
       </main>
       <SiteFooter />
+      {isCustom && !submitted && <FranchiseSelectionBar selectedBrandIds={selectedBrandIds} />}
     </div>
   );
 }
-

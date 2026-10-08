@@ -274,6 +274,19 @@ function LandingPage() {
           </div>
         </section>
 
+        <section className="md-section md-section-cream md-franchise-home-promo" aria-labelledby="home-franchise-title">
+          <div>
+            <p className="md-kicker md-kicker-red">Make it your business</p>
+            <h2 id="home-franchise-title">One brand.<br />A few favourites.<br />The whole MealDeck.</h2>
+            <p>Explore individual food franchises or the full MealDeck concept. Choose your brands and discuss a package for your existing kitchen or a new food business.</p>
+            <Link to="/franchise" className="md-btn md-btn-red">Explore franchise options <ArrowRight aria-hidden="true" /></Link>
+          </div>
+          <div className="md-franchise-home-routes">
+            <Link to="/franchise" search={{ package: "full" }}><span>THE FULL CONCEPT</span><strong>MealDeck, in full.</strong><p>The shared portfolio, setup and support.</p><ArrowRight aria-hidden="true" /></Link>
+            <Link to="/franchise" search={{ package: "brands" }} hash="brands"><span>YOUR OWN COMBINATION</span><strong>1, 2, 3… your choice.</strong><p>Explore each brand. Add your favourites.</p><ArrowRight aria-hidden="true" /></Link>
+          </div>
+        </section>
+
         <section className="md-final-cta">
           <Sparkles />
           <p className="md-kicker md-kicker-light">Different cuisines. One checkout.</p>

@@ -4,6 +4,7 @@ import {
   OFFER_VERSION,
   normaliseTerritories,
 } from "./franchise-offer";
+import { FRANCHISE_BRAND_IDS } from "./franchise-selection";
 
 const PROGRAMME_KEY = "mealdeck-england-wales";
 const SOURCE = "mealdeck-franchise-page";
@@ -66,12 +67,27 @@ const enquirySchema = z.object({
   website: singleLine(200).default("").refine((value) => value === ""),
   answers: z.object({
     offerVersion: z.literal(OFFER_VERSION),
+    franchisePackage: z.enum(["full_mealdeck", "selected_brands"]).default("full_mealdeck"),
+    selectedBrandIds: z.array(z.enum(FRANCHISE_BRAND_IDS))
+      .max(FRANCHISE_BRAND_IDS.length)
+      .default([]),
     operatingExperience: z.string().trim().max(2000)
       .refine((value) => !hasControls(value, true))
       .default(""),
     setupPackageAcknowledged: z.literal(true),
     operatorResponsibilitiesAcknowledged: z.literal(true),
     selectedTerritory: optionalText(160),
+  }).superRefine((answers, context) => {
+    const selected = answers.selectedBrandIds;
+    if (new Set(selected).size !== selected.length) {
+      context.addIssue({ code: "custom", path: ["selectedBrandIds"], message: "Choose each brand once." });
+    }
+    if (answers.franchisePackage === "selected_brands" && selected.length === 0) {
+      context.addIssue({ code: "custom", path: ["selectedBrandIds"], message: "Choose at least one brand." });
+    }
+    if (answers.franchisePackage === "full_mealdeck" && selected.length > 0) {
+      context.addIssue({ code: "custom", path: ["selectedBrandIds"], message: "Choose the full MealDeck package or individual brands." });
+    }
   }),
 });
 
@@ -357,7 +373,7 @@ export async function handleFranchiseRequest(
     const submittedVersion = isRecord(submittedAnswers) ? submittedAnswers["offerVersion"] : undefined;
     if (
       typeof submittedVersion === "string" &&
-      ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3"].includes(submittedVersion)
+      ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3", "2026-10-08-poa"].includes(submittedVersion)
     ) {
       throw new PublicError(409, STALE_OFFER);
     }

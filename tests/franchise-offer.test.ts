@@ -8,7 +8,7 @@ const available = (overrides: Record<string, unknown> = {}) => ({
 
 describe("public franchise offer", () => {
   test("publishes only the complete launch range and quote-required ongoing services", () => {
-    expect(OFFER_VERSION).toBe("2026-10-08-poa");
+    expect(OFFER_VERSION).toBe("2026-10-08-brand-choice");
     expect(FRANCHISE_FEE_VERSION).toBe("2026-10-06-r2");
     expect(OFFER_VERSION).not.toBe(FRANCHISE_FEE_VERSION);
     expect(DEFAULT_PROGRAMME).toEqual({
