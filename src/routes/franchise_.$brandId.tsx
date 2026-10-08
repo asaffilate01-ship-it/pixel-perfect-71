@@ -150,7 +150,12 @@ function BrandFranchisePage() {
                   <p>Your investment reflects the agreed brands, site, equipment and support.</p>
                 </div>
               </div>
-              <div className="md-franchise-brand-promo-card">
+              <div
+                className={
+                  "md-franchise-brand-promo-card" +
+                  (brand.artwork === "identity" ? " is-identity" : "")
+                }
+              >
                 <div className="md-franchise-brand-promo-logo">
                   <FranchiseBrandLogo key={brand.id} src={brand.logo} name={brand.name} />
                 </div>

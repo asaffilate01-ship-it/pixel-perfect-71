@@ -4,7 +4,7 @@ import tavoImage from "@/assets/brand-tavo.jpg";
 import loaddImage from "@/assets/brand-loadd.jpg";
 import sabzoraImage from "@/assets/brand-sabzora.jpg";
 import icovaImage from "@/assets/brand-icova.jpg";
-import vytaImage from "@/assets/brand-vyta.jpg";
+import vytaImage from "@/assets/premium-logos/vyta-premium.png";
 import moktlImage from "@/assets/brand-moktl.jpg";
 import tarkaImage from "@/assets/brand-tarka.jpg";
 import skorchImage from "@/assets/brand-skorchd.jpg";
@@ -18,6 +18,7 @@ import { FRANCHISE_BRAND_IDS, type FranchiseBrandId } from "@/lib/franchise-sele
 
 type FranchisePromotion = {
   image: string;
+  artwork?: "identity";
   collection: "food" | "drinks-desserts";
   tagline: string;
   pitch: string;
@@ -96,7 +97,9 @@ const promotions: Record<FranchiseBrandId, FranchisePromotion> = {
       "Explore the premises format, preparation requirements and training for an Icova launch.",
   },
   vyta: {
+    // The legacy brand-vyta food photo depicts salad; use the current juice identity.
     image: vytaImage,
+    artwork: "identity",
     collection: "drinks-desserts",
     tagline: "Put fresh juices in the spotlight.",
     pitch:
