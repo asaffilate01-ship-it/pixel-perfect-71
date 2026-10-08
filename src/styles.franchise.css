@@ -86,7 +86,7 @@
 .md-franchise-proof span { display: inline-flex; align-items: center; gap: 6px; }
 .md-franchise-proof svg { width: 17px; height: 17px; color: var(--md-yellow); flex: 0 0 auto; }
 .md-franchise-hero-cost { margin: 28px 0 0; padding-top: 20px; border-top: 1px solid oklch(0.99 0 0 / 0.2); line-height: 1.55; }
-.md-franchise-hero-cost strong { display: block; font-size: 16px; color: var(--md-yellow); }
+.md-franchise-hero-cost strong { display: block; font-size: clamp(18px, 1.7vw, 24px); color: var(--md-yellow); }
 .md-franchise-hero-cost > span { display: block; margin-top: 5px; max-width: 570px; font-size: 13px; color: oklch(0.84 0.008 80); }
 .md-franchise-stack { position: relative; min-height: 490px; display: grid; place-items: center; }
 .md-franchise-card-back {
@@ -188,6 +188,9 @@
 .md-franchise-table td:nth-child(2) { width: 29%; }
 .md-franchise-table td strong { color: var(--ff-foreground); font-weight: 700; }
 .md-franchise-table tbody tr:last-child > * { border-bottom: 0; }
+.md-franchise-services { min-width: 0; }
+.md-franchise-services tbody th { width: 31%; }
+.md-franchise-services td:nth-child(2) { width: 69%; }
 .md-franchise-responsibilities tbody th { width: 22%; }
 .md-franchise-responsibilities td:nth-child(2), .md-franchise-responsibilities td:nth-child(3) { width: 39%; }
 
@@ -339,7 +342,7 @@
   .md-franchise-hero-lead { margin-top: 23px; font-size: 17px; }
   .md-franchise-hero-actions { flex-direction: column; }
   .md-franchise-hero-actions > a { width: 100%; }
-  .md-franchise-hero-cost strong { font-size: 15px; }
+  .md-franchise-hero-cost strong { font-size: 18px; }
   .md-franchise-proof { font-size: 12px; gap: 12px; }
   .md-franchise-stack { min-height: 360px; }
   .md-franchise-card-back { width: 207px; }
@@ -372,6 +375,8 @@
   .md-franchise-market > svg { width: 17px; height: 17px; }
   .md-franchise-tech-note { padding: 20px; gap: 12px; }
   .md-franchise-table th, .md-franchise-table td { padding: 17px; }
+  .md-franchise-services tbody th { width: 36%; font-size: 14px; }
+  .md-franchise-services td:nth-child(2) { width: 64%; font-size: 13px; }
   .md-franchise-investment-note { padding: 23px; }
   .md-franchise-availability { flex-wrap: wrap; align-items: flex-start; padding: 16px; }
   .md-franchise-availability p { flex-basis: calc(100% - 40px); }
@@ -402,3 +407,4 @@
   .md-franchise-page .md-btn, .md-franchise-territory-action svg { transition: none; }
   .md-franchise-territory-action:hover svg { transform: none; }
 }
+

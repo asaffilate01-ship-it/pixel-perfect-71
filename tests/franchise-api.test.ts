@@ -78,8 +78,12 @@ describe("franchise enquiry validation", () => {
       email: " OPERATOR@EXAMPLE.INVALID ",
       availableCapitalMinor: 0,
       privateMetadata: { approved: true },
+      royaltyPercent: 8,
+      marketingPercent: 5,
+      techFeePerOrder: 0.35,
+      accountancyFeePerMonth: 100,
       utm: { utm_source: "newsletter", arbitrary: "not forwarded" },
-      answers: { ...answers, privateDecision: "not forwarded", offerSnapshot: { royaltyPercent: 0 }, selectedTerritoryFee: 1 },
+      answers: { ...answers, privateDecision: "not forwarded", offerSnapshot: { royaltyPercent: 0 }, selectedTerritoryFee: 1, royaltyPercent: 8, feeMin: 3750 },
     }));
     expect(result.success).toBe(true);
     if (!result.success) throw new Error("Expected a valid enquiry");
@@ -89,9 +93,15 @@ describe("franchise enquiry validation", () => {
     expect(result.data.marketingConsent).toBe(false);
     expect(result.data.utm).toEqual({ utm_source: "newsletter" });
     expect("privateMetadata" in result.data).toBe(false);
+    expect("royaltyPercent" in result.data).toBe(false);
+    expect("marketingPercent" in result.data).toBe(false);
+    expect("techFeePerOrder" in result.data).toBe(false);
+    expect("accountancyFeePerMonth" in result.data).toBe(false);
     expect("privateDecision" in result.data.answers).toBe(false);
     expect("offerSnapshot" in result.data.answers).toBe(false);
     expect("selectedTerritoryFee" in result.data.answers).toBe(false);
+    expect("royaltyPercent" in result.data.answers).toBe(false);
+    expect("feeMin" in result.data.answers).toBe(false);
   });
 
   const invalid: Array<[string, unknown]> = [
@@ -118,6 +128,7 @@ describe("franchise enquiry validation", () => {
     ["an obsolete offer", enquiry({ answers: { ...answers, offerVersion: "2026-01-01" } })],
     ["the superseded pre-repricing offer", enquiry({ answers: { ...answers, offerVersion: "2026-10-06" } })],
     ["the superseded monthly-technology offer", enquiry({ answers: { ...answers, offerVersion: "2026-10-06-r2" } })],
+    ["the superseded published tariff offer", enquiry({ answers: { ...answers, offerVersion: "2026-10-06-r3" } })],
     ["missing setup acknowledgement", enquiry({ answers: { ...answers, setupPackageAcknowledged: false } })],
     ["missing operations acknowledgement", enquiry({ answers: { ...answers, operatorResponsibilitiesAcknowledged: false } })],
   ];
@@ -243,7 +254,7 @@ describe("franchise request boundary", () => {
     expect((await response.json()).ok).toBe(false);
   });
 
-  for (const supersededVersion of ["2026-10-06", "2026-10-06-r2"]) {
+  for (const supersededVersion of ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3"]) {
     test("asks browser offer " + supersededVersion + " to refresh before any submission", async () => {
       let calls = 0;
       const response = await handleFranchiseRequest(post(enquiry({
@@ -257,7 +268,7 @@ describe("franchise request boundary", () => {
       const result = await response.json();
       expect(result.ok).toBe(false);
       expect(result.error).toContain("Refresh this page");
-      expect(result.error).toContain("review the revised fees");
+      expect(result.error).toContain("review the offer details");
       expect(result.error).toContain("acknowledgements again");
     });
   }
@@ -292,7 +303,7 @@ describe("public franchise data", () => {
     expect(response.status).toBe(200);
     const result = await response.json();
     expect(result.programme).toEqual(DEFAULT_PROGRAMME);
-    expect(result.territories[0]).toEqual(territory({ fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }));
+    expect(result.territories[0]).toEqual(territory({ fee: null }));
     expect(JSON.stringify(result)).not.toContain("SECRET");
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
@@ -329,133 +340,91 @@ describe("public franchise data", () => {
   });
 });
 
-describe("versioned territory prices", () => {
-  const legacyTiers = [7500, 10000, 12500, 15000, 17500, 20000, 22500, 25000];
-  const currentTiers = [3750, 5000, 6250, 7500, 8750, 10000, 11250, 12500];
+describe("public POA pricing", () => {
+  const privatePricing = {
+    feeMin: 3750,
+    feeMax: 12500,
+    royaltyPercent: 8,
+    marketingPercent: 5,
+    techFeePercent: 5,
+    techFeePerOrder: 0.35,
+    techFeePerMonth: 199,
+    accountancyFeePerMonth: 200,
+    equipmentOpeningSuppliesFee: 15000,
+    boughtInSupplyMarkupPercent: 0,
+    manufacturedSupplyMarkupPercent: 10,
+    packagingMarkupPercent: 5,
+    internalNotes: "PRIVATE_PRICING",
+  };
 
-  test("halves every known legacy tier exactly once before the browser reads it", async () => {
-    const response = await handleFranchiseRequest(new Request(FORM_URL), {
-      apiUrl: API_URL,
-      fetchImpl: async () => publicResponse(legacyTiers.map((fee, index) =>
-        territory({ code: "MD-" + index, fee }))),
-    });
-    expect(response.status).toBe(200);
-    const result = await response.json();
-    expect(result.territories.map((item: { fee: number }) => item.fee)).toEqual(currentTiers);
-    expect(result.territories.every((item: { franchiseFeeVersion: string }) =>
-      item.franchiseFeeVersion === FRANCHISE_FEE_VERSION)).toBe(true);
-    const browserRows = normaliseTerritories(result.territories);
-    expect(browserRows).toEqual(result.territories);
-    expect(normaliseTerritories(browserRows)).toEqual(result.territories);
-  });
-
-  test("preserves every current tier instead of applying a second reduction", async () => {
-    const response = await handleFranchiseRequest(new Request(FORM_URL), {
-      apiUrl: API_URL,
-      fetchImpl: async () => publicResponse(currentTiers.map((fee, index) =>
-        territory({ code: "MD-" + index, fee, franchiseFeeVersion: FRANCHISE_FEE_VERSION })), DEFAULT_PROGRAMME),
-    });
-    const result = await response.json();
-    expect(result.programme.offerVersion).toBe("2026-10-06-r3");
-    expect(result.programme.franchiseFeeVersion).toBe("2026-10-06-r2");
-    expect(result.territories.map((item: { fee: number }) => item.fee)).toEqual(currentTiers);
-    expect(result.territories.every((item: { franchiseFeeVersion: string }) =>
-      item.franchiseFeeVersion === FRANCHISE_FEE_VERSION)).toBe(true);
-    expect(normaliseTerritories(normaliseTerritories(result.territories))).toEqual(result.territories);
-  });
-
-  test("publishes the r3 offer while retaining r2 fees from an older upstream offer", async () => {
-    const response = await handleFranchiseRequest(new Request(FORM_URL), {
-      apiUrl: API_URL,
-      fetchImpl: async () => publicResponse([
-        territory({ fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
-      ], {
-        feeMin: 3750, feeMax: 12500, offerVersion: "2026-10-06-r2",
-        franchiseFeeVersion: FRANCHISE_FEE_VERSION, techFeePerMonth: 199,
-        equipmentOpeningSuppliesEstimate: 15000,
-      }),
-    });
-    const result = await response.json();
-    expect(result.programme).toEqual(DEFAULT_PROGRAMME);
-    expect(result.programme.techFeePerOrder).toBe(0.35);
-    expect("techFeePerMonth" in result.programme).toBe(false);
-    expect("equipmentOpeningSuppliesEstimate" in result.programme).toBe(false);
-    expect(result.territories[0].fee).toBe(10000);
-    expect(result.territories[0].franchiseFeeVersion).toBe(FRANCHISE_FEE_VERSION);
-  });
-
-  test("uses each row's revision for overlapping amounts during a staged deployment", async () => {
-    const response = await handleFranchiseRequest(new Request(FORM_URL), {
-      apiUrl: API_URL,
-      fetchImpl: async () => publicResponse([
-        territory({ code: "MD-OLD", fee: 10000 }),
-        territory({ code: "MD-CURRENT", fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
-      ]),
-    });
-    expect((await response.json()).territories.map((item: { fee: number }) => item.fee)).toEqual([5000, 10000]);
-  });
-
-  test("legacy odd-penny conversion matches the already migrated custom fee", async () => {
-    const response = await handleFranchiseRequest(new Request(FORM_URL), {
-      apiUrl: API_URL,
-      fetchImpl: async () => publicResponse([
-        territory({ code: "MD-OLD-CUSTOM", fee: 12345.67 }),
-        territory({ code: "MD-CURRENT-CUSTOM", fee: 6172.84, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
-      ]),
-    });
-    const result = await response.json();
-    expect(result.territories.map((item: { fee: number }) => item.fee)).toEqual([6172.84, 6172.84]);
-    expect(normaliseTerritories(result.territories)).toEqual(result.territories);
-  });
-
-  test("only an explicit legacy row marker can convert a row under a current programme", async () => {
-    const response = await handleFranchiseRequest(new Request(FORM_URL), {
-      apiUrl: API_URL,
-      fetchImpl: async () => publicResponse([
-        territory({ code: "MD-LEGACY", fee: 10000, franchiseFeeVersion: "legacy" }),
-        territory({ code: "MD-UNMARKED", fee: 10000 }),
-      ], DEFAULT_PROGRAMME),
-    });
-    expect((await response.json()).territories.map((item: { fee: number | null }) => item.fee)).toEqual([5000, null]);
-  });
-
-  for (const programme of [
-    { feeMin: undefined, feeMax: undefined },
-    { feeMin: 7500, feeMax: 30000 },
-    { feeMin: 3750, feeMax: 12500 },
-    { franchiseFeeVersion: FRANCHISE_FEE_VERSION },
-    { franchiseFeeVersion: "future-revision" },
-  ]) {
-    test("leaves an unversioned price unquoted when its programme cannot prove a legacy basis", async () => {
+  for (const version of [undefined, "legacy", "2026-10-06-r2", "2026-10-06-r3", OFFER_VERSION, "future-revision"]) {
+    test("publishes only the POA offer when upstream version is " + String(version), async () => {
       const response = await handleFranchiseRequest(new Request(FORM_URL), {
         apiUrl: API_URL,
-        fetchImpl: async () => publicResponse([territory({ fee: 10000 })], programme),
+        fetchImpl: async () => publicResponse([
+          territory({
+            fee: 10000,
+            franchiseFeeVersion: FRANCHISE_FEE_VERSION,
+            programme: { pricing: privatePricing },
+            metadata: privatePricing,
+          }),
+        ], {
+          ...privatePricing,
+          offerVersion: version,
+          franchiseFeeVersion: FRANCHISE_FEE_VERSION,
+          offer: { pricing: privatePricing, franchiseeFunds: ["PRIVATE_PRICING"] },
+          programmes: [{ pricing: privatePricing }],
+        }),
       });
+      expect(response.status).toBe(200);
       const result = await response.json();
-      expect(result.territories[0].fee).toBeNull();
       expect(result.programme).toEqual(DEFAULT_PROGRAMME);
+      expect(result.programme.offerVersion).toBe("2026-10-08-poa");
+      expect(result.programme.franchiseFeeVersion).toBe(FRANCHISE_FEE_VERSION);
+      expect(result.programme.upfrontFeeMin).toBe(18750);
+      expect(result.programme.upfrontFeeMax).toBe(27500);
+      expect(result.programme.ongoingFeesDisplay).toBe("POA");
+      expect(result.programme.ongoingFeesStatus).toBe("quote_required");
+      expect(Object.values(result.programme).filter((value) => typeof value === "number")).toEqual([18750, 27500]);
+      expect(result.territories).toHaveLength(1);
+      expect(result.territories[0]).toMatchObject(territory({ fee: null }));
+      expect(Object.values(result.territories[0]).some((value) => typeof value === "number")).toBe(false);
+      expect(JSON.stringify(result)).not.toContain("PRIVATE_PRICING");
+      for (const key of Object.keys(privatePricing)) {
+        expect(key in result.programme).toBe(false);
+        expect(key in result.territories[0]).toBe(false);
+      }
     });
   }
 
-  test("rejects unknown row revisions and amounts outside their declared price range", async () => {
+  test("does not infer or convert a territory fee from any row revision or amount", async () => {
+    const rows = [
+      territory({ code: "MD-LEGACY", fee: 20000, franchiseFeeVersion: "legacy" }),
+      territory({ code: "MD-CURRENT", fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
+      territory({ code: "MD-UNMARKED", fee: 10000 }),
+      territory({ code: "MD-FUTURE", fee: 10000, franchiseFeeVersion: "future-revision" }),
+      territory({ code: "MD-ODD", fee: 12345.67 }),
+      territory({ code: "MD-ZERO", fee: 0 }),
+      territory({ code: "MD-TEXT", fee: "10000" }),
+      territory({ code: "MD-NULL", fee: null }),
+    ];
     const response = await handleFranchiseRequest(new Request(FORM_URL), {
       apiUrl: API_URL,
-      fetchImpl: async () => publicResponse([
-        territory({ code: "MD-UNKNOWN", fee: 10000, franchiseFeeVersion: "future-revision" }),
-        territory({ code: "MD-NULL", fee: 10000, franchiseFeeVersion: null }),
-        territory({ code: "MD-LOW", fee: 5000 }),
-        territory({ code: "MD-HIGH", fee: 30000 }),
-        territory({ code: "MD-NEW-HIGH", fee: 20000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
-        territory({ code: "MD-TEXT", fee: "10000" }),
-      ]),
+      fetchImpl: async () => publicResponse(rows),
     });
-    expect((await response.json()).territories.every((item: { fee: number | null }) => item.fee === null)).toBe(true);
+    expect(response.status).toBe(200);
+    const result = await response.json();
+    expect(result.territories).toHaveLength(rows.length);
+    expect(result.territories.every((item: { fee: unknown }) => item.fee === null)).toBe(true);
+    expect(result.territories.every((item: { isSellable: boolean }) => item.isSellable)).toBe(true);
+    expect(normaliseTerritories(result.territories)).toEqual(result.territories);
+    expect(normaliseTerritories(normaliseTerritories(result.territories))).toEqual(result.territories);
   });
 
-  test("duplicate overlapping prices with different revisions cannot publish a guessed fee", async () => {
+  test("duplicate private prices cannot publish a tariff or change availability", async () => {
     for (const rows of [
-      [territory({ fee: 10000 }), territory({ fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION })],
-      [territory({ fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }), territory({ fee: 10000 })],
+      [territory({ fee: 10000 }), territory({ fee: 5000, franchiseFeeVersion: FRANCHISE_FEE_VERSION })],
+      [territory({ fee: 5000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }), territory({ fee: 10000 })],
     ]) {
       const response = await handleFranchiseRequest(new Request(FORM_URL), {
         apiUrl: API_URL,
@@ -463,8 +432,7 @@ describe("versioned territory prices", () => {
       });
       const result = await response.json();
       expect(result.territories).toHaveLength(1);
-      expect(result.territories[0].fee).toBeNull();
-      expect(normaliseTerritories(result.territories)).toEqual(result.territories);
+      expect(result.territories[0]).toMatchObject(territory({ fee: null }));
     }
   });
 });
@@ -493,7 +461,7 @@ describe("submission, territory verification and receipts", () => {
     expect(headers.has("cookie")).toBe(false);
     expect(calls[1]!.init.redirect).toBe("error");
     const sent = JSON.parse(String(calls[1]!.init.body));
-    expect(sent.answers).toEqual({ ...answers, selectedTerritory: "Example territory", selectedTerritoryFee: 10000, offerSnapshot: DEFAULT_PROGRAMME });
+    expect(sent.answers).toEqual({ ...answers, selectedTerritory: "Example territory", selectedTerritoryFee: null, offerSnapshot: DEFAULT_PROGRAMME });
     expect(sent.marketingConsent).toBe(false);
     expect(sent.source).toBe("mealdeck-franchise-page");
   });
@@ -541,19 +509,25 @@ describe("submission, territory verification and receipts", () => {
     expect(response.status).toBe(201);
   });
 
-  test("records an unknown selected price as quote-required instead of trusting the caller", async () => {
+  test("records the public POA enquiry without accepting upstream or caller tariffs", async () => {
     const response = await handleFranchiseRequest(post(enquiry({
       territoryCode: "MD-999",
       answers: { ...answers, selectedTerritoryFee: 1000, offerSnapshot: { royaltyPercent: 7.5 } },
     })), {
       apiUrl: API_URL,
       fetchImpl: async (_url, init) => {
-        if (init.method === "GET") return publicResponse([territory({ fee: 10000 })], DEFAULT_PROGRAMME);
+        if (init.method === "GET") return publicResponse([
+          territory({ fee: 10000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
+        ], { ...DEFAULT_PROGRAMME, royaltyPercent: 8, marketingPercent: 5, accountancyFeePerMonth: 200 });
         const data = JSON.parse(String(init.body));
         expect(data.answers.selectedTerritory).toBe("Example territory");
         expect(data.answers.selectedTerritoryFee).toBeNull();
-        expect(data.answers.offerSnapshot.royaltyPercent).toBeNull();
-        expect(data.answers.offerSnapshot.royaltyStatus).toBe("quote_required");
+        expect(data.answers.offerSnapshot).toEqual(DEFAULT_PROGRAMME);
+        expect("royaltyPercent" in data.answers.offerSnapshot).toBe(false);
+        expect("marketingPercent" in data.answers.offerSnapshot).toBe(false);
+        expect("accountancyFeePerMonth" in data.answers.offerSnapshot).toBe(false);
+        expect(data.answers.offerSnapshot.ongoingFeesDisplay).toBe("POA");
+        expect(data.answers.offerSnapshot.ongoingFeesStatus).toBe("quote_required");
         expect(data.answers.offerSnapshot.offerVersion).toBe(OFFER_VERSION);
         return Response.json({ applicationId: "app-quoted" }, { status: 201 });
       },
@@ -671,3 +645,4 @@ describe("upstream failures and deadlines", () => {
     expect(response.status).toBe(502);
   });
 });
+

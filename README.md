@@ -28,7 +28,7 @@ MealDeck is the consumer experience. Dishbee is the operational engine underneat
 - subscription/add-on entitlement
 
 ### Haccora
-Optional food-safety/compliance layer requested and billed through Dishbee.
+Food-safety and compliance software included in the MealDeck franchise technology offer, with location access, configuration and training arranged through Dishbee.
 
 ### Omniqora
 Optional AI/CRM/WhatsApp/voice/automation/analytics layer requested and billed through Dishbee.
@@ -117,8 +117,11 @@ npm run lint
 
 ## Franchise recruitment
 
-The public `/franchise` offer covers the shared brand portfolio, location/territory, chargeable equipment and technology setup, opening supplies/packaging, and ongoing operator responsibilities. The full commercial structure and integration notes are in [docs/franchise-offer.md](docs/franchise-offer.md).
+The public `/franchise` offer presents one all-inclusive franchise launch range and describes the brands, location/territory, equipment, technology setup, opening supplies/packaging and ongoing support. All ongoing charges are **POA**; no monthly prices, percentages, per-order charges, individual territory prices or launch-price components are exposed by the page or its public API.
+
+The private commercial brief and integration notes are in [docs/franchise-offer.md](docs/franchise-offer.md). They cover the revised channel fees, card-processing-first calculation, delivered-cost supply pricing and accounts/admin package. This document is for internal quotation and implementation planning; it is not imported into the website or an active billing configuration.
 
 Set `OMNIQORA_PUBLIC_API_URL` on the server to the complete deployed franchise intake endpoint. Missing configuration produces an honest service-unavailable response; the site never confirms an application that has not been accepted by the service.
 
 Run the franchise regressions with `bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts`. The verification workflow also builds the site and checks the franchise implementation with ESLint.
+

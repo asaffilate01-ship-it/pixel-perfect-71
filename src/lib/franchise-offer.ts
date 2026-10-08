@@ -1,4 +1,4 @@
-export const OFFER_VERSION = "2026-10-06-r3";
+export const OFFER_VERSION = "2026-10-08-poa";
 /** The entry-fee reduction is independent from later changes to the offer. */
 export const FRANCHISE_FEE_VERSION = "2026-10-06-r2";
 
@@ -7,37 +7,30 @@ export type Territory = {
   name: string;
   region: string;
   status: string;
-  fee: number | null;
-  franchiseFeeVersion?: typeof FRANCHISE_FEE_VERSION;
+  /** Individual territory prices are quoted privately, never published. */
+  fee: null;
   currency: string;
   isSellable: boolean;
   note?: string;
 };
 
-/** Reviewed public terms. An increased royalty still needs a written quote. */
+/**
+ * Public offer only. Keep negotiated fees and the launch-price components out
+ * of this browser-imported module and anonymous API responses.
+ */
 export const DEFAULT_PROGRAMME = Object.freeze({
   key: "mealdeck-england-wales",
   name: "MealDeck England & Wales",
   currency: "GBP",
   offerVersion: OFFER_VERSION,
   franchiseFeeVersion: FRANCHISE_FEE_VERSION,
-  feeMin: 3750,
-  feeMax: 12500,
-  royaltyPercent: null,
-  royaltyStatus: "quote_required",
-  royaltyDisplay: "To be confirmed in written quote",
-  marketingPercent: 1.5,
-  techFeePerOrder: 0.35,
+  upfrontFeeMin: 18750,
+  upfrontFeeMax: 27500,
+  upfrontPaymentTiming: "upfront",
+  upfrontFeeVatBasis: "exclusive_where_applicable",
+  ongoingFeesStatus: "quote_required",
+  ongoingFeesDisplay: "POA",
   techIncludesHaccora: true,
-  techFeeBasis: "per_completed_order",
-  techOrderDefinition: "One completed customer order per kitchen, regardless of brand count or ordering channel; cancelled and fully refunded orders are excluded.",
-  accountancyFeePerMonth: 100,
-  boughtInSupplyMarkupPercent: 0,
-  manufacturedSupplyMarkupPercent: 15,
-  manufacturedSupplyCostBasis: "fully_costed_production",
-  equipmentOpeningSuppliesFee: 15000,
-  equipmentOpeningSuppliesPaymentTiming: "upfront",
-  franchiseFeePaymentTiming: "upfront",
 });
 
 export const TAKEN_MARKETS = [
@@ -91,7 +84,7 @@ function normalName(value: string): string {
 }
 
 const takenNames = new Set([
-  "luton", "luton dunstable", "st albans", "bedford", "milton keynes", "islington", "islington camden",
+  "luton", "luton dunstable", "st albans", "bedford", "milton keynes", "milton keynes 1", "islington", "islington camden",
   "camden islington", "islington caledonian road area", "islington camden caledonian road area",
 ]);
 const takenPostcodes = ["LU48NU", "AL13JU", "N78XH"];
@@ -109,7 +102,8 @@ function allocatedAnchor(value: Record<string, unknown>): boolean {
 
 /**
  * Allowlist canonical public fields and fail closed on contradictory availability.
- * This is also used in the browser: never convert historical prices here.
+ * This is also used in the browser. Prices and other commercial fields are
+ * deliberately discarded, regardless of upstream price/version provenance.
  */
 export function normaliseTerritories(input: unknown): Territory[] {
   if (!Array.isArray(input)) return [];
@@ -128,21 +122,15 @@ export function normaliseTerritories(input: unknown): Territory[] {
     let status = knownStatuses.includes(rawStatus) ? rawStatus : "planned";
     if (allocatedAnchor(item)) status = "taken";
     if (status === "available" && item["isSellable"] !== true) status = "unavailable";
-    const currentPriceBasis = item["franchiseFeeVersion"] === undefined || item["franchiseFeeVersion"] === FRANCHISE_FEE_VERSION;
-    const fee = currentPriceBasis && typeof item["fee"] === "number" && Number.isFinite(item["fee"]) && item["fee"] >= DEFAULT_PROGRAMME.feeMin && item["fee"] <= DEFAULT_PROGRAMME.feeMax ? item["fee"] : null;
     const territory: Territory = {
-      code, name, region, status, fee, currency: "GBP",
+      code, name, region, status, fee: null, currency: "GBP",
       isSellable: status === "available" && item["isSellable"] === true,
-      ...(item["franchiseFeeVersion"] === FRANCHISE_FEE_VERSION ? { franchiseFeeVersion: FRANCHISE_FEE_VERSION } : {}),
     };
     const previous = result.get(code);
     if (previous) {
       // Duplicate entries cannot re-enable a previously unavailable or contradictory territory.
       if (previous.name !== name || previous.region !== region || previous.status !== status || previous.isSellable !== territory.isSellable) {
         result.set(code, { ...previous, status: "unavailable", isSellable: false, fee: null });
-      } else if (previous.fee !== fee) {
-        // An area may still accept an enquiry, but conflicting prices need a quote.
-        result.set(code, { ...previous, fee: null });
       }
       continue;
     }
@@ -154,3 +142,4 @@ export function normaliseTerritories(input: unknown): Territory[] {
 export function money(value: number): string {
   return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value);
 }
+
