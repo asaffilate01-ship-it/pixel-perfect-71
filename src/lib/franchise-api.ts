@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   DEFAULT_PROGRAMME,
-  FRANCHISE_FEE_VERSION,
   OFFER_VERSION,
   normaliseTerritories,
 } from "./franchise-offer";
@@ -18,7 +17,7 @@ const UNCONFIRMED =
 const INVALID_DETAILS =
   "Please check your details and confirm the required acknowledgements.";
 const STALE_OFFER =
-  "The franchise offer has changed. Refresh this page, review the revised fees and confirm the required acknowledgements again.";
+  "The franchise offer has changed. Refresh this page, review the offer details and confirm the required acknowledgements again.";
 const TERRITORY_UNAVAILABLE =
   "That territory is not currently open for applications. Choose another area or send a general enquiry.";
 
@@ -293,38 +292,9 @@ async function currentTerritories(
   ) {
     throw new PublicError(502, UNAVAILABLE);
   }
-  // Convert the verified upstream price basis exactly once, at the server edge.
-  // The browser normaliser must never apply the entry-fee reduction again.
-  return normaliseTerritories(adaptUpstreamFees(programme, payload["territories"]));
-}
-
-/** Never infer a fee's revision from its amount: old and new ranges overlap. */
-function adaptUpstreamFees(programme: Record<string, unknown>, rows: unknown[]): unknown[] {
-  const programmeVersion = programme["franchiseFeeVersion"];
-  const knownLegacyProgramme =
-    (programmeVersion === undefined || programmeVersion === "legacy") &&
-    programme["feeMin"] === 7500 && programme["feeMax"] === 25000;
-
-  return rows.slice(0, 500).map((row) => {
-    if (!isRecord(row)) return row;
-    const version = row["franchiseFeeVersion"];
-    const rawFee = row["fee"];
-    let fee: number | null = null;
-    if (typeof rawFee === "number" && Number.isFinite(rawFee)) {
-      if (version === FRANCHISE_FEE_VERSION) {
-        if (rawFee >= DEFAULT_PROGRAMME.feeMin && rawFee <= DEFAULT_PROGRAMME.feeMax) fee = rawFee;
-      } else if (version === "legacy" || (version === undefined && knownLegacyProgramme)) {
-        if (rawFee >= 7500 && rawFee <= 25000) {
-          // Match the database migration: halve integer pence, then round to a penny.
-          const previousFeeMinor = Math.round(rawFee * 100);
-          fee = Math.round(previousFeeMinor / 2) / 100;
-        }
-      }
-    }
-    // A programme revision alone cannot certify that an individual row migrated.
-    // Unknown, missing or contradictory price provenance leaves the fee unquoted.
-    return { ...row, fee, franchiseFeeVersion: fee === null ? undefined : FRANCHISE_FEE_VERSION };
-  });
+  // Availability still comes from the verified programme, but the public offer is
+  // POA. Never expose, convert or infer a territory price from any upstream version.
+  return normaliseTerritories(payload["territories"]);
 }
 
 function receiptReference(payload: Record<string, unknown>): string | null {
@@ -385,7 +355,10 @@ export async function handleFranchiseRequest(
     }
     const submittedAnswers = isRecord(input) ? input["answers"] : null;
     const submittedVersion = isRecord(submittedAnswers) ? submittedAnswers["offerVersion"] : undefined;
-    if (submittedVersion === "2026-10-06" || submittedVersion === "2026-10-06-r2") {
+    if (
+      typeof submittedVersion === "string" &&
+      ["2026-10-06", "2026-10-06-r2", "2026-10-06-r3"].includes(submittedVersion)
+    ) {
       throw new PublicError(409, STALE_OFFER);
     }
     const parsed = validateFranchiseEnquiry(input);
@@ -397,7 +370,7 @@ export async function handleFranchiseRequest(
         // The upstream answers record accepts this server-authored offer snapshot.
         // Caller-supplied prices and snapshots are stripped by enquirySchema.
         offerSnapshot: DEFAULT_PROGRAMME,
-        selectedTerritoryFee: null as number | null,
+        selectedTerritoryFee: null,
       },
     };
     const target = endpoint(options.apiUrl, options.allowInsecureLocalhost === true);
@@ -411,7 +384,8 @@ export async function handleFranchiseRequest(
         throw new PublicError(409, TERRITORY_UNAVAILABLE);
       }
       enquiry.answers.selectedTerritory = territory.name;
-      enquiry.answers.selectedTerritoryFee = territory.fee;
+      // This is an enquiry against the public POA offer, not acceptance of the
+      // CRM's private territory price. Keep selectedTerritoryFee unquoted.
     }
     enquiry.answers.offerVersion = OFFER_VERSION;
     enquiry.answers.setupPackageAcknowledged = true;
@@ -433,3 +407,4 @@ export async function handleFranchiseRequest(
     return json({ ok: false, error: isPost ? UNCONFIRMED : UNAVAILABLE }, 503);
   }
 }
+

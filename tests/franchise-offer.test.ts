@@ -7,30 +7,24 @@ const available = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("public franchise offer", () => {
-  test("keeps r3 technology and upfront payment terms separate from territory pricing", () => {
-    expect(OFFER_VERSION).toBe("2026-10-06-r3");
+  test("publishes only the complete launch range and quote-required ongoing services", () => {
+    expect(OFFER_VERSION).toBe("2026-10-08-poa");
     expect(FRANCHISE_FEE_VERSION).toBe("2026-10-06-r2");
     expect(OFFER_VERSION).not.toBe(FRANCHISE_FEE_VERSION);
-    expect(DEFAULT_PROGRAMME).toMatchObject({
+    expect(DEFAULT_PROGRAMME).toEqual({
+      key: "mealdeck-england-wales", name: "MealDeck England & Wales", currency: "GBP",
       offerVersion: OFFER_VERSION, franchiseFeeVersion: FRANCHISE_FEE_VERSION,
-      feeMin: 3750, feeMax: 12500, royaltyPercent: null, marketingPercent: 1.5,
-      royaltyStatus: "quote_required", royaltyDisplay: "To be confirmed in written quote",
-      techFeePerOrder: 0.35, techIncludesHaccora: true, techFeeBasis: "per_completed_order",
-      techOrderDefinition: "One completed customer order per kitchen, regardless of brand count or ordering channel; cancelled and fully refunded orders are excluded.",
-      accountancyFeePerMonth: 100,
-      boughtInSupplyMarkupPercent: 0, manufacturedSupplyMarkupPercent: 15,
-      manufacturedSupplyCostBasis: "fully_costed_production",
-      equipmentOpeningSuppliesFee: 15000,
-      equipmentOpeningSuppliesPaymentTiming: "upfront", franchiseFeePaymentTiming: "upfront",
+      upfrontFeeMin: 18750, upfrontFeeMax: 27500,
+      upfrontPaymentTiming: "upfront", upfrontFeeVatBasis: "exclusive_where_applicable",
+      ongoingFeesStatus: "quote_required", ongoingFeesDisplay: "POA",
+      techIncludesHaccora: true,
     });
-    expect("techFeePerMonth" in DEFAULT_PROGRAMME).toBe(false);
-    expect("equipmentOpeningSuppliesEstimate" in DEFAULT_PROGRAMME).toBe(false);
-    expect("supplyMarkupPercent" in DEFAULT_PROGRAMME).toBe(false);
+    expect(Object.values(DEFAULT_PROGRAMME).filter((value) => typeof value === "number")).toEqual([18750, 27500]);
   });
 
-  test("formats custom fee pennies without adding decimals to whole-pound tiers", () => {
-    expect(money(3750)).toBe("£3,750");
-    expect(money(12500)).toBe("£12,500");
+  test("formats the overall launch range without unnecessary decimals", () => {
+    expect(money(DEFAULT_PROGRAMME.upfrontFeeMin)).toBe("£18,750");
+    expect(money(DEFAULT_PROGRAMME.upfrontFeeMax)).toBe("£27,500");
     expect(money(6172.84)).toBe("£6,172.84");
   });
 
@@ -55,7 +49,7 @@ describe("public territory boundary", () => {
 
   test("known taken anchors stay taken even when upstream says available", () => {
     for (const market of TAKEN_MARKETS) {
-      const [territory] = normaliseTerritories([available({ name: market.name, note: market.note })]);
+      const [territory] = normaliseTerritories([available({ name: market.name })]);
       expect(territory.status).toBe("taken");
       expect(territory.isSellable).toBe(false);
     }
@@ -71,10 +65,14 @@ describe("public territory boundary", () => {
     const [territory] = normaliseTerritories([available({
       note: "Private negotiation note", score: 94, ownerId: "private-owner",
       investorName: "Private name", internalNotes: "Private financial terms",
+      royaltyPercent: 8, techPercent: 5, marketingPercent: 5,
+      accountancyFeePerMonth: 100, adminFeePerMonth: 100,
+      equipmentOpeningSuppliesFee: 15000,
+      pricing: { aggregatorPercent: 5, manufacturedSupplyMarkupPercent: 10 },
     })]);
     expect(territory).toEqual({
       code: "MD-TEST", name: "Example town", region: "London", status: "available",
-      isSellable: true, fee: 10000, currency: "GBP",
+      isSellable: true, fee: null, currency: "GBP",
     });
     expect(normaliseTerritories([available({ isSellable: "true" })])[0].isSellable).toBe(false);
     expect(normaliseTerritories([available({ status: "draft" })])[0].status).toBe("planned");
@@ -88,30 +86,30 @@ describe("public territory boundary", () => {
     expect(normaliseTerritories([available(), available({ name: "Other town" })])[0].status).toBe("unavailable");
   });
 
-  test("invalid fees cannot enter a published calculation", () => {
-    for (const fee of [NaN, Infinity, -1, 0, 3749, 12501, 30000, "10000"]) {
+  test("no territory fee can escape, including valid and malformed private quotes", () => {
+    for (const fee of [3750, 5000, 10000, 12500, NaN, Infinity, -1, 0, 3749, 12501, 30000, "10000"]) {
       expect(normaliseTerritories([available({ fee })])[0].fee).toBeNull();
     }
   });
 
-  test("browser normalisation never discounts a fee and is idempotent", () => {
+  test("browser normalisation keeps quotes private and is idempotent", () => {
     const once = normaliseTerritories([
       available({ franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
       available({ code: "MD-LOW", fee: 3750, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
       available({ code: "MD-HIGH", fee: 12500 }),
     ]);
-    expect(once.map((item) => item.fee)).toEqual([10000, 3750, 12500]);
+    expect(once.map((item) => item.fee)).toEqual([null, null, null]);
     expect(normaliseTerritories(once)).toEqual(once);
     expect(normaliseTerritories(normaliseTerritories(once))).toEqual(once);
   });
 
-  test("historical or unknown price markers cannot be treated as canonical prices", () => {
-    for (const franchiseFeeVersion of ["legacy", "future", null]) {
+  test("price revision markers cannot opt a private quote into public data", () => {
+    for (const franchiseFeeVersion of [FRANCHISE_FEE_VERSION, "legacy", "future", null, undefined]) {
       expect(normaliseTerritories([available({ franchiseFeeVersion })])[0].fee).toBeNull();
     }
   });
 
-  test("conflicting duplicate prices require a quote in either order and stay unresolved", () => {
+  test("duplicate private quotes do not publish a price or change otherwise valid availability", () => {
     const rows = [
       available({ franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
       available({ fee: 5000, franchiseFeeVersion: FRANCHISE_FEE_VERSION }),
@@ -120,7 +118,9 @@ describe("public territory boundary", () => {
     for (const input of [rows, rows.toReversed()]) {
       const canonical = normaliseTerritories(input);
       expect(canonical[0].fee).toBeNull();
+      expect(canonical[0].isSellable).toBe(true);
       expect(normaliseTerritories(canonical)).toEqual(canonical);
     }
   });
 });
+
