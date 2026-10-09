@@ -218,23 +218,13 @@
 }
 .md-deck-shadow {
   position: absolute;
-  border: 12px solid var(--md-paper);
-  background: #9f1019;
+  border-radius: 14px;
+  overflow: hidden;
   box-shadow: 0 30px 70px rgba(0,0,0,.35);
   opacity: 0;
   transition: opacity .6s ease 1.05s, transform .8s cubic-bezier(.22,.8,.2,1) 1.05s;
 }
-.md-deck-shadow::after {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  border: 2px solid rgba(255,246,232,.6);
-  outline: 1px solid rgba(255,246,232,.35);
-  outline-offset: -7px;
-  background: repeating-linear-gradient(45deg, transparent 0 10px, rgba(255,246,232,.07) 10px 12px), repeating-linear-gradient(-45deg, transparent 0 10px, rgba(255,246,232,.07) 10px 12px);
-}
-.md-deck-shadow { display: grid; place-items: center; overflow: hidden; }
-.md-deck-back-emblem { position: relative; z-index: 1; width: 78%; opacity: .8; filter: drop-shadow(0 0 1px rgba(255,246,232,.9)) drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+.md-deck-back-art { display: block; width: 100%; height: 100%; object-fit: cover; }
 .md-deck-shadow-left { transform: translateX(-18px) rotate(-2deg); }
 .md-deck-shadow-right { transform: translateX(18px) rotate(2deg); }
 .md-deck-stage.is-cycling .md-deck-shadow { opacity: 1; }
@@ -269,8 +259,12 @@
   border: 10px solid #9f1019;
   background: var(--md-paper);
   color: var(--md-black);
+  border-radius: 14px;
+  overflow: hidden;
   box-shadow: 0 40px 90px rgba(0,0,0,.42);
 }
+.md-deck-card-inner.is-mealdeck { padding: 0; border: 0; background: none; }
+.md-deck-card-art { display: block; width: 100%; height: 100%; object-fit: cover; }
 .md-deck-index,
 .md-deck-suit {
   position: absolute;
@@ -286,7 +280,6 @@
 .md-deck-corner-tl { top: 8px; left: 9px; }
 .md-deck-corner-br { bottom: 8px; right: 9px; transform: rotate(180deg); }
 .md-deck-brand-logo { width: 76%; flex: 1 1 auto; min-height: 0; object-fit: contain; }
-.md-deck-mealdeck-logo { width: 86%; flex: 1 1 auto; min-height: 0; object-fit: contain; }
 .md-deck-suit-cutlery { width: .92em; height: .92em; display: block; }
 .md-deck-caption { flex: 0 0 auto; margin-top: auto; padding-top: 10px; width: 100%; text-align: center; }
 .md-deck-caption strong { display: block; font-family: var(--md-display); font-size: 17px; }
