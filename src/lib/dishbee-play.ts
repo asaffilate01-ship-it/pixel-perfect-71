@@ -8,6 +8,12 @@
 /** Food-suit artwork keys. Artwork itself lives in src/lib/food-suit-artwork.ts. */
 export type SuitArt = "burger" | "french-taco" | "chicken" | "cake" | "fries" | "drink" | "paratha";
 
+/** Ingredient tile artwork keys, mapped in src/lib/food-suit-artwork.ts. */
+export type TileArt = "bun" | "patty" | "lettuce" | "tortilla" | "chicken" | "salsa" | "fries" | "cheese" | "sauce";
+
+/** Anything that can appear as a card face. */
+export type FoodArt = SuitArt | TileArt;
+
 export const FOOD_SUITS = [
   { id: "burger", symbol: "🍔", art: "burger", label: "Burgers", brand: "Skorch" },
   { id: "taco", symbol: "🌮", art: "french-taco", label: "Tacos", brand: "Taconelle" },
@@ -38,16 +44,24 @@ export function isBrandTheme(value: unknown): value is BrandTheme {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(BRAND_THEMES, value);
 }
 
-export type PairCard = { id: number; food: string; art: SuitArt; label: string };
-const FOODS: readonly [string, SuitArt, string][] = [
-  ["🍔", "burger", "Burger"], ["🌮", "french-taco", "Taco"], ["🍟", "fries", "Fries"],
-  ["🥤", "drink", "Drink"], ["🍗", "chicken", "Chicken"], ["🫓", "paratha", "Paratha"],
-];
+export type PairCard = { id: number; food: string; art: FoodArt; label: string };
+
+/** Each brand skin deals its own dishes — the deck changes, the rules never do. */
+export const BRAND_FOODS: Record<BrandTheme, readonly [FoodArt, string][]> = {
+  mealdeck: [["burger", "Burger"], ["french-taco", "French Taco"], ["chicken", "Chicken"], ["cake", "Cake"], ["fries", "Fries"], ["drink", "Drink"]],
+  skorch: [["burger", "Smash Burger"], ["bun", "Bun"], ["patty", "Patty"], ["cheese", "Cheese"], ["sauce", "Sauce"], ["fries", "Fries"]],
+  taconelle: [["french-taco", "French Taco"], ["tortilla", "Tortilla"], ["salsa", "Salsa"], ["lettuce", "Lettuce"], ["chicken", "Chicken"], ["drink", "Drink"]],
+  loadd: [["fries", "Loaded Fries"], ["cheese", "Cheese"], ["sauce", "Sauce"], ["patty", "Patty"], ["bun", "Bun"], ["drink", "Drink"]],
+  paratique: [["paratha", "Paratha"], ["patty", "Patty"], ["lettuce", "Lettuce"], ["salsa", "Salsa"], ["chicken", "Chicken"], ["drink", "Drink"]],
+  tavo: [["chicken", "Chicken Leg"], ["patty", "Patty"], ["sauce", "Sauce"], ["lettuce", "Lettuce"], ["bun", "Bun"], ["drink", "Drink"]],
+  vyta: [["drink", "Fresh Juice"], ["cake", "Milk Cake"], ["fries", "Fries"], ["burger", "Burger"], ["paratha", "Paratha"], ["french-taco", "French Taco"]],
+};
 
 /** Shuffling changes only entertainment puzzles, never a reward or redemption. */
-export function makePairs(): PairCard[] {
-  const cards = FOODS.flatMap(([food, art, label], pair) => [
-    { id: pair * 2, food, art, label }, { id: pair * 2 + 1, food, art, label },
+export function makePairs(brand: BrandTheme = "mealdeck"): PairCard[] {
+  const foods = BRAND_FOODS[brand] ?? BRAND_FOODS.mealdeck;
+  const cards = foods.flatMap(([art, label], pair) => [
+    { id: pair * 2, food: art, art, label }, { id: pair * 2 + 1, food: art, art, label },
   ]);
   for (let i = cards.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
