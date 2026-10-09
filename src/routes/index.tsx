@@ -50,12 +50,12 @@ const directBenefits = [
 ];
 
 const offers = [
-  { rank: "A", suit: "♥", label: "The Burger Ace", value: "FREE", copy: "Spend £21. Get an eligible burger on us." },
-  { rank: "2", suit: "♦", label: "Perfect Pair", value: "½ PRICE", copy: "Buy two identical eligible items and get the second half price." },
-  { rank: "S", suit: "♠", label: "Snap!", value: "2 FOR 1", copy: "Selected matching items. Pay for one." },
-  { rank: "K", suit: "♣", label: "The Group Hand", value: "+ POINTS", copy: "Selected group orders earn extra loyalty points." },
-  { rank: "F", suit: "♥", label: "Full House Feast", value: "£5 OFF", copy: "Order from three brands with a £30 minimum spend." },
-  { rank: "10", suit: "♦", label: "The Loyalty Flush", value: "10× PTS", copy: "Your fifth direct order in a month earns 10× points." },
+  { rank: "A", suit: "🍔", label: "The Burger Ace", value: "FREE", copy: "Spend £21. Get an eligible burger on us." },
+  { rank: "2", suit: "🌮", label: "Perfect Pair", value: "½ PRICE", copy: "Buy two identical eligible items and get the second half price." },
+  { rank: "S", suit: "🍟", label: "Snap!", value: "2 FOR 1", copy: "Selected matching items. Pay for one." },
+  { rank: "K", suit: "🥤", label: "The Group Hand", value: "+ POINTS", copy: "Selected group orders earn extra loyalty points." },
+  { rank: "F", suit: "🍔", label: "Full House Feast", value: "£5 OFF", copy: "Order from three brands with a £30 minimum spend." },
+  { rank: "10", suit: "🌮", label: "The Loyalty Flush", value: "10× PTS", copy: "Your fifth direct order in a month earns 10× points." },
 ];
 
 const steps = [
@@ -136,7 +136,7 @@ function LandingPage() {
           </div>
           <div className="md-offer-grid">
             {offers.map((offer) => {
-              const red = offer.suit === "♥" || offer.suit === "♦";
+              const red = offer.suit === "🍔" || offer.suit === "🍟";
               return (
                 <article key={offer.label} className="md-offer-card">
                   <div className={`md-offer-corner ${red ? "md-offer-corner-red" : ""}`}>
