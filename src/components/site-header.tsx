@@ -26,6 +26,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
             {navItems.map((item) => (
               <Link key={item.label} to={item.to} hash={item.hash}>{item.label}</Link>
             ))}
+            <Link to="/play">Play &amp; Rewards</Link>
             <Link to="/franchise">Franchises</Link>
             <Link to="/blog">Blog</Link>
             <Link to="/track">Track</Link>
@@ -61,6 +62,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           ))}
           <Link to="/luton" onClick={() => setOpen(false)}>Luton</Link>
           <Link to="/st-albans" onClick={() => setOpen(false)}>St Albans</Link>
+          <Link to="/play" onClick={() => setOpen(false)}>Play &amp; Rewards</Link>
           <Link to="/franchise" onClick={() => setOpen(false)}>Franchises</Link>
           <Link to="/blog" onClick={() => setOpen(false)}>Blog</Link>
           <Link to="/track" onClick={() => setOpen(false)}>Track order</Link>
