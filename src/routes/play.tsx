@@ -1,0 +1,188 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { ArrowRight, CheckCircle2, Gamepad2, Gift, LockKeyhole, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import {
+  BRAND_THEMES, FOOD_SUITS, GAME_CATALOGUE, INGREDIENTS, RECIPES,
+  isBrandTheme, makePairs, recipeMatches, type BrandTheme, type PairCard,
+} from "@/lib/dishbee-play";
+import { seo } from "@/lib/seo";
+
+type Game = "pairs" | "recipe";
+
+export const Route = createFileRoute("/play")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    brand: isBrandTheme(search.brand) ? search.brand : ("mealdeck" as BrandTheme),
+  }),
+  head: () => seo({
+    title: "Dishbee Play at MealDeck — Free Food Card Games",
+    description: "Play free, entertainment-only food card games. No gambling, stakes, or redeemable gameplay prizes. MealDeck purchase rewards remain separate.",
+    path: "/play",
+  }),
+  component: PlayPage,
+});
+
+function FoodPairs() {
+  const [cards, setCards] = useState<PairCard[]>([]);
+  const [flipped, setFlipped] = useState<number[]>([]);
+  const [matched, setMatched] = useState<number[]>([]);
+  const [moves, setMoves] = useState(0);
+
+  // Defer randomisation until mount to prevent mismatched server-rendered markup.
+  useEffect(() => { setCards(makePairs()); }, []);
+
+  useEffect(() => {
+    if (flipped.length !== 2) return;
+    const [first, second] = flipped;
+    const a = cards.find((card) => card.id === first);
+    const b = cards.find((card) => card.id === second);
+    const match = a && b && a.food === b.food;
+    const timer = setTimeout(() => {
+      if (match) setMatched((previous) => [...previous, first, second]);
+      setFlipped([]);
+    }, match ? 250 : 850);
+    return () => clearTimeout(timer);
+  }, [cards, flipped]);
+
+  function restart() {
+    setCards(makePairs());
+    setFlipped([]);
+    setMatched([]);
+    setMoves(0);
+  }
+
+  function flip(id: number) {
+    if (flipped.length === 2 || flipped.includes(id) || matched.includes(id)) return;
+    setFlipped((previous) => [...previous, id]);
+    if (flipped.length === 1) setMoves((previous) => previous + 1);
+  }
+
+  const complete = cards.length > 0 && matched.length === cards.length;
+  return (
+    <section className="dp-game-panel" aria-label="Food Pairs">
+      <div className="dp-game-head">
+        <div><h2>Food Pairs</h2><p>Turn over two cards. Match all six food pairs.</p></div>
+        <button className="dp-small-button" type="button" onClick={restart}><RotateCcw size={16} /> New game</button>
+      </div>
+      <div className="dp-statline"><span>Pairs <b>{matched.length / 2} / 6</b></span><span>Moves <b>{moves}</b></span><span>Cost <b>Free</b></span></div>
+      <div className="dp-pairs-grid">
+        {cards.map((card) => {
+          const shown = flipped.includes(card.id) || matched.includes(card.id);
+          return (
+            <button type="button" key={card.id} className={`dp-pair-card ${shown ? "is-revealed" : ""} ${matched.includes(card.id) ? "is-matched" : ""}`}
+              onClick={() => flip(card.id)} disabled={shown || flipped.length === 2 || complete}
+              aria-label={shown ? card.label + " matched or revealed" : "Reveal food card"}
+              aria-pressed={shown}>
+              {shown ? <><span aria-hidden="true">{card.food}</span><small>{card.label}</small></> : <><span aria-hidden="true">✦</span><small>MEALDECK</small></>}
+            </button>
+          );
+        })}
+      </div>
+      {complete && <p className="dp-win-message"><CheckCircle2 size={20} /> All pairs found in {moves} moves! A great game — no monetary prizes.</p>}
+      <p className="dp-fineprint">Entertainment only. Game results do not award points, meals, cash or discounts.</p>
+    </section>
+  );
+}
+
+function RecipeRush() {
+  const [recipe, setRecipe] = useState(0);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [feedback, setFeedback] = useState("");
+  const [complete, setComplete] = useState(false);
+  const current = RECIPES[recipe];
+
+  function selectIngredient(id: string) {
+    if (complete) return;
+    setFeedback("");
+    setSelected((previous) =>
+      previous.includes(id) ? previous.filter((item) => item !== id) : previous.length < 3 ? [...previous, id] : previous,
+    );
+  }
+
+  function check() {
+    if (selected.length !== 3 || complete) return;
+    if (!recipeMatches(selected, current.ingredients)) {
+      setFeedback("Not quite! Check the recipe and try another combination.");
+      return;
+    }
+    setFeedback("Perfect recipe! You got it.");
+    if (recipe === RECIPES.length - 1) setComplete(true);
+    else {
+      setRecipe((value) => value + 1);
+      setSelected([]);
+    }
+  }
+
+  function restart() {
+    setRecipe(0); setSelected([]); setFeedback(""); setComplete(false);
+  }
+
+  return (
+    <section className="dp-game-panel" aria-label="Recipe Rush">
+      <div className="dp-game-head">
+        <div><h2>Recipe Rush</h2><p>Choose exactly three ingredients for each signature dish.</p></div>
+        <button className="dp-small-button" type="button" onClick={restart}><RotateCcw size={16} /> Restart</button>
+      </div>
+      <div className="dp-recipe-target"><span aria-hidden="true">{complete ? "🏆" : current.emoji}</span><div><small>{complete ? "Challenge complete" : `Recipe ${recipe + 1} of ${RECIPES.length}`}</small><h3>{complete ? "Master Chef!" : current.label}</h3><p>{complete ? "Three recipes completed. Well played!" : "Select the ingredients that belong in this dish."}</p></div></div>
+      <div className="dp-ingredient-grid">
+        {INGREDIENTS.map((item) => (
+          <button key={item.id} type="button" disabled={complete} aria-pressed={selected.includes(item.id)} onClick={() => selectIngredient(item.id)}
+            className={`dp-ingredient ${selected.includes(item.id) ? "is-selected" : ""}`}>
+            <span aria-hidden="true">{item.emoji}</span><small>{item.label}</small>
+          </button>
+        ))}
+      </div>
+      <div className="dp-recipe-footer">
+        <span>{selected.length} / 3 ingredients</span>
+        <button type="button" className="dp-main-button" disabled={selected.length !== 3 || complete} onClick={check}>Check recipe <ArrowRight size={16}/></button>
+      </div>
+      {feedback && <p role="status" className="dp-game-feedback">{feedback}</p>}
+      {complete && <button type="button" className="dp-small-button" onClick={restart}>Play again</button>}
+      <p className="dp-fineprint">Entertainment only. No game play or results affect food rewards.</p>
+    </section>
+  );
+}
+
+function PlayPage() {
+  const { brand } = Route.useSearch();
+  const theme = BRAND_THEMES[brand];
+  const [game, setGame] = useState<Game>("pairs");
+  return (
+    <div className="md-marketing-shell dp-shell" style={{ "--dp-accent": theme.accent } as React.CSSProperties}>
+      <SiteHeader />
+      <main className="dp-main">
+        <div className="dp-container">
+          <div className="dp-eyebrow"><Gamepad2 size={18} /> DISHBEE PLAY · {theme.label.toUpperCase()}</div>
+          <div className="dp-intro">
+            <div><h1>Good food. <em>Great games.</em></h1><p>{theme.subtitle} Quick games, food-themed cards and fun challenges — all free, no gambling.</p>
+              <div className="dp-claims"><span><ShieldCheck size={16}/> No gambling</span><span><CheckCircle2 size={16}/> Free to play</span><span><Sparkles size={16}/> Food-themed cards</span></div>
+            </div>
+            <div className="dp-feature-card"><span>{theme.symbol}</span><strong>{theme.label}</strong><small>PLAY EDITION</small></div>
+          </div>
+          <div className="dp-brands"><span>Play as</span>{Object.entries(BRAND_THEMES).map(([id, item]) =>
+            <Link key={id} to="/play" search={{ brand: id as BrandTheme }} className={`dp-brand-pill ${brand === id ? "is-active" : ""}`} aria-current={brand === id ? "page" : undefined}>{item.symbol} {item.label}</Link>,
+          )}</div>
+          <div className="dp-suits" aria-label="Our four food card suits">{FOOD_SUITS.map((suit) => <div key={suit.id}><span aria-hidden="true">{suit.symbol}</span><b>{suit.label}</b><small>{suit.brand}</small></div>)}</div>
+          <div className="dp-section-title"><div><small>READY TO PLAY</small><h2>Choose your game</h2></div><p>Scores and badges are for fun only.</p></div>
+          <div className="dp-game-select">
+            <button type="button" onClick={() => setGame("pairs")} aria-pressed={game === "pairs"} className={game === "pairs" ? "is-active" : ""}>🃏 Food Pairs <small>Memory game</small></button>
+            <button type="button" onClick={() => setGame("recipe")} aria-pressed={game === "recipe"} className={game === "recipe" ? "is-active" : ""}>👩‍🍳 Recipe Rush <small>Food puzzle</small></button>
+          </div>
+          {game === "pairs" ? <FoodPairs /> : <RecipeRush />}
+          <section className="dp-collection">
+            <div className="dp-section-title"><div><small>SEPARATE FROM THE GAMES</small><h2>Full House Rewards</h2></div><Gift size={27}/></div>
+            <p>Food rewards will be earned only from verified eligible purchases, never from card-game outcomes. Guaranteed milestones can be enabled once the Dishbee loyalty ledger and redemption flow are connected.</p>
+            <div className="dp-collection-cards">{["🍔","🌮","🍟","🥤","👨‍🍳"].map((icon,index) => <div key={index}><span>{icon}</span><LockKeyhole size={15}/><small>Card {index + 1}</small></div>)}</div>
+            <p className="dp-pending"><LockKeyhole size={16}/> Purchase rewards are not active in this preview. No simulated points or vouchers are issued.</p>
+            <Link to="/order" className="dp-order-link">Browse MealDeck food <ArrowRight size={17}/></Link>
+          </section>
+          <div className="dp-section-title"><div><small>COMING NEXT</small><h2>More games</h2></div></div>
+          <div className="dp-catalogue">{GAME_CATALOGUE.filter((entry) => entry.state === "planned").map((entry) => <article key={entry.id}><LockKeyhole size={17}/><h3>{entry.name}</h3><p>{entry.description}</p><small>In development</small></article>)}</div>
+          <section className="dp-events"><div><small>MATCH NIGHTS</small><h2>Food for the big moments</h2><p>Future football and fight-night bundles will use published prices and accessible offers — never betting or predictions for prizes. Fanzeno integration and fixture-based scheduling are planned, not live.</p></div><Link to="/order">Explore food brands <ArrowRight size={17}/></Link></section>
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
