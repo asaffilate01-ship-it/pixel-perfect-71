@@ -7,7 +7,7 @@ import {
   BRAND_THEMES, FOOD_SUITS, GAME_CATALOGUE, INGREDIENTS, RECIPES,
   isBrandTheme, makePairs, recipeMatches, type BrandTheme, type PairCard, type SuitArt,
 } from "@/lib/dishbee-play";
-import { suitArtwork } from "@/lib/food-suit-artwork";
+import { suitArtwork, tileArtwork } from "@/lib/food-suit-artwork";
 import { seo } from "@/lib/seo";
 import cardBack from "@/assets/mealdeck-card-back.png";
 import cardFront from "@/assets/mealdeck-card-front.png";
@@ -147,7 +147,7 @@ function RecipeRush() {
           <button key={item.id} type="button" disabled={complete} aria-pressed={selected.includes(item.id)} onClick={() => selectIngredient(item.id)}
             style={{ "--i": index } as CSSProperties}
             className={`dp-ingredient ${selected.includes(item.id) ? "is-selected" : ""}`}>
-            <span aria-hidden="true">{item.emoji}</span><small>{item.label}</small>
+            <img className="dp-ingredient-art" src={tileArtwork[item.art]} alt="" loading="lazy" /><small>{item.label}</small>
           </button>
         ))}
       </div>
