@@ -7,7 +7,7 @@ import {
   BRAND_THEMES, FOOD_SUITS, GAME_CATALOGUE, INGREDIENTS, RECIPES,
   isBrandTheme, makePairs, recipeMatches, type BrandTheme, type PairCard, type SuitArt,
 } from "@/lib/dishbee-play";
-import { foodArtwork, suitArtwork, tileArtwork } from "@/lib/food-suit-artwork";
+import { gameFoodArtwork as foodArtwork, gameFoodArtwork as suitArtwork, gameFoodArtwork as tileArtwork } from "@/lib/game-food-artwork";
 import { seo } from "@/lib/seo";
 import cardBack from "@/assets/mealdeck-card-back.png";
 import cardFront from "@/assets/mealdeck-card-front.png";
