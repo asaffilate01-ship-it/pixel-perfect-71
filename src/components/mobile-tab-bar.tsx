@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, LayoutGrid, Gamepad2, MapPin, UtensilsCrossed } from "lucide-react";
+import { Home, LayoutGrid, Gamepad2, MapPin } from "lucide-react";
 import { suitArtwork } from "@/lib/food-suit-artwork";
+import backEmblem from "@/assets/mealdeck-back-emblem.png";
 
 type Tab = { label: string; to: "/" | "/order" | "/track" | "/play"; hash?: string; icon: typeof Home };
 
@@ -75,7 +76,7 @@ export function MobileTabBar() {
               <span className="absolute bottom-1 right-1.5 flex rotate-180 flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
                 A<img src={suitArtwork.burger} alt="" className="mt-0.5 h-2.5 w-2.5 object-contain" />
               </span>
-              <UtensilsCrossed className="size-5 text-primary" />
+              <img src={backEmblem} alt="" className="h-4 w-auto object-contain" />
               <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">Order</span>
             </Link>
           </div>
