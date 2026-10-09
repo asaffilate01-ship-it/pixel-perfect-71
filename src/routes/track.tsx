@@ -9,6 +9,7 @@ import {
   MapPin,
   PackageCheck,
   Search,
+  Gamepad2,
   ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -229,6 +230,16 @@ function TrackOrderPage(){
               </div>
             ):null}
           </div>
+
+          {["paid", "accepted", "preparing"].includes(result.orderStatus) ? (
+            <div className="border-t border-border p-6">
+              <p className="mb-3 text-sm text-muted-foreground">Your chefs are at work. Fancy a free food-card game while you wait?</p>
+              <Link to="/play" className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-accent-foreground">
+                <Gamepad2 className="size-5" /> Play while you wait
+              </Link>
+              <p className="mt-2 text-xs text-muted-foreground">Games are for fun only, with no prizes or wagering. Return here to track your order.</p>
+            </div>
+          ) : null}
 
           {result.trackingUrl?(
             <div className="border-t border-border p-6">
