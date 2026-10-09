@@ -34,3 +34,6 @@ export const tileArtwork = {
   cheese,
   sauce,
 };
+
+/** Every face a card can carry — suits plus ingredient tiles. */
+export const foodArtwork = { ...suitArtwork, ...tileArtwork };

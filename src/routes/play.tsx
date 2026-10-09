@@ -7,7 +7,7 @@ import {
   BRAND_THEMES, FOOD_SUITS, GAME_CATALOGUE, INGREDIENTS, RECIPES,
   isBrandTheme, makePairs, recipeMatches, type BrandTheme, type PairCard, type SuitArt,
 } from "@/lib/dishbee-play";
-import { suitArtwork, tileArtwork } from "@/lib/food-suit-artwork";
+import { foodArtwork, suitArtwork, tileArtwork } from "@/lib/food-suit-artwork";
 import { seo } from "@/lib/seo";
 import cardBack from "@/assets/mealdeck-card-back.png";
 import cardFront from "@/assets/mealdeck-card-front.png";
@@ -83,7 +83,7 @@ function FoodPairs({ brand }: { brand: BrandTheme }) {
               aria-pressed={shown}>
               <span className="dp-pair-flip" aria-hidden="true">
                 <span className="dp-pair-face dp-pair-cover"><img className="dp-cover-art" src={cardBack} alt="" loading="lazy" /></span>
-                <span className="dp-pair-face dp-pair-front"><img src={suitArtwork[card.art]} alt="" loading="lazy" /><small>{card.label}</small></span>
+                <span className="dp-pair-face dp-pair-front"><img src={foodArtwork[card.art]} alt="" loading="lazy" /><small>{card.label}</small></span>
               </span>
             </button>
           );
