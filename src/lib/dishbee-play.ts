@@ -4,11 +4,15 @@
  * discount codes, food rewards or payment entitlements.
  * The verified-order loyalty ledger is a separate server-side system.
  */
+
+/** Food-suit artwork keys. Artwork itself lives in src/lib/food-suit-artwork.ts. */
+export type SuitArt = "burger" | "french-taco" | "chicken" | "cake" | "fries" | "drink" | "paratha";
+
 export const FOOD_SUITS = [
-  { id: "burger", symbol: "🍔", label: "Burgers", brand: "Skorch" },
-  { id: "taco", symbol: "🌮", label: "Tacos", brand: "Taconelle" },
-  { id: "fries", symbol: "🍟", label: "Fries", brand: "Load'd" },
-  { id: "drinks", symbol: "🥤", label: "Drinks", brand: "Vyta" },
+  { id: "burger", symbol: "🍔", art: "burger", label: "Burgers", brand: "Skorch" },
+  { id: "taco", symbol: "🌮", art: "french-taco", label: "Tacos", brand: "Taconelle" },
+  { id: "fries", symbol: "🍟", art: "fries", label: "Fries", brand: "Load'd" },
+  { id: "drinks", symbol: "🥤", art: "drink", label: "Drinks", brand: "Vyta" },
 ] as const;
 
 export const GAME_CATALOGUE = [
@@ -21,31 +25,31 @@ export const GAME_CATALOGUE = [
 ] as const;
 
 export const BRAND_THEMES = {
-  mealdeck: { label: "MealDeck", symbol: "🃏", accent: "#f8c94c", subtitle: "Every brand. One place to play." },
-  skorch: { label: "Skorch Burgers", symbol: "🍔", accent: "#fb923c", subtitle: "Fire up your next round." },
-  taconelle: { label: "Taconelle", symbol: "🌮", accent: "#b1ef8b", subtitle: "A fresh twist on game night." },
-  loadd: { label: "Load'd", symbol: "🍟", accent: "#ff8c8c", subtitle: "Play fully loaded." },
-  paratique: { label: "Paratique", symbol: "🫓", accent: "#e8b77e", subtitle: "The perfect playtime pairing." },
-  tavo: { label: "Tavo Chicken", symbol: "🍗", accent: "#e8ad64", subtitle: "Bring your A-game." },
-  vyta: { label: "Vyta", symbol: "🥤", accent: "#8bdfe0", subtitle: "Play refreshed." },
+  mealdeck: { label: "MealDeck", symbol: "🃏", art: "cake", accent: "#f8c94c", subtitle: "Every brand. One place to play." },
+  skorch: { label: "Skorch Burgers", symbol: "🍔", art: "burger", accent: "#fb923c", subtitle: "Fire up your next round." },
+  taconelle: { label: "Taconelle", symbol: "🌮", art: "french-taco", accent: "#b1ef8b", subtitle: "A fresh twist on game night." },
+  loadd: { label: "Load'd", symbol: "🍟", art: "fries", accent: "#ff8c8c", subtitle: "Play fully loaded." },
+  paratique: { label: "Paratique", symbol: "🫓", art: "paratha", accent: "#e8b77e", subtitle: "The perfect playtime pairing." },
+  tavo: { label: "Tavo Chicken", symbol: "🍗", art: "chicken", accent: "#e8ad64", subtitle: "Bring your A-game." },
+  vyta: { label: "Vyta", symbol: "🥤", art: "drink", accent: "#8bdfe0", subtitle: "Play refreshed." },
 } as const;
 export type BrandTheme = keyof typeof BRAND_THEMES;
 export function isBrandTheme(value: unknown): value is BrandTheme {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(BRAND_THEMES, value);
 }
 
-export type PairCard = { id: number; food: string; label: string };
-const FOODS = [
-  ["🍔", "Burger"], ["🌮", "Taco"], ["🍟", "Fries"],
-  ["🥤", "Drink"], ["🍗", "Chicken"], ["🫓", "Paratha"],
-] as const;
+export type PairCard = { id: number; food: string; art: SuitArt; label: string };
+const FOODS: readonly [string, SuitArt, string][] = [
+  ["🍔", "burger", "Burger"], ["🌮", "french-taco", "Taco"], ["🍟", "fries", "Fries"],
+  ["🥤", "drink", "Drink"], ["🍗", "chicken", "Chicken"], ["🫓", "paratha", "Paratha"],
+];
 
 /** Shuffling changes only entertainment puzzles, never a reward or redemption. */
 export function makePairs(): PairCard[] {
-  const cards = FOODS.flatMap(([food, label], pair) => [
-    { id: pair * 2, food, label }, { id: pair * 2 + 1, food, label },
+  const cards = FOODS.flatMap(([food, art, label], pair) => [
+    { id: pair * 2, food, art, label }, { id: pair * 2 + 1, food, art, label },
   ]);
-  for (let i = cards.length - 1; i > 0; i--) {
+  for (let i = cards.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     const temp = cards[i]!;
     cards[i] = cards[j]!;
@@ -67,9 +71,9 @@ export const INGREDIENTS = [
 ] as const;
 
 export const RECIPES = [
-  { label: "Skorch Burger", emoji: "🍔", ingredients: ["bun", "patty", "lettuce"] },
-  { label: "Taconelle Taco", emoji: "🌮", ingredients: ["tortilla", "chicken", "salsa"] },
-  { label: "Load'd Fries", emoji: "🍟", ingredients: ["fries", "cheese", "sauce"] },
+  { label: "Skorch Burger", emoji: "🍔", art: "burger", ingredients: ["bun", "patty", "lettuce"] },
+  { label: "Taconelle Taco", emoji: "🌮", art: "french-taco", ingredients: ["tortilla", "chicken", "salsa"] },
+  { label: "Load'd Fries", emoji: "🍟", art: "fries", ingredients: ["fries", "cheese", "sauce"] },
 ] as const;
 
 export function recipeMatches(selected: string[], target: readonly string[]): boolean {
