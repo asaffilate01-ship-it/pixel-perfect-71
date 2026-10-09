@@ -15,5 +15,5 @@
 - [x] Mobile ordering flow: sticky restaurant row, slide-up basket/checkout, scrollable dish options
 - [x] Add Pastarivo, Nusara, Rise & Griddle, Souvano to ordering
 - [x] Branded in-app success messages
-- [ ] Play page: remove Fanzeno / fixture-based scheduling and "predictions for prizes" wording
-- [ ] Play: make "Play as" brand skins meaningful (each brand deals its own dishes) + further table polish
+- [x] Play page: remove Fanzeno / fixture-based scheduling and "predictions for prizes" wording
+- [x] Play: make "Play as" brand skins meaningful (each brand deals its own dishes) + further table polish
