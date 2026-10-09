@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { ArrowRight, CheckCircle2, Gamepad2, Gift, LockKeyhole, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -149,7 +149,7 @@ function PlayPage() {
   const theme = BRAND_THEMES[brand];
   const [game, setGame] = useState<Game>("pairs");
   return (
-    <div className="md-marketing-shell dp-shell" style={{ "--dp-accent": theme.accent } as React.CSSProperties}>
+    <div className="md-marketing-shell dp-shell" style={{ "--dp-accent": theme.accent } as CSSProperties}>
       <SiteHeader />
       <main className="dp-main">
         <div className="dp-container">
