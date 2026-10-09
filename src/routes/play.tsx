@@ -12,8 +12,8 @@ import { seo } from "@/lib/seo";
 type Game = "pairs" | "recipe";
 
 export const Route = createFileRoute("/play")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    brand: isBrandTheme(search.brand) ? search.brand : ("mealdeck" as BrandTheme),
+  validateSearch: (search: Record<string, unknown>): { brand?: BrandTheme } => ({
+    ...(isBrandTheme(search["brand"]) ? { brand: search["brand"] } : {}),
   }),
   head: () => seo({
     title: "Dishbee Play at MealDeck — Free Food Card Games",
@@ -146,7 +146,7 @@ function RecipeRush() {
 }
 
 function PlayPage() {
-  const { brand } = Route.useSearch();
+  const { brand = "mealdeck" } = Route.useSearch();
   const theme = BRAND_THEMES[brand];
   const [game, setGame] = useState<Game>("pairs");
   return (
