@@ -145,7 +145,7 @@ function LandingPage() {
                   <div className="md-offer-corner md-offer-corner-br" aria-hidden="true">
                     <strong>{offer.rank}</strong><img src={suitArtwork[offer.suit]} alt="" />
                   </div>
-                  <img className="md-offer-pip" src={suitArtwork[offer.suit]} alt="" aria-hidden="true" />
+                  <img className="md-offer-pip" src={backEmblem} alt="" aria-hidden="true" />
                   <p className="md-offer-label">{offer.label}</p>
                   <h3>{offer.value}</h3>
                   <p>{offer.copy}</p>
