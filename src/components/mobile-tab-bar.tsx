@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, LayoutGrid, Gamepad2, MapPin, UtensilsCrossed } from "lucide-react";
+import { suitArtwork } from "@/lib/food-suit-artwork";
 
 type Tab = { label: string; to: "/" | "/order" | "/track" | "/play"; hash?: string; icon: typeof Home };
 
@@ -69,10 +70,10 @@ export function MobileTabBar() {
             >
               <span className="pointer-events-none absolute inset-1 rounded-[6px] border-[1.5px] border-primary/70" />
               <span className="absolute left-1.5 top-1 flex flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
-                A<small className="text-[9px]">🍔</small>
+                A<img src={suitArtwork.burger} alt="" className="mt-0.5 h-2.5 w-2.5 object-contain" />
               </span>
               <span className="absolute bottom-1 right-1.5 flex rotate-180 flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
-                A<small className="text-[9px]">🍔</small>
+                A<img src={suitArtwork.burger} alt="" className="mt-0.5 h-2.5 w-2.5 object-contain" />
               </span>
               <UtensilsCrossed className="size-5 text-primary" />
               <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">Order</span>
