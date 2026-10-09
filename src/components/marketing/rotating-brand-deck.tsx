@@ -3,12 +3,7 @@ import cardFront from "@/assets/mealdeck-card-front.png";
 import cardBack from "@/assets/mealdeck-card-back.png";
 import { marketingBrands } from "@/lib/marketing-brands";
 import { chefTitles, heroFoodDeck } from "@/lib/hero-food-deck";
-import burgerSuit from "@/assets/card-suit-burger.png";
-import tacoSuit from "@/assets/card-suit-french-taco.png";
-import chickenSuit from "@/assets/card-suit-chicken.png";
-import cakeSuit from "@/assets/card-suit-cake.png";
-
-const suitArtwork = { burger: burgerSuit, "french-taco": tacoSuit, chicken: chickenSuit, cake: cakeSuit };
+import { suitArtwork } from "@/lib/food-suit-artwork";
 const stepSeconds = 3;
 const introDuration = 4600;
 

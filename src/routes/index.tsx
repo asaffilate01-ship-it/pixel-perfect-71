@@ -24,6 +24,7 @@ import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import backEmblem from "@/assets/mealdeck-back-emblem.png";
 import { ldScript, orgJsonLd, seo } from "@/lib/seo";
+import { suitArtwork } from "@/lib/food-suit-artwork";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -50,13 +51,13 @@ const directBenefits = [
 ];
 
 const offers = [
-  { rank: "A", suit: "🍔", label: "The Burger Ace", value: "FREE", copy: "Spend £21. Get an eligible burger on us." },
-  { rank: "2", suit: "🌮", label: "Perfect Pair", value: "½ PRICE", copy: "Buy two identical eligible items and get the second half price." },
-  { rank: "S", suit: "🍟", label: "Snap!", value: "2 FOR 1", copy: "Selected matching items. Pay for one." },
-  { rank: "K", suit: "🥤", label: "The Group Hand", value: "+ POINTS", copy: "Selected group orders earn extra loyalty points." },
-  { rank: "F", suit: "🍔", label: "Full House Feast", value: "£5 OFF", copy: "Order from three brands with a £30 minimum spend." },
-  { rank: "10", suit: "🌮", label: "The Loyalty Flush", value: "10× PTS", copy: "Your fifth direct order in a month earns 10× points." },
-];
+  { rank: "A", suit: "burger", label: "The Burger Ace", value: "FREE", copy: "Spend £21. Get an eligible burger on us." },
+  { rank: "2", suit: "french-taco", label: "Perfect Pair", value: "½ PRICE", copy: "Buy two identical eligible items and get the second half price." },
+  { rank: "C", suit: "chicken", label: "Snap!", value: "2 FOR 1", copy: "Selected matching items. Pay for one." },
+  { rank: "M", suit: "cake", label: "The Group Hand", value: "+ POINTS", copy: "Selected group orders earn extra loyalty points." },
+  { rank: "H", suit: "burger", label: "Full House Feast", value: "£5 OFF", copy: "Order from three brands with a £30 minimum spend." },
+  { rank: "10", suit: "french-taco", label: "The Loyalty Flush", value: "10× PTS", copy: "Your fifth direct order in a month earns 10× points." },
+] as const;
 
 const steps = [
   { n: "01", title: "Choose how you want it", copy: "Delivery, pickup or kerbside. Select your area when ordering opens." },
@@ -136,16 +137,15 @@ function LandingPage() {
           </div>
           <div className="md-offer-grid">
             {offers.map((offer) => {
-              const red = offer.suit === "🍔" || offer.suit === "🍟";
               return (
                 <article key={offer.label} className="md-offer-card">
-                  <div className={`md-offer-corner ${red ? "md-offer-corner-red" : ""}`}>
-                    <strong>{offer.rank}</strong><span>{offer.suit}</span>
+                  <div className="md-offer-corner" aria-hidden="true">
+                    <strong>{offer.rank}</strong><img src={suitArtwork[offer.suit]} alt="" />
                   </div>
-                  <div className={`md-offer-corner md-offer-corner-br ${red ? "md-offer-corner-red" : ""}`} aria-hidden="true">
-                    <strong>{offer.rank}</strong><span>{offer.suit}</span>
+                  <div className="md-offer-corner md-offer-corner-br" aria-hidden="true">
+                    <strong>{offer.rank}</strong><img src={suitArtwork[offer.suit]} alt="" />
                   </div>
-                  <span className="md-offer-pip" aria-hidden="true">{offer.suit}</span>
+                  <img className="md-offer-pip" src={suitArtwork[offer.suit]} alt="" aria-hidden="true" />
                   <p className="md-offer-label">{offer.label}</p>
                   <h3>{offer.value}</h3>
                   <p>{offer.copy}</p>
