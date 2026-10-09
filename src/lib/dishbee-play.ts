@@ -71,5 +71,5 @@ export const RECIPES = [
 ] as const;
 
 export function recipeMatches(selected: string[], target: readonly string[]): boolean {
-  return selected.length === target.length && selected.every((item) => target.includes(item));
+  return selected.length === target.length && new Set(selected).size === target.length && selected.every((item) => target.includes(item));
 }
