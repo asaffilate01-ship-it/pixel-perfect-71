@@ -72,9 +72,6 @@ export function makePairs(brand: BrandTheme = "mealdeck"): PairCard[] {
   return cards;
 }
 
-/** Ingredient tile artwork keys, mapped in src/lib/food-suit-artwork.ts. */
-export type TileArt = "bun" | "patty" | "lettuce" | "tortilla" | "chicken" | "salsa" | "fries" | "cheese" | "sauce";
-
 export const INGREDIENTS = [
   { id: "bun", label: "Bun", emoji: "🍞", art: "bun" },
   { id: "patty", label: "Patty", emoji: "🥩", art: "patty" },
