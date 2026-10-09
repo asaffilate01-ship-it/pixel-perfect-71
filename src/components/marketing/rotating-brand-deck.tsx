@@ -71,7 +71,7 @@ export function RotatingBrandDeck() {
       <CardBack side="left" />
       <CardBack side="right" />
       {cards.map((card, index) => {
-        const black = card.suit === "♠" || card.suit === "♣";
+        const black = card.suit === "🍟" || card.suit === "🥤";
         const centeredIndex = index - (cards.length - 1) / 2;
         return (
           <div
