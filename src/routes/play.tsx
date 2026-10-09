@@ -68,7 +68,7 @@ function FoodPairs({ brand }: { brand: BrandTheme }) {
   return (
     <section className="dp-game-panel" aria-label="Food Pairs">
       <div className="dp-game-head">
-        <div><h2>Food Pairs</h2><p>Turn over two cards. Match all six food pairs.</p></div>
+        <div><h2>Food Pairs</h2><p>{BRAND_THEMES[brand].label} deck — turn over two cards and match all six pairs.</p></div>
         <button className="dp-small-button" type="button" onClick={restart}><RotateCcw size={16} /> New game</button>
       </div>
       <div className="dp-statline"><span>Pairs <b>{matched.length / 2} / 6</b></span><span>Moves <b>{moves}</b></span><span>Cost <b>Free</b></span></div>
@@ -188,6 +188,7 @@ function PlayPage() {
               <img className="dp-pill-art" src={suitArtwork[item.art]} alt="" loading="lazy" /> {item.label}
             </Link>,
           )}</div>
+          <p className="dp-brands-note">Each brand deals its own dishes into the deck — pick one and the cards change with it.</p>
           <div className="dp-suits" aria-label="Our four food card suits">{FOOD_SUITS.map((suit) => <div key={suit.id}><img src={suitArtwork[suit.art]} alt="" loading="lazy" /><b>{suit.label}</b><small>{suit.brand}</small></div>)}</div>
           <div className="dp-section-title"><div><small>READY TO PLAY</small><h2>Choose your game</h2></div><p>Scores and badges are for fun only.</p></div>
           <div className="dp-game-select">
