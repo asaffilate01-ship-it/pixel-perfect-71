@@ -208,7 +208,6 @@ function PlayPage() {
           </section>
           <div className="dp-section-title"><div><small>COMING NEXT</small><h2>More games</h2></div></div>
           <div className="dp-catalogue">{GAME_CATALOGUE.filter((entry) => entry.state === "planned").map((entry) => <article key={entry.id}><LockKeyhole size={17}/><h3>{entry.name}</h3><p>{entry.description}</p><small>In development</small></article>)}</div>
-          <section className="dp-events"><div><small>MATCH NIGHTS</small><h2>Food for the big moments</h2><p>Future football and fight-night bundles will use published prices and accessible offers — never betting or predictions for prizes. Fanzeno integration and fixture-based scheduling are planned, not live.</p></div><Link to="/order">Explore food brands <ArrowRight size={17}/></Link></section>
         </div>
       </main>
       <SiteFooter />

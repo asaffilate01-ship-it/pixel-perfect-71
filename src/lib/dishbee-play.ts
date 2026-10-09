@@ -58,16 +58,19 @@ export function makePairs(): PairCard[] {
   return cards;
 }
 
+/** Ingredient tile artwork keys, mapped in src/lib/food-suit-artwork.ts. */
+export type TileArt = "bun" | "patty" | "lettuce" | "tortilla" | "chicken" | "salsa" | "fries" | "cheese" | "sauce";
+
 export const INGREDIENTS = [
-  { id: "bun", label: "Bun", emoji: "🍞" },
-  { id: "patty", label: "Patty", emoji: "🥩" },
-  { id: "lettuce", label: "Lettuce", emoji: "🥬" },
-  { id: "tortilla", label: "Tortilla", emoji: "🫓" },
-  { id: "chicken", label: "Chicken", emoji: "🍗" },
-  { id: "salsa", label: "Salsa", emoji: "🍅" },
-  { id: "fries", label: "Fries", emoji: "🍟" },
-  { id: "cheese", label: "Cheese", emoji: "🧀" },
-  { id: "sauce", label: "Sauce", emoji: "🥫" },
+  { id: "bun", label: "Bun", emoji: "🍞", art: "bun" },
+  { id: "patty", label: "Patty", emoji: "🥩", art: "patty" },
+  { id: "lettuce", label: "Lettuce", emoji: "🥬", art: "lettuce" },
+  { id: "tortilla", label: "Tortilla", emoji: "🫓", art: "tortilla" },
+  { id: "chicken", label: "Chicken", emoji: "🍗", art: "chicken" },
+  { id: "salsa", label: "Salsa", emoji: "🍅", art: "salsa" },
+  { id: "fries", label: "Fries", emoji: "🍟", art: "fries" },
+  { id: "cheese", label: "Cheese", emoji: "🧀", art: "cheese" },
+  { id: "sauce", label: "Sauce", emoji: "🥫", art: "sauce" },
 ] as const;
 
 export const RECIPES = [
