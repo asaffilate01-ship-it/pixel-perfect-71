@@ -263,14 +263,23 @@ function LandingPage() {
             <p>More cities are in the shuffle. MealDeck is stacking its next hands across the UK.</p>
           </div>
           <div className="md-soon-grid">
-            <article className="md-soon-card"><span className="md-soon-suit">♠</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>London</h3><p>The ace up London's sleeve.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♥</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Manchester</h3><p>You're next up our sleeve.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♦</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Birmingham</h3><p>The deck is stacked in your favour.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♣</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Leicester</h3><p>We're shuffling your way.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♦</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Bedford</h3><p>Consider yourself dealt in.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♠</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Milton Keynes</h3><p>A winning hand is on the table.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♥</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Cardiff</h3><p>Hold tight — the cards are warm.</p></article>
-            <article className="md-soon-card md-soon-card-wild"><span className="md-soon-suit">★</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Your city</h3><p>Nominate it and we'll deal you in first.</p></article>
+            {([
+              { city: "London", rank: "A", suit: "burger", copy: "The ace up London's sleeve." },
+              { city: "Manchester", rank: "2", suit: "french-taco", copy: "You're next up our sleeve." },
+              { city: "Birmingham", rank: "C", suit: "chicken", copy: "The deck is stacked in your favour." },
+              { city: "Leicester", rank: "H", suit: "cake", copy: "We're shuffling your way." },
+              { city: "Bedford", rank: "3", suit: "burger", copy: "Consider yourself dealt in." },
+              { city: "Milton Keynes", rank: "4", suit: "french-taco", copy: "A winning hand is on the table." },
+              { city: "Cardiff", rank: "5", suit: "chicken", copy: "Hold tight — the cards are warm." },
+              { city: "Your city", rank: "M", suit: "cake", copy: "Nominate it and we'll deal you in first." },
+            ] as const).map(({ city, rank, suit, copy }) => (
+              <article key={city} className={`md-soon-card${city === "Your city" ? " md-soon-card-wild" : ""}`}>
+                <span className="md-soon-corner md-soon-corner-tl" aria-hidden="true"><b>{rank}</b><img src={suitArtwork[suit]} alt="" /></span>
+                <span className="md-soon-corner md-soon-corner-br" aria-hidden="true"><b>{rank}</b><img src={suitArtwork[suit]} alt="" /></span>
+                <img src={backEmblem} alt="" className="md-soon-emblem" />
+                <h3>{city}</h3><p>{copy}</p>
+              </article>
+            ))}
           </div>
         </section>
 

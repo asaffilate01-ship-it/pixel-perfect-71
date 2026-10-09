@@ -595,8 +595,8 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 .md-soon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
 .md-soon-card {
   position: relative;
-  min-height: 190px;
-  padding: 18px 20px;
+  min-height: 240px;
+  padding: 48px 20px 52px;
   display: flex;
   flex-direction: column;
   border-radius: 14px;
@@ -618,6 +618,13 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 }
 .md-soon-card > * { position: relative; z-index: 1; }
 .md-soon-suit { font-size: 22px; line-height: 1; color: var(--md-cream); opacity: .9; }
+.md-soon-card .md-soon-corner { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 3px; font-family: var(--md-display); line-height: 1; color: var(--md-cream); }
+.md-soon-corner b { font-size: 20px; }
+.md-soon-corner img { display: block; width: 21px; height: 22px; object-fit: contain; filter: brightness(0) invert(1); }
+.md-soon-corner-tl { top: 12px; left: 14px; }
+.md-soon-corner-br { bottom: 12px; right: 14px; transform: rotate(180deg); }
+.md-soon-card-wild .md-soon-corner { color: var(--md-red); }
+.md-soon-card-wild .md-soon-corner img { filter: none; }
 .md-soon-emblem {
   width: 52px;
   margin: 10px auto 0;
@@ -755,6 +762,6 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 
 @media (max-width: 820px) {
   .md-soon-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-  .md-soon-card { min-height: 170px; padding: 16px 16px; }
+  .md-soon-card { min-height: 245px; padding: 48px 14px 52px; }
   .md-soon-card h3 { font-size: 20px; }
 }
