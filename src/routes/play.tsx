@@ -26,7 +26,7 @@ export const Route = createFileRoute("/play")({
   component: PlayPage,
 });
 
-function FoodPairs() {
+function FoodPairs({ brand }: { brand: BrandTheme }) {
   const [cards, setCards] = useState<PairCard[]>([]);
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<number[]>([]);
@@ -34,7 +34,7 @@ function FoodPairs() {
   const [round, setRound] = useState(0);
 
   // Defer randomisation until mount to prevent mismatched server-rendered markup.
-  useEffect(() => { setCards(makePairs()); }, []);
+  useEffect(() => { setCards(makePairs(brand)); }, [brand]);
 
   useEffect(() => {
     if (flipped.length !== 2) return;
@@ -51,7 +51,7 @@ function FoodPairs() {
   }, [cards, flipped]);
 
   function restart() {
-    setCards(makePairs());
+    setCards(makePairs(brand));
     setFlipped([]);
     setMatched([]);
     setMoves(0);
@@ -198,7 +198,7 @@ function PlayPage() {
               <img className="dp-tab-art" src={suitArtwork.chicken} alt="" loading="lazy" /> Recipe Rush <small>Food puzzle</small>
             </button>
           </div>
-          {game === "pairs" ? <FoodPairs /> : <RecipeRush />}
+          {game === "pairs" ? <FoodPairs brand={brand} /> : <RecipeRush />}
           <section className="dp-collection">
             <div className="dp-section-title"><div><small>SEPARATE FROM THE GAMES</small><h2>Full House Rewards</h2></div><Gift size={27}/></div>
             <p>Food rewards will be earned only from verified eligible purchases, never from card-game outcomes. Guaranteed milestones can be enabled once the loyalty ledger and redemption flow are connected.</p>
