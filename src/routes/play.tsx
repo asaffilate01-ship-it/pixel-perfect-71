@@ -35,6 +35,7 @@ function FoodPairs() {
   useEffect(() => {
     if (flipped.length !== 2) return;
     const [first, second] = flipped;
+    if (first === undefined || second === undefined) return;
     const a = cards.find((card) => card.id === first);
     const b = cards.find((card) => card.id === second);
     const match = a && b && a.food === b.food;
@@ -90,7 +91,7 @@ function RecipeRush() {
   const [selected, setSelected] = useState<string[]>([]);
   const [feedback, setFeedback] = useState("");
   const [complete, setComplete] = useState(false);
-  const current = RECIPES[recipe];
+  const current = RECIPES[recipe] ?? RECIPES[0];
 
   function selectIngredient(id: string) {
     if (complete) return;
