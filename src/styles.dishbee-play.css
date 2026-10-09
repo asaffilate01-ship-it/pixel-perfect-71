@@ -108,6 +108,7 @@
 
 /* ---------- Brand + suit rails ---------- */
 .dp-brands { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 26px; }
+.dp-brands-note { margin: -16px 0 22px; font-size: 12px; color: #c8b7bf; }
 .dp-brands > span { font-size: 12px; font-weight: 700; color: #b8adb2; margin-right: 4px; }
 .dp-brand-pill {
   border: 1px solid rgba(255,246,232,.18);
@@ -290,10 +291,20 @@
     repeating-linear-gradient(45deg, transparent 0 8px, rgba(255,246,232,.06) 8px 9px),
     linear-gradient(150deg, #cf1920 0%, #8f0d14 100%);
   border: 1px solid rgba(255,246,232,.6);
-  box-shadow: inset 0 0 0 3px rgba(120,10,16,.85), inset 0 1px 0 rgba(255,255,255,.25), 0 18px 28px -16px rgba(0,0,0,.85);
+  box-shadow: inset 0 0 0 3px rgba(120,10,16,.85), inset 0 1px 0 rgba(255,255,255,.25), 0 4px 0 -1px rgba(96,8,13,.6), 0 18px 28px -16px rgba(0,0,0,.85);
 }
 /* card back: the MealDeck logo card back artwork */
 .dp-cover-art { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
+/* printed gloss so the stock catches light */
+.dp-pair-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(125deg, rgba(255,255,255,.38) 0%, rgba(255,255,255,0) 44%);
+  pointer-events: none;
+}
+.dp-pair-card:not(:disabled):hover .dp-pair-face::after { background: linear-gradient(125deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,0) 58%); }
 /* card face: ivory front */
 .dp-pair-front {
   transform: rotateY(180deg);
@@ -342,32 +353,30 @@
 .dp-recipe-target p { font-size: 13px; color: #c9bbc1; }
 .dp-ingredient-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; perspective: 1100px; }
 .dp-ingredient {
+  position: relative;
   padding: 16px 12px;
-  border: 1px solid var(--dp-line);
+  border: 1px solid rgba(255,246,232,.5);
   border-radius: 14px;
-  background: linear-gradient(180deg, #3b2c39, #241a24);
-  color: #eee2e6;
+  background: linear-gradient(168deg, #fffaf0 0%, #f4e4c6 100%);
+  color: #2b1b21;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  box-shadow: 0 10px 0 -4px rgba(0,0,0,.5), 0 20px 28px -18px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.08);
+  box-shadow: 0 10px 0 -4px rgba(0,0,0,.45), 0 22px 30px -18px rgba(0,0,0,.9), inset 0 0 0 2px rgba(208,25,31,.12), inset 0 1px 0 #fff;
   transition: transform .16s, box-shadow .16s, border-color .16s, background .16s;
 }
-.dp-ingredient:hover { transform: translateY(-3px); }
-.dp-ingredient:active { transform: translateY(2px); box-shadow: 0 4px 0 -2px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06); }
-.dp-ingredient-art { width: 44px; height: 50px; object-fit: contain; filter: brightness(0) invert(1) opacity(.9) drop-shadow(0 6px 8px rgba(0,0,0,.35)); }
-.dp-ingredient small { font-size: 12px; }
+.dp-ingredient:hover { transform: translateY(-3px); border-color: rgba(248,201,76,.8); }
+.dp-ingredient:active { transform: translateY(2px); box-shadow: 0 4px 0 -2px rgba(0,0,0,.45), inset 0 0 0 2px rgba(208,25,31,.12), inset 0 1px 0 #fff; }
+.dp-ingredient-art { width: 44px; height: 50px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0,0,0,.18)); }
+.dp-ingredient small { font-size: 12px; font-weight: 800; letter-spacing: .4px; color: #7b2226; }
 .dp-ingredient.is-selected {
   border-color: var(--dp-accent);
-  background: linear-gradient(180deg, #fff8ea, #f0ddbd);
-  color: #2b1b21;
-  transform: translateY(-3px);
-  box-shadow: 0 0 0 1px var(--dp-accent), 0 18px 30px -18px rgba(248,201,76,.55), inset 0 1px 0 rgba(255,255,255,.6);
+  background: linear-gradient(168deg, #fffdf6 0%, #ffe9b4 100%);
+  transform: translateY(-4px);
+  box-shadow: 0 0 0 2px var(--dp-accent), 0 18px 34px -16px rgba(248,201,76,.6), inset 0 0 0 2px rgba(208,25,31,.2), inset 0 1px 0 #fff;
 }
-.dp-ingredient.is-selected .dp-ingredient-art { filter: drop-shadow(0 5px 8px rgba(0,0,0,.22)); }
-.dp-ingredient.is-selected small { color: #7b2226; }
 .dp-recipe-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; font-size: 13px; color: #cdbbc4; }
 .dp-main-button {
   background: linear-gradient(180deg, #ffeeb8, var(--dp-accent));
@@ -385,7 +394,7 @@
 }
 .dp-main-button:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.05); }
 .dp-main-button:not(:disabled):active { transform: translateY(1px); }
-.dp-main-button:disabled { cursor: not-allowed; background: linear-gradient(180deg, #6b5a3a, #4a3c26); color: #e2d4b4; border-color: rgba(255,246,232,.22); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); filter: none; }
+.dp-main-button:disabled { cursor: not-allowed; background: linear-gradient(180deg, rgba(255,246,232,.18), rgba(255,246,232,.06)); color: #efe5ea; border-color: rgba(255,246,232,.32); box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
 .dp-game-feedback { margin-top: 15px; font-size: 14px; font-weight: 700; color: #f1d28a; }
 
 /* ---------- Rewards + catalogue ---------- */
