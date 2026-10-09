@@ -68,14 +68,18 @@ function FoodPairs() {
       </div>
       <div className="dp-statline"><span>Pairs <b>{matched.length / 2} / 6</b></span><span>Moves <b>{moves}</b></span><span>Cost <b>Free</b></span></div>
       <div className="dp-pairs-grid">
-        {cards.map((card) => {
+        {cards.map((card, index) => {
           const shown = flipped.includes(card.id) || matched.includes(card.id);
           return (
             <button type="button" key={card.id} className={`dp-pair-card ${shown ? "is-revealed" : ""} ${matched.includes(card.id) ? "is-matched" : ""}`}
+              style={{ "--i": index } as CSSProperties}
               onClick={() => flip(card.id)} disabled={shown || flipped.length === 2 || complete}
               aria-label={shown ? card.label + " matched or revealed" : "Reveal food card"}
               aria-pressed={shown}>
-              {shown ? <><span aria-hidden="true">{card.food}</span><small>{card.label}</small></> : <><span aria-hidden="true">✦</span><small>MEALDECK</small></>}
+              <span className="dp-pair-flip" aria-hidden="true">
+                <span className="dp-pair-face dp-pair-cover"><b>✦</b><small>MEALDECK</small></span>
+                <span className="dp-pair-face dp-pair-front"><span>{card.food}</span><small>{card.label}</small></span>
+              </span>
             </button>
           );
         })}
@@ -127,8 +131,9 @@ function RecipeRush() {
       </div>
       <div className="dp-recipe-target"><span aria-hidden="true">{complete ? "🏆" : current.emoji}</span><div><small>{complete ? "Challenge complete" : `Recipe ${recipe + 1} of ${RECIPES.length}`}</small><h3>{complete ? "Master Chef!" : current.label}</h3><p>{complete ? "Three recipes completed. Well played!" : "Select the ingredients that belong in this dish."}</p></div></div>
       <div className="dp-ingredient-grid">
-        {INGREDIENTS.map((item) => (
+        {INGREDIENTS.map((item, index) => (
           <button key={item.id} type="button" disabled={complete} aria-pressed={selected.includes(item.id)} onClick={() => selectIngredient(item.id)}
+            style={{ "--i": index } as CSSProperties}
             className={`dp-ingredient ${selected.includes(item.id) ? "is-selected" : ""}`}>
             <span aria-hidden="true">{item.emoji}</span><small>{item.label}</small>
           </button>
