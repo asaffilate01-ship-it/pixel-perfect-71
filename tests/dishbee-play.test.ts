@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
-  BRAND_THEMES, FOOD_SUITS, GAME_CATALOGUE, INGREDIENTS, RECIPES,
+  BRAND_FOODS, BRAND_THEMES, FOOD_SUITS, GAME_CATALOGUE, INGREDIENTS, RECIPES,
   isBrandTheme, makePairs, recipeMatches,
 } from "../src/lib/dishbee-play";
 
@@ -20,6 +20,22 @@ describe("Dishbee Play entertainment-only games", () => {
       for (const card of cards) symbols.set(card.food, (symbols.get(card.food) ?? 0) + 1);
       expect([...symbols.values()]).toEqual([2, 2, 2, 2, 2, 2]);
     }
+  });
+  test("every brand skin deals its own six-dish deck", () => {
+    for (const brand of Object.keys(BRAND_THEMES) as (keyof typeof BRAND_THEMES)[]) {
+      const dishes = BRAND_FOODS[brand].map(([art]) => art);
+      expect(dishes).toHaveLength(6);
+      expect(new Set(dishes).size).toBe(6);
+      const cards = makePairs(brand);
+      expect(cards).toHaveLength(12);
+      expect(new Set(cards.map((card) => card.art)).size).toBe(6);
+      const counts = new Map<string, number>();
+      for (const card of cards) counts.set(card.food, (counts.get(card.food) ?? 0) + 1);
+      expect([...counts.values()]).toEqual([2, 2, 2, 2, 2, 2]);
+    }
+    // Skorch and Vyta must not deal the same deck — "Play as" has to mean something.
+    expect(BRAND_FOODS.skorch.map(([art]) => art)).not.toEqual(BRAND_FOODS.vyta.map(([art]) => art));
+    expect(BRAND_FOODS.skorch.map(([art]) => art)).not.toEqual(BRAND_FOODS.mealdeck.map(([art]) => art));
   });
   test("recipe acceptance requires exact ingredient sets", () => {
     expect(INGREDIENTS).toHaveLength(9);

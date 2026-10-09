@@ -276,7 +276,9 @@ function LandingPage() {
               <article key={city} className={`md-soon-card${city === "Your city" ? " md-soon-card-wild" : ""}`}>
                 <span className="md-soon-corner md-soon-corner-tl" aria-hidden="true"><b>{rank}</b><img src={suitArtwork[suit]} alt="" /></span>
                 <span className="md-soon-corner md-soon-corner-br" aria-hidden="true"><b>{rank}</b><img src={suitArtwork[suit]} alt="" /></span>
-                <img src={backEmblem} alt="" className="md-soon-emblem" />
+                {city === "Your city"
+                  ? <img src={backEmblem} alt="" className="md-soon-emblem" aria-hidden="true" />
+                  : <img src={suitArtwork[suit]} alt="" className="md-soon-emblem md-soon-emblem-food" aria-hidden="true" />}
                 <h3>{city}</h3><p>{copy}</p>
               </article>
             ))}
