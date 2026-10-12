@@ -16,6 +16,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
+      - name: MealDeck Play game regressions
+        run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/hero-food-deck.test.ts
       - run: bun run build
       - name: TypeScript validation
         run: bunx tsc --noEmit
@@ -27,4 +29,12 @@ jobs:
           src/components/franchise/*.tsx
           'src/routes/franchise_.$brandId.tsx'
           tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
+          --rule 'prettier/prettier: off'
+
+      - name: Game module lint
+        run: >
+          bunx eslint src/lib/dishbee-play.ts src/lib/kitchen-chaos.ts
+          src/lib/mealdeck-collection-games.ts src/lib/game-brand-artwork.ts
+          src/components/play/premium-games.tsx src/routes/play.tsx
+          tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts
           --rule 'prettier/prettier: off'
