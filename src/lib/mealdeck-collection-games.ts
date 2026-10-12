@@ -129,6 +129,11 @@ export function askGoDish(state: GoDishState, rank: GoDishRank): GoDishState {
     takeStock(hand, remaining);
     s = { ...s, player: hand, stock: remaining };
   }
+  if (!s.winner && s.stock.length === 0 && (s.player.length === 0 || s.chef.length === 0)) {
+    const winner: GoDishWinner = s.playerSets.length === s.chefSets.length ? "draw" :
+      s.playerSets.length > s.chefSets.length ? "player" : "chef";
+    s = { ...s, winner, lastMessage: "The draw pile is empty; round over." };
+  }
   return s;
 }
 export function drawGoDishIfEmpty(state: GoDishState): GoDishState {
