@@ -60,7 +60,9 @@ describe("Full House: guaranteed-solvable set puzzle",()=>{
       expect(cards).toHaveLength(9);
       expect(new Set(cards.map(card=>card.id)).size).toBe(9);
       const bySuit=CHAOS_SUITS.map(suit=>cards.filter(card=>card.suit===suit));
-      const winner=[...bySuit[0]!.slice(0,3),...bySuit[1]!.slice(0,2)];
+      const three=bySuit.find(group=>group.length===3)!;
+      const two=bySuit.find(group=>group.length===2)!;
+      const winner=[...three,...two.slice(0,2)];
       expect(isFullHouse(winner)).toBe(true);
       expect(isFullHouse(winner.slice(0,4))).toBe(false);
       expect(isFullHouse([...winner.slice(0,4),winner[0]!])).toBe(false);
