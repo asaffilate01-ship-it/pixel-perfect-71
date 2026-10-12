@@ -18,6 +18,7 @@ import marketingCss from "../styles.mealdeck-rebuild.css?url";
 import franchiseCss from "../styles.franchise.css?url";
 import franchiseBrandsCss from "../styles.franchise-brands.css?url";
 import dishbeePlayCss from "../styles.dishbee-play.css?url";
+import dishbeePlayPremiumCss from "../styles.dishbee-play-premium.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -113,6 +114,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: franchiseCss },
       { rel: "stylesheet", href: franchiseBrandsCss },
       { rel: "stylesheet", href: dishbeePlayCss },
+      { rel: "stylesheet", href: dishbeePlayPremiumCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
