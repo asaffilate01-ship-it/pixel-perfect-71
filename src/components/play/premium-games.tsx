@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, CheckCircle2, ChefHat, RotateCcw, Shuffle, Sparkles, Trophy } from "lucide-react";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { marketingBrands, cafe1Brand } from "@/lib/marketing-brands";
@@ -25,7 +25,7 @@ function Intro({ title, instructions, onReset }: { title: string; instructions: 
     </header>
   );
 }
-function Note({ children }: { children: React.ReactNode }) {
+function Note({ children }: { children: ReactNode }) {
   return <p className="dp-fineprint dp2-safe"><CheckCircle2 size={14} /> {children}</p>;
 }
 function Result({ message, success = false }: { message: string; success?: boolean }) {
