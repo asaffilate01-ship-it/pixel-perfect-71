@@ -6,9 +6,11 @@ import {
 
 describe("Dishbee Play entertainment-only games", () => {
   test("uses four food suits, not traditional gambling suits", () => {
-    expect(FOOD_SUITS.map((item) => item.symbol)).toEqual(["🍔", "🌮", "🍟", "🥤"]);
+    expect(FOOD_SUITS.map((item) => item.id)).toEqual(["burger", "chicken", "french-taco", "cake"]);
+    expect(FOOD_SUITS.map((item) => item.art)).toEqual(["burger", "chicken", "french-taco", "cake"]);
     expect(new Set(FOOD_SUITS.map((item) => item.id)).size).toBe(4);
-    expect(GAME_CATALOGUE.filter((game) => game.state === "playable").map((game) => game.id)).toEqual(["pairs", "recipe"]);
+    expect(GAME_CATALOGUE.filter((game) => game.state === "playable").map((game) => game.id))
+      .toEqual(["pairs", "recipe", "kitchen-chaos", "snap", "go-dish", "full-house", "solitaire"]);
     expect(JSON.stringify(GAME_CATALOGUE)).not.toMatch(/wager|stake|cash_prize|jackpot|redeemable/);
   });
   test("memory games contain exactly six matching pairs and unique card IDs", () => {
