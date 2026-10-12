@@ -14,24 +14,26 @@ export type TileArt = "bun" | "patty" | "lettuce" | "tortilla" | "chicken" | "sa
 /** Anything that can appear as a card face. */
 export type FoodArt = SuitArt | TileArt;
 
+/** Identical icon mapping to the approved MealDeck master card design. */
 export const FOOD_SUITS = [
-  { id: "burger", symbol: "🍔", art: "burger", label: "Burgers", brand: "Skorch" },
-  { id: "taco", symbol: "🌮", art: "french-taco", label: "Tacos", brand: "Taconelle" },
-  { id: "fries", symbol: "🍟", art: "fries", label: "Fries", brand: "Load'd" },
-  { id: "drinks", symbol: "🥤", art: "drink", label: "Drinks", brand: "Vyta" },
+  { id: "burger", symbol: "🍔", art: "burger", label: "Smashburger", brand: "Skorch" },
+  { id: "chicken", symbol: "🍗", art: "chicken", label: "Chicken Leg", brand: "Tavo Chicken" },
+  { id: "french-taco", symbol: "▤", art: "french-taco", label: "French Taco", brand: "Taconelle" },
+  { id: "cake", symbol: "🍰", art: "cake", label: "Cake", brand: "MealDeck" },
 ] as const;
 
 export const GAME_CATALOGUE = [
-  { id: "pairs", name: "Food Pairs", description: "Find six food pairs in as few moves as possible.", state: "playable" },
-  { id: "recipe", name: "Recipe Rush", description: "Build three recipes from the correct ingredient cards.", state: "playable" },
-  { id: "go-dish", name: "Go Dish!", description: "Build food-suit sets and ask opponents for matches.", state: "planned" },
-  { id: "kitchen-chaos", name: "Kitchen Chaos", description: "An original colour and food-suit shedding game.", state: "planned" },
-  { id: "solitaire", name: "MealDeck Solitaire", description: "Sort your food cards into complete kitchen stacks.", state: "planned" },
-  { id: "full-house", name: "Full House", description: "Complete food-themed hands with fixed, transparent rules.", state: "planned" },
+  { id: "pairs", name: "Food Pairs", description: "Flip and match delicious MealDeck food icons.", state: "playable" },
+  { id: "recipe", name: "Recipe Rush", description: "Build signature meals from the right ingredients.", state: "playable" },
+  { id: "kitchen-chaos", name: "Kitchen Chaos", description: "Take on the house chef in a colourful, original food-card game.", state: "playable" },
+  { id: "snap", name: "Brand Snap", description: "Spot matching official MealDeck brand logos.", state: "playable" },
+  { id: "go-dish", name: "Go Dish!", description: "Ask for food-card ranks and collect complete sets.", state: "playable" },
+  { id: "full-house", name: "Full House", description: "Find five cards forming three of one food suit and two of another.", state: "playable" },
+  { id: "solitaire", name: "Kitchen Stacks", description: "Sort each food suit from one to four in a solo challenge.", state: "playable" },
 ] as const;
 
 export const BRAND_THEMES = {
-  mealdeck: { label: "MealDeck", symbol: "🃏", art: "cake", accent: "#f8c94c", subtitle: "Every brand. One place to play." },
+  mealdeck: { label: "MealDeck", symbol: "🍽️", art: "burger", accent: "#f8c94c", subtitle: "Every brand. One place to play." },
   skorch: { label: "Skorch Burgers", symbol: "🍔", art: "burger", accent: "#fb923c", subtitle: "Fire up your next round." },
   taconelle: { label: "Taconelle", symbol: "🌮", art: "french-taco", accent: "#b1ef8b", subtitle: "A fresh twist on game night." },
   loadd: { label: "Load'd", symbol: "🍟", art: "fries", accent: "#ff8c8c", subtitle: "Play fully loaded." },
@@ -86,7 +88,7 @@ export const INGREDIENTS = [
 
 export const RECIPES = [
   { label: "Skorch Burger", emoji: "🍔", art: "burger", ingredients: ["bun", "patty", "lettuce"] },
-  { label: "Taconelle Taco", emoji: "🌮", art: "french-taco", ingredients: ["tortilla", "chicken", "salsa"] },
+  { label: "Taconelle French Taco", emoji: "▤", art: "french-taco", ingredients: ["tortilla", "chicken", "salsa"] },
   { label: "Load'd Fries", emoji: "🍟", art: "fries", ingredients: ["fries", "cheese", "sauce"] },
 ] as const;
 
