@@ -9,7 +9,7 @@ export const CHAOS_SUIT_NAMES: Record<FoodSuit, string> = {
   burger: "Burger", chicken: "Chicken", "french-taco": "French Taco", cake: "Cake",
 };
 export const CHAOS_COLOURS: Record<FoodSuit, string> = {
-  burger: "#c52635", chicken: "#e6a22e", "french-taco": "#228d88", cake: "#8752a5",
+  burger: "#A76537", chicken: "#C8202E", "french-taco": "#EE831C", cake: "#78368E",
 };
 export type ChaosAction = "number" | "rush" | "pause" | "chef-choice";
 export type ChaosCard = {
