@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, CheckCircle2, Gamepad2, Gift, LockKeyhole, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { KitchenChaos, BrandSnap, GoDish, FullHouse, KitchenStacks } from "@/components/play/premium-games";
 import { gameBrandArtwork } from "@/lib/game-brand-artwork";
@@ -12,7 +12,6 @@ import {
 import { gameFoodArtwork as foodArtwork, gameFoodArtwork as suitArtwork, gameFoodArtwork as tileArtwork } from "@/lib/game-food-artwork";
 import { seo } from "@/lib/seo";
 import cardBack from "@/assets/mealdeck-card-back.png";
-import cardFront from "@/assets/mealdeck-card-front.png";
 
 type Game = (typeof GAME_CATALOGUE)[number]["id"];
 
@@ -170,7 +169,7 @@ function PlayPage() {
   const [game, setGame] = useState<Game>("pairs");
   const collectionSuits: SuitArt[] = ["burger", "chicken", "french-taco", "cake"];
 
-  const playPanels: Record<Game, React.ReactNode> = {
+  const playPanels: Record<Game, ReactNode> = {
     pairs: <FoodPairs key={brand} brand={brand} />,
     recipe: <RecipeRush key={brand} />,
     "kitchen-chaos": <KitchenChaos />,
