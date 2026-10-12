@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { ArrowRight, MapPin, Menu, X } from "lucide-react";
-import mealDeckLogo from "@/assets/mealdeck-card-logo.png";
+import mealDeckLogo from "@/assets/mealdeck-main-logo.png.asset.json";
 
 const navItems = [
   { label: "Brands", to: "/", hash: "brands" },
@@ -17,7 +17,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
     <header className="md-site-header">
       <div className="md-header-inner">
         <Link to="/" className="md-header-logo" aria-label="MealDeck home">
-          <img src={mealDeckLogo} alt="MealDeck — One Order. Every Craving." />
+          <img src={mealDeckLogo.url} alt="MealDeck — One Order. Every Craving." />
         </Link>
 
         {nav ? (
@@ -26,6 +26,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
             {navItems.map((item) => (
               <Link key={item.label} to={item.to} hash={item.hash}>{item.label}</Link>
             ))}
+            <Link to="/play">Play &amp; Rewards</Link>
             <Link to="/franchise">Franchises</Link>
             <Link to="/blog">Blog</Link>
             <Link to="/track">Track</Link>
@@ -61,6 +62,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           ))}
           <Link to="/luton" onClick={() => setOpen(false)}>Luton</Link>
           <Link to="/st-albans" onClick={() => setOpen(false)}>St Albans</Link>
+          <Link to="/play" onClick={() => setOpen(false)}>Play &amp; Rewards</Link>
           <Link to="/franchise" onClick={() => setOpen(false)}>Franchises</Link>
           <Link to="/blog" onClick={() => setOpen(false)}>Blog</Link>
           <Link to="/track" onClick={() => setOpen(false)}>Track order</Link>

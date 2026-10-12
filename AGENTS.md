@@ -15,4 +15,7 @@
 - Blog posts live in a static list and render as playing-card tiles — no backend needed for content yet.
 - Global light/dark appearance is controlled by the shared theme provider and semantic CSS tokens — keeps every route and overlay synchronized.
 - The homepage card showcase uses a brief all-brand fan-to-deck intro before its repeating brand reveal — keeps food primary while retaining the playing-card identity.
+- Hero card ranks and suit counts come from a separate browser-safe deck definition, leaving restaurant availability untouched; corner emblems are extracted from the approved card artwork.
+- Hero and offer cards import the same food-suit artwork map so their corner emblems stay consistent.
+- Play uses a separate realistic food artwork map so game imagery can improve without changing approved logo and marketing card emblems.
 - Ordering uses a browse-first, restaurant-led marketplace layout while serviceability is confirmed separately — keeps discovery fast without weakening location rules.

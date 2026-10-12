@@ -1,14 +1,16 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, LayoutGrid, Tag, MapPin, UtensilsCrossed } from "lucide-react";
+import { Home, LayoutGrid, Gamepad2, MapPin } from "lucide-react";
+import { suitArtwork } from "@/lib/food-suit-artwork";
+import backEmblem from "@/assets/mealdeck-back-emblem.png";
 
-type Tab = { label: string; to: "/" | "/order" | "/track"; hash?: string; icon: typeof Home };
+type Tab = { label: string; to: "/" | "/order" | "/track" | "/play"; hash?: string; icon: typeof Home };
 
 const left: Tab[] = [
   { label: "Home", to: "/", icon: Home },
   { label: "Brands", to: "/", hash: "brands", icon: LayoutGrid },
 ];
 const right: Tab[] = [
-  { label: "Offers", to: "/", hash: "offers", icon: Tag },
+  { label: "Play", to: "/play", icon: Gamepad2 },
   { label: "Track", to: "/track", icon: MapPin },
 ];
 
@@ -69,12 +71,12 @@ export function MobileTabBar() {
             >
               <span className="pointer-events-none absolute inset-1 rounded-[6px] border-[1.5px] border-primary/70" />
               <span className="absolute left-1.5 top-1 flex flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
-                A<small className="text-[9px]">♦</small>
+                A<img src={suitArtwork.burger} alt="" className="mt-0.5 h-2.5 w-2.5 object-contain" />
               </span>
               <span className="absolute bottom-1 right-1.5 flex rotate-180 flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
-                A<small className="text-[9px]">♦</small>
+                A<img src={suitArtwork.burger} alt="" className="mt-0.5 h-2.5 w-2.5 object-contain" />
               </span>
-              <UtensilsCrossed className="size-5 text-primary" />
+              <img src={backEmblem} alt="" className="h-[18px] w-auto object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]" />
               <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">Order</span>
             </Link>
           </div>

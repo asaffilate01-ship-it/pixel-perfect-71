@@ -24,6 +24,7 @@ import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import backEmblem from "@/assets/mealdeck-back-emblem.png";
 import { ldScript, orgJsonLd, seo } from "@/lib/seo";
+import { suitArtwork } from "@/lib/food-suit-artwork";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -50,13 +51,13 @@ const directBenefits = [
 ];
 
 const offers = [
-  { rank: "A", suit: "♥", label: "The Burger Ace", value: "FREE", copy: "Spend £21. Get an eligible burger on us." },
-  { rank: "2", suit: "♦", label: "Perfect Pair", value: "½ PRICE", copy: "Buy two identical eligible items and get the second half price." },
-  { rank: "S", suit: "♠", label: "Snap!", value: "2 FOR 1", copy: "Selected matching items. Pay for one." },
-  { rank: "K", suit: "♣", label: "The Group Hand", value: "+ POINTS", copy: "Selected group orders earn extra loyalty points." },
-  { rank: "F", suit: "♥", label: "Full House Feast", value: "£5 OFF", copy: "Order from three brands with a £30 minimum spend." },
-  { rank: "10", suit: "♦", label: "The Loyalty Flush", value: "10× PTS", copy: "Your fifth direct order in a month earns 10× points." },
-];
+  { rank: "A", suit: "burger", label: "The Burger Ace", value: "FREE", copy: "Spend £21. Get an eligible burger on us." },
+  { rank: "2", suit: "french-taco", label: "Perfect Pair", value: "½ PRICE", copy: "Buy two identical eligible items and get the second half price." },
+  { rank: "C", suit: "chicken", label: "Snap!", value: "2 FOR 1", copy: "Selected matching items. Pay for one." },
+  { rank: "M", suit: "cake", label: "The Group Hand", value: "+ POINTS", copy: "Selected group orders earn extra loyalty points." },
+  { rank: "H", suit: "burger", label: "Full House Feast", value: "£5 OFF", copy: "Order from three brands with a £30 minimum spend." },
+  { rank: "10", suit: "french-taco", label: "The Loyalty Flush", value: "10× PTS", copy: "Your fifth direct order in a month earns 10× points." },
+] as const;
 
 const steps = [
   { n: "01", title: "Choose how you want it", copy: "Delivery, pickup or kerbside. Select your area when ordering opens." },
@@ -136,16 +137,15 @@ function LandingPage() {
           </div>
           <div className="md-offer-grid">
             {offers.map((offer) => {
-              const red = offer.suit === "♥" || offer.suit === "♦";
               return (
                 <article key={offer.label} className="md-offer-card">
-                  <div className={`md-offer-corner ${red ? "md-offer-corner-red" : ""}`}>
-                    <strong>{offer.rank}</strong><span>{offer.suit}</span>
+                  <div className="md-offer-corner" aria-hidden="true">
+                    <strong>{offer.rank}</strong><img src={suitArtwork[offer.suit]} alt="" />
                   </div>
-                  <div className={`md-offer-corner md-offer-corner-br ${red ? "md-offer-corner-red" : ""}`} aria-hidden="true">
-                    <strong>{offer.rank}</strong><span>{offer.suit}</span>
+                  <div className="md-offer-corner md-offer-corner-br" aria-hidden="true">
+                    <strong>{offer.rank}</strong><img src={suitArtwork[offer.suit]} alt="" />
                   </div>
-                  <span className="md-offer-pip" aria-hidden="true">{offer.suit}</span>
+                  <img className="md-offer-pip" src={backEmblem} alt="" aria-hidden="true" />
                   <p className="md-offer-label">{offer.label}</p>
                   <h3>{offer.value}</h3>
                   <p>{offer.copy}</p>
@@ -263,14 +263,25 @@ function LandingPage() {
             <p>More cities are in the shuffle. MealDeck is stacking its next hands across the UK.</p>
           </div>
           <div className="md-soon-grid">
-            <article className="md-soon-card"><span className="md-soon-suit">♠</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>London</h3><p>The ace up London's sleeve.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♥</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Manchester</h3><p>You're next up our sleeve.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♦</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Birmingham</h3><p>The deck is stacked in your favour.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♣</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Leicester</h3><p>We're shuffling your way.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♦</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Bedford</h3><p>Consider yourself dealt in.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♠</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Milton Keynes</h3><p>A winning hand is on the table.</p></article>
-            <article className="md-soon-card"><span className="md-soon-suit">♥</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Cardiff</h3><p>Hold tight — the cards are warm.</p></article>
-            <article className="md-soon-card md-soon-card-wild"><span className="md-soon-suit">★</span><img src={backEmblem} alt="" className="md-soon-emblem" /><h3>Your city</h3><p>Nominate it and we'll deal you in first.</p></article>
+            {([
+              { city: "London", rank: "A", suit: "burger", copy: "The ace up London's sleeve." },
+              { city: "Manchester", rank: "2", suit: "french-taco", copy: "You're next up our sleeve." },
+              { city: "Birmingham", rank: "C", suit: "chicken", copy: "The deck is stacked in your favour." },
+              { city: "Leicester", rank: "H", suit: "cake", copy: "We're shuffling your way." },
+              { city: "Bedford", rank: "3", suit: "burger", copy: "Consider yourself dealt in." },
+              { city: "Milton Keynes", rank: "4", suit: "french-taco", copy: "A winning hand is on the table." },
+              { city: "Cardiff", rank: "5", suit: "chicken", copy: "Hold tight — the cards are warm." },
+              { city: "Your city", rank: "M", suit: "cake", copy: "Nominate it and we'll deal you in first." },
+            ] as const).map(({ city, rank, suit, copy }) => (
+              <article key={city} className={`md-soon-card${city === "Your city" ? " md-soon-card-wild" : ""}`}>
+                <span className="md-soon-corner md-soon-corner-tl" aria-hidden="true"><b>{rank}</b><img src={suitArtwork[suit]} alt="" /></span>
+                <span className="md-soon-corner md-soon-corner-br" aria-hidden="true"><b>{rank}</b><img src={suitArtwork[suit]} alt="" /></span>
+                {city === "Your city"
+                  ? <img src={backEmblem} alt="" className="md-soon-emblem" aria-hidden="true" />
+                  : <img src={suitArtwork[suit]} alt="" className="md-soon-emblem md-soon-emblem-food" aria-hidden="true" />}
+                <h3>{city}</h3><p>{copy}</p>
+              </article>
+            ))}
           </div>
         </section>
 

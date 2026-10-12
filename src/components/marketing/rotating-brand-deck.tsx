@@ -1,37 +1,16 @@
 import { useEffect, useState } from "react";
-import backEmblem from "@/assets/mealdeck-back-emblem.png";
-import mealDeckEmblem from "@/assets/mealdeck-vintage-emblem.png.asset.json";
+import cardFront from "@/assets/mealdeck-card-front.png";
+import cardBack from "@/assets/mealdeck-card-back.png";
 import { marketingBrands } from "@/lib/marketing-brands";
-
-const cycleSeconds = 45;
-const stepSeconds = cycleSeconds / (marketingBrands.length + 1);
+import { chefTitles, heroFoodDeck } from "@/lib/hero-food-deck";
+import { suitArtwork } from "@/lib/food-suit-artwork";
+const stepSeconds = 3;
 const introDuration = 4600;
-
-function CutlerySuit() {
-  return (
-    <svg viewBox="0 0 24 24" className="md-deck-suit-cutlery" aria-hidden="true">
-      <g transform="rotate(45 12 12)">
-        <path
-          d="M8.1 2.6v4.4M12 2.2v4.8M15.9 2.6v4.4"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-        />
-        <path d="M12 7.2v13.6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-      </g>
-      <g transform="rotate(-45 12 12)">
-        <path d="M12 21.4V7.6" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
-        <path d="M12 2.4c2.7 1.5 4 3.6 4 5.6H12V2.4z" fill="currentColor" />
-      </g>
-    </svg>
-  );
-}
 
 function CardBack({ side }: { side: "left" | "right" }) {
   return (
     <div className={`md-deck-shadow md-deck-shadow-${side}`} aria-hidden="true">
-      <img src={backEmblem} alt="" className="md-deck-back-emblem" />
+      <img src={cardBack} alt="" className="md-deck-back-art" />
     </div>
   );
 }
@@ -40,8 +19,10 @@ function shuffleBrands<T>(items: T[]): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    const tmp = copy[i]!;
-    copy[i] = copy[j]!;
+    const tmp = copy[i];
+    const other = copy[j];
+    if (tmp === undefined || other === undefined) continue;
+    copy[i] = other;
     copy[j] = tmp;
   }
   return copy;
@@ -52,10 +33,14 @@ export function RotatingBrandDeck() {
   // Random starting order each load — shuffled after mount so SSR and the
   // first client render stay identical (no hydration mismatch).
   const [brandOrder, setBrandOrder] = useState(marketingBrands);
-  const cards = [
-    { id: "mealdeck", name: "MealDeck", category: "One Order. Every Craving.", logo: mealDeckEmblem.url, rank: "M", suit: "cutlery" },
-    ...brandOrder,
-  ];
+  const logoCard = { id: "mealdeck", name: "MealDeck", category: "One Order. Every Craving.", logo: cardFront, rank: "M", suit: "burger" as const };
+  const brandCards = heroFoodDeck.map((foodCard, index) => {
+    const brand = brandOrder[index % brandOrder.length];
+    return { ...brand, ...foodCard, name: brand?.name ?? "MealDeck", category: brand?.category ?? "", logo: brand?.logo ?? cardFront };
+  });
+  // Show every restaurant once in the opening fan; the full four-suit deck
+  // follows, with the MealDeck artwork as a separate title card.
+  const cards = [logoCard, ...(introComplete ? brandCards : brandCards.slice(0, brandOrder.length))];
 
   useEffect(() => {
     setBrandOrder(shuffleBrands(marketingBrands));
@@ -71,11 +56,11 @@ export function RotatingBrandDeck() {
       <CardBack side="left" />
       <CardBack side="right" />
       {cards.map((card, index) => {
-        const black = card.suit === "♠" || card.suit === "♣";
+        const isMealDeck = index === 0;
         const centeredIndex = index - (cards.length - 1) / 2;
         return (
           <div
-            key={card.id}
+            key={`${introComplete ? "cycle" : "intro"}-${card.id}`}
             className="md-deck-card"
             style={{
               "--card-delay": `${index * stepSeconds}s`,
@@ -85,21 +70,32 @@ export function RotatingBrandDeck() {
               "--fan-z": `${cards.length - Math.abs(centeredIndex)}`,
             } as React.CSSProperties}
           >
-            <div className={`md-deck-card-inner${black ? " is-black" : ""}`}>
-              <span className="md-deck-corner md-deck-corner-tl" aria-hidden="true">
-                <b>{card.rank}</b>
-                <i>{card.suit === "cutlery" ? <CutlerySuit /> : card.suit}</i>
-              </span>
-              <span className="md-deck-corner md-deck-corner-br" aria-hidden="true">
-                <b>{card.rank}</b>
-                <i>{card.suit === "cutlery" ? <CutlerySuit /> : card.suit}</i>
-              </span>
-              <img src={card.logo} alt="" className={index === 0 ? "md-deck-mealdeck-logo" : "md-deck-brand-logo"} />
-              {index !== 0 && (
-                <div className="md-deck-caption">
-                  <strong>{card.name}</strong>
-                  <span>{card.category}</span>
-                </div>
+            <div
+              className={`md-deck-card-inner${isMealDeck ? " is-mealdeck" : ""}`}
+              aria-label={`${card.name}${isMealDeck ? "" : `, ${chefTitles[card.rank] ?? card.rank} of ${card.suit}`}`}
+            >
+              {isMealDeck ? (
+                <img
+                  src={card.logo}
+                  alt="MealDeck — One Order. Every Craving."
+                  className="md-deck-card-art"
+                />
+              ) : (
+                <>
+                  <span className="md-deck-corner md-deck-corner-tl" aria-hidden="true">
+                    <b>{card.rank}</b>
+                    <img src={suitArtwork[card.suit]} alt="" className="md-deck-food-suit" />
+                  </span>
+                  <span className="md-deck-corner md-deck-corner-br" aria-hidden="true">
+                    <b>{card.rank}</b>
+                    <img src={suitArtwork[card.suit]} alt="" className="md-deck-food-suit" />
+                  </span>
+                  <img src={card.logo} alt="" className="md-deck-brand-logo" />
+                  <div className="md-deck-caption">
+                    <strong>{card.name}</strong>
+                    <span>{card.category}</span>
+                  </div>
+                </>
               )}
             </div>
           </div>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-labelledby="t">
+<title id="t">Soft tortilla wrap</title>
+<defs><linearGradient id="bread" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#ffe2a0"/><stop offset="1" stop-color="#e3a451"/></linearGradient></defs>
+<path d="M28 125Q48 56 115 37Q180 38 213 103Q189 158 125 208Q60 185 28 125Z" fill="url(#bread)" stroke="#ae4a23" stroke-width="7" stroke-linejoin="round"/>
+<path d="M52 112Q95 84 151 94M63 136Q104 112 159 124M80 162Q118 142 174 146" fill="none" stroke="#bd582e" stroke-width="8" stroke-linecap="round" opacity=".65"/>
+<path d="M28 125Q97 126 125 208" fill="none" stroke="#ffedbd" stroke-width="5"/>
+</svg>

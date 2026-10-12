@@ -1,0 +1,132 @@
+/* Premium Dishbee Play extension — shared restaurant card language. */
+.dp2-game-select{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.dp2-game-select button{min-width:0;min-height:116px;display:block;overflow:hidden;border-radius:17px;
+background:linear-gradient(145deg,#33222a,#20171f);border:1px solid #8b5b51;
+box-shadow:inset 0 1px 0 #ffffff1a,0 16px 28px -24px #000}
+.dp2-game-select button small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;font-size:11px}
+.dp2-game-select button.is-active{background:linear-gradient(155deg,#69313b,#32212b);box-shadow:inset 0 0 0 1px #fbd893,0 8px 28px #d2964533}
+.dp2-game-select button .dp-tab-art{width:32px;height:32px}
+.dp2-game-panel{min-height:420px}
+.dp2-kicker{display:flex;align-items:center;gap:7px;color:#f5c77e;letter-spacing:1.5px;font-size:10px;font-weight:900;margin-bottom:4px}
+.dp2-stat{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 20px}
+.dp2-stat span{display:flex;align-items:center;gap:9px;border:1px solid #68535a;
+background:linear-gradient(180deg,#2f242d,#1f1923);border-radius:11px;padding:9px 13px;
+color:#d7c6c6;font-size:11px;letter-spacing:1px;font-weight:700}
+.dp2-stat strong{font-size:15px;color:#ffd990;letter-spacing:0}
+.dp2-subhead{font-family:Outfit,sans-serif;font-size:19px;font-weight:800;margin:15px 0}
+.dp2-result{display:flex;align-items:center;gap:9px;margin-top:20px;padding:14px 16px;
+border:1px solid #a87849aa;background:linear-gradient(120deg,#51352c,#2c2529);
+color:#fbe3c6;font-size:14px;line-height:1.55;border-radius:13px}
+.dp2-result.is-success{background:linear-gradient(125deg,#1f4b3e,#182e2e);border-color:#5cba8d;color:#ccf5de}
+.dp2-safe{display:flex;gap:8px;align-items:flex-start;line-height:1.5}
+.dp2-safe svg{color:#a0d9b6;flex:none}
+.dp2-choice{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0;padding:12px;
+border:1px solid #725258;border-radius:12px;background:#2a2027}
+.dp2-choice label{font-size:12px;font-weight:800;color:#ffe4b0}
+.dp2-choice select{background:#fff6e6;color:#421a21;padding:8px;border:1px solid #dba967;border-radius:8px;min-height:42px}
+.dp2-choice p{flex:1 1 100%;color:#cfbcb9;font-size:12px;margin:0}
+.dp2-chaos-stage{display:grid;grid-template-columns:1fr 1.5fr;align-items:center;gap:18px;
+border-radius:19px;padding:20px;border:1px solid #67463c;background:
+radial-gradient(ellipse at 56% 45%,#5d3434 0%,#2a1b25 65%,#1c1720 100%)}
+.dp2-chef-hand{display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:800;font-size:13px;color:#f9e7d3}
+.dp2-mini-backs{display:flex;justify-content:center;align-items:center;gap:0;padding:12px 8px;min-height:116px}
+.dp2-mini-backs img{width:64px;height:93px;object-fit:cover;border:2px solid #fff8dd;border-radius:8px;box-shadow:0 8px 20px #0008}
+.dp2-mini-backs img + img{margin-left:-29px;transform:rotate(8deg)}
+.dp2-chaos-centre{display:flex;flex-direction:column;align-items:center;gap:10px}
+.dp2-active{border:1px solid var(--food-color);border-radius:50px;display:flex;align-items:center;gap:8px;
+padding:6px 12px;background:#18141b;color:#fff6e6;box-shadow:0 0 0 1px #ffffff18;font-size:11px;font-weight:800}
+.dp2-active img{height:21px;width:21px;object-fit:contain}
+.dp2-chaos-hand{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:stretch}
+.dp2-chaos-card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+width:112px;min-height:162px;border:3px solid #fff0cf;border-radius:15px;
+background:linear-gradient(145deg,#fff8e6,#eee2cc);color:#21161e;
+box-shadow:inset 0 0 0 5px var(--food-color),0 10px 24px -12px #000;
+cursor:pointer;transition:transform .16s ease,box-shadow .16s ease;padding:9px;gap:4px}
+.dp2-chaos-card.can-play:hover{transform:translateY(-8px);box-shadow:inset 0 0 0 5px var(--food-color),0 18px 24px -10px #000}
+.dp2-chaos-card:disabled{cursor:default;filter:saturate(.75);opacity:.8}
+.dp2-chaos-number{position:absolute;top:11px;left:13px;font-size:23px;font-family:Outfit,sans-serif;font-weight:900;color:var(--food-color)}
+.dp2-chaos-symbol{height:70px;width:76px;object-fit:contain;margin-top:9px}
+.dp2-chaos-card>small{font-weight:900;text-transform:uppercase;color:#50252a;font-size:11px;text-align:center}
+.dp2-chaos-corner{position:absolute;bottom:9px;right:12px;font-weight:800;font-size:9px;color:#875a43}
+.dp2-replay{margin:17px 0}
+.dp2-snap-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:720px;margin:auto}
+.dp2-brand-card{display:flex;flex-direction:column;justify-content:space-between;align-items:center;
+aspect-ratio:4/5;max-height:310px;min-height:180px;min-width:0;border-radius:19px;border:4px solid #eac178;
+background:linear-gradient(155deg,#fff8ea,#f7e8ca);padding:17px;color:#461a20;box-shadow:
+inset 0 0 0 2px #a61b27,0 20px 26px -19px #000}
+.dp2-brand-card-top{text-align:center;font-size:9px;letter-spacing:1.7px;font-weight:900;color:#9f3a3d}
+.dp2-brand-card img{max-height:66%;max-width:95%;object-fit:contain;min-height:60px}
+.dp2-brand-card strong{text-align:center;font-size:12px}
+.dp2-snap-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px;margin-top:20px}
+.dp2-next{margin:16px auto 0}
+.dp2-finish{text-align:center;padding:30px 0}
+.dp2-finish>svg{color:#ffd990;margin:auto}
+.dp2-finish h3{font-size:27px;font-weight:900}
+.dp2-finish p{color:#e4cad0}
+.dp2-full-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.dp2-full-cell{border-radius:14px}
+.dp2-full-cell.is-selected{outline:3px solid #f5ce73;outline-offset:3px;box-shadow:0 0 22px #f9a85e7f}
+.dp2-food-card{position:relative;min-height:125px;width:100%;aspect-ratio:.74;
+display:flex;align-items:center;justify-content:center;flex-direction:column;
+background:linear-gradient(155deg,#fff9e9,#f1dec1);color:#511e27;border-radius:11px;border:2px solid #f8d8a2;
+box-shadow:inset 0 0 0 3px var(--food-color),0 14px 20px -16px #000;
+transition:transform .16s;cursor:pointer;padding:8px}
+.dp2-food-card:not(:disabled):hover{transform:translateY(-4px)}
+.dp2-food-card:disabled{cursor:default;opacity:1}
+.dp2-food-rank{position:absolute;top:9px;left:9px;display:flex;align-items:center;gap:4px;
+font-family:Outfit,sans-serif;font-weight:900;font-size:16px;color:var(--food-color)}
+.dp2-food-rank img{width:18px;height:18px;object-fit:contain}
+.dp2-food-big{width:72%;height:55%;object-fit:contain}
+.dp2-food-caption{font-size:9px;font-weight:900;color:#67272c;text-transform:uppercase;text-align:center}
+.dp2-dish-chef{display:flex;align-items:center;gap:13px;border:1px solid #77595e;padding:13px;
+border-radius:12px;max-width:540px;background:linear-gradient(120deg,#49303a,#2b202c)}
+.dp2-dish-chef div{display:flex;flex-direction:column;flex:1;gap:4px}
+.dp2-dish-chef div span{font-size:12px;color:#e6c9ca}
+.dp2-dish-chef img{width:46px;height:64px;object-fit:cover;border-radius:7px}
+.dp2-go-hand{display:flex;gap:9px;flex-wrap:wrap}
+.dp2-go-hand .dp2-food-card{width:106px;min-height:145px}
+.dp2-rank-ask{display:flex;flex-wrap:wrap;gap:12px}
+.dp2-stacks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.dp2-stacks>div{min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;
+border:1px solid #ad8158;background:linear-gradient(160deg,#41313a,#241d25);border-radius:15px;padding:13px}
+.dp2-stacks img{width:50px;height:55px;object-fit:contain}
+.dp2-stacks small{font-size:10px;color:#f5d7b7;text-align:center;font-weight:800}
+.dp2-stacks b{font-size:18px}
+.dp2-legal{display:flex;align-items:flex-start;gap:12px;border:1px solid #62816f;
+padding:20px;background:linear-gradient(110deg,#19352b,#22202b);border-radius:17px;
+color:#eaf6e9;margin:32px 0}
+.dp2-legal svg{color:#9ad9b4;flex-shrink:0}
+.dp2-legal strong{display:block;font-weight:900}
+.dp2-legal p{margin-top:6px;color:#c4d1c7;font-size:13px;line-height:1.6}
+.dp2-game-panel button:focus-visible,.dp2-game-select button:focus-visible,
+.dp2-choice select:focus-visible{outline:3px solid #f9d990;outline-offset:3px}
+@media(max-width:900px){.dp2-game-select{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dp2-full-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:640px){.dp2-game-select{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dp2-game-select button{min-height:100px}
+.dp2-chaos-stage{grid-template-columns:1fr;padding:12px}
+.dp2-mini-backs{min-height:70px}
+.dp2-mini-backs img{width:40px;height:54px}
+.dp2-chaos-hand{gap:7px}
+.dp2-chaos-card{width:calc(33.33% - 8px);max-width:113px;min-height:136px}
+.dp2-chaos-symbol{width:63px;height:60px}
+.dp2-chaos-number{font-size:17px}
+.dp2-full-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.dp2-food-card{min-height:118px}
+.dp2-food-rank{font-size:12px}
+.dp2-food-rank img{width:14px;height:14px}
+.dp2-food-caption{font-size:8px}
+.dp2-stacks{grid-template-columns:repeat(2,1fr)}
+.dp2-brand-card{padding:8px;border-width:3px}
+.dp2-brand-card-top{font-size:7px}
+.dp2-stat{gap:6px}
+.dp2-stat span{padding:7px 8px;font-size:10px}
+}
+@media(max-width:400px){.dp2-chaos-card{width:calc(33.33% - 6px);min-height:122px}
+.dp2-chaos-symbol{width:50px;height:50px}
+.dp2-chaos-card>small{font-size:9px}
+.dp2-full-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dp2-food-card{min-height:94px}
+.dp2-go-hand .dp2-food-card{width:82px;min-height:110px}
+}
+@media(prefers-reduced-motion:reduce){.dp2-game-select *, .dp2-game-panel *{transition:none!important;animation:none!important}}

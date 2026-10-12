@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Music2, Youtube } from "lucide-react";
-import mealDeckLogo from "@/assets/mealdeck-card-logo.png";
+import mealDeckLogo from "@/assets/mealdeck-main-logo.png.asset.json";
 import deliverooLogo from "@/assets/deliveroo-app.png.asset.json";
 import uberEatsLogo from "@/assets/ubereats-app.png.asset.json";
 import justEatLogo from "@/assets/justeat-app.png.asset.json";
@@ -10,7 +10,7 @@ export function SiteFooter() {
     <footer className="md-site-footer">
       <div className="md-footer-main">
         <div className="md-footer-brand">
-          <img src={mealDeckLogo} alt="MealDeck" />
+          <img src={mealDeckLogo.url} alt="MealDeck" />
           <p>Different cuisines. One basket. One delivery fee.</p>
           <strong>One Order. Every Craving.</strong>
         </div>
@@ -22,6 +22,7 @@ export function SiteFooter() {
             <Link to="/" hash="offers">Offers</Link>
             <Link to="/" hash="how">How it works</Link>
             <Link to="/track">Track order</Link>
+            <Link to="/play">Play &amp; Rewards</Link>
             <Link to="/franchise">Franchises</Link>
           </div>
           <div>

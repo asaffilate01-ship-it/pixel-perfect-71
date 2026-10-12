@@ -10,8 +10,11 @@
 - [x] Add Forvello (Artisan Pizza) to homepage and every location; align brand cards/logos across desktop and mobile.
 
 ## Open
+- [x] Replace flat Play food and ingredient icons with realistic isolated food artwork.
 - [x] Answered: ordering layout scales via brand filter + grouped sections; offered search/category chips when live menus go large
 
 - [x] Mobile ordering flow: sticky restaurant row, slide-up basket/checkout, scrollable dish options
 - [x] Add Pastarivo, Nusara, Rise & Griddle, Souvano to ordering
 - [x] Branded in-app success messages
+- [x] Play page: remove Fanzeno / fixture-based scheduling and "predictions for prizes" wording
+- [x] Play: make "Play as" brand skins meaningful (each brand deals its own dishes) + further table polish
