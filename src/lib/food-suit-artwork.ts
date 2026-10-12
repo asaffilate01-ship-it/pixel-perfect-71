@@ -6,6 +6,7 @@ import fries from "@/assets/card-suit-fries.png";
 import drink from "@/assets/card-suit-drink.png";
 import paratha from "@/assets/card-suit-paratha.png";
 import bun from "@/assets/ingredient-bun.png";
+import tortilla from "@/assets/ingredient-tortilla.svg";
 import patty from "@/assets/ingredient-patty.png";
 import lettuce from "@/assets/ingredient-lettuce.png";
 import salsa from "@/assets/ingredient-salsa.png";
@@ -27,7 +28,7 @@ export const tileArtwork = {
   bun,
   patty,
   lettuce,
-  tortilla: paratha,
+  tortilla,
   chicken,
   salsa,
   fries,
