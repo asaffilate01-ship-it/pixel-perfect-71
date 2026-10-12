@@ -35,7 +35,7 @@ export const GAME_CATALOGUE = [
 export const BRAND_THEMES = {
   mealdeck: { label: "MealDeck", symbol: "🍽️", art: "burger", accent: "#f8c94c", subtitle: "Every brand. One place to play." },
   skorch: { label: "Skorch Burgers", symbol: "🍔", art: "burger", accent: "#fb923c", subtitle: "Fire up your next round." },
-  taconelle: { label: "Taconelle", symbol: "🌮", art: "french-taco", accent: "#b1ef8b", subtitle: "A fresh twist on game night." },
+  taconelle: { label: "Taconelle", symbol: "▤", art: "french-taco", accent: "#b1ef8b", subtitle: "A fresh twist on game night." },
   loadd: { label: "Load'd", symbol: "🍟", art: "fries", accent: "#ff8c8c", subtitle: "Play fully loaded." },
   paratique: { label: "Paratique", symbol: "🫓", art: "paratha", accent: "#e8b77e", subtitle: "The perfect playtime pairing." },
   tavo: { label: "Tavo Chicken", symbol: "🍗", art: "chicken", accent: "#e8ad64", subtitle: "Bring your A-game." },
