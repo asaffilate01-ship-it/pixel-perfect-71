@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type CSSProperties } from "react";
 import { ArrowRight, CheckCircle2, Gamepad2, Gift, LockKeyhole, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
+import { KitchenChaos, BrandSnap, GoDish, FullHouse, KitchenStacks } from "@/components/play/premium-games";
+import { gameBrandArtwork } from "@/lib/game-brand-artwork";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import {
@@ -12,7 +14,7 @@ import { seo } from "@/lib/seo";
 import cardBack from "@/assets/mealdeck-card-back.png";
 import cardFront from "@/assets/mealdeck-card-front.png";
 
-type Game = "pairs" | "recipe";
+type Game = (typeof GAME_CATALOGUE)[number]["id"];
 
 export const Route = createFileRoute("/play")({
   validateSearch: (search: Record<string, unknown>): { brand?: BrandTheme } => ({
@@ -166,49 +168,81 @@ function PlayPage() {
   const { brand = "mealdeck" } = Route.useSearch();
   const theme = BRAND_THEMES[brand];
   const [game, setGame] = useState<Game>("pairs");
-  const collectionSuits: SuitArt[] = ["burger", "french-taco", "fries", "drink", "cake"];
+  const collectionSuits: SuitArt[] = ["burger", "chicken", "french-taco", "cake"];
+
+  const playPanels: Record<Game, React.ReactNode> = {
+    pairs: <FoodPairs key={brand} brand={brand} />,
+    recipe: <RecipeRush key={brand} />,
+    "kitchen-chaos": <KitchenChaos />,
+    snap: <BrandSnap />,
+    "go-dish": <GoDish />,
+    "full-house": <FullHouse />,
+    solitaire: <KitchenStacks />,
+  };
+  const gameIcons: Record<Game, SuitArt> = {
+    pairs: "burger", recipe: "french-taco", "kitchen-chaos": "chicken",
+    snap: "cake", "go-dish": "french-taco", "full-house": "cake", solitaire: "burger",
+  };
   return (
     <div className="md-marketing-shell dp-shell" style={{ "--dp-accent": theme.accent } as CSSProperties}>
       <SiteHeader />
       <main className="dp-main">
         <div className="dp-container">
-          <div className="dp-eyebrow"><Gamepad2 size={18} /> MEALDECK PLAY · {theme.label.toUpperCase()}</div>
+          <div className="dp-eyebrow"><Gamepad2 size={18} /> DISHBEE PLAY · {theme.label.toUpperCase()}</div>
           <div className="dp-intro">
-            <div><h1>Good food. <em>Great games.</em></h1><p>{theme.subtitle} Quick games, food-themed cards and fun challenges — all free, no gambling.</p>
-              <div className="dp-claims"><span><ShieldCheck size={16}/> No gambling</span><span><CheckCircle2 size={16}/> Free to play</span><span><Sparkles size={16}/> Food-themed cards</span></div>
+            <div>
+              <h1>Good food. <em>Great games.</em></h1>
+              <p>{theme.subtitle} Seven original food-themed games, with the approved MealDeck symbols and official brand artwork.</p>
+              <div className="dp-claims"><span><ShieldCheck size={16}/> No gambling</span><span><CheckCircle2 size={16}/> Always free</span><span><Sparkles size={16}/> Purely for fun</span></div>
             </div>
             <div className="dp-feature-card">
-              <img className="dp-feature-art" src={brand === "mealdeck" ? cardFront : suitArtwork[theme.art]} alt="" loading="lazy" />
+              <img className="dp-feature-art" src={gameBrandArtwork[brand]} alt={`${theme.label} official artwork`} loading="lazy"/>
               <strong>{theme.label}</strong>
               <small>PLAY EDITION</small>
             </div>
           </div>
-          <div className="dp-brands"><span>Play as</span>{Object.entries(BRAND_THEMES).map(([id, item]) =>
-            <Link key={id} to="/play" search={{ brand: id as BrandTheme }} className={`dp-brand-pill ${brand === id ? "is-active" : ""}`} aria-current={brand === id ? "page" : undefined}>
-              <img className="dp-pill-art" src={suitArtwork[item.art]} alt="" loading="lazy" /> {item.label}
-            </Link>,
-          )}</div>
-          <p className="dp-brands-note">Each brand deals its own dishes into the deck — pick one and the cards change with it.</p>
-          <div className="dp-suits" aria-label="Our four food card suits">{FOOD_SUITS.map((suit) => <div key={suit.id}><img src={suitArtwork[suit.art]} alt="" loading="lazy" /><b>{suit.label}</b><small>{suit.brand}</small></div>)}</div>
-          <div className="dp-section-title"><div><small>READY TO PLAY</small><h2>Choose your game</h2></div><p>Scores and badges are for fun only.</p></div>
-          <div className="dp-game-select">
-            <button type="button" onClick={() => setGame("pairs")} aria-pressed={game === "pairs"} className={game === "pairs" ? "is-active" : ""}>
-              <img className="dp-tab-art" src={suitArtwork.burger} alt="" loading="lazy" /> Food Pairs <small>Memory game</small>
-            </button>
-            <button type="button" onClick={() => setGame("recipe")} aria-pressed={game === "recipe"} className={game === "recipe" ? "is-active" : ""}>
-              <img className="dp-tab-art" src={suitArtwork.chicken} alt="" loading="lazy" /> Recipe Rush <small>Food puzzle</small>
-            </button>
+          <div className="dp-brands"><span>Play as</span>
+            {Object.entries(BRAND_THEMES).map(([id, item]) =>
+              <Link key={id} to="/play" search={{ brand: id as BrandTheme }}
+                className={`dp-brand-pill ${brand === id ? "is-active" : ""}`} aria-current={brand === id ? "page" : undefined}>
+                <img className="dp-pill-art" src={gameBrandArtwork[id as BrandTheme]} alt="" loading="lazy" /> {item.label}
+              </Link>,
+            )}
           </div>
-          {game === "pairs" ? <FoodPairs brand={brand} /> : <RecipeRush />}
+          <p className="dp-brands-note">MealDeck Food Pairs uses the selected brand's food collection. Brand Snap always displays the original logos from across the MealDeck family.</p>
+          <div className="dp-suits" aria-label="The four official food suits">
+            {FOOD_SUITS.map(suit =>
+              <div key={suit.id}><img src={suitArtwork[suit.art]} alt="" loading="lazy" /><b>{suit.label}</b><small>{suit.brand}</small></div>
+            )}
+          </div>
+          <div className="dp-section-title"><div><small>SEVEN GAMES · ONE ARCADE</small><h2>Choose your game</h2></div><p>Play alone or against the house chef. No monetary prizes.</p></div>
+          <div className="dp-game-select dp2-game-select" role="group" aria-label="Choose a MealDeck game">
+            {GAME_CATALOGUE.map(item =>
+              <button key={item.id} type="button" onClick={() => setGame(item.id)}
+                aria-pressed={game === item.id} className={game === item.id ? "is-active" : ""}>
+                <img className="dp-tab-art" src={suitArtwork[gameIcons[item.id]]} alt="" loading="lazy"/>
+                <span>{item.name}</span><small>{item.description}</small>
+              </button>
+            )}
+          </div>
+          {playPanels[game]}
           <section className="dp-collection">
-            <div className="dp-section-title"><div><small>SEPARATE FROM THE GAMES</small><h2>Full House Rewards</h2></div><Gift size={27}/></div>
-            <p>Food rewards will be earned only from verified eligible purchases, never from card-game outcomes. Guaranteed milestones can be enabled once the loyalty ledger and redemption flow are connected.</p>
-            <div className="dp-collection-cards">{collectionSuits.map((art, index) => <div key={art}><img src={suitArtwork[art]} alt="" loading="lazy" /><LockKeyhole size={15}/><small>Card {index + 1}</small></div>)}</div>
-            <p className="dp-pending"><LockKeyhole size={16}/> Purchase rewards are not active in this preview. No simulated points or vouchers are issued.</p>
+            <div className="dp-section-title"><div><small>SHOPPING REWARDS ARE SEPARATE</small><h2>Full House Rewards</h2></div><Gift size={27}/></div>
+            <p>Customers will collect guaranteed food rewards from verified, eligible purchases after the Dishbee loyalty service and redemption controls are activated. Games never give points, food, cash or vouchers.</p>
+            <div className="dp-collection-cards">
+              {collectionSuits.map((art, index) =>
+                <div key={art}><img src={suitArtwork[art]} alt="" loading="lazy"/><LockKeyhole size={15}/><small>{FOOD_SUITS[index]?.label}</small></div>
+              )}
+            </div>
+            <p className="dp-pending"><LockKeyhole size={16}/> Real purchase rewards are not active in this games preview. No simulated points or vouchers are issued.</p>
             <Link to="/order" className="dp-order-link">Browse MealDeck food <ArrowRight size={17}/></Link>
           </section>
-          <div className="dp-section-title"><div><small>COMING NEXT</small><h2>More games</h2></div></div>
-          <div className="dp-catalogue">{GAME_CATALOGUE.filter((entry) => entry.state === "planned").map((entry) => <article key={entry.id}><LockKeyhole size={17}/><h3>{entry.name}</h3><p>{entry.description}</p><small>In development</small></article>)}</div>
+          <div className="dp2-legal">
+            <ShieldCheck size={22}/>
+            <div><strong>Enjoy the games. Keep the rewards separate.</strong>
+              <p>All seven games are free entertainment. There is no entry fee, cash-out, wagering, paid advantage, random food prize, purchased turn, or gameplay-linked loyalty reward.</p>
+            </div>
+          </div>
         </div>
       </main>
       <SiteFooter />
