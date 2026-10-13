@@ -16,6 +16,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
+      - name: Category-first ordering regressions
+        run: bun test tests/order-discovery.test.ts
       - name: MealDeck Play game regressions
         run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/hero-food-deck.test.ts
       - run: bun run build
@@ -37,4 +39,9 @@ jobs:
           src/lib/mealdeck-collection-games.ts src/lib/game-brand-artwork.ts
           src/components/play/premium-games.tsx src/routes/play.tsx
           tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts
+          --rule 'prettier/prettier: off'
+      - name: Ordering discovery lint
+        run: >-
+          bunx eslint src/lib/order-discovery.ts src/routes/order.tsx
+          tests/order-discovery.test.ts
           --rule 'prettier/prettier: off'
