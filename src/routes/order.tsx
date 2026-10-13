@@ -52,6 +52,7 @@ import {
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import { SiteHeader } from "@/components/site-header";
+import { suitArtwork } from "@/lib/food-suit-artwork";
 import { BrandDiscoveryGallery, FavouriteDishRail } from "@/components/order/premium-discovery";
 import {
   FAVOURITES_STORAGE_KEY, BASKET_STORAGE_KEY,
@@ -722,7 +723,9 @@ function OrderPage() {
                     <button key={category.id} type="button" onClick={()=>{setActiveCategory(category.id);setActiveBrand(null);}}
                       aria-pressed={activeCategory===category.id}
                       className={`md-category-pill ${activeCategory===category.id?"is-selected":""}`}>
-                      <span className="text-xl" aria-hidden="true">{category.emoji}</span>
+                      {category.id==="french-tacos"
+                        ? <img src={suitArtwork["french-taco"]} alt="" aria-hidden="true" className="md-category-icon"/>
+                        : <span className="text-xl" aria-hidden="true">{category.emoji}</span>}
                       <span>{category.label}</span>
                     </button>
                   ))}
