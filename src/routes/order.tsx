@@ -272,6 +272,10 @@ function OrderPage() {
       toast("Basket cleared", { description: "We started a fresh basket for the new location." });
     }
     setLocation(next);
+    const destination = locations.find(entry => entry.key === next);
+    if (destination && !destination.allowedFulfilments.includes(fulfilment)) {
+      setFulfilment(destination.allowedFulfilments[0] ?? "delivery");
+    }
     setActiveBrand(null);
     setActiveCategory("all");
     setSearchText("");
@@ -596,6 +600,9 @@ function OrderPage() {
                     size="sm"
                     role="tab"
                     aria-selected={active}
+                    disabled={!!currentLocation && !currentLocation.allowedFulfilments.includes(key)}
+                    title={currentLocation && !currentLocation.allowedFulfilments.includes(key)
+                      ? `Not yet available for online ordering in ${currentLocation.town}` : undefined}
                     onClick={() => changeFulfilment(key)}
                     className="h-10 shrink-0 rounded-full px-4"
                   >
