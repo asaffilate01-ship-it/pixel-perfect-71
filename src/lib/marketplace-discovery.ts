@@ -5,6 +5,7 @@ export const BROWSE_CATEGORIES = [
   { id: "all", label: "All food", emoji: "🍽️" },
   { id: "burgers", label: "Burgers", emoji: "🍔" },
   { id: "chicken", label: "Chicken", emoji: "🍗" },
+  { id: "sides", label: "Fries & sides", emoji: "🍟" },
   { id: "french-tacos", label: "French tacos", emoji: "🥙" },
   { id: "indian", label: "Indian", emoji: "🍛" },
   { id: "pizza", label: "Pizza", emoji: "🍕" },
@@ -21,21 +22,29 @@ function normalize(value: string): string {
   return value.toLowerCase().replace(/[’']/g, "").trim();
 }
 function categoryFor(item: MenuItem, brand?: Brand): BrowseCategory[] {
-  const title=normalize(`${item.name} ${item.category} ${brand?.category ?? ""} ${brand?.name ?? ""}`);
-  const cat:BrowseCategory[]=[];
-  const matches=(...terms:string[])=>terms.some(term=>title.includes(term));
-  if(matches("burger","smash","skorch"))cat.push("burgers");
-  if(matches("chicken","wing","tender","tavo"))cat.push("chicken");
-  if(matches("french taco","taconelle","wrap","loadd"))cat.push("french-tacos");
-  if(matches("indian","curry","desi","tarka","paratha","paratique","sabzora","daal"))cat.push("indian");
-  if(matches("pizza","forvello"))cat.push("pizza");
-  if(matches("pasta","rigatoni","pastarivo","mac n cheese"))cat.push("pasta");
-  if(matches("breakfast","brunch","rise & griddle","pancake","omelette"))cat.push("breakfast");
-  if(matches("grill","souvano","souvlaki","shawarma"))cat.push("grill");
-  if(matches("veg","salad","sabzora","plant"))cat.push("vegetarian");
-  if(matches("drink","juice","smoothie","coffee","chai","iced latte","moktl","icova","vyta","cooler"))cat.push("drinks");
-  if(matches("dessert","cake","pie","sweet","brownie","cookie","ice cream"))cat.push("desserts");
-  return cat;
+  // Classify the actual dish first. A mixed-menu brand such as Icova must not
+  // make all its iced coffees appear under Desserts (or its cakes under Drinks).
+  const fromText = (text: string): BrowseCategory[] => {
+    const result: BrowseCategory[] = [];
+    const matches = (...terms: string[]) => terms.some(term => text.includes(term));
+    if (matches("burger", "smash")) result.push("burgers");
+    if (matches("chicken", "wing", "tender")) result.push("chicken");
+    if (matches("loaded fries", "fries", "chips", "side dishes")) result.push("sides");
+    if (matches("french taco", "grilled taco", "taconelle", "wrap")) result.push("french-tacos");
+    if (matches("indian", "curry", "desi", "tarka", "paratha", "sabzora", "daal")) result.push("indian");
+    if (matches("pizza", "margherita", "forvello")) result.push("pizza");
+    if (matches("pasta", "rigatoni", "mac n cheese")) result.push("pasta");
+    if (matches("breakfast", "brunch", "pancake", "omelette")) result.push("breakfast");
+    if (matches("grill", "souvano", "souvlaki", "shawarma")) result.push("grill");
+    if (matches("vegetarian", "veggie", "salad", "plant", "sabzora")) result.push("vegetarian");
+    if (matches("drink", "juice", "smoothie", "coffee", "chai", "iced latte", "mocktail", "cooler")) result.push("drinks");
+    if (matches("dessert", "cake", "pie", "sweet", "brownie", "cookie", "ice cream")) result.push("desserts");
+    return result;
+  };
+  const own = fromText(normalize(`${item.name} ${item.category}`));
+  if (own.length) return [...new Set(own)];
+  // Fall back to a brand's cuisine only for ambiguous item metadata.
+  return [...new Set(fromText(normalize(`${brand?.category ?? ""} ${brand?.name ?? ""}`)))];
 }
 export function matchesBrowseCategory(item:MenuItem,category:BrowseCategory,brand?:Brand):boolean {
   return category==="all" || categoryFor(item,brand).includes(category);
