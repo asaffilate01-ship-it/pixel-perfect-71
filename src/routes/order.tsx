@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -17,6 +17,9 @@ import {
   Trash2,
   PanelLeftOpen,
   ChevronRight,
+  Heart,
+  BookmarkPlus,
+  RefreshCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -49,6 +52,12 @@ import {
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import { SiteHeader } from "@/components/site-header";
+import { BrandDiscoveryGallery, FavouriteDishRail } from "@/components/order/premium-discovery";
+import {
+  FAVOURITES_STORAGE_KEY, BASKET_STORAGE_KEY,
+  decodeFavourites, toggleFavourite, encodeSavedBasket, decodeSavedBasket,
+  restoreSavedBasket, type SavedBasket,
+} from "@/lib/marketplace-preferences";
 import { BROWSE_CATEGORIES, browseBrands, browseMenu, basketSuggestions, type BrowseCategory } from "@/lib/marketplace-discovery";
 import { seo } from "@/lib/seo";
 
@@ -116,6 +125,54 @@ function OrderPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
   const [brandMenuOpen, setBrandMenuOpen] = useState(false);
+  const [favouriteIds, setFavouriteIds] = useState<string[]>([]);
+  const [savedBasket, setSavedBasket] = useState<SavedBasket | null>(null);
+  // Browser preferences are only read on the client after hydration.
+  useEffect(() => {
+    try {
+      setFavouriteIds(decodeFavourites(window.localStorage.getItem(FAVOURITES_STORAGE_KEY)));
+      setSavedBasket(decodeSavedBasket(window.localStorage.getItem(BASKET_STORAGE_KEY)));
+    } catch {
+      // Private browsing / storage disabled: games and ordering remain usable.
+    }
+  }, []);
+  function toggleSavedFavourite(itemId: string) {
+    const next = toggleFavourite(favouriteIds, itemId);
+    try {
+      window.localStorage.setItem(FAVOURITES_STORAGE_KEY, JSON.stringify(next));
+      setFavouriteIds(next);
+    } catch {
+      toast.error("Unable to save favourites on this device.");
+    }
+  }
+  function saveBasketForLater() {
+    if (!location || lines.length === 0) return;
+    try {
+      const json=encodeSavedBasket(location, lines);
+      window.localStorage.setItem(BASKET_STORAGE_KEY, json);
+      setSavedBasket(decodeSavedBasket(json));
+      toast.success("Basket saved on this device", { description: "It isn't an order. Re-add items later at the prices then available." });
+    } catch {
+      toast.error("This browser couldn't save the basket.");
+    }
+  }
+  function addSavedBasket() {
+    if (!location || !savedBasket) return;
+    const restored=restoreSavedBasket(savedBasket, location, items, lines);
+    if (restored.mismatch) {
+      toast.message("Saved for another location", { description: "Choose the original MealDeck location first." });
+      return;
+    }
+    if (restored.added > 0) {
+      setLines(restored.cart);
+      toast.success(`${restored.added} item(s) added from your saved basket`, {
+        description: "We used today's menu and prices. Review the basket before checking out.",
+      });
+    }
+    if (restored.unavailable > 0) {
+      toast.message(`${restored.unavailable} saved item(s) are unavailable or have changed options.`);
+    }
+  }
   const pickBrand = (id: string | null) => {
     setActiveBrand(id);
     setBrandMenuOpen(false);
@@ -359,6 +416,23 @@ function OrderPage() {
             <p className="mt-1 text-xs text-muted-foreground">
               {itemCount(lines)} items from {new Set(lines.map((line) => line.brandId)).size} brands
             </p>
+            {lines.length > 0 ? (
+              <div className="md-premium-basket-brandrow" aria-label="Brands in this basket">
+                {[...new Set(lines.map(line => line.brandId))].map(brandId=>{
+                  const brand=brandById(brandId);
+                  return <span key={brandId} className="md-premium-basket-brand">
+                    {brand?.logo ? <img src={brand.logo} alt="" loading="lazy"/> : null}
+                    <span>{brand?.name || "MealDeck"}</span>
+                  </span>;
+                })}
+              </div>
+            ) : null}
+            <div className="md-premium-save-actions">
+              {lines.length>0 ? <button type="button" onClick={saveBasketForLater}
+                className="md-premium-save-button"><BookmarkPlus size={16}/> Save basket for later</button> : null}
+              {savedBasket && savedBasket.location===location ? <button type="button" onClick={addSavedBasket}
+                className="md-premium-save-button"><RefreshCcw size={16}/> Add saved basket ({savedBasket.lines.length})</button> : null}
+            </div>
 
             <div className="mt-4 space-y-3">
               {lines.map((line) => (
@@ -666,6 +740,21 @@ function OrderPage() {
                 <p className="mt-1 hidden text-sm text-muted-foreground sm:block">Choose a restaurant or discover dishes across them all.</p>
               </div>
 
+              <FavouriteDishRail
+                items={searchableItems} brands={availableBrands} favouriteIds={favouriteIds}
+                isOrderingOpen={channelOpen} onAdd={beginAdd} onRemoveFavourite={toggleSavedFavourite}/>
+              <BrandDiscoveryGallery
+                brands={filteredBrands}
+                items={browseMenu(searchableItems, null, activeCategory, menuSearch, availableBrands)}
+                selectedBrandId={activeBrand} onSelectBrand={pickBrand}
+                isOrderingOpen={channelOpen}/>
+              {savedBasket?.location===location ? (
+                <div className="md-premium-reorder-shortcut">
+                  <div><strong>Your saved basket</strong><p>{savedBasket.lines.length} saved selection(s) · rechecked against this location's menu</p></div>
+                  <button type="button" onClick={addSavedBasket}><RefreshCcw size={16}/> Add again</button>
+                </div>
+              ) : null}
+
               <button
                 type="button"
                 onClick={() => setBrandMenuOpen(true)}
@@ -733,7 +822,15 @@ function OrderPage() {
                           const brand = brandById(item.brandId);
                           const directLine = lines.find((line) => line.id === item.id && line.selectedModifiers.length === 0);
                           return (
-                            <article key={item.id} className="marketplace-dish-card">
+                            <article key={item.id} className="marketplace-dish-card relative">
+                              <button type="button"
+                                className={`md-premium-fav-heart ${favouriteIds.includes(item.id) ? "is-saved" : ""}`}
+                                aria-pressed={favouriteIds.includes(item.id)}
+                                aria-label={favouriteIds.includes(item.id) ? `Remove ${item.name} from favourites` : `Save ${item.name} to favourites`}
+                                title={favouriteIds.includes(item.id) ? "Remove from favourites" : "Save to favourites"}
+                                onClick={()=>toggleSavedFavourite(item.id)}>
+                                <Heart size={18} fill={favouriteIds.includes(item.id) ? "currentColor" : "none"}/>
+                              </button>
                               <img
                                 src={item.imageUrl || brand?.image}
                                 alt={item.name}
@@ -945,7 +1042,10 @@ function OrderPage() {
             onClick={() => setBasketOpen(true)}
           >
             <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-xs font-bold">{itemCount(lines)}</span>
-            <span className="truncate text-left">View your hand</span>
+            <span className="flex min-w-0 flex-col items-start">
+               <span className="truncate">View basket</span>
+               <span className="text-[10px] font-normal opacity-80">{new Set(lines.map(line=>line.brandId)).size} brand(s) · one checkout</span>
+             </span>
             <span>{formatPence(total)}</span>
           </Button>
         </div>
