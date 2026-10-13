@@ -811,8 +811,8 @@ function OrderPage() {
                     </section>
                   ))}
                   {activeBrand ? (() => {
-                    const idx = primaryBrands.findIndex((b) => b.id === activeBrand);
-                    const next = primaryBrands[(idx + 1) % primaryBrands.length];
+                    const idx = availableBrands.findIndex((b) => b.id === activeBrand);
+                    const next = availableBrands.length > 1 ? availableBrands[(idx + 1) % availableBrands.length] : undefined;
                     if (!next || next.id === activeBrand) return null;
                     return (
                       <button
@@ -830,32 +830,33 @@ function OrderPage() {
                       </button>
                     );
                   })() : null}
-                  {grouped.length === 0 ? (
-                    <p className="text-muted-foreground">No dishes available from this brand right now.</p>
+                  {(activeBrand || showAllDishes || searchText.trim()) && grouped.length === 0 ? (
+                    <p className="md-order-empty">No matching dishes in this menu right now. Try another category or a different brand.</p>
                   ) : null}
 
-                  {addonItems.length ? (
-                    <section className="rounded-2xl border border-accent/30 bg-accent/5 p-5">
-                      <p className="eyebrow">Add something extra</p>
-                      <h3 className="mt-1 font-display text-xl font-bold">Icova + Moktl drinks</h3>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {addonItems.map((item) => {
+                  {lines.length > 0 && suggestions.length > 0 && channelOpen ? (
+                    <section className="md-order-cross-sell" aria-label="Optional extras for your order">
+                      <div className="md-order-cross-sell-title">
+                        <span className="md-order-cross-sell-icon"><Sparkles className="size-5"/></span>
+                        <div><p className="eyebrow">A little more delicious</p><h3>Complete your order</h3>
+                          <p>Thoughtful suggestions using available dishes from this MealDeck location. All extras are optional.</p>
+                        </div>
+                      </div>
+                      <div className="md-order-cross-sell-grid">
+                        {suggestions.map(({ item, explanation }) => {
                           const brand = brandById(item.brandId);
-                          return (
-                            <button
-                              key={item.id}
-                              disabled={!channelOpen}
-                              onClick={() => beginAdd(item)}
-                              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-accent disabled:opacity-50"
-                            >
-                              {brand ? <BrandMark brand={brand} className="h-12 w-16 shrink-0 rounded-lg bg-ink p-1" /> : null}
-                              <span className="min-w-0 flex-1">
-                                <span className="block truncate font-semibold">{item.name}</span>
-                                <span className="text-sm text-muted-foreground">{formatPence(item.pricePence)} · customise</span>
-                              </span>
-                              <Plus className="size-5 text-accent" />
-                            </button>
-                          );
+                          return <article className="md-order-cross-sell-card" key={item.id}>
+                            <div className="md-order-cross-sell-photo"><img src={item.imageUrl || brand?.image} alt="" loading="lazy"/></div>
+                            <div className="md-order-cross-sell-details">
+                              <span>{explanation}</span>
+                              <strong>{item.name}</strong>
+                              <small>{brand?.name ?? "MealDeck"}</small>
+                              <div><b>{formatPence(item.pricePence)}</b>
+                                <Button type="button" variant="hero" size="sm" disabled={!channelOpen}
+                                  onClick={() => beginAdd(item)}><Plus className="size-4"/> Add</Button>
+                              </div>
+                            </div>
+                          </article>;
                         })}
                       </div>
                     </section>
