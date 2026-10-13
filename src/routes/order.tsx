@@ -902,8 +902,8 @@ function OrderPage() {
                     </section>
                   ):null}
                   {activeBrand ? (() => {
-                    const idx = primaryBrands.findIndex((b) => b.id === activeBrand);
-                    const next = primaryBrands[(idx + 1) % primaryBrands.length];
+                    const idx = filteredBrands.findIndex((b) => b.id === activeBrand);
+                    const next = filteredBrands[(idx + 1) % filteredBrands.length];
                     if (!next || next.id === activeBrand) return null;
                     return (
                       <button
@@ -1088,7 +1088,7 @@ function OrderPage() {
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
             {[{ id: null as string | null }, ...filteredBrands.map((b) => ({ id: b.id as string | null }))].map(({ id }) => {
               const brand = id ? brandById(id) : null;
-              const dishCount = id ? primaryItems.filter((i) => i.brandId === id).length : primaryItems.length;
+              const dishCount = browseMenu(searchableItems, id, activeCategory, menuSearch, availableBrands).length;
               const inBasket = lines.filter((l) => (id ? l.brandId === id : true)).reduce((n, l) => n + l.quantity, 0);
               const active = activeBrand === id;
               return (
