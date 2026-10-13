@@ -28,3 +28,6 @@ background:var(--card);border:1px solid var(--border);border-radius:15px}
 .md-upsell-card img{width:68px;height:68px}
 }
 @media(prefers-reduced-motion:reduce){.md-category-pill{transition:none}}
+
+/* Official MealDeck French taco suit, not a generic taco illustration. */
+.md-category-icon{width:26px;height:26px;object-fit:contain;flex:none}
