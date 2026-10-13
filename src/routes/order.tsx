@@ -643,58 +643,102 @@ function OrderPage() {
                 </p>
               ) : null}
 
-              <div className="mt-7">
-                <p className="eyebrow">Restaurants in {currentLocation.town}</p>
-                <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">Explore every craving</h2>
-                <p className="mt-1 hidden text-sm text-muted-foreground sm:block">Choose a restaurant or discover dishes across them all.</p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setBrandMenuOpen(true)}
-                aria-label="Choose a restaurant"
-                className="order-brand-selector mt-4 lg:hidden"
-              >
-                <span className="order-brand-logo">
-                  {activeBrandObj ? (
-                    <BrandMark brand={activeBrandObj} className="h-full w-full p-1.5 text-xs" />
-                  ) : (
-                    <span className="grid h-full w-full place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
-                  )}
-                </span>
-                <span className="min-w-0 flex-1 text-left">
-                  <span className="block text-[10px] font-bold uppercase tracking-[0.14em] opacity-60">Ordering from</span>
-                  <span className="block truncate font-display text-base font-extrabold">{activeBrandObj?.name ?? "All restaurants"}</span>
-                </span>
-                <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">
-                  <PanelLeftOpen className="size-4" /> Menu
-                </span>
-              </button>
-
-              <div className="mt-4 hidden lg:block">
-                <div className="order-brand-rail">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setActiveBrand(null)}
-                    className={`order-brand-pill ${activeBrand === null ? "is-active" : ""}`}
-                  >
-                    <span className="order-brand-logo grid place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
-                    <span className="truncate">All</span>
-                  </Button>
-                  {primaryBrands.map((brand) => (
-                      <Button
-                        key={brand.id}
-                        variant="ghost"
-                        onClick={() => setActiveBrand(brand.id)}
-                        aria-label={brand.name}
-                        className={`order-brand-pill ${activeBrand === brand.id ? "is-active" : ""}`}
-                      >
-                        <span className="order-brand-logo"><BrandMark brand={brand} className="h-full w-full p-1.5 text-xs" /></span>
-                        <span className="w-full truncate">{brand.name}</span>
-                      </Button>
+              <section id="discovery-top" className="md-order-discovery mt-7" aria-label="Explore MealDeck food">
+                <div className="md-order-intro">
+                  <div>
+                    <p className="eyebrow">From every MealDeck kitchen</p>
+                    <h2>What are you craving today?</h2>
+                    <p>Choose a food category, explore its brands, and add dishes to one basket.</p>
+                  </div>
+                  <div className="md-order-step-guide" aria-label="Ordering steps">
+                    <span>1 · Food</span><ChevronRight className="size-4"/><span>2 · Brand</span><ChevronRight className="size-4"/><span>3 · Basket</span>
+                  </div>
+                </div>
+                <div className="md-order-search-wrap">
+                  <Search className="size-5" aria-hidden="true"/>
+                  <Input
+                    value={searchText}
+                    onChange={(event) => changeSearch(event.target.value)}
+                    placeholder="Search burgers, French tacos, brands or dishes"
+                    aria-label="Search MealDeck dishes and brands"
+                    className="md-order-search-field"
+                  />
+                  {searchText && <button type="button" aria-label="Clear search" className="md-order-search-clear" onClick={() => changeSearch("")}><X className="size-4"/></button>}
+                </div>
+                <div className="md-order-categories-head">
+                  <h3>Browse food categories</h3>
+                  <span>Choose what you're in the mood for</span>
+                </div>
+                <div className="md-order-categories" role="group" aria-label="Food categories">
+                  {ORDER_CATEGORIES.filter(category => category.id === "all" || categoryTotals[category.id] > 0).map(category => (
+                    <button key={category.id} type="button"
+                      className={`md-order-category ${activeCategory === category.id ? "is-active" : ""}`}
+                      aria-pressed={activeCategory === category.id}
+                      onClick={() => selectCategory(category.id)}>
+                      <span className="md-order-category-icon">
+                        {category.id === "french-tacos" ? <img src={suitArtwork["french-taco"]} alt=""/> : category.symbol}
+                      </span>
+                      <span className="md-order-category-label">{category.label}</span>
+                      <span className="md-order-category-count">{categoryTotals[category.id]}</span>
+                    </button>
                   ))}
                 </div>
-              </div>
+                <div className="md-order-brand-heading" id="brand-grid">
+                  <div>
+                    <p className="eyebrow">{activeCategory === "all" ? "A kitchen for every craving" : "Kitchens serving this category"}</p>
+                    <h3>{searchText ? "Search your favourite food" : activeBrandObj ? activeBrandObj.name : "Choose your next brand"}</h3>
+                    <p>{activeBrandObj
+                      ? "Add your favourites and keep exploring other brands without losing your basket."
+                      : `${availableBrands.length} participating ${availableBrands.length === 1 ? "brand" : "brands"} · one combined order`}</p>
+                  </div>
+                  <div className="md-order-brand-actions">
+                    <button type="button" className="md-order-subtle-action" onClick={() => setBrandMenuOpen(true)}>
+                      <PanelLeftOpen className="size-4"/> All brands
+                    </button>
+                    {activeBrandObj || showAllDishes
+                      ? <button type="button" className="md-order-subtle-action" onClick={() => { setActiveBrand(null); setShowAllDishes(false); }}>
+                          <ArrowLeft className="size-4"/> Back to brands
+                        </button>
+                      : <button type="button" className="md-order-subtle-action" onClick={() => pickBrand(null)}>
+                          Browse all dishes <ArrowRight className="size-4"/>
+                        </button>}
+                  </div>
+                </div>
+                {!activeBrand && !showAllDishes && !searchText.trim() ? (
+                  <div className="md-order-brand-grid">
+                    {availableBrands.map(brand => {
+                      const count = filteredItems.filter(item => item.brandId === brand.id).length;
+                      const inBasket = lines.filter(line => line.brandId === brand.id).reduce((n, line) => n + line.quantity, 0);
+                      return <button type="button" key={brand.id} className="md-order-brand-tile" onClick={() => pickBrand(brand.id)}>
+                        <span className="md-order-brand-cover"><img src={brand.image} alt="" loading="lazy" /></span>
+                        <span className="md-order-brand-content">
+                          <span className="md-order-brand-mark"><BrandMark brand={brand} className="h-full w-full p-1" /></span>
+                          <strong>{brand.name}</strong>
+                          <small>{brand.category}</small>
+                          <span className="md-order-brand-bottom">
+                            <span>{count} {count === 1 ? "dish" : "dishes"}</span>
+                            {inBasket > 0 ? <span>{inBasket} in basket</span> : <ArrowRight className="size-4" />}
+                          </span>
+                        </span>
+                      </button>;
+                    })}
+                  </div>
+                ) : activeBrandObj ? (
+                  <div className="md-order-selected-brand">
+                    <span className="md-order-selected-brand-logo"><BrandMark brand={activeBrandObj} className="h-full w-full p-2" /></span>
+                    <div>
+                      <p className="eyebrow">Now viewing</p><strong>{activeBrandObj.name}</strong>
+                      <span>{activeBrandObj.tagline}</span>
+                    </div>
+                    {activeCategory !== "all" ? (
+                      <button type="button" onClick={() => setActiveCategory("all")}>Full menu <ArrowRight className="size-4"/></button>
+                    ) : null}
+                  </div>
+                ) : null}
+                {!activeBrand && !showAllDishes && !searchText && availableBrands.length === 0 && !catalogue.isLoading ? (
+                  <p className="md-order-empty">No participating brands currently have dishes in this category. Try a different category.</p>
+                ) : null}
+              </section>
 
               {catalogue.isLoading ? (
                 <div className="mt-16 flex justify-center">
