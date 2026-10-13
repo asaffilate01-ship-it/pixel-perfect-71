@@ -52,6 +52,7 @@ import {
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import { SiteHeader } from "@/components/site-header";
+import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { BrandDiscoveryGallery, FavouriteDishRail } from "@/components/order/premium-discovery";
 import {
@@ -487,7 +488,7 @@ function OrderPage() {
                 <div className="mt-3 space-y-2">
                   {suggestions.slice(0,2).map(({item,reason})=>(
                     <div key={item.id} className="flex items-center gap-2 rounded-xl border border-border bg-background p-2">
-                      <img src={item.imageUrl || brandById(item.brandId)?.image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy"/>
+                      <img src={marketplaceItemPhoto(item, brandById(item.brandId)).src} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy"/>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-semibold text-accent">{reason}</p>
                         <p className="truncate text-xs font-bold">{item.name}</p>
@@ -824,6 +825,7 @@ function OrderPage() {
                         {groupItems.map((item) => {
                           const brand = brandById(item.brandId);
                           const directLine = lines.find((line) => line.id === item.id && line.selectedModifiers.length === 0);
+                          const itemPhoto = marketplaceItemPhoto(item, brand);
                           return (
                             <article key={item.id} className="marketplace-dish-card relative">
                               <button type="button"
@@ -834,9 +836,10 @@ function OrderPage() {
                                 onClick={()=>toggleSavedFavourite(item.id)}>
                                 <Heart size={18} fill={favouriteIds.includes(item.id) ? "currentColor" : "none"}/>
                               </button>
+                              {itemPhoto.illustrative ? <span className="md-premium-illustrative-caption">Illustrative</span> : null}
                               <img
-                                src={item.imageUrl || brand?.image}
-                                alt={item.name}
+                                src={itemPhoto.src}
+                                alt={itemPhoto.illustrative ? "Illustrative food photography" : item.name}
                                 width={816}
                                 height={816}
                                 loading="lazy"
@@ -877,7 +880,7 @@ function OrderPage() {
                       <div className="md-upsell-list mt-4">
                         {suggestions.map(({item,reason})=>(
                           <article key={item.id} className="md-upsell-card">
-                            <img src={item.imageUrl || brandById(item.brandId)?.image} alt="" loading="lazy"/>
+                            <img src={marketplaceItemPhoto(item, brandById(item.brandId)).src} alt="" loading="lazy"/>
                             <div className="min-w-0 flex-1"><span className="text-xs font-bold text-primary">{reason} · {brandById(item.brandId)?.name}</span>
                               <p className="truncate font-semibold">{item.name}</p>
                               <span className="text-sm">{formatPence(item.pricePence)}</span></div>
