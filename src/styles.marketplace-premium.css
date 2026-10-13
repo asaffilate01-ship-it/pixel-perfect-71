@@ -107,3 +107,24 @@
   .md-premium-brand-text strong{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.md-premium-brand-tile,.md-premium-brand-cover,
   .md-premium-fav-heart{transition:none!important}}
+
+/* Transparent food-photo attribution and gentle catalogue loading skeletons. */
+.md-premium-illustrative-caption{
+  position:absolute;left:8px;top:9px;z-index:2;
+  background:color-mix(in oklab,var(--card) 94%,transparent);
+  color:var(--muted-foreground);border:1px solid var(--border);
+  border-radius:999px;padding:4px 6px;font-size:9px;font-weight:750;pointer-events:none;
+}
+.md-premium-loading-gallery{margin:22px 0 18px}
+.md-premium-loading-heading,.md-premium-loading-tiles span{
+  display:block;background:linear-gradient(90deg,var(--muted) 8%,var(--card) 42%,var(--muted) 90%);
+  background-size:210% 100%;animation:md-market-shimmer 1.65s ease-in-out infinite;
+}
+.md-premium-loading-heading{height:27px;width:52%;border-radius:9px;margin-bottom:14px}
+.md-premium-loading-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.md-premium-loading-tiles span{aspect-ratio:1.03;border-radius:20px;min-height:190px}
+@keyframes md-market-shimmer{from{background-position:120% 0}to{background-position:-120% 0}}
+@media(max-width:1024px){.md-premium-loading-tiles{grid-template-columns:repeat(2,1fr)}
+  .md-premium-loading-tiles span:last-child{display:none}}
+@media(max-width:390px){.md-premium-loading-tiles{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.md-premium-loading-heading,.md-premium-loading-tiles span{animation:none}}
