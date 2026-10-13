@@ -160,3 +160,9 @@ outline:3px solid #ce8a44;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){
 .md-order-brand-tile,.md-order-category,.md-order-brand-cover img{transition:none!important}
 }
+
+.md-order-basket-mix-note{display:flex;align-items:center;gap:8px;line-height:1.55;
+margin-top:12px;padding:9px 10px;border-radius:10px;
+background:color-mix(in oklab,var(--color-accent) 11%,transparent);
+color:var(--color-foreground);font-size:11px}
+.md-order-basket-mix-note svg{flex-shrink:0;color:var(--color-accent)}
