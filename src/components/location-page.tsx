@@ -108,7 +108,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <div>
               <p className="md-kicker md-kicker-light">St Albans</p>
               <h2>Café1 · St Albans Crown Court, 6 Bricket Road, St Albans, AL1 3JU</h2>
-              <p>Delivery, pickup, kerbside and dine-in options can be presented here.</p>
+              <p>MealDeck online currently supports delivery in St Albans. Other options will appear when the venue enables them.</p>
             </div>
             <div className="md-collection-icons">
               <span><UtensilsCrossed /> Dine in</span>
