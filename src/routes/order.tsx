@@ -49,6 +49,7 @@ import {
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import { SiteHeader } from "@/components/site-header";
+import { BROWSE_CATEGORIES, browseBrands, browseMenu, basketSuggestions, type BrowseCategory } from "@/lib/marketplace-discovery";
 import { seo } from "@/lib/seo";
 
 type OrderSearch = { brand?: string; fulfilment?: FulfilmentType };
@@ -108,6 +109,8 @@ function OrderPage() {
   });
   const [location, setLocation] = useState<LocationKey | null>("luton");
   const [activeBrand, setActiveBrand] = useState<string | null>(brandFromSearch ?? null);
+  const [activeCategory, setActiveCategory] = useState<BrowseCategory>("all");
+  const [menuSearch, setMenuSearch] = useState("");
   const [lines, setLines] = useState<CartLine[]>([]);
   const [customer, setCustomer] = useState(emptyCustomer);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -146,7 +149,14 @@ function OrderPage() {
   );
   const primaryItems = items.filter((item) => currentLocation?.primaryBrandIds.includes(item.brandId));
   const addonItems = items.filter((item) => currentLocation?.addonBrandIds.includes(item.brandId));
-  const visibleItems = activeBrand ? primaryItems.filter((item) => item.brandId === activeBrand) : primaryItems;
+  const searchableItems = [...primaryItems, ...addonItems];
+  const availableBrands = [...primaryBrands, ...(currentLocation?.addonBrandIds.map(brandById).filter((b): b is Brand => !!b) ?? [])];
+  const filteredBrands = useMemo(
+    () => browseBrands(searchableItems, availableBrands, activeCategory, menuSearch),
+    [items, currentLocation, activeCategory, menuSearch],
+  );
+  const visibleItems = browseMenu(searchableItems, activeBrand, activeCategory, menuSearch, availableBrands);
+  const suggestions = basketSuggestions(searchableItems, lines, availableBrands);
   const activeBrandObj = activeBrand ? brandById(activeBrand) ?? null : null;
 
   const grouped = useMemo(() => {
@@ -228,6 +238,8 @@ function OrderPage() {
     }
     setLocation(next);
     setActiveBrand(null);
+    setActiveCategory("all");
+    setMenuSearch("");
     setPostcode("");
     setCustomer(emptyCustomer);
     setCheckoutOpen(false);
@@ -598,9 +610,37 @@ function OrderPage() {
                 </p>
               ) : null}
 
+              <section className="md-discovery-top mt-6" aria-label="Discover food">
+                <div className="flex items-center justify-between gap-3">
+                  <div><p className="eyebrow">Made for every craving</p><h2 className="font-display text-xl font-black sm:text-2xl">Find your next favourite</h2></div>
+                  <span className="hidden rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary sm:inline">One basket · Multiple brands</span>
+                </div>
+                <div className="relative mt-4">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={menuSearch} onChange={(event)=>setMenuSearch(event.target.value)}
+                    className="h-12 rounded-2xl bg-card pl-12 pr-4 shadow-sm"
+                    placeholder="Search dishes, brands or cuisines" aria-label="Search MealDeck dishes and brands"/>
+                </div>
+                <div className="md-category-scroller mt-4" role="group" aria-label="Food categories">
+                  {BROWSE_CATEGORIES.map(category=>(
+                    <button key={category.id} type="button" onClick={()=>{setActiveCategory(category.id);setActiveBrand(null);}}
+                      aria-pressed={activeCategory===category.id}
+                      className={`md-category-pill ${activeCategory===category.id?"is-selected":""}`}>
+                      <span className="text-xl" aria-hidden="true">{category.emoji}</span>
+                      <span>{category.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {lines.length>0 ? <div className="md-mix-notice mt-3">
+                  <ShoppingBasket className="size-5 shrink-0"/>
+                  <span>{itemCount(lines)} items from {new Set(lines.map(line=>line.brandId)).size} brands. Add food from another brand without starting over.</span>
+                  <button type="button" className="font-bold underline underline-offset-4" onClick={()=>setBasketOpen(true)}>Basket</button>
+                </div>:null}
+              </section>
+
               <div className="mt-7">
                 <p className="eyebrow">Restaurants in {currentLocation.town}</p>
-                <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">Explore every craving</h2>
+                <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">{activeCategory==="all"?"Explore every craving":BROWSE_CATEGORIES.find(c=>c.id===activeCategory)?.label}</h2>
                 <p className="mt-1 hidden text-sm text-muted-foreground sm:block">Choose a restaurant or discover dishes across them all.</p>
               </div>
 
@@ -636,11 +676,11 @@ function OrderPage() {
                     <span className="order-brand-logo grid place-items-center bg-primary text-primary-foreground"><UtensilsCrossed className="size-5" /></span>
                     <span className="truncate">All</span>
                   </Button>
-                  {primaryBrands.map((brand) => (
+                  {filteredBrands.map((brand) => (
                       <Button
                         key={brand.id}
                         variant="ghost"
-                        onClick={() => setActiveBrand(brand.id)}
+                        onClick={() => pickBrand(brand.id)}
                         aria-label={brand.name}
                         className={`order-brand-pill ${activeBrand === brand.id ? "is-active" : ""}`}
                       >
@@ -705,6 +745,26 @@ function OrderPage() {
                       </div>
                     </section>
                   ))}
+                  {suggestions.length ? (
+                    <section className="md-upsell-panel" aria-label="You may also like">
+                      <div className="flex items-start justify-between gap-3">
+                        <div><p className="eyebrow">Build your perfect meal</p><h3 className="font-display text-xl font-extrabold">Good with your basket</h3>
+                          <p className="mt-1 text-sm text-muted-foreground">Relevant extras from food available at this MealDeck location. No automatic add-ons.</p></div>
+                        <ShoppingBasket className="size-6 text-accent"/>
+                      </div>
+                      <div className="md-upsell-list mt-4">
+                        {suggestions.map(({item,reason})=>(
+                          <article key={item.id} className="md-upsell-card">
+                            <img src={item.imageUrl || brandById(item.brandId)?.image} alt="" loading="lazy"/>
+                            <div className="min-w-0 flex-1"><span className="text-xs font-bold text-primary">{reason} · {brandById(item.brandId)?.name}</span>
+                              <p className="truncate font-semibold">{item.name}</p>
+                              <span className="text-sm">{formatPence(item.pricePence)}</span></div>
+                            <Button type="button" variant="hero" size="icon" aria-label={`Add ${item.name}`} disabled={!channelOpen} onClick={()=>beginAdd(item)}><Plus/></Button>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  ):null}
                   {activeBrand ? (() => {
                     const idx = primaryBrands.findIndex((b) => b.id === activeBrand);
                     const next = primaryBrands[(idx + 1) % primaryBrands.length];
@@ -726,7 +786,7 @@ function OrderPage() {
                     );
                   })() : null}
                   {grouped.length === 0 ? (
-                    <p className="text-muted-foreground">No dishes available from this brand right now.</p>
+                    <p className="text-muted-foreground">No matching dishes for this category or search. Choose another category or clear your search.</p>
                   ) : null}
 
                   {addonItems.length ? (
@@ -887,7 +947,7 @@ function OrderPage() {
             </SheetDescription>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
-            {[{ id: null as string | null }, ...primaryBrands.map((b) => ({ id: b.id as string | null }))].map(({ id }) => {
+            {[{ id: null as string | null }, ...filteredBrands.map((b) => ({ id: b.id as string | null }))].map(({ id }) => {
               const brand = id ? brandById(id) : null;
               const dishCount = id ? primaryItems.filter((i) => i.brandId === id).length : primaryItems.length;
               const inBasket = lines.filter((l) => (id ? l.brandId === id : true)).reduce((n, l) => n + l.quantity, 0);
