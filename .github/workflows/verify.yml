@@ -18,6 +18,8 @@ jobs:
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - name: MealDeck Play game regressions
         run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/hero-food-deck.test.ts
+      - name: Marketplace discovery, saved basket and category regressions
+        run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
       - run: bun run build
       - name: TypeScript validation
         run: bunx tsc --noEmit
@@ -37,4 +39,12 @@ jobs:
           src/lib/mealdeck-collection-games.ts src/lib/game-brand-artwork.ts
           src/components/play/premium-games.tsx src/routes/play.tsx
           tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts
+          --rule 'prettier/prettier: off'
+
+      - name: Marketplace ordering lint
+        run: >
+          bunx eslint src/routes/order.tsx
+          src/lib/marketplace-discovery.ts src/lib/marketplace-preferences.ts
+          src/lib/marketplace-photos.ts src/components/order/premium-discovery.tsx
+          tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
           --rule 'prettier/prettier: off'

@@ -35,6 +35,18 @@ describe("category → brand → dish navigation",()=>{
     expect(browseMenu(items,"skorch-burgers","french-tacos","",brands)).toEqual([]);
     expect(browseMenu(items,null,"all","iced",brands).map(i=>i.id)).toEqual(["latte"]);
   });
+  test("mixed-menu brands do not make a cake a drink or a latte a dessert",()=>{
+    expect(matchesBrowseCategory(items[2]!,"desserts",brands[2])).toBe(false);
+    expect(matchesBrowseCategory(items[4]!,"drinks",brands[2])).toBe(false);
+    expect(matchesBrowseCategory(items[4]!,"desserts",brands[2])).toBe(true);
+  });
+  test("fries are available as a customer category",()=>{
+    expect(BROWSE_CATEGORIES.some(c=>c.id==="sides")).toBe(true);
+    const fries:MenuItem={id:"fries",brandId:"loadd",name:"Loaded Fries",category:"Fries & sides",pricePence:450};
+    const loadd={id:"loadd",name:"Load'd",category:"French tacos · mac n cheese"} as Brand;
+    expect(matchesBrowseCategory(fries,"sides",loadd)).toBe(true);
+    expect(matchesBrowseCategory(fries,"french-tacos",loadd)).toBe(false);
+  });
   test("recommendations only use real catalogue items not already in basket",()=>{
     const suggestions=basketSuggestions(items,[cart(items[0]!)],brands);
     expect(suggestions.length).toBeLessThanOrEqual(4);

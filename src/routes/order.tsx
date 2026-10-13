@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -17,6 +17,9 @@ import {
   Trash2,
   PanelLeftOpen,
   ChevronRight,
+  Heart,
+  BookmarkPlus,
+  RefreshCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -49,6 +52,14 @@ import {
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import { SiteHeader } from "@/components/site-header";
+import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
+import { suitArtwork } from "@/lib/food-suit-artwork";
+import { BrandDiscoveryGallery, FavouriteDishRail } from "@/components/order/premium-discovery";
+import {
+  FAVOURITES_STORAGE_KEY, BASKET_STORAGE_KEY,
+  decodeFavourites, toggleFavourite, encodeSavedBasket, decodeSavedBasket,
+  restoreSavedBasket, type SavedBasket,
+} from "@/lib/marketplace-preferences";
 import { BROWSE_CATEGORIES, browseBrands, browseMenu, basketSuggestions, type BrowseCategory } from "@/lib/marketplace-discovery";
 import { seo } from "@/lib/seo";
 
@@ -116,6 +127,58 @@ function OrderPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
   const [brandMenuOpen, setBrandMenuOpen] = useState(false);
+  const [favouriteIds, setFavouriteIds] = useState<string[]>([]);
+  const [savedBasket, setSavedBasket] = useState<SavedBasket | null>(null);
+  // Browser preferences are only read on the client after hydration.
+  useEffect(() => {
+    try {
+      setFavouriteIds(decodeFavourites(window.localStorage.getItem(FAVOURITES_STORAGE_KEY)));
+      setSavedBasket(decodeSavedBasket(window.localStorage.getItem(BASKET_STORAGE_KEY)));
+    } catch {
+      // Private browsing / storage disabled: games and ordering remain usable.
+    }
+  }, []);
+  function toggleSavedFavourite(itemId: string) {
+    const next = toggleFavourite(favouriteIds, itemId);
+    try {
+      window.localStorage.setItem(FAVOURITES_STORAGE_KEY, JSON.stringify(next));
+      setFavouriteIds(next);
+    } catch {
+      toast.error("Unable to save favourites on this device.");
+    }
+  }
+  function saveBasketForLater() {
+    if (!location || lines.length === 0) return;
+    try {
+      const json=encodeSavedBasket(location, lines);
+      window.localStorage.setItem(BASKET_STORAGE_KEY, json);
+      setSavedBasket(decodeSavedBasket(json));
+      toast.success("Basket saved on this device", { description: "It isn't an order. Re-add items later at the prices then available." });
+    } catch {
+      toast.error("This browser couldn't save the basket.");
+    }
+  }
+  function addSavedBasket() {
+    if (!location || !savedBasket) return;
+    if (catalogue.isLoading || !catalogue.data) {
+      toast.message("The menu is still loading. Please try again shortly.");
+      return;
+    }
+    const restored=restoreSavedBasket(savedBasket, location, items, lines);
+    if (restored.mismatch) {
+      toast.message("Saved for another location", { description: "Choose the original MealDeck location first." });
+      return;
+    }
+    if (restored.added > 0) {
+      setLines(restored.cart);
+      toast.success(`${restored.added} item(s) added from your saved basket`, {
+        description: "We used today's menu and prices. Review the basket before checking out.",
+      });
+    }
+    if (restored.unavailable > 0) {
+      toast.message(`${restored.unavailable} saved item(s) are unavailable or have changed options.`);
+    }
+  }
   const pickBrand = (id: string | null) => {
     setActiveBrand(id);
     setBrandMenuOpen(false);
@@ -359,6 +422,23 @@ function OrderPage() {
             <p className="mt-1 text-xs text-muted-foreground">
               {itemCount(lines)} items from {new Set(lines.map((line) => line.brandId)).size} brands
             </p>
+            {lines.length > 0 ? (
+              <div className="md-premium-basket-brandrow" aria-label="Brands in this basket">
+                {[...new Set(lines.map(line => line.brandId))].map(brandId=>{
+                  const brand=brandById(brandId);
+                  return <span key={brandId} className="md-premium-basket-brand">
+                    {brand?.logo ? <img src={brand.logo} alt="" loading="lazy"/> : null}
+                    <span>{brand?.name || "MealDeck"}</span>
+                  </span>;
+                })}
+              </div>
+            ) : null}
+            <div className="md-premium-save-actions">
+              {lines.length>0 ? <button type="button" onClick={saveBasketForLater}
+                className="md-premium-save-button"><BookmarkPlus size={16}/> Save basket for later</button> : null}
+              {savedBasket && savedBasket.location===location ? <button type="button" onClick={addSavedBasket}
+                className="md-premium-save-button"><RefreshCcw size={16}/> Add saved basket ({savedBasket.lines.length})</button> : null}
+            </div>
 
             <div className="mt-4 space-y-3">
               {lines.map((line) => (
@@ -412,7 +492,7 @@ function OrderPage() {
                 <div className="mt-3 space-y-2">
                   {suggestions.slice(0,2).map(({item,reason})=>(
                     <div key={item.id} className="flex items-center gap-2 rounded-xl border border-border bg-background p-2">
-                      <img src={item.imageUrl || brandById(item.brandId)?.image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy"/>
+                      <img src={marketplaceItemPhoto(item, brandById(item.brandId)).src} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy"/>
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-semibold text-accent">{reason}</p>
                         <p className="truncate text-xs font-bold">{item.name}</p>
@@ -639,7 +719,7 @@ function OrderPage() {
                 </div>
                 <div className="relative mt-4">
                   <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={menuSearch} onChange={(event)=>setMenuSearch(event.target.value)}
+                  <Input value={menuSearch} onChange={(event)=>{setMenuSearch(event.target.value);setActiveBrand(null);}}
                     className="h-12 rounded-2xl bg-card pl-12 pr-4 shadow-sm"
                     placeholder="Search dishes, brands or cuisines" aria-label="Search MealDeck dishes and brands"/>
                 </div>
@@ -648,7 +728,9 @@ function OrderPage() {
                     <button key={category.id} type="button" onClick={()=>{setActiveCategory(category.id);setActiveBrand(null);}}
                       aria-pressed={activeCategory===category.id}
                       className={`md-category-pill ${activeCategory===category.id?"is-selected":""}`}>
-                      <span className="text-xl" aria-hidden="true">{category.emoji}</span>
+                      {category.id==="french-tacos"
+                        ? <img src={suitArtwork["french-taco"]} alt="" aria-hidden="true" className="md-category-icon"/>
+                        : <span className="text-xl" aria-hidden="true">{category.emoji}</span>}
                       <span>{category.label}</span>
                     </button>
                   ))}
@@ -665,6 +747,28 @@ function OrderPage() {
                 <h2 className="mt-1 text-2xl font-extrabold sm:text-3xl">{activeCategory==="all"?"Explore every craving":BROWSE_CATEGORIES.find(c=>c.id===activeCategory)?.label}</h2>
                 <p className="mt-1 hidden text-sm text-muted-foreground sm:block">Choose a restaurant or discover dishes across them all.</p>
               </div>
+
+              {catalogue.isLoading ? (
+                <div className="md-premium-loading-gallery" role="status" aria-label="Loading restaurants">
+                  <div className="md-premium-loading-heading"/>
+                  <div className="md-premium-loading-tiles">{[1,2,3].map(n=><span key={n}/>)}</div>
+                </div>
+              ) : (<>
+                <FavouriteDishRail
+                  items={searchableItems} brands={availableBrands} favouriteIds={favouriteIds}
+                  isOrderingOpen={channelOpen} onAdd={beginAdd} onRemoveFavourite={toggleSavedFavourite}/>
+                <BrandDiscoveryGallery
+                  brands={filteredBrands}
+                  items={browseMenu(searchableItems, null, activeCategory, menuSearch, availableBrands)}
+                  selectedBrandId={activeBrand} onSelectBrand={pickBrand}
+                  isOrderingOpen={channelOpen && catalogue.data?.source === "live"}/>
+                {savedBasket?.location===location ? (
+                  <div className="md-premium-reorder-shortcut">
+                    <div><strong>Your saved basket</strong><p>{savedBasket.lines.length} saved selection(s) · checked against the current menu when added</p></div>
+                    <button type="button" onClick={addSavedBasket}><RefreshCcw size={16}/> Add again</button>
+                  </div>
+                ) : null}
+              </>)}
 
               <button
                 type="button"
@@ -732,11 +836,21 @@ function OrderPage() {
                         {groupItems.map((item) => {
                           const brand = brandById(item.brandId);
                           const directLine = lines.find((line) => line.id === item.id && line.selectedModifiers.length === 0);
+                          const itemPhoto = marketplaceItemPhoto(item, brand);
                           return (
-                            <article key={item.id} className="marketplace-dish-card">
+                            <article key={item.id} className="marketplace-dish-card relative">
+                              <button type="button"
+                                className={`md-premium-fav-heart ${favouriteIds.includes(item.id) ? "is-saved" : ""}`}
+                                aria-pressed={favouriteIds.includes(item.id)}
+                                aria-label={favouriteIds.includes(item.id) ? `Remove ${item.name} from favourites` : `Save ${item.name} to favourites`}
+                                title={favouriteIds.includes(item.id) ? "Remove from favourites" : "Save to favourites"}
+                                onClick={()=>toggleSavedFavourite(item.id)}>
+                                <Heart size={18} fill={favouriteIds.includes(item.id) ? "currentColor" : "none"}/>
+                              </button>
+                              {itemPhoto.illustrative ? <span className="md-premium-illustrative-caption">Illustrative</span> : null}
                               <img
-                                src={item.imageUrl || brand?.image}
-                                alt={item.name}
+                                src={itemPhoto.src}
+                                alt={itemPhoto.illustrative ? "Illustrative food photography" : item.name}
                                 width={816}
                                 height={816}
                                 loading="lazy"
@@ -777,7 +891,7 @@ function OrderPage() {
                       <div className="md-upsell-list mt-4">
                         {suggestions.map(({item,reason})=>(
                           <article key={item.id} className="md-upsell-card">
-                            <img src={item.imageUrl || brandById(item.brandId)?.image} alt="" loading="lazy"/>
+                            <img src={marketplaceItemPhoto(item, brandById(item.brandId)).src} alt="" loading="lazy"/>
                             <div className="min-w-0 flex-1"><span className="text-xs font-bold text-primary">{reason} · {brandById(item.brandId)?.name}</span>
                               <p className="truncate font-semibold">{item.name}</p>
                               <span className="text-sm">{formatPence(item.pricePence)}</span></div>
@@ -788,8 +902,8 @@ function OrderPage() {
                     </section>
                   ):null}
                   {activeBrand ? (() => {
-                    const idx = primaryBrands.findIndex((b) => b.id === activeBrand);
-                    const next = primaryBrands[(idx + 1) % primaryBrands.length];
+                    const idx = filteredBrands.findIndex((b) => b.id === activeBrand);
+                    const next = filteredBrands[(idx + 1) % filteredBrands.length];
                     if (!next || next.id === activeBrand) return null;
                     return (
                       <button
@@ -945,7 +1059,10 @@ function OrderPage() {
             onClick={() => setBasketOpen(true)}
           >
             <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-xs font-bold">{itemCount(lines)}</span>
-            <span className="truncate text-left">View your hand</span>
+            <span className="flex min-w-0 flex-col items-start">
+               <span className="truncate">View basket</span>
+               <span className="text-[10px] font-normal opacity-80">{new Set(lines.map(line=>line.brandId)).size} brand(s) · one checkout</span>
+             </span>
             <span>{formatPence(total)}</span>
           </Button>
         </div>
@@ -971,7 +1088,7 @@ function OrderPage() {
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
             {[{ id: null as string | null }, ...filteredBrands.map((b) => ({ id: b.id as string | null }))].map(({ id }) => {
               const brand = id ? brandById(id) : null;
-              const dishCount = id ? primaryItems.filter((i) => i.brandId === id).length : primaryItems.length;
+              const dishCount = browseMenu(searchableItems, id, activeCategory, menuSearch, availableBrands).length;
               const inBasket = lines.filter((l) => (id ? l.brandId === id : true)).reduce((n, l) => n + l.quantity, 0);
               const active = activeBrand === id;
               return (

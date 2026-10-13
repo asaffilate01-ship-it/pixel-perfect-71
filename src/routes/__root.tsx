@@ -20,6 +20,7 @@ import franchiseBrandsCss from "../styles.franchise-brands.css?url";
 import dishbeePlayCss from "../styles.dishbee-play.css?url";
 import dishbeePlayPremiumCss from "../styles.dishbee-play-premium.css?url";
 import marketplaceDiscoveryCss from "../styles.marketplace-discovery.css?url";
+import marketplacePremiumCss from "../styles.marketplace-premium.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -117,6 +118,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: dishbeePlayCss },
       { rel: "stylesheet", href: dishbeePlayPremiumCss },
       { rel: "stylesheet", href: marketplaceDiscoveryCss },
+      { rel: "stylesheet", href: marketplacePremiumCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
