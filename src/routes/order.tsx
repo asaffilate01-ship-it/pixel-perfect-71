@@ -142,6 +142,8 @@ function OrderPage() {
       setActiveCategory("all");
       setActiveBrand(null);
       setShowAllDishes(true);
+    } else {
+      setShowAllDishes(false);
     }
   };
   const [submitting, setSubmitting] = useState(false);
@@ -285,6 +287,7 @@ function OrderPage() {
 
   function beginAdd(item: MenuItem) {
     if (modifierGroupsFor(item).length) {
+      setBasketOpen(false);
       setCustomising(item);
       setChosen([]);
       return;
@@ -394,47 +397,60 @@ function OrderPage() {
             </p>
 
             <div className="mt-4 space-y-3">
-              {lines.map((line) => (
-                <div key={line.lineId} className="flex items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs text-accent">{brandById(line.brandId)?.name}</p>
-                    <p className="truncate text-sm font-medium">{line.name}</p>
-                    {line.selectedModifiers.length ? (
-                      <p className="truncate text-xs text-muted-foreground">
-                        {line.selectedModifiers.map((m) => m.name).join(", ")}
-                      </p>
-                    ) : null}
-                    <p className="text-sm text-muted-foreground">{formatPence(lineUnitPrice(line) * line.quantity)}</p>
+              {basketGroups.map(([brandId, brandLines]) => {
+                const brand = brandById(brandId);
+                return <section key={brandId} className="md-order-basket-group">
+                  <div className="md-order-basket-brand">
+                    {brand ? <span className="md-order-basket-logo"><BrandMark brand={brand} className="h-full w-full p-1"/></span> : null}
+                    <span className="min-w-0 flex-1"><strong>{brand?.name ?? "MealDeck"}</strong><small>{brandLines.reduce((n, line) => n + line.quantity, 0)} items</small></span>
+                    <span className="md-order-basket-brand-total">{formatPence(brandLines.reduce((sum, line) => sum + lineUnitPrice(line) * line.quantity, 0))}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="glass"
-                      size="icon"
-                      className="size-8 rounded-full"
-                      aria-label="Remove one"
-                      onClick={() => setLines((prev) => setQuantity(prev, line.lineId, line.quantity - 1))}
-                    >
-                      {line.quantity === 1 ? <Trash2 /> : <Minus />}
-                    </Button>
-                    <span className="w-6 text-center text-sm font-semibold">{line.quantity}</span>
-                    <Button
-                      variant="glass"
-                      size="icon"
-                      className="size-8 rounded-full"
-                      aria-label="Add one"
-                      onClick={() => setLines((prev) => setQuantity(prev, line.lineId, line.quantity + 1))}
-                    >
-                      <Plus />
-                    </Button>
+                  <div className="space-y-3 p-3">
+                    {brandLines.map(line => (
+                      <div key={line.lineId} className="flex items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold">{line.name}</p>
+                          {line.selectedModifiers.length ? (
+                            <p className="line-clamp-2 text-xs text-muted-foreground">{line.selectedModifiers.map(m => m.name).join(", ")}</p>
+                          ) : null}
+                          <p className="text-sm text-muted-foreground">{formatPence(lineUnitPrice(line) * line.quantity)}</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="glass" size="icon" className="size-9 rounded-full"
+                            aria-label={`Remove one ${line.name}`}
+                            onClick={() => setLines(prev => setQuantity(prev, line.lineId, line.quantity - 1))}>
+                            {line.quantity === 1 ? <Trash2 /> : <Minus />}
+                          </Button>
+                          <span className="w-6 text-center text-sm font-semibold">{line.quantity}</span>
+                          <Button variant="glass" size="icon" className="size-9 rounded-full"
+                            aria-label={`Add one ${line.name}`}
+                            onClick={() => setLines(prev => setQuantity(prev, line.lineId, line.quantity + 1))}><Plus /></Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
+                </section>;
+              })}
               {lines.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
                    Add dishes from any restaurant.
                 </p>
               ) : null}
             </div>
+
+            {lines.length > 0 && suggestions.length > 0 && channelOpen ? (
+              <section className="md-order-basket-upsells" aria-label="Suggested additions">
+                <div className="flex items-center gap-2"><Sparkles className="size-4 text-accent"/><h3 className="font-display text-sm font-bold">Complete your meal</h3></div>
+                <p className="text-xs text-muted-foreground">Optional extras from the same MealDeck location.</p>
+                {suggestions.slice(0, 2).map(({ item, explanation }) => (
+                  <div className="md-order-basket-suggestion" key={item.id}>
+                    <div className="min-w-0 flex-1"><span>{explanation}</span><strong>{item.name}</strong><small>{brandById(item.brandId)?.name} · {formatPence(item.pricePence)}</small></div>
+                    <Button type="button" variant="glass" size="icon" className="size-9 shrink-0 rounded-full"
+                      aria-label={`Add ${item.name}`} onClick={() => beginAdd(item)}><Plus /></Button>
+                  </div>
+                ))}
+              </section>
+            ) : null}
 
             {lines.length ? (
               <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
