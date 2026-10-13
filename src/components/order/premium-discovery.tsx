@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, Heart, ShoppingBasket, Sparkles, UtensilsCrossed } from "lucide-react";
 import type { Brand, MenuItem } from "@/lib/mealdeck";
 import { formatPence } from "@/lib/mealdeck";
+import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 
 type GalleryProps = {
   brands: readonly Brand[];
@@ -96,7 +97,7 @@ export function FavouriteDishRail({
       {available.map(item=>{
         const brand=brands.find(b=>b.id===item.brandId);
         return <article key={item.id} className="md-premium-fav-tile">
-          <img src={item.imageUrl || brand?.image} alt="" loading="lazy"/>
+          <img src={marketplaceItemPhoto(item, brand).src} alt="" loading="lazy"/>
           <div><small>{brand?.name||"MealDeck"}</small><strong>{item.name}</strong>
             <span>{formatPence(item.pricePence)}</span></div>
           <div className="md-premium-fav-actions">
