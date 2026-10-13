@@ -134,6 +134,7 @@ function OrderPage() {
   const selectCategory = (id: OrderCategory) => {
     setActiveCategory(id);
     setActiveBrand(null);
+    setSearchText("");
     setShowAllDishes(false);
   };
   const changeSearch = (value: string) => {
@@ -995,7 +996,7 @@ function OrderPage() {
       </Sheet>
 
       <Sheet open={brandMenuOpen} onOpenChange={setBrandMenuOpen}>
-        <SheetContent side="left" className="z-[80] flex w-[86vw] max-w-sm flex-col gap-0 border-border bg-background p-0 lg:hidden">
+        <SheetContent side="left" className="z-[80] flex w-[86vw] max-w-sm flex-col gap-0 border-border bg-background p-0">
           <div className="border-b border-border px-5 pb-4 pt-6">
             <p className="eyebrow">Pick your next card</p>
             <SheetTitle className="font-display text-2xl font-extrabold">Restaurants</SheetTitle>
@@ -1013,7 +1014,7 @@ function OrderPage() {
                 <button
                   key={id ?? "all"}
                   type="button"
-                  onClick={() => pickBrand(id)}
+                  onClick={() => { setActiveCategory("all"); setSearchText(""); pickBrand(id); }}
                   className={`brand-drawer-row ${active ? "is-active" : ""}`}
                 >
                   <span className="order-brand-logo size-14">
