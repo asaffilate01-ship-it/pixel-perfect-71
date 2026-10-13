@@ -714,7 +714,7 @@ function OrderPage() {
                 </div>
                 <div className="relative mt-4">
                   <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={menuSearch} onChange={(event)=>setMenuSearch(event.target.value)}
+                  <Input value={menuSearch} onChange={(event)=>{setMenuSearch(event.target.value);setActiveBrand(null);}}
                     className="h-12 rounded-2xl bg-card pl-12 pr-4 shadow-sm"
                     placeholder="Search dishes, brands or cuisines" aria-label="Search MealDeck dishes and brands"/>
                 </div>
