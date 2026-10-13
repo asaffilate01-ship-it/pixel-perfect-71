@@ -403,6 +403,28 @@ function OrderPage() {
               ) : null}
             </div>
 
+            {suggestions.length && lines.length ? (
+              <section className="mt-5 border-t border-border pt-4" aria-label="Basket add-on ideas">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-display font-bold">Complete your meal</h3>
+                  <span className="text-[10px] text-muted-foreground">Optional · Same basket</span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {suggestions.slice(0,2).map(({item,reason})=>(
+                    <div key={item.id} className="flex items-center gap-2 rounded-xl border border-border bg-background p-2">
+                      <img src={item.imageUrl || brandById(item.brandId)?.image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" loading="lazy"/>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-semibold text-accent">{reason}</p>
+                        <p className="truncate text-xs font-bold">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatPence(item.pricePence)}</p>
+                      </div>
+                      <Button size="icon" variant="glass" className="size-9 rounded-full" disabled={!channelOpen}
+                        aria-label={`Add ${item.name}`} onClick={()=>beginAdd(item)}><Plus/></Button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ):null}
             {lines.length ? (
               <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
                 <div className="flex justify-between text-muted-foreground">
