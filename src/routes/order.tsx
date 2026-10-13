@@ -750,7 +750,7 @@ function OrderPage() {
                 brands={filteredBrands}
                 items={browseMenu(searchableItems, null, activeCategory, menuSearch, availableBrands)}
                 selectedBrandId={activeBrand} onSelectBrand={pickBrand}
-                isOrderingOpen={channelOpen}/>
+                isOrderingOpen={channelOpen && catalogue.data?.source === "live"}/>
               {savedBasket?.location===location ? (
                 <div className="md-premium-reorder-shortcut">
                   <div><strong>Your saved basket</strong><p>{savedBasket.lines.length} saved selection(s) · rechecked against this location's menu</p></div>
