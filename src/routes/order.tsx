@@ -333,6 +333,7 @@ function OrderPage() {
 
   const canCheckout =
     !!location &&
+    catalogue.data?.source === "live" &&
     fulfilmentAllowed &&
     channelOpen &&
     customer.postcode.trim().length >= 2 &&
@@ -433,9 +434,13 @@ function OrderPage() {
               })}
               {lines.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                   Add dishes from any restaurant.
+                  Find your food, then mix items from as many participating brands as you like.
                 </p>
-              ) : null}
+              ) : (
+                <p className="md-order-basket-mix-note">
+                  <Sparkles className="size-4"/> Mix more brands from this location — still one basket and one checkout.
+                </p>
+              )}
             </div>
 
             {lines.length > 0 && suggestions.length > 0 && channelOpen ? (
@@ -472,10 +477,16 @@ function OrderPage() {
                   variant="hero"
                   size="lg"
                   className="mt-3 w-full rounded-full"
+                  disabled={catalogue.data?.source !== "live" || !channelOpen}
                   onClick={() => setCheckoutOpen((open) => !open)}
                 >
-                  Go to checkout
+                  {catalogue.data?.source === "live" ? "Go to checkout" : "Menu preview — checkout unavailable"}
                 </Button>
+                {catalogue.data?.source !== "live" ? (
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    Live checkout will appear here when Dishbee ordering is connected. Prices shown are preview menu prices.
+                  </p>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -969,7 +980,7 @@ function OrderPage() {
             onClick={() => setBasketOpen(true)}
           >
             <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/15 text-xs font-bold">{itemCount(lines)}</span>
-            <span className="truncate text-left">View your hand</span>
+            <span className="truncate text-left">View basket · {new Set(lines.map(line => line.brandId)).size} brands</span>
             <span>{formatPence(total)}</span>
           </Button>
         </div>
@@ -1028,7 +1039,7 @@ function OrderPage() {
           {lines.length ? (
             <div className="border-t border-border p-3">
               <Button variant="hero" size="lg" className="w-full rounded-xl" onClick={() => { setBrandMenuOpen(false); setBasketOpen(true); }}>
-                View your hand · {itemCount(lines)} · {formatPence(total)}
+                View basket · {itemCount(lines)} · {formatPence(total)}
               </Button>
             </div>
           ) : null}
