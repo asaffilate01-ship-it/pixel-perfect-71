@@ -17,6 +17,10 @@ import {
   Trash2,
   PanelLeftOpen,
   ChevronRight,
+  ArrowLeft,
+  ArrowRight,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -49,6 +53,8 @@ import {
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import { SiteHeader } from "@/components/site-header";
+import { ORDER_CATEGORIES, categoryCounts, searchCatalogue, suggestedAdditions, type OrderCategory } from "@/lib/order-discovery";
+import { suitArtwork } from "@/lib/food-suit-artwork";
 import { seo } from "@/lib/seo";
 
 type OrderSearch = { brand?: string; fulfilment?: FulfilmentType };
@@ -108,6 +114,9 @@ function OrderPage() {
   });
   const [location, setLocation] = useState<LocationKey | null>("luton");
   const [activeBrand, setActiveBrand] = useState<string | null>(brandFromSearch ?? null);
+  const [activeCategory, setActiveCategory] = useState<OrderCategory>("all");
+  const [searchText, setSearchText] = useState("");
+  const [showAllDishes, setShowAllDishes] = useState(false);
   const [lines, setLines] = useState<CartLine[]>([]);
   const [customer, setCustomer] = useState(emptyCustomer);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -115,11 +124,25 @@ function OrderPage() {
   const [brandMenuOpen, setBrandMenuOpen] = useState(false);
   const pickBrand = (id: string | null) => {
     setActiveBrand(id);
+    setShowAllDishes(id === null);
     setBrandMenuOpen(false);
     requestAnimationFrame(() => {
       const el = document.getElementById("menu-top");
-      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 205, behavior: "smooth" });
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 170, behavior: "smooth" });
     });
+  };
+  const selectCategory = (id: OrderCategory) => {
+    setActiveCategory(id);
+    setActiveBrand(null);
+    setShowAllDishes(false);
+  };
+  const changeSearch = (value: string) => {
+    setSearchText(value);
+    if (value.trim()) {
+      setActiveCategory("all");
+      setActiveBrand(null);
+      setShowAllDishes(true);
+    }
   };
   const [submitting, setSubmitting] = useState(false);
   const [paymentPending, setPaymentPending] = useState<{ orderId: string; handoffCode: string } | null>(null);
@@ -140,15 +163,26 @@ function OrderPage() {
   const items = catalogue.data?.items ?? [];
   const channelOpen = catalogue.data?.channelOpen ?? true;
 
-  const primaryBrands = useMemo(
-    () => (currentLocation ? currentLocation.primaryBrandIds.map(brandById).filter((b): b is Brand => !!b) : []),
-    [currentLocation],
-  );
-  const primaryItems = items.filter((item) => currentLocation?.primaryBrandIds.includes(item.brandId));
-  const addonItems = items.filter((item) => currentLocation?.addonBrandIds.includes(item.brandId));
-  const visibleItems = activeBrand ? primaryItems.filter((item) => item.brandId === activeBrand) : primaryItems;
+  // The same single basket accepts menus from every participating brand in
+  // this location, including the drinks brands Icova and Moktl.
+  const primaryBrands = useMemo(() => (currentLocation
+    ? [...new Set([...currentLocation.primaryBrandIds, ...currentLocation.addonBrandIds])]
+      .map(brandById).filter((b): b is Brand => !!b)
+    : []), [currentLocation]);
+  const primaryItems = useMemo(() => items.filter(item =>
+    primaryBrands.some(brand => brand.id === item.brandId)), [items, primaryBrands]);
+  const categoryTotals = useMemo(() => categoryCounts(primaryItems), [primaryItems]);
+  const filteredItems = useMemo(() => searchCatalogue(primaryItems, {
+    category: activeCategory, search: searchText,
+    brandName: id => brandById(id)?.name ?? id,
+  }), [primaryItems, activeCategory, searchText]);
+  const availableBrands = useMemo(() => primaryBrands.filter(brand =>
+    filteredItems.some(item => item.brandId === brand.id)), [primaryBrands, filteredItems]);
+  const visibleItems = useMemo(() => activeBrand
+    ? filteredItems.filter(item => item.brandId === activeBrand)
+    : showAllDishes || !!searchText.trim() ? filteredItems : [],
+  [filteredItems, activeBrand, showAllDishes, searchText]);
   const activeBrandObj = activeBrand ? brandById(activeBrand) ?? null : null;
-
   const grouped = useMemo(() => {
     const map = new Map<string, MenuItem[]>();
     for (const item of visibleItems) {
@@ -158,6 +192,12 @@ function OrderPage() {
     }
     return [...map.entries()];
   }, [visibleItems, activeBrand]);
+  const suggestions = useMemo(() => suggestedAdditions(primaryItems, lines), [primaryItems, lines]);
+  const basketGroups = useMemo(() => {
+    const groups = new Map<string, CartLine[]>();
+    for (const line of lines) groups.set(line.brandId, [...(groups.get(line.brandId) ?? []), line]);
+    return [...groups.entries()];
+  }, [lines]);
 
   const goods = subtotal(lines);
   const deliveryPence = lines.length && fulfilment === "delivery" ? DELIVERY_FEE_PENCE : 0;
@@ -176,6 +216,8 @@ function OrderPage() {
       if (!result.served) {
         setLocation(null);
         setActiveBrand(null);
+        setActiveCategory("all");
+        setShowAllDishes(false);
         setCheckoutOpen(false);
         setPaymentPending(null);
         setServiceMessage({ tone: "error", text: result.message });
@@ -228,6 +270,9 @@ function OrderPage() {
     }
     setLocation(next);
     setActiveBrand(null);
+    setActiveCategory("all");
+    setSearchText("");
+    setShowAllDishes(false);
     setPostcode("");
     setCustomer(emptyCustomer);
     setCheckoutOpen(false);
