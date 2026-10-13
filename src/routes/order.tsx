@@ -160,6 +160,10 @@ function OrderPage() {
   }
   function addSavedBasket() {
     if (!location || !savedBasket) return;
+    if (catalogue.isLoading || !catalogue.data) {
+      toast.message("The menu is still loading. Please try again shortly.");
+      return;
+    }
     const restored=restoreSavedBasket(savedBasket, location, items, lines);
     if (restored.mismatch) {
       toast.message("Saved for another location", { description: "Choose the original MealDeck location first." });
@@ -744,20 +748,27 @@ function OrderPage() {
                 <p className="mt-1 hidden text-sm text-muted-foreground sm:block">Choose a restaurant or discover dishes across them all.</p>
               </div>
 
-              <FavouriteDishRail
-                items={searchableItems} brands={availableBrands} favouriteIds={favouriteIds}
-                isOrderingOpen={channelOpen} onAdd={beginAdd} onRemoveFavourite={toggleSavedFavourite}/>
-              <BrandDiscoveryGallery
-                brands={filteredBrands}
-                items={browseMenu(searchableItems, null, activeCategory, menuSearch, availableBrands)}
-                selectedBrandId={activeBrand} onSelectBrand={pickBrand}
-                isOrderingOpen={channelOpen && catalogue.data?.source === "live"}/>
-              {savedBasket?.location===location ? (
-                <div className="md-premium-reorder-shortcut">
-                  <div><strong>Your saved basket</strong><p>{savedBasket.lines.length} saved selection(s) · rechecked against this location's menu</p></div>
-                  <button type="button" onClick={addSavedBasket}><RefreshCcw size={16}/> Add again</button>
+              {catalogue.isLoading ? (
+                <div className="md-premium-loading-gallery" role="status" aria-label="Loading restaurants">
+                  <div className="md-premium-loading-heading"/>
+                  <div className="md-premium-loading-tiles">{[1,2,3].map(n=><span key={n}/>)}</div>
                 </div>
-              ) : null}
+              ) : (<>
+                <FavouriteDishRail
+                  items={searchableItems} brands={availableBrands} favouriteIds={favouriteIds}
+                  isOrderingOpen={channelOpen} onAdd={beginAdd} onRemoveFavourite={toggleSavedFavourite}/>
+                <BrandDiscoveryGallery
+                  brands={filteredBrands}
+                  items={browseMenu(searchableItems, null, activeCategory, menuSearch, availableBrands)}
+                  selectedBrandId={activeBrand} onSelectBrand={pickBrand}
+                  isOrderingOpen={channelOpen && catalogue.data?.source === "live"}/>
+                {savedBasket?.location===location ? (
+                  <div className="md-premium-reorder-shortcut">
+                    <div><strong>Your saved basket</strong><p>{savedBasket.lines.length} saved selection(s) · checked against the current menu when added</p></div>
+                    <button type="button" onClick={addSavedBasket}><RefreshCcw size={16}/> Add again</button>
+                  </div>
+                ) : null}
+              </>)}
 
               <button
                 type="button"
