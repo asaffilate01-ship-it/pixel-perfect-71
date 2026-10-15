@@ -3,7 +3,6 @@
  * Dishbee service-role credentials and per-merchant SumUp secrets never enter
  * this storefront, its browser bundle or its deployment environment.
  */
-import type {LocationKey} from "./mealdeck";
 
 export type GatewayRequest={
   orderId:string;
