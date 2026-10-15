@@ -29,7 +29,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { SiteFooter } from "@/components/site-footer";
-import { checkServiceability, getCatalogue, placeOrder } from "@/lib/dishbee.functions";
+import { checkServiceability, getCatalogue, placeOrder, resumeMealDeckPayment } from "@/lib/dishbee.functions";
+import { trustedHostedPaymentUrl } from "@/lib/mealdeck-payment-gateway";
 import {
   DELIVERY_FEE_PENCE,
   addItem,
@@ -188,13 +189,15 @@ function OrderPage() {
     });
   };
   const [submitting, setSubmitting] = useState(false);
-  const [paymentPending, setPaymentPending] = useState<{ orderId: string; handoffCode: string } | null>(null);
+  const [paymentPending, setPaymentPending] = useState<{ orderId: string; handoffCode: string; paymentUrl?:string } | null>(null);
+  const [resumingPayment,setResumingPayment]=useState(false);
   const [customising, setCustomising] = useState<MenuItem | null>(null);
   const [chosen, setChosen] = useState<SelectedModifier[]>([]);
 
   const runServiceability = useServerFn(checkServiceability);
   const fetchCatalogue = useServerFn(getCatalogue);
   const submitOrder = useServerFn(placeOrder);
+  const resumePayment = useServerFn(resumeMealDeckPayment);
 
   const catalogue = useQuery({
     queryKey: ["catalogue", location],
@@ -392,12 +395,26 @@ function OrderPage() {
           customer,
         },
       });
-      if (result.status === "payment_required") {
-        setPaymentPending({ orderId: result.orderId, handoffCode: result.handoffCode });
+      if (result.status === "payment_required" || result.status === "payment_processing") {
+        const pending={
+          orderId:result.orderId,
+          handoffCode:result.handoffCode,
+          ...(result.status==="payment_required"?{paymentUrl:result.paymentUrl}:{}),
+        };
+        setPaymentPending(pending);
+        // Short-lived per-tab handoff reference only. No customer data, payment
+        // provider tokens or amounts are saved in browser storage.
+        try{
+          sessionStorage.setItem("mealdeck-payment-return",JSON.stringify({
+            orderId:result.orderId,handoffCode:result.handoffCode,location,
+          }));
+        }catch{}
         setCheckoutOpen(false);
-        toast.success("Order created", {
-          description: "Complete payment to send your order for preparation.",
-        });
+        if(result.status==="payment_required"&&trustedHostedPaymentUrl(result.paymentUrl)){
+          toast.success("Secure payment is ready",{description:"Tap Pay securely to complete your order."});
+        }else{
+          toast.message("Order awaiting payment",{description:"Payment setup is pending. You have not been charged."});
+        }
       } else if (result.status === "unconfigured") {
         toast.error("Ordering service not connected yet", {
           description: "This is a preview — live orders start once the ordering service is connected.",
@@ -410,6 +427,24 @@ function OrderPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleResumePayment(){
+    if(!paymentPending||!location||resumingPayment)return;
+    setResumingPayment(true);
+    try{
+      const result=await resumePayment({
+        data:{orderId:paymentPending.orderId,handoffCode:paymentPending.handoffCode,location},
+      });
+      if(result.status==="payment_required"&&trustedHostedPaymentUrl(result.paymentUrl)){
+        setPaymentPending({...paymentPending,paymentUrl:result.paymentUrl});
+        toast.success("Secure payment is ready");
+      }else{
+        toast.message("Payment is not ready yet",{description:"No new order or second charge has been created."});
+      }
+    }catch{
+      toast.error("Unable to check the payment session");
+    }finally{setResumingPayment(false)}
   }
 
   const basketPanel = (
@@ -699,6 +734,20 @@ function OrderPage() {
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 Order reference {paymentPending.orderId.slice(0, 8).toUpperCase()}.
+              </p>
+              {paymentPending.paymentUrl&&trustedHostedPaymentUrl(paymentPending.paymentUrl)?(
+                <a className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground"
+                  href={paymentPending.paymentUrl} rel="noreferrer">
+                  Pay securely with SumUp
+                </a>
+              ):(
+                <button type="button" onClick={()=>void handleResumePayment()} disabled={resumingPayment}
+                  className="mt-4 rounded-xl border border-border px-4 py-3 text-sm font-semibold disabled:opacity-50">
+                  {resumingPayment?"Checking payment…":"Check secure payment link"}
+                </button>
+              )}
+              <p className="mt-3 text-xs text-muted-foreground">
+                Your kitchen receives the order only after Dishbee verifies payment.
               </p>
             </div>
           ) : null}
