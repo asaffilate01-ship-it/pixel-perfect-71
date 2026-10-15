@@ -13,9 +13,12 @@ export const Route=createFileRoute("/payment-return")({
   validateSearch:(raw:Record<string,unknown>):PaymentSearch=>
     typeof raw["orderId"]==="string"&&uuid.test(raw["orderId"])
       ?{orderId:raw["orderId"]}:{},
-  head:()=>seo({title:"Payment status | MealDeck",
-    description:"Check your MealDeck payment status securely.",
-    path:"/payment-return",noindex:true}),
+  head:()=>{
+    const head=seo({title:"Payment status | MealDeck",
+      description:"Check your MealDeck payment status securely.",
+      path:"/payment-return"});
+    return {...head,meta:[...head.meta,{name:"robots",content:"noindex,nofollow"}]};
+  },
   component:PaymentReturn,
 });
 
