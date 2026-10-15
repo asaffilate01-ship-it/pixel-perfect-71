@@ -98,14 +98,10 @@ export const checkServiceability = createServerFn({ method: "POST" })
         | null;
 
       if (!row || !row["served"] || !row["location_id"]) {
-        const sample = resolveSampleServiceability(
-          data.postcode,
-          data.fulfilment,
-        );
         return {
           served: false,
-          message: row?.["message"]?.toString() ?? sample.message,
-          alternativeFulfilments: sample.alternativeFulfilments,
+          message: row?.["message"]?.toString() ??
+            "MealDeck is not currently serving this postcode.",
         };
       }
 
