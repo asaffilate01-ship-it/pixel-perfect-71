@@ -5,8 +5,6 @@ import { readMealDeckRuntimeConfig } from "./mealdeck-runtime-config";
 import { isMealDeckLaunchFulfilmentAllowed } from "./mealdeck-fulfilment-policy";
 import {
   brands,
-  resolveSampleServiceability,
-  sampleLocationOpen,
   sampleMenu,
   type FulfilmentType,
   type LocationKey,
@@ -75,24 +73,15 @@ export const checkServiceability = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<ServiceabilityResult> => {
-    const fallback = (): ServiceabilityResult => {
-      const result = resolveSampleServiceability(data.postcode, data.fulfilment);
-      return result.locationKey
-        ? {
-            served: true,
-            location: result.locationKey,
-            channelOpen: sampleLocationOpen(result.locationKey),
-            message: result.message,
-          }
-        : {
-            served: false,
-            message: result.message,
-            alternativeFulfilments: result.alternativeFulfilments,
-          };
-    };
+    // Never claim a real delivery area from built-in demo prefixes when
+    // the Dishbee runtime is missing or returning errors.
+    const unavailable = (): ServiceabilityResult => ({
+      served: false,
+      message: "Live MealDeck availability could not be verified. You can still browse our preview menu.",
+    });
 
     const base = readBase();
-    if (!base) return fallback();
+    if (!base) return unavailable();
 
     try {
       const { data: rows, error } = await dishbeeClient(base).rpc(
@@ -120,17 +109,25 @@ export const checkServiceability = createServerFn({ method: "POST" })
         };
       }
 
-      const town = String(
-        row["town"] ?? row["location_name"] ?? "",
-      ).toLowerCase();
-      const normalisedPostcode = data.postcode
-        .toUpperCase()
-        .replace(/\s+/g, "");
-
-      const location: LocationKey =
-        town.includes("albans") || normalisedPostcode.startsWith("AL")
-          ? "stalbans"
-          : "luton";
+      // The public RPC is global across Dishbee tenants. Match its actual
+      // tenant and physical kitchen IDs, never a postcode/town heuristic.
+      const returnedTenant = String(row["tenant_id"] ?? "");
+      const returnedLocation = String(row["location_id"] ?? "");
+      const matched = (["luton", "stalbans"] as const).find((key) => {
+        const configured = readConfig(key);
+        return configured?.tenantId === returnedTenant &&
+          configured.locationId === returnedLocation;
+      });
+      if (!matched) {
+        return {
+          served: false,
+          message: "This MealDeck kitchen is not configured for ordering yet.",
+        };
+      }
+      if (!isMealDeckLaunchFulfilmentAllowed(matched, data.fulfilment)) {
+        return { served: false, message: "The selected MealDeck location does not offer that service." };
+      }
+      const location: LocationKey = matched;
 
       return {
         served: true,
@@ -142,7 +139,7 @@ export const checkServiceability = createServerFn({ method: "POST" })
       };
     } catch (error) {
       console.error("Dishbee serviceability failed", error);
-      return fallback();
+      return unavailable();
     }
   });
 
@@ -163,7 +160,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
     if (!config) {
       return {
         source: "sample",
-        channelOpen: sampleLocationOpen(data.location),
+        channelOpen: false,
         items: sampleMenu(data.location),
         notice:
           "Showing a preview menu while live ordering is unavailable.",
@@ -243,7 +240,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
       console.error("Dishbee catalogue request failed", error);
       return {
         source: "sample",
-        channelOpen: sampleLocationOpen(data.location),
+        channelOpen: false,
         items: sampleMenu(data.location),
         notice:
           "The live menu is temporarily unavailable, so a preview menu is shown.",
