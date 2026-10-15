@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
+import { readMealDeckRuntimeConfig } from "./mealdeck-runtime-config";
 import {
   brands,
   resolveSampleServiceability,
@@ -14,26 +15,14 @@ import {
 const locationSchema = z.enum(["luton", "stalbans"]);
 const fulfilmentSchema = z.enum(["delivery", "pickup", "curbside", "dinein"]);
 
-type DishbeeConfig = {
-  url: string;
-  anonKey: string;
-  tenantId: string;
-  locationId: string;
-};
-
 function readBase() {
   const url = process.env["DISHBEE_SUPABASE_URL"];
   const anonKey = process.env["DISHBEE_SUPABASE_ANON_KEY"];
   return url && anonKey ? { url, anonKey } : null;
 }
 
-function readConfig(location: LocationKey): DishbeeConfig | null {
-  const base = readBase();
-  const prefix = location === "luton" ? "MEALDECK_LUTON" : "MEALDECK_STALBANS";
-  const tenantId = process.env[`${prefix}_TENANT_ID`];
-  const locationId = process.env[`${prefix}_LOCATION_ID`];
-  if (!base || !tenantId || !locationId) return null;
-  return { ...base, tenantId, locationId };
+function readConfig(location: LocationKey) {
+  return readMealDeckRuntimeConfig(process.env, location);
 }
 
 function dishbeeClient(config: { url: string; anonKey: string }) {
