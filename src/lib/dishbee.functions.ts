@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { readMealDeckRuntimeConfig } from "./mealdeck-runtime-config";
+import { isMealDeckLaunchFulfilmentAllowed } from "./mealdeck-fulfilment-policy";
 import {
   brands,
   resolveSampleServiceability,
@@ -319,13 +320,10 @@ const orderSchema = z
     }),
   })
   .superRefine((value, ctx) => {
-    if (
-      value.location === "stalbans" &&
-      value.fulfilment !== "delivery"
-    ) {
+    if (!isMealDeckLaunchFulfilmentAllowed(value.location, value.fulfilment)) {
       ctx.addIssue({
         code: "custom",
-        message: "St Albans is delivery only",
+        message: "The selected location does not offer this MealDeck fulfilment mode",
       });
     }
 
