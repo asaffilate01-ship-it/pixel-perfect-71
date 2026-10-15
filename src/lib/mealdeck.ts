@@ -31,6 +31,7 @@ import logoRise from "@/assets/premium-logos/rise-and-griddle-premium.png";
 import logoSouvano from "@/assets/premium-logos/souvano-premium.png";
 import logoForvelloAsset from "@/assets/premium-logos/forvello-logo.png.asset.json";
 import { cafe1Menu, coreMenu } from "./sample-menus";
+import { mealDeckLaunchFulfilments } from "./mealdeck-fulfilment-policy";
 
 export type LocationKey = "luton" | "stalbans";
 export type FulfilmentType = "delivery" | "pickup" | "curbside" | "dinein";
@@ -126,8 +127,8 @@ export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd
 export const addonBrandIds = ["icova", "moktl"];
 
 export const locations: MealDeckLocation[] = [
-  { key: "luton", name: "MealDeck Luton", town: "Luton", hoursLabel: "5pm–11pm · Monday to Sunday", primaryBrandIds, addonBrandIds, allowedFulfilments: ["delivery", "pickup", "curbside"] },
-  { key: "stalbans", name: "MealDeck St Albans", town: "St Albans", hoursLabel: "Mon–Fri · 09:00–16:00", primaryBrandIds: ["cafe1", ...primaryBrandIds], addonBrandIds, allowedFulfilments: ["delivery"] },
+  { key: "luton", name: "MealDeck Luton", town: "Luton", hoursLabel: "5pm–11pm · Monday to Sunday", primaryBrandIds, addonBrandIds, allowedFulfilments: [...mealDeckLaunchFulfilments.luton] },
+  { key: "stalbans", name: "MealDeck St Albans", town: "St Albans", hoursLabel: "Mon–Fri · 09:00–16:00", primaryBrandIds: ["cafe1", ...primaryBrandIds], addonBrandIds, allowedFulfilments: [...mealDeckLaunchFulfilments.stalbans] },
 ];
 
 export function brandById(id: string): Brand | undefined {
