@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { readMealDeckRuntimeConfig } from "./mealdeck-runtime-config";
 import { isMealDeckLaunchFulfilmentAllowed } from "./mealdeck-fulfilment-policy";
+import {callDishbeeCheckout,paymentGatewayAvailable} from "./mealdeck-payment-gateway";
 import {
   brands,
   sampleMenu,
@@ -342,20 +343,20 @@ const orderSchema = z
   });
 
 export type PlaceOrderResult =
-  | {
-      status: "payment_required";
-      orderId: string;
-      handoffCode: string;
-    }
-  | { status: "unconfigured" }
-  | { status: "failed"; message: string };
+  | {status:"payment_required";orderId:string;handoffCode:string;paymentUrl:string}
+  | {status:"payment_processing";orderId:string;handoffCode:string}
+  | {status:"unconfigured"}
+  | {status:"failed";message:string};
 
 export const placeOrder = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => orderSchema.parse(input))
   .handler(async ({ data }): Promise<PlaceOrderResult> => {
     const config = readConfig(data.location);
 
-    if (!config) {
+    // Do not create stranded payment-pending orders when the brand gateway
+    // is unconfigured. A configured gateway can still fail remotely; in that
+    // case return the existing order for an idempotent payment resume.
+    if (!config || !paymentGatewayAvailable()) {
       return { status: "unconfigured" };
     }
 
@@ -398,11 +399,19 @@ export const placeOrder = createServerFn({ method: "POST" })
         throw new Error("Order reference not returned");
       }
 
-      return {
-        status: "payment_required",
-        orderId,
-        handoffCode: String(row?.["handoff_code"] ?? ""),
-      };
+      const handoffCode=String(row?.["handoff_code"]??"");
+      if(!/^\\d{4}$/.test(handoffCode))throw new Error("Invalid handoff code from Dishbee");
+      try{
+        const session=await callDishbeeCheckout("start",{
+          orderId,handoffCode,tenantId:config.tenantId,locationId:config.locationId,
+        });
+        if(session.status==="payment_required"){
+          return {status:"payment_required",orderId,handoffCode,paymentUrl:session.paymentUrl};
+        }
+      }catch(error){
+        console.error("MealDeck hosted payment session unavailable",error);
+      }
+      return {status:"payment_processing",orderId,handoffCode};
     } catch (error) {
       console.error("Dishbee checkout failed", error);
       return {
@@ -501,5 +510,46 @@ export const getOrderTracking = createServerFn({ method: "POST" })
         found: false,
         message: "Order tracking is temporarily unavailable. Please try again.",
       };
+    }
+  });
+
+const existingOrderSchema=z.object({
+  orderId:z.string().uuid(),
+  handoffCode:z.string().regex(/^\\d{4}$/),
+  location:locationSchema,
+});
+
+export const resumeMealDeckPayment=createServerFn({method:"POST"})
+  .inputValidator((input:unknown)=>existingOrderSchema.parse(input))
+  .handler(async({data})=>{
+    const config=readConfig(data.location);
+    if(!config||!paymentGatewayAvailable()){
+      return {status:"unconfigured" as const};
+    }
+    try{
+      return await callDishbeeCheckout("start",{
+        orderId:data.orderId,handoffCode:data.handoffCode,
+        tenantId:config.tenantId,locationId:config.locationId,
+      });
+    }catch{
+      return {status:"processing" as const};
+    }
+  });
+
+export const checkMealDeckPayment=createServerFn({method:"POST"})
+  .inputValidator((input:unknown)=>existingOrderSchema.parse(input))
+  .handler(async({data})=>{
+    const config=readConfig(data.location);
+    if(!config||!paymentGatewayAvailable()){
+      return {status:"unconfigured" as const};
+    }
+    try{
+      const response=await callDishbeeCheckout("status",{
+        orderId:data.orderId,handoffCode:data.handoffCode,
+        tenantId:config.tenantId,locationId:config.locationId,
+      });
+      return {status:response.status==="paid"?"paid" as const:"pending" as const};
+    }catch{
+      return {status:"pending" as const};
     }
   });
