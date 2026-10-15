@@ -279,22 +279,26 @@ function OrderPage() {
   }
 
   function changeFulfilment(next: FulfilmentType) {
-    setFulfilment(next);
-    setPaymentPending(null);
-    if (postcode.trim()) {
-      void checkArea(next);
-      return;
-    }
     if (currentLocation && !currentLocation.allowedFulfilments.includes(next)) {
       setServiceMessage({
         tone: "error",
         text: `${currentLocation.name} offers ${currentLocation.allowedFulfilments.map((f) => fulfilmentLabels[f]).join(", ")} only.`,
       });
+      return;
+    }
+    setFulfilment(next);
+    setPaymentPending(null);
+    if (postcode.trim()) {
+      void checkArea(next);
     }
   }
 
   function browseLocation(next: LocationKey) {
     if (location === next) return;
+    const nextLocation = locations.find((entry) => entry.key === next);
+    if (nextLocation && !nextLocation.allowedFulfilments.includes(fulfilment)) {
+      setFulfilment(nextLocation.allowedFulfilments[0] ?? "delivery");
+    }
     if (lines.length) {
       setLines([]);
       toast("Basket cleared", { description: "We started a fresh basket for the new location." });
@@ -626,7 +630,7 @@ function OrderPage() {
               </div>
             </div>
             <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="How you'd like your order">
-              {(Object.keys(fulfilmentLabels) as FulfilmentType[]).map((key) => {
+              {(currentLocation?.allowedFulfilments ?? ["delivery"]).map((key) => {
                 const Icon = fulfilmentIcons[key];
                 const active = fulfilment === key;
                 return (
