@@ -7,7 +7,7 @@ function BrandTile({ brand }: { brand: MarketingBrand }) {
       to="/order"
       search={{ brand: brand.id }}
       className="md-brand-tile"
-      aria-label={`Order from ${brand.name}`}
+      aria-label={`Preview ${brand.name} — ordering coming soon`}
     >
       <div className="md-brand-logo-wrap">
         <img src={brand.logo} alt={`${brand.name} logo`} loading="lazy" />
@@ -27,3 +27,4 @@ export function BrandLogoGrid({ brands = marketingBrands }: { brands?: Marketing
     </div>
   );
 }
+

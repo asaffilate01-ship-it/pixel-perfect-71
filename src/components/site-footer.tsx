@@ -29,24 +29,20 @@ export function SiteFooter() {
             <h3>Locations</h3>
             <Link to="/luton">Luton</Link>
             <Link to="/st-albans">St Albans</Link>
-            <Link to="/order">Order direct</Link>
+            <Link to="/order">Coming soon · Menu preview</Link>
           </div>
           <div>
             <h3>Luton collection</h3>
             <p>314–318 Selbourne Road</p>
             <p>Luton · LU4 8NU</p>
-            <p>Please bring your order reference.</p>
+            <p>MealDeck ordering coming soon.</p>
           </div>
         </div>
       </div>
 
       <div className="md-footer-apps">
         <p className="md-footer-apps-copy">
-          <strong>Prefer the big apps?</strong> We're on{" "}
-          <a href="https://deliveroo.co.uk" target="_blank" rel="noopener noreferrer">Deliveroo</a>,{" "}
-          <a href="https://www.ubereats.com" target="_blank" rel="noopener noreferrer">Uber Eats</a> &{" "}
-          <a href="https://www.just-eat.co.uk" target="_blank" rel="noopener noreferrer">Just Eat</a> — but ordering direct
-          costs you less, and our offers &amp; loyalty points aren't available through them.
+          <strong>MealDeck is coming soon.</strong> Registration, ordering, payments and purchase rewards are not open yet. Browse the brands and play our free games.
         </p>
         <div className="md-footer-apps-row" aria-label="Ordering channels and social links">
           <div className="md-footer-social" aria-label="Social links">
@@ -57,15 +53,15 @@ export function SiteFooter() {
           </div>
           <span className="md-footer-apps-divider" aria-hidden="true" />
           <div className="md-footer-apps-logos">
-            <a className="md-app-logo" href="https://deliveroo.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Deliveroo">
+            <div className="md-app-logo" aria-label="Deliveroo platform website — coming soon">
               <img src={deliverooLogo.url} alt="Deliveroo" />
-            </a>
-            <a className="md-app-logo" href="https://www.ubereats.com" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Uber Eats">
+            </div>
+            <div className="md-app-logo" aria-label="Uber Eats platform website — coming soon">
               <img src={uberEatsLogo.url} alt="Uber Eats" />
-            </a>
-            <a className="md-app-logo" href="https://www.just-eat.co.uk" target="_blank" rel="noopener noreferrer" aria-label="Order MealDeck on Just Eat">
+            </div>
+            <div className="md-app-logo" aria-label="Just Eat platform website — coming soon">
               <img src={justEatLogo.url} alt="Just Eat" />
-            </a>
+            </div>
           </div>
         </div>
       </div>
@@ -77,3 +73,4 @@ export function SiteFooter() {
     </footer>
   );
 }
+

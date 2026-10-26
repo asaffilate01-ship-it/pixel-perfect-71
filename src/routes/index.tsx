@@ -6,6 +6,7 @@ import {
   Check,
   Clock3,
   Crown,
+  Gamepad2,
   MapPin,
   MessageCircle,
   Package,
@@ -29,9 +30,9 @@ import { suitArtwork } from "@/lib/food-suit-artwork";
 export const Route = createFileRoute("/")({
   head: () => ({
     ...seo({
-      title: "MealDeck — One Order. Every Craving.",
+      title: "MealDeck — Coming soon | Brands, menus and free games",
       description:
-        "Order direct from multiple MealDeck food brands in one basket. One delivery fee, group ordering, rewards and live tracking across Luton and St Albans.",
+        "MealDeck ordering and registration are coming soon. Preview our food brands and menus, and enjoy eleven free games.",
       path: "/",
       keywords:
         "MealDeck, food delivery Luton, takeaway Luton, food delivery St Albans, group food ordering, split payment food delivery, multi brand food delivery",
@@ -75,7 +76,7 @@ function LandingPage() {
           <div className="md-hero-pattern" aria-hidden="true" />
           <div className="md-hero-inner">
             <div className="md-hero-copy">
-              <p className="md-kicker">Different restaurants. One easy order.</p>
+              <p className="md-kicker">MealDeck is coming soon</p>
               <h1>
                 Food for every<br />
                 <span>craving.</span>
@@ -86,13 +87,13 @@ function LandingPage() {
               <p className="md-hero-foods">Artisan pizza · French tacos · Parathas · Burgers · Pasta · Fresh juices · Chai · Desserts</p>
               <p className="md-hero-tagline">One Order. Every Craving.</p>
               <div className="md-hero-actions">
-                <Link to="/order" className="md-btn md-btn-yellow">Order direct <ArrowRight /></Link>
+                <Link to="/order" className="md-btn md-btn-yellow">Coming soon · Preview menu <ArrowRight /></Link>
                 <Link to="/" hash="brands" className="md-btn md-btn-outline-light">See all brands</Link>
               </div>
               <div className="md-hero-proof">
                 <span><Check /> Mix brands</span>
-                <span><Check /> Split payments</span>
-                <span><Check /> Live tracking</span>
+                <span><Clock3 /> Ordering coming soon</span>
+                <span><Gamepad2 /> Free games open</span>
               </div>
             </div>
             <RotatingBrandDeck />
@@ -101,8 +102,8 @@ function LandingPage() {
 
         <section className="md-direct-strip" aria-label="Why order direct">
           <div className="md-direct-strip-title">
-            <span>ORDER DIRECT.</span>
-            <strong>Same food. Same delivery. Better direct value.</strong>
+            <span>COMING SOON.</span>
+            <strong>Explore the food. Try the games. Ordering opens later.</strong>
           </div>
           <div className="md-direct-grid">
             {directBenefits.map(({ icon: Icon, title, copy }) => (
@@ -124,7 +125,7 @@ function LandingPage() {
               <h2>Multiple brands. One premium collection.</h2>
               <p>Every identity stays distinct. MealDeck brings them together in one ordering experience.</p>
             </div>
-            <Link to="/order" className="md-btn md-btn-red">Start a mixed order <ArrowRight /></Link>
+            <Link to="/order" className="md-btn md-btn-red">Preview our menus <ArrowRight /></Link>
           </div>
           <BrandLogoGrid />
         </section>
@@ -133,7 +134,7 @@ function LandingPage() {
           <div className="md-section-heading md-section-heading-light">
             <p className="md-kicker">MealDeck exclusive offers</p>
             <h2>Good deals. Clearly dealt.</h2>
-            <p>Direct-order promotions presented in the same card language as MealDeck.</p>
+            <p>Preview of planned offers — not active or redeemable. Ordering and registration are coming soon.</p>
           </div>
           <div className="md-offer-grid">
             {offers.map((offer) => {
@@ -148,12 +149,12 @@ function LandingPage() {
                   <img className="md-offer-pip" src={backEmblem} alt="" aria-hidden="true" />
                   <p className="md-offer-label">{offer.label}</p>
                   <h3>{offer.value}</h3>
-                  <p>{offer.copy}</p>
+                  <p>{offer.copy}</p><strong className="md-preview-label">Coming soon · Preview only</strong>
                 </article>
               );
             })}
           </div>
-          <p className="md-offer-terms">Selected items and brands. Offer limits apply. Current terms shown before ordering.</p>
+          <p className="md-offer-terms">These are preview promotions. Offers, loyalty rewards and ordering are not active.</p>
         </section>
 
         <section id="how" className="md-section md-section-cream">
@@ -184,7 +185,7 @@ function LandingPage() {
               <li><WalletCards /> Choose one payer or split payments</li>
               <li><Clock3 /> Set a group cutoff time</li>
             </ul>
-            <Link to="/order" className="md-btn md-btn-yellow">Start a group order <ArrowRight /></Link>
+            <Link to="/order" className="md-btn md-btn-yellow">Group ordering · Coming soon <ArrowRight /></Link>
           </article>
 
           <article className="md-feature-panel md-feature-panel-cream">
@@ -205,7 +206,7 @@ function LandingPage() {
 
         <section className="md-section md-section-black md-fulfilment-section">
           <div className="md-section-heading md-section-heading-light">
-            <p className="md-kicker">Get MealDeck your way</p>
+            <p className="md-kicker">MealDeck ordering · Coming soon</p>
             <h2>Delivery. Pickup. Kerbside.</h2>
           </div>
           <div className="md-fulfilment-grid">
@@ -217,19 +218,19 @@ function LandingPage() {
             <p className="md-kicker md-kicker-light">Order your way</p>
             <h3>Every route leads to a full deck.</h3>
             <div className="md-channels-grid">
-              <article><span className="md-channels-suit">♣</span><MessageCircle /><h4>WhatsApp</h4><p>Message, choose and order.</p></article>
+              <article><span className="md-channels-suit">♣</span><MessageCircle /><h4>WhatsApp</h4><p>Ordering channel coming soon.</p></article>
               <article><span className="md-channels-suit">♦</span><Share2 /><h4>Website</h4><p>The complete deck, no download.</p></article>
-              <article><span className="md-channels-suit">♥</span><Phone /><h4>Phone</h4><p>Prefer a person? Call it in.</p></article>
-              <article><span className="md-channels-suit">♠</span><Smartphone /><h4>Mobile app</h4><p>Fast reorders, points and tracking.</p></article>
+              <article><span className="md-channels-suit">♥</span><Phone /><h4>Phone</h4><p>Phone ordering coming soon.</p></article>
+              <article><span className="md-channels-suit">♠</span><Smartphone /><h4>Mobile app</h4><p>Mobile ordering coming soon.</p></article>
             </div>
           </div>
           <div className="md-collection-band">
             <div>
               <p className="md-kicker md-kicker-light">Luton pickup / kerbside</p>
               <h3>314–318 Selbourne Road, Luton, LU4 8NU</h3>
-              <p>Please bring your order reference.</p>
+              <p>MealDeck collection is coming soon. No orders are being accepted.</p>
             </div>
-            <Link to="/order" className="md-btn md-btn-yellow">Order for collection <ArrowRight /></Link>
+            <Link to="/order" className="md-btn md-btn-yellow">Collection · Coming soon <ArrowRight /></Link>
           </div>
         </section>
 
@@ -242,13 +243,13 @@ function LandingPage() {
             <Link to="/luton" className="md-location-card">
               <span>Luton</span>
               <h3>Evening cravings, dealt together.</h3>
-              <p>Delivery · Pickup · Kerbside</p>
+              <p>Coming soon · Delivery · Pickup · Kerbside</p>
               <strong>Explore Luton <ArrowRight /></strong>
             </Link>
             <Link to="/st-albans" className="md-location-card">
               <span>St Albans</span>
               <h3>Weekday breakfast and lunch, one hand.</h3>
-              <p>Delivery · Pickup · Kerbside · Dine in</p>
+              <p>Coming soon · MealDeck ordering</p>
               <strong>Explore St Albans <ArrowRight /></strong>
             </Link>
           </div>
@@ -302,10 +303,10 @@ function LandingPage() {
           <Sparkles />
           <p className="md-kicker md-kicker-light">Different cuisines. One checkout.</p>
           <h2>Ready to play your cravings right?</h2>
-          <p>Mix your brands, build one basket and keep the whole order together.</p>
+          <p>Registration, ordering and payments are closed until launch. Explore our brands and enjoy eleven free games.</p>
           <div>
-            <Link to="/order" className="md-btn md-btn-yellow">Deal me in <Crown /></Link>
-            <Link to="/track" className="md-btn md-btn-outline-light">Track an order</Link>
+            <Link to="/order" className="md-btn md-btn-yellow">Coming soon <Crown /></Link>
+            <Link to="/play" className="md-btn md-btn-outline-light">Play free games</Link>
           </div>
         </section>
       </main>
@@ -313,3 +314,4 @@ function LandingPage() {
     </div>
   );
 }
+

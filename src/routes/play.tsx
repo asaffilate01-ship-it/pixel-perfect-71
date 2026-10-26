@@ -169,6 +169,9 @@ function PlayPage() {
   const theme = BRAND_THEMES[brand];
   const [game, setGame] = useState<Game>("feast-2048");
   const [filter, setFilter] = useState("All games");
+  const [depth, setDepth] = useState(true);
+  useEffect(() => { try { const preference = localStorage.getItem("mealdeck-play-depth"); setDepth(preference ? preference === "on" : !window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { setDepth(false); } }, []);
+  function toggleDepth() { const next = !depth; setDepth(next); try { localStorage.setItem("mealdeck-play-depth", next ? "on" : "off"); } catch { /* Optional preference. */ } }
   const categories: Record<Game, string> = { "feast-2048": "Strategy", "four-to-feast": "Strategy", "order-echo": "Memory", "kitchen-shuffle": "Puzzles", pairs: "Memory", recipe: "Puzzles", "kitchen-chaos": "Card games", snap: "Memory", "go-dish": "Card games", "full-house": "Puzzles", solitaire: "Puzzles" };
   const collectionSuits: SuitArt[] = ["burger", "chicken", "french-taco", "cake"];
 
@@ -188,21 +191,21 @@ function PlayPage() {
     snap: "cake", "go-dish": "french-taco", "full-house": "cake", solitaire: "burger",
   };
   return (
-    <div className="md-marketing-shell dp-shell" style={{ "--dp-accent": theme.accent } as CSSProperties}>
+    <div className="md-marketing-shell dp-shell" data-depth={depth ? "on" : "off"} style={{ "--dp-accent": theme.accent } as CSSProperties}>
       <SiteHeader />
       <main className="dp-main">
         <div className="dp-container">
           <div className="dp-eyebrow"><Gamepad2 size={18} /> DISHBEE PLAY · {theme.label.toUpperCase()}</div>
           <div className="dp-intro">
             <div>
-              <h1>Good food. <em>Great games.</em></h1>
+              <p className="dp3-eyebrow">THE MEALDECK ARCADE</p><h1>Your table.<br /><em>Your next challenge.</em></h1>
               <p>{theme.subtitle} Coming soon: ordering and registration. Try eleven free, account-free food-themed games, with the approved MealDeck symbols and official brand artwork.</p>
               <div className="dp-claims"><span><ShieldCheck size={16}/> No gambling</span><span><CheckCircle2 size={16}/> Always free</span><span><Sparkles size={16}/> Purely for fun</span></div>
             </div>
-            <div className="dp-feature-card">
-              <img className="dp-feature-art" src={gameBrandArtwork[brand]} alt={`${theme.label} official artwork`} loading="lazy"/>
-              <strong>{theme.label}</strong>
-              <small>PLAY EDITION</small>
+            <div className="dp3-stage" aria-hidden="true"><div className="dp3-stage-orbit" />
+              <div className="dp3-stage-card dp3-stage-back"><img src={suitArtwork["french-taco"]} alt="" /><b>PLAY</b></div>
+              <div className="dp3-stage-card dp3-stage-front"><img src={suitArtwork.burger} alt="" /><b>11 GAMES</b><span>ONE ARCADE</span></div>
+              <div className="dp3-stage-chip"><Gamepad2 size={25} /><span>FREE TO PLAY</span></div>
             </div>
           </div>
           <div className="dp-brands"><span>Play as</span>
@@ -230,6 +233,7 @@ function PlayPage() {
               </button>
             )}
           </div>
+          <div className="dp3-table-toolbar"><div><span>AT YOUR TABLE</span><strong>{GAME_CATALOGUE.find(item => item.id === game)?.name}</strong></div><button type="button" aria-pressed={depth} onClick={toggleDepth}>{depth ? "3D depth on" : "Flat view"}</button></div>
           <div id="arcade-active-game" className="arcade-panel" tabIndex={-1} role="region" aria-label="Selected game">{playPanels[game]}</div>
           <section className="dp-collection">
             <div className="dp-section-title"><div><small>SHOPPING REWARDS ARE SEPARATE</small><h2>Full House Rewards</h2></div><Gift size={27}/></div>
