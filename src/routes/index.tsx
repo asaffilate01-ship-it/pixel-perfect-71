@@ -125,7 +125,7 @@ function LandingPage() {
               <h2>Multiple brands. One premium collection.</h2>
               <p>Every identity stays distinct. MealDeck brings them together in one ordering experience.</p>
             </div>
-            <Link to="/order" className="md-btn md-btn-red">Start a mixed order <ArrowRight /></Link>
+            <Link to="/order" className="md-btn md-btn-red">Coming soon <ArrowRight /></Link>
           </div>
           <BrandLogoGrid />
         </section>
@@ -185,7 +185,7 @@ function LandingPage() {
               <li><WalletCards /> Choose one payer or split payments</li>
               <li><Clock3 /> Set a group cutoff time</li>
             </ul>
-            <Link to="/order" className="md-btn md-btn-yellow">Start a group order <ArrowRight /></Link>
+            <Link to="/order" className="md-btn md-btn-yellow">Coming soon <ArrowRight /></Link>
           </article>
 
           <article className="md-feature-panel md-feature-panel-cream">
@@ -230,7 +230,7 @@ function LandingPage() {
               <h3>314–318 Selbourne Road, Luton, LU4 8NU</h3>
               <p>Please bring your order reference.</p>
             </div>
-            <Link to="/order" className="md-btn md-btn-yellow">Order for collection <ArrowRight /></Link>
+            <Link to="/order" className="md-btn md-btn-yellow">Coming soon <ArrowRight /></Link>
           </div>
         </section>
 
@@ -239,7 +239,7 @@ function LandingPage() {
             <p className="md-kicker md-kicker-red">Locations</p>
             <h2>Your local MealDeck.</h2>
           </div>
-          <div className="md-location-grid">
+          <div className="md-location-grid md-order-locations">
             <Link to="/luton" className="md-location-card">
               <span>Luton</span>
               <h3>Evening cravings, dealt together.</h3>
@@ -251,6 +251,12 @@ function LandingPage() {
               <h3>Weekday breakfast and lunch, one hand.</h3>
               <p>Delivery · Pickup · Kerbside · Dine in</p>
               <strong>Explore St Albans <ArrowRight /></strong>
+            </Link>
+            <Link to="/bedford" className="md-location-card">
+              <span>Bedford</span>
+              <h3>Coming soon to a table near you.</h3>
+              <p>Launch details confirmed soon</p>
+              <strong>Explore Bedford <ArrowRight /></strong>
             </Link>
           </div>
         </section>

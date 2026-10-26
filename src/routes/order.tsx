@@ -32,30 +32,6 @@ export const Route = createFileRoute("/order")({
   component: ComingSoonPage,
 });
 
-const landingSpots = [
-  {
-    town: "Luton",
-    to: "/luton" as const,
-    status: "In the shuffle",
-    copy: "5pm–11pm, Monday to Sunday. Delivery, pickup and kerbside.",
-    cta: "Explore Luton",
-  },
-  {
-    town: "St Albans",
-    to: "/st-albans" as const,
-    status: "In the shuffle",
-    copy: "Monday to Friday, 09:00–16:00. Delivery, kerbside, pickup and dine in at Café 1.",
-    cta: "Explore St Albans",
-  },
-  {
-    town: "Bedford",
-    to: "/bedford" as const,
-    status: "Being dealt now",
-    copy: "Launch details for Bedford are confirmed on its MealDeck page.",
-    cta: "Explore Bedford",
-  },
-];
-
 const hand = [
   { n: "01", title: "Mix your cuisines", copy: "Build one basket from different MealDeck brands." },
   { n: "02", title: "One delivery fee", copy: "Order from several brands and pay a single delivery fee." },
@@ -68,6 +44,15 @@ const channels = [
   { icon: Share2, suit: "♦", title: "Website", copy: "The complete deck, no download." },
   { icon: Phone, suit: "♥", title: "Phone", copy: "Prefer a person? Call it in." },
   { icon: Smartphone, suit: "♠", title: "Mobile app", copy: "Fast reorders, points and tracking." },
+];
+
+const perks = [
+  { icon: ShoppingBasket, title: "Offers", copy: "Direct-order promotions, dealt with limits and clear terms." },
+  { icon: WalletCards, title: "Loyalty points", copy: "Earn points on direct orders and unlock MealDeck-only rewards." },
+  { icon: Users, title: "Group ordering", copy: "Everyone adds their own picks, then one payer or split payments." },
+  { icon: Clock3, title: "Live tracking", copy: "Follow every brand in your order from preparation to delivery." },
+  { icon: Bike, title: "One delivery fee", copy: "Several brands, one handoff, one fee where delivery is offered." },
+  { icon: MapPin, title: "Pickup & kerbside", copy: "Collect in person or from your vehicle where the service is offered." },
 ];
 
 function ComingSoonPage() {
@@ -85,14 +70,24 @@ function ComingSoonPage() {
             </p>
           </div>
           <div className="md-location-grid md-order-locations">
-            {landingSpots.map((spot) => (
-              <Link key={spot.town} to={spot.to} className="md-location-card">
-                <span>{spot.status}</span>
-                <h3>{spot.town}</h3>
-                <p>{spot.copy}</p>
-                <strong>{spot.cta} <ArrowRight /></strong>
-              </Link>
-            ))}
+            <Link to="/luton" className="md-location-card">
+              <span>In the shuffle</span>
+              <h3>Luton</h3>
+              <p>5pm–11pm, Monday to Sunday. Delivery, pickup and kerbside.</p>
+              <strong>Explore Luton <ArrowRight /></strong>
+            </Link>
+            <Link to="/st-albans" className="md-location-card">
+              <span>In the shuffle</span>
+              <h3>St Albans</h3>
+              <p>Monday to Friday, 09:00–16:00. Delivery, kerbside, pickup and dine in at Café 1.</p>
+              <strong>Explore St Albans <ArrowRight /></strong>
+            </Link>
+            <Link to="/bedford" className="md-location-card">
+              <span>Being dealt now</span>
+              <h3>Bedford</h3>
+              <p>Launch details for Bedford are confirmed on its MealDeck page.</p>
+              <strong>Explore Bedford <ArrowRight /></strong>
+            </Link>
           </div>
           <p className="md-offer-terms">Availability, hours and areas are confirmed on each MealDeck location page.</p>
         </section>
@@ -130,48 +125,15 @@ function ComingSoonPage() {
             </div>
           </div>
           <div className="md-direct-grid">
-            <article>
-              <ShoppingBasket />
-              <div>
-                <h2>Offers</h2>
-                <p>Direct-order promotions, dealt with limits and clear terms.</p>
-              </div>
-            </article>
-            <article>
-              <WalletCards />
-              <div>
-                <h2>Loyalty points</h2>
-                <p>Earn points on direct orders and unlock MealDeck-only rewards.</p>
-              </div>
-            </article>
-            <article>
-              <Users />
-              <div>
-                <h2>Group ordering</h2>
-                <p>Everyone adds their own picks, then one payer or split payments.</p>
-              </div>
-            </article>
-            <article>
-              <Clock3 />
-              <div>
-                <h2>Live tracking</h2>
-                <p>Follow every brand in your order from preparation to delivery.</p>
-              </div>
-            </article>
-            <article>
-              <Bike />
-              <div>
-                <h2>One delivery fee</h2>
-                <p>Several brands, one handoff, one fee where delivery is offered.</p>
-              </div>
-            </article>
-            <article>
-              <MapPin />
-              <div>
-                <h2>Pickup &amp; kerbside</h2>
-                <p>Collect in person or from your vehicle where the service is offered.</p>
-              </div>
-            </article>
+            {perks.map(({ icon: Icon, title, copy }) => (
+              <article key={title}>
+                <Icon />
+                <div>
+                  <h2>{title}</h2>
+                  <p>{copy}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
 
