@@ -375,6 +375,12 @@
   border-left: 1px solid var(--md-line);
   border-top: 1px solid var(--md-line);
 }
+/* Never leave a blank slot in the final row of the brand collection. */
+@media (min-width: 821px) {
+  .md-brand-grid > .md-brand-tile:last-child:nth-child(4n+3) { grid-column: span 2; }
+  .md-brand-grid > .md-brand-tile:last-child:nth-child(4n+2) { grid-column: span 3; }
+  .md-brand-grid > .md-brand-tile:last-child:nth-child(4n+1) { grid-column: span 4; }
+}
 .md-brand-tile {
   min-height: 245px;
   display: flex;
@@ -695,6 +701,7 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
   .md-section-heading-split { display: block; }
   .md-section-heading-split .md-btn { margin-top: 22px; }
   .md-brand-grid { grid-template-columns: repeat(2,1fr); }
+  .md-brand-grid > .md-brand-tile:last-child:nth-child(odd) { grid-column: span 2; }
   .md-brand-tile { min-height: 220px; }
   .md-offer-grid { grid-template-columns: 1fr; }
   .md-step-grid { grid-template-columns: 1fr; }
