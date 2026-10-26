@@ -23,6 +23,10 @@ export const FOOD_SUITS = [
 ] as const;
 
 export const GAME_CATALOGUE = [
+  { id: "feast-2048", name: "Feast 2048", description: "Merge matching food tiles into a record-breaking feast.", state: "playable" },
+  { id: "four-to-feast", name: "Four to Feast", description: "Outthink the house chef or challenge a friend to connect four.", state: "playable" },
+  { id: "order-echo", name: "Order Echo", description: "Remember a growing order sequence across three challenge levels.", state: "playable" },
+  { id: "kitchen-shuffle", name: "Kitchen Shuffle", description: "Solve 3×3 and 4×4 sliding puzzles, including a daily challenge.", state: "playable" },
   { id: "pairs", name: "Food Pairs", description: "Flip and match delicious MealDeck food icons.", state: "playable" },
   { id: "recipe", name: "Recipe Rush", description: "Build signature meals from the right ingredients.", state: "playable" },
   { id: "kitchen-chaos", name: "Kitchen Chaos", description: "Take on the house chef in a colourful, original food-card game.", state: "playable" },
@@ -95,3 +99,4 @@ export const RECIPES = [
 export function recipeMatches(selected: string[], target: readonly string[]): boolean {
   return selected.length === target.length && new Set(selected).size === target.length && selected.every((item) => target.includes(item));
 }
+

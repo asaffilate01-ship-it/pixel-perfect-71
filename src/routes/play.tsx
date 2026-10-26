@@ -1,3 +1,4 @@
+import { Feast2048, FourToFeast, OrderEcho, KitchenShuffle } from "@/components/play/arcade-games";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowRight, CheckCircle2, Gamepad2, Gift, LockKeyhole, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
@@ -166,10 +167,13 @@ function RecipeRush() {
 function PlayPage() {
   const { brand = "mealdeck" } = Route.useSearch();
   const theme = BRAND_THEMES[brand];
-  const [game, setGame] = useState<Game>("pairs");
+  const [game, setGame] = useState<Game>("feast-2048");
+  const [filter, setFilter] = useState("All games");
+  const categories: Record<Game, string> = { "feast-2048": "Strategy", "four-to-feast": "Strategy", "order-echo": "Memory", "kitchen-shuffle": "Puzzles", pairs: "Memory", recipe: "Puzzles", "kitchen-chaos": "Card games", snap: "Memory", "go-dish": "Card games", "full-house": "Puzzles", solitaire: "Puzzles" };
   const collectionSuits: SuitArt[] = ["burger", "chicken", "french-taco", "cake"];
 
   const playPanels: Record<Game, ReactNode> = {
+    "feast-2048": <Feast2048 />, "four-to-feast": <FourToFeast />, "order-echo": <OrderEcho />, "kitchen-shuffle": <KitchenShuffle />,
     pairs: <FoodPairs key={brand} brand={brand} />,
     recipe: <RecipeRush key={brand} />,
     "kitchen-chaos": <KitchenChaos />,
@@ -179,6 +183,7 @@ function PlayPage() {
     solitaire: <KitchenStacks />,
   };
   const gameIcons: Record<Game, SuitArt> = {
+    "feast-2048": "burger", "four-to-feast": "cake", "order-echo": "chicken", "kitchen-shuffle": "french-taco",
     pairs: "burger", recipe: "french-taco", "kitchen-chaos": "chicken",
     snap: "cake", "go-dish": "french-taco", "full-house": "cake", solitaire: "burger",
   };
@@ -191,7 +196,7 @@ function PlayPage() {
           <div className="dp-intro">
             <div>
               <h1>Good food. <em>Great games.</em></h1>
-              <p>{theme.subtitle} Coming soon: ordering and registration. Try seven free, account-free food-themed games, with the approved MealDeck symbols and official brand artwork.</p>
+              <p>{theme.subtitle} Coming soon: ordering and registration. Try eleven free, account-free food-themed games, with the approved MealDeck symbols and official brand artwork.</p>
               <div className="dp-claims"><span><ShieldCheck size={16}/> No gambling</span><span><CheckCircle2 size={16}/> Always free</span><span><Sparkles size={16}/> Purely for fun</span></div>
             </div>
             <div className="dp-feature-card">
@@ -214,17 +219,18 @@ function PlayPage() {
               <div key={suit.id}><img src={suitArtwork[suit.art]} alt="" loading="lazy" /><b>{suit.label}</b><small>{suit.brand}</small></div>
             )}
           </div>
-          <div className="dp-section-title"><div><small>SEVEN GAMES · ONE ARCADE</small><h2>Choose your game</h2></div><p>Play alone or against the house chef. No monetary prizes.</p></div>
+          <div className="dp-section-title"><div><small>ELEVEN GAMES · ONE ARCADE</small><h2>Choose your game</h2></div><p>Play alone or against the house chef. No monetary prizes.</p></div>
+          <div className="arcade-filters" role="group" aria-label="Filter games">{["All games", "Strategy", "Memory", "Puzzles", "Card games"].map(category => <button type="button" key={category} aria-pressed={filter === category} onClick={() => setFilter(category)}>{category}</button>)}</div>
           <div className="dp-game-select dp2-game-select" role="group" aria-label="Choose a MealDeck game">
-            {GAME_CATALOGUE.map(item =>
-              <button key={item.id} type="button" onClick={() => setGame(item.id)}
+            {GAME_CATALOGUE.filter(item => filter === "All games" || categories[item.id] === filter).map(item =>
+              <button key={item.id} type="button" onClick={() => { setGame(item.id); requestAnimationFrame(() => { const panel = document.getElementById("arcade-active-game"); panel?.focus({ preventScroll: true }); panel?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); }); }}
                 aria-pressed={game === item.id} className={game === item.id ? "is-active" : ""}>
                 <img className="dp-tab-art" src={suitArtwork[gameIcons[item.id]]} alt="" loading="lazy"/>
-                <span>{item.name}</span><small>{item.description}</small>
+                <span>{item.name}</span>{["feast-2048", "four-to-feast", "order-echo", "kitchen-shuffle"].includes(item.id) && <b className="arcade-new">New game</b>}<small>{item.description}</small>
               </button>
             )}
           </div>
-          {playPanels[game]}
+          <div id="arcade-active-game" className="arcade-panel" tabIndex={-1} role="region" aria-label="Selected game">{playPanels[game]}</div>
           <section className="dp-collection">
             <div className="dp-section-title"><div><small>SHOPPING REWARDS ARE SEPARATE</small><h2>Full House Rewards</h2></div><Gift size={27}/></div>
             <p>Customers will collect guaranteed food rewards from verified, eligible purchases after the Dishbee loyalty service and redemption controls are activated. Games never give points, food, cash or vouchers.</p>
@@ -247,7 +253,7 @@ function PlayPage() {
           <div className="dp2-legal">
             <ShieldCheck size={22}/>
             <div><strong>Enjoy the games. Keep the rewards separate.</strong>
-              <p>All seven games are free entertainment. There is no entry fee, cash-out, wagering, paid advantage, random food prize, purchased turn, or gameplay-linked loyalty reward.</p>
+              <p>All eleven games are free entertainment. There is no entry fee, cash-out, wagering, paid advantage, random food prize, purchased turn, or gameplay-linked loyalty reward.</p>
             </div>
           </div>
         </div>
@@ -256,3 +262,4 @@ function PlayPage() {
     </div>
   );
 }
+
