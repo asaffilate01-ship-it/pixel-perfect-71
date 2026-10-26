@@ -375,11 +375,20 @@
   border-left: 1px solid var(--md-line);
   border-top: 1px solid var(--md-line);
 }
-/* Never leave a blank slot in the final row of the brand collection. */
-@media (min-width: 821px) {
+/* Keep the brand collection's final row full and evenly weighted. */
+@media (min-width: 821px) and (max-width: 1180px) {
   .md-brand-grid > .md-brand-tile:last-child:nth-child(4n+3) { grid-column: span 2; }
   .md-brand-grid > .md-brand-tile:last-child:nth-child(4n+2) { grid-column: span 3; }
   .md-brand-grid > .md-brand-tile:last-child:nth-child(4n+1) { grid-column: span 4; }
+}
+@media (min-width: 1181px) {
+  .md-brand-grid { grid-template-columns: repeat(12, minmax(0,1fr)); }
+  .md-brand-grid > .md-brand-tile { grid-column: span 3; }
+  .md-brand-grid > .md-brand-tile:nth-last-child(3):nth-child(4n+1),
+  .md-brand-grid > .md-brand-tile:nth-last-child(3):nth-child(4n+1) ~ .md-brand-tile { grid-column: span 4; }
+  .md-brand-grid > .md-brand-tile:nth-last-child(2):nth-child(4n+1),
+  .md-brand-grid > .md-brand-tile:nth-last-child(2):nth-child(4n+1) ~ .md-brand-tile { grid-column: span 6; }
+  .md-brand-grid > .md-brand-tile:last-child:nth-child(4n+1) { grid-column: span 12; }
 }
 .md-brand-tile {
   min-height: 245px;
