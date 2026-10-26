@@ -1,3 +1,5 @@
+import { COMING_SOON } from "@/lib/launch-status";
+import { OrderingPreview } from "@/components/coming-soon";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -81,11 +83,11 @@ export const Route = createFileRoute("/order")({
   },
   head: () =>
     seo({
-      title: "Order Food Online — Luton & St Albans | MealDeck",
+      title: "Coming soon — Preview our menu | MealDeck",
       description: "Enter your postcode and build one basket across every MealDeck brand. Delivery, pickup or kerbside in Luton; delivery, kerbside, pickup or dine in at Café 1, St Albans Crown Court.",
       path: "/order",
     }),
-  component: OrderPage,
+  component: () => COMING_SOON ? <OrderingPreview /> : <OrderPage />,
 });
 
 const fulfilmentIcons = { delivery: Bike, pickup: Package, curbside: CarFront, dinein: UtensilsCrossed } as const;

@@ -1,3 +1,4 @@
+import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
@@ -373,6 +374,7 @@ export type PlaceOrderResult =
 export const placeOrder = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => orderSchema.parse(input))
   .handler(async ({ data }): Promise<PlaceOrderResult> => {
+    if (COMING_SOON) return { status: "failed", message: COMING_SOON_MESSAGE };
     const config = readConfig(data.location);
 
     if (!config) {

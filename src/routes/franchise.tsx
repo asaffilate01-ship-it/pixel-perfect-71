@@ -1,3 +1,4 @@
+import { COMING_SOON, COMING_SOON_MESSAGE } from "@/lib/launch-status";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
@@ -1426,7 +1427,9 @@ function FranchisePage() {
                 </p>
               </div>
             ) : (
-              <form className="md-franchise-form" onSubmit={submit} aria-busy={sending}>
+              <form className="md-franchise-form" onSubmit={event => { if (COMING_SOON) { event.preventDefault(); return; } void submit(event); }} aria-busy={sending}>
+                {COMING_SOON && <p role="status">{COMING_SOON_MESSAGE}</p>}
+                <fieldset disabled={COMING_SOON} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
                 <p className="md-franchise-form-intro">
                   Required fields are marked with an asterisk (*).
                 </p>
@@ -1740,7 +1743,7 @@ function FranchisePage() {
                   Your enquiry is confirmed only when the receipt message appears. No territory
                   reservation or payment is made here.
                 </p>
-              </form>
+              </fieldset></form>
             )}
           </div>
         </section>
