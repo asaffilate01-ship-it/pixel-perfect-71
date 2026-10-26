@@ -64,7 +64,7 @@ export function MobileTabBar() {
           <div className="flex flex-1 justify-center">
             <Link
               to="/order"
-              aria-label="Order now"
+              aria-label="Coming soon to a table near you"
               className={`relative -mt-8 flex h-20 w-14 rotate-[-6deg] flex-col items-center justify-center rounded-lg border border-ink/15 bg-paper shadow-xl transition-transform duration-300 active:scale-90 ${
                 dealActive ? "rotate-0 scale-105" : "hover:rotate-0"
               }`}
@@ -77,7 +77,7 @@ export function MobileTabBar() {
                 A<img src={suitArtwork.burger} alt="" className="mt-0.5 h-2.5 w-2.5 object-contain" />
               </span>
               <img src={backEmblem} alt="" className="h-[18px] w-auto object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]" />
-              <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">Order</span>
+              <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">Soon</span>
             </Link>
           </div>
           {right.map(item)}
