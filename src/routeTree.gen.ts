@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BedfordRouteImport } from './routes/bedford'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as LutonRouteImport } from './routes/luton'
+import { Route as OrderRouteImport } from './routes/order'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StAlbansRouteImport } from './routes/st-albans'
@@ -26,6 +28,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BedfordRoute = BedfordRouteImport.update({
+  id: '/bedford',
+  path: '/bedford',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FranchiseRoute = FranchiseRouteImport.update({
   id: '/franchise',
   path: '/franchise',
@@ -34,6 +41,11 @@ const FranchiseRoute = FranchiseRouteImport.update({
 const LutonRoute = LutonRouteImport.update({
   id: '/luton',
   path: '/luton',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderRoute = OrderRouteImport.update({
+  id: '/order',
+  path: '/order',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlayRoute = PlayRouteImport.update({
@@ -79,8 +91,10 @@ const FranchiseBrandIdRoute = FranchiseBrandIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bedford': typeof BedfordRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
+  '/order': typeof OrderRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st-albans': typeof StAlbansRoute
@@ -92,8 +106,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bedford': typeof BedfordRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
+  '/order': typeof OrderRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st-albans': typeof StAlbansRoute
@@ -106,8 +122,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/bedford': typeof BedfordRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
+  '/order': typeof OrderRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st-albans': typeof StAlbansRoute
@@ -121,8 +139,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/bedford'
     | '/franchise'
     | '/luton'
+    | '/order'
     | '/play'
     | '/sitemap.xml'
     | '/st-albans'
@@ -134,8 +154,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/bedford'
     | '/franchise'
     | '/luton'
+    | '/order'
     | '/play'
     | '/sitemap.xml'
     | '/st-albans'
@@ -147,8 +169,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/bedford'
     | '/franchise'
     | '/luton'
+    | '/order'
     | '/play'
     | '/sitemap.xml'
     | '/st-albans'
@@ -161,8 +185,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BedfordRoute: typeof BedfordRoute
   FranchiseRoute: typeof FranchiseRoute
   LutonRoute: typeof LutonRoute
+  OrderRoute: typeof OrderRoute
   PlayRoute: typeof PlayRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StAlbansRoute: typeof StAlbansRoute
@@ -182,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bedford': {
+      id: '/bedford'
+      path: '/bedford'
+      fullPath: '/bedford'
+      preLoaderRoute: typeof BedfordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/franchise': {
       id: '/franchise'
       path: '/franchise'
@@ -194,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/luton'
       fullPath: '/luton'
       preLoaderRoute: typeof LutonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order': {
+      id: '/order'
+      path: '/order'
+      fullPath: '/order'
+      preLoaderRoute: typeof OrderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/play': {
@@ -257,8 +297,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BedfordRoute: BedfordRoute,
   FranchiseRoute: FranchiseRoute,
   LutonRoute: LutonRoute,
+  OrderRoute: OrderRoute,
   PlayRoute: PlayRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StAlbansRoute: StAlbansRoute,

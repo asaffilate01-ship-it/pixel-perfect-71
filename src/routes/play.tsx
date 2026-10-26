@@ -234,15 +234,15 @@ function PlayPage() {
               )}
             </div>
             <p className="dp-pending"><LockKeyhole size={16}/> Real purchase rewards are not active in this games preview. No simulated points or vouchers are issued.</p>
-            <Link to="/order" className="dp-order-link">Browse MealDeck food <ArrowRight size={17}/></Link>
+            <Link to="/order" className="dp-order-link">Coming soon <ArrowRight size={17}/></Link>
           </section>
           <section className="dp-events">
             <div>
               <small>MATCHDAY &amp; FIGHT-NIGHT FOOD</small>
               <h2>More flavour for the big moments.</h2>
-              <p>Seasonal football and fight-night bundles can be offered to all eligible customers under published prices and conditions. Fanzeno fixture links and live event scheduling are planned, not yet connected. No game outcome or sports prediction can trigger a valuable prize.</p>
+              <p>Seasonal football and fight-night bundles can be offered to all eligible customers under published prices and conditions. No game outcome or sports prediction can trigger a valuable prize.</p>
             </div>
-            <Link to="/order">Explore food brands <ArrowRight size={17}/></Link>
+            <Link to="/order">Coming soon <ArrowRight size={17}/></Link>
           </section>
           <div className="dp2-legal">
             <ShieldCheck size={22}/>
