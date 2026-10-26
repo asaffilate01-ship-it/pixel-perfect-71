@@ -143,7 +143,7 @@ function TrackOrderPage(){
     <SiteHeader
       context={
         <Link to="/order" className="font-display text-sm font-black uppercase tracking-wide text-accent">
-          Start an order
+          Coming soon
         </Link>
       }
     />

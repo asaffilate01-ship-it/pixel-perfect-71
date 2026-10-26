@@ -227,22 +227,22 @@ function PlayPage() {
           {playPanels[game]}
           <section className="dp-collection">
             <div className="dp-section-title"><div><small>SHOPPING REWARDS ARE SEPARATE</small><h2>Full House Rewards</h2></div><Gift size={27}/></div>
-            <p>Customers will collect guaranteed food rewards from verified, eligible purchases after the Dishbee loyalty service and redemption controls are activated. Games never give points, food, cash or vouchers.</p>
+            <p>Customers will collect guaranteed food rewards from verified, eligible purchases once loyalty and redemption controls are activated. Games never give points, food, cash or vouchers.</p>
             <div className="dp-collection-cards">
               {collectionSuits.map((art, index) =>
                 <div key={art}><img src={suitArtwork[art]} alt="" loading="lazy"/><LockKeyhole size={15}/><small>{FOOD_SUITS[index]?.label}</small></div>
               )}
             </div>
             <p className="dp-pending"><LockKeyhole size={16}/> Real purchase rewards are not active in this games preview. No simulated points or vouchers are issued.</p>
-            <Link to="/order" className="dp-order-link">Browse MealDeck food <ArrowRight size={17}/></Link>
+            <Link to="/order" className="dp-order-link">Coming soon <ArrowRight size={17}/></Link>
           </section>
           <section className="dp-events">
             <div>
               <small>MATCHDAY &amp; FIGHT-NIGHT FOOD</small>
               <h2>More flavour for the big moments.</h2>
-              <p>Seasonal football and fight-night bundles can be offered to all eligible customers under published prices and conditions. Fanzeno fixture links and live event scheduling are planned, not yet connected. No game outcome or sports prediction can trigger a valuable prize.</p>
+              <p>Seasonal football and fight-night bundles can be offered to all eligible customers under published prices and conditions. No game outcome or sports prediction can trigger a valuable prize.</p>
             </div>
-            <Link to="/order">Explore food brands <ArrowRight size={17}/></Link>
+            <Link to="/order">Coming soon <ArrowRight size={17}/></Link>
           </section>
           <div className="dp2-legal">
             <ShieldCheck size={22}/>

@@ -29,7 +29,8 @@ export function SiteFooter() {
             <h3>Locations</h3>
             <Link to="/luton">Luton</Link>
             <Link to="/st-albans">St Albans</Link>
-            <Link to="/order">Order direct</Link>
+            <Link to="/bedford">Bedford</Link>
+            <Link to="/order">Coming soon</Link>
           </div>
           <div>
             <h3>Luton collection</h3>

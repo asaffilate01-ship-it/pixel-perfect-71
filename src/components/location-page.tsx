@@ -8,6 +8,7 @@ import cafe1Logo from "@/assets/cafe1-logo.png";
 import redEmblem from "@/assets/mealdeck-emblem.png";
 import heroLuton from "@/assets/hero-luton.jpg";
 import heroStAlbans from "@/assets/hero-stalbans.jpg";
+import heroTable from "@/assets/hero-table.jpg";
 
 type Props = {
   town: string;
@@ -21,7 +22,8 @@ type Props = {
 
 export function LocationPage({ town, intro, hours, fulfilment, areas, includeCafe1, faqs }: Props) {
   const isLuton = town.toLowerCase() === "luton";
-  const heroImage = isLuton ? heroLuton : heroStAlbans;
+  const isStAlbans = town.toLowerCase() === "st albans";
+  const heroImage = isLuton ? heroLuton : isStAlbans ? heroStAlbans : heroTable;
 
   return (
     <div className="md-marketing-shell">
@@ -41,7 +43,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <span><Bike /> {fulfilment}</span>
             </div>
             <div className="md-hero-actions">
-              <Link to="/order" className="md-btn md-btn-yellow">Order in {town} <ArrowRight /></Link>
+              <Link to="/order" className="md-btn md-btn-yellow">Coming soon <ArrowRight /></Link>
               <Link to="/" hash="brands" className="md-btn md-btn-outline-light">See the full brand deck</Link>
             </div>
           </div>
@@ -103,7 +105,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <span><MapPin /> Kerbside</span>
             </div>
           </section>
-        ) : (
+        ) : isStAlbans ? (
           <section className="md-collection-location">
             <div>
               <p className="md-kicker md-kicker-light">St Albans</p>
@@ -115,7 +117,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <span><Package /> Pickup</span>
             </div>
           </section>
-        )}
+        ) : null}
 
         <section className="md-section md-section-cream">
           <div className="md-section-heading">

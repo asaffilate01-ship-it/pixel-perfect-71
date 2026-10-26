@@ -108,7 +108,7 @@ function PostPage() {
         </article>
         <div className="mt-12 rounded-2xl border border-accent/50 bg-card p-8 text-center">
           <p className="font-display text-2xl font-black">Your hand is waiting.</p>
-          <Button asChild size="lg" className="mt-4"><Link to="/order">Start your order</Link></Button>
+          <Button asChild size="lg" className="mt-4"><Link to="/order">Coming soon</Link></Button>
         </div>
         <div className="mt-10"><Share url={url} title={post.title} /></div>
       </main>

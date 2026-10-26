@@ -37,7 +37,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           {context ?? (
             <>
               <Link to="/luton" className="md-header-location"><MapPin /> Luton</Link>
-              <Link to="/order" className="md-btn md-btn-yellow">Order now <ArrowRight /></Link>
+              <Link to="/order" className="md-btn md-btn-yellow" title="Coming soon to a table near you">Coming soon <ArrowRight /></Link>
             </>
           )}
           {nav ? (
@@ -62,11 +62,12 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           ))}
           <Link to="/luton" onClick={() => setOpen(false)}>Luton</Link>
           <Link to="/st-albans" onClick={() => setOpen(false)}>St Albans</Link>
+          <Link to="/bedford" onClick={() => setOpen(false)}>Bedford</Link>
           <Link to="/play" onClick={() => setOpen(false)}>Play &amp; Rewards</Link>
           <Link to="/franchise" onClick={() => setOpen(false)}>Franchises</Link>
           <Link to="/blog" onClick={() => setOpen(false)}>Blog</Link>
           <Link to="/track" onClick={() => setOpen(false)}>Track order</Link>
-          <Link to="/order" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Order now <ArrowRight /></Link>
+          <Link to="/order" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Coming soon <ArrowRight /></Link>
         </nav>
       ) : null}
     </header>
