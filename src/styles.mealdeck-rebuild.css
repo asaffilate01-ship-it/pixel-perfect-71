@@ -509,6 +509,7 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 }
 
 .md-location-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.md-order-locations { grid-template-columns: repeat(3, 1fr); }
 .md-location-card { min-height: 350px; padding: 46px; position: relative; overflow: hidden; background: white; color: var(--md-black); border: 1px solid var(--md-line); }
 .md-location-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 9px; background: var(--md-red); }
 .md-location-card > span { color: var(--md-red); font-family: var(--md-display); font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: .14em; }

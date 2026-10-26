@@ -62,6 +62,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           ))}
           <Link to="/luton" onClick={() => setOpen(false)}>Luton</Link>
           <Link to="/st-albans" onClick={() => setOpen(false)}>St Albans</Link>
+          <Link to="/bedford" onClick={() => setOpen(false)}>Bedford</Link>
           <Link to="/play" onClick={() => setOpen(false)}>Play &amp; Rewards</Link>
           <Link to="/franchise" onClick={() => setOpen(false)}>Franchises</Link>
           <Link to="/blog" onClick={() => setOpen(false)}>Blog</Link>
