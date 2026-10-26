@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as LutonRouteImport } from './routes/luton'
-import { Route as OrderRouteImport } from './routes/order'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StAlbansRouteImport } from './routes/st-albans'
@@ -35,11 +34,6 @@ const FranchiseRoute = FranchiseRouteImport.update({
 const LutonRoute = LutonRouteImport.update({
   id: '/luton',
   path: '/luton',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrderRoute = OrderRouteImport.update({
-  id: '/order',
-  path: '/order',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlayRoute = PlayRouteImport.update({
@@ -87,7 +81,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
-  '/order': typeof OrderRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st-albans': typeof StAlbansRoute
@@ -101,7 +94,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
-  '/order': typeof OrderRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st-albans': typeof StAlbansRoute
@@ -116,7 +108,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
-  '/order': typeof OrderRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st-albans': typeof StAlbansRoute
@@ -132,7 +123,6 @@ export interface FileRouteTypes {
     | '/'
     | '/franchise'
     | '/luton'
-    | '/order'
     | '/play'
     | '/sitemap.xml'
     | '/st-albans'
@@ -146,7 +136,6 @@ export interface FileRouteTypes {
     | '/'
     | '/franchise'
     | '/luton'
-    | '/order'
     | '/play'
     | '/sitemap.xml'
     | '/st-albans'
@@ -160,7 +149,6 @@ export interface FileRouteTypes {
     | '/'
     | '/franchise'
     | '/luton'
-    | '/order'
     | '/play'
     | '/sitemap.xml'
     | '/st-albans'
@@ -175,7 +163,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FranchiseRoute: typeof FranchiseRoute
   LutonRoute: typeof LutonRoute
-  OrderRoute: typeof OrderRoute
   PlayRoute: typeof PlayRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StAlbansRoute: typeof StAlbansRoute
@@ -207,13 +194,6 @@ declare module '@tanstack/react-router' {
       path: '/luton'
       fullPath: '/luton'
       preLoaderRoute: typeof LutonRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/order': {
-      id: '/order'
-      path: '/order'
-      fullPath: '/order'
-      preLoaderRoute: typeof OrderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/play': {
@@ -279,7 +259,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FranchiseRoute: FranchiseRoute,
   LutonRoute: LutonRoute,
-  OrderRoute: OrderRoute,
   PlayRoute: PlayRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StAlbansRoute: StAlbansRoute,
