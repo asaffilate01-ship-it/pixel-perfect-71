@@ -1,3 +1,5 @@
+import { COMING_SOON } from "@/lib/launch-status";
+import { ComingSoonPage } from "@/components/coming-soon";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,14 +24,14 @@ import { getOrderTracking, type OrderTrackingResult } from "@/lib/dishbee.functi
 export const Route=createFileRoute("/track")({
   head:()=>({
     meta:[
-      {title:"Track Order — MealDeck"},
+      {title:"Order tracking coming soon — MealDeck"},
       {
         name:"description",
-        content:"Track a MealDeck order using the order reference and 4-digit handoff code.",
+        content:"MealDeck order tracking is coming soon. Registration and ordering are not open yet.",
       },
     ],
   }),
-  component:TrackOrderPage,
+  component:() => COMING_SOON ? <ComingSoonPage title="Order tracking is coming soon" /> : <TrackOrderPage />,
 });
 
 const statusCopy:Record<string,{label:string;copy:string;Icon:typeof Clock3}>={
@@ -266,3 +268,4 @@ function TrackOrderPage(){
     <SiteFooter/>
   </div>
 }
+

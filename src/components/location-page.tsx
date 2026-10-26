@@ -33,15 +33,15 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
         >
           <div className="md-location-hero-shade" aria-hidden="true" />
           <div>
-            <p className="md-kicker">MealDeck {town}</p>
+            <p className="md-kicker">MealDeck {town} · Coming soon</p>
             <h1>Different cuisines.<br /><span>One {town} order.</span></h1>
             <p>{intro}</p>
             <div className="md-location-meta">
-              <span><Clock3 /> {hours}</span>
+              <span><Clock3 /> Planned hours: {hours}</span>
               <span><Bike /> {fulfilment}</span>
             </div>
             <div className="md-hero-actions">
-              <Link to="/order" className="md-btn md-btn-yellow">Order in {town} <ArrowRight /></Link>
+              <Link to="/order" className="md-btn md-btn-yellow">Coming soon · Preview menu <ArrowRight /></Link>
               <Link to="/" hash="brands" className="md-btn md-btn-outline-light">See the full brand deck</Link>
             </div>
           </div>
@@ -79,15 +79,15 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
         <section className="md-location-info-grid">
           <article className="md-location-info-panel md-location-info-panel-dark">
             <MapPin />
-            <p className="md-kicker">Areas we serve</p>
+            <p className="md-kicker">Planned service areas</p>
             <h2>Local first.</h2>
             <p>{areas.join(" · ")}</p>
           </article>
           <article className="md-location-info-panel md-location-info-panel-red">
             <Store />
-            <p className="md-kicker md-kicker-light">Ways to order</p>
+            <p className="md-kicker md-kicker-light">Coming soon</p>
             <h2>{fulfilment}</h2>
-            <p>Choose your fulfilment method when you start your MealDeck order.</p>
+            <p>MealDeck ordering and registration are not open yet. Browse the brands in this preview.</p>
           </article>
         </section>
 
@@ -96,7 +96,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <div>
               <p className="md-kicker md-kicker-light">Pickup / kerbside collection</p>
               <h2>314–318 Selbourne Road, Luton, LU4 8NU</h2>
-              <p>Please bring your order reference.</p>
+              <p>MealDeck collection is coming soon. No orders are being accepted.</p>
             </div>
             <div className="md-collection-icons">
               <span><Package /> Pickup</span>
@@ -136,3 +136,4 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
     </div>
   );
 }
+

@@ -5,8 +5,8 @@ import { SiteFooter } from "./site-footer";
 import { brands, locations, sampleMenu, formatPence, type LocationKey } from "@/lib/mealdeck";
 
 export function ComingSoonBanner() {
-  return <aside role="status" className="border-b border-primary/30 bg-card px-4 py-3 text-center text-sm">
-    <strong className="text-accent">Coming soon</strong> · Browse only. Registration and ordering are not open yet.
+  return <aside role="status" className="md-launch-banner">
+    <strong className="text-accent">Coming soon</strong><span>Browse only — registration, ordering and payments are closed.</span><Link to="/play">Play free games →</Link>
   </aside>;
 }
 
@@ -39,4 +39,13 @@ export function OrderingPreview() {
       {!items.length && <p role="status">No dishes match. Try another search or location.</p>}
       <div className="mt-10 flex flex-wrap gap-4"><Link to="/" className="md-btn md-btn-yellow">Explore our brands</Link><Link to="/play" className="md-btn">Try the free games</Link></div>
     </main><SiteFooter /></div>;
+}
+
+
+export function ComingSoonPage({ title = "Coming soon" }: { title?: string }) {
+  return <div className="md-marketing-shell"><SiteHeader /><main className="mx-auto max-w-3xl px-6 py-20 text-center">
+    <p className="font-bold uppercase tracking-widest text-accent">MealDeck · Preview only</p><h1 className="my-5 text-4xl font-bold">{title}</h1>
+    <p className="text-muted-foreground">Registration, ordering, payments and order tracking are not open yet. Browse our brands or enjoy the free arcade while we prepare to launch.</p>
+    <div className="mt-8 flex flex-wrap justify-center gap-4"><Link to="/order" className="md-btn md-btn-yellow">Preview our menus</Link><Link to="/play" className="md-btn">Play free games</Link></div>
+  </main><SiteFooter /></div>;
 }
