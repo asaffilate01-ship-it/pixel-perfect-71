@@ -1,3 +1,4 @@
+import { ComingSoonBanner } from "@/components/coming-soon";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BackToTop } from "@/components/back-to-top";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -160,6 +161,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <ComingSoonBanner />
       <Outlet />
       <BackToTop />
       <MobileTabBar />

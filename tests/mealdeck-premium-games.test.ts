@@ -4,7 +4,7 @@ import {
   playChaos, startChaos, type ChaosCard,
 } from "../src/lib/kitchen-chaos";
 import {
-  askGoDish, createBrandSnapRounds, evaluateSnap, isFullHouse,
+  askGoDish, drawGoDishIfEmpty, createBrandSnapRounds, evaluateSnap, isFullHouse,
   makeFullHousePuzzle, stackSolitaireCard, startGoDish, startSolitaire,
 } from "../src/lib/mealdeck-collection-games";
 
@@ -97,5 +97,24 @@ describe("Kitchen Stacks: solvable sorting",()=>{
     expect(state.moves).toBe(17);
     expect(state.mistakes).toBe(1);
     expect(Object.values(state.progress)).toEqual([4,4,4,4]);
+  });
+});
+
+describe("Go Dish round completion", () => {
+  test("a repeated exchange cannot exceed the 60-turn round limit", () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      let value = seed;
+      const random = () => ((value = (value * 1664525 + 1013904223) >>> 0) / 4294967296);
+      let state = startGoDish(random);
+      for (let turn = 0; turn < 65 && !state.winner; turn++) {
+        state = state.player.length
+          ? askGoDish(state, state.player[turn % state.player.length]!.rank)
+          : drawGoDishIfEmpty(state);
+      }
+      expect(state.winner).not.toBeNull();
+      expect(state.turns).toBeLessThanOrEqual(60);
+      expect(new Set([...state.player, ...state.chef, ...state.stock].map(c => c.id)).size +
+        4 * (state.playerSets.length + state.chefSets.length)).toBe(12);
+    }
   });
 });

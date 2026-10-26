@@ -1,7 +1,9 @@
+import { COMING_SOON, COMING_SOON_MESSAGE } from "@/lib/launch-status";
 import { createFileRoute } from "@tanstack/react-router";
 import { handleFranchiseRequest } from "@/lib/franchise-api";
 
 function handle(request: Request) {
+  if (COMING_SOON && request.method !== "GET") return Response.json({ ok: false, error: COMING_SOON_MESSAGE }, { status: 503, headers: { "Cache-Control": "no-store" } });
   const apiUrl = process.env["OMNIQORA_PUBLIC_API_URL"];
   // Without the live service, the page shows its built-in territory list instead.
   if (request.method === "GET" && !apiUrl?.trim()) {

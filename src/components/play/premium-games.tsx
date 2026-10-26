@@ -35,7 +35,7 @@ function FoodIcon({ food, className }: { food: FoodSuit; className?: string }) {
   return <img src={suitArtwork[food]} className={className || "dp2-icon"} alt="" draggable={false}/>;
 }
 function FoodCard({ card, label, disabled, onClick }: { card: FullHouseCard; label?: string; disabled?: boolean; onClick?: () => void }) {
-  return <button type="button" onClick={onClick} disabled={disabled} className="dp2-food-card" style={{ "--food-color": CHAOS_COLOURS[card.suit] } as CSSProperties}
+  return <button type="button" onClick={onClick} disabled={disabled} aria-pressed={label?.startsWith("Selected") ? true : undefined} className="dp2-food-card" style={{ "--food-color": CHAOS_COLOURS[card.suit] } as CSSProperties}
     aria-label={label || `${CHAOS_SUIT_NAMES[card.suit]} ${card.rank}`}>
     <span className="dp2-food-rank">{card.rank}<FoodIcon food={card.suit}/></span>
     <FoodIcon food={card.suit} className="dp2-food-big"/>
@@ -154,7 +154,7 @@ export function FullHouse() {
     <div className="dp2-stat"><span>SELECTED <strong>{selected.length} / 5</strong></span><span>GOAL <strong>3 + 2</strong></span></div>
     <div className="dp2-full-grid">{cards.map(card=>
       <div className={`dp2-full-cell ${selected.includes(card.id)?"is-selected":""}`} key={card.id}>
-        <FoodCard card={card} disabled={solved} onClick={()=>{
+        <FoodCard card={card} label={`${selected.includes(card.id) ? "Selected: " : ""}${CHAOS_SUIT_NAMES[card.suit]} ${card.rank}`} disabled={solved} onClick={()=>{
           setSelected(s=>s.includes(card.id)?s.filter(id=>id!==card.id):s.length<5?[...s,card.id]:s);
           setMessage("Build a hand with three cards of one food and two of another.");
         }}/>
@@ -181,12 +181,13 @@ export function GoDish() {
       <div className="dp2-dish-chef"><ChefHat size={32}/><div><strong>House Chef</strong><span>{state.chef.length} cards in hand</span></div><img src={cardBack} alt="Hidden house-chef cards" /></div>
       <h3 className="dp2-subhead">Your food cards</h3>
       <div className="dp2-go-hand">{state.player.map(card=><FoodCard key={card.id} card={card} disabled={true}/>)}</div>
+      <p className="dp-fineprint">Your collected ranks: {state.playerSets.join(", ") || "None yet"} · Chef: {state.chefSets.join(", ") || "None yet"} · Turn {state.turns} / 60</p>
       <h3 className="dp2-subhead">Ask for a number</h3>
       <div className="dp2-rank-ask">{rankOptions.map(rank=><button className="dp-main-button" key={rank} type="button" disabled={state.winner!==null}
         onClick={()=>setState(s=>s?askGoDish(s,rank as GoDishRank):null)}>Got any {rank}s?</button>)}
         {rankOptions.length===0&&state.winner===null&&<button className="dp-small-button" onClick={()=>setState(s=>s?drawGoDishIfEmpty(s):null)}>Draw a card</button>}
       </div>
-      <Result message={state.winner ? `Round complete — you made ${state.playerSets.length} set(s), house chef made ${state.chefSets.length}.` : state.lastMessage} success={state.winner==="player"}/>
+      <Result message={state.winner ? `${state.winner === "draw" ? "Draw" : state.winner === "player" ? "You win!" : "House chef wins."} You made ${state.playerSets.length} set(s), house chef made ${state.chefSets.length}.` : state.lastMessage} success={state.winner==="player"}/>
       {state.winner && <button className="dp-small-button" onClick={restart}>Play another round <RotateCcw size={16}/></button>}
     </>}
     <Note>The chef is a local automated opponent. No money, prizes or loyalty points are at stake.</Note>
@@ -199,12 +200,13 @@ export function KitchenStacks() {
   const restart=()=>setState(startSolitaire());
   const complete=!!state && state.cards.length===0;
   return <section className="dp-game-panel dp2-game-panel">
-    <Intro title="Kitchen Stacks" instructions="Our solo sorting challenge: build four food-suit stacks from 1 up to 4. All cards are visible." onReset={restart}/>
+    <Intro title="Kitchen Stacks" instructions="Build four food-suit stacks from 1 up to 4. All cards are visible. Use Hint if you need the next move." onReset={restart}/>
     {!state ? <p>Preparing your stack…</p>:<>
       <div className="dp2-stat"><span>PLACED <strong>{16-state.cards.length} / 16</strong></span><span>ATTEMPTS <strong>{state.moves}</strong></span><span>MISTAKES <strong>{state.mistakes}</strong></span></div>
       <div className="dp2-stacks">{CHAOS_SUITS.map(suit=><div key={suit}>
         <FoodIcon food={suit}/><small>{CHAOS_SUIT_NAMES[suit]}</small><b>{state.progress[suit]} / 4</b>
       </div>)}</div>
+      <button type="button" className="dp-small-button" disabled={complete} onClick={() => setState(s => { if (!s) return s; const next = s.cards.find(c => c.rank === s.progress[c.suit] + 1); return next ? { ...s, message: `Hint: choose ${CHAOS_SUIT_NAMES[next.suit]} ${next.rank}.` } : s; })}>Hint</button>
       <h3 className="dp2-subhead">Cards to stack</h3>
       <div className="dp2-full-grid">{state.cards.map(card=><FoodCard key={card.id} card={card}
         onClick={()=>setState(s=>s?stackSolitaireCard(s,card.id):null)} disabled={complete}/>)}</div>

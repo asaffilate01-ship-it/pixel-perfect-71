@@ -59,11 +59,11 @@ export function startGoDish(random: () => number = Math.random): GoDishState {
   const cards = shuffleDeck(CHAOS_SUITS.flatMap(suit => RANKS.map(rank => ({
     id: `${suit}-${rank}`, suit, rank,
   }))), random);
-  return {
+  return collectSets({
     player: cards.splice(0, 4), chef: cards.splice(0, 4), stock: cards,
     playerSets: [], chefSets: [], lastMessage: "Ask the house chef for a number shown in your hand.",
     turns: 0, winner: null,
-  };
+  });
 }
 function collectSets(state: GoDishState): GoDishState {
   let { player, chef } = state;
@@ -111,7 +111,7 @@ export function askGoDish(state: GoDishState, rank: GoDishRank): GoDishState {
   if (chefHand.length === 0) takeStock(chefHand, stockNow);
   if (playerHand.length === 0) takeStock(playerHand, stockNow);
   if (chefHand.length > 0) {
-    const desired = chefHand[0]!.rank;
+    const desired = [...chefHand].sort((a, b) => chefHand.filter(c => c.rank === b.rank).length - chefHand.filter(c => c.rank === a.rank).length)[0]!.rank;
     const chefGain = playerHand.filter(card => card.rank === desired);
     const playerAfter = playerHand.filter(card => card.rank !== desired);
     for (const card of chefGain) chefHand.push(card);
@@ -134,12 +134,14 @@ export function askGoDish(state: GoDishState, rank: GoDishRank): GoDishState {
       s.playerSets.length > s.chefSets.length ? "player" : "chef";
     s = { ...s, winner, lastMessage: "The draw pile is empty; round over." };
   }
+  // A bounded round prevents repeated exchanges from trapping the player.
+  if (!s.winner && s.turns >= 60) s = { ...s, winner: s.playerSets.length === s.chefSets.length ? "draw" : s.playerSets.length > s.chefSets.length ? "player" : "chef", lastMessage: "60-turn round complete. Collected sets decide the result." };
   return s;
 }
 export function drawGoDishIfEmpty(state: GoDishState): GoDishState {
   if (state.winner || state.player.length > 0) return state;
   const stock = [...state.stock], player: GoDishCard[] = [];
-  if (!takeStock(player, stock)) return { ...state, lastMessage: "No cards left to draw." };
+  if (!takeStock(player, stock)) return { ...state, winner: state.playerSets.length === state.chefSets.length ? "draw" : state.playerSets.length > state.chefSets.length ? "player" : "chef", lastMessage: "No cards left. Collected sets decide the result." };
   return { ...state, stock, player, lastMessage: "A new food card is ready for your next turn." };
 }
 

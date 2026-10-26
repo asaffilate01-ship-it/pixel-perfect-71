@@ -35,7 +35,7 @@ function FoodPairs({ brand }: { brand: BrandTheme }) {
   const [round, setRound] = useState(0);
 
   // Defer randomisation until mount to prevent mismatched server-rendered markup.
-  useEffect(() => { setCards(makePairs(brand)); }, [brand]);
+  useEffect(() => { setCards(makePairs(brand)); setFlipped([]); setMatched([]); setMoves(0); }, [brand]);
 
   useEffect(() => {
     if (flipped.length !== 2) return;
@@ -90,7 +90,7 @@ function FoodPairs({ brand }: { brand: BrandTheme }) {
           );
         })}
       </div>
-      {complete && <p className="dp-win-message"><CheckCircle2 size={20} /> All pairs found in {moves} moves! A great game — no monetary prizes.</p>}
+      {complete && <p role="status" className="dp-win-message"><CheckCircle2 size={20} /> All pairs found in {moves} moves! A great game — no monetary prizes.</p>}
       <p className="dp-fineprint">Entertainment only. Game results do not award points, meals, cash or discounts.</p>
     </section>
   );
@@ -140,7 +140,7 @@ function RecipeRush() {
         <div>
           <small>{complete ? "Challenge complete" : `Recipe ${recipe + 1} of ${RECIPES.length}`}</small>
           <h3>{complete ? "Master Chef!" : current.label}</h3>
-          <p>{complete ? "Three recipes completed. Well played!" : "Select the ingredients that belong in this dish."}</p>
+          <p>{complete ? `${RECIPES.length} recipes completed. Well played!` : "Select the ingredients that belong in this dish."}</p>
         </div>
       </div>
       <div className="dp-ingredient-grid">
@@ -191,7 +191,7 @@ function PlayPage() {
           <div className="dp-intro">
             <div>
               <h1>Good food. <em>Great games.</em></h1>
-              <p>{theme.subtitle} Seven original food-themed games, with the approved MealDeck symbols and official brand artwork.</p>
+              <p>{theme.subtitle} Coming soon: ordering and registration. Try seven free, account-free food-themed games, with the approved MealDeck symbols and official brand artwork.</p>
               <div className="dp-claims"><span><ShieldCheck size={16}/> No gambling</span><span><CheckCircle2 size={16}/> Always free</span><span><Sparkles size={16}/> Purely for fun</span></div>
             </div>
             <div className="dp-feature-card">
