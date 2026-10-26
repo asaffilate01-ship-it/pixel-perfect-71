@@ -86,9 +86,10 @@ function LandingPage() {
               <p className="md-hero-foods">Artisan pizza · French tacos · Parathas · Burgers · Pasta · Fresh juices · Chai · Desserts</p>
               <p className="md-hero-tagline">One Order. Every Craving.</p>
               <div className="md-hero-actions">
-                <Link to="/order" className="md-btn md-btn-yellow">Order direct <ArrowRight /></Link>
+                <Link to="/order" className="md-btn md-btn-yellow">Coming soon <ArrowRight /></Link>
                 <Link to="/" hash="brands" className="md-btn md-btn-outline-light">See all brands</Link>
               </div>
+              <p className="md-hero-soon">Coming soon to a table near you.</p>
               <div className="md-hero-proof">
                 <span><Check /> Mix brands</span>
                 <span><Check /> Split payments</span>
@@ -302,9 +303,9 @@ function LandingPage() {
           <Sparkles />
           <p className="md-kicker md-kicker-light">Different cuisines. One checkout.</p>
           <h2>Ready to play your cravings right?</h2>
-          <p>Mix your brands, build one basket and keep the whole order together.</p>
+          <p>Coming soon to a table near you. Mix your brands, build one basket and keep the whole order together.</p>
           <div>
-            <Link to="/order" className="md-btn md-btn-yellow">Deal me in <Crown /></Link>
+            <Link to="/order" className="md-btn md-btn-yellow">Coming soon <Crown /></Link>
             <Link to="/track" className="md-btn md-btn-outline-light">Track an order</Link>
           </div>
         </section>
