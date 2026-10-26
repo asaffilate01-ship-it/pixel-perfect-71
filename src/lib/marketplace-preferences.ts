@@ -56,28 +56,28 @@ export function decodeSavedBasket(json: string | null): SavedBasket | null {
     const data: unknown = JSON.parse(json);
     if (!data || typeof data !== "object") return null;
     const value = data as Record<string, unknown>;
-    if (value.version !== 1 || (value.location !== "luton" && value.location !== "stalbans")
-      || !Array.isArray(value.lines) || value.lines.length > MAX_SAVED_LINES) return null;
+    if (value["version"] !== 1 || (value["location"] !== "luton" && value["location"] !== "stalbans")
+      || !Array.isArray(value["lines"]) || value["lines"].length > MAX_SAVED_LINES) return null;
     const parsed: SavedBasketLine[] = [];
-    for (const raw of value.lines) {
+    for (const raw of value["lines"]) {
       if (!raw || typeof raw !== "object") return null;
       const l = raw as Record<string, unknown>;
-      if (typeof l.itemId !== "string" || l.itemId.length < 1 || l.itemId.length > 96
-        || typeof l.quantity !== "number" || !Number.isInteger(l.quantity) ||
-        l.quantity < 1 || l.quantity > MAX_QUANTITY ||
-        !Array.isArray(l.selected) || l.selected.length > 20) return null;
+      if (typeof l["itemId"] !== "string" || l["itemId"].length < 1 || l["itemId"].length > 96
+        || typeof l["quantity"] !== "number" || !Number.isInteger(l["quantity"]) ||
+        l["quantity"] < 1 || l["quantity"] > MAX_QUANTITY ||
+        !Array.isArray(l["selected"]) || l["selected"].length > 20) return null;
       const selected: SavedBasketLine["selected"] = [];
-      for (const entry of l.selected) {
+      for (const entry of l["selected"]) {
         if (!entry || typeof entry !== "object") return null;
         const option = entry as Record<string, unknown>;
-        if (typeof option.groupId !== "string" || !option.groupId ||
-          option.groupId.length > 120 || typeof option.optionId !== "string" ||
-          !option.optionId || option.optionId.length > 120) return null;
-        selected.push({groupId: option.groupId, optionId: option.optionId});
+        if (typeof option["groupId"] !== "string" || !option["groupId"] ||
+          option["groupId"].length > 120 || typeof option["optionId"] !== "string" ||
+          !option["optionId"] || option["optionId"].length > 120) return null;
+        selected.push({groupId: option["groupId"], optionId: option["optionId"]});
       }
-      parsed.push({itemId:l.itemId, quantity:l.quantity, selected});
+      parsed.push({itemId:l["itemId"], quantity:l["quantity"], selected});
     }
-    return {version:1,location:value.location,lines:parsed};
+    return {version:1,location:value["location"],lines:parsed};
   } catch { return null; }
 }
 
@@ -99,14 +99,14 @@ export function restoreSavedBasket(
     const selected: SelectedModifier[] = [];
     let valid = true;
     for (const option of savedLine.selected) {
-      const group = groups.find(g => g.id === option.groupId);
-      const current = group?.options.find(o => o.id === option.optionId);
+      const group = groups.find(g => g.id === option["groupId"]);
+      const current = group?.options.find(o => o.id === option["optionId"]);
       if (!group || !current ||
         selected.some(s=>s.groupId===group.id && s.id===current.id)) {valid=false;break;}
       selected.push({...current,groupId:group.id,groupName:group.name});
     }
     if (valid) valid=groups.every(group => {
-      const count=selected.filter(option => option.groupId === group.id).length;
+      const count=selected.filter(option => option["groupId"] === group.id).length;
       return count >= group.minSelect && count <= group.maxSelect;
     });
     if (!valid) {unavailable++;continue;}
