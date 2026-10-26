@@ -18,3 +18,4 @@
 - [x] Branded in-app success messages
 - [x] Play page: remove Fanzeno / fixture-based scheduling and "predictions for prizes" wording
 - [x] Play: make "Play as" brand skins meaningful (each brand deals its own dishes) + further table polish
+- [ ] Ordering hidden for now: /order shows a "coming soon" screen listing Luton, St Albans and Bedford; restore the marketplace when live
