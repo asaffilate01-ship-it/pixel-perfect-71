@@ -725,6 +725,7 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
   .md-hero-tagline { font-size: 28px; }
   .md-hero-actions { flex-direction: column; }
   .md-hero-actions .md-btn { width: 100%; }
+  .md-hero-inner { padding-bottom: 108px; }
   .md-deck-stage { min-height: 320px; }
   .md-deck-shadow, .md-deck-card { width: min(190px, 52vw); }
   .md-deck-corner b { font-size: 18px; } .md-deck-corner i { font-size: 15px; } .md-deck-corner-tl { top: 6px; left: 7px; } .md-deck-corner-br { bottom: 6px; right: 7px; } .md-deck-caption strong { font-size: 14px; } .md-deck-caption span { font-size: 10px; }
