@@ -17,7 +17,7 @@ jobs:
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - name: MealDeck Play game regressions
-        run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/hero-food-deck.test.ts
+        run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/hero-food-deck.test.ts
       - name: Marketplace discovery, saved basket and category regressions
         run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
       - run: bun run build
@@ -36,9 +36,9 @@ jobs:
       - name: Game module lint
         run: >
           bunx eslint src/lib/dishbee-play.ts src/lib/kitchen-chaos.ts
-          src/lib/mealdeck-collection-games.ts src/lib/game-brand-artwork.ts
-          src/components/play/premium-games.tsx src/routes/play.tsx
-          tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts
+          src/lib/mealdeck-collection-games.ts src/lib/game-brand-artwork.ts src/lib/arcade-games.ts
+          src/components/play/premium-games.tsx src/components/play/arcade-games.tsx src/routes/play.tsx
+          tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts
           --rule 'prettier/prettier: off'
 
       - name: Marketplace ordering lint
@@ -48,3 +48,4 @@ jobs:
           src/lib/marketplace-photos.ts src/components/order/premium-discovery.tsx
           tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
           --rule 'prettier/prettier: off'
+
