@@ -117,7 +117,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <span><Package /> Pickup</span>
             </div>
           </section>
-        )}
+        ) : null}
 
         <section className="md-section md-section-cream">
           <div className="md-section-heading">
