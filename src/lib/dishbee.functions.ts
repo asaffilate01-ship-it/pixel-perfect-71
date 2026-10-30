@@ -1,10 +1,10 @@
+import { serviceLocation } from "./checkout-readiness";
 import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import {
   brands,
-  resolveSampleServiceability,
   sampleLocationOpen,
   sampleMenu,
   type FulfilmentType,
@@ -35,6 +35,13 @@ function readConfig(location: LocationKey): DishbeeConfig | null {
   const locationId = process.env[`${prefix}_LOCATION_ID`];
   if (!base || !tenantId || !locationId) return null;
   return { ...base, tenantId, locationId };
+}
+
+function configuredLocations() {
+  return (["luton", "stalbans"] as const).flatMap(key => {
+    const config = readConfig(key);
+    return config ? [{ key, locationId: config.locationId, tenantId: config.tenantId }] : [];
+  });
 }
 
 function dishbeeClient(config: { url: string; anonKey: string }) {
@@ -86,24 +93,13 @@ export const checkServiceability = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<ServiceabilityResult> => {
-    const fallback = (): ServiceabilityResult => {
-      const result = resolveSampleServiceability(data.postcode, data.fulfilment);
-      return result.locationKey
-        ? {
-            served: true,
-            location: result.locationKey,
-            channelOpen: sampleLocationOpen(result.locationKey),
-            message: result.message,
-          }
-        : {
-            served: false,
-            message: result.message,
-            alternativeFulfilments: result.alternativeFulfilments,
-          };
-    };
+    const unavailable = (): ServiceabilityResult => ({
+      served: false,
+      message: "We couldn't confirm live availability. You can browse the menu and try your postcode again shortly.",
+    });
 
     const base = readBase();
-    if (!base) return fallback();
+    if (!base) return unavailable();
 
     try {
       const { data: rows, error } = await dishbeeClient(base).rpc(
@@ -115,45 +111,16 @@ export const checkServiceability = createServerFn({ method: "POST" })
       );
       if (error) throw new Error(error.message);
 
-      const row = (Array.isArray(rows) ? rows[0] : rows) as
-        | Record<string, unknown>
-        | null;
-
-      if (!row || !row["served"] || !row["location_id"]) {
-        const sample = resolveSampleServiceability(
-          data.postcode,
-          data.fulfilment,
-        );
-        return {
-          served: false,
-          message: row?.["message"]?.toString() ?? sample.message,
-          alternativeFulfilments: sample.alternativeFulfilments,
-        };
-      }
-
-      const town = String(
-        row["town"] ?? row["location_name"] ?? "",
-      ).toLowerCase();
-      const normalisedPostcode = data.postcode
-        .toUpperCase()
-        .replace(/\s+/g, "");
-
-      const location: LocationKey =
-        town.includes("albans") || normalisedPostcode.startsWith("AL")
-          ? "stalbans"
-          : "luton";
-
+      const match = serviceLocation(rows, configuredLocations());
+      if (!match) return { served: false, message: "This postcode and service are not currently available from a configured MealDeck kitchen." };
       return {
         served: true,
-        location,
-        channelOpen: Boolean(row["channel_open"]),
-        message:
-          row["message"]?.toString() ??
-          `MealDeck ${location === "stalbans" ? "St Albans" : "Luton"} serves your area.`,
+        ...match,
+        message: `MealDeck ${match.location === "stalbans" ? "St Albans" : "Luton"} serves your area.`,
       };
     } catch (error) {
       console.error("Dishbee serviceability failed", error);
-      return fallback();
+      return unavailable();
     }
   });
 
@@ -387,7 +354,17 @@ export const placeOrder = createServerFn({ method: "POST" })
         : 0;
 
     try {
-      const { data: rows, error } = await dishbeeClient(config).rpc(
+      // Never rely on browser checks: postcode, fulfilment or opening hours may have changed.
+      const client = dishbeeClient(config);
+      const coverage = await client.rpc("public_mealdeck_serviceability", {
+        p_postcode: data.customer.postcode,
+        p_fulfilment: data.fulfilment,
+      });
+      const match = coverage.error ? null : serviceLocation(coverage.data, configuredLocations());
+      if (!match || match.location !== data.location || !match.channelOpen) {
+        return { status: "failed", message: "We couldn't confirm this kitchen is accepting orders for your postcode and chosen service. Check your postcode again." };
+      }
+      const { data: rows, error } = await client.rpc(
         "create_mealdeck_checkout_order",
         {
           p_tenant: config.tenantId,
@@ -429,10 +406,7 @@ export const placeOrder = createServerFn({ method: "POST" })
       console.error("Dishbee checkout failed", error);
       return {
         status: "failed",
-        message:
-          error instanceof Error
-            ? error.message
-            : "We couldn't create that order. Please try again.",
+        message: "We couldn't create that order. Please check availability and try again.",
       };
     }
   });
@@ -525,3 +499,4 @@ export const getOrderTracking = createServerFn({ method: "POST" })
       };
     }
   });
+

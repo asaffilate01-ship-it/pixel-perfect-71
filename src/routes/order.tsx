@@ -1,7 +1,8 @@
+import { checkoutBlocker, type ServiceConfirmation } from "@/lib/checkout-readiness";
 import { COMING_SOON } from "@/lib/launch-status";
 import { OrderingPreview } from "@/components/coming-soon";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -116,6 +117,9 @@ function OrderPage() {
   const [fulfilment, setFulfilment] = useState<FulfilmentType>(fulfilmentFromSearch ?? "delivery");
   const [postcode, setPostcode] = useState("");
   const [checking, setChecking] = useState(false);
+  const [confirmation, setConfirmation] = useState<ServiceConfirmation | null>(null);
+  const areaRequest = useRef(0);
+  const checkoutInFlight = useRef(false);
   const [serviceMessage, setServiceMessage] = useState<{ tone: "idle" | "ok" | "error"; text: string }>({
     tone: "idle",
     text: "Browsing the Luton menu. Enter your postcode when you're ready to order.",
@@ -206,7 +210,7 @@ function OrderPage() {
 
   const currentLocation = location ? locations.find((entry) => entry.key === location)! : null;
   const items = catalogue.data?.items ?? [];
-  const channelOpen = catalogue.data?.channelOpen ?? true;
+  const channelOpen = catalogue.data?.channelOpen ?? false;
 
   const primaryBrands = useMemo(
     () => (currentLocation ? currentLocation.primaryBrandIds.map(brandById).filter((b): b is Brand => !!b) : []),
@@ -216,10 +220,7 @@ function OrderPage() {
   const addonItems = items.filter((item) => currentLocation?.addonBrandIds.includes(item.brandId));
   const searchableItems = [...primaryItems, ...addonItems];
   const availableBrands = [...primaryBrands, ...(currentLocation?.addonBrandIds.map(brandById).filter((b): b is Brand => !!b) ?? [])];
-  const filteredBrands = useMemo(
-    () => browseBrands(searchableItems, availableBrands, activeCategory, menuSearch),
-    [items, currentLocation, activeCategory, menuSearch],
-  );
+  const filteredBrands = browseBrands(searchableItems, availableBrands, activeCategory, menuSearch);
   const visibleItems = browseMenu(searchableItems, activeBrand, activeCategory, menuSearch, availableBrands);
   const suggestions = basketSuggestions(searchableItems, lines, availableBrands);
   const activeBrandObj = activeBrand ? brandById(activeBrand) ?? null : null;
@@ -238,16 +239,20 @@ function OrderPage() {
   const deliveryPence = lines.length && fulfilment === "delivery" ? DELIVERY_FEE_PENCE : 0;
   const total = goods + deliveryPence;
 
-  async function checkArea(nextFulfilment: FulfilmentType = fulfilment) {
-    if (!postcode.trim()) {
+  async function checkArea(nextFulfilment: FulfilmentType = fulfilment, postcodeToCheck: string = postcode) {
+    if (!postcodeToCheck.trim()) {
       setServiceMessage({ tone: "error", text: "Enter a postcode to find your nearest MealDeck." });
       return;
     }
+    const request = ++areaRequest.current;
+    const checkedPostcode = postcodeToCheck.trim();
+    setConfirmation(null);
     setChecking(true);
     try {
       const result = await runServiceability({
-        data: { postcode: postcode.trim(), fulfilment: nextFulfilment },
+        data: { postcode: postcodeToCheck.trim(), fulfilment: nextFulfilment },
       });
+      if (request !== areaRequest.current) return;
       if (!result.served) {
         setLocation(null);
         setActiveBrand(null);
@@ -262,9 +267,10 @@ function OrderPage() {
         toast("Basket cleared", { description: "Your postcode changed the menus available, so we started a fresh basket." });
       }
       setLocation(result.location);
+      setConfirmation({ postcode: checkedPostcode, fulfilment: nextFulfilment, location: result.location, channelOpen: result.channelOpen });
       setCustomer((prev) => ({
         ...prev,
-        postcode: postcode.trim().toUpperCase(),
+        postcode: postcodeToCheck.trim().toUpperCase(),
       }));
       setServiceMessage({
         tone: result.channelOpen ? "ok" : "idle",
@@ -273,14 +279,18 @@ function OrderPage() {
           : `${result.message} Your local MealDeck is currently closed, but you can still browse.`,
       });
     } catch {
+      if (request !== areaRequest.current) return;
       setLocation(null);
       setServiceMessage({ tone: "error", text: "We couldn't check that postcode right now. Please try again." });
     } finally {
-      setChecking(false);
+      if (request === areaRequest.current) setChecking(false);
     }
   }
 
   function changeFulfilment(next: FulfilmentType) {
+    areaRequest.current++;
+    setConfirmation(null);
+    setChecking(false);
     setFulfilment(next);
     setPaymentPending(null);
     if (postcode.trim()) {
@@ -297,6 +307,9 @@ function OrderPage() {
 
   function browseLocation(next: LocationKey) {
     if (location === next) return;
+    areaRequest.current++;
+    setConfirmation(null);
+    setChecking(false);
     if (lines.length) {
       setLines([]);
       toast("Basket cleared", { description: "We started a fresh basket for the new location." });
@@ -360,7 +373,13 @@ function OrderPage() {
 
   const fulfilmentAllowed = currentLocation?.allowedFulfilments.includes(fulfilment) ?? false;
 
+  const blocker = checkoutBlocker({
+    comingSoon: COMING_SOON, loading: catalogue.isFetching || checking,
+    source: catalogue.data?.source, channelOpen, fulfilmentAllowed,
+    lineCount: lines.length, postcode: customer.postcode, location, fulfilment, confirmation,
+  });
   const canCheckout =
+    !blocker &&
     !!location &&
     fulfilmentAllowed &&
     channelOpen &&
@@ -372,13 +391,18 @@ function OrderPage() {
     (fulfilment !== "curbside" || (customer.carMake.trim() && customer.vehicleRegistration.trim()));
 
   async function handleCheckout() {
-    if (!location) return;
+    if (!location || checkoutInFlight.current) return;
+    if (!canCheckout) {
+      toast.error(blocker ?? "Complete the required contact and fulfilment details.");
+      return;
+    }
     if(catalogue.data?.source!=="live"){
       toast.error("Live ordering connection required",{
         description:"The preview menu is for browsing only. Checkout will be available when live ordering opens.",
       });
       return;
     }
+    checkoutInFlight.current = true;
     setSubmitting(true);
     try {
       const result = await submitOrder({
@@ -406,6 +430,7 @@ function OrderPage() {
     } catch {
       toast.error("We couldn't place that order. Please check your details and try again.");
     } finally {
+      checkoutInFlight.current = false;
       setSubmitting(false);
     }
   }
@@ -515,7 +540,7 @@ function OrderPage() {
                 </div>
                 {fulfilment === "delivery" ? (
                   <div className="flex justify-between text-muted-foreground">
-                    <span>Delivery (one fee)</span>
+                    <span>Estimated delivery (one fee)</span>
                     <span>{formatPence(deliveryPence)}</span>
                   </div>
                 ) : null}
@@ -527,10 +552,12 @@ function OrderPage() {
                   variant="hero"
                   size="lg"
                   className="mt-3 w-full rounded-full"
+                  disabled={catalogue.data?.source !== "live" || !channelOpen || !fulfilmentAllowed}
                   onClick={() => setCheckoutOpen((open) => !open)}
                 >
-                  Go to checkout
+                  Review checkout details
                 </Button>
+                {blocker ? <p role="status" className="text-sm text-muted-foreground">{blocker}</p> : null}
               </div>
             ) : null}
           </div>
@@ -562,8 +589,17 @@ function OrderPage() {
                     <Label htmlFor={field}>{label}</Label>
                     <Input
                       id={field}
+                      type={field === "email" ? "email" : field === "phone" ? "tel" : "text"}
+                      autoComplete={({ name: "name", phone: "tel", email: "email", address1: "address-line1", city: "address-level2", postcode: "postal-code", carMake: "off", vehicleRegistration: "off" } as const)[field]}
                       value={customer[field]}
-                      onChange={(event) => setCustomer((prev) => ({ ...prev, [field]: event.target.value }))}
+                      onChange={(event) => {
+                        if (field === "postcode") {
+                          areaRequest.current++;
+                          setChecking(false);
+                          setConfirmation(null);
+                        }
+                        setCustomer((prev) => ({ ...prev, [field]: event.target.value }));
+                      }}
                     />
                   </div>
                 ))}
@@ -575,6 +611,15 @@ function OrderPage() {
                   onChange={(event) => setCustomer((prev) => ({ ...prev, notes: event.target.value }))}
                 />
               </div>
+              {blocker ? (
+                <div role="status" className="rounded-xl border border-border bg-muted p-3 text-sm">
+                  <p>{blocker}</p>
+                  <Button type="button" variant="outline" className="mt-2" disabled={checking || !customer.postcode.trim()}
+                    onClick={() => { setPostcode(customer.postcode); void checkArea(fulfilment, customer.postcode); }}>
+                    {checking ? "Checking…" : "Check this postcode"}
+                  </Button>
+                </div>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 You'll get a 4-digit handoff code. Preparation starts once payment is confirmed.
               </p>
@@ -653,7 +698,12 @@ function OrderPage() {
                 <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={postcode}
-                  onChange={(event) => setPostcode(event.target.value)}
+                  onChange={(event) => {
+                    areaRequest.current++;
+                    setChecking(false);
+                    setConfirmation(null);
+                    setPostcode(event.target.value);
+                  }}
                   onKeyDown={(event) => event.key === "Enter" && void checkArea()}
                   placeholder="Enter your postcode"
                   aria-label="Postcode"
@@ -1134,3 +1184,4 @@ function OrderPage() {
     </div>
   );
 }
+
