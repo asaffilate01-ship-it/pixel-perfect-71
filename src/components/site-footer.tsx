@@ -46,9 +46,9 @@ export function SiteFooter() {
         </p>
         <div className="md-footer-apps-row" aria-label="Ordering channels and social links">
           <div className="md-footer-social" aria-label="Social links">
-            <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram /></a>
+            <a href="https://www.instagram.com/mealdeckofficial/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram /></a>
             <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><Facebook /></a>
-            <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><Music2 /></a>
+            <a href="https://www.tiktok.com/@mealdeckofficial" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><Music2 /></a>
             <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><Youtube /></a>
           </div>
           <span className="md-footer-apps-divider" aria-hidden="true" />
