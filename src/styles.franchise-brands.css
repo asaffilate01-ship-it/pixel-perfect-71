@@ -168,12 +168,12 @@
 }
 .md-franchise-brand-card-logo-stage {
   position: relative;
-  aspect-ratio: 1.9;
+  height: 224px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 26px 30px;
+  padding: 20px 26px;
   background: var(--md-paper);
   border-bottom: 1px solid var(--ff-border);
 }
