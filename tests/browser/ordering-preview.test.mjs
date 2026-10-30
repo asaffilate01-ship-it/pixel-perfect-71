@@ -83,6 +83,13 @@ for (const width of [390, 1280]) {
       const source = guide.getByRole("link", { name: "View in FAQs" }).first();
       const href = await source.getAttribute("href");
       assert.equal(await page.locator(href).count(), 1);
+      await source.click();
+      assert.equal(await page.locator(href).evaluate(element => element.open), true);
+      await guide.getByRole("button", { name: "Clear search", exact: true }).click();
+      assert.equal(await guide.getByRole("searchbox").inputValue(), "");
+      assert.equal(await guide.getByRole("searchbox").evaluate(element => element === document.activeElement), true);
+      await guide.getByRole("searchbox").fill("How much money do I need?");
+      await guide.getByRole("article").first().waitFor();
       await guide.getByRole("searchbox").fill("quantum astrology");
       await guide.getByText("0 related published answers").waitFor();
       assert.equal(await guide.getByRole("article").count(), 0);
