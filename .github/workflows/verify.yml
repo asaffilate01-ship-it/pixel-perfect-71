@@ -21,6 +21,8 @@ jobs:
         run: node --test tests/checkout-readiness.test.mjs tests/checkout-server.test.mjs
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
+      - name: Franchise guide and MCP protocol
+        run: npm run test:franchise-guide
       - name: MealDeck Play game regressions
         run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/hero-food-deck.test.ts
       - name: Marketplace discovery, saved basket and category regressions

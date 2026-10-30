@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test:checkout": "node --test tests/checkout-readiness.test.mjs tests/checkout-server.test.mjs",
-    "test:browser": "node --test tests/browser/*.test.mjs"
+    "test:browser": "node --test tests/browser/*.test.mjs",
+    "mcp:franchise": "node scripts/franchise-mcp.mjs",
+    "test:franchise-guide": "node --test tests/franchise-guide.test.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -74,6 +76,7 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.25.3",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

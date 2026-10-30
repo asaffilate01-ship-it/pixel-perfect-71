@@ -71,3 +71,23 @@ for (const width of [390, 1280]) {
     }
   });
 }
+
+for (const width of [390, 1280]) {
+  test(`franchise guide at ${width}px`, { timeout: 45000 }, async () => {
+    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    try {
+      await page.goto(`${baseURL}/franchise`, { waitUntil: "networkidle" });
+      const guide = page.getByRole("region", { name: "Find a franchise answer" });
+      await guide.getByRole("button", { name: "Equipment", exact: true }).click();
+      await guide.getByRole("article").first().waitFor();
+      const source = guide.getByRole("link", { name: "View in FAQs" }).first();
+      const href = await source.getAttribute("href");
+      assert.equal(await page.locator(href).count(), 1);
+      await guide.getByRole("searchbox").fill("quantum astrology");
+      await guide.getByText("0 related published answers").waitFor();
+      assert.equal(await guide.getByRole("article").count(), 0);
+      assert.equal(await guide.getByRole("link", { name: "View enquiry options" }).getAttribute("href"), "#apply");
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    } finally { await page.close(); }
+  });
+}
