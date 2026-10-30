@@ -118,18 +118,12 @@ export function BrandFranchiseCatalogue({
               const selected = selection.has(brand.id);
               return (
                 <article
-                  className={`md-franchise-brand-card${selected ? " is-selected" : ""}${brand.artwork === "identity" ? " is-identity" : ""}`}
+                  className={`md-franchise-brand-card${selected ? " is-selected" : ""}`}
                   key={brand.id}
                   aria-labelledby={`franchise-brand-${brand.id}`}
                 >
-                  <div className="md-franchise-brand-card-photo">
-                    <img
-                      src={brand.image}
-                      alt={`${brand.name} — ${brand.category}`}
-                      loading="lazy"
-                      width={768}
-                      height={512}
-                    />
+                  <div className="md-franchise-brand-card-logo-stage">
+                    <FranchiseBrandLogo src={brand.logo} name={brand.name} lazy />
                     <span className="md-franchise-brand-card-suit" aria-hidden="true">
                       {brand.rank}
                       <span>{brand.suit}</span>
@@ -142,9 +136,6 @@ export function BrandFranchiseCatalogue({
                   </div>
                   <div className="md-franchise-brand-card-body">
                     <div className="md-franchise-brand-card-identity">
-                      <div className="md-franchise-brand-card-logo">
-                        <FranchiseBrandLogo src={brand.logo} name={brand.name} decorative lazy />
-                      </div>
                       <div>
                         <h3 id={`franchise-brand-${brand.id}`}>{brand.name}</h3>
                         <p>{brand.category}</p>
