@@ -189,9 +189,6 @@
 .md-franchise-brand-card-logo-stage .md-franchise-logo-fallback {
   font-size: clamp(20px, 2.4vw, 30px);
 }
-.md-franchise-brand-promo-card.is-identity .md-franchise-brand-promo-logo { min-height: 360px; }
-.md-franchise-brand-promo-card.is-identity .md-franchise-brand-promo-logo img { width: min(320px, 85%); max-height: 300px; }
-.md-franchise-brand-promo-card.is-identity .md-franchise-brand-promo-food { display: none; }
 .md-franchise-brand-card:hover .md-franchise-brand-card-logo-stage > img {
   transform: scale(1.03);
 }
@@ -541,25 +538,21 @@
 .md-franchise-brand-promo-logo {
   display: grid;
   place-items: center;
-  height: 190px;
-  padding: 10px 36px;
+  min-height: clamp(250px, 26vw, 330px);
+  padding: 26px 28px;
+  border-radius: 6px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='96'%3E%3Cg fill='%23C7A24B' fill-opacity='0.13'%3E%3Cpath d='M36 8c2 8 6 12 14 14-8 2-12 6-14 14-2-8-6-12-14-14 8-2 12-6 14-14z'/%3E%3Cpath d='M36 48l3.2 10.8L50 62l-10.8 3.2L36 76l-3.2-10.8L22 62l10.8-3.2z'/%3E%3Cpath d='M27 80a7.5 7.5 0 0 1 2.4-14.6 9.4 9.4 0 0 1 17.2 0A7.5 7.5 0 0 1 49 80z'/%3E%3Crect x='28' y='81' width='20' height='5.5' rx='2'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 54px 72px,
+    radial-gradient(circle at 50% 42%, #ffffff 0%, #fbf6ee 58%, #f2e8db 100%);
+  border: 1px solid #e2d3bd;
+  box-shadow: inset 0 0 0 4px #fffdf8, inset 0 0 34px #d9c9ae55;
 }
 .md-franchise-brand-promo-logo img {
   display: block;
   width: 100%;
   height: 100%;
+  max-height: 250px;
   object-fit: contain;
-}
-.md-franchise-brand-promo-food {
-  aspect-ratio: 1.14;
-  overflow: hidden;
-  border-radius: 4px;
-}
-.md-franchise-brand-promo-food img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 .md-franchise-brand-promo-caption {
   display: flex;
@@ -977,11 +970,11 @@
     padding: 10px;
   }
   .md-franchise-brand-promo-logo {
-    height: 125px;
-    padding: 5px 24px;
+    min-height: 165px;
+    padding: 14px 20px;
   }
-  .md-franchise-brand-promo-food {
-    aspect-ratio: 1.4;
+  .md-franchise-brand-promo-logo img {
+    max-height: 120px;
   }
   .md-franchise-brand-promo-caption {
     padding: 14px 6px 6px;

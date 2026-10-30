@@ -35,7 +35,7 @@ export const Route = createFileRoute("/franchise_/$brandId")({
           title: `${loaderData.name} Franchise | MealDeck`,
           description: `${loaderData.tagline} Explore a ${loaderData.name} franchise on its own or with other MealDeck brands. New entrants and existing kitchens welcome. Pricing POA.`,
           path: `/franchise/${loaderData.id}`,
-          image: new URL(loaderData.image, SITE_URL).toString(),
+          image: new URL(loaderData.logo, SITE_URL).toString(),
           keywords: `${loaderData.name} franchise, ${loaderData.category} franchise, MealDeck individual brands, food franchise UK`,
         })
       : {},
@@ -150,23 +150,9 @@ function BrandFranchisePage() {
                   <p>Your investment reflects the agreed brands, site, equipment and support.</p>
                 </div>
               </div>
-              <div
-                className={
-                  "md-franchise-brand-promo-card" +
-                  (brand.artwork === "identity" ? " is-identity" : "")
-                }
-              >
+              <div className="md-franchise-brand-promo-card">
                 <div className="md-franchise-brand-promo-logo">
                   <FranchiseBrandLogo key={brand.id} src={brand.logo} name={brand.name} />
-                </div>
-                <div className="md-franchise-brand-promo-food">
-                  <img
-                    src={brand.image}
-                    alt={`${brand.name} — ${brand.category}`}
-                    width={768}
-                    height={512}
-                    fetchPriority="high"
-                  />
                 </div>
                 <div className="md-franchise-brand-promo-caption">
                   <span>{brand.category}</span>
