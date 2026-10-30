@@ -98,3 +98,43 @@ for (const width of [390, 1280]) {
     } finally { await page.close(); }
   });
 }
+
+for (const width of [390, 1280]) {
+  test(`preview shortlist persists and stays browse-only at ${width}px`, { timeout: 45000 }, async () => {
+    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    try {
+      await page.goto(`${baseURL}/order`, { waitUntil: "networkidle" });
+      const first = page.getByRole("main").getByRole("article").first();
+      const dish = await first.getByRole("heading").textContent();
+      await first.getByRole("button", { name: `Save ${dish}`, exact: true }).click();
+      await page.getByRole("button", { name: /^Saved dishes/ }).click();
+      assert.equal(await page.getByRole("main").getByRole("article").count(), 1);
+      await page.reload({ waitUntil: "networkidle" });
+      await page.getByRole("button", { name: `Unsave ${dish}`, exact: true }).waitFor();
+      await page.getByRole("button", { name: /^Saved dishes/ }).click();
+      await page.getByRole("button", { name: `Unsave ${dish}`, exact: true }).click();
+      await page.getByText("No saved dishes match here.", { exact: false }).waitFor();
+      await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+      assert.ok(await page.getByRole("main").getByRole("article").count() > 1);
+      assert.equal(await page.getByRole("main").getByRole("button", { name: /checkout|payment|add to basket/i }).count(), 0);
+    } finally { await page.close(); }
+  });
+}
+
+test("preview shortlist explains blocked device storage", { timeout: 45000 }, async () => {
+  const page = await browser.newPage();
+  try {
+    await page.addInitScript(() => {
+      const originalSet = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(key, value) {
+        if (key === "mealdeck:favourites:v1") throw new Error("Storage blocked");
+        return originalSet.call(this, key, value);
+      };
+    });
+    await page.goto(`${baseURL}/order`, { waitUntil: "networkidle" });
+    await page.getByRole("main").getByRole("article").first().getByRole("button").click();
+    await page.getByRole("status").filter({ hasText: "for this visit only" }).waitFor();
+    await page.getByRole("button", { name: /^Saved dishes/ }).click();
+    assert.equal(await page.getByRole("main").getByRole("article").count(), 1);
+  } finally { await page.close(); }
+});

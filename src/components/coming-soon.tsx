@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BROWSE_CATEGORIES, browseMenu, refineMenuPrice, type BrowseCategory, type MenuPriceSort } from "@/lib/marketplace-discovery";
+import { decodeFavourites, FAVOURITES_STORAGE_KEY, updateFavouriteSelection } from "@/lib/marketplace-preferences";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 import { brands, locations, sampleMenu, formatPence, type LocationKey } from "@/lib/mealdeck";
@@ -17,10 +18,28 @@ export function OrderingPreview() {
   const [category, setCategory] = useState<BrowseCategory>("all");
   const [budget, setBudget] = useState("all");
   const [priceSort, setPriceSort] = useState<MenuPriceSort>("menu");
+  const [favouriteIds, setFavouriteIds] = useState<string[]>([]);
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [preferencesReady, setPreferencesReady] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  useEffect(() => {
+    try { setFavouriteIds(decodeFavourites(window.localStorage.getItem(FAVOURITES_STORAGE_KEY))); }
+    catch { setSaveMessage("Device storage is unavailable. Favourites will last for this visit only."); }
+    setPreferencesReady(true);
+  }, []);
+  function toggleSavedDish(id: string, name: string) {
+    const wasSaved = favouriteIds.includes(id);
+    const result = updateFavouriteSelection(favouriteIds, id, (key, value) => window.localStorage.setItem(key, value));
+    setFavouriteIds(result.ids);
+    setSaveMessage(result.status === "limit" ? "You can save up to 40 dishes. Remove a favourite before adding another."
+      : result.status === "session" ? `${name} ${wasSaved ? "removed" : "saved"} for this visit only. Device storage is unavailable.`
+      : `${name} ${wasSaved ? "removed from" : "added to"} your saved dishes on this device.`);
+  }
   const menu = sampleMenu(location);
-  const items = refineMenuPrice(browseMenu(menu, null, category, search, brands), budget === "all" ? null : Number(budget), priceSort);
+  const savedHere = menu.filter(item => favouriteIds.includes(item.id)).length;
+  const items = refineMenuPrice(browseMenu(menu, null, category, search, brands), budget === "all" ? null : Number(budget), priceSort).filter(item => !savedOnly || favouriteIds.includes(item.id));
   const categories = BROWSE_CATEGORIES.filter(entry => entry.id === "all" || browseMenu(menu, null, entry.id, "", brands).length > 0);
-  function resetFilters() { setSearch(""); setCategory("all"); setBudget("all"); setPriceSort("menu"); }
+  function resetFilters() { setSearch(""); setCategory("all"); setBudget("all"); setPriceSort("menu"); setSavedOnly(false); }
   return <div className="md-marketing-shell"><SiteHeader />
     <main className="mx-auto max-w-6xl px-5 py-12">
       <p className="font-bold uppercase tracking-widest text-accent">MealDeck · Coming soon</p>
@@ -32,6 +51,14 @@ export function OrderingPreview() {
         <label className="grow"> <span className="sr-only">Search preview menu</span>
           <input type="search" className="w-full rounded-xl border border-border bg-card px-4 py-3" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search dishes or brands" />
         </label>
+      </div>
+      <div className="mb-5 space-y-2">
+        <button type="button" disabled={!preferencesReady} aria-pressed={savedOnly} onClick={() => setSavedOnly(!savedOnly)}
+          className="min-h-11 rounded-full border border-primary/40 px-4 py-2 font-semibold disabled:opacity-50">
+          Saved dishes ({savedHere})
+        </button>
+        <p className="text-xs text-muted-foreground">Save up to 40 favourites on this device. This is a shortlist, not a basket or reservation. The count shows dishes in this location’s preview.</p>
+        <p role="status" className="text-sm text-muted-foreground">{saveMessage}</p>
       </div>
       <div role="group" aria-label="Food categories" className="mb-5 flex flex-wrap gap-2">
         {categories.map(entry => <button key={entry.id} type="button" aria-pressed={category === entry.id}
@@ -62,7 +89,7 @@ export function OrderingPreview() {
         <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
           {items.length} {items.length === 1 ? "dish" : "dishes"} · {locations.find(place => place.key === location)?.town} preview
         </p>
-        {search || category !== "all" || budget !== "all" || priceSort !== "menu" ? <button type="button" onClick={resetFilters}
+        {search || category !== "all" || budget !== "all" || priceSort !== "menu" || savedOnly ? <button type="button" onClick={resetFilters}
           className="min-h-11 rounded-lg px-3 font-semibold text-primary underline underline-offset-4">Clear filters</button> : null}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -71,10 +98,18 @@ export function OrderingPreview() {
           <h2 className="mt-2 text-xl font-bold">{item.name}</h2>
           {item.description && <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>}
           <p className="mt-4 font-bold">{item.hasModifiers ? "From " : ""}{formatPence(item.pricePence)} <span className="text-xs font-normal text-muted-foreground">Preview price</span></p>
-          <p className="mt-3 text-sm text-accent">Coming soon</p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-accent">Coming soon</p>
+            <button type="button" disabled={!preferencesReady} aria-pressed={favouriteIds.includes(item.id)}
+              aria-label={`${favouriteIds.includes(item.id) ? "Unsave" : "Save"} ${item.name}`}
+              onClick={() => toggleSavedDish(item.id, item.name)}
+              className="min-h-11 rounded-lg border border-border px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50">
+              {favouriteIds.includes(item.id) ? "♥ Saved" : "♡ Save dish"}
+            </button>
+          </div>
         </article>)}
       </div>
-      {!items.length && <p role="status" className="rounded-2xl border border-border bg-card p-6">No dishes match. Clear your filters or try another search or location.</p>}
+      {!items.length && <p role="status" className="rounded-2xl border border-border bg-card p-6">{savedOnly ? "No saved dishes match here. Switch off Saved dishes to explore, or clear your filters." : "No dishes match. Clear your filters or try another search or location."}</p>}
       <div className="mt-10 flex flex-wrap gap-4"><Link to="/" className="md-btn md-btn-yellow">Explore our brands</Link><Link to="/play" className="md-btn">Try the free games</Link></div>
     </main><SiteFooter /></div>;
 }

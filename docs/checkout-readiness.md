@@ -63,3 +63,9 @@ and exits before opening a page. A passing build is not a visual/browser sign-of
   implementation phases; no agent or MCP endpoint is enabled by this change.
 
 Do not remove the launch flag until these dependencies have been verified.
+
+## Preview shortlist
+
+The launch preview now shares the existing device-local favourites format with the ordering page. Visitors can save or remove a dish and filter the current location to saved dishes; budget, category and search filters still apply. Clear filters preserves saved IDs. The shortlist stores at most 40 item IDs, not prices, personal information, basket contents or reservations. Unknown IDs remain outside the displayed catalogue. If persistence fails, the current visit still keeps its selection and explains the limitation. Controls wait for preference hydration before accepting changes.
+
+Unit regressions cover storage success, storage failure and limit/removal behaviour. Browser scenarios cover mobile/desktop save, reload, remove, filter reset, blocked storage and continued launch protection. Browser execution remains outstanding due to the environment's socket restriction.

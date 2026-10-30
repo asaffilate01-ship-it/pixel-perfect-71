@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   BASKET_STORAGE_KEY, FAVOURITES_STORAGE_KEY,
-  decodeFavourites, normaliseFavouriteIds, toggleFavourite,
+  decodeFavourites, normaliseFavouriteIds, toggleFavourite, updateFavouriteSelection,
   decodeSavedBasket, encodeSavedBasket, restoreSavedBasket,
 } from "../src/lib/marketplace-preferences";
 import type { CartLine, MenuItem } from "../src/lib/mealdeck";
@@ -104,3 +104,30 @@ describe("Save basket for later (not an order)",()=>{
   });
 });
 
+
+
+describe("preview shortlist persistence", () => {
+  test("writes only bounded item IDs using the existing favourites format", () => {
+    let stored = "";
+    const result = updateFavouriteSelection([], "burger", (key, value) => {
+      expect(key).toBe(FAVOURITES_STORAGE_KEY); stored = value;
+    });
+    expect(result.status).toBe("saved");
+    expect(decodeFavourites(stored)).toEqual(["burger"]);
+  });
+  test("failed storage still adds and removes session favourites", () => {
+    const blocked = () => { throw new Error("Quota exceeded"); };
+    const added = updateFavouriteSelection([], "burger", blocked);
+    expect(added).toEqual({ ids: ["burger"], status: "session" });
+    expect(updateFavouriteSelection(added.ids, "burger", blocked)).toEqual({ ids: [], status: "session" });
+  });
+  test("full shortlist reports the limit without writing, but still allows removal", () => {
+    const ids = Array.from({length:40}, (_, i) => `dish-${i}`);
+    let writes = 0;
+    const write = () => { writes++; };
+    expect(updateFavouriteSelection(ids, "extra", write)).toEqual({ids, status:"limit"});
+    expect(writes).toBe(0);
+    expect(updateFavouriteSelection(ids, "dish-0", write).ids.length).toBe(39);
+    expect(writes).toBe(1);
+  });
+});

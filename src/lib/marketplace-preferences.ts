@@ -30,6 +30,20 @@ export function toggleFavourite(ids: readonly string[], id: string): string[] {
     : normaliseFavouriteIds([...current, id]);
 }
 
+/** Keep a usable in-memory shortlist when device storage is blocked or full. */
+export function updateFavouriteSelection(
+  ids: readonly string[], id: string, write: (key: string, value: string) => void,
+): { ids: string[]; status: "saved" | "session" | "limit" } {
+  const next = toggleFavourite(ids, id);
+  if (!ids.includes(id) && !next.includes(id)) return { ids: next, status: "limit" };
+  try {
+    write(FAVOURITES_STORAGE_KEY, JSON.stringify(next));
+    return { ids: next, status: "saved" };
+  } catch {
+    return { ids: next, status: "session" };
+  }
+}
+
 export type SavedBasketLine = {
   itemId: string;
   quantity: number;
