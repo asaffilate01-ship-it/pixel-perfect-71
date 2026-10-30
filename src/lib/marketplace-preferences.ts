@@ -1,5 +1,5 @@
 import {
-  addItem, modifierGroupsFor, setQuantity,
+  modifierGroupsFor,
   type CartLine, type LocationKey, type MenuItem, type SelectedModifier,
 } from "./mealdeck";
 
@@ -112,9 +112,13 @@ export function restoreSavedBasket(
     if (!valid) {unavailable++;continue;}
     const lineId = `${item.id}:${selected.map(m => `${m.groupId}:${m.id}`).sort().join("|")}`;
     const existing = result.find(line => line.lineId === lineId)?.quantity ?? 0;
-    result = addItem(result, item, selected);
-    result = setQuantity(result, lineId, Math.min(MAX_QUANTITY, existing + savedLine.quantity));
-    added += savedLine.quantity;
+    const increase = Math.max(0, Math.min(savedLine.quantity, MAX_QUANTITY - existing));
+    const refreshedLine: CartLine = { ...item, lineId, quantity: existing + increase, selectedModifiers: selected };
+    result = existing > 0
+      ? result.map(line => line.lineId === lineId ? refreshedLine : line)
+      : [...result, refreshedLine];
+    added += increase;
   }
   return {cart:result,added,unavailable,mismatch:false};
 }
+

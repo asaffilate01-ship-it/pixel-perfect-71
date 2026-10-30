@@ -86,4 +86,21 @@ describe("Save basket for later (not an order)",()=>{
     expect(decodeSavedBasket(JSON.stringify({version:1,location:"luton",lines:[{itemId:"burger",quantity:1e5,selected:[]}]}))).toBeNull();
     expect(decodeSavedBasket(JSON.stringify({version:2,location:"luton",lines:[]}))).toBeNull();
   });
+  test("reports only quantities actually added at the saved-basket limit", () => {
+    const saved=decodeSavedBasket(encodeSavedBasket("luton",[cart(burger,10)]))!;
+    const result=restoreSavedBasket(saved,"luton",[burger],[cart(burger,24)]);
+    expect(result.cart[0]?.quantity).toBe(25);
+    expect(result.added).toBe(1);
+    const full=restoreSavedBasket(saved,"luton",[burger],result.cart);
+    expect(full.cart[0]?.quantity).toBe(25);
+    expect(full.added).toBe(0);
+  });
+  test("restoring into an existing line refreshes price without reducing its quantity", () => {
+    const saved=decodeSavedBasket(encodeSavedBasket("luton",[cart(burger,1)]))!;
+    const result=restoreSavedBasket(saved,"luton",[{...burger,pricePence:1299}],[cart(burger,30)]);
+    expect(result.cart[0]?.quantity).toBe(30);
+    expect(result.cart[0]?.pricePence).toBe(1299);
+    expect(result.added).toBe(0);
+  });
 });
+

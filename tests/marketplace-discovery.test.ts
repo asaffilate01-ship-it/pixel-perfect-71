@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   BROWSE_CATEGORIES, browseBrands, browseMenu,
-  matchesBrowseCategory, basketSuggestions,
+  matchesBrowseCategory, basketSuggestions, refineMenuPrice,
 } from "../src/lib/marketplace-discovery";
 import type { Brand, CartLine, MenuItem } from "../src/lib/mealdeck";
 
@@ -56,3 +56,51 @@ describe("category → brand → dish navigation",()=>{
     expect(basketSuggestions(items,[],brands)).toEqual([]);
   });
 });
+
+describe("accurate dish labels", () => {
+  const dish = (name: string, category = "Menu"): MenuItem => ({ id: name, name, category, brandId: "test", pricePence: 500 });
+  test.each(["Chicken salad", "Tuna salad", "Plantain chicken", "Non-vegetarian curry", "Non vegetarian curry"])("does not infer vegetarian status for %s", name => {
+    expect(matchesBrowseCategory(dish(name), "vegetarian")).toBe(false);
+  });
+  test.each(["Vegetarian curry", "Vegan burger", "Plant-based bowl", "Veggie wrap"])("accepts explicit dish label: %s", name => {
+    expect(matchesBrowseCategory(dish(name), "vegetarian")).toBe(true);
+  });
+  test("brand-level vegetarian marketing does not label an unspecified dish", () => {
+    expect(matchesBrowseCategory(dish("House special"), "vegetarian", { id: "test", name: "Sabzora", category: "Vegetarian" } as Brand)).toBe(false);
+  });
+  test.each(["Shepherd's Pie", "Steak pie", "Sweet chilli chicken"])("does not classify %s as dessert", name => {
+    expect(matchesBrowseCategory(dish(name, "Hot meals"), "desserts")).toBe(false);
+  });
+  test.each(["Apple pie", "Milk cake", "Chocolate brownie", "Ice cream"])("keeps %s in desserts", name => {
+    expect(matchesBrowseCategory(dish(name), "desserts")).toBe(true);
+  });
+});
+
+describe("budget and price discovery", () => {
+  test("budget is inclusive and uses only supplied catalogue items", () => {
+    const result = refineMenuPrice(items, 425);
+    expect(result.map(item => item.id)).toEqual(["latte", "cooler"]);
+    expect(result.every(item => items.includes(item))).toBe(true);
+  });
+  test("supports both price orders without mutating the catalogue", () => {
+    const original = items.map(item => item.id);
+    expect(refineMenuPrice(items, null, "price-low").map(item => item.pricePence)).toEqual([395, 425, 450, 899, 999]);
+    expect(refineMenuPrice(items, null, "price-high").map(item => item.pricePence)).toEqual([999, 899, 450, 425, 395]);
+    expect(items.map(item => item.id)).toEqual(original);
+    expect(refineMenuPrice(items, null).map(item => item.id)).toEqual(original);
+  });
+  test.each([-1, NaN, Infinity, 4.5])("invalid budget %s cannot silently disable the limit", budget => {
+    expect(refineMenuPrice(items, budget)).toEqual([]);
+  });
+  test("does not present invalid amounts as affordable dishes", () => {
+    const invalid = [-1, NaN, Infinity, 42.5].map(pricePence => ({ ...items[0]!, pricePence }));
+    expect(refineMenuPrice(invalid, null)).toEqual([]);
+  });
+  test("zero budget is a real filter, not unlimited", () => {
+    expect(refineMenuPrice(items, 0)).toEqual([]);
+  });
+  test("budget composes with category and text search", () => {
+    expect(refineMenuPrice(browseMenu(items, null, "drinks", "iced", brands), 400).map(item => item.id)).toEqual(["latte"]);
+  });
+});
+

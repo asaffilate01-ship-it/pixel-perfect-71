@@ -46,6 +46,17 @@ for (const width of [390, 1280]) {
       await main.getByRole("status").filter({ hasText: "No dishes match" }).waitFor();
       await page.getByRole("button", { name: "Clear filters", exact: true }).click();
       assert.equal(await search.inputValue(), "");
+      await page.getByRole("combobox", { name: "Maximum dish price" }).selectOption("500");
+      await page.waitForFunction(() => [...document.querySelectorAll("main article")].every(card => Number(card.getAttribute("data-price-pence")) <= 500));
+      assert.ok(await main.locator("article").count() > 0, "budget filter retains affordable dishes");
+      await page.getByRole("combobox", { name: "Sort dishes" }).selectOption("price-high");
+      await page.waitForFunction(() => {
+        const prices = [...document.querySelectorAll("main article")].map(card => Number(card.getAttribute("data-price-pence")));
+        return prices.every((price, index) => index === 0 || prices[index - 1] >= price);
+      });
+      await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+      assert.equal(await page.getByRole("combobox", { name: "Maximum dish price" }).inputValue(), "all");
+      assert.equal(await page.getByRole("combobox", { name: "Sort dishes" }).inputValue(), "menu");
       await page.getByRole("group", { name: "Food categories" }).getByRole("button", { name: /Drinks/ }).click();
       assert.ok(await main.locator("article").count() > 0, "category has dishes");
       await page.waitForFunction(count => document.querySelectorAll("main article").length < count, allDishes);

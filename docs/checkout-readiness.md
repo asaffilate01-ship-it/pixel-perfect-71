@@ -23,15 +23,25 @@ production `COMING_SOON` remains unchanged. This is not a live payment test.
 
 ## Preview discovery and browser coverage
 
-The launch preview now uses the shared dish-first food taxonomy, shows the number
+The launch preview uses the shared dish-first food taxonomy, shows the number
 of matching dishes, resets category selection when changing kitchens, and provides
-an explicit clear-filters action. It remains browse-only.
+an explicit clear-filters action. It now supports £5/£10/£15 maximum base-price
+filters and ascending/descending price sorting. Clearing filters resets search,
+category, budget and sort. Preview prices are labelled as base prices; options and
+delivery are not included. It remains browse-only.
+
+Vegetarian discovery requires an explicit item name/category label; salad, plantain
+or a brand's cuisine no longer imply that status. Savoury pies and sweet chilli
+chicken no longer match the generic dessert rule. These are browsing categories,
+not allergen guarantees. Saved-basket restoration refreshes existing line prices
+and reports only the quantity actually added, without reducing a larger existing
+quantity when the saved-basket cap is reached.
 
 `npm run test:browser` starts a local Vite server and runs Playwright checks at
 390px and 1280px. CI installs Chromium first. `BROWSER_TEST_BASE_URL` can target an
 already-running staging server; these checks assume the launch preview is enabled.
 
-Local validation: production build, TypeScript, targeted ESLint, 195 existing Bun
+Local validation: production build, TypeScript, targeted ESLint, 223 Bun
 tests and 32 checkout Node tests pass. The browser test file passes syntax checking,
 but browser execution is unverified: Chromium cannot create sockets in this runtime
 and exits before opening a page. A passing build is not a visual/browser sign-off.

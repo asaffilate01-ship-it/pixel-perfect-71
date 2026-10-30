@@ -36,14 +36,19 @@ function categoryFor(item: MenuItem, brand?: Brand): BrowseCategory[] {
     if (matches("pasta", "rigatoni", "mac n cheese")) result.push("pasta");
     if (matches("breakfast", "brunch", "pancake", "omelette")) result.push("breakfast");
     if (matches("grill", "souvano", "souvlaki", "shawarma")) result.push("grill");
-    if (matches("vegetarian", "veggie", "salad", "plant", "sabzora")) result.push("vegetarian");
     if (matches("drink", "juice", "smoothie", "coffee", "chai", "iced latte", "mocktail", "cooler")) result.push("drinks");
-    if (matches("dessert", "cake", "pie", "sweet", "brownie", "cookie", "ice cream")) result.push("desserts");
+    if (/\b(?:desserts?|cakes?|brownies?|cookies?|ice cream|puddings?)\b/.test(text)
+      || /\b(?:apple|cherry|pecan|lemon|banoffee|pumpkin) pie\b/.test(text)) result.push("desserts");
     return result;
   };
-  const own = fromText(normalize(`${item.name} ${item.category}`));
+  const itemText = normalize(`${item.name} ${item.category}`);
+  const own = fromText(itemText);
+  // Dietary discovery requires an explicit item label, not a cuisine, brand,
+  // "salad" or an ingredient guess. It is not an allergen/suitability guarantee.
+  if (/\b(?:vegetarian|veggie|vegan|plant[- ]based)\b/.test(itemText)
+    && !/\bnon[- ]?(?:vegetarian|vegan)\b/.test(itemText)) own.push("vegetarian");
   if (own.length) return [...new Set(own)];
-  // Fall back to a brand's cuisine only for ambiguous item metadata.
+  // Fall back to cuisine only; a brand must never assign dietary labels to a dish.
   return [...new Set(fromText(normalize(`${brand?.category ?? ""} ${brand?.name ?? ""}`)))];
 }
 export function matchesBrowseCategory(item:MenuItem,category:BrowseCategory,brand?:Brand):boolean {
@@ -79,4 +84,19 @@ export function basketSuggestions(items:readonly MenuItem[],lines:readonly CartL
     return {item,score,reason:drink&&!drinksInBasket?"Add a drink":dessert&&!dessertInBasket?"Finish with something sweet":newBrand?"Try another MealDeck brand":"More from this kitchen"};
   }).sort((a,b)=>b.score-a.score || a.item.pricePence-b.item.pricePence || a.item.id.localeCompare(b.item.id))
     .slice(0,Math.max(0,limit)).map(({item,reason})=>({item,reason}));
+}
+
+
+export type MenuPriceSort = "menu" | "price-low" | "price-high";
+
+/** Base-price discovery only: modifiers and delivery are not a quoted total. */
+export function refineMenuPrice(
+  items: readonly MenuItem[], maxPence: number | null, sort: MenuPriceSort = "menu",
+): MenuItem[] {
+  if (maxPence !== null && (!Number.isSafeInteger(maxPence) || maxPence < 0)) return [];
+  const matches = items.filter(item => Number.isSafeInteger(item.pricePence)
+    && item.pricePence >= 0 && (maxPence === null || item.pricePence <= maxPence));
+  if (sort === "menu") return matches;
+  return matches.sort((a, b) => (sort === "price-high" ? b.pricePence - a.pricePence : a.pricePence - b.pricePence)
+    || a.id.localeCompare(b.id));
 }

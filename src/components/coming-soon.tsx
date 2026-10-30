@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { BROWSE_CATEGORIES, browseMenu, type BrowseCategory } from "@/lib/marketplace-discovery";
+import { BROWSE_CATEGORIES, browseMenu, refineMenuPrice, type BrowseCategory, type MenuPriceSort } from "@/lib/marketplace-discovery";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 import { brands, locations, sampleMenu, formatPence, type LocationKey } from "@/lib/mealdeck";
@@ -15,10 +15,12 @@ export function OrderingPreview() {
   const [location, setLocation] = useState<LocationKey>("luton");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<BrowseCategory>("all");
+  const [budget, setBudget] = useState("all");
+  const [priceSort, setPriceSort] = useState<MenuPriceSort>("menu");
   const menu = sampleMenu(location);
-  const items = browseMenu(menu, null, category, search, brands);
+  const items = refineMenuPrice(browseMenu(menu, null, category, search, brands), budget === "all" ? null : Number(budget), priceSort);
   const categories = BROWSE_CATEGORIES.filter(entry => entry.id === "all" || browseMenu(menu, null, entry.id, "", brands).length > 0);
-  function resetFilters() { setSearch(""); setCategory("all"); }
+  function resetFilters() { setSearch(""); setCategory("all"); setBudget("all"); setPriceSort("menu"); }
   return <div className="md-marketing-shell"><SiteHeader />
     <main className="mx-auto max-w-6xl px-5 py-12">
       <p className="font-bold uppercase tracking-widest text-accent">MealDeck · Coming soon</p>
@@ -38,19 +40,37 @@ export function OrderingPreview() {
           <span aria-hidden="true">{entry.emoji} </span>{entry.label}
         </button>)}
       </div>
+      <div className="mb-5 grid gap-3 sm:grid-cols-2">
+        <label className="space-y-1 text-sm font-semibold">Maximum dish price
+          <select value={budget} onChange={event => setBudget(event.target.value)}
+            className="block min-h-11 w-full rounded-xl border border-border bg-card px-3 text-foreground">
+            <option value="all">Any price</option><option value="500">Up to £5</option>
+            <option value="1000">Up to £10</option><option value="1500">Up to £15</option>
+          </select>
+        </label>
+        <label className="space-y-1 text-sm font-semibold">Sort dishes
+          <select value={priceSort} onChange={event => setPriceSort(event.target.value as MenuPriceSort)}
+            className="block min-h-11 w-full rounded-xl border border-border bg-card px-3 text-foreground">
+            <option value="menu">Menu order</option><option value="price-low">Price: low to high</option>
+            <option value="price-high">Price: high to low</option>
+          </select>
+        </label>
+      </div>
+      <p className="mb-4 text-xs text-muted-foreground">Prices shown are preview base prices. Options and delivery may cost extra.</p>
+      {category === "vegetarian" ? <p className="mb-4 text-sm text-muted-foreground">Dishes explicitly labelled vegetarian, vegan or plant-based in the menu. Check ingredients and allergens with the kitchen before ordering.</p> : null}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
           {items.length} {items.length === 1 ? "dish" : "dishes"} · {locations.find(place => place.key === location)?.town} preview
         </p>
-        {search || category !== "all" ? <button type="button" onClick={resetFilters}
+        {search || category !== "all" || budget !== "all" || priceSort !== "menu" ? <button type="button" onClick={resetFilters}
           className="min-h-11 rounded-lg px-3 font-semibold text-primary underline underline-offset-4">Clear filters</button> : null}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map(item => <article key={item.id} className="rounded-2xl border border-border bg-card p-5">
+        {items.map(item => <article key={item.id} data-price-pence={item.pricePence} className="rounded-2xl border border-border bg-card p-5">
           <p className="text-sm text-accent">{brands.find(b => b.id === item.brandId)?.name}</p>
           <h2 className="mt-2 text-xl font-bold">{item.name}</h2>
           {item.description && <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>}
-          <p className="mt-4 font-bold">{formatPence(item.pricePence)} <span className="text-xs font-normal text-muted-foreground">Preview price</span></p>
+          <p className="mt-4 font-bold">{item.hasModifiers ? "From " : ""}{formatPence(item.pricePence)} <span className="text-xs font-normal text-muted-foreground">Preview price</span></p>
           <p className="mt-3 text-sm text-accent">Coming soon</p>
         </article>)}
       </div>
