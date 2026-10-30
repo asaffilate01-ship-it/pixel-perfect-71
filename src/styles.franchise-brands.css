@@ -925,8 +925,8 @@
     gap: 22px;
   }
   .md-franchise-brand-card-logo-stage {
-    aspect-ratio: 1.9;
-    padding: 22px 24px;
+    height: 186px;
+    padding: 18px 22px;
   }
   .md-franchise-brand-card-body {
     padding: 21px;
