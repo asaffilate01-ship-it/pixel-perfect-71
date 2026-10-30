@@ -19,3 +19,5 @@
 - [x] Play page: remove Fanzeno / fixture-based scheduling and "predictions for prizes" wording
 - [x] Play: make "Play as" brand skins meaningful (each brand deals its own dishes) + further table polish
 - [x] Ordering hidden for now: /order shows a "coming soon" screen listing Luton, St Albans and Bedford; marketplace archived at src/_archive/current-ui/routes/order.tsx for restore when live
+- [x] Franchise brands grid: cards lead with the brand logo on an ivory panel; food photographs removed from the listing
+- [ ] Socials @mealdeckoriginal: TikTok connect declined in chat; Instagram has no connector. Links + live feed + posting still to agree.
