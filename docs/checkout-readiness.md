@@ -21,6 +21,21 @@ The server suite invokes actual handlers with mocked transport and real input
 validation. Its launch flag is overridden only inside the isolated test process;
 production `COMING_SOON` remains unchanged. This is not a live payment test.
 
+## Preview discovery and browser coverage
+
+The launch preview now uses the shared dish-first food taxonomy, shows the number
+of matching dishes, resets category selection when changing kitchens, and provides
+an explicit clear-filters action. It remains browse-only.
+
+`npm run test:browser` starts a local Vite server and runs Playwright checks at
+390px and 1280px. CI installs Chromium first. `BROWSER_TEST_BASE_URL` can target an
+already-running staging server; these checks assume the launch preview is enabled.
+
+Local validation: production build, TypeScript, targeted ESLint, 195 existing Bun
+tests and 32 checkout Node tests pass. The browser test file passes syntax checking,
+but browser execution is unverified: Chromium cannot create sockets in this runtime
+and exits before opening a page. A passing build is not a visual/browser sign-off.
+
 ## Remaining launch dependencies
 
 - Confirm the deployed Dishbee RPCs, tenant IDs and kitchen IDs match source.

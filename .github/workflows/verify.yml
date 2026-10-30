@@ -26,6 +26,10 @@ jobs:
       - name: Marketplace discovery, saved basket and category regressions
         run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
       - run: bun run build
+      - name: Install browser for preview regressions
+        run: bunx playwright install --with-deps chromium
+      - name: Mobile and desktop preview regressions
+        run: npm run test:browser
       - name: TypeScript validation
         run: bunx tsc --noEmit
       - name: Franchise implementation lint
@@ -50,7 +54,7 @@ jobs:
         run: >
           bunx eslint src/routes/order.tsx
           src/lib/marketplace-discovery.ts src/lib/marketplace-preferences.ts
-          src/lib/checkout-readiness.ts src/lib/dishbee.functions.ts
+          src/lib/checkout-readiness.ts src/lib/dishbee.functions.ts src/components/coming-soon.tsx
           src/lib/marketplace-photos.ts src/components/order/premium-discovery.tsx
           tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
           --rule 'prettier/prettier: off'

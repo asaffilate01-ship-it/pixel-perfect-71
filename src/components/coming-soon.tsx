@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { BROWSE_CATEGORIES, browseMenu, type BrowseCategory } from "@/lib/marketplace-discovery";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 import { brands, locations, sampleMenu, formatPence, type LocationKey } from "@/lib/mealdeck";
@@ -13,8 +14,11 @@ export function ComingSoonBanner() {
 export function OrderingPreview() {
   const [location, setLocation] = useState<LocationKey>("luton");
   const [search, setSearch] = useState("");
-  const items = sampleMenu(location).filter(item =>
-    (item.name + " " + (brands.find(b => b.id === item.brandId)?.name ?? "")).toLowerCase().includes(search.toLowerCase()));
+  const [category, setCategory] = useState<BrowseCategory>("all");
+  const menu = sampleMenu(location);
+  const items = browseMenu(menu, null, category, search, brands);
+  const categories = BROWSE_CATEGORIES.filter(entry => entry.id === "all" || browseMenu(menu, null, entry.id, "", brands).length > 0);
+  function resetFilters() { setSearch(""); setCategory("all"); }
   return <div className="md-marketing-shell"><SiteHeader />
     <main className="mx-auto max-w-6xl px-5 py-12">
       <p className="font-bold uppercase tracking-widest text-accent">MealDeck · Coming soon</p>
@@ -22,10 +26,24 @@ export function OrderingPreview() {
       <p className="mt-4 text-muted-foreground">Explore our preview menu. Registration, baskets, checkout and payments are closed until launch. Menu items and prices may change.</p>
       <div className="my-8 flex flex-wrap gap-3">
         {locations.map(place => <button key={place.key} type="button" aria-pressed={location === place.key}
-          className="rounded-xl border border-primary/40 px-5 py-3" onClick={() => setLocation(place.key)}>{place.town}</button>)}
+          className="rounded-xl border border-primary/40 px-5 py-3" onClick={() => { setLocation(place.key); setCategory("all"); }}>{place.town}</button>)}
         <label className="grow"> <span className="sr-only">Search preview menu</span>
           <input type="search" className="w-full rounded-xl border border-border bg-card px-4 py-3" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search dishes or brands" />
         </label>
+      </div>
+      <div role="group" aria-label="Food categories" className="mb-5 flex flex-wrap gap-2">
+        {categories.map(entry => <button key={entry.id} type="button" aria-pressed={category === entry.id}
+          onClick={() => setCategory(entry.id)}
+          className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${category === entry.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground"}`}>
+          <span aria-hidden="true">{entry.emoji} </span>{entry.label}
+        </button>)}
+      </div>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+          {items.length} {items.length === 1 ? "dish" : "dishes"} · {locations.find(place => place.key === location)?.town} preview
+        </p>
+        {search || category !== "all" ? <button type="button" onClick={resetFilters}
+          className="min-h-11 rounded-lg px-3 font-semibold text-primary underline underline-offset-4">Clear filters</button> : null}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map(item => <article key={item.id} className="rounded-2xl border border-border bg-card p-5">
@@ -36,7 +54,7 @@ export function OrderingPreview() {
           <p className="mt-3 text-sm text-accent">Coming soon</p>
         </article>)}
       </div>
-      {!items.length && <p role="status">No dishes match. Try another search or location.</p>}
+      {!items.length && <p role="status" className="rounded-2xl border border-border bg-card p-6">No dishes match. Clear your filters or try another search or location.</p>}
       <div className="mt-10 flex flex-wrap gap-4"><Link to="/" className="md-btn md-btn-yellow">Explore our brands</Link><Link to="/play" className="md-btn">Try the free games</Link></div>
     </main><SiteFooter /></div>;
 }
@@ -49,3 +67,4 @@ export function ComingSoonPage({ title = "Coming soon" }: { title?: string }) {
     <div className="mt-8 flex flex-wrap justify-center gap-4"><Link to="/order" className="md-btn md-btn-yellow">Preview our menus</Link><Link to="/play" className="md-btn">Play free games</Link></div>
   </main><SiteFooter /></div>;
 }
+
