@@ -35,7 +35,7 @@ const FULFILMENT_NAMES: Record<WhatsAppFulfilment, string> = {
 function safeLabel(value: unknown, limit: number): string {
   if (typeof value !== "string") return "";
   return value
-    .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
+    .replace(/\p{Cc}/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);
