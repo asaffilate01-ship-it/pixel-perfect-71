@@ -51,6 +51,8 @@ export function normaliseBusinessWhatsAppNumber(value: unknown): string | null {
 export function createWhatsAppBasketDraft(input: WhatsAppBasketDraft): string | null {
   if (!input || !Object.hasOwn(LOCATION_NAMES, input.location)) return null;
   if (!Object.hasOwn(FULFILMENT_NAMES, input.fulfilment)) return null;
+  // MealDeck St Albans is delivery only; Cafe 1 direct EPOS modes are separate.
+  if (input.location === "stalbans" && input.fulfilment !== "delivery") return null;
   if (!Array.isArray(input.lines) || !input.lines.length || input.lines.length > 15) return null;
 
   const entries: string[] = [];
