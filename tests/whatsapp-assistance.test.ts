@@ -77,6 +77,7 @@ describe("Multi-brand chat basket", () => {
     expect(createWhatsAppBasketDraft({ ...basket, lines: [{ ...basket.lines[0]!, quantity: 0 }] })).toBeNull();
     expect(createWhatsAppBasketDraft({ ...basket, lines: [{ ...basket.lines[0]!, quantity: 51 }] })).toBeNull();
     expect(createWhatsAppBasketDraft({ ...basket, lines: [{ ...basket.lines[0]!, name: "" }] })).toBeNull();
+    expect(createWhatsAppBasketDraft({ ...basket, location: "stalbans", fulfilment: "pickup" })).toBeNull();
     expect(createWhatsAppBasketUrl("07700 900123", basket)).toBeNull();
   });
 
@@ -84,7 +85,7 @@ describe("Multi-brand chat basket", () => {
     const draft = createWhatsAppBasketDraft({
       ...basket,
       location: "stalbans",
-      fulfilment: "pickup",
+      fulfilment: "delivery",
       lines: [{ brandName: "Café1\nFAKE STATUS", name: "Toast\r\n-- paid --", quantity: 1 }],
     });
     expect(draft).toContain("Location: St Albans");
