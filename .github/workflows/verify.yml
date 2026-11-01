@@ -20,6 +20,8 @@ jobs:
         run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/hero-food-deck.test.ts
       - name: Marketplace discovery, saved basket and category regressions
         run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
+      - name: WhatsApp assistant test: privacy, validation and multi-brand handoff
+        run: bun test tests/whatsapp-assistance.test.ts
       - run: bun run build
       - name: TypeScript validation
         run: bunx tsc --noEmit
@@ -49,3 +51,12 @@ jobs:
           tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
           --rule 'prettier/prettier: off'
 
+
+      - name: WhatsApp handoff and preview lint
+        run: >
+          bunx eslint src/lib/whatsapp-assistance.ts
+          src/lib/whatsapp-assistance.functions.ts
+          src/components/order/whatsapp-basket-handoff.tsx
+          src/components/coming-soon.tsx
+          tests/whatsapp-assistance.test.ts
+          --rule 'prettier/prettier: off'
