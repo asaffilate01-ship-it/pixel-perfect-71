@@ -64,7 +64,8 @@ export function createWhatsAppBasketDraft(input: WhatsAppBasketDraft): string | 
     if (line.selectedModifiers && (!Array.isArray(line.selectedModifiers) || line.selectedModifiers.length > 8)) {
       return null;
     }
-    const options = (line.selectedModifiers ?? []).map((modifier) =>
+    const modifiers: readonly { name: string }[] = line.selectedModifiers ?? [];
+    const options = modifiers.map((modifier) =>
       safeLabel(modifier?.name, 55),
     ).filter(Boolean);
     const suffix = options.length ? " (" + options.join(", ") + ")" : "";
