@@ -125,13 +125,15 @@ function MealDeckOperations(){
     }catch(reason){
       setAuthError(reason instanceof Error?reason.message:"Staff login is not configured.");
       setCheckingAuth(false);
+      return undefined; // Effect cleanup is optional when no client exists.
     }
   },[fetchAccess]);
 
   useEffect(()=>{
     let current=true;
     if(!tenant||!user){
-      setLocations([]);setLocation("");return;
+      setLocations([]);setLocation("");
+      return undefined; // No active tenant subscription to clean up.
     }
     setLocations([]);setLocation("");setData(blank());
     void opsRpc<unknown>("mealdeck_ops_locations",{p_tenant:tenant})
