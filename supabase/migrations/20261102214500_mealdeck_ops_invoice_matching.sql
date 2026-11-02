@@ -490,6 +490,14 @@ begin
     p_tenant,p_location,v_inv.supplier_id,p_invoice,
     trim(p_number),p_issued,trim(p_reason),p_net,p_vat,(select auth.uid())
   ) returning id into v_id;
+  insert into public.mealdeck_ops_audit_log(
+    tenant_id,location_id,actor_id,action,entity_type,entity_id,
+    next_value
+  ) values(
+    p_tenant,p_location,(select auth.uid()),'credit.draft',
+    'supplier_credit',v_id,
+    jsonb_build_object('invoiceId',p_invoice,'netPence',p_net,'vatPence',p_vat)
+  );
   return v_id;
 end;
 $$;
