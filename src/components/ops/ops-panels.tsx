@@ -9,7 +9,7 @@ import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cl
 import type {
   OpsMenuItem,OpsTaxonomy,OpsIngredient,OpsOrder,OpsOrderLine,
   OpsRecipe,OpsStock,OpsCost,OpsRecipeCost,OpsExpense,
-  OpsFinance,OpsAnalytics,OpsStaff,OpsLocation,OpsBrandSales,
+  OpsFinance,OpsAnalytics,OpsStaff,OpsLocation,OpsBrandSales,OpsAudit,
 } from "@/lib/mealdeck-ops-types";
 
 const field="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500";
@@ -651,9 +651,9 @@ export function OpsAnalyticsPanel({analytics,brandSales}:{analytics:OpsAnalytics
 }
 
 export function OpsTeamPanel(props:Common&{
-  staff:OpsStaff[];locations:OpsLocation[];
+  staff:OpsStaff[];audit:OpsAudit[];locations:OpsLocation[];
 }){
-  const{staff,locations,tenantId,locationId,canGlobal,reload,notice}=props;
+  const{staff,audit,locations,tenantId,locationId,canGlobal,reload,notice}=props;
   const{busy,error,commit}=useCommit({reload,notice});
   const[user,setUser]=useState("");
   const[role,setRole]=useState("viewer");
@@ -697,6 +697,21 @@ export function OpsTeamPanel(props:Common&{
         {staff.length===0&&<div className={empty}>No visible staff assignments for this tenant.</div>}
       </div>
     </section>
+    {ownerOrAdmin&&<section className={card}>
+      <h2 className="text-lg font-black">Staff and menu change audit</h2>
+      <p className="mt-1 text-xs text-slate-500">Immutable, actor-stamped changes. This history cannot change prices or permissions.</p>
+      <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
+        {audit.map(row=><div key={row.event_id} className="rounded-xl border border-slate-200 p-3 text-sm">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-bold">{row.action}</p>
+            <span className="text-xs text-slate-500">{new Date(row.created_at).toLocaleString("en-GB")}</span>
+          </div>
+          <p className="mt-1 text-xs text-slate-600">Actor {row.actor_id?.slice(0,8)??"system"} · {row.entity_type} · {row.entity_id.slice(0,8)}</p>
+          <p className="mt-1 text-xs text-slate-500">Kitchen: {row.location_id?.slice(0,8)??"All tenant locations"}</p>
+        </div>)}
+        {!audit.length&&<p className="text-sm text-slate-500">No changes have been recorded.</p>}
+      </div>
+    </section>}
     {ownerOrAdmin&&<section className={card}>
       <h2 className="text-xl font-black">Assign or update staff</h2>
       <p className="mt-1 text-sm text-slate-500">Provision the user in Supabase Auth first. Enter their verified UID; this page cannot create an Auth user or send an invitation. You cannot edit your own access.</p>
