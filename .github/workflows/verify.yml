@@ -22,6 +22,8 @@ jobs:
         run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
       - name: WhatsApp assistant test: privacy, validation and multi-brand handoff
         run: bun test tests/whatsapp-assistance.test.ts
+      - name: MealDeck backend staff, costing, analytics and RLS source contracts
+        run: bun test tests/mealdeck-ops.test.ts
       - run: bun run build
       - name: TypeScript validation
         run: bunx tsc --noEmit
@@ -59,4 +61,13 @@ jobs:
           src/components/order/whatsapp-basket-handoff.tsx
           src/components/coming-soon.tsx
           tests/whatsapp-assistance.test.ts
+          --rule 'prettier/prettier: off'
+
+      - name: Staff console lint
+        run: >
+          bunx eslint src/routes/ops.tsx
+          src/components/ops/ops-panels.tsx
+          src/lib/mealdeck-ops-browser.ts src/lib/mealdeck-ops-access.ts
+          src/lib/mealdeck-ops-math.ts src/lib/mealdeck-ops-types.ts
+          tests/mealdeck-ops.test.ts
           --rule 'prettier/prettier: off'
