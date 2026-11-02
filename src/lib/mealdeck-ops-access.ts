@@ -53,6 +53,8 @@ export const OPS_SECTIONS=[
   {id:"orders",label:"Order history",permission:"orders.read"},
   {id:"recipes",label:"Recipes",permission:"recipes.read"},
   {id:"ingredients",label:"Ingredients & stock",permission:"inventory.read"},
+  {id:"purchasing",label:"Purchasing",permission:"inventory.read"},
+  {id:"batches",label:"Stock batches",permission:"inventory.read"},
   {id:"costs",label:"Food costs",permission:"costs.read"},
   {id:"finance",label:"Financials",permission:"finance.read"},
   {id:"team",label:"Staff access",permission:"staff.read"},
