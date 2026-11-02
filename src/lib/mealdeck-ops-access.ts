@@ -39,7 +39,7 @@ export function effectiveOpsPermissions(
   const denied=new Set(relevant.flatMap(a=>a.deny_permissions));
   for(const entry of relevant){
     for(const perm of [
-      ...OPS_ROLE_PERMISSIONS[entry.role]??[],
+      ...OPS_ROLE_PERMISSIONS[entry.role],
       ...entry.grant_permissions,
     ]){
       if(valid.has(perm)&&!denied.has(perm))permitted.add(perm as OpsPermission);
