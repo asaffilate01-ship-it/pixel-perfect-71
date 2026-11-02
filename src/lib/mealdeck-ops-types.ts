@@ -67,3 +67,8 @@ export type OpsStaff={
   role:string;enabled:boolean;grant_permissions:string[];
   deny_permissions:string[];created_at:string;
 };
+export type OpsAudit={
+  event_id:number;created_at:string;actor_id:string|null;location_id:string|null;
+  action:string;entity_type:string;entity_id:string;
+  previous_value:unknown;next_value:unknown;
+};
