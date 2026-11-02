@@ -105,7 +105,7 @@ export function OpsProcurementPanel(props:Props){
             <td className="px-3 py-4 font-bold">{row.order_id.slice(0,8).toUpperCase()}</td>
             <td className="px-3 py-4">{row.supplier_name}</td>
             <td className="px-3 py-4"><span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold">{row.status.replaceAll("_"," ")}</span></td>
-            <td className="px-3 py-4">{row.received_units} / {row.ordered_units} base units</td>
+            <td className="px-3 py-4">{row.received_line_count} / {row.line_count} lines</td>
             <td className="px-3 py-4">{row.quoted_total_pence===null?"Restricted":penceToPounds(row.quoted_total_pence)}</td>
             <td className="px-3 py-4"><button type="button" aria-pressed={selected===row.order_id}
               className={secondary} onClick={()=>{setSelected(row.order_id);setReceiptLine("");}}>
