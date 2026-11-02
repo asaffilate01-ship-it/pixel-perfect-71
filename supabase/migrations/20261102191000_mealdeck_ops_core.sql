@@ -402,6 +402,35 @@ grant execute on function public.mealdeck_ops_set_menu_visibility(
 
 
 -- Location discovery and category selection are also permission-scoped.
+-- Owners/admins can inspect actor-stamped changes; ordinary kitchen staff
+-- cannot read staff assignment or global menu price history.
+create or replace function public.mealdeck_ops_audit_history(
+  p_tenant uuid,p_limit integer default 50
+) returns table(
+  event_id bigint,created_at timestamptz,actor_id uuid,
+  location_id uuid,action text,entity_type text,
+  entity_id uuid,previous_value jsonb,next_value jsonb
+)
+language plpgsql stable security definer set search_path=''
+as $$
+begin
+  if not private.mealdeck_ops_can(p_tenant,null,'staff.read') then
+    raise exception 'mealdeck_ops_forbidden';
+  end if;
+  return query
+    select a.id,a.created_at,a.actor_id,a.location_id,a.action,
+      a.entity_type,a.entity_id,a.previous_value,a.next_value
+    from public.mealdeck_ops_audit_log a
+    where a.tenant_id=p_tenant
+    order by a.created_at desc,a.id desc
+    limit least(greatest(coalesce(p_limit,50),1),100);
+end;
+$$;
+revoke all on function public.mealdeck_ops_audit_history(uuid,integer)
+  from public,anon,authenticated;
+grant execute on function public.mealdeck_ops_audit_history(uuid,integer)
+  to authenticated;
+
 create or replace function public.mealdeck_ops_locations(p_tenant uuid)
 returns table(location_id uuid,location_name text)
 language plpgsql stable security definer set search_path=''
