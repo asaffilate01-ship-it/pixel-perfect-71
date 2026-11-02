@@ -24,6 +24,7 @@ export function SiteFooter() {
             <Link to="/track">Track order</Link>
             <Link to="/play">Play &amp; Rewards</Link>
             <Link to="/franchise">Franchises</Link>
+            <Link to="/ops">Staff sign-in</Link>
           </div>
           <div>
             <h3>Locations</h3>
