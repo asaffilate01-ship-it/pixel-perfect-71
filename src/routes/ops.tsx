@@ -20,17 +20,21 @@ import {
 import {seo} from "@/lib/seo";
 
 export const Route=createFileRoute("/ops")({
-  head:()=>({
-    ...seo({
+  head:()=>{
+    const tags=seo({
       title:"Staff operations | MealDeck",
       description:"Secure internal MealDeck staff operations. Sign-in required.",
       path:"/ops",
-    }),
-    meta:[
-      {name:"robots",content:"noindex, nofollow, noarchive"},
-      {name:"referrer",content:"no-referrer"},
-    ],
-  }),
+    });
+    return{
+      ...tags,
+      meta:[
+        ...tags.meta,
+        {name:"robots",content:"noindex, nofollow, noarchive"},
+        {name:"referrer",content:"no-referrer"},
+      ],
+    };
+  },
   component:MealDeckOperations,
 });
 const field="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-amber-500";
