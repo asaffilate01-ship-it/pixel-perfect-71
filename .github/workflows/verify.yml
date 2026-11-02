@@ -92,3 +92,21 @@ jobs:
           src/lib/mealdeck-ops-invoice-types.ts
           tests/mealdeck-invoice-matching.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Group payment, KDS and delivery fulfilment regression suite
+        run: >-
+          bun test tests/mealdeck-group-payment-gate.test.ts
+          tests/mealdeck-group-invitations.test.ts
+          tests/mealdeck-payment-event-ledger.test.ts
+          tests/mealdeck-kds-outbox.test.ts
+          tests/mealdeck-delivery-selection.test.ts
+          tests/mealdeck-fulfilment-planner.test.ts
+          tests/mealdeck-fulfilment-status.test.ts
+          tests/mealdeck-handoff.test.ts
+
+      - name: Fulfilment module lint
+        run: >-
+          bunx eslint src/lib/mealdeck-fulfilment-planner.ts
+          src/lib/mealdeck-fulfilment-status.ts src/lib/mealdeck-handoff.ts
+          tests/mealdeck-fulfilment-planner.test.ts tests/mealdeck-fulfilment-status.test.ts
+          tests/mealdeck-handoff.test.ts --rule 'prettier/prettier: off'
