@@ -163,7 +163,7 @@ export function OpsMenuPanel(props:Common&{
                 p_name:newName,p_description:newDesc,p_price_pence:value,
               });
               setNewName("");setNewPrice("");setNewDesc("");
-            },"Product created in the canonical menu. Check KDS routes and channel availability before publishing.")}>
+            },"Product saved as INACTIVE draft. Confirm allergens, modifiers and KDS station routing before activating.")}>
             <Plus className="mr-1 inline size-4"/> Add product
           </button>
         </div>
