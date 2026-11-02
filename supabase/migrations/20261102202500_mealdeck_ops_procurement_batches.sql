@@ -340,6 +340,10 @@ begin
     or not exists(select 1 from public.mealdeck_ops_ingredients i
       where i.tenant_id=p_tenant and i.id=p_ingredient and i.active)
   then raise exception 'mealdeck_ops_invalid_purchase_line'; end if;
+  if p_base_units<>trunc(p_base_units) and exists(
+    select 1 from public.mealdeck_ops_ingredients i
+    where i.id=p_ingredient and i.tenant_id=p_tenant and i.base_unit='each'
+  ) then raise exception 'mealdeck_ops_each_requires_integer'; end if;
 
   insert into public.mealdeck_ops_purchase_lines(
     tenant_id,location_id,purchase_order_id,ingredient_id,
@@ -444,6 +448,10 @@ begin
     where l.id=p_line and l.tenant_id=p_tenant
       and l.location_id=p_location;
   if not found then raise exception 'mealdeck_ops_purchase_line_not_found'; end if;
+  if p_base_qty<>trunc(p_base_qty) and exists(
+    select 1 from public.mealdeck_ops_ingredients i
+    where i.id=v_line.ingredient_id and i.tenant_id=p_tenant and i.base_unit='each'
+  ) then raise exception 'mealdeck_ops_each_requires_integer'; end if;
   select * into v_order from public.mealdeck_ops_purchase_orders o
     where o.id=v_line.purchase_order_id and o.tenant_id=p_tenant
       and o.location_id=p_location for update;
@@ -601,6 +609,10 @@ begin
     where b.id=p_batch and b.tenant_id=p_tenant
       and b.location_id=p_location for update;
   if not found then raise exception 'mealdeck_ops_batch_not_found'; end if;
+  if p_quantity<>trunc(p_quantity) and exists(
+    select 1 from public.mealdeck_ops_ingredients i
+    where i.id=v_batch.ingredient_id and i.tenant_id=p_tenant and i.base_unit='each'
+  ) then raise exception 'mealdeck_ops_each_requires_integer'; end if;
   select * into v_prior from public.mealdeck_ops_batch_issues bi
     where bi.tenant_id=p_tenant and bi.location_id=p_location
       and bi.issue_reference=trim(p_reference);
