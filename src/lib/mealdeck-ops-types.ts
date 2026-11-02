@@ -52,6 +52,10 @@ export type OpsFinance={
   unreconciled:boolean;vatCalculated:boolean;actualCogsCalculated:boolean;
   bankSettlementVerified:boolean;
 };
+export type OpsBrandSales={
+  brand_id:string|null;brand_name:string;item_count:number;
+  order_count:number;recorded_goods_gross_pence:number;
+};
 export type OpsAnalytics={
   periodFrom:string;periodTo:string;paidOrders:number;
   recordedPaidGrossPence:number;
