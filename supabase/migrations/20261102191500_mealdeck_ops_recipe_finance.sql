@@ -180,10 +180,16 @@ begin
   else
     if exists(
       select 1 from public.mealdeck_ops_ingredients i
-      join public.mealdeck_ops_recipe_lines l
-        on l.ingredient_id=i.id and l.tenant_id=p_tenant
       where i.id=p_id and i.tenant_id=p_tenant
         and i.base_unit<>p_unit
+        and (
+          exists(select 1 from public.mealdeck_ops_recipe_lines l
+            where l.ingredient_id=i.id and l.tenant_id=p_tenant)
+          or exists(select 1 from public.mealdeck_ops_stock_movements sm
+            where sm.ingredient_id=i.id and sm.tenant_id=p_tenant)
+          or exists(select 1 from public.mealdeck_ops_ingredient_costs c
+            where c.ingredient_id=i.id and c.tenant_id=p_tenant)
+        )
     ) then raise exception 'mealdeck_ops_ingredient_unit_in_use'; end if;
     update public.mealdeck_ops_ingredients i
       set name=trim(p_name),base_unit=p_unit,allergens=p_allergens,
@@ -227,6 +233,14 @@ begin
     join public.menu_items m on m.id=r.menu_item_id and m.tenant_id=p_tenant
     left join public.tenant_brands b on b.id=m.brand_id and b.tenant_id=p_tenant
     where r.tenant_id=p_tenant
+      and (
+        private.mealdeck_ops_can(p_tenant,null,'recipes.read')
+        or exists(
+          select 1 from public.menu_item_station_routes sr
+          where sr.tenant_id=p_tenant and sr.location_id=p_location
+            and sr.item_id=r.menu_item_id
+        )
+      )
     order by b.name,m.name
     limit 500;
 end;
