@@ -57,6 +57,7 @@ export const OPS_SECTIONS=[
   {id:"batches",label:"Stock batches",permission:"inventory.read"},
   {id:"costs",label:"Food costs",permission:"costs.read"},
   {id:"finance",label:"Financials",permission:"finance.read"},
+  {id:"invoices",label:"Supplier invoices",permission:"finance.read"},
   {id:"team",label:"Staff access",permission:"staff.read"},
 ] as const;
 export type OpsSection=(typeof OPS_SECTIONS)[number]["id"];
