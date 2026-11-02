@@ -480,6 +480,16 @@ begin
     join public.tenant_brands b
       on b.id=c.brand_id and b.tenant_id=p_tenant
     where c.tenant_id=p_tenant
+      and (
+        mealdeck_ops_private.can(p_tenant,null,'menu.read')
+        or exists(
+          select 1 from public.menu_items i
+          join public.menu_item_station_routes sr
+            on sr.tenant_id=p_tenant and sr.location_id=p_location
+            and sr.item_id=i.id
+          where i.tenant_id=p_tenant and i.category_id=c.id
+        )
+      )
     order by b.name,c.name
     limit 400;
 end;
