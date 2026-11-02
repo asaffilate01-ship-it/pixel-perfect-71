@@ -31,6 +31,25 @@ create index mealdeck_ops_staff_user_idx
 alter table public.mealdeck_ops_staff_access enable row level security;
 revoke all on public.mealdeck_ops_staff_access from public,anon,authenticated;
 
+-- Immutable audit records for role changes, canonical price edits and
+-- location-specific visibility. No authenticated direct write/delete.
+create table public.mealdeck_ops_audit_log(
+  id bigint generated always as identity primary key,
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  location_id uuid references public.tenant_locations(id) on delete set null,
+  actor_id uuid references auth.users(id) on delete set null,
+  action text not null,
+  entity_type text not null,
+  entity_id uuid not null,
+  previous_value jsonb,
+  next_value jsonb,
+  created_at timestamptz not null default now()
+);
+create index mealdeck_ops_audit_tenant_idx
+  on public.mealdeck_ops_audit_log(tenant_id,created_at desc);
+alter table public.mealdeck_ops_audit_log enable row level security;
+revoke all on public.mealdeck_ops_audit_log from public,anon,authenticated;
+
 -- All permissions are checked against the actor's verified Supabase auth.uid().
 -- A location-specific role cannot perform a tenant-wide global write.
 create or replace function private.mealdeck_ops_can(
@@ -213,6 +232,23 @@ begin
     enabled=excluded.enabled,
     updated_at=now()
   returning id into v_id;
+  insert into public.mealdeck_ops_audit_log(
+    tenant_id,location_id,actor_id,action,entity_type,entity_id,
+    previous_value,next_value
+  ) values(
+    p_tenant,p_location,(select auth.uid()),'staff.assignment','staff_access',v_id,
+    case when v_existing.id is null then null else
+      jsonb_build_object(
+        'userId',v_existing.user_id,'role',v_existing.role,
+        'enabled',v_existing.enabled,
+        'grants',v_existing.grant_permissions,
+        'denials',v_existing.deny_permissions
+      ) end,
+    jsonb_build_object(
+      'userId',p_user,'role',p_role,'enabled',p_enabled,
+      'grants',p_grants,'denials',p_denies
+    )
+  );
   return v_id;
 end;
 $$;
@@ -261,7 +297,9 @@ create or replace function public.mealdeck_ops_update_menu_item(
 ) returns boolean
 language plpgsql security definer set search_path=''
 as $$
-declare v_id uuid;
+declare
+  v_id uuid;
+  v_before public.menu_items%rowtype;
 begin
   -- Master menu products are shared across locations: only global staff
   -- may edit canonical names and prices.
@@ -275,12 +313,22 @@ begin
      or p_price_pence>1000000 or p_active is null then
     raise exception 'mealdeck_ops_invalid_menu_item';
   end if;
+  select * into v_before from public.menu_items i
+    where i.id=p_item and i.tenant_id=p_tenant for update;
+  if not found then return false; end if;
   update public.menu_items i
     set name=trim(p_name),description=p_description,
       price_pence=p_price_pence,active=p_active
     where i.id=p_item and i.tenant_id=p_tenant
     returning i.id into v_id;
-  return v_id is not null;
+  insert into public.mealdeck_ops_audit_log(
+    tenant_id,actor_id,action,entity_type,entity_id,previous_value,next_value
+  ) values(
+    p_tenant,(select auth.uid()),'menu.update','menu_item',v_id,
+    jsonb_build_object('name',v_before.name,'pricePence',v_before.price_pence,'active',v_before.active),
+    jsonb_build_object('name',trim(p_name),'pricePence',p_price_pence,'active',p_active)
+  );
+  return true;
 end;
 $$;
 
@@ -308,6 +356,12 @@ begin
   ) values (p_tenant,p_location,'mealdeck',p_item,p_visible)
   on conflict(tenant_id,location_id,channel_key,menu_item_id)
   do update set visible=excluded.visible,updated_at=now();
+  insert into public.mealdeck_ops_audit_log(
+    tenant_id,location_id,actor_id,action,entity_type,entity_id,next_value
+  ) values(
+    p_tenant,p_location,(select auth.uid()),'menu.visibility','menu_item',p_item,
+    jsonb_build_object('visible',p_visible,'channel','mealdeck')
+  );
   return true;
 end;
 $$;
@@ -413,6 +467,13 @@ begin
     p_tenant,p_brand,p_category,trim(p_name),coalesce(p_description,''),
     p_price_pence,true
   ) returning id into v_id;
+  insert into public.mealdeck_ops_audit_log(
+    tenant_id,actor_id,action,entity_type,entity_id,next_value
+  ) values(
+    p_tenant,(select auth.uid()),'menu.create','menu_item',v_id,
+    jsonb_build_object('name',trim(p_name),'brandId',p_brand,
+      'categoryId',p_category,'pricePence',p_price_pence)
+  );
   return v_id;
 end;
 $$;
