@@ -18,6 +18,9 @@ import {
   OpsRecipePanel,OpsTeamPanel,
 } from "@/components/ops/ops-panels";
 import {seo} from "@/lib/seo";
+import {OpsProcurementPanel} from "@/components/ops/procurement-panel";
+import {OpsStockBatchesPanel} from "@/components/ops/stock-batches-panel";
+import type {OpsSupplier,OpsPurchase,OpsBatch} from "@/lib/mealdeck-ops-procurement-types";
 
 export const Route=createFileRoute("/ops")({
   head:()=>{
@@ -46,11 +49,13 @@ type WorkspaceData={
   costs:OpsCost[];recipeCosts:OpsRecipeCost[];
   expenses:OpsExpense[];finance:OpsFinance|null;
   analytics:OpsAnalytics|null;brandSales:OpsBrandSales[];staff:OpsStaff[];audit:OpsAudit[];
+  suppliers:OpsSupplier[];purchases:OpsPurchase[];batches:OpsBatch[];
 };
 const blank=():WorkspaceData=>({
   menu:[],taxonomy:[],orders:[],recipes:[],ingredients:[],
   stock:[],costs:[],recipeCosts:[],expenses:[],finance:null,
   analytics:null,brandSales:[],staff:[],audit:[],
+  suppliers:[],purchases:[],batches:[],
 });
 function dateISO(date:Date){return date.toISOString().slice(0,10);}
 function lastMonth(){const date=new Date();date.setDate(date.getDate()-29);return dateISO(date);}
@@ -191,6 +196,23 @@ function MealDeckOperations(){
           ]);
           next.ingredients=row<OpsIngredient>(ingredients);
           next.stock=row<OpsStock>(stock);
+          break;
+        }
+        case "purchasing":{
+          const[suppliers,purchases,ingredients]=await Promise.all([
+            opsRpc<unknown>("mealdeck_ops_supplier_list",base),
+            opsRpc<unknown>("mealdeck_ops_purchase_list",base),
+            opsRpc<unknown>("mealdeck_ops_ingredient_list",base),
+          ]);
+          next.suppliers=row<OpsSupplier>(suppliers);
+          next.purchases=row<OpsPurchase>(purchases);
+          next.ingredients=row<OpsIngredient>(ingredients);
+          break;
+        }
+        case "batches":{
+          next.batches=row<OpsBatch>(await opsRpc<unknown>(
+            "mealdeck_ops_batch_list",{...base,p_days:14},
+          ));
           break;
         }
         case "costs":{
@@ -395,6 +417,18 @@ function MealDeckOperations(){
             recipes={data.recipes} ingredients={data.ingredients} menu={data.menu}/>}
           {selectedSection==="ingredients"&&<OpsIngredientPanel {...common}
             ingredients={data.ingredients} stock={data.stock}/>}
+          {selectedSection==="purchasing"&&<OpsProcurementPanel
+            tenantId={tenant} locationId={location} staffUserId={user.id}
+            suppliers={data.suppliers} purchases={data.purchases}
+            ingredients={data.ingredients}
+            canFinance={can("finance.manage")}
+            canFinanceGlobal={canGlobal("finance.manage")}
+            canReceive={can("inventory.write")}
+            onRefresh={reload} onNotice={setNotice}/>}
+          {selectedSection==="batches"&&<OpsStockBatchesPanel
+            tenantId={tenant} locationId={location} batches={data.batches}
+            canIssue={can("inventory.write")}
+            onRefresh={reload} onNotice={setNotice}/>}
           {selectedSection==="costs"&&<OpsCostsPanel {...common}
             ingredients={data.ingredients} costs={data.costs}
             recipeCosts={data.recipeCosts} menu={data.menu}/>}
