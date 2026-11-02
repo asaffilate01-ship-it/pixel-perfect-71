@@ -38,7 +38,7 @@ export function OpsStockBatchesPanel({
   async function issue(){
     setBusy(true);setError("");
     try{
-      const value=positiveBaseQuantity(qty);
+      const value=positiveBaseQuantity(qty,selectedBatch?.unit??"g");
       if(value===null||!selectedBatch||value>Number(selectedBatch.tracked_balance)){
         throw new Error("Enter a quantity no greater than this batch's tracked balance.");
       }
