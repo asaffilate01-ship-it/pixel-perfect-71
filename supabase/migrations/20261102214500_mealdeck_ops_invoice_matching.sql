@@ -21,6 +21,8 @@ create table public.mealdeck_ops_supplier_invoices(
   status text not null default 'draft' check(status in
     ('draft','submitted','matched','approved','void')),
   tax_document_reviewed boolean not null default false,
+  tax_reviewed_by uuid references auth.users(id) on delete set null,
+  tax_reviewed_at timestamptz,
   note text not null default '' check(length(note)<=500),
   created_by uuid not null references auth.users(id),
   approved_by uuid references auth.users(id) on delete set null,
@@ -378,7 +380,8 @@ begin
       set status='matched',updated_at=now() where inv.id=p_invoice;
 
   elsif p_action='approve' then
-    if v_inv.status<>'matched' or v_inv.created_by=(select auth.uid())
+    if v_inv.status<>'matched' or not v_inv.tax_document_reviewed
+      or v_inv.created_by=(select auth.uid())
       or not mealdeck_ops_private.can(p_tenant,null,'finance.manage') then
       raise exception 'mealdeck_ops_invoice_second_approver_required';
     end if;
@@ -408,6 +411,47 @@ begin
       when 'match' then 'matched'
       when 'approve' then 'approved'
       else 'void' end)
+  );
+  return true;
+end;
+$$;
+
+-- Manual tax-document evidence review is distinct from actual tax filing.
+-- Invoice creator may inspect rates; approval still requires a DIFFERENT
+-- authorised finance manager after the paper invoice has been checked.
+create or replace function public.mealdeck_ops_review_invoice_tax(
+  p_tenant uuid,p_location uuid,p_invoice uuid,p_reviewed boolean
+) returns boolean
+language plpgsql security definer set search_path=''
+as $$
+declare
+  v_invoice public.mealdeck_ops_supplier_invoices%rowtype;
+begin
+  if not mealdeck_ops_private.can(p_tenant,p_location,'finance.manage') then
+    raise exception 'mealdeck_ops_forbidden';
+  end if;
+  select * into v_invoice from public.mealdeck_ops_supplier_invoices inv
+    where inv.id=p_invoice and inv.tenant_id=p_tenant
+      and inv.location_id=p_location for update;
+  if not found or v_invoice.status<>'matched' or p_reviewed is null then
+    raise exception 'mealdeck_ops_invoice_tax_not_reviewable';
+  end if;
+  if p_reviewed and exists(
+    select 1 from public.mealdeck_ops_supplier_invoice_lines l
+      where l.invoice_id=p_invoice and l.tenant_id=p_tenant
+        and l.location_id=p_location and l.tax_category='unreviewed'
+  ) then raise exception 'mealdeck_ops_invoice_tax_category_missing'; end if;
+  update public.mealdeck_ops_supplier_invoices inv
+    set tax_document_reviewed=p_reviewed,
+      tax_reviewed_by=case when p_reviewed then (select auth.uid()) else null end,
+      tax_reviewed_at=case when p_reviewed then now() else null end,
+      updated_at=now()
+    where inv.id=p_invoice;
+  insert into public.mealdeck_ops_audit_log(
+    tenant_id,location_id,actor_id,action,entity_type,entity_id,next_value
+  ) values(
+    p_tenant,p_location,(select auth.uid()),'invoice.tax_document_review',
+    'supplier_invoice',p_invoice,jsonb_build_object('reviewed',p_reviewed)
   );
   return true;
 end;
@@ -609,6 +653,7 @@ begin
     'mealdeck_ops_create_invoice(uuid,uuid,uuid,text,date,date,bigint,bigint,text)',
     'mealdeck_ops_save_invoice_line(uuid,uuid,uuid,uuid,numeric,bigint,bigint,text)',
     'mealdeck_ops_invoice_action(uuid,uuid,uuid,text)',
+    'mealdeck_ops_review_invoice_tax(uuid,uuid,uuid,boolean)',
     'mealdeck_ops_create_supplier_credit(uuid,uuid,uuid,text,date,text,bigint,bigint)',
     'mealdeck_ops_credit_action(uuid,uuid,uuid,text)',
     'mealdeck_ops_credit_list(uuid,uuid,date,date)',
