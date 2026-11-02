@@ -58,7 +58,6 @@ export function OpsSupplierInvoicesPanel({
   const[creditDate,setCreditDate]=useState(currentDate());
 
   const current=invoices.find(x=>x.invoice_id===selectedId);
-  const selectedCredits=credits.filter(x=>x.invoice_id===selectedId);
   const po=poLines.find(x=>x.line_id===linePoId);
   const totalsMatch=current?isInvoiceSubmittable({
     declaredNetPence:current.declared_net_pence,
