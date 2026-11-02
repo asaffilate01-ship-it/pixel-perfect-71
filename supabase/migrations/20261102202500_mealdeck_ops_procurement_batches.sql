@@ -220,7 +220,7 @@ create or replace function public.mealdeck_ops_purchase_list(
   p_tenant uuid,p_location uuid
 ) returns table(
   order_id uuid,supplier_name text,status text,created_at timestamptz,
-  approved_at timestamptz,ordered_units numeric,received_units numeric,
+  approved_at timestamptz,line_count bigint,received_line_count bigint,
   quoted_total_pence bigint,note text,created_by uuid
 )
 language plpgsql stable security definer set search_path=''
@@ -232,8 +232,9 @@ begin
   ) then raise exception 'mealdeck_ops_forbidden'; end if;
   return query
     select o.id,s.name::text,o.status,o.created_at,o.approved_at,
-      coalesce(sum(l.pack_count*l.base_units_per_pack),0)::numeric,
-      coalesce(sum(l.received_base_units),0)::numeric,
+      count(l.id)::bigint,
+      count(l.id) filter(where l.received_base_units>=
+        l.pack_count::numeric*l.base_units_per_pack)::bigint,
       case when mealdeck_ops_private.can(p_tenant,p_location,'costs.read')
         then coalesce(sum(l.pack_count::bigint*l.price_per_pack_pence),0)
         else null::bigint end as quoted_total_pence,
