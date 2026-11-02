@@ -18,6 +18,8 @@ import {
   OpsRecipePanel,OpsTeamPanel,
 } from "@/components/ops/ops-panels";
 import {seo} from "@/lib/seo";
+import {OpsSupplierInvoicesPanel} from "@/components/ops/supplier-invoices-panel";
+import type {OpsSupplierInvoice,OpsSupplierCredit,OpsSupplierInvoiceSummary} from "@/lib/mealdeck-ops-invoice-types";
 import {OpsProcurementPanel} from "@/components/ops/procurement-panel";
 import {OpsStockBatchesPanel} from "@/components/ops/stock-batches-panel";
 import type {OpsSupplier,OpsPurchase,OpsBatch} from "@/lib/mealdeck-ops-procurement-types";
@@ -50,12 +52,15 @@ type WorkspaceData={
   expenses:OpsExpense[];finance:OpsFinance|null;
   analytics:OpsAnalytics|null;brandSales:OpsBrandSales[];staff:OpsStaff[];audit:OpsAudit[];
   suppliers:OpsSupplier[];purchases:OpsPurchase[];batches:OpsBatch[];
+  invoices:OpsSupplierInvoice[];credits:OpsSupplierCredit[];
+  invoiceSummary:OpsSupplierInvoiceSummary|null;
 };
 const blank=():WorkspaceData=>({
   menu:[],taxonomy:[],orders:[],recipes:[],ingredients:[],
   stock:[],costs:[],recipeCosts:[],expenses:[],finance:null,
   analytics:null,brandSales:[],staff:[],audit:[],
   suppliers:[],purchases:[],batches:[],
+  invoices:[],credits:[],invoiceSummary:null,
 });
 function dateISO(date:Date){return date.toISOString().slice(0,10);}
 function lastMonth(){const date=new Date();date.setDate(date.getDate()-29);return dateISO(date);}
@@ -228,6 +233,19 @@ function MealDeckOperations(){
           next.menu=row<OpsMenuItem>(menu);
           break;
         }
+        case "invoices":{
+          const[invoices,credits,summary,purchases]=await Promise.all([
+            opsRpc<unknown>("mealdeck_ops_invoice_list",period),
+            opsRpc<unknown>("mealdeck_ops_credit_list",period),
+            opsRpc<OpsSupplierInvoiceSummary>("mealdeck_ops_invoice_summary",period),
+            opsRpc<unknown>("mealdeck_ops_purchase_list",base),
+          ]);
+          next.invoices=row<OpsSupplierInvoice>(invoices);
+          next.credits=row<OpsSupplierCredit>(credits);
+          next.invoiceSummary=summary;
+          next.purchases=row<OpsPurchase>(purchases);
+          break;
+        }
         case "finance":{
           const[finance,expenses]=await Promise.all([
             opsRpc<OpsFinance>("mealdeck_ops_finance_summary",period),
@@ -391,7 +409,7 @@ function MealDeckOperations(){
           </button>)}
         </nav>
 
-        {(selectedSection==="overview"||selectedSection==="orders"||selectedSection==="finance")&&<section className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+        {(selectedSection==="overview"||selectedSection==="orders"||selectedSection==="finance"||selectedSection==="invoices")&&<section className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2"><BarChart3 className="size-5 text-amber-600"/>
             <p className="text-sm font-bold">Reporting period</p></div>
           <label className="text-xs font-semibold">From
@@ -432,6 +450,13 @@ function MealDeckOperations(){
           {selectedSection==="costs"&&<OpsCostsPanel {...common}
             ingredients={data.ingredients} costs={data.costs}
             recipeCosts={data.recipeCosts} menu={data.menu}/>}
+          {selectedSection==="invoices"&&<OpsSupplierInvoicesPanel
+            tenantId={tenant} locationId={location} staffUserId={user.id}
+            invoices={data.invoices} credits={data.credits}
+            summary={data.invoiceSummary} purchaseOrders={data.purchases}
+            canManage={can("finance.manage")}
+            canManageGlobal={canGlobal("finance.manage")}
+            refresh={reload} notify={setNotice}/>}
           {selectedSection==="finance"&&<OpsFinancePanel {...common}
             finance={data.finance} expenses={data.expenses}/>}
           {selectedSection==="team"&&<OpsTeamPanel {...common} staff={data.staff} audit={data.audit} locations={locations}/>}
