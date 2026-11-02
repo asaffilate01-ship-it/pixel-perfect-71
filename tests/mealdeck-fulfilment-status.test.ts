@@ -18,6 +18,9 @@ const tracking = (change: Partial<TrackingInput> = {}): TrackingInput => ({
   courier: null, handoffVerified: false, ...change,
 });
 describe("Phase 18 courier events and private customer tracking", () => {
+  test("unrecognised event name is never a state transition", () => {
+    expect(applyCourierEvent(base(), event({ kind: "__proto__" as CourierEvent["kind"] })).reason).toBe("invalid_transition");
+  });
   test("requires authenticated event", () => {
     expect(applyCourierEvent(base(), event({ verified: false })).reason).toBe("unverified");
   });
