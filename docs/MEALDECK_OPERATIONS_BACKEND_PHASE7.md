@@ -11,6 +11,8 @@ MealDeck uses the existing Dishbee Supabase project as its canonical store of te
 
 Do not run these SQL scripts against an empty/new MealDeck project: their required canonical Dishbee tables do not exist there. No applied migration should be amended. Local Supabase CLI and real Postgres replay have not been available to this build; verify with an approved staging environment and up-to-date Supabase CLI before release.
 
+The verifier lives in its own non-exposed mealdeck_ops_private schema, so no generic private-schema permissions used by Dishbee are changed. The staff and commercial tables have RLS enabled and no direct authenticated write grants.
+
 ## Secure staff logins and permissions
 
 The internal website route is /ops, with Supabase Auth email/password or existing-account email sign-in links. Automatic signup is disabled for the email-link flow. Login by itself grants **zero** menu, recipe, financial, staff or order access.
