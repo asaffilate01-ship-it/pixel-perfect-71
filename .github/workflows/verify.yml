@@ -26,6 +26,8 @@ jobs:
         run: bun test tests/mealdeck-ops.test.ts
       - name: Supplier, purchase approval, stock batch and expiry regressions
         run: bun test tests/mealdeck-procurement.test.ts
+      - name: Supplier invoice, VAT review and credit-note regressions
+        run: bun test tests/mealdeck-invoice-matching.test.ts
       - run: bun run build
       - name: TypeScript validation
         run: bunx tsc --noEmit
@@ -81,4 +83,12 @@ jobs:
           src/lib/mealdeck-ops-procurement.ts
           src/lib/mealdeck-ops-procurement-types.ts
           tests/mealdeck-procurement.test.ts
+          --rule 'prettier/prettier: off'
+
+      - name: Supplier invoice operations lint
+        run: >
+          bunx eslint src/components/ops/supplier-invoices-panel.tsx
+          src/lib/mealdeck-ops-invoices.ts
+          src/lib/mealdeck-ops-invoice-types.ts
+          tests/mealdeck-invoice-matching.test.ts
           --rule 'prettier/prettier: off'
