@@ -8,7 +8,7 @@ import type {User} from "@supabase/supabase-js";
 import {getMealDeckOpsClient,opsRpc,opsRows,type OpsAccess} from "@/lib/mealdeck-ops-browser";
 import {effectiveOpsPermissions,OPS_SECTIONS,type OpsPermission,type OpsSection} from "@/lib/mealdeck-ops-access";
 import type {
-  OpsAnalytics,OpsCost,OpsExpense,OpsFinance,OpsIngredient,
+  OpsAnalytics,OpsBrandSales,OpsCost,OpsExpense,OpsFinance,OpsIngredient,
   OpsLocation,OpsMenuItem,OpsOrder,OpsRecipe,OpsRecipeCost,
   OpsStaff,OpsStock,OpsTaxonomy,
 } from "@/lib/mealdeck-ops-types";
@@ -41,12 +41,12 @@ type WorkspaceData={
   recipes:OpsRecipe[];ingredients:OpsIngredient[];stock:OpsStock[];
   costs:OpsCost[];recipeCosts:OpsRecipeCost[];
   expenses:OpsExpense[];finance:OpsFinance|null;
-  analytics:OpsAnalytics|null;staff:OpsStaff[];
+  analytics:OpsAnalytics|null;brandSales:OpsBrandSales[];staff:OpsStaff[];
 };
 const blank=():WorkspaceData=>({
   menu:[],taxonomy:[],orders:[],recipes:[],ingredients:[],
   stock:[],costs:[],recipeCosts:[],expenses:[],finance:null,
-  analytics:null,staff:[],
+  analytics:null,brandSales:[],staff:[],
 });
 function dateISO(date:Date){return date.toISOString().slice(0,10);}
 function lastMonth(){const date=new Date();date.setDate(date.getDate()-29);return dateISO(date);}
@@ -211,9 +211,15 @@ function MealDeckOperations(){
           next.expenses=row<OpsExpense>(expenses);
           break;
         }
-        case "overview":
-          next.analytics=await opsRpc<OpsAnalytics>("mealdeck_ops_analytics",period);
+        case "overview":{
+          const[analytics,brandSales]=await Promise.all([
+            opsRpc<OpsAnalytics>("mealdeck_ops_analytics",period),
+            opsRpc<unknown>("mealdeck_ops_brand_sales",period),
+          ]);
+          next.analytics=analytics;
+          next.brandSales=row<OpsBrandSales>(brandSales);
           break;
+        }
         case "team":
           next.staff=row<OpsStaff>(await opsRpc<unknown>(
             "mealdeck_ops_staff_list",{p_tenant:tenant},
@@ -374,7 +380,7 @@ function MealDeckOperations(){
         {!location?<div className={columns}><p className="font-semibold">No accessible kitchen locations. Contact your tenant administrator.</p></div>
         :loading?<div role="status" className={columns}>Loading authorised records for this kitchen…</div>
         :<div>
-          {selectedSection==="overview"&&<OpsAnalyticsPanel analytics={data.analytics}/>}
+          {selectedSection==="overview"&&<OpsAnalyticsPanel analytics={data.analytics} brandSales={data.brandSales}/>}
           {selectedSection==="menu"&&<OpsMenuPanel {...common} menu={data.menu} taxonomy={data.taxonomy}/>}
           {selectedSection==="orders"&&<OpsOrdersPanel orders={data.orders} tenantId={tenant} locationId={location}/>}
           {selectedSection==="recipes"&&<OpsRecipePanel {...common}
