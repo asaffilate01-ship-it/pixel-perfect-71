@@ -112,6 +112,9 @@ describe("Database source contracts — staging replay still required",()=>{
     expect(core).toContain("create table public.mealdeck_ops_audit_log");
     expect(core).toContain("'staff.assignment'");
     expect(core).toContain("'menu.update'");
+    expect(core).toContain("mealdeck_ops_station_route_required_before_activation");
+    expect(core).toContain("p_price_pence,false");
+    expect(core).toContain("mealdeck_ops_audit_history");
   });
   it("protects recipes, unit costs, stock, and expenses with RLS",()=>{
     for(const table of [
@@ -135,6 +138,9 @@ describe("Database source contracts — staging replay still required",()=>{
     expect(finance).toContain("o.paid_at");
     expect(finance).toContain("mealdeck_ops_order_lines");
     expect(finance).toContain("v_refunds");
+    expect(finance).toContain("mealdeck_ops_brand_sales");
+    expect(finance).toContain("mealdeck_ops_ingredient_unit_in_use");
+    expect(finance).toContain("Append-only quotes");
     expect(finance).toContain("'vatCalculated',false");
     expect(finance).toContain("'actualCogsCalculated',false");
     expect(finance).toContain("'bankSettlementVerified',false");
