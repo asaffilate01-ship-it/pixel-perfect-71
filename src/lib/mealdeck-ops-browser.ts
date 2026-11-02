@@ -43,6 +43,27 @@ export async function opsRpc<T>(
   // explicit per-tenant/location permissions. UI visibility is not authority.
   const {data,error}=await db.rpc(name,parameters);
   if(error){
+    // Narrow, reviewed operational errors are translated without returning
+    // raw SQL, database schema details, user IDs or provider credentials.
+    const invoiceFailures:readonly [string,string][]=[
+      ["mealdeck_ops_invoice_totals_mismatch","Invoice lines must total exactly to the supplier's stated net and VAT."],
+      ["mealdeck_ops_invoice_unreceived_goods","Record and approve the physical delivery receipt before matching this quantity."],
+      ["mealdeck_ops_invoice_goods_already_claimed","These received goods are already claimed by another matched or approved invoice."],
+      ["mealdeck_ops_invoice_price_variance","Supplier net price differs from the approved purchase order beyond rounding tolerance."],
+      ["mealdeck_ops_invoice_tax_category_missing","Review the tax category on every invoice line before confirming the tax document."],
+      ["mealdeck_ops_invoice_second_approver_required","A different, tenant-wide finance manager must approve this reviewed invoice."],
+      ["mealdeck_ops_invoice_tax_not_reviewable","Tax evidence can only be reviewed after a successful goods/PO match."],
+      ["mealdeck_ops_invoice_not_matchable","This invoice cannot be matched until it is submitted and the purchase order is approved."],
+      ["mealdeck_ops_credit_exceeds_invoice","Approved credit notes cannot exceed the original invoice net or VAT."],
+      ["mealdeck_ops_credit_second_approver_required","A separate tenant-wide finance manager must approve this credit."],
+      ["mealdeck_ops_credit_requires_approved_invoice","Only an approved supplier invoice can receive a supplier credit note."],
+      ["mealdeck_ops_invoice_not_editable","This supplier invoice can no longer be edited. Use a reviewed credit or void an unapproved invoice."],
+    ];
+    const known=invoiceFailures.find(([code])=>error.message.includes(code));
+    if(known)throw new Error(known[1]);
+    if(error.code==="23505"&&/mealdeck_ops_supplier_(invoices|credits)/i.test(error.message)){
+      throw new Error("This supplier invoice or credit note number already exists. Verify the original record instead of submitting it twice.");
+    }
     if(error.code==="42501"||/forbidden|permission/i.test(error.message)){
       throw new Error("Your staff role is not permitted to access this area.");
     }
