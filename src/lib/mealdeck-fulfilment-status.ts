@@ -49,7 +49,9 @@ export function applyCourierEvent(current: CourierLedger, event: CourierEvent): 
   if (current.processedEventIds.includes(event.eventId)) return no("duplicate");
   if (event.orderId !== current.orderId || event.provider !== current.provider) return no("mismatch");
   if (occurred < previous) return no("out_of_order");
-  const nextStatus = transitions[current.status]?.[event.kind];
+  if (!Object.hasOwn(transitions, current.status)) return no("invalid");
+  const allowed = transitions[current.status];
+  const nextStatus = Object.hasOwn(allowed, event.kind) ? allowed[event.kind] : undefined;
   if (!nextStatus) return no("invalid_transition");
   if (event.kind === "booking_confirmed") {
     if (current.bookingReference !== null || !event.bookingReference ||
