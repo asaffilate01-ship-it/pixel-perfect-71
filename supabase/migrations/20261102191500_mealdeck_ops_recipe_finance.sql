@@ -572,6 +572,35 @@ begin
 end;
 $$;
 
+-- Line-item drill-down preserves canonical item notes/modifiers for authorised
+-- operations staff; it deliberately excludes customer contact details.
+create or replace function public.mealdeck_ops_order_lines(
+  p_tenant uuid,p_location uuid,p_order uuid
+) returns table(
+  item_id uuid,item_name text,brand_name text,quantity integer,
+  unit_price_pence integer,modifiers jsonb,notes text
+)
+language plpgsql stable security definer set search_path=''
+as $$
+begin
+  if not private.mealdeck_ops_can(p_tenant,p_location,'orders.read') then
+    raise exception 'mealdeck_ops_forbidden';
+  end if;
+  if not exists(select 1 from public.orders o
+      where o.id=p_order and o.tenant_id=p_tenant and o.location_id=p_location)
+  then raise exception 'mealdeck_ops_order_not_found'; end if;
+  return query
+    select i.id,i.item_name::text,b.name::text,
+      i.quantity,i.unit_price_pence,i.modifiers,i.notes::text
+    from public.order_items i
+    left join public.tenant_brands b
+      on b.id=i.brand_id and b.tenant_id=p_tenant
+    where i.order_id=p_order and i.tenant_id=p_tenant
+    order by i.id
+    limit 250;
+end;
+$$;
+
 -- Analytics totals: "paid" means Dishbee has a recorded paid_at; it does not
 -- establish Adyen bank settlement or a VAT-exclusive accounting net figure.
 create or replace function public.mealdeck_ops_analytics(
@@ -699,6 +728,7 @@ begin
     ('mealdeck_ops_add_expense(uuid,uuid,date,text,bigint,text)'),
     ('mealdeck_ops_expense_list(uuid,uuid,date,date)'),
     ('mealdeck_ops_order_history(uuid,uuid,date,date)'),
+    ('mealdeck_ops_order_lines(uuid,uuid,uuid)'),
     ('mealdeck_ops_analytics(uuid,uuid,date,date)'),
     ('mealdeck_ops_finance_summary(uuid,uuid,date,date)')
   ) as f(signature) loop
