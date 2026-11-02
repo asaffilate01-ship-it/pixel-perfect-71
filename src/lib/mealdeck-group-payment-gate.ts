@@ -27,7 +27,7 @@ export function evaluateGroupKdsRelease(order:GroupPayment):ReleaseDecision{
   if(order.status!=="paid")return no("unpaid");
   if(!order.shares.length)return no("invalid_shares");
   const ids=new Set<string>();
-  let allocation=0,remaining=0;
+  let allocation=0,remaining=0,invalidSettlement=false;
   for(const share of order.shares){
     if(!share.shareId||!share.participantId||ids.has(share.shareId)||
       share.currency!==order.currency||!validAmount(share.duePence)||share.duePence===0||
@@ -39,9 +39,10 @@ export function evaluateGroupKdsRelease(order:GroupPayment):ReleaseDecision{
     const net=share.capturedPence-share.refundedPence;
     if(share.paymentStatus!=="captured"||net!==share.duePence){
       remaining+=Math.max(0,share.duePence-net);
+      if(net>share.duePence)invalidSettlement=true;
     }
   }
   if(allocation!==order.totalPence)return no("allocation_mismatch");
-  if(remaining>0||order.shares.some(s=>s.paymentStatus!=="captured"))return no("payments_incomplete",remaining);
+  if(invalidSettlement||remaining>0||order.shares.some(s=>s.paymentStatus!=="captured"))return no("payments_incomplete",remaining);
   return {release:true,reason:"ready",outstandingPence:0};
 }
