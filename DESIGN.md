@@ -1,0 +1,32 @@
+# MealDeck design system (current-source reference)
+
+This document records MealDeck's own committed visual language. It is not a copy of a design-system sample. See `src/styles.css` and `src/styles.mealdeck-rebuild.css` for authoritative values.
+
+## Audience and product idea
+
+People ordering food for different cravings should feel the pleasure of choosing **many brands from one kitchen**, with one basket and one handoff. The MealDeck card/deck motif and real food photography distinguish the brand. The ordering screen is an **Operate** surface; the homepage and franchise pages are **Persuade** surfaces.
+
+## Established visual identity
+
+- Marketing: MealDeck red `#d5141d`, deep red `#951018`, black `#111111`, warm cream `#fff6e8`, paper `#fffdf7`, yellow `#ffd51f` and gold `#e7b53a`. The CSS variables, not these examples, remain the source of truth.
+- App: semantic light/dark tokens in OKLCH. The current root shell forces a dark initial appearance; do not mix marketing paper text with dark app card tokens.
+- Typography: Outfit for display, DM Sans for controls and content, Caveat only where the existing brand script treatment calls for it.
+- Imagery: use the repository's approved brand and dish assets. When a generic/category image represents a *sample* menu item, label it **illustrative**. Never show an illustrative image as an exact product photograph.
+- Surfaces: readable dish details, clear interactive target areas and restrained depth. Do not layer generic icon cards or rainbow glows onto the card/food identity.
+
+## Experience priorities
+
+1. First-screen hierarchy: postcode/location state, fulfilment, browse, basket and readiness should be instantly understandable.
+2. Multi-brand continuity: switching between available brands must not discard the current basket for the same kitchen. Location changes have their own reset rules.
+3. Inclusive design: semantic headings and landmarks, visible keyboard focus, adequate contrast, descriptive controls, reduced-motion alternatives, 44px touch targets where possible, and overflow checks at narrow widths.
+4. Truthful status: *sample*, *illustrative*, *coming soon*, *unavailable*, *pending payment*, *paid* and *completed* are distinct states. Do not use paid/success visuals without server-confirmed evidence.
+5. Small screens: single-column dish cards, practical search controls and basket panels that preserve checkout readability. Provide real error, zero-result, unavailable and pending states.
+6. Chat commerce: offer only a clearly labelled enquiry/assistant handoff after an official location-specific number has passed production verification. WhatsApp is not the payment processor.
+
+## External design references
+
+Taste Skill guides subject-specific composition, Impeccable guides accessibility and interaction finishing, and Awesome DESIGN.md is a **reference catalogue**. Use these as review methods, never to overwrite MealDeck's identity or copy another company's design assets.
+
+## Review protocol
+
+Inspect existing pages and CSS before changes. Run build, tests, lint and a keyboard/mobile browser pass (320px, 390px, 768px, desktop). If actual screenshots or live runtime verification are unavailable, record that limitation rather than claiming pixel-perfect validation.

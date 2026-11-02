@@ -19,3 +19,9 @@
 - Hero and offer cards import the same food-suit artwork map so their corner emblems stay consistent.
 - Play uses a separate realistic food artwork map so game imagery can improve without changing approved logo and marketing card emblems.
 - Ordering uses a browse-first, restaurant-led marketplace layout while serviceability is confirmed separately — keeps discovery fast without weakening location rules.
+
+
+- Review `PRODUCT.md` and `DESIGN.md` before MealDeck feature/UI changes. Preserve the card/food identity, existing approved artwork, app vs marketing contrast tokens, and clearly marked sample/illustrative menus.
+- Develop via the GitHub codebase and tests; do not invoke Lovable as a build environment. Leave all existing Git/Lovable history untouched.
+- MealDeck must never assume that a WhatsApp chat, agent response, browser redirect or illustrative price is a paid order. Only Dishbee's verified server-side payment/order authority can release KDS.
+- Per-location official WhatsApp business numbers are server-configured, verified and disabled by default. No private account/customer data, checkout state or prices in chat-link query strings. Omniqora keeps channel identity; Cafe 1's independent EPOS and restricted menus stay separate.

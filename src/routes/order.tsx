@@ -57,6 +57,7 @@ import { SiteHeader } from "@/components/site-header";
 import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { BrandDiscoveryGallery, FavouriteDishRail } from "@/components/order/premium-discovery";
+import { WhatsAppBasketHandoff } from "@/components/order/whatsapp-basket-handoff";
 import {
   FAVOURITES_STORAGE_KEY, BASKET_STORAGE_KEY,
   decodeFavourites, toggleFavourite, encodeSavedBasket, decodeSavedBasket,
@@ -485,6 +486,9 @@ function OrderPage() {
               ) : null}
             </div>
 
+            {location && lines.length ? (
+              <WhatsAppBasketHandoff location={location} fulfilment={fulfilment} lines={lines} />
+            ) : null}
             {suggestions.length && lines.length ? (
               <section className="mt-5 border-t border-border pt-4" aria-label="Basket add-on ideas">
                 <div className="flex items-center justify-between gap-2">

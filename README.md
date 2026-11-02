@@ -129,3 +129,24 @@ Set `OMNIQORA_PUBLIC_API_URL` on the server to the complete deployed franchise i
 
 Run the franchise regressions with `bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts`. The verification workflow also builds the site and checks the franchise implementation with ESLint.
 
+
+
+## WhatsApp basket assistance (gated)
+
+A separate optional contact handoff prepares a privacy-minimised message with
+MealDeck location, preferred fulfilment and multiple brands' dish quantities
+and modifier **names**. It is a conversation enquiry, not an order, price quote
+or payment.
+
+`src/lib/whatsapp-assistance.ts` builds and validates the message.
+`src/lib/whatsapp-assistance.functions.ts` returns only a verified
+public E.164 business number after the server-side release and location gates
+are satisfied. The basket component is hidden while `COMING_SOON`
+is enabled. No public WhatsApp credentials or operational secrets are stored
+in the browser.
+
+See `docs/whatsapp-omniqora-dishbee-cafe1.md` for the staged
+Dishbee/Omniqora/Cafe1 runtime contract and activation checks, `DESIGN.md`
+for retained visual rules, and `PRODUCT.md` for source-of-truth boundaries.
+
+Tests: `bun test tests/whatsapp-assistance.test.ts`
