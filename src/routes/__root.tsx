@@ -8,6 +8,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -157,14 +158,16 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname=useRouterState({select:state=>state.location.pathname});
+  const internal=pathname==="/ops"||pathname.startsWith("/ops/");
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <ComingSoonBanner />
+      {!internal&&<ComingSoonBanner />}
       <Outlet />
       <BackToTop />
-      <MobileTabBar />
+      {!internal&&<MobileTabBar />}
       <Toaster position="top-center" />
     </QueryClientProvider>
   );
