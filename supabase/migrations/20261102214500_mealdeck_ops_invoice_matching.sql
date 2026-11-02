@@ -259,6 +259,7 @@ begin
   if not found then raise exception 'mealdeck_ops_invoice_po_line_mismatch'; end if;
 
   if p_quantity is null or p_quantity<=0 or p_quantity>10000000
+    or p_quantity<>round(p_quantity,3)
     or p_net is null or p_net<0 or p_net>1000000000
     or p_vat is null or p_vat<0 or p_vat>200000000
     or p_tax not in (
