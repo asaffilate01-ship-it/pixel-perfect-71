@@ -6,7 +6,7 @@ export type OpsPurchase={
   order_id:string;supplier_name:string;
   status:"draft"|"submitted"|"approved"|"partially_received"|"received"|"cancelled";
   created_at:string;approved_at:string|null;
-  ordered_units:number;received_units:number;
+  line_count:number;received_line_count:number;
   quoted_total_pence:number|null;note:string;created_by:string;
 };
 export type OpsPurchaseLine={
