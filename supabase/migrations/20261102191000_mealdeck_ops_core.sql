@@ -46,6 +46,14 @@ as $$
       'finance.read','finance.manage','analytics.read',
       'inventory.read','inventory.write','staff.read','staff.manage'
     ]::text[])
+    and not exists(
+      select 1 from public.mealdeck_ops_staff_access denied
+      where denied.user_id=(select auth.uid())
+        and denied.tenant_id=p_tenant and denied.enabled
+        and (denied.location_id is null or
+          (p_location is not null and denied.location_id=p_location))
+        and p_permission=any(denied.deny_permissions)
+    )
     and exists(
       select 1 from public.mealdeck_ops_staff_access a
       where a.user_id=(select auth.uid())
