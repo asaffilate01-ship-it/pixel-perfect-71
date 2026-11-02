@@ -24,7 +24,7 @@ describe("Phase 17 master pass and courier planning", () => {
   test("missing, unknown, duplicate or cancelled tickets cannot complete", () => {
     expect(evaluateMasterPass("ord_1", station, tickets().slice(0, 1)).reason).toBe("kitchens_incomplete");
     expect(evaluateMasterPass("ord_1", station, [...tickets(), { key: "other", status: "ready" }]).reason).toBe("invalid_routing");
-    expect(evaluateMasterPass("ord_1", [...station, station[0]], tickets()).reason).toBe("invalid_routing");
+    expect(evaluateMasterPass("ord_1", [...station, station[0]!], tickets()).reason).toBe("invalid_routing");
     expect(evaluateMasterPass("ord_1", station, tickets("cancelled")).reason).toBe("kitchen_cancelled");
   });
   test("selects cheapest eligible quote with stable one-order booking identity", () => {
@@ -38,7 +38,7 @@ describe("Phase 17 master pass and courier planning", () => {
     const initial = input();
     expect(planCourierBooking(input({ order: { ...initial.order, status: "payment_pending" } })).reason).toBe("payment_unconfirmed");
     expect(planCourierBooking(input({ order: { ...initial.order,
-      shares: [{ ...initial.order.shares[0], refundedPence: 1 }] } })).reason).toBe("payment_unconfirmed");
+      shares: [{ ...initial.order.shares[0]!, refundedPence: 1 }] } })).reason).toBe("payment_unconfirmed");
   });
   test("waits for all brand stations and rejects cancelled production", () => {
     expect(planCourierBooking(input({ actualTickets: tickets("preparing") })).reason).toBe("kitchens_incomplete");
