@@ -10,10 +10,11 @@ export type PurchaseLineSummary={
   price_per_pack_pence:number|null;
 };
 
-export function positiveBaseQuantity(text:string):number|null{
+export function positiveBaseQuantity(text:string,unit:string="g"):number|null{
   if(!/^(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,3})?$/.test(text.trim()))return null;
   const value=Number(text);
-  return Number.isFinite(value)&&value>0&&value<=10000000?value:null;
+  return Number.isFinite(value)&&value>0&&value<=10000000&&
+    (unit!=="each"||Number.isInteger(value))?value:null;
 }
 export function poRemainingBaseUnits(line:PurchaseLineSummary):number|null{
   const total=line.pack_count*line.base_units_per_pack;
