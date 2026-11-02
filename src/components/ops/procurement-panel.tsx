@@ -213,7 +213,9 @@ export function OpsProcurementPanel(props:Props){
           </div>
           <button type="button" className={action} disabled={busy||!ingredientId}
             onClick={()=>void execute(async()=>{
-              const count=Number(packCount),unit=positiveBaseQuantity(baseUnits);
+              const ingredient=ingredients.find(x=>x.ingredient_id===ingredientId);
+              const count=Number(packCount);
+              const unit=positiveBaseQuantity(baseUnits,ingredient?.base_unit??"g");
               const price=poundsToPence(packPrice);
               if(!Number.isInteger(count)||count<1||unit===null||price===null)
                 throw new Error("Enter a whole pack count, valid unit quantity and net pack price.");
@@ -291,7 +293,7 @@ export function OpsProcurementPanel(props:Props){
           <button type="button" className={action}
             disabled={busy||!receiptLine||!batchCode.trim()||!deliveryRef.trim()}
             onClick={()=>void execute(async()=>{
-              const amount=positiveBaseQuantity(receiptQuantity);
+              const amount=positiveBaseQuantity(receiptQuantity,chosenReceiptLine?.base_unit??"g");
               if(amount===null||remaining===null||amount>remaining)
                 throw new Error("Quantity must be positive and within unreceived PO balance.");
               if(expiryKind!=="none"&&!expiryDate)
