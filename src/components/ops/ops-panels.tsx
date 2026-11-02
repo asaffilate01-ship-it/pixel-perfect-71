@@ -9,7 +9,7 @@ import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cl
 import type {
   OpsMenuItem,OpsTaxonomy,OpsIngredient,OpsOrder,OpsOrderLine,
   OpsRecipe,OpsStock,OpsCost,OpsRecipeCost,OpsExpense,
-  OpsFinance,OpsAnalytics,OpsStaff,OpsLocation,
+  OpsFinance,OpsAnalytics,OpsStaff,OpsLocation,OpsBrandSales,
 } from "@/lib/mealdeck-ops-types";
 
 const field="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500";
@@ -598,7 +598,7 @@ export function OpsFinancePanel(props:Common&{
   </div>;
 }
 
-export function OpsAnalyticsPanel({analytics}:{analytics:OpsAnalytics|null}){
+export function OpsAnalyticsPanel({analytics,brandSales}:{analytics:OpsAnalytics|null;brandSales:OpsBrandSales[]}){
   const points=cleanDailySeries(analytics?.daily);
   const biggest=Math.max(1,...points.map(x=>x.grossPence));
   return <div className="space-y-5">
@@ -623,6 +623,18 @@ export function OpsAnalyticsPanel({analytics}:{analytics:OpsAnalytics|null}){
           <span className="text-[10px] text-slate-500">{p.date.slice(5)}</span>
         </div>)}
       </div>:<div className={empty}>No recorded paid orders in the selected period.</div>}
+    </section>
+    <section className={card}>
+      <h2 className="text-xl font-black">Multi-brand sales mix</h2>
+      <p className="mt-1 text-sm text-slate-500">Based on recorded paid order items by brand, excluding delivery charges, refunds, settlement fees and taxes.</p>
+      {brandSales.length?<div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {brandSales.map(row=><div key={row.brand_id??row.brand_name}
+          className="rounded-xl border border-slate-200 p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-amber-700">{row.brand_name}</p>
+          <p className="mt-2 text-2xl font-black">{penceToPounds(row.recorded_goods_gross_pence)}</p>
+          <p className="mt-1 text-sm text-slate-600">{row.item_count} items · {row.order_count} orders</p>
+        </div>)}
+      </div>:<p className="mt-4 text-sm text-slate-500">No paid items from this location in the selected period.</p>}
     </section>
     <section className={card}>
       <h2 className="text-xl font-black">Source-channel breakdown</h2>
