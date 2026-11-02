@@ -386,7 +386,7 @@ function MealDeckOperations(){
             recipeCosts={data.recipeCosts} menu={data.menu}/>}
           {selectedSection==="finance"&&<OpsFinancePanel {...common}
             finance={data.finance} expenses={data.expenses}/>}
-          {selectedSection==="team"&&<OpsTeamPanel {...common} staff={data.staff}/>}
+          {selectedSection==="team"&&<OpsTeamPanel {...common} staff={data.staff} locations={locations}/>}
         </div>}
         <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <Store className="size-4"/> Records are from the approved Dishbee data source. Owner approval is required for tenant-wide editing.
