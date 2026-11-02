@@ -58,6 +58,8 @@ export function OpsSupplierInvoicesPanel({
   const[creditDate,setCreditDate]=useState(currentDate());
 
   const current=invoices.find(x=>x.invoice_id===selectedId);
+  const selectedInvoiceId=current?.invoice_id??"";
+  const selectedPoId=current?.purchase_order_id??"";
   const po=poLines.find(x=>x.line_id===linePoId);
   const totalsMatch=current?isInvoiceSubmittable({
     declaredNetPence:current.declared_net_pence,
@@ -79,14 +81,14 @@ export function OpsSupplierInvoicesPanel({
 
   useEffect(()=>{
     let currentReq=true;
-    if(!current){setLines([]);setPoLines([]);return;}
+    if(!selectedInvoiceId||!selectedPoId){setLines([]);setPoLines([]);return;}
     setLoading(true);setLines([]);setPoLines([]);setError("");
     void Promise.all([
       opsRpc<unknown>("mealdeck_ops_invoice_line_list",{
-        p_tenant:tenantId,p_location:locationId,p_invoice:current.invoice_id,
+        p_tenant:tenantId,p_location:locationId,p_invoice:selectedInvoiceId,
       }),
       opsRpc<unknown>("mealdeck_ops_purchase_lines_list",{
-        p_tenant:tenantId,p_location:locationId,p_order:current.purchase_order_id,
+        p_tenant:tenantId,p_location:locationId,p_order:selectedPoId,
       }),
     ]).then(([a,b])=>{
       if(!currentReq)return;
@@ -96,7 +98,7 @@ export function OpsSupplierInvoicesPanel({
       if(currentReq)setError(reason instanceof Error?reason.message:"Invoice line details could not be loaded.");
     }).finally(()=>{if(currentReq)setLoading(false);});
     return()=>{currentReq=false;};
-  },[current?.invoice_id,current?.purchase_order_id,tenantId,locationId,reloadLines]);
+  },[selectedInvoiceId,selectedPoId,tenantId,locationId,reloadLines]);
 
   async function act(fn:()=>Promise<unknown>,success:string){
     setBusy(true);setError("");
