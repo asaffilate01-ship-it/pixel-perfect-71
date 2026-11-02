@@ -4,8 +4,8 @@
 -- This migration is source-only until real staging RLS and replay are accepted.
 -- No public guest ordering, payment state or KDS release is changed.
 
-create schema if not exists private;
-revoke all on schema private from public, anon, authenticated;
+create schema if not exists mealdeck_ops_private;
+revoke all on schema mealdeck_ops_private from public, anon, authenticated;
 
 create table public.mealdeck_ops_staff_access(
   id uuid primary key default gen_random_uuid(),
@@ -52,7 +52,7 @@ revoke all on public.mealdeck_ops_audit_log from public,anon,authenticated;
 
 -- All permissions are checked against the actor's verified Supabase auth.uid().
 -- A location-specific role cannot perform a tenant-wide global write.
-create or replace function private.mealdeck_ops_can(
+create or replace function mealdeck_ops_private.can(
   p_tenant uuid,p_location uuid,p_permission text
 ) returns boolean
 language sql stable security definer set search_path=''
@@ -118,7 +118,7 @@ as $$
     ),false
   );
 $$;
-revoke all on function private.mealdeck_ops_can(uuid,uuid,text)
+revoke all on function mealdeck_ops_private.can(uuid,uuid,text)
   from public,anon,authenticated;
 
 -- Bootstrap must be performed by an authorised platform DBA after checking
@@ -148,7 +148,7 @@ returns table(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,null,'staff.read') then
+  if not mealdeck_ops_private.can(p_tenant,null,'staff.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   return query
@@ -179,7 +179,7 @@ declare
     'inventory.read','inventory.write','staff.read','staff.manage'
   ];
 begin
-  if not private.mealdeck_ops_can(p_tenant,null,'staff.manage') then
+  if not mealdeck_ops_private.can(p_tenant,null,'staff.manage') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   select a.role into v_actor_role
@@ -266,7 +266,7 @@ create or replace function public.mealdeck_ops_menu_list(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'menu.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'menu.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if not exists(
@@ -287,7 +287,7 @@ begin
       and r.location_id=p_location and r.channel_key='mealdeck'
     where i.tenant_id=p_tenant
       and (
-        private.mealdeck_ops_can(p_tenant,null,'menu.read')
+        mealdeck_ops_private.can(p_tenant,null,'menu.read')
         or exists(
           select 1 from public.menu_item_station_routes sr
           where sr.tenant_id=p_tenant and sr.location_id=p_location
@@ -318,7 +318,7 @@ declare
 begin
   -- Master menu products are shared across locations: only global staff
   -- may edit canonical names and prices.
-  if not private.mealdeck_ops_can(p_tenant,null,'menu.write') then
+  if not mealdeck_ops_private.can(p_tenant,null,'menu.write') then
     raise exception 'mealdeck_ops_global_menu_permission_required';
   end if;
   if nullif(trim(coalesce(p_name,'')),'') is null
@@ -360,7 +360,7 @@ create or replace function public.mealdeck_ops_set_menu_visibility(
 language plpgsql security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'menu.write') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'menu.write') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if p_visible is null or not exists(
@@ -429,7 +429,7 @@ create or replace function public.mealdeck_ops_audit_history(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,null,'staff.read') then
+  if not mealdeck_ops_private.can(p_tenant,null,'staff.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   return query
@@ -458,7 +458,7 @@ begin
     select l.id,l.name::text
     from public.tenant_locations l
     where l.tenant_id=p_tenant
-      and private.mealdeck_ops_can(p_tenant,l.id,'menu.read')
+      and mealdeck_ops_private.can(p_tenant,l.id,'menu.read')
     order by l.name;
 end;
 $$;
@@ -471,7 +471,7 @@ create or replace function public.mealdeck_ops_menu_taxonomy(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'menu.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'menu.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   return query
@@ -493,7 +493,7 @@ language plpgsql security definer set search_path=''
 as $$
 declare v_id uuid;
 begin
-  if not private.mealdeck_ops_can(p_tenant,null,'menu.write') then
+  if not mealdeck_ops_private.can(p_tenant,null,'menu.write') then
     raise exception 'mealdeck_ops_global_menu_permission_required';
   end if;
   if nullif(trim(coalesce(p_name,'')),'') is null
