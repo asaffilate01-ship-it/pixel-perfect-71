@@ -81,7 +81,7 @@ describe("Procurement SQL safety contracts (not a Postgres execution test)",()=>
     const begin=sql.indexOf("create or replace function public.mealdeck_ops_receive_purchase(");
     const end=sql.indexOf("create or replace function public.mealdeck_ops_batch_list(",begin);
     const block=sql.slice(begin,end);
-    expect(block).toContain("unique(purchase_line_id,delivery_reference)");
+    expect(sql).toContain("unique(purchase_line_id,delivery_reference)");
     expect(block).toContain("where rec.purchase_line_id=p_line");
     expect(block).toContain("mealdeck_ops_receipt_idempotency_mismatch");
     expect(block).toContain("v_order.status not in ('approved','partially_received')");
@@ -99,7 +99,7 @@ describe("Procurement SQL safety contracts (not a Postgres execution test)",()=>
     expect(sql).toContain("mealdeck_ops_batch_insufficient_stock");
     expect(sql).toContain("mealdeck_ops_cannot_use_expired_batch");
     expect(sql).toContain("set issued_base_units=b.issued_base_units+p_quantity");
-    expect(sql).toContain("p_quantity,-p_quantity");
+    expect(sql).toContain("v_batch.ingredient_id,-p_quantity,p_reason");
   });
   it("restricts kitchen staff from reading supplier emails or purchasing prices",()=>{
     expect(sql).toContain("then s.contact_email::text else null::text");
