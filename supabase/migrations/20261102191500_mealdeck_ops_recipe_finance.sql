@@ -150,6 +150,24 @@ begin
   return query select i.id,i.name,i.base_unit,i.allergens,i.reorder_threshold,i.active
     from public.mealdeck_ops_ingredients i
     where i.tenant_id=p_tenant
+      and (
+        private.mealdeck_ops_can(p_tenant,null,'recipes.read')
+        or private.mealdeck_ops_can(p_tenant,p_location,'costs.read')
+        or exists(
+          select 1 from public.mealdeck_ops_stock_movements sm
+          where sm.tenant_id=p_tenant and sm.location_id=p_location
+            and sm.ingredient_id=i.id
+        )
+        or exists(
+          select 1 from public.mealdeck_ops_recipe_lines line
+          join public.mealdeck_ops_recipes recipe
+            on recipe.id=line.recipe_id and recipe.tenant_id=p_tenant
+          join public.menu_item_station_routes route
+            on route.tenant_id=p_tenant and route.location_id=p_location
+            and route.item_id=recipe.menu_item_id
+          where line.tenant_id=p_tenant and line.ingredient_id=i.id
+        )
+      )
     order by i.name limit 1000;
 end;
 $$;
