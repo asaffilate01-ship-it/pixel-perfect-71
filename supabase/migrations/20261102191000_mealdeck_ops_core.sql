@@ -286,6 +286,21 @@ begin
       on r.menu_item_id=i.id and r.tenant_id=p_tenant
       and r.location_id=p_location and r.channel_key='mealdeck'
     where i.tenant_id=p_tenant
+      and (
+        private.mealdeck_ops_can(p_tenant,null,'menu.read')
+        or exists(
+          select 1 from public.menu_item_station_routes sr
+          where sr.tenant_id=p_tenant and sr.location_id=p_location
+            and sr.item_id=i.id
+        )
+        or exists(
+          select 1 from public.menu_item_channel_rules local_rule
+          where local_rule.tenant_id=p_tenant
+            and local_rule.location_id=p_location
+            and local_rule.menu_item_id=i.id
+            and local_rule.channel_key='mealdeck'
+        )
+      )
     order by b.name,c.name,i.name
     limit 750;
 end;
