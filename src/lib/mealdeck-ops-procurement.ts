@@ -67,7 +67,7 @@ export function expiryLabel(state:ExpiryState,kind:ExpiryKind="use_by"):string{
   switch(state){
     case"expired":return kind==="best_before"?"Past best-before — inspect quality":"Expired use-by — quarantine";
     case"due_soon":return"Expiry approaching";
-    case"not_applicable":return"No expiry recorded";
+    case"not_applicable":return"Expiry not applicable";
     default:return"Within date";
   }
 }
