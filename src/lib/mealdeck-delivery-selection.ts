@@ -36,5 +36,6 @@ export function chooseDelivery(
   priority[a.provider]-priority[b.provider]||
   a.quoteId.localeCompare(b.quoteId)
  );
- return sorted.length?{selected:sorted[0],reason:"selected"}:{selected:null,reason:"no_serviceable_quotes"};
+ const selected=sorted[0];
+ return selected?{selected,reason:"selected"}:{selected:null,reason:"no_serviceable_quotes"};
 }
