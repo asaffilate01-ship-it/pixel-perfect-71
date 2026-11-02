@@ -330,3 +330,97 @@ grant execute on function public.mealdeck_ops_update_menu_item(
 grant execute on function public.mealdeck_ops_set_menu_visibility(
   uuid,uuid,uuid,boolean
 ) to authenticated;
+
+
+-- Location discovery and category selection are also permission-scoped.
+create or replace function public.mealdeck_ops_locations(p_tenant uuid)
+returns table(location_id uuid,location_name text)
+language plpgsql stable security definer set search_path=''
+as $$
+begin
+  if (select auth.uid()) is null then
+    raise exception 'mealdeck_ops_login_required';
+  end if;
+  return query
+    select l.id,l.name::text
+    from public.tenant_locations l
+    where l.tenant_id=p_tenant
+      and private.mealdeck_ops_can(p_tenant,l.id,'menu.read')
+    order by l.name;
+end;
+$$;
+
+create or replace function public.mealdeck_ops_menu_taxonomy(
+  p_tenant uuid,p_location uuid
+) returns table(
+  category_id uuid,category_name text,brand_id uuid,brand_name text
+)
+language plpgsql stable security definer set search_path=''
+as $$
+begin
+  if not private.mealdeck_ops_can(p_tenant,p_location,'menu.read') then
+    raise exception 'mealdeck_ops_forbidden';
+  end if;
+  return query
+    select c.id,c.name::text,b.id,b.name::text
+    from public.menu_categories c
+    join public.tenant_brands b
+      on b.id=c.brand_id and b.tenant_id=p_tenant
+    where c.tenant_id=p_tenant
+    order by b.name,c.name
+    limit 400;
+end;
+$$;
+
+create or replace function public.mealdeck_ops_create_menu_item(
+  p_tenant uuid,p_brand uuid,p_category uuid,
+  p_name text,p_description text,p_price_pence integer
+) returns uuid
+language plpgsql security definer set search_path=''
+as $$
+declare v_id uuid;
+begin
+  if not private.mealdeck_ops_can(p_tenant,null,'menu.write') then
+    raise exception 'mealdeck_ops_global_menu_permission_required';
+  end if;
+  if nullif(trim(coalesce(p_name,'')),'') is null
+    or length(trim(p_name))>140
+    or length(coalesce(p_description,''))>2000
+    or p_price_pence is null or p_price_pence<0
+    or p_price_pence>1000000
+    or not exists(
+      select 1 from public.tenant_brands b
+      where b.id=p_brand and b.tenant_id=p_tenant
+    )
+    or not exists(
+      select 1 from public.menu_categories c
+      where c.id=p_category and c.tenant_id=p_tenant
+        and (c.brand_id is null or c.brand_id=p_brand)
+    ) then
+    raise exception 'mealdeck_ops_invalid_menu_item';
+  end if;
+  insert into public.menu_items(
+    tenant_id,brand_id,category_id,name,description,price_pence,active
+  ) values(
+    p_tenant,p_brand,p_category,trim(p_name),coalesce(p_description,''),
+    p_price_pence,true
+  ) returning id into v_id;
+  return v_id;
+end;
+$$;
+
+revoke all on function public.mealdeck_ops_locations(uuid)
+  from public,anon,authenticated;
+revoke all on function public.mealdeck_ops_menu_taxonomy(uuid,uuid)
+  from public,anon,authenticated;
+revoke all on function public.mealdeck_ops_create_menu_item(
+  uuid,uuid,uuid,text,text,integer
+) from public,anon,authenticated;
+
+grant execute on function public.mealdeck_ops_locations(uuid)
+  to authenticated;
+grant execute on function public.mealdeck_ops_menu_taxonomy(uuid,uuid)
+  to authenticated;
+grant execute on function public.mealdeck_ops_create_menu_item(
+  uuid,uuid,uuid,text,text,integer
+) to authenticated;
