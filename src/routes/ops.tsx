@@ -1,5 +1,5 @@
 import {createFileRoute,Link} from "@tanstack/react-router";
-import {useCallback,useEffect,useMemo,useRef,useState} from "react";
+import {useCallback,useEffect,useMemo,useRef,useState,type FormEvent} from "react";
 import {
   ArrowLeft,BarChart3,ChefHat,ClipboardList,LockKeyhole,
   LogOut,RefreshCcw,ShieldCheck,Store,UserRoundCog,
@@ -17,7 +17,6 @@ import {
   OpsIngredientPanel,OpsMenuPanel,OpsOrdersPanel,
   OpsRecipePanel,OpsTeamPanel,
 } from "@/components/ops/ops-panels";
-import {SiteFooter} from "@/components/site-footer";
 import {seo} from "@/lib/seo";
 
 export const Route=createFileRoute("/ops")({
@@ -231,7 +230,7 @@ function MealDeckOperations(){
   },[tenant,location,user,selectedSection,fromDate,toDate]);
   useEffect(()=>{if(tenant&&location&&user)void reload();},[tenant,location,user,reload]);
 
-  async function signIn(event:React.FormEvent<HTMLFormElement>){
+  async function signIn(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
     setAuthError("");setLoginBusy(true);
     try{
@@ -396,6 +395,5 @@ function MealDeckOperations(){
         </p>
       </div>}
     </main>
-    <SiteFooter/>
   </div>;
 }
