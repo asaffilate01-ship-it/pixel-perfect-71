@@ -102,7 +102,7 @@ describe("Database source contracts — staging replay still required",()=>{
     expect(core).toContain("mealdeck_ops_owner_approval_required");
     expect(core).toContain("and not exists(");
     expect(core).toContain("p_permission=any(denied.deny_permissions)");
-    expect(core).toContain("private.mealdeck_ops_can");
+    expect(core).toContain("mealdeck_ops_private.can");
     expect(core).not.toContain("user_metadata");
   });
   it("authorises menu writes only via permission-checked RPCs",()=>{
