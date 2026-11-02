@@ -178,6 +178,13 @@ begin
       p_tenant,trim(p_name),p_unit,p_allergens,p_reorder
     ) returning id into v_id;
   else
+    if exists(
+      select 1 from public.mealdeck_ops_ingredients i
+      join public.mealdeck_ops_recipe_lines l
+        on l.ingredient_id=i.id and l.tenant_id=p_tenant
+      where i.id=p_id and i.tenant_id=p_tenant
+        and i.base_unit<>p_unit
+    ) then raise exception 'mealdeck_ops_ingredient_unit_in_use'; end if;
     update public.mealdeck_ops_ingredients i
       set name=trim(p_name),base_unit=p_unit,allergens=p_allergens,
           reorder_threshold=p_reorder,updated_at=now()
@@ -445,7 +452,9 @@ begin
   if p_delta is null or p_delta=0 or abs(p_delta)>1000000 or
     p_reason not in ('opening','purchase','production','waste',
                      'adjustment','transfer_in','transfer_out')
-    or length(coalesce(p_note,''))>300 then
+    or length(coalesce(p_note,''))>300
+    or (p_reason in ('opening','purchase','transfer_in') and p_delta<=0)
+    or (p_reason in ('production','waste','transfer_out') and p_delta>=0) then
     raise exception 'mealdeck_ops_invalid_stock_movement';
   end if;
   insert into public.mealdeck_ops_stock_movements(
@@ -653,6 +662,39 @@ begin
 end;
 $$;
 
+-- Sales mix is grouped from paid Dishbee order items; totals exclude
+-- delivery fees, provider charges, refunds and unverified marketplace events.
+create or replace function public.mealdeck_ops_brand_sales(
+  p_tenant uuid,p_location uuid,p_from date,p_to date
+) returns table(
+  brand_id uuid,brand_name text,item_count bigint,
+  order_count bigint,recorded_goods_gross_pence bigint
+)
+language plpgsql stable security definer set search_path=''
+as $$
+begin
+  if not private.mealdeck_ops_can(p_tenant,p_location,'analytics.read') then
+    raise exception 'mealdeck_ops_forbidden';
+  end if;
+  if p_from is null or p_to is null or p_to<p_from
+    or p_to-p_from>93 then raise exception 'mealdeck_ops_invalid_period'; end if;
+  return query
+    select i.brand_id,coalesce(b.name,'Unassigned')::text,
+      coalesce(sum(i.quantity),0)::bigint,count(distinct o.id)::bigint,
+      coalesce(sum(i.quantity*i.unit_price_pence),0)::bigint
+    from public.orders o
+    join public.order_items i
+      on i.order_id=o.id and i.tenant_id=p_tenant
+    left join public.tenant_brands b
+      on b.id=i.brand_id and b.tenant_id=p_tenant
+    where o.tenant_id=p_tenant and o.location_id=p_location
+      and o.paid_at::date between p_from and p_to
+    group by i.brand_id,b.name
+    order by coalesce(sum(i.quantity*i.unit_price_pence),0) desc
+    limit 100;
+end;
+$$;
+
 create or replace function public.mealdeck_ops_finance_summary(
   p_tenant uuid,p_location uuid,p_from date,p_to date
 ) returns jsonb
@@ -730,7 +772,8 @@ begin
     ('mealdeck_ops_order_history(uuid,uuid,date,date)'),
     ('mealdeck_ops_order_lines(uuid,uuid,uuid)'),
     ('mealdeck_ops_analytics(uuid,uuid,date,date)'),
-    ('mealdeck_ops_finance_summary(uuid,uuid,date,date)')
+    ('mealdeck_ops_finance_summary(uuid,uuid,date,date)'),
+    ('mealdeck_ops_brand_sales(uuid,uuid,date,date)')
   ) as f(signature) loop
     execute format('revoke all on function public.%s from public,anon,authenticated',sig.signature);
     execute format('grant execute on function public.%s to authenticated',sig.signature);
