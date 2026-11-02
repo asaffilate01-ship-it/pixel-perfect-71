@@ -70,7 +70,7 @@ create table public.mealdeck_ops_ingredient_costs(
   cost_per_unit_pence numeric(16,6) not null check(cost_per_unit_pence>=0),
   recorded_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
-  unique(tenant_id,location_id,ingredient_id,effective_on,supplier),
+  -- Append-only quotes: corrections are later rows, never silent overwrites.
   foreign key(tenant_id,ingredient_id)
     references public.mealdeck_ops_ingredients(tenant_id,id)
 );
@@ -365,10 +365,7 @@ begin
   ) values(
     p_tenant,p_location,p_ingredient,p_effective,p_supplier,p_unit_cost,
     (select auth.uid())
-  ) on conflict(tenant_id,location_id,ingredient_id,effective_on,supplier)
-    do update set cost_per_unit_pence=excluded.cost_per_unit_pence,
-      recorded_by=excluded.recorded_by
-  returning id into v_id;
+  ) returning id into v_id;
   return v_id;
 end;
 $$;
