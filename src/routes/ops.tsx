@@ -376,7 +376,7 @@ function MealDeckOperations(){
         :<div>
           {selectedSection==="overview"&&<OpsAnalyticsPanel analytics={data.analytics}/>}
           {selectedSection==="menu"&&<OpsMenuPanel {...common} menu={data.menu} taxonomy={data.taxonomy}/>}
-          {selectedSection==="orders"&&<OpsOrdersPanel orders={data.orders}/>}
+          {selectedSection==="orders"&&<OpsOrdersPanel orders={data.orders} tenantId={tenant} locationId={location}/>}
           {selectedSection==="recipes"&&<OpsRecipePanel {...common}
             recipes={data.recipes} ingredients={data.ingredients} menu={data.menu}/>}
           {selectedSection==="ingredients"&&<OpsIngredientPanel {...common}
