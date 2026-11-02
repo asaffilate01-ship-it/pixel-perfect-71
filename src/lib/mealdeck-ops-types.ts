@@ -12,6 +12,10 @@ export type OpsOrder={
   order_id:string;source:string|null;status:string;fulfilment:string;
   created_at:string;paid_at:string|null;total_pence:number;item_count:number;
 };
+export type OpsOrderLine={
+  item_id:string;item_name:string;brand_name:string|null;quantity:number;
+  unit_price_pence:number;modifiers:unknown;notes:string|null;
+};
 export type OpsIngredient={
   ingredient_id:string;name:string;base_unit:"g"|"ml"|"each";
   allergens:string[];reorder_threshold:number;active:boolean;
