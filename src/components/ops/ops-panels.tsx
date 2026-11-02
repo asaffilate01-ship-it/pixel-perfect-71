@@ -1,7 +1,7 @@
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useState,type ReactNode} from "react";
 import {
-  AlertCircle,BookOpen,CheckCircle2,ClipboardList,
-  Plus,RefreshCcw,ShieldCheck,Trash2,
+  AlertCircle,BookOpen,ClipboardList,
+  Plus,ShieldCheck,Trash2,
 } from "lucide-react";
 import {opsRpc} from "@/lib/mealdeck-ops-browser";
 import {OPS_PERMISSIONS,type OpsPermission} from "@/lib/mealdeck-ops-access";
@@ -25,7 +25,7 @@ type Common={
   reload:()=>Promise<void>;
   notice:(message:string)=>void;
 };
-function Labelled({label,children}:{label:string;children:React.ReactNode}){
+function Labelled({label,children}:{label:string;children:ReactNode}){
   return <label className="block text-sm font-semibold text-slate-800">
     {label}<span className="mt-2 block">{children}</span>
   </label>;
