@@ -62,9 +62,9 @@ function validISODate(text:string):boolean{
   const parsed=new Date(text+"T00:00:00Z");
   return !Number.isNaN(parsed.getTime())&&parsed.toISOString().slice(0,10)===text;
 }
-export function expiryLabel(state:ExpiryState):string{
+export function expiryLabel(state:ExpiryState,kind:ExpiryKind="use_by"):string{
   switch(state){
-    case"expired":return"Expired — quarantine";
+    case"expired":return kind==="best_before"?"Past best-before — inspect quality":"Expired use-by — quarantine";
     case"due_soon":return"Expiry approaching";
     case"not_applicable":return"No expiry recorded";
     default:return"Within date";
