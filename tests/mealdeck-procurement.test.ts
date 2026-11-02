@@ -14,6 +14,8 @@ describe("MealDeck procurement validation",()=>{
   it("accepts measured base units to 0.001, refusing unsafe formats and zero",()=>{
     expect(positiveBaseQuantity("2.125")).toBe(2.125);
     expect(positiveBaseQuantity("1")).toBe(1);
+    expect(positiveBaseQuantity("1.5","each")).toBeNull();
+    expect(positiveBaseQuantity("2","each")).toBe(2);
     for(const invalid of ["0","-1","1.0009","4e3","10,000","", "10000001"]){
       expect(positiveBaseQuantity(invalid)).toBeNull();
     }
@@ -97,6 +99,7 @@ describe("Procurement SQL safety contracts (not a Postgres execution test)",()=>
     expect(sql).toContain("unique(tenant_id,location_id,issue_reference)");
     expect(sql).toContain("mealdeck_ops_issue_idempotency_mismatch");
     expect(sql).toContain("mealdeck_ops_batch_insufficient_stock");
+    expect(sql).toContain("mealdeck_ops_each_requires_integer");
     expect(sql).toContain("mealdeck_ops_cannot_use_expired_batch");
     expect(sql).toContain("set issued_base_units=b.issued_base_units+p_quantity");
     expect(sql).toContain("v_batch.ingredient_id,-p_quantity,p_reason");
