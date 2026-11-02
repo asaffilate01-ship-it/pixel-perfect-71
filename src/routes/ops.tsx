@@ -8,7 +8,7 @@ import type {User} from "@supabase/supabase-js";
 import {getMealDeckOpsClient,opsRpc,opsRows,type OpsAccess} from "@/lib/mealdeck-ops-browser";
 import {effectiveOpsPermissions,OPS_SECTIONS,type OpsPermission,type OpsSection} from "@/lib/mealdeck-ops-access";
 import type {
-  OpsAnalytics,OpsBrandSales,OpsCost,OpsExpense,OpsFinance,OpsIngredient,
+  OpsAnalytics,OpsBrandSales,OpsAudit,OpsCost,OpsExpense,OpsFinance,OpsIngredient,
   OpsLocation,OpsMenuItem,OpsOrder,OpsRecipe,OpsRecipeCost,
   OpsStaff,OpsStock,OpsTaxonomy,
 } from "@/lib/mealdeck-ops-types";
@@ -45,12 +45,12 @@ type WorkspaceData={
   recipes:OpsRecipe[];ingredients:OpsIngredient[];stock:OpsStock[];
   costs:OpsCost[];recipeCosts:OpsRecipeCost[];
   expenses:OpsExpense[];finance:OpsFinance|null;
-  analytics:OpsAnalytics|null;brandSales:OpsBrandSales[];staff:OpsStaff[];
+  analytics:OpsAnalytics|null;brandSales:OpsBrandSales[];staff:OpsStaff[];audit:OpsAudit[];
 };
 const blank=():WorkspaceData=>({
   menu:[],taxonomy:[],orders:[],recipes:[],ingredients:[],
   stock:[],costs:[],recipeCosts:[],expenses:[],finance:null,
-  analytics:null,brandSales:[],staff:[],
+  analytics:null,brandSales:[],staff:[],audit:[],
 });
 function dateISO(date:Date){return date.toISOString().slice(0,10);}
 function lastMonth(){const date=new Date();date.setDate(date.getDate()-29);return dateISO(date);}
@@ -224,11 +224,15 @@ function MealDeckOperations(){
           next.brandSales=row<OpsBrandSales>(brandSales);
           break;
         }
-        case "team":
-          next.staff=row<OpsStaff>(await opsRpc<unknown>(
-            "mealdeck_ops_staff_list",{p_tenant:tenant},
-          ));
+        case "team":{
+          const[staff,audit]=await Promise.all([
+            opsRpc<unknown>("mealdeck_ops_staff_list",{p_tenant:tenant}),
+            opsRpc<unknown>("mealdeck_ops_audit_history",{p_tenant:tenant,p_limit:60}),
+          ]);
+          next.staff=row<OpsStaff>(staff);
+          next.audit=row<OpsAudit>(audit);
           break;
+        }
       }
       if(request===reqRef.current)setData(next);
     }catch(reason){
@@ -396,7 +400,7 @@ function MealDeckOperations(){
             recipeCosts={data.recipeCosts} menu={data.menu}/>}
           {selectedSection==="finance"&&<OpsFinancePanel {...common}
             finance={data.finance} expenses={data.expenses}/>}
-          {selectedSection==="team"&&<OpsTeamPanel {...common} staff={data.staff} locations={locations}/>}
+          {selectedSection==="team"&&<OpsTeamPanel {...common} staff={data.staff} audit={data.audit} locations={locations}/>}
         </div>}
         <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <Store className="size-4"/> Records are from the approved Dishbee data source. Owner approval is required for tenant-wide editing.
