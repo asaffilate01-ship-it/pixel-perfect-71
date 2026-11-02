@@ -153,7 +153,7 @@ export function OpsSupplierInvoicesPanel({
             </div>
             <p className="mt-1 text-sm text-slate-600">{item.supplier_name} · {item.invoice_date}</p>
             <p className="mt-2 text-sm font-bold">{fmt(item.declared_gross_pence)}
-              <span className="ml-3 font-normal text-slate-500">{item.line_count} matched PO line{item.line_count===1?"":"s"}</span>
+              <span className="ml-3 font-normal text-slate-500">{item.line_count} PO line{item.line_count===1?"":"s"} entered</span>
             </p>
           </button>)}
           {!invoices.length&&<p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">No supplier invoices recorded in the selected period.</p>}
