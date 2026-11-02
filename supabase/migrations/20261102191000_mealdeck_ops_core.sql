@@ -316,6 +316,13 @@ begin
   select * into v_before from public.menu_items i
     where i.id=p_item and i.tenant_id=p_tenant for update;
   if not found then return false; end if;
+  if p_active and not v_before.active
+      and not exists(
+        select 1 from public.menu_item_station_routes sr
+        where sr.tenant_id=p_tenant and sr.item_id=p_item
+      ) then
+    raise exception 'mealdeck_ops_station_route_required_before_activation';
+  end if;
   update public.menu_items i
     set name=trim(p_name),description=p_description,
       price_pence=p_price_pence,active=p_active
@@ -461,11 +468,13 @@ begin
     ) then
     raise exception 'mealdeck_ops_invalid_menu_item';
   end if;
+  -- New dishes are DRAFTS until their station routing, allergens and
+  -- actual channel availability have been reviewed. Never publish on insert.
   insert into public.menu_items(
     tenant_id,brand_id,category_id,name,description,price_pence,active
   ) values(
     p_tenant,p_brand,p_category,trim(p_name),coalesce(p_description,''),
-    p_price_pence,true
+    p_price_pence,false
   ) returning id into v_id;
   insert into public.mealdeck_ops_audit_log(
     tenant_id,actor_id,action,entity_type,entity_id,next_value
