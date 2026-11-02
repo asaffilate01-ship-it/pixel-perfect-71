@@ -1,0 +1,13 @@
+name: MealDeck Runner Diagnostic
+on:
+  push:
+    branches:
+      - feature/mealdeck-supplier-invoice-matching-phase9-20261102
+permissions:
+  contents: read
+jobs:
+  runner-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm Actions runner allocation
+        run: echo "MealDeck runner available"
