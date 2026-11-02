@@ -24,6 +24,8 @@ jobs:
         run: bun test tests/whatsapp-assistance.test.ts
       - name: MealDeck backend staff, costing, analytics and RLS source contracts
         run: bun test tests/mealdeck-ops.test.ts
+      - name: Supplier, purchase approval, stock batch and expiry regressions
+        run: bun test tests/mealdeck-procurement.test.ts
       - run: bun run build
       - name: TypeScript validation
         run: bunx tsc --noEmit
@@ -70,4 +72,13 @@ jobs:
           src/lib/mealdeck-ops-browser.ts src/lib/mealdeck-ops-access.ts
           src/lib/mealdeck-ops-math.ts src/lib/mealdeck-ops-types.ts
           tests/mealdeck-ops.test.ts
+          --rule 'prettier/prettier: off'
+
+      - name: Procurement and stock batch lint
+        run: >
+          bunx eslint src/components/ops/procurement-panel.tsx
+          src/components/ops/stock-batches-panel.tsx
+          src/lib/mealdeck-ops-procurement.ts
+          src/lib/mealdeck-ops-procurement-types.ts
+          tests/mealdeck-procurement.test.ts
           --rule 'prettier/prettier: off'
