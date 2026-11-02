@@ -221,7 +221,7 @@ create or replace function public.mealdeck_ops_purchase_list(
 ) returns table(
   order_id uuid,supplier_name text,status text,created_at timestamptz,
   approved_at timestamptz,ordered_units numeric,received_units numeric,
-  quoted_total_pence bigint,note text
+  quoted_total_pence bigint,note text,created_by uuid
 )
 language plpgsql stable security definer set search_path=''
 as $$
@@ -237,7 +237,7 @@ begin
       case when mealdeck_ops_private.can(p_tenant,p_location,'costs.read')
         then coalesce(sum(l.pack_count::bigint*l.price_per_pack_pence),0)
         else null::bigint end as quoted_total_pence,
-      o.note
+      o.note,o.created_by
     from public.mealdeck_ops_purchase_orders o
     join public.mealdeck_ops_suppliers s
       on s.id=o.supplier_id and s.tenant_id=p_tenant
