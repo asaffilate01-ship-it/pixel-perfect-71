@@ -9,7 +9,7 @@ import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cl
 import type {
   OpsMenuItem,OpsTaxonomy,OpsIngredient,OpsOrder,OpsOrderLine,
   OpsRecipe,OpsStock,OpsCost,OpsRecipeCost,OpsExpense,
-  OpsFinance,OpsAnalytics,OpsStaff,
+  OpsFinance,OpsAnalytics,OpsStaff,OpsLocation,
 } from "@/lib/mealdeck-ops-types";
 
 const field="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500";
@@ -639,13 +639,14 @@ export function OpsAnalyticsPanel({analytics}:{analytics:OpsAnalytics|null}){
 }
 
 export function OpsTeamPanel(props:Common&{
-  staff:OpsStaff[];
+  staff:OpsStaff[];locations:OpsLocation[];
 }){
-  const{staff,tenantId,locationId,canGlobal,reload,notice}=props;
+  const{staff,locations,tenantId,locationId,canGlobal,reload,notice}=props;
   const{busy,error,commit}=useCommit({reload,notice});
   const[user,setUser]=useState("");
   const[role,setRole]=useState("viewer");
   const[scope,setScope]=useState("location");
+  const[targetLocation,setTargetLocation]=useState(locationId);
   const[enabled,setEnabled]=useState(true);
   const[grants,setGrants]=useState<string[]>([]);
   const[denies,setDenies]=useState<string[]>([]);
@@ -676,6 +677,7 @@ export function OpsTeamPanel(props:Common&{
             <p className="mt-1 text-xs text-slate-500">Extra grants: {row.grant_permissions.length} · Denials: {row.deny_permissions.length}</p>}
           {ownerOrAdmin&&<button type="button" className="mt-2 min-h-10 text-sm font-semibold underline"
             onClick={()=>{setUser(row.user_id);setRole(row.role);setScope(row.location_id?"location":"global");
+              setTargetLocation(row.location_id??locationId);
               setEnabled(row.enabled);setGrants(row.grant_permissions);setDenies(row.deny_permissions);}}>
             Edit assignment
           </button>}
@@ -695,6 +697,12 @@ export function OpsTeamPanel(props:Common&{
         <Labelled label="Scope"><select className={field} value={scope} onChange={e=>setScope(e.target.value)}>
           <option value="location">Selected kitchen only</option><option value="global">All locations in tenant</option>
         </select></Labelled>
+        {scope==="location"&&<Labelled label="Authorised kitchen"><select className={field}
+          value={targetLocation} onChange={e=>setTargetLocation(e.target.value)}>
+          {locations.map(place=><option key={place.location_id} value={place.location_id}>
+            {place.location_name}
+          </option>)}
+        </select></Labelled>}
         <label className="flex items-center gap-2 text-sm font-semibold">
           <input type="checkbox" className="size-5" checked={enabled} onChange={e=>setEnabled(e.target.checked)}/>
           Assignment enabled
@@ -716,7 +724,7 @@ export function OpsTeamPanel(props:Common&{
             if(!/^[0-9a-f-]{36}$/i.test(user))throw new Error("A valid staff Auth UUID is required.");
             await opsRpc("mealdeck_ops_assign_staff",{
               p_tenant:tenantId,p_user:user,
-              p_location:scope==="global"?null:locationId,
+              p_location:scope==="global"?null:targetLocation,
               p_role:role,p_grants:grants,p_denies:denies,p_enabled:enabled,
             });
           },"Staff role assignment saved and restricted by database permissions.")}>
