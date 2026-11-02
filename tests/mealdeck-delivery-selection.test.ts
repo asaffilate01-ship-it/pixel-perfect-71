@@ -10,4 +10,5 @@ describe("delivery provider selection",()=>{
  test("excludes late ETA",()=>expect(chooseDelivery([q({estimatedMinutes:90})],"GBP",now,60).selected).toBeNull());
  test("excludes negative or fractional prices",()=>expect(chooseDelivery([q({amountPence:-1}),q({quoteId:"q2",amountPence:1.5})],"GBP",now,60).selected).toBeNull());
  test("prefers faster quote when prices match",()=>expect(chooseDelivery([q(),q({provider:"stuart",quoteId:"q2",estimatedMinutes:20})],"GBP",now,60).selected?.provider).toBe("stuart"));
+ test("rejects unknown provider at runtime even when quote looks cheap",()=>expect(chooseDelivery([q({provider:"unknown_provider" as DeliveryQuote["provider"],amountPence:1})],"GBP",now,60).selected).toBeNull());
 });
