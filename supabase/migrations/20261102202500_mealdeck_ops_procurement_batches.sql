@@ -446,8 +446,8 @@ begin
   select * into v_order from public.mealdeck_ops_purchase_orders o
     where o.id=v_line.purchase_order_id and o.tenant_id=p_tenant
       and o.location_id=p_location for update;
-  if not found or v_order.status not in ('approved','partially_received') then
-    raise exception 'mealdeck_ops_purchase_not_receivable'; end if;
+  if not found then
+    raise exception 'mealdeck_ops_purchase_order_not_found'; end if;
   select * into v_line from public.mealdeck_ops_purchase_lines l
     where l.id=p_line and l.tenant_id=p_tenant
       and l.location_id=p_location for update;
@@ -468,6 +468,9 @@ begin
     return v_existing.id;
   end if;
 
+  if v_order.status not in ('approved','partially_received') then
+    raise exception 'mealdeck_ops_purchase_not_receivable';
+  end if;
   if v_line.received_base_units+p_base_qty >
       v_line.pack_count::numeric*v_line.base_units_per_pack then
     raise exception 'mealdeck_ops_received_quantity_exceeds_purchase'; end if;
