@@ -123,7 +123,7 @@ revoke all on function mealdeck_ops_private.can(uuid,uuid,text)
 
 -- Bootstrap must be performed by an authorised platform DBA after checking
 -- the Auth user ID, canonical Dishbee tenant and location. There is NO signup
--- trigger, tenant self-registration, automatic owner, or user_metadata shortcut.
+-- trigger, tenant self-registration, automatic owner, or editable client role shortcut.
 create or replace function public.mealdeck_ops_my_access()
 returns table(
   access_id uuid,tenant_id uuid,tenant_name text,location_id uuid,
