@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "verify:procurement:staging": "node verification/mealdeck-procurement-staging.mjs"
+    "verify:procurement:staging": "node verification/mealdeck-procurement-staging.mjs",
+    "verify:invoices:staging": "node verification/mealdeck-invoice-staging.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
