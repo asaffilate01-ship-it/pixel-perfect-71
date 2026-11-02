@@ -143,16 +143,16 @@ returns table(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not(private.mealdeck_ops_can(p_tenant,p_location,'recipes.read') or
-     private.mealdeck_ops_can(p_tenant,p_location,'inventory.read')) then
+  if not(mealdeck_ops_private.can(p_tenant,p_location,'recipes.read') or
+     mealdeck_ops_private.can(p_tenant,p_location,'inventory.read')) then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   return query select i.id,i.name,i.base_unit,i.allergens,i.reorder_threshold,i.active
     from public.mealdeck_ops_ingredients i
     where i.tenant_id=p_tenant
       and (
-        private.mealdeck_ops_can(p_tenant,null,'recipes.read')
-        or private.mealdeck_ops_can(p_tenant,p_location,'costs.read')
+        mealdeck_ops_private.can(p_tenant,null,'recipes.read')
+        or mealdeck_ops_private.can(p_tenant,p_location,'costs.read')
         or exists(
           select 1 from public.mealdeck_ops_stock_movements sm
           where sm.tenant_id=p_tenant and sm.location_id=p_location
@@ -179,7 +179,7 @@ language plpgsql security definer set search_path=''
 as $$
 declare v_id uuid;
 begin
-  if not private.mealdeck_ops_can(p_tenant,null,'recipes.write') then
+  if not mealdeck_ops_private.can(p_tenant,null,'recipes.write') then
     raise exception 'mealdeck_ops_global_recipes_permission_required';
   end if;
   if p_unit not in ('g','ml','each')
@@ -230,7 +230,7 @@ create or replace function public.mealdeck_ops_recipe_list(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'recipes.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'recipes.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   return query
@@ -252,7 +252,7 @@ begin
     left join public.tenant_brands b on b.id=m.brand_id and b.tenant_id=p_tenant
     where r.tenant_id=p_tenant
       and (
-        private.mealdeck_ops_can(p_tenant,null,'recipes.read')
+        mealdeck_ops_private.can(p_tenant,null,'recipes.read')
         or exists(
           select 1 from public.menu_item_station_routes sr
           where sr.tenant_id=p_tenant and sr.location_id=p_location
@@ -279,7 +279,7 @@ declare
   v_waste numeric;
   v_count integer:=0;
 begin
-  if not private.mealdeck_ops_can(p_tenant,null,'recipes.write') then
+  if not mealdeck_ops_private.can(p_tenant,null,'recipes.write') then
     raise exception 'mealdeck_ops_global_recipes_permission_required';
   end if;
   if not exists(select 1 from public.menu_items m
@@ -363,7 +363,7 @@ language plpgsql security definer set search_path=''
 as $$
 declare v_id uuid;
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'costs.write') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'costs.write') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if not exists(select 1 from public.tenant_locations l
@@ -397,7 +397,7 @@ create or replace function public.mealdeck_ops_cost_list(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'costs.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'costs.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   return query
@@ -427,7 +427,7 @@ create or replace function public.mealdeck_ops_recipe_costs(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'costs.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'costs.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   return query
@@ -469,7 +469,7 @@ language plpgsql security definer set search_path=''
 as $$
 declare v_id uuid;
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'inventory.write') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'inventory.write') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if not exists(select 1 from public.tenant_locations l
@@ -505,7 +505,7 @@ create or replace function public.mealdeck_ops_stock_levels(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'inventory.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'inventory.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   return query
@@ -529,7 +529,7 @@ language plpgsql security definer set search_path=''
 as $$
 declare v_id uuid;
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'finance.manage') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'finance.manage') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if not exists(select 1 from public.tenant_locations l
@@ -561,7 +561,7 @@ create or replace function public.mealdeck_ops_expense_list(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'finance.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'finance.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if p_from is null or p_to is null or p_to<p_from
@@ -588,7 +588,7 @@ create or replace function public.mealdeck_ops_order_history(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'orders.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'orders.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if p_from is null or p_to is null or p_to<p_from
@@ -621,7 +621,7 @@ create or replace function public.mealdeck_ops_order_lines(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'orders.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'orders.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if not exists(select 1 from public.orders o
@@ -648,7 +648,7 @@ language plpgsql stable security definer set search_path=''
 as $$
 declare v_result jsonb;
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'analytics.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'analytics.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if p_from is null or p_to is null or p_to<p_from
@@ -702,7 +702,7 @@ create or replace function public.mealdeck_ops_brand_sales(
 language plpgsql stable security definer set search_path=''
 as $$
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'analytics.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'analytics.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if p_from is null or p_to is null or p_to<p_from
@@ -737,7 +737,7 @@ declare
   v_refunds bigint;
   v_expenses bigint;
 begin
-  if not private.mealdeck_ops_can(p_tenant,p_location,'finance.read') then
+  if not mealdeck_ops_private.can(p_tenant,p_location,'finance.read') then
     raise exception 'mealdeck_ops_forbidden';
   end if;
   if p_from is null or p_to is null or p_to<p_from
