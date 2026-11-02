@@ -90,7 +90,7 @@ export function OpsStockBatchesPanel({
       </div>
       {counts.expired>0&&<div role="alert" className="mt-4 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
         <ShieldAlert className="mt-0.5 size-5 shrink-0"/>
-        <span>Expired batches need immediate physical quarantine and staff review. The new lot-issue function rejects expired use-by stock for production; legacy KDS, menu availability and inventory workflows are not automatically blocked by this screen.</span>
+        <span>Past-date stock requires human review: quarantine expired USE-BY lots immediately; BEST-BEFORE dates indicate a quality limit and need separate food-safety assessment. The new lot-issue function blocks expired use-by lots for production, but legacy KDS and other inventory workflows are not automatically blocked.</span>
       </div>}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <label className="text-sm font-semibold">Show batches
@@ -119,7 +119,7 @@ export function OpsStockBatchesPanel({
               <span className={batch.expiry_state==="expired"?
                 "font-bold text-rose-800":batch.expiry_state==="due_soon"?
                 "font-bold text-amber-700":"text-slate-600"}>
-                {expiryLabel(batch.expiry_state)}
+                {expiryLabel(batch.expiry_state,batch.expiry_kind)}
               </span>
             </td>
             <td className="px-3 py-4">{canIssue&&<button type="button"
