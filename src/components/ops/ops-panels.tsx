@@ -7,7 +7,7 @@ import {opsRpc} from "@/lib/mealdeck-ops-browser";
 import {OPS_PERMISSIONS,type OpsPermission} from "@/lib/mealdeck-ops-access";
 import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cleanDailySeries} from "@/lib/mealdeck-ops-math";
 import type {
-  OpsMenuItem,OpsTaxonomy,OpsIngredient,OpsOrder,
+  OpsMenuItem,OpsTaxonomy,OpsIngredient,OpsOrder,OpsOrderLine,
   OpsRecipe,OpsStock,OpsCost,OpsRecipeCost,OpsExpense,
   OpsFinance,OpsAnalytics,OpsStaff,
 } from "@/lib/mealdeck-ops-types";
@@ -173,18 +173,36 @@ export function OpsMenuPanel(props:Common&{
   </div>;
 }
 
-export function OpsOrdersPanel({orders}:{orders:OpsOrder[]}){
+export function OpsOrdersPanel({
+  orders,tenantId,locationId,
+}:{orders:OpsOrder[];tenantId:string;locationId:string}){
+  const[selected,setSelected]=useState("");
+  const[lines,setLines]=useState<OpsOrderLine[]>([]);
+  const[loading,setLoading]=useState(false);
+  const[error,setError]=useState("");
+  async function showLines(id:string){
+    if(selected===id){setSelected("");setLines([]);return;}
+    setLoading(true);setError("");setSelected(id);setLines([]);
+    try{
+      const rows=await opsRpc<OpsOrderLine[]>("mealdeck_ops_order_lines",{
+        p_tenant:tenantId,p_location:locationId,p_order:id,
+      });
+      setLines(Array.isArray(rows)?rows:[]);
+    }catch(reason){
+      setError(reason instanceof Error?reason.message:"Order items unavailable.");
+    }finally{setLoading(false);}
+  }
   return <section className={card}>
     <div className="flex items-start gap-3">
       <ClipboardList className="mt-1 size-6 text-amber-600"/>
       <div><h2 className="text-xl font-black">Order history</h2>
-        <p className="mt-1 text-sm text-slate-500">Real Dishbee orders only. Payment pending is not a completed sale; marketplace order numbers and delivery proofs will follow canonical provider integrations.</p>
+        <p className="mt-1 text-sm text-slate-500">Real Dishbee orders only. Payment pending is not a completed sale; marketplace order numbers and delivery proofs follow provider integrations, not guessed labels.</p>
       </div>
     </div>
     <div className="mt-5 overflow-x-auto">
       <table className="min-w-full text-left text-sm">
         <thead><tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
-          {["Order","Channel","Fulfilment","Received","Items","Amount","Status","Paid"].map(x=><th key={x} className="whitespace-nowrap px-3 py-3">{x}</th>)}
+          {["Order","Channel","Fulfilment","Received","Items","Amount","Status","Paid","Details"].map(x=><th key={x} className="whitespace-nowrap px-3 py-3">{x}</th>)}
         </tr></thead>
         <tbody>{orders.map(row=><tr key={row.order_id} className="border-b border-slate-100">
           <td className="whitespace-nowrap px-3 py-4 font-bold">{row.order_id.slice(0,8).toUpperCase()}</td>
@@ -195,10 +213,33 @@ export function OpsOrdersPanel({orders}:{orders:OpsOrder[]}){
           <td className="whitespace-nowrap px-3 py-4 font-bold">{penceToPounds(row.total_pence)}</td>
           <td className="px-3 py-4"><Status label={row.status}/></td>
           <td className="px-3 py-4">{row.paid_at?"Recorded paid":"Not recorded"}</td>
+          <td className="px-3 py-4"><button type="button" className={secondary}
+            aria-expanded={selected===row.order_id}
+            onClick={()=>void showLines(row.order_id)}>{selected===row.order_id?"Close":"View items"}</button></td>
         </tr>)}</tbody>
       </table>
     </div>
     {orders.length===0&&<div className={empty}>No orders are available for this period and kitchen. Sample baskets are not included.</div>}
+    {selected&&<aside className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5" aria-label="Selected order lines">
+      <h3 className="font-black">Order {selected.slice(0,8).toUpperCase()} · kitchen items</h3>
+      <p className="mt-1 text-xs text-slate-600">Item names, quantities, modifiers and order-item notes are from the canonical ledger. This view cannot change payment or KDS state.</p>
+      {loading?<p className="mt-3 text-sm">Loading order items…</p>
+      :error?<ErrorRow error={error}/>:lines.length?<div className="mt-3 space-y-2">
+        {lines.map(line=><div key={line.item_id} className="rounded-xl bg-white p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-bold">{line.quantity} × {line.item_name}</p>
+            <span className="text-sm font-semibold">{penceToPounds(line.unit_price_pence)} per item</span>
+          </div>
+          {line.brand_name&&<p className="text-xs text-amber-700">{line.brand_name}</p>}
+          {Array.isArray(line.modifiers)&&line.modifiers.length>0&&
+            <p className="mt-1 text-xs text-slate-600">Options: {line.modifiers.map((m:unknown)=>{
+              const entry=m&&typeof m==="object"?m as Record<string,unknown>:null;
+              return typeof entry?.["name"]==="string"?entry["name"]:"Selected option";
+            }).join(", ")}</p>}
+          {line.notes&&<p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm"><b>Kitchen note:</b> {line.notes}</p>}
+        </div>)}
+      </div>:<p className="mt-3 text-sm text-slate-600">No item rows returned for this order.</p>}
+    </aside>}
   </section>;
 }
 
