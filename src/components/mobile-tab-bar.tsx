@@ -32,7 +32,7 @@ export function MobileTabBar() {
         key={t.label}
         to={t.to}
         {...(t.hash ? { hash: t.hash } : {})}
-        className="group relative flex flex-1 flex-col items-center justify-center gap-1 py-2 active:scale-90 transition-transform"
+        className="group relative flex min-h-12 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-2 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-95"
         aria-current={active ? "page" : undefined}
       >
         <span
@@ -42,7 +42,7 @@ export function MobileTabBar() {
         >
           <Icon className="size-5" strokeWidth={active ? 2.5 : 2} />
         </span>
-        <span className={`font-display text-[10px] font-semibold tracking-wide ${active ? "text-accent" : "text-muted-foreground"}`}>
+        <span className={`font-display text-xs font-semibold tracking-wide ${active ? "text-accent" : "text-muted-foreground"}`}>
           {t.label}
         </span>
       </Link>
@@ -64,8 +64,9 @@ export function MobileTabBar() {
           <div className="flex flex-1 justify-center">
             <Link
               to="/order"
-              aria-label="Coming soon"
-              className={`relative -mt-8 flex h-20 w-14 rotate-[-6deg] flex-col items-center justify-center rounded-lg border border-ink/15 bg-paper shadow-xl transition-transform duration-300 active:scale-90 ${
+              aria-label="Preview the MealDeck menu. Ordering coming soon"
+              aria-current={dealActive ? "page" : undefined}
+              className={`relative -mt-8 flex h-20 w-14 rotate-[-6deg] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent flex-col items-center justify-center rounded-lg border border-ink/15 bg-paper shadow-xl transition-transform duration-300 active:scale-90 ${
                 dealActive ? "rotate-0 scale-105" : "hover:rotate-0"
               }`}
             >
