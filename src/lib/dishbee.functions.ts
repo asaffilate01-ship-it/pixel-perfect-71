@@ -1,5 +1,5 @@
 import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
-import { canonicalDeliveryFeePence, validateCheckoutDeliveryFee } from "./mealdeck-checkout-delivery-fee";
+import { estimateGoodsFromDishbee, verifyDishbeeFeeResult } from "./mealdeck-live-price-estimate";
 import { safeCourierTrackingUrl } from "./mealdeck-tracking-links";
 import { mayCreateCustomerOrder, parseDishbeeOrderReceipt, resolveDishbeeServiceability } from "./mealdeck-dishbee-contract";
 import { createServerFn } from "@tanstack/react-start";
@@ -247,6 +247,64 @@ export const getCatalogue = createServerFn({ method: "GET" })
     }
   });
 
+/** Read-only estimate from the CURRENT server-side Dishbee catalogue.
+ * Never creates a payment session, captures funds or confirms serviceability
+ * from a browser price. The final Dishbee order is repriced independently.
+ */
+export type DeliveryEstimateResult =
+  | {ready:true;kind:"estimate";goodsPence:number;deliveryPence:number;totalPence:number}
+  | {ready:false;reason:"unavailable"|"menu_changed"|"policy_unavailable"};
+
+const deliveryEstimateInput=z.object({
+  location:locationSchema,
+  postcode:z.string().trim().min(5).max(12),
+  lines:z.array(z.object({
+    itemId:z.string().uuid(),
+    quantity:z.number().int().min(1).max(50),
+    modifierIds:z.array(z.string().uuid()).max(20),
+  })).min(1).max(60),
+});
+
+export const estimateDishbeeDelivery=createServerFn({method:"POST"})
+  .inputValidator((input:unknown)=>deliveryEstimateInput.parse(input))
+  .handler(async({data}):Promise<DeliveryEstimateResult>=>{
+    const config=readConfig(data.location);
+    if(!config)return{ready:false,reason:"unavailable"};
+    const sb=dishbeeClient(config);
+    try{
+      const service=await sb.rpc("public_mealdeck_serviceability",{
+        p_postcode:data.postcode,p_fulfilment:"delivery",
+      });
+      if(service.error)throw new Error("serviceability_unavailable");
+      const approved=resolveDishbeeServiceability(service.data,[{
+        location:data.location,tenantId:config.tenantId,locationId:config.locationId,
+      }]);
+      if(!approved.served||approved.location!==data.location||!approved.channelOpen)
+        return{ready:false,reason:"unavailable"};
+      const catalogue=await sb.rpc("public_mealdeck_catalogue",{
+        p_tenant:config.tenantId,p_location:config.locationId,
+      });
+      if(catalogue.error||!Array.isArray(catalogue.data))
+        return{ready:false,reason:"unavailable"};
+      const priced=estimateGoodsFromDishbee(catalogue.data,data.lines);
+      if(!priced.valid)return{ready:false,reason:"menu_changed"};
+      const fee=await sb.rpc("public_mealdeck_delivery_fee",{
+        p_location:config.locationId,p_order_value_pence:priced.goodsPence,
+      });
+      if(fee.error)return{ready:false,reason:"policy_unavailable"};
+      const delivery=verifyDishbeeFeeResult(fee.data);
+      if(delivery===null||priced.goodsPence+delivery>10_000_000)
+        return{ready:false,reason:"policy_unavailable"};
+      return{
+        ready:true,kind:"estimate",goodsPence:priced.goodsPence,
+        deliveryPence:delivery,totalPence:priced.goodsPence+delivery,
+      };
+    }catch{
+      // No backend or postcode details in the customer-facing message.
+      return{ready:false,reason:"unavailable"};
+    }
+  });
+
 const orderSchema = z
   .object({
     location: locationSchema,
@@ -271,7 +329,6 @@ const orderSchema = z
       )
       .min(1)
       .max(60),
-    deliveryPence: z.number().int().min(0).max(5000),
     customer: z.object({
       name: z.string().trim().min(1).max(120),
       phone: z.string().trim().min(5).max(40),
@@ -369,15 +426,9 @@ export const placeOrder = createServerFn({ method: "POST" })
       return { status: "unconfigured" };
     }
 
-    // The browser can display the fee, but cannot set or discount it.
-    // Reject stale/tampered totals and always send the canonical server amount.
-    if (!validateCheckoutDeliveryFee(data.fulfilment, data.deliveryPence)) {
-      return {
-        status: "failed",
-        message: "The delivery charge has changed. Refresh your basket and try again.",
-      };
-    }
-    const deliveryPence = canonicalDeliveryFeePence(data.fulfilment);
+    // The public RPC still accepts a deprecated caller fee argument. Always
+    // send zero: Dishbee must calculate its own configured fee and enforce
+    // the database price guard (Phase 25) BEFORE this feature can go live.
 
     try {
       const { data: rows, error } = await dishbeeClient(config).rpc(
@@ -389,7 +440,7 @@ export const placeOrder = createServerFn({ method: "POST" })
           p_customer_name: data.customer.name,
           p_customer_phone: data.customer.phone,
           p_lines: data.lines,
-          p_delivery_pence: deliveryPence,
+          p_delivery_pence: 0,
           p_address:
             data.fulfilment === "delivery"
               ? data.customer
