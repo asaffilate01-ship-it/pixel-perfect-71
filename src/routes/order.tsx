@@ -236,30 +236,34 @@ function OrderPage() {
   }, [visibleItems, activeBrand]);
 
   const goods = subtotal(lines);
-  const quoteLines = lines.map(line=>({
+  const quoteLines=lines.map(line=>({
     itemId:line.id,quantity:line.quantity,
-    modifierIds:line.selectedModifiers.map(modifier=>modifier.id),
+    modifierIds:line.selectedModifiers.map(option=>option.id),
   }));
-  // Only the current Dishbee catalogue/tenant/location can supply a fee
-  // estimate. Browser prices and arbitrary postcode guesses cannot.
+  // A postcode or fulfilment change revokes the displayed quote, and each
+  // fresh estimate is bound to the exact selected modifiers and kitchen.
   const liveDeliveryEstimate=useQuery({
-    queryKey:["mealdeckDeliveryEstimate",location,postcode.trim().toUpperCase(),quoteLines],
+    queryKey:["mealdeckBasketQuote",location,fulfilment,
+      customer.postcode.trim().toUpperCase(),quoteLines],
     queryFn:()=>fetchDeliveryEstimate({data:{
-      location:location!,
-      postcode:postcode.trim(),
-      lines:quoteLines,
+      location:location!,fulfilment:fulfilment as "delivery"|"pickup"|"curbside",
+      postcode:customer.postcode.trim(),lines:quoteLines,
     }}),
-    enabled:!!location&&lines.length>0&&fulfilment==="delivery"&&
+    enabled:!!location&&lines.length>0&&fulfilment!=="dinein"&&
+      customer.postcode.trim().length>=5&&
       serviceMessage.tone==="ok"&&catalogue.data?.source==="live",
-    staleTime:15_000,
+    staleTime:0,
+    refetchInterval:15_000,
     retry:false,
   });
-  const quoteReady=fulfilment!=="delivery"||liveDeliveryEstimate.data?.ready===true;
-  const deliveryPence=fulfilment==="delivery"
-    ?(liveDeliveryEstimate.data?.ready?liveDeliveryEstimate.data.deliveryPence:null):0;
-  const displayGoods=fulfilment==="delivery"&&liveDeliveryEstimate.data?.ready
-    ?liveDeliveryEstimate.data.goodsPence:goods;
-  const total=deliveryPence===null?null:displayGoods+deliveryPence;
+  const quote=liveDeliveryEstimate.data;
+  const quoteFresh=quote?.ready===true&&
+    Date.parse(quote.expiresAt)>Date.now()+10_000&&
+    !liveDeliveryEstimate.isFetching;
+  const quoteReady=quoteFresh;
+  const deliveryPence=quoteFresh&&quote.ready?quote.deliveryPence:null;
+  const displayGoods=quoteFresh&&quote.ready?quote.goodsPence:goods;
+  const total=quoteFresh&&quote.ready?quote.totalPence:null;
 
   async function checkArea(nextFulfilment: FulfilmentType = fulfilment) {
     if (!postcode.trim()) {
@@ -405,12 +409,21 @@ function OrderPage() {
       });
       return;
     }
+    // Never submit an unbound basket or a stale quote, even if the button
+    // state has not yet updated after a postcode or price change.
+    if(!quoteReady||!quote?.ready){
+      toast.error("Your quote needs refreshing",{
+        description:"Recheck your basket and delivery price before checkout.",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       const result = await submitOrder({
         data: {
           location,
           fulfilment,
+          quoteToken:quote.quoteToken,
           lines: lines.map((line) => ({ itemId: line.id, quantity: line.quantity, modifiers: line.selectedModifiers })),
           customer,
         },
@@ -545,7 +558,7 @@ function OrderPage() {
                   <div className="flex justify-between text-muted-foreground">
                     <span>Delivery (one estimated fee)</span>
                     <span>{deliveryPence===null
-                      ?(liveDeliveryEstimate.isFetching?"Checking…":"Unavailable")
+                      ?(liveDeliveryEstimate.isFetching?"Checking…":"Recheck price")
                       :formatPence(deliveryPence)}</span>
                   </div>
                 ) : null}
@@ -554,10 +567,16 @@ function OrderPage() {
                   <span>{total===null?"—":formatPence(total)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground" aria-live="polite">
-                  {fulfilment==="delivery"&&deliveryPence===null
-                    ?"A confirmed Dishbee delivery policy is required before checkout."
-                    :"Prices and delivery are estimates; Dishbee independently reprices the final order before payment."}
+                  {!quoteReady
+                    ?"Check your postcode and refresh the current Dishbee prices before checkout."
+                    :"Quote valid for up to two minutes. Dishbee reprices the final order before payment."}
                 </p>
+                <Button type="button" variant="ghost" size="sm"
+                  className="h-8 gap-1.5 rounded-full px-3 text-xs"
+                  disabled={!location||!lines.length||liveDeliveryEstimate.isFetching}
+                  onClick={()=>void liveDeliveryEstimate.refetch()}>
+                  <RefreshCcw className="size-3.5"/> Refresh prices
+                </Button>
                 <Button
                   variant="hero"
                   size="lg"
