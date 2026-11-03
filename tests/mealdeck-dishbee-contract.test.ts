@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   resolveDishbeeServiceability, parseDishbeeOrderReceipt,
+  parseDishbeeCheckoutAttemptReceipt,
   mayCreateCustomerOrder, type ApprovedKitchenRoute,
 } from "../src/lib/mealdeck-dishbee-contract";
 const tenants = {
@@ -81,5 +82,44 @@ describe("Phase 23 payment-pending receipt and launch gate", () => {
     expect(mayCreateCustomerOrder({
       comingSoon: false, kitchenConfigured: true, checkoutApproval: "signed-off",
     })).toBe(true);
+  });
+});
+
+describe("P32 canonical idempotent checkout receipts", () => {
+  const receipt = {
+    order_id:"44444444-4444-4444-8444-444444444444",
+    handoff_code:"0070",order_status:"payment_pending",replayed:false,
+  };
+  test("new pending order and exact same-attempt replay remain pending", () => {
+    expect(parseDishbeeCheckoutAttemptReceipt([receipt])).toEqual({
+      kind:"payment_pending",orderId:receipt.order_id,
+      handoffCode:"0070",replayed:false,
+    });
+    expect(parseDishbeeCheckoutAttemptReceipt([{...receipt,replayed:true}])).toEqual({
+      kind:"payment_pending",orderId:receipt.order_id,
+      handoffCode:"0070",replayed:true,
+    });
+  });
+  test("a replay of a paid/ready order is not treated as an unpaid new order", () => {
+    for(const order_status of ["paid","accepted","preparing","ready","fulfilled"]) {
+      expect(parseDishbeeCheckoutAttemptReceipt({...receipt,order_status,replayed:true})?.kind)
+        .toBe("existing_order");
+      expect(parseDishbeeCheckoutAttemptReceipt({...receipt,order_status,replayed:false}))
+        .toBeNull();
+    }
+  });
+  test("cancelled/refunded attempts require support and never a new payment claim", () => {
+    for(const order_status of ["cancelled","refunded","failed"]) {
+      expect(parseDishbeeCheckoutAttemptReceipt({...receipt,order_status,replayed:true})?.kind)
+        .toBe("needs_support");
+    }
+  });
+  test("fails closed on ambiguous or malformed, spoofed receipts", () => {
+    for(const value of [
+      null,[receipt,receipt],{...receipt,replayed:"true"},
+      {...receipt,order_status:"paid",replayed:false},
+      {...receipt,handoff_code:"123a"}, {...receipt,handoff_code:"12345"},
+      {...receipt,order_id:"some-ref"}, {...receipt,order_status:"hacked"},
+    ]) expect(parseDishbeeCheckoutAttemptReceipt(value)).toBeNull();
   });
 });
