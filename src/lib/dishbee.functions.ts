@@ -1,7 +1,7 @@
 import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
 import { estimateGoodsFromDishbee, verifyDishbeeFeeResult } from "./mealdeck-live-price-estimate";
 import { safeCourierTrackingUrl } from "./mealdeck-tracking-links";
-import { mayCreateCustomerOrder, parseDishbeeOrderReceipt, resolveDishbeeServiceability } from "./mealdeck-dishbee-contract";
+import { mayCreateCustomerOrder, parseDishbeeCheckoutAttemptReceipt, resolveDishbeeServiceability } from "./mealdeck-dishbee-contract";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
@@ -43,6 +43,19 @@ function readConfig(location: LocationKey): DishbeeConfig | null {
 function dishbeeClient(config: { url: string; anonKey: string }) {
   return createClient(config.url, config.anonKey, {
     auth: { persistSession: false },
+  });
+}
+
+/** Server-only key for Dishbee P27's service-role-only idempotent RPC.
+ * Never used by the browser, marketplace catalogue or public tracking.
+ * Refuse legacy anonymous checkout rather than silently bypass P27.
+ */
+function checkoutServerClient(config: DishbeeConfig) {
+  const key = process.env["DISHBEE_MEALDECK_CHECKOUT_SERVER_KEY"];
+  if (!key || key.length < 40 || key === config.anonKey ||
+      key.startsWith("sb_publishable_")) return null;
+  return createClient(config.url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
@@ -356,6 +369,10 @@ const orderSchema = z
     location: locationSchema,
     fulfilment: fulfilmentSchema,
     quoteToken: z.string().min(40).max(1536),
+    attemptId: z.string().regex(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      "A secure checkout attempt identifier is required",
+    ),
     lines: z
       .array(
         z.object({
@@ -456,7 +473,10 @@ export type PlaceOrderResult =
       status: "payment_required";
       orderId: string;
       handoffCode: string;
+      reused: boolean;
     }
+  | { status: "existing_order"; orderId: string; handoffCode: string }
+  | { status: "needs_review"; orderId: string; handoffCode: string }
   | { status: "unconfigured" }
   | { status: "failed"; message: string };
 
@@ -472,6 +492,9 @@ export const placeOrder = createServerFn({ method: "POST" })
     }) || !config) {
       return { status: "unconfigured" };
     }
+
+    const checkoutClient = checkoutServerClient(config);
+    if (!checkoutClient) return { status: "unconfigured" };
 
     // A short-lived signed estimate is not sufficient by itself. Re-read
     // the live Dishbee catalogue, serviceability, and delivery policy here
@@ -516,9 +539,10 @@ export const placeOrder = createServerFn({ method: "POST" })
     // approved before the independent checkout release gate is enabled.
 
     try {
-      const { data: rows, error } = await dishbeeClient(config).rpc(
-        "create_mealdeck_checkout_order",
+      const { data: rows, error } = await checkoutClient.rpc(
+        "create_mealdeck_checkout_order_once",
         {
+          p_attempt_id: data.attemptId,
           p_tenant: config.tenantId,
           p_location: config.locationId,
           p_fulfilment: data.fulfilment,
@@ -539,15 +563,25 @@ export const placeOrder = createServerFn({ method: "POST" })
 
       if (error) throw new Error(error.message);
 
-      const receipt = parseDishbeeOrderReceipt(rows);
+      const receipt = parseDishbeeCheckoutAttemptReceipt(rows);
       if (!receipt) throw new Error("dishbee_checkout_receipt_invalid");
+      if (receipt.kind === "existing_order" || receipt.kind === "needs_support") {
+        return {
+          status: receipt.kind === "existing_order" ? "existing_order" : "needs_review",
+          orderId: receipt.orderId,
+          handoffCode: receipt.handoffCode,
+        };
+      }
       return {
         status: "payment_required",
         orderId: receipt.orderId,
         handoffCode: receipt.handoffCode,
+        reused: receipt.replayed,
       };
-    } catch (error) {
-      console.error("Dishbee checkout failed", error);
+    } catch {
+      // Never log raw customer data, provider errors, tenant credentials or
+      // SQL exception messages from this payment-adjacent request.
+      console.error("Dishbee idempotent checkout unavailable");
       return {
         status: "failed",
         message: "We couldn't create the order through the secure kitchen system. Please try again or contact support.",

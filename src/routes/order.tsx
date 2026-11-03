@@ -1,7 +1,7 @@
 import { COMING_SOON } from "@/lib/launch-status";
 import { OrderingPreview } from "@/components/coming-soon";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -64,6 +64,10 @@ import {
 } from "@/lib/marketplace-preferences";
 import { BROWSE_CATEGORIES, browseBrands, browseMenu, basketSuggestions, type BrowseCategory } from "@/lib/marketplace-discovery";
 import { seo } from "@/lib/seo";
+import {
+  checkoutSnapshotFingerprint, getOrCreateCheckoutAttempt,
+  type CheckoutAttempt,
+} from "@/lib/mealdeck-checkout-attempt";
 
 type OrderSearch = { brand?: string; fulfilment?: FulfilmentType };
 
@@ -190,7 +194,11 @@ function OrderPage() {
     });
   };
   const [submitting, setSubmitting] = useState(false);
-  const [paymentPending, setPaymentPending] = useState<{ orderId: string; handoffCode: string } | null>(null);
+  const submittingRef = useRef(false);
+  const checkoutAttemptRef = useRef<CheckoutAttempt | null>(null);
+  const [orderReceipt, setOrderReceipt] = useState<{
+    orderId: string; handoffCode: string; kind: "pending" | "existing" | "review";
+  } | null>(null);
   const [customising, setCustomising] = useState<MenuItem | null>(null);
   const [chosen, setChosen] = useState<SelectedModifier[]>([]);
 
@@ -279,7 +287,7 @@ function OrderPage() {
         setLocation(null);
         setActiveBrand(null);
         setCheckoutOpen(false);
-        setPaymentPending(null);
+        setOrderReceipt(null);
         setServiceMessage({ tone: "error", text: result.message });
         return;
       }
@@ -309,7 +317,7 @@ function OrderPage() {
 
   function changeFulfilment(next: FulfilmentType) {
     setFulfilment(next);
-    setPaymentPending(null);
+    setOrderReceipt(null);
     if (postcode.trim()) {
       void checkArea(next);
       return;
@@ -335,7 +343,7 @@ function OrderPage() {
     setPostcode("");
     setCustomer(emptyCustomer);
     setCheckoutOpen(false);
-    setPaymentPending(null);
+    setOrderReceipt(null);
     setServiceMessage({
       tone: "idle",
       text: `Browsing the ${locations.find((entry) => entry.key === next)?.town ?? "local"} menu. Enter your postcode when you're ready to order.`,
@@ -402,7 +410,7 @@ function OrderPage() {
     (fulfilment !== "curbside" || (customer.carMake.trim() && customer.vehicleRegistration.trim()));
 
   async function handleCheckout() {
-    if (!location) return;
+    if (!location || submittingRef.current) return;
     if(catalogue.data?.source!=="live"){
       toast.error("Live ordering connection required",{
         description:"The preview menu is for browsing only. Checkout will be available when live ordering opens.",
@@ -417,33 +425,61 @@ function OrderPage() {
       });
       return;
     }
+    // Keep a single UUIDv4 for the same checkout inputs across double-taps,
+    // timed-out requests and refreshed quotes. Do not persist it in URLs.
+    const fingerprint = checkoutSnapshotFingerprint({ location, fulfilment, lines, customer });
+    const attempt = getOrCreateCheckoutAttempt(
+      checkoutAttemptRef.current, fingerprint, () => window.crypto.randomUUID(),
+    );
+    if (!attempt) {
+      toast.error("Secure checkout unavailable", {
+        description: "Please use a secure browser session and try again.",
+      });
+      return;
+    }
+    checkoutAttemptRef.current = attempt;
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const result = await submitOrder({
         data: {
           location,
           fulfilment,
-          quoteToken:quote.quoteToken,
+          attemptId: attempt.id,
+          quoteToken: quote.quoteToken,
           lines: lines.map((line) => ({ itemId: line.id, quantity: line.quantity, modifiers: line.selectedModifiers })),
           customer,
         },
       });
       if (result.status === "payment_required") {
-        setPaymentPending({ orderId: result.orderId, handoffCode: result.handoffCode });
+        setOrderReceipt({ orderId: result.orderId, handoffCode: result.handoffCode, kind: "pending" });
         setCheckoutOpen(false);
-        toast.message("Payment pending", {
-          description: "Dishbee has created a pending order. Your kitchen will not receive it without verified payment.",
+        toast.message(result.reused ? "Existing pending order located" : "Payment pending", {
+          description: "The original MealDeck order is awaiting verified payment. No duplicate kitchen order was requested.",
+        });
+      } else if (result.status === "existing_order" || result.status === "needs_review") {
+        setOrderReceipt({
+          orderId: result.orderId, handoffCode: result.handoffCode,
+          kind: result.status === "existing_order" ? "existing" : "review",
+        });
+        setCheckoutOpen(false);
+        toast.message(result.status === "existing_order" ?
+          "Your existing order was found" : "Your order needs a review", {
+          description: "We did not create a second order or charge. Check tracking or contact support.",
         });
       } else if (result.status === "unconfigured") {
-        toast.error("Ordering service not connected yet", {
-          description: "This is a preview — live orders start once the ordering service is connected.",
+        toast.error("Secure checkout is not connected yet", {
+          description: "Ordering will open after the Dishbee payment and idempotency staging checks are approved.",
         });
       } else {
         toast.error(result.message);
       }
     } catch {
-      toast.error("We couldn't place that order. Please check your details and try again.");
+      // Preserve the same attempt UUID. A retry must never silently create
+      // a second pending order after an unknown network outcome.
+      toast.error("We couldn't verify checkout. Try again with this basket or contact support.");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
@@ -738,20 +774,27 @@ function OrderPage() {
             ) : null}
           </section>
 
-          {paymentPending ? (
+          {orderReceipt ? (
             <div className="mt-6 rounded-xl border border-accent/40 bg-accent/10 p-5">
-              <p className="eyebrow">Payment required</p>
+              <p className="eyebrow">
+                {orderReceipt.kind === "pending" ? "Payment required" :
+                  orderReceipt.kind === "existing" ? "Existing order" : "Order needs review"}
+              </p>
               <p className="mt-2 font-display text-lg font-bold">
-                This order is awaiting verified payment. Preparation has not started.
+                {orderReceipt.kind === "pending" ?
+                  "Your order is awaiting verified payment. Preparation has not started." :
+                  orderReceipt.kind === "existing" ?
+                  "Dishbee has located your original order. No second order was created." :
+                  "The previous order needs support review. Do not submit a new payment attempt."}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 This screen is not confirmation of payment or a courier booking. Your handoff code is{" "}
                 <strong className="text-xl text-gold">
-                  {paymentPending.handoffCode || "----"}
+                  {orderReceipt.handoffCode || "----"}
                 </strong>.
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Order reference {paymentPending.orderId.slice(0, 8).toUpperCase()}.
+                Order reference {orderReceipt.orderId.slice(0, 8).toUpperCase()}.
               </p>
             </div>
           ) : null}

@@ -77,6 +77,43 @@ export function parseDishbeeOrderReceipt(value: unknown): DishbeeOrderReceipt | 
 }
 
 /**
+ * P32 — strict server-side interpretation of the new DB idempotency receipt.
+ * A replay of a paid order is NOT a new payment request.
+ * A refund/cancellation needs human review, never a retry under a new ID.
+ */
+export type DishbeeAttemptReceipt = {
+  kind: "payment_pending" | "existing_order" | "needs_support";
+  orderId: string;
+  handoffCode: string;
+  replayed: boolean;
+};
+const alreadyProcessing = new Set([
+  "paid", "accepted", "preparing", "ready", "fulfilled", "completed", "delivered",
+]);
+const terminalReview = new Set(["cancelled", "refunded", "failed"]);
+
+export function parseDishbeeCheckoutAttemptReceipt(value: unknown): DishbeeAttemptReceipt | null {
+  const row = Array.isArray(value) ? (value.length === 1 ? value[0] : null) : value;
+  if (!record(row) || !uuid(row["order_id"]) ||
+      typeof row["handoff_code"] !== "string" ||
+      !/^\d{4}$/.test(row["handoff_code"]) ||
+      typeof row["replayed"] !== "boolean" ||
+      typeof row["order_status"] !== "string") return null;
+
+  const status = row["order_status"];
+  const replayed = row["replayed"];
+  const base = { orderId: row["order_id"], handoffCode: row["handoff_code"], replayed };
+  if (status === "payment_pending" || status === "awaiting_payment") {
+    return { ...base, kind: "payment_pending" };
+  }
+  // A first response can never claim the new pending order is paid.
+  if (!replayed) return null;
+  if (alreadyProcessing.has(status)) return { ...base, kind: "existing_order" };
+  if (terminalReview.has(status)) return { ...base, kind: "needs_support" };
+  return null;
+}
+
+/**
  * A second intentional fail-closed switch after COMING_SOON. Setting the env
  * flag never connects Adyen or certifies compliance by itself. Operations may
  * set it only when the full Dishbee/Adyen path is independently signed off.
