@@ -1,4 +1,5 @@
 import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
+import { readMealDeckRuntimeConfig } from "./mealdeck-runtime-config";
 import { estimateGoodsFromDishbee, verifyDishbeeFeeResult } from "./mealdeck-live-price-estimate";
 import { safeCourierTrackingUrl } from "./mealdeck-tracking-links";
 import { mayCreateCustomerOrder, parseDishbeeCheckoutAttemptReceipt, resolveDishbeeServiceability } from "./mealdeck-dishbee-contract";
@@ -32,12 +33,10 @@ function readBase() {
 }
 
 function readConfig(location: LocationKey): DishbeeConfig | null {
-  const base = readBase();
-  const prefix = location === "luton" ? "MEALDECK_LUTON" : "MEALDECK_STALBANS";
-  const tenantId = process.env[`${prefix}_TENANT_ID`];
-  const locationId = process.env[`${prefix}_LOCATION_ID`];
-  if (!base || !tenantId || !locationId) return null;
-  return { ...base, tenantId, locationId };
+  // One canonical MealDeck tenant with distinct location IDs. Conflicts
+  // disable checkout, catalogue and paid-order routing instead of selecting
+  // an arbitrary location's tenant.
+  return readMealDeckRuntimeConfig(process.env, location);
 }
 
 function dishbeeClient(config: { url: string; anonKey: string }) {
