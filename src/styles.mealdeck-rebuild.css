@@ -759,3 +759,41 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
   .md-soon-card { min-height: 245px; padding: 48px 14px 52px; }
   .md-soon-card h3 { font-size: 20px; }
 }
+
+/* Design audit: preserve existing MealDeck art direction while making
+   keyboard focus, active navigation and touch targets unmistakable. */
+.md-desktop-nav a.is-current {
+  color: var(--md-yellow);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 8px;
+}
+.md-site-header :is(a, button):focus-visible {
+  outline: 3px solid var(--md-yellow);
+  outline-offset: 4px;
+}
+.md-mobile-menu-button[aria-expanded="true"] {
+  border-color: var(--md-yellow);
+  background: rgba(255, 213, 31, .12);
+}
+.md-mobile-nav > a:not(.md-btn) {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+}
+.md-mobile-nav > a.is-current:not(.md-btn) {
+  color: var(--md-yellow);
+  background: rgba(255, 213, 31, .1);
+  padding-inline: 12px;
+}
+@media (max-width: 1050px) {
+  .md-mobile-nav {
+    max-height: min(70dvh, 620px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .md-mobile-nav a, .md-mobile-menu-button { transition: none; }
+}
