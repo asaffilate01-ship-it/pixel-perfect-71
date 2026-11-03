@@ -37,14 +37,16 @@ export function resolveDishbeeServiceability(
   if (row["served"] !== true) return {
     served: false, message: publicMessage(row["message"], genericUnavailable),
   };
-  if (!uuid(row["tenant_id"]) || !uuid(row["location_id"]) ||
+  const tenantId = row["tenant_id"];
+  const locationId = row["location_id"];
+  if (!uuid(tenantId) || !uuid(locationId) ||
       typeof row["channel_open"] !== "boolean") {
     return { served: false, message: unknownKitchen };
   }
   const matches = allowed.filter(route =>
     uuid(route.tenantId) && uuid(route.locationId) &&
-    route.tenantId.toLowerCase() === row["tenant_id"].toLowerCase() &&
-    route.locationId.toLowerCase() === row["location_id"].toLowerCase());
+    route.tenantId.toLowerCase() === tenantId.toLowerCase() &&
+    route.locationId.toLowerCase() === locationId.toLowerCase());
   // A duplicated or unknown kitchen mapping is an operational fault, not a
   // reason to silently reroute a customer to a different restaurant.
   if (matches.length !== 1) return { served: false, message: unknownKitchen };
