@@ -26,7 +26,7 @@ describe("Phase 21: read-only staff exception review", () => {
       order("o3", "payment_pending", 100),
     ], now);
     expect(alerts.map(a => a.priority)).toEqual(["high", "high", "info"]);
-    expect(alerts[0]?.detail).toContain("nothing has been refunded automatically");
+    expect(alerts.find(a => a.reason === "paid_cancelled")?.detail).toContain("nothing has been refunded automatically");
   });
   test("never invents delay for fulfilled, future or invalid timestamps", () => {
     expect(reviewOrderExceptions([
