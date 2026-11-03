@@ -272,10 +272,10 @@ function MealDeckOperations(){
           const asOf=dateISO(new Date());
           const range=paidOrderGoalRange(asOf);
           const siteNames=["Luton","St Albans"] as const;
-          next.paidGoalLocations=await Promise.all(siteNames.map(async city:PaidGoalLocation["city"]):Promise<PaidGoalLocation>=>{
+          next.paidGoalLocations=await Promise.all(siteNames.map(async (city:PaidGoalLocation["city"]):Promise<PaidGoalLocation>=>{
             const matching=locations.filter(place=>
-              city==="Luton"?/\\bluton\\b/i.test(place.location_name)
-              :/\\bst[.\\s-]*albans\\b/i.test(place.location_name));
+              city==="Luton"?/\bluton\b/i.test(place.location_name)
+              :/\bst[.\s-]*albans\b/i.test(place.location_name));
             if(matching.length!==1)return {city,status:"not_configured",goal:null};
             const site=matching[0]!;
             if(!effectiveOpsPermissions(accesses,tenant,site.location_id).has("analytics.read"))
