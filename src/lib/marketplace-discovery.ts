@@ -36,7 +36,8 @@ function categoryFor(item: MenuItem, brand?: Brand): BrowseCategory[] {
     if (matches("pasta", "rigatoni", "mac n cheese")) result.push("pasta");
     if (matches("breakfast", "brunch", "pancake", "omelette")) result.push("breakfast");
     if (matches("grill", "souvano", "souvlaki", "shawarma")) result.push("grill");
-    // Dietary classifications require an explicit item-level category, never\n    // a cuisine, brand, product name, or substring such as "plant" or "salad".
+    // Dietary classifications require an explicit item-level category, never
+    // a cuisine, brand, product name, or substring such as "plant" or "salad".
     if (matches("drink", "juice", "smoothie", "coffee", "chai", "iced latte", "mocktail", "cooler")) result.push("drinks");
     if (matches("dessert", "cake", "pie", "sweet", "brownie", "cookie", "ice cream")) result.push("desserts");
     return result;
@@ -51,7 +52,7 @@ export function matchesBrowseCategory(item:MenuItem,category:BrowseCategory,bran
   if(category==="vegetarian"){
     // The filter reflects an explicit dish-level menu label only. An eventual
     // live dietary/allergen guarantee still requires operator-reviewed evidence.
-    return /\\b(vegetarian|vegan)\\b/.test(normalize(item.category));
+    return /\b(vegetarian|vegan)\b/.test(normalize(item.category));
   }
   return categoryFor(item,brand).includes(category);
 }
