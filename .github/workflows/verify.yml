@@ -270,3 +270,13 @@ jobs:
           src/components/ops/paid-orders-goal-panel.tsx
           tests/mealdeck-weekly-paid-goal.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Design audit navigation states
+        run: bun test tests/mealdeck-nav-state.test.ts
+
+      - name: Navigation design module lint
+        run: >-
+          bunx eslint src/lib/mealdeck-nav-state.ts
+          src/components/site-header.tsx
+          tests/mealdeck-nav-state.test.ts
+          --rule 'prettier/prettier: off'
