@@ -1,6 +1,7 @@
 import { ComingSoonBanner } from "@/components/coming-soon";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BackToTop } from "@/components/back-to-top";
+import { SkipToMainContent } from "@/components/skip-to-main-content";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -164,8 +165,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      {!internal&&<SkipToMainContent />}
       {!internal&&<ComingSoonBanner />}
-      <Outlet />
+      <div id="mealdeck-main" tabIndex={-1}>
+        <Outlet />
+      </div>
       <BackToTop />
       {!internal&&<MobileTabBar />}
       <Toaster position="top-center" />
