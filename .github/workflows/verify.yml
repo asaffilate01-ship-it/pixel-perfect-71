@@ -280,3 +280,13 @@ jobs:
           src/components/site-header.tsx
           tests/mealdeck-nav-state.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Keyboard skip navigation and mobile bar
+        run: bun test tests/mealdeck-skip-navigation.test.tsx
+
+      - name: Main navigation accessibility lint
+        run: >-
+          bunx eslint src/components/skip-to-main-content.tsx
+          src/components/mobile-tab-bar.tsx
+          tests/mealdeck-skip-navigation.test.tsx
+          --rule 'prettier/prettier: off'
