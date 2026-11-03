@@ -31,9 +31,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { SiteFooter } from "@/components/site-footer";
-import { checkServiceability, getCatalogue, placeOrder } from "@/lib/dishbee.functions";
+import { checkServiceability, getCatalogue, placeOrder, estimateDishbeeDelivery } from "@/lib/dishbee.functions";
 import {
-  DELIVERY_FEE_PENCE,
   addItem,
   brandById,
   formatPence,
@@ -198,6 +197,7 @@ function OrderPage() {
   const runServiceability = useServerFn(checkServiceability);
   const fetchCatalogue = useServerFn(getCatalogue);
   const submitOrder = useServerFn(placeOrder);
+  const fetchDeliveryEstimate = useServerFn(estimateDishbeeDelivery);
 
   const catalogue = useQuery({
     queryKey: ["catalogue", location],
@@ -236,8 +236,30 @@ function OrderPage() {
   }, [visibleItems, activeBrand]);
 
   const goods = subtotal(lines);
-  const deliveryPence = lines.length && fulfilment === "delivery" ? DELIVERY_FEE_PENCE : 0;
-  const total = goods + deliveryPence;
+  const quoteLines = lines.map(line=>({
+    itemId:line.id,quantity:line.quantity,
+    modifierIds:line.selectedModifiers.map(modifier=>modifier.id),
+  }));
+  // Only the current Dishbee catalogue/tenant/location can supply a fee
+  // estimate. Browser prices and arbitrary postcode guesses cannot.
+  const liveDeliveryEstimate=useQuery({
+    queryKey:["mealdeckDeliveryEstimate",location,postcode.trim().toUpperCase(),quoteLines],
+    queryFn:()=>fetchDeliveryEstimate({data:{
+      location:location!,
+      postcode:postcode.trim(),
+      lines:quoteLines,
+    }}),
+    enabled:!!location&&lines.length>0&&fulfilment==="delivery"&&
+      serviceMessage.tone==="ok"&&catalogue.data?.source==="live",
+    staleTime:15_000,
+    retry:false,
+  });
+  const quoteReady=fulfilment!=="delivery"||liveDeliveryEstimate.data?.ready===true;
+  const deliveryPence=fulfilment==="delivery"
+    ?(liveDeliveryEstimate.data?.ready?liveDeliveryEstimate.data.deliveryPence:null):0;
+  const displayGoods=fulfilment==="delivery"&&liveDeliveryEstimate.data?.ready
+    ?liveDeliveryEstimate.data.goodsPence:goods;
+  const total=deliveryPence===null?null:displayGoods+deliveryPence;
 
   async function checkArea(nextFulfilment: FulfilmentType = fulfilment) {
     if (!postcode.trim()) {
@@ -365,6 +387,9 @@ function OrderPage() {
     !!location &&
     fulfilmentAllowed &&
     channelOpen &&
+    catalogue.data?.source==="live" &&
+    serviceMessage.tone==="ok" &&
+    quoteReady &&
     customer.postcode.trim().length >= 2 &&
     customer.name.trim() &&
     customer.phone.trim().length >= 5 &&
@@ -387,7 +412,6 @@ function OrderPage() {
           location,
           fulfilment,
           lines: lines.map((line) => ({ itemId: line.id, quantity: line.quantity, modifiers: line.selectedModifiers })),
-          deliveryPence,
           customer,
         },
       });
@@ -514,23 +538,31 @@ function OrderPage() {
             {lines.length ? (
               <div className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span>{formatPence(goods)}</span>
+                  <span>Indicative items</span>
+                  <span>{formatPence(displayGoods)}</span>
                 </div>
                 {fulfilment === "delivery" ? (
                   <div className="flex justify-between text-muted-foreground">
-                    <span>Delivery (one fee)</span>
-                    <span>{formatPence(deliveryPence)}</span>
+                    <span>Delivery (one estimated fee)</span>
+                    <span>{deliveryPence===null
+                      ?(liveDeliveryEstimate.isFetching?"Checking…":"Unavailable")
+                      :formatPence(deliveryPence)}</span>
                   </div>
                 ) : null}
                 <div className="flex justify-between font-display text-lg font-bold">
-                  <span>Total</span>
-                  <span>{formatPence(total)}</span>
+                  <span>Estimated total</span>
+                  <span>{total===null?"—":formatPence(total)}</span>
                 </div>
+                <p className="text-xs text-muted-foreground" aria-live="polite">
+                  {fulfilment==="delivery"&&deliveryPence===null
+                    ?"A confirmed Dishbee delivery policy is required before checkout."
+                    :"Prices and delivery are estimates; Dishbee independently reprices the final order before payment."}
+                </p>
                 <Button
                   variant="hero"
                   size="lg"
                   className="mt-3 w-full rounded-full"
+                  disabled={!quoteReady||catalogue.data?.source!=="live"}
                   onClick={() => setCheckoutOpen((open) => !open)}
                 >
                   Go to checkout
@@ -590,7 +622,7 @@ function OrderPage() {
                 onClick={handleCheckout}
               >
                 {submitting ? <Loader2 className="animate-spin" /> : null}
-                Continue to payment · {formatPence(total)}
+                Continue to payment · {total===null?"Quote unavailable":formatPence(total)}
               </Button>
             </div>
           ) : null}
