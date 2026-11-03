@@ -223,3 +223,12 @@ jobs:
           bunx eslint src/lib/mealdeck-courier-booking-recovery.ts
           tests/mealdeck-courier-booking-recovery.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Canonical MealDeck Dishbee tenant configuration regression
+        run: bun test tests/mealdeck-runtime-config.test.ts
+
+      - name: Tenant configuration module lint
+        run: >-
+          bunx eslint src/lib/mealdeck-runtime-config.ts
+          tests/mealdeck-runtime-config.test.ts
+          --rule 'prettier/prettier: off'
