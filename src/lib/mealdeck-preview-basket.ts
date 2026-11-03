@@ -27,8 +27,9 @@ function isSampleItem(item: unknown): item is MenuItem {
   const dish = item as Partial<MenuItem>;
   return typeof dish.id === "string" && dish.id.length > 0 &&
     typeof dish.brandId === "string" && dish.brandId.length > 0 &&
-    Number.isSafeInteger(dish.pricePence) && (dish.pricePence ?? -1) >= 0 &&
-    (dish.pricePence ?? Infinity) <= MAX_SAMPLE_SUBTOTAL_PENCE;
+    typeof dish.pricePence === "number" &&
+    Number.isSafeInteger(dish.pricePence) && dish.pricePence >= 0 &&
+    dish.pricePence <= MAX_SAMPLE_SUBTOTAL_PENCE;
 }
 
 /** Penny-exact illustrative quantities, never a live delivery or checkout quote. */
