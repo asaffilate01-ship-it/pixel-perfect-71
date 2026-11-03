@@ -73,8 +73,8 @@ function canonicalBinding(input: QuoteBinding): string | null {
     if (!UUID.test(line.itemId) || !Number.isSafeInteger(line.quantity) ||
         line.quantity < 1 || line.quantity > 50 ||
         !Array.isArray(line.modifierIds) || line.modifierIds.length > 20 ||
-        !line.modifierIds.every(id => UUID.test(id))) return null;
-    const modifierIds = line.modifierIds.map(id => id.toLowerCase()).sort();
+        !line.modifierIds.every((id: string) => UUID.test(id))) return null;
+    const modifierIds = line.modifierIds.map((id: string) => id.toLowerCase()).sort();
     if (new Set(modifierIds).size !== modifierIds.length) return null;
     lines.push({ itemId: line.itemId.toLowerCase(), quantity: line.quantity, modifierIds });
   }
