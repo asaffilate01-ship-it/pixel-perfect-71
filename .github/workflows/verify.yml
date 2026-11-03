@@ -250,3 +250,13 @@ jobs:
           bunx eslint src/lib/mealdeck-franchise-faq-search.ts
           tests/mealdeck-franchise-faq-search.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Homepage preview offer discovery
+        run: bun test tests/mealdeck-preview-offers.test.ts
+
+      - name: Homepage offer preview lint
+        run: >-
+          bunx eslint src/lib/mealdeck-preview-offers.ts
+          src/components/marketing/offer-discovery-preview.tsx
+          tests/mealdeck-preview-offers.test.ts
+          --rule 'prettier/prettier: off'

@@ -23,9 +23,10 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
+import { OfferDiscoveryPreview } from "@/components/marketing/offer-discovery-preview";
 import backEmblem from "@/assets/mealdeck-back-emblem.png";
-import { ldScript, orgJsonLd, seo } from "@/lib/seo";
 import { suitArtwork } from "@/lib/food-suit-artwork";
+import { ldScript, orgJsonLd, seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -50,15 +51,6 @@ const directBenefits = [
   { icon: Star, title: "Loyalty rewards", copy: "Earn points and unlock direct-order offers." },
   { icon: MapPin, title: "Live tracking", copy: "Follow the complete MealDeck handoff." },
 ];
-
-const offers = [
-  { rank: "A", suit: "burger", label: "The Burger Ace", value: "FREE", copy: "Spend £21. Get an eligible burger on us." },
-  { rank: "2", suit: "french-taco", label: "Perfect Pair", value: "½ PRICE", copy: "Buy two identical eligible items and get the second half price." },
-  { rank: "C", suit: "chicken", label: "Snap!", value: "2 FOR 1", copy: "Selected matching items. Pay for one." },
-  { rank: "M", suit: "cake", label: "The Group Hand", value: "+ POINTS", copy: "Selected group orders earn extra loyalty points." },
-  { rank: "H", suit: "burger", label: "Full House Feast", value: "£5 OFF", copy: "Order from three brands with a £30 minimum spend." },
-  { rank: "10", suit: "french-taco", label: "The Loyalty Flush", value: "10× PTS", copy: "Your fifth direct order in a month earns 10× points." },
-] as const;
 
 const steps = [
   { n: "01", title: "Choose how you want it", copy: "Delivery, pickup or kerbside. Select your area when ordering opens." },
@@ -130,32 +122,7 @@ function LandingPage() {
           <BrandLogoGrid />
         </section>
 
-        <section id="offers" className="md-section md-section-black">
-          <div className="md-section-heading md-section-heading-light">
-            <p className="md-kicker">MealDeck exclusive offers</p>
-            <h2>Good deals. Clearly dealt.</h2>
-            <p>Preview of planned offers — not active or redeemable. Ordering and registration are coming soon.</p>
-          </div>
-          <div className="md-offer-grid">
-            {offers.map((offer) => {
-              return (
-                <article key={offer.label} className="md-offer-card">
-                  <div className="md-offer-corner" aria-hidden="true">
-                    <strong>{offer.rank}</strong><img src={suitArtwork[offer.suit]} alt="" />
-                  </div>
-                  <div className="md-offer-corner md-offer-corner-br" aria-hidden="true">
-                    <strong>{offer.rank}</strong><img src={suitArtwork[offer.suit]} alt="" />
-                  </div>
-                  <img className="md-offer-pip" src={backEmblem} alt="" aria-hidden="true" />
-                  <p className="md-offer-label">{offer.label}</p>
-                  <h3>{offer.value}</h3>
-                  <p>{offer.copy}</p><strong className="md-preview-label">Coming soon · Preview only</strong>
-                </article>
-              );
-            })}
-          </div>
-          <p className="md-offer-terms">These are preview promotions. Offers, loyalty rewards and ordering are not active.</p>
-        </section>
+        <OfferDiscoveryPreview />
 
         <section id="how" className="md-section md-section-cream">
           <div className="md-section-heading">
