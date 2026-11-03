@@ -53,6 +53,7 @@ export function reconcileCourierBooking(
     attempt.idempotencyKey!==expectedKey||!Number.isFinite(requested)||
     !Number.isFinite(now)||requested>now||!Number.isSafeInteger(safeRetryAfterSeconds)||
     safeRetryAfterSeconds<60||safeRetryAfterSeconds>86400)return blocked("invalid");
+  if(!["requesting","uncertain","confirmed","rejected","cancelled"].includes(attempt.state))return blocked("invalid");
   if(attempt.state==="confirmed"||attempt.state==="cancelled"||
     attempt.state==="rejected")return blocked("already_terminal");
   if(attempt.providerBookingId!==null)return blocked("inconsistent_result","manual_review");
@@ -61,6 +62,7 @@ export function reconcileCourierBooking(
   const checked=Date.parse(lookup.checkedAt);
   if(lookup.provider!==attempt.provider||lookup.idempotencyKey!==expectedKey||
     !Number.isFinite(checked)||checked<requested||checked>now)return blocked("lookup_mismatch");
+  if(!["confirmed","not_found","unavailable","rejected","cancelled"].includes(lookup.result))return blocked("inconsistent_result","manual_review");
   if(lookup.result==="confirmed"){
     if(!lookup.providerBookingId||lookup.providerBookingId.length>160)return blocked("inconsistent_result","manual_review");
     return {action:"record_booking",reason:"booking_found",
