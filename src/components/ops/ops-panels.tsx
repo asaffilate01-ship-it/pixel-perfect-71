@@ -4,6 +4,7 @@ import {
   Plus,ShieldCheck,Trash2,
 } from "lucide-react";
 import {opsRpc} from "@/lib/mealdeck-ops-browser";
+import {reviewOrderExceptions} from "@/lib/mealdeck-ops-alerts";
 import {OPS_PERMISSIONS,type OpsPermission} from "@/lib/mealdeck-ops-access";
 import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cleanDailySeries} from "@/lib/mealdeck-ops-math";
 import type {
@@ -180,6 +181,7 @@ export function OpsOrdersPanel({
   const[lines,setLines]=useState<OpsOrderLine[]>([]);
   const[loading,setLoading]=useState(false);
   const[error,setError]=useState("");
+  const alerts=reviewOrderExceptions(orders,new Date().toISOString(),{limit:8});
   async function showLines(id:string){
     if(selected===id){setSelected("");setLines([]);return;}
     setLoading(true);setError("");setSelected(id);setLines([]);
@@ -199,6 +201,23 @@ export function OpsOrdersPanel({
         <p className="mt-1 text-sm text-slate-500">Real Dishbee orders only. Payment pending is not a completed sale; marketplace order numbers and delivery proofs follow provider integrations, not guessed labels.</p>
       </div>
     </div>
+    <section aria-label="Order review watchlist" className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-base font-black text-slate-950">Orders needing review</h3>
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-900">{alerts.length} suggestions</span>
+      </div>
+      <p className="mt-1 text-xs leading-5 text-slate-700">Read-only watchlist based on recorded order status and timestamps. This does not verify Adyen captures, KDS readiness, courier ETA or refunds.</p>
+      {alerts.length?<ul className="mt-4 grid gap-2 sm:grid-cols-2">
+        {alerts.map(alert=><li key={alert.orderId} className="rounded-xl border border-amber-200 bg-white p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-bold text-slate-950">{alert.title}</p>
+            <span className="rounded bg-slate-100 px-2 py-1 text-[11px] font-bold uppercase text-slate-800">{alert.priority}</span>
+          </div>
+          <p className="mt-1 text-xs text-slate-500">Order {alert.orderId.slice(0,8).toUpperCase()} · {alert.ageMinutes} min since reference time</p>
+          <p className="mt-2 text-xs leading-5 text-slate-700">{alert.detail}</p>
+        </li>)}
+      </ul>:<p className="mt-3 text-sm text-slate-600">No potential exceptions found in these order rows. This is not a payment or fulfilment health certification.</p>}
+    </section>
     <div className="mt-5 overflow-x-auto">
       <table className="min-w-full text-left text-sm">
         <thead><tr className="border-b border-slate-200 text-xs uppercase text-slate-500">

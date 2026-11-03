@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { MessageCircle,MapPin,Layers3,ShieldCheck,Users,CarFront,Truck,PackageCheck } from "lucide-react";
-import {recommendCrossBrandOffers,groupPaymentProgress,handoffRequirements,previewFulfilments} from "@/lib/multibrand-offers";
+import {recommendCrossBrandOffers,handoffRequirements,previewFulfilments} from "@/lib/multibrand-offers";
+import {planEqualGroupSplit} from "@/lib/mealdeck-group-allocation";
+import {BROWSE_CATEGORIES,matchesBrowseCategory,type BrowseCategory} from "@/lib/marketplace-discovery";
 import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
@@ -17,6 +19,7 @@ export function OrderingPreview() {
   const [location,setLocation]=useState<LocationKey>("luton");
   const [search,setSearch]=useState("");
   const [activeBrand,setActiveBrand]=useState<string>("all");
+  const [activeCategory,setActiveCategory]=useState<BrowseCategory>("all");
   const [previewItems,setPreviewItems]=useState<MenuItem[]>([]);
   const [fulfilment,setFulfilment]=useState<FulfilmentType>("delivery");
   const [postcode,setPostcode]=useState("");
@@ -29,16 +32,21 @@ export function OrderingPreview() {
   const brandsHere=allBrandIds.map(id=>brands.find(b=>b.id===id)).filter((b):b is (typeof brands)[number]=>!!b);
   const filtered=menu.filter(item=>
     (activeBrand==="all"||item.brandId===activeBrand)&&
+    matchesBrowseCategory(item,activeCategory,brands.find(b=>b.id===item.brandId))&&
     (item.name+" "+(brands.find(b=>b.id===item.brandId)?.name??"")+" "+item.category)
       .toLowerCase().includes(search.trim().toLowerCase()));
   const offers=recommendCrossBrandOffers({menu,cart:previewItems});
   const estimate=previewItems.reduce((sum,item)=>sum+item.pricePence,0);
-  const group=groupPaymentProgress({
-    totalPence:estimate,contributions:[],hostCoveredPence:0,
+  const split=planEqualGroupSplit({
+    participantIds:Array.from({length:participants},(_,index)=>"guest_"+(index+1)),
+    goodsPence:estimate,deliveryPence:0,deliveryPayer:"shared",
   });
   function switchLocation(key:LocationKey){
     setLocation(key);
     setActiveBrand("all");
+    setActiveCategory("all");
+    setSearch("");
+    setPostcode("");
     setPreviewItems([]);
     setFulfilment("delivery");
   }
@@ -109,7 +117,16 @@ export function OrderingPreview() {
             placeholder="Search burgers, tacos, drinks…" className="min-h-12 w-full rounded-xl border border-[var(--md-line)] bg-[var(--md-paper)] px-4 text-[var(--md-black)]"/>
         </label>
       </div>
-      <nav aria-label="Preview brands" className="mt-5 flex gap-2 overflow-x-auto pb-3">
+      <nav aria-label="Filter preview dishes by category" className="mt-5 flex gap-2 overflow-x-auto pb-3">
+        {BROWSE_CATEGORIES.map(category=><button key={category.id} type="button"
+          aria-pressed={activeCategory===category.id}
+          onClick={()=>{setActiveCategory(category.id);setActiveBrand("all");}}
+          className={activeCategory===category.id?"min-h-11 shrink-0 rounded-full bg-[var(--md-red-deep)] px-4 py-2 text-sm font-bold text-white":"min-h-11 shrink-0 rounded-full border border-[var(--md-line)] bg-[var(--md-paper)] px-4 py-2 text-sm font-bold text-[var(--md-black)]"}>
+          <span aria-hidden="true">{category.emoji} </span>{category.label}
+        </button>)}
+      </nav>
+      <p role="status" className="mb-3 text-sm text-[var(--md-muted)]">{filtered.length} illustrative dishes match your filters.</p>
+      <nav aria-label="Preview brands" className="mt-3 flex gap-2 overflow-x-auto pb-3">
         <button type="button" aria-pressed={activeBrand==="all"} onClick={()=>setActiveBrand("all")}
           className={activeBrand==="all"?"shrink-0 rounded-full bg-[var(--md-black)] px-5 py-3 text-sm font-bold text-white":"shrink-0 rounded-full border border-[var(--md-line)] bg-[var(--md-paper)] px-5 py-3 text-sm font-bold text-[var(--md-black)]"}>All brands</button>
         {brandsHere.map(brand=><button type="button" key={brand.id} aria-pressed={activeBrand===brand.id}
@@ -141,7 +158,11 @@ export function OrderingPreview() {
           </article>;
         })}
       </div>
-      {!filtered.length&&<p role="status" className="mt-5 rounded-xl bg-[var(--md-paper)] p-5 text-[var(--md-black)]">No preview dishes match this brand and search. Choose another brand.</p>}
+      {!filtered.length&&<div role="status" className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--md-paper)] p-5 text-[var(--md-black)]">
+        <p>No illustrative dishes match these filters.</p>
+        <button type="button" onClick={()=>{setSearch("");setActiveBrand("all");setActiveCategory("all");}}
+          className="min-h-11 rounded-xl border border-[var(--md-line)] px-4 font-bold">Clear filters</button>
+      </div>}
 
       <div className="mt-9 grid gap-5 lg:grid-cols-[1.3fr_1fr]">
         <section aria-label="Suggested cross-brand pairings" className="rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] p-5 text-[var(--md-black)]">
@@ -176,8 +197,15 @@ export function OrderingPreview() {
               className="min-h-11 w-full rounded-xl border border-[var(--md-line)] px-3">
               {[2,3,4,5,6,8,10].map(n=><option key={n} value={n}>{n} people</option>)}
             </select>
-            <p className="text-sm text-[var(--md-muted)]">Illustrative equal share: {formatPence(Math.ceil(estimate/participants))} each, excluding delivery. Real invitees can contribute separately or be covered by the host. No invitation or payment is sent here.</p>
-            <p className="text-xs text-[var(--md-muted)]">Unpaid amount: {formatPence(group.remainingPence)}. The kitchen will receive the order only after the master payment conditions are verified.</p>
+            <p className="text-sm text-[var(--md-muted)]">Exact-penny goods-only illustration. A single delivery charge is calculated at live checkout; no invitation or payment is sent here.</p>
+            {split.valid&&previewItems.length>0&&<div role="status" className="rounded-xl bg-white p-3">
+              <p className="mb-2 text-xs font-black uppercase tracking-wide">Illustrative equal-share breakdown</p>
+              <ul className="space-y-2">{split.shares.map((share,index)=><li key={share.participantId} className="flex justify-between gap-3 text-sm">
+                <span>{index===0?"Host":"Guest "+(index+1)}</span><strong>{formatPence(share.duePence)}</strong>
+              </li>)}</ul>
+              <p className="mt-2 text-xs text-[var(--md-muted)]">Total {formatPence(split.totalPence)}; the penny remainder is assigned deterministically. Delivery excluded.</p>
+            </div>}
+            <p className="text-xs text-[var(--md-muted)]">Sample basket value: {formatPence(estimate)}. Only Dishbee's captured payment confirmation can release kitchen tickets.</p>
           </div>}
           <div className="mt-5 rounded-xl border border-[var(--md-line)] p-4 text-sm">
             <p className="font-black">Handoff checklist · {fulfilment==="curbside"?"kerbside":fulfilment}</p>

@@ -30,3 +30,12 @@ Taste Skill guides subject-specific composition, Impeccable guides accessibility
 ## Review protocol
 
 Inspect existing pages and CSS before changes. Run build, tests, lint and a keyboard/mobile browser pass (320px, 390px, 768px, desktop). If actual screenshots or live runtime verification are unavailable, record that limitation rather than claiming pixel-perfect validation.
+
+
+## Group ordering and cuisine discovery — 3 November 2026
+
+- Filter sample menus by semantic food category *and* brand, with a visible count and one-touch reset; do not imply product availability.
+- Keep the primary brand and food photography hierarchy ahead of feature widgets. Use established brand red, paper, black, accessible focus and 44px controls rather than new visual gradients.
+- Equal share previews distribute integer pennies exactly (and delivery is a **single** order-level charge, omitted until quoted). Never round every share up or imply a payment has been collected.
+- Back-office exception cards are read-only operational prompts. A late-looking order is **not** proof of a failed kitchen or courier. Operations remains a protected, distinct UI mode.
+- Model-generated text must never be exposed as confirmed price, allergen assurance, payment completion, availability, fulfilment or refund.

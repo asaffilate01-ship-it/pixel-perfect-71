@@ -25,3 +25,13 @@
 - Develop via the GitHub codebase and tests; do not invoke Lovable as a build environment. Leave all existing Git/Lovable history untouched.
 - MealDeck must never assume that a WhatsApp chat, agent response, browser redirect or illustrative price is a paid order. Only Dishbee's verified server-side payment/order authority can release KDS.
 - Per-location official WhatsApp business numbers are server-configured, verified and disabled by default. No private account/customer data, checkout state or prices in chat-link query strings. Omniqora keeps channel identity; Cafe 1's independent EPOS and restricted menus stay separate.
+
+
+## MealDeck Phases 19–21 safety and design contract
+
+- Treat source module group allocations as **illustrative plans**. The only live settlement authority is Dishbee's immutable server-priced order/share ledger plus verified Adyen event receipt.
+- Keep multi-brand delivery fee once per master order. Allocations must have no lost/duplicated pennies or unassigned quantity.
+- Use src/lib/mealdeck-agent-guardrails.ts as a **server-side admission policy only**: never convert a model-provided boolean, role, tenant, order ID or permission to trusted identity. Do not enable arbitrary MCP/SQL, provider webhooks, KDS releases, payments or courier bookings from an LLM.
+- Human review is mandatory for allergens, disputed payments, delivery exceptions and refunds. AI outputs and traces must redact personal information and secrets.
+- Protect St Albans MealDeck delivery-only policy independently from Café1 counter/EPOS fulfilments. Coming Soon remains true until approvals.
+- Apply Taste, Impeccable and Awesome DESIGN.md as design heuristics; do not import competitor code or AGPL sources into this proprietary repository.
