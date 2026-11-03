@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { isMealDeckNavCurrent } from "@/lib/mealdeck-nav-state";
 import { ArrowRight, MapPin, Menu, X } from "lucide-react";
 import mealDeckLogo from "@/assets/mealdeck-main-logo.png.asset.json";
 
@@ -12,6 +13,28 @@ const navItems = [
 
 export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?: boolean }) {
   const [open, setOpen] = useState(false);
+  const menuId=useId();
+  const triggerRef=useRef<HTMLButtonElement>(null);
+  const firstLinkRef=useRef<HTMLAnchorElement>(null);
+  const {pathname,hash}=useRouterState({select:state=>({
+    pathname:state.location.pathname,hash:state.location.hash,
+  })});
+  useEffect(()=>{setOpen(false);},[pathname,hash]);
+  useEffect(()=>{
+    if(!open)return;
+    firstLinkRef.current?.focus();
+    const onKeyDown=(event:KeyboardEvent)=>{
+      if(event.key==="Escape"){
+        event.preventDefault();
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown",onKeyDown);
+    return()=>document.removeEventListener("keydown",onKeyDown);
+  },[open]);
+  const current=(to:string,targetHash?:string)=>isMealDeckNavCurrent(pathname,hash,{to,hash:targetHash});
+  const active=(to:string,targetHash?:string)=>current(to,targetHash)?"is-current":undefined;
 
   return (
     <header className="md-site-header">
@@ -22,14 +45,14 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
 
         {nav ? (
           <nav className="md-desktop-nav" aria-label="Main navigation">
-            <Link to="/">Home</Link>
+            <Link to="/" aria-current={current("/")?"page":undefined} className={active("/")}>Home</Link>
             {navItems.map((item) => (
-              <Link key={item.label} to={item.to} hash={item.hash}>{item.label}</Link>
+              <Link key={item.label} to={item.to} hash={item.hash} aria-current={current(item.to,item.hash)?"location":undefined} className={active(item.to,item.hash)}>{item.label}</Link>
             ))}
-            <Link to="/play">Play &amp; Rewards</Link>
-            <Link to="/franchise">Franchises</Link>
-            <Link to="/blog">Blog</Link>
-            <Link to="/track">Track</Link>
+            <Link to="/play" aria-current={current("/play")?"page":undefined} className={active("/play")}>Play &amp; Rewards</Link>
+            <Link to="/franchise" aria-current={current("/franchise")?"page":undefined} className={active("/franchise")}>Franchises</Link>
+            <Link to="/blog" aria-current={current("/blog")?"page":undefined} className={active("/blog")}>Blog</Link>
+            <Link to="/track" aria-current={current("/track")?"page":undefined} className={active("/track")}>Track</Link>
           </nav>
         ) : null}
 
@@ -46,6 +69,8 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
               className="md-mobile-menu-button"
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
+              aria-controls={menuId}
+              ref={triggerRef}
               onClick={() => setOpen((value) => !value)}
             >
               {open ? <X /> : <Menu />}
@@ -55,17 +80,17 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
       </div>
 
       {nav && open ? (
-        <nav className="md-mobile-nav" aria-label="Mobile navigation">
-          <Link to="/" onClick={() => setOpen(false)}>Home</Link>
+        <nav id={menuId} className="md-mobile-nav" aria-label="Mobile navigation">
+          <Link to="/" ref={firstLinkRef} onClick={() => setOpen(false)} aria-current={current("/")?"page":undefined} className={active("/")}>Home</Link>
           {navItems.map((item) => (
-            <Link key={item.label} to={item.to} hash={item.hash} onClick={() => setOpen(false)}>{item.label}</Link>
+            <Link key={item.label} to={item.to} hash={item.hash} onClick={() => setOpen(false)} aria-current={current(item.to,item.hash)?"location":undefined} className={active(item.to,item.hash)}>{item.label}</Link>
           ))}
-          <Link to="/luton" onClick={() => setOpen(false)}>Luton</Link>
-          <Link to="/st-albans" onClick={() => setOpen(false)}>St Albans</Link>
-          <Link to="/play" onClick={() => setOpen(false)}>Play &amp; Rewards</Link>
-          <Link to="/franchise" onClick={() => setOpen(false)}>Franchises</Link>
-          <Link to="/blog" onClick={() => setOpen(false)}>Blog</Link>
-          <Link to="/track" onClick={() => setOpen(false)}>Track order</Link>
+          <Link to="/luton" onClick={() => setOpen(false)} aria-current={current("/luton")?"page":undefined} className={active("/luton")}>Luton</Link>
+          <Link to="/st-albans" onClick={() => setOpen(false)} aria-current={current("/st-albans")?"page":undefined} className={active("/st-albans")}>St Albans</Link>
+          <Link to="/play" onClick={() => setOpen(false)} aria-current={current("/play")?"page":undefined} className={active("/play")}>Play &amp; Rewards</Link>
+          <Link to="/franchise" onClick={() => setOpen(false)} aria-current={current("/franchise")?"page":undefined} className={active("/franchise")}>Franchises</Link>
+          <Link to="/blog" onClick={() => setOpen(false)} aria-current={current("/blog")?"page":undefined} className={active("/blog")}>Blog</Link>
+          <Link to="/track" onClick={() => setOpen(false)} aria-current={current("/track")?"page":undefined} className={active("/track")}>Track order</Link>
           <Link to="/order" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Coming soon <ArrowRight /></Link>
         </nav>
       ) : null}
