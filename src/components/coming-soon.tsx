@@ -3,11 +3,12 @@ import { useState } from "react";
 import { MessageCircle,MapPin,Layers3,ShieldCheck,Users,CarFront,Truck,PackageCheck } from "lucide-react";
 import {recommendCrossBrandOffers,handoffRequirements,previewFulfilments} from "@/lib/multibrand-offers";
 import {planEqualGroupSplit} from "@/lib/mealdeck-group-allocation";
+import {adjustSampleBasket,summariseSampleBasket,SAMPLE_MAX_ITEMS,SAMPLE_MAX_PER_DISH,type SampleBasketLine} from "@/lib/mealdeck-preview-basket";
 import {BROWSE_CATEGORIES,matchesBrowseCategory,type BrowseCategory} from "@/lib/marketplace-discovery";
 import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
-import { brands, locations, sampleMenu, formatPence, type LocationKey, type FulfilmentType, type MenuItem } from "@/lib/mealdeck";
+import { brands, locations, sampleMenu, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
 
 export function ComingSoonBanner() {
   return <aside role="status" className="md-launch-banner">
@@ -20,7 +21,7 @@ export function OrderingPreview() {
   const [search,setSearch]=useState("");
   const [activeBrand,setActiveBrand]=useState<string>("all");
   const [activeCategory,setActiveCategory]=useState<BrowseCategory>("all");
-  const [previewItems,setPreviewItems]=useState<MenuItem[]>([]);
+  const [previewLines,setPreviewLines]=useState<SampleBasketLine[]>([]);
   const [fulfilment,setFulfilment]=useState<FulfilmentType>("delivery");
   const [postcode,setPostcode]=useState("");
   const [groupEnabled,setGroupEnabled]=useState(false);
@@ -35,8 +36,10 @@ export function OrderingPreview() {
     matchesBrowseCategory(item,activeCategory,brands.find(b=>b.id===item.brandId))&&
     (item.name+" "+(brands.find(b=>b.id===item.brandId)?.name??"")+" "+item.category)
       .toLowerCase().includes(search.trim().toLowerCase()));
+  const previewItems=previewLines.map(line=>line.item);
+  const summary=summariseSampleBasket(previewLines);
   const offers=recommendCrossBrandOffers({menu,cart:previewItems});
-  const estimate=previewItems.reduce((sum,item)=>sum+item.pricePence,0);
+  const estimate=summary.subtotalPence;
   const split=planEqualGroupSplit({
     participantIds:Array.from({length:participants},(_,index)=>"guest_"+(index+1)),
     goodsPence:estimate,deliveryPence:0,deliveryPayer:"shared",
@@ -47,7 +50,7 @@ export function OrderingPreview() {
     setActiveCategory("all");
     setSearch("");
     setPostcode("");
-    setPreviewItems([]);
+    setPreviewLines([]);
     setFulfilment("delivery");
   }
   return <div className="md-marketing-shell"><SiteHeader/>
@@ -58,7 +61,7 @@ export function OrderingPreview() {
 
       <section aria-label="Location and fulfilment preview" className="mt-7 grid gap-4 rounded-3xl border border-[var(--md-line)] bg-[var(--md-paper)] p-5 text-[var(--md-black)] shadow-sm lg:grid-cols-[1fr_1fr_1.4fr]">
         <div>
-          <label className="block text-xs font-black uppercase tracking-wide text-[var(--md-muted)]" htmlFor="preview-location">Your nearest MealDeck</label>
+          <label className="block text-xs font-black uppercase tracking-wide text-[var(--md-muted)]" htmlFor="preview-location">Choose a kitchen to preview</label>
           <select id="preview-location" value={location} onChange={e=>switchLocation(e.target.value as LocationKey)}
             className="mt-2 min-h-12 w-full rounded-xl border border-[var(--md-line)] bg-white px-3 font-semibold">
             {locations.map(place=><option key={place.key} value={place.key}>{place.town} · preview</option>)}
@@ -83,28 +86,6 @@ export function OrderingPreview() {
             </button>)}
           </div>
           <p className="mt-2 text-xs text-[var(--md-muted)]">{location==="stalbans"?"MealDeck St Albans preview is delivery only. Café1 has separate ordering rules.":"Luton fulfilment choices are illustrative until the kitchen approves them."}</p>
-        </div>
-      </section>
-
-      <section aria-label="Future ordering capabilities" className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          {Icon:Layers3,title:"Every brand",desc:"One basket across eligible menus"},
-          {Icon:Users,title:"Invite the table",desc:"Host pays or invitees split their share"},
-          {Icon:Truck,title:"One delivery",desc:"One master order, delivery quoted once"},
-          {Icon:ShieldCheck,title:"Payment-gated KDS",desc:"No kitchen release before verified payment"},
-        ].map(({Icon,title,desc})=><article key={title} className="rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] p-4 text-[var(--md-black)]">
-          <Icon className="size-6 text-[var(--md-red-deep)]" aria-hidden="true"/>
-          <h2 className="mt-2 font-display font-bold">{title}</h2>
-          <p className="mt-1 text-sm text-[var(--md-muted)]">{desc}</p>
-        </article>)}
-      </section>
-
-      <section aria-label="WhatsApp coming soon" className="mt-6 rounded-2xl bg-[var(--md-black)] p-5 text-white">
-        <div className="flex items-start gap-3">
-          <MessageCircle className="mt-1 size-6 shrink-0 text-[var(--md-yellow)]"/>
-          <div><h2 className="font-display text-xl font-bold">Website, app and WhatsApp — one kitchen system</h2>
-            <p className="mt-2 text-sm leading-6 text-white/80">We are preparing one Dishbee-powered order journey across all channels. Verified payment, brand-specific KDS, invitation payments, handoff codes and courier tracking are required before launch. A WhatsApp conversation alone will never be a paid order.</p>
-          </div>
         </div>
       </section>
 
@@ -134,11 +115,17 @@ export function OrderingPreview() {
           className={activeBrand===brand.id?"shrink-0 rounded-full bg-[var(--md-black)] px-5 py-3 text-sm font-bold text-white":"shrink-0 rounded-full border border-[var(--md-line)] bg-[var(--md-paper)] px-5 py-3 text-sm font-bold text-[var(--md-black)]"}>{brand.name}</button>)}
       </nav>
 
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] p-4 text-[var(--md-black)]" aria-label="Sample basket summary">
+        <div><strong className="block font-display text-lg">{summary.dishes} {summary.dishes===1?"dish":"dishes"} in your deck</strong>
+          <span className="text-sm text-[var(--md-muted)]">{summary.brands} {summary.brands===1?"brand":"brands"} · {formatPence(estimate)} illustrative · delivery not included</span>
+        </div>
+        <a href="#sample-deck" className="min-h-11 rounded-xl bg-[var(--md-black)] px-5 py-3 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2">Review sample deck</a>
+      </div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map(item=>{
           const brand=brands.find(b=>b.id===item.brandId);
           const photo=marketplaceItemPhoto(item,brand);
-          const selected=previewItems.some(x=>x.id===item.id);
+          const quantity=previewLines.find(line=>line.item.id===item.id)?.quantity??0;
           return <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] text-[var(--md-black)] shadow-sm">
             {photo.src&&<div className="relative aspect-[16/9] overflow-hidden bg-[var(--md-line)]">
               <img src={photo.src} alt="" loading="lazy" className="h-full w-full object-cover"/>
@@ -149,11 +136,16 @@ export function OrderingPreview() {
               <h3 className="mt-2 font-display text-xl font-bold">{item.name}</h3>
               {item.description&&<p className="mt-2 text-sm leading-6 text-[var(--md-muted)]">{item.description}</p>}
               <p className="mt-4 font-black">{formatPence(item.pricePence)} <span className="text-xs font-normal text-[var(--md-muted)]">illustrative</span></p>
-              <button type="button" aria-pressed={selected}
-                onClick={()=>setPreviewItems(lines=>selected?lines.filter(x=>x.id!==item.id):[...lines,item])}
-                className="mt-4 min-h-11 w-full rounded-xl border border-[var(--md-black)] px-4 font-bold transition-colors hover:bg-[var(--md-black)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2">
-                {selected?"Remove from sample basket":"Add to sample basket"}
-              </button>
+              <div role="group" className="mt-4 flex min-h-11 items-center gap-2" aria-label={`Sample basket quantity for ${item.name}`}>
+                <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,-1))}
+                  disabled={quantity===0} aria-label={`Remove one ${item.name}`}
+                  className="min-h-11 min-w-11 rounded-xl border border-[var(--md-line)] text-lg font-black transition-colors hover:bg-[var(--md-black)] hover:text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2">−</button>
+                <span className="min-w-0 flex-1 text-center text-sm font-bold" aria-live="polite">{quantity} in deck</span>
+                <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,1))}
+                  disabled={quantity>=SAMPLE_MAX_PER_DISH||summary.dishes>=SAMPLE_MAX_ITEMS}
+                  aria-label={`Add one ${item.name} to sample basket`}
+                  className="min-h-11 rounded-xl bg-[var(--md-black)] px-4 font-bold text-white transition-opacity hover:opacity-85 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2">+ Add</button>
+              </div>
             </div>
           </article>;
         })}
@@ -174,31 +166,44 @@ export function OrderingPreview() {
                 <p className="mt-1 font-bold">{offer.label}</p>
                 <p className="text-sm text-[var(--md-muted)]">{offer.target.name} · {formatPence(offer.indicativePricePence)} illustrative</p>
               </div>
-              <button type="button" onClick={()=>setPreviewItems(items=>items.some(x=>x.id===offer.target.id)?items:[...items,offer.target])}
-                className="min-h-11 rounded-xl bg-[var(--md-black)] px-4 text-sm font-bold text-white">Add to sample</button>
+              <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,offer.target,1))}
+                disabled={(previewLines.find(line=>line.item.id===offer.target.id)?.quantity??0)>=SAMPLE_MAX_PER_DISH||summary.dishes>=SAMPLE_MAX_ITEMS}
+                aria-label={`Add one ${offer.target.name} to sample basket`}
+                className="min-h-11 rounded-xl bg-[var(--md-black)] px-4 text-sm font-bold text-white disabled:opacity-40">+ Add to deck</button>
             </div>)}
-          </div>:<p className="mt-5 text-sm text-[var(--md-muted)]">Add a sample dish to see available cross-brand pairing ideas.</p>}
+          </div>:<p className="mt-5 text-sm text-[var(--md-muted)]">Add a sample dish to see cross-brand pairing ideas.</p>}
           <p className="mt-4 text-xs text-[var(--md-muted)]">Only eligible live products will be offered when ordering opens. Suggested upgrades do not automatically replace a side or apply a discount.</p>
         </section>
-        <section aria-label="Sample shared basket" className="rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] p-5 text-[var(--md-black)]">
+        <section id="sample-deck" aria-label="Sample shared basket" className="scroll-mt-28 rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] p-5 text-[var(--md-black)]">
           <h2 className="font-display text-xl font-black">Your sample deck</h2>
-          <p className="mt-2 text-sm text-[var(--md-muted)]">{previewItems.length} dishes · illustrative subtotal {formatPence(estimate)}</p>
-          {previewItems.length?<ul className="mt-4 space-y-2">{previewItems.map(item=><li key={item.id} className="flex items-center justify-between gap-3 border-b border-[var(--md-line)] pb-2 text-sm">
-            <span>{item.name}</span><button type="button" onClick={()=>setPreviewItems(items=>items.filter(x=>x.id!==item.id))}
-              className="min-h-11 shrink-0 rounded-lg px-3 font-semibold underline">Remove</button>
+          <p className="mt-2 text-sm text-[var(--md-muted)]">{summary.dishes} dishes from {summary.brands} {summary.brands===1?"brand":"brands"} · illustrative subtotal {formatPence(estimate)}</p>
+          {previewLines.length?<ul className="mt-4 space-y-3">{previewLines.map(({item,quantity})=><li key={item.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--md-line)] pb-3 text-sm">
+            <div className="min-w-0 flex-1"><strong className="block">{item.name}</strong>
+              <span className="text-xs text-[var(--md-muted)]">{brands.find(brand=>brand.id===item.brandId)?.name??"MealDeck"} · {quantity} × {formatPence(item.pricePence)}</span></div>
+            <strong>{formatPence(quantity*item.pricePence)}</strong>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,-1))}
+                aria-label={`Remove one ${item.name}`}
+                className="min-h-11 min-w-11 rounded-lg border border-[var(--md-line)] text-lg font-black">−</button>
+              <span aria-label={`Quantity ${quantity}`} className="w-5 text-center font-bold">{quantity}</span>
+              <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,1))}
+                disabled={quantity>=SAMPLE_MAX_PER_DISH||summary.dishes>=SAMPLE_MAX_ITEMS}
+                aria-label={`Add one ${item.name}`}
+                className="min-h-11 min-w-11 rounded-lg border border-[var(--md-line)] text-lg font-black disabled:opacity-40">+</button>
+            </div>
           </li>)}</ul>:<p className="mt-4 text-sm text-[var(--md-muted)]">Choose dishes from different brands to preview a combined basket.</p>}
           <label className="mt-5 flex items-center gap-3 rounded-xl border border-[var(--md-line)] p-3 text-sm font-semibold">
             <input type="checkbox" checked={groupEnabled} onChange={e=>setGroupEnabled(e.target.checked)} className="size-5"/>
             Invite friends and split the order (preview)
           </label>
           {groupEnabled&&<div className="mt-3 space-y-2">
-            <label htmlFor="sample-participants" className="text-sm font-semibold">Number of invitees</label>
+            <label htmlFor="sample-participants" className="text-sm font-semibold">People sharing (including host)</label>
             <select id="sample-participants" value={participants} onChange={e=>setParticipants(Number(e.target.value))}
               className="min-h-11 w-full rounded-xl border border-[var(--md-line)] px-3">
               {[2,3,4,5,6,8,10].map(n=><option key={n} value={n}>{n} people</option>)}
             </select>
             <p className="text-sm text-[var(--md-muted)]">Exact-penny goods-only illustration. A single delivery charge is calculated at live checkout; no invitation or payment is sent here.</p>
-            {split.valid&&previewItems.length>0&&<div role="status" className="rounded-xl bg-white p-3">
+            {split.valid&&summary.dishes>0&&<div role="status" className="rounded-xl bg-white p-3">
               <p className="mb-2 text-xs font-black uppercase tracking-wide">Illustrative equal-share breakdown</p>
               <ul className="space-y-2">{split.shares.map((share,index)=><li key={share.participantId} className="flex justify-between gap-3 text-sm">
                 <span>{index===0?"Host":"Guest "+(index+1)}</span><strong>{formatPence(share.duePence)}</strong>
@@ -216,6 +221,29 @@ export function OrderingPreview() {
           <p className="mt-4 text-sm font-bold text-[var(--md-red-deep)]">Preview only. No checkout, payment, delivery booking or KDS ticket is created.</p>
         </section>
       </div>
+      {/* Secondary feature story follows the actual food and sample basket. */}
+      <section aria-label="Future ordering capabilities" className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          {Icon:Layers3,title:"Every brand",desc:"One basket across eligible menus"},
+          {Icon:Users,title:"Invite the table",desc:"Host pays or invitees split their share"},
+          {Icon:Truck,title:"One delivery",desc:"One master order, delivery quoted once"},
+          {Icon:ShieldCheck,title:"Payment-gated KDS",desc:"No kitchen release before verified payment"},
+        ].map(({Icon,title,desc})=><article key={title} className="rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] p-4 text-[var(--md-black)]">
+          <Icon className="size-6 text-[var(--md-red-deep)]" aria-hidden="true"/>
+          <h2 className="mt-2 font-display font-bold">{title}</h2>
+          <p className="mt-1 text-sm text-[var(--md-muted)]">{desc}</p>
+        </article>)}
+      </section>
+
+      <section aria-label="WhatsApp coming soon" className="mt-6 rounded-2xl bg-[var(--md-black)] p-5 text-white">
+        <div className="flex items-start gap-3">
+          <MessageCircle className="mt-1 size-6 shrink-0 text-[var(--md-yellow)]"/>
+          <div><h2 className="font-display text-xl font-bold">Website, app and WhatsApp — one kitchen system</h2>
+            <p className="mt-2 text-sm leading-6 text-white/80">We are preparing one Dishbee-powered order journey across all channels. Verified payment, brand-specific KDS, invitation payments, handoff codes and courier tracking are required before launch. A WhatsApp conversation alone will never be a paid order.</p>
+          </div>
+        </div>
+      </section>
+
       <div className="mt-10 flex flex-wrap gap-4"><Link to="/" className="md-btn md-btn-yellow">Explore the brands</Link><Link to="/play" className="md-btn">Play free games</Link></div>
     </main><SiteFooter/></div>;
 }

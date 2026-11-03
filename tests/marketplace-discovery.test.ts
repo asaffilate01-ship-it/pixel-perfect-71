@@ -40,6 +40,19 @@ describe("category → brand → dish navigation",()=>{
     expect(matchesBrowseCategory(items[4]!,"drinks",brands[2])).toBe(false);
     expect(matchesBrowseCategory(items[4]!,"desserts",brands[2])).toBe(true);
   });
+  test("dietary browsing never guesses vegetarian status from a brand, salad or name",()=>{
+    const vegetarianBrand={id:"sabzora",name:"Sabzora",category:"Indian vegetarian"} as Brand;
+    const unreviewed={id:"salad",brandId:"sabzora",name:"Garden Salad",category:"Fresh",pricePence:600} as MenuItem;
+    const meat={id:"meat",brandId:"sabzora",name:"Grilled Chicken Salad",category:"Fresh",pricePence:850} as MenuItem;
+    const ambiguous={id:"veg-burger",brandId:"sabzora",name:"Plant Burger",category:"Burgers",pricePence:750} as MenuItem;
+    const labelled={id:"veg",brandId:"sabzora",name:"Veg Delight",category:"Vegetarian",pricePence:780} as MenuItem;
+    expect(matchesBrowseCategory(unreviewed,"vegetarian",vegetarianBrand)).toBe(false);
+    expect(matchesBrowseCategory(meat,"vegetarian",vegetarianBrand)).toBe(false);
+    expect(matchesBrowseCategory(ambiguous,"vegetarian",vegetarianBrand)).toBe(false);
+    expect(matchesBrowseCategory(labelled,"vegetarian",vegetarianBrand)).toBe(true);
+    expect(browseMenu([unreviewed,meat,ambiguous,labelled],null,"vegetarian","",[vegetarianBrand]).map(x=>x.id))
+      .toEqual(["veg"]);
+  });
   test("fries are available as a customer category",()=>{
     expect(BROWSE_CATEGORIES.some(c=>c.id==="sides")).toBe(true);
     const fries:MenuItem={id:"fries",brandId:"loadd",name:"Loaded Fries",category:"Fries & sides",pricePence:450};

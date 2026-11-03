@@ -8,7 +8,7 @@ This is a curated, risk-ranked survey of relevant GitHub projects and official A
 
 | Reference | Relevant technique | MealDeck decision |
 | --- | --- | --- |
-| [Taste Skill](https://github.com/senlindesign/taste-skill) | Extract visual principles and rationale, not merely colours | Maintain existing MealDeck brand/card/food composition; use one clear shopping hierarchy |
+| [Taste Skill](https://github.com/Leonxlnx/taste-skill) | Extract visual principles and rationale, not merely colours | Maintain existing MealDeck brand/card/food composition; use one clear shopping hierarchy |
 | [Impeccable](https://github.com/pbakaus/impeccable) | Critique, audit, polish, mobile adaptation and accessibility checks | Clear active filter states, meaningful empty results, readable group-share breakdown |
 | [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md) | Durable design constraints for agent-led changes | Preserve PRODUCT.md and DESIGN.md as source of design and product truth |
 
