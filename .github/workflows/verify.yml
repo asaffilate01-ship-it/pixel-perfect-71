@@ -110,3 +110,12 @@ jobs:
           src/lib/mealdeck-fulfilment-status.ts src/lib/mealdeck-handoff.ts
           tests/mealdeck-fulfilment-planner.test.ts tests/mealdeck-fulfilment-status.test.ts
           tests/mealdeck-handoff.test.ts --rule 'prettier/prettier: off'
+
+      - name: Checkout delivery charge integrity
+        run: bun test tests/mealdeck-checkout-delivery-fee.test.ts
+
+      - name: Checkout charge policy lint
+        run: >-
+          bunx eslint src/lib/mealdeck-checkout-delivery-fee.ts
+          tests/mealdeck-checkout-delivery-fee.test.ts
+          --rule 'prettier/prettier: off'
