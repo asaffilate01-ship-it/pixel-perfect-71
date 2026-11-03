@@ -1,271 +1,181 @@
 import { COMING_SOON } from "@/lib/launch-status";
 import { ComingSoonPage } from "@/components/coming-soon";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  Bike,
-  CheckCircle2,
-  Clock3,
-  Loader2,
-  MapPin,
-  PackageCheck,
-  Search,
-  Gamepad2,
-  ShoppingBag,
-} from "lucide-react";
+import { AlertCircle, Bike, CheckCircle2, Loader2, RefreshCcw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { TrackingTimeline } from "@/components/order/tracking-timeline";
+import { presentMealDeckTracking } from "@/lib/mealdeck-tracking-presentation";
 import { getOrderTracking, type OrderTrackingResult } from "@/lib/dishbee.functions";
 
-export const Route=createFileRoute("/track")({
-  head:()=>({
-    meta:[
-      {title:"Order tracking coming soon — MealDeck"},
-      {
-        name:"description",
-        content:"MealDeck order tracking is coming soon. Registration and ordering are not open yet.",
-      },
+export const Route = createFileRoute("/track")({
+  head: () => ({
+    meta: [
+      { title: "MealDeck order tracking — Coming soon" },
+      { name: "description",
+        content: "Track a MealDeck multi-brand order with the private order reference and handoff code once ordering is open." },
     ],
   }),
-  component:() => COMING_SOON ? <ComingSoonPage title="Order tracking is coming soon" /> : <TrackOrderPage />,
+  component: () => COMING_SOON
+    ? <ComingSoonPage title="Order tracking is coming soon" />
+    : <TrackOrderPage />,
 });
 
-const statusCopy:Record<string,{label:string;copy:string;Icon:typeof Clock3}>={
-  payment_pending:{
-    label:"Awaiting payment",
-    copy:"Payment has not confirmed yet, so your order has not been sent for preparation.",
-    Icon:Clock3,
-  },
-  paid:{
-    label:"Payment confirmed",
-    copy:"Payment is confirmed and your order is being sent for preparation.",
-    Icon:CheckCircle2,
-  },
-  accepted:{
-    label:"Sent for preparation",
-    copy:"Your order has been sent to the chefs.",
-    Icon:PackageCheck,
-  },
-  preparing:{
-    label:"Preparing",
-    copy:"Each brand is freshly preparing their dishes for your order.",
-    Icon:PackageCheck,
-  },
-  ready:{
-    label:"Ready",
-    copy:"Your order is ready for the next handoff step.",
-    Icon:CheckCircle2,
-  },
-  fulfilled:{
-    label:"Completed",
-    copy:"Your MealDeck order has been completed.",
-    Icon:CheckCircle2,
-  },
-};
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const NETWORK_MESSAGE = "We couldn't refresh the kitchen's status. Please try again.";
+const DEFAULT_MISSING_MESSAGE = "No order matched that reference and code.";
 
-const passCopy:Record<string,{label:string;copy:string;Icon:typeof Clock3}>={
-  ready_to_pack:{
-    label:"Preparation complete",
-    copy:"Every brand's dishes are ready and your order is moving to the MealDeck pass.",
-    Icon:PackageCheck,
-  },
-  packing:{
-    label:"Packing your order",
-    copy:"Your MealDeck pass keeps every brand together for one delivery.",
-    Icon:PackageCheck,
-  },
-  sealed:{
-    label:"Packed & sealed",
-    copy:"Your full multi-brand order is packed and being checked for handoff.",
-    Icon:CheckCircle2,
-  },
-  ready_for_handoff:{
-    label:"Ready for handoff",
-    copy:"Your complete order is ready for collection or delivery handoff.",
-    Icon:CheckCircle2,
-  },
-};
+function TrackOrderPage() {
+  const [orderId, setOrderId] = useState("");
+  const [handoffCode, setHandoffCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<OrderTrackingResult | null>(null);
+  const activeRequest = useRef(0);
+  const inFlight = useRef(false);
+  const track = useServerFn(getOrderTracking);
+  const eligible = UUID.test(orderId.trim()) && /^\d{4}$/.test(handoffCode.trim());
+  const projection = result?.found ? presentMealDeckTracking(result) : null;
 
-const deliveryCopy:Record<string,string>={
-  waiting_for_kitchen:"Waiting for preparation",
-  waiting_for_ready:"Waiting for the full order to be packed",
-  pending_quote:"Finding the best available delivery",
-  quoted:"Delivery option selected",
-  booking:"Booking your driver",
-  booked:"Driver booking confirmed",
-  requested:"Finding a delivery driver",
-  accepted:"Delivery accepted",
-  driver_assigned:"Driver assigned",
-  arriving_pickup:"Driver on the way to collect your order",
-  picked_up:"Order collected by driver",
-  arriving_customer:"Driver heading to you",
-  delivered:"Delivered",
-  cancelled:"Delivery cancelled",
-  failed:"Delivery issue",
-};
+  function invalidate() {
+    activeRequest.current += 1;
+    inFlight.current = false;
+    setLoading(false);
+    setResult(null);
+  }
 
-function TrackOrderPage(){
-  const[orderId,setOrderId]=useState("");
-  const[handoffCode,setHandoffCode]=useState("");
-  const[loading,setLoading]=useState(false);
-  const[result,setResult]=useState<OrderTrackingResult|null>(null);
-  const track=useServerFn(getOrderTracking);
-
-  async function submit(){
-    if(!orderId.trim()||handoffCode.trim().length!==4)return;
+  async function submit() {
+    if (!eligible || inFlight.current) return;
+    const requestId = ++activeRequest.current;
+    inFlight.current = true;
     setLoading(true);
-    try{
-      setResult(await track({
-        data:{
-          orderId:orderId.trim(),
-          handoffCode:handoffCode.trim(),
-        },
-      }));
-    }finally{
-      setLoading(false);
+    setResult(null);
+    try {
+      const response = await track({ data: {
+        orderId: orderId.trim(), handoffCode: handoffCode.trim(),
+      }});
+      if (activeRequest.current === requestId) setResult(response);
+    } catch {
+      if (activeRequest.current === requestId) {
+        setResult({ found: false, message: NETWORK_MESSAGE });
+      }
+    } finally {
+      if (activeRequest.current === requestId) {
+        inFlight.current = false;
+        setLoading(false);
+      }
     }
   }
 
-  const status=result?.found
-    ? (result.passStatus?passCopy[result.passStatus]:undefined)
-      ??statusCopy[result.orderStatus]
-      ??{
-        label:result.orderStatus.replace(/_/g," "),
-        copy:"Your order status has been updated.",
-        Icon:Clock3,
-      }
-    : null;
-  const StatusIcon=status?.Icon??Clock3;
-
   return <div className="min-h-screen bg-background">
-    <SiteHeader
-      context={
-        <Link to="/order" className="font-display text-sm font-black uppercase tracking-wide text-accent">
-          Start an order
-        </Link>
-      }
-    />
-
-    <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <section className="card-elevated p-6 sm:p-8">
+    <SiteHeader context={
+      <Link to="/order" className="font-display text-sm font-black uppercase tracking-wide text-accent">
+        Explore menus
+      </Link>
+    }/>
+    <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12">
+      <section className="card-elevated p-5 sm:p-8">
         <p className="eyebrow">MealDeck tracking</p>
-        <h1 className="mt-2 text-4xl font-extrabold">Where is my order?</h1>
-        <p className="mt-3 text-muted-foreground">
-          Enter the order UUID from your confirmation and the 4-digit handoff code.
+        <h1 className="mt-2 font-display text-3xl font-black sm:text-4xl">
+          Follow your full order
+        </h1>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+          Your different food brands travel together in one MealDeck order.
+          Enter the private order UUID and its 4-digit handoff code to view the
+          latest kitchen and courier updates.
         </p>
-
-        <div className="mt-7 grid gap-4 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
-          <div className="space-y-1">
+        <form onSubmit={(event) => { event.preventDefault(); void submit(); }}
+          className="mt-7 grid gap-4 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-end">
+          <div className="min-w-0 space-y-2">
             <Label htmlFor="order-id">Order reference</Label>
-            <Input
-              id="order-id"
-              value={orderId}
-              onChange={(event)=>setOrderId(event.target.value)}
+            <Input id="order-id" value={orderId} autoComplete="off"
+              onChange={event => { invalidate(); setOrderId(event.target.value.slice(0,36)); }}
               placeholder="Order UUID"
-            />
+              aria-describedby="tracking-privacy"
+              className="min-h-11 font-mono text-sm"/>
           </div>
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-2">
             <Label htmlFor="handoff-code">4-digit code</Label>
-            <Input
-              id="handoff-code"
-              value={handoffCode}
-              inputMode="numeric"
-              maxLength={4}
-              onChange={(event)=>setHandoffCode(event.target.value.replace(/\D/g,"").slice(0,4))}
-              placeholder="1234"
-              className="font-mono tracking-[.25em]"
-            />
+            <Input id="handoff-code" value={handoffCode} inputMode="numeric"
+              autoComplete="off" maxLength={4} type="password"
+              onChange={event => { invalidate();
+                setHandoffCode(event.target.value.replace(/\D/g, "").slice(0,4)); }}
+              placeholder="••••" className="min-h-11 font-mono tracking-[.18em]"/>
           </div>
-          <Button
-            variant="hero"
-            size="lg"
-            className="rounded-xl"
-            disabled={loading||!orderId.trim()||handoffCode.length!==4}
-            onClick={()=>void submit()}
-          >
-            {loading?<Loader2 className="animate-spin"/>:<Search/>}
-            Track
+          <Button type="submit" variant="hero" size="lg" className="min-h-11 rounded-xl"
+            disabled={loading || !eligible}>
+            {loading ? <Loader2 aria-hidden="true" className="size-5 animate-spin"/> :
+              <Search aria-hidden="true" className="size-5"/>}
+            {loading ? "Checking…" : "Track"}
           </Button>
-        </div>
+        </form>
+        <p id="tracking-privacy" className="mt-3 text-xs leading-5 text-muted-foreground">
+          Keep both details private. This page never asks for your card details or
+          treats a courier update as independent proof of delivery.
+        </p>
       </section>
 
-      {result?.found&&status?(
-        <section className="mt-6 overflow-hidden rounded-3xl border border-border bg-card">
-          <div className="flex items-start gap-4 border-b border-border p-6">
-            <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent/10">
-              <StatusIcon className="size-6 text-accent"/>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[.16em] text-muted-foreground">
-                Order status
-              </p>
-              <h2 className="mt-1 font-display text-2xl font-bold">{status.label}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{status.copy}</p>
-            </div>
-          </div>
-
-          <div className="grid gap-3 p-6 sm:grid-cols-2">
-            <div className="rounded-2xl border border-border bg-background/50 p-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {result.fulfilment==="delivery"?<Bike className="size-4"/>:
-                  result.fulfilment==="curbside"?<MapPin className="size-4"/>:
-                  <ShoppingBag className="size-4"/>}
-                Fulfilment
+      {result?.found && projection ? (
+        <section aria-label="Your latest MealDeck order status"
+          className="mt-6 overflow-hidden rounded-3xl border border-border bg-card">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-5 sm:p-6">
+            <div className="flex min-w-0 flex-1 items-start gap-4">
+              <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent/10">
+                {projection.tone === "review" ?
+                  <AlertCircle aria-hidden="true" className="size-6 text-destructive"/> :
+                  <CheckCircle2 aria-hidden="true" className="size-6 text-accent"/>}
               </div>
-              <p className="mt-2 font-display text-lg font-bold capitalize">
-                {result.fulfilment.replace(/_/g," ")}
-              </p>
-            </div>
-
-            {result.fulfilment==="delivery"?(
-              <div className="rounded-2xl border border-border bg-background/50 p-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Bike className="size-4"/>Delivery
-                </div>
-                <p className="mt-2 font-display text-lg font-bold">
-                  {deliveryCopy[result.deliveryStatus??""]??"Waiting for dispatch"}
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  {projection.tone === "review" ? "Status needs checking" :
+                    projection.tone === "reported" ? "Reported status" : "Latest update"}
+                </p>
+                <h2 className="mt-1 font-display text-xl font-bold sm:text-2xl">
+                  {projection.headline}
+                </h2>
+                <p role={projection.tone === "review" ? "alert" : "status"}
+                  className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+                  {projection.description}
                 </p>
               </div>
-            ):null}
+            </div>
+            <Button type="button" variant="outline" size="sm"
+              className="min-h-11 shrink-0 gap-2 rounded-xl"
+              onClick={() => void submit()} disabled={loading || !eligible}>
+              {loading ? <Loader2 aria-hidden="true" className="size-4 animate-spin"/> :
+                <RefreshCcw aria-hidden="true" className="size-4"/>}
+              Refresh
+            </Button>
           </div>
-
-          {["paid", "accepted", "preparing"].includes(result.orderStatus) ? (
-            <div className="border-t border-border p-6">
-              <p className="mb-3 text-sm text-muted-foreground">Your chefs are at work. Fancy a free food-card game while you wait?</p>
-              <Link to="/play" className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-accent-foreground">
-                <Gamepad2 className="size-5" /> Play while you wait
-              </Link>
-              <p className="mt-2 text-xs text-muted-foreground">Games are for fun only, with no prizes or wagering. Return here to track your order.</p>
+          <TrackingTimeline value={projection}/>
+          {projection.canOpenCourierTracking && result.trackingUrl ? (
+            <div className="border-t border-border p-5 sm:p-6">
+              <a href={result.trackingUrl} rel="noopener noreferrer" target="_blank"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2">
+                <Bike aria-hidden="true" className="size-4"/>
+                View courier tracking
+              </a>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Opens the verified delivery provider's tracking page. Times are estimates.
+              </p>
             </div>
           ) : null}
-
-          {result.trackingUrl?(
-            <div className="border-t border-border p-6">
-              <a
-                href={result.trackingUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground"
-              >
-                <Bike className="size-4"/>Live delivery tracking
-              </a>
-            </div>
-          ):null}
         </section>
-      ):null}
+      ) : null}
 
-      {result&&!result.found?(
-        <p className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm">
-          {result.message}
+      {result && !result.found ? (
+        <p role="status" className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm leading-6">
+          {result.message || DEFAULT_MISSING_MESSAGE}
         </p>
-      ):null}
+      ) : null}
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        No automatic refresh. Use Refresh to request another status update.
+      </p>
     </main>
-
     <SiteFooter/>
-  </div>
+  </div>;
 }
-
