@@ -119,3 +119,12 @@ jobs:
           bunx eslint src/lib/mealdeck-checkout-delivery-fee.ts
           tests/mealdeck-checkout-delivery-fee.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Trusted courier tracking link checks
+        run: bun test tests/mealdeck-tracking-links.test.ts
+
+      - name: Courier tracking link lint
+        run: >-
+          bunx eslint src/lib/mealdeck-tracking-links.ts
+          tests/mealdeck-tracking-links.test.ts
+          --rule 'prettier/prettier: off'
