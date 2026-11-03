@@ -96,7 +96,7 @@ export function parseDishbeeCheckoutAttemptReceipt(value: unknown): DishbeeAttem
   const row = Array.isArray(value) ? (value.length === 1 ? value[0] : null) : value;
   if (!record(row) || !uuid(row["order_id"]) ||
       typeof row["handoff_code"] !== "string" ||
-      !/^\\d{4}$/.test(row["handoff_code"]) ||
+      !/^\d{4}$/.test(row["handoff_code"]) ||
       typeof row["replayed"] !== "boolean" ||
       typeof row["order_status"] !== "string") return null;
 
