@@ -164,6 +164,15 @@ jobs:
       - name: Dishbee canonical routing, checkout receipt and launch gate
         run: bun test tests/mealdeck-dishbee-contract.test.ts
 
+      - name: Phase 32 checkout-attempt safety and replay tests
+        run: bun test tests/mealdeck-checkout-attempt.test.ts
+
+      - name: Phase 32 checkout attempt module lint
+        run: >-
+          bunx eslint src/lib/mealdeck-checkout-attempt.ts
+          tests/mealdeck-checkout-attempt.test.ts
+          --rule 'prettier/prettier: off'
+
       - name: Dishbee integration boundary lint
         run: >-
           bunx eslint src/lib/mealdeck-dishbee-contract.ts
