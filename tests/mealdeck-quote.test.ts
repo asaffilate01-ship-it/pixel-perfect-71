@@ -57,7 +57,9 @@ describe("Phase 28: signed, short-lived Dishbee checkout price bound to basket",
     expect(verified(issued.token,binding,nowMs+119_999).valid).toBe(true);
     expect(verified(issued.token,binding,nowMs+120_000))
       .toEqual({valid:false,reason:"expired"});
-    expect(verified(issued.token.replace(/.$/,"A")).valid).toBe(false);
+    const [body,sig]=issued.token.split(".");
+    const tampered=body+"."+(sig?.startsWith("A")?"B":"A")+sig!.slice(1);
+    expect(verified(tampered).valid).toBe(false);
     expect(verified("abc").valid).toBe(false);
     expect(make(binding,amounts,"weak").ready).toBe(false);
     expect(verified(issued.token,binding,nowMs,"other-key-32chars-minimum-long-value").valid)
