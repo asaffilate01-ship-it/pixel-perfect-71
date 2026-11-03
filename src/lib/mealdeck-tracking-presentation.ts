@@ -96,8 +96,11 @@ function review(stages: TrackingStep[], updatedAtIso: string | null,
   headline = "We're checking your order's progress",
   description = "Our system cannot confirm the next step from the latest update. Please contact MealDeck support if you need help.",
 ): TrackingPresentation {
-  const last = stages.findLastIndex(step => step.state === "current");
-  const index = last >= 0 ? last : 0;
+  // Compatible with the current project's TS target (pre-ES2023).
+  let index = 0;
+  for (let i = 0; i < stages.length; i++) {
+    if (stages[i]?.state === "current") index = i;
+  }
   stages[index] = { ...stages[index]!, state: "review",
     detail: "Needs a verified status update" };
   return view(headline, description, "review", stages, false, updatedAtIso);
