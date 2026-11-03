@@ -1095,3 +1095,29 @@
 }
 [data-sonner-toast].mealdeck-toast .mealdeck-toast-icon { color: var(--color-primary); }
 [data-sonner-toast][data-type="error"].mealdeck-toast { border-color: var(--color-destructive) !important; }
+
+/* Keyboard skip link: visible only when focused, above sticky header. */
+.md-skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  transform: translateY(-180%);
+  padding: 12px 16px;
+  border: 2px solid var(--md-yellow, #ffd51f);
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.md-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid var(--md-yellow, #ffd51f);
+  outline-offset: 2px;
+}
+#mealdeck-main { scroll-margin-top: 96px; }
+#mealdeck-main:focus { outline: none; }
+@media (prefers-reduced-motion: reduce) {
+  .md-skip-link { transition: none; }
+}
