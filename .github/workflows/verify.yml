@@ -214,3 +214,12 @@ jobs:
           bunx eslint src/lib/mealdeck-courier-booking-guard.ts
           tests/mealdeck-courier-booking-guard.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Courier booking recovery and idempotency tests
+        run: bun test tests/mealdeck-courier-booking-recovery.test.ts
+
+      - name: Courier recovery module lint
+        run: >-
+          bunx eslint src/lib/mealdeck-courier-booking-recovery.ts
+          tests/mealdeck-courier-booking-recovery.test.ts
+          --rule 'prettier/prettier: off'
