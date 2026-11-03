@@ -1,5 +1,6 @@
 import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
 import { canonicalDeliveryFeePence, validateCheckoutDeliveryFee } from "./mealdeck-checkout-delivery-fee";
+import { safeCourierTrackingUrl } from "./mealdeck-tracking-links";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
@@ -516,8 +517,12 @@ export const getOrderTracking = createServerFn({ method: "POST" })
         deliveryStatus: row["delivery_status"]
           ? String(row["delivery_status"])
           : undefined,
-        trackingUrl: row["tracking_url"]
-          ? String(row["tracking_url"])
+        // Never expose arbitrary provider-supplied destinations to customers.
+        trackingUrl: String(row["fulfilment"] ?? "") === "delivery"
+          ? safeCourierTrackingUrl(
+              row["tracking_url"],
+              process.env["MEALDECK_TRACKING_ALLOWED_HOSTS"],
+            ) ?? undefined
           : undefined,
         updatedAt: row["updated_at"]
           ? String(row["updated_at"])
