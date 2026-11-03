@@ -241,3 +241,12 @@ jobs:
           bunx eslint src/lib/mealdeck-serviceability-generation.ts
           tests/mealdeck-serviceability-generation.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Franchise FAQ retrieval and scope regression
+        run: bun test tests/mealdeck-franchise-faq-search.test.ts
+
+      - name: Franchise FAQ search module lint
+        run: >-
+          bunx eslint src/lib/mealdeck-franchise-faq-search.ts
+          tests/mealdeck-franchise-faq-search.test.ts
+          --rule 'prettier/prettier: off'
