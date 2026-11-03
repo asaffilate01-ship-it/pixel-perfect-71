@@ -35,3 +35,20 @@
 - Human review is mandatory for allergens, disputed payments, delivery exceptions and refunds. AI outputs and traces must redact personal information and secrets.
 - Protect St Albans MealDeck delivery-only policy independently from Café1 counter/EPOS fulfilments. Coming Soon remains true until approvals.
 - Apply Taste, Impeccable and Awesome DESIGN.md as design heuristics; do not import competitor code or AGPL sources into this proprietary repository.
+
+## MealDeck Phase 22/23 canonical runtime boundaries
+
+- Match Dishbee serviceability responses only by trusted server-configured
+  tenant and location UUID pairs. City and postcode strings are never routing
+  authority. Unknown, ambiguous, missing and failed RPC responses mean not
+  verified; never turn them into sample-confirmed live serviceability.
+- Treat `create_mealdeck_checkout_order` receipts as payment **pending**
+  only, and require the canonical UUID + four-digit handoff code format. A
+  browser redirect or service call cannot mark the order paid.
+- Keep customer checkout fail-closed unless both `COMING_SOON=false` and the
+  separate server-only `MEALDECK_CHECKOUT_INTEGRATION_APPROVED=signed-off`
+  release switch are intentionally changed after staging acceptance. The
+  environment switch is NOT a replacement for a real Adyen session adapter.
+- Do not enable checkout until Dishbee's signed webhook, group payment,
+  source-of-funds split, KDS, one-delivery orchestration, full refunds,
+  replays and customer payment UI are functional and accepted.

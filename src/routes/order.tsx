@@ -394,8 +394,8 @@ function OrderPage() {
       if (result.status === "payment_required") {
         setPaymentPending({ orderId: result.orderId, handoffCode: result.handoffCode });
         setCheckoutOpen(false);
-        toast.success("Order created", {
-          description: "Complete payment to send your order for preparation.",
+        toast.message("Payment pending", {
+          description: "Dishbee has created a pending order. Your kitchen will not receive it without verified payment.",
         });
       } else if (result.status === "unconfigured") {
         toast.error("Ordering service not connected yet", {
@@ -691,10 +691,10 @@ function OrderPage() {
             <div className="mt-6 rounded-xl border border-accent/40 bg-accent/10 p-5">
               <p className="eyebrow">Payment required</p>
               <p className="mt-2 font-display text-lg font-bold">
-                Your order is reserved, but preparation has not started yet.
+                This order is awaiting verified payment. Preparation has not started.
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Complete payment to release it for preparation. Your handoff code is{" "}
+                This screen is not confirmation of payment or a courier booking. Your handoff code is{" "}
                 <strong className="text-xl text-gold">
                   {paymentPending.handoffCode || "----"}
                 </strong>.

@@ -1,6 +1,7 @@
 import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
 import { canonicalDeliveryFeePence, validateCheckoutDeliveryFee } from "./mealdeck-checkout-delivery-fee";
 import { safeCourierTrackingUrl } from "./mealdeck-tracking-links";
+import { mayCreateCustomerOrder, parseDishbeeOrderReceipt, resolveDishbeeServiceability } from "./mealdeck-dishbee-contract";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
@@ -105,7 +106,10 @@ export const checkServiceability = createServerFn({ method: "POST" })
     };
 
     const base = readBase();
-    if (!base) return fallback();
+    if (!base) return COMING_SOON ? fallback() : {
+      served: false,
+      message: "Live MealDeck serviceability is not connected yet.",
+    };
 
     try {
       const { data: rows, error } = await dishbeeClient(base).rpc(
@@ -117,45 +121,24 @@ export const checkServiceability = createServerFn({ method: "POST" })
       );
       if (error) throw new Error(error.message);
 
-      const row = (Array.isArray(rows) ? rows[0] : rows) as
-        | Record<string, unknown>
-        | null;
-
-      if (!row || !row["served"] || !row["location_id"]) {
-        const sample = resolveSampleServiceability(
-          data.postcode,
-          data.fulfilment,
-        );
-        return {
-          served: false,
-          message: row?.["message"]?.toString() ?? sample.message,
-          alternativeFulfilments: sample.alternativeFulfilments,
-        };
-      }
-
-      const town = String(
-        row["town"] ?? row["location_name"] ?? "",
-      ).toLowerCase();
-      const normalisedPostcode = data.postcode
-        .toUpperCase()
-        .replace(/\s+/g, "");
-
-      const location: LocationKey =
-        town.includes("albans") || normalisedPostcode.startsWith("AL")
-          ? "stalbans"
-          : "luton";
-
-      return {
-        served: true,
-        location,
-        channelOpen: Boolean(row["channel_open"]),
-        message:
-          row["message"]?.toString() ??
-          `MealDeck ${location === "stalbans" ? "St Albans" : "Luton"} serves your area.`,
-      };
+      const approved = (["luton", "stalbans"] as const).flatMap(key => {
+        const kitchen = readConfig(key);
+        return kitchen ? [{
+          location: key,
+          tenantId: kitchen.tenantId,
+          locationId: kitchen.locationId,
+        }] : [];
+      });
+      // Dishbee tenant and location UUIDs determine the kitchen. Never infer
+      // a payment destination from a city name or postcode prefix.
+      return resolveDishbeeServiceability(rows, approved);
     } catch (error) {
-      console.error("Dishbee serviceability failed", error);
-      return fallback();
+      console.error("Dishbee serviceability connection failed", error);
+      // An unavailable canonical service is NOT evidence of postcode coverage.
+      return {
+        served: false,
+        message: "We couldn't verify MealDeck coverage right now. Please try again.",
+      };
     }
   });
 
@@ -378,8 +361,11 @@ export const placeOrder = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<PlaceOrderResult> => {
     if (COMING_SOON) return { status: "failed", message: COMING_SOON_MESSAGE };
     const config = readConfig(data.location);
-
-    if (!config) {
+    if (!mayCreateCustomerOrder({
+      comingSoon: COMING_SOON,
+      kitchenConfigured: config !== null,
+      checkoutApproval: process.env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"],
+    }) || !config) {
       return { status: "unconfigured" };
     }
 
@@ -417,29 +403,18 @@ export const placeOrder = createServerFn({ method: "POST" })
 
       if (error) throw new Error(error.message);
 
-      const row = (Array.isArray(rows) ? rows[0] : rows) as
-        | Record<string, unknown>
-        | null;
-
-      const orderId = String(row?.["order_id"] ?? "");
-
-      if (!orderId) {
-        throw new Error("Order reference not returned");
-      }
-
+      const receipt = parseDishbeeOrderReceipt(rows);
+      if (!receipt) throw new Error("dishbee_checkout_receipt_invalid");
       return {
         status: "payment_required",
-        orderId,
-        handoffCode: String(row?.["handoff_code"] ?? ""),
+        orderId: receipt.orderId,
+        handoffCode: receipt.handoffCode,
       };
     } catch (error) {
       console.error("Dishbee checkout failed", error);
       return {
         status: "failed",
-        message:
-          error instanceof Error
-            ? error.message
-            : "We couldn't create that order. Please try again.",
+        message: "We couldn't create the order through the secure kitchen system. Please try again or contact support.",
       };
     }
   });

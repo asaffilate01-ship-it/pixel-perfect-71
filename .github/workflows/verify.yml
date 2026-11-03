@@ -145,3 +145,21 @@ jobs:
           tests/mealdeck-ops-alerts.test.ts
           src/components/coming-soon.tsx
           --rule 'prettier/prettier: off'
+
+      - name: Dishbee canonical routing, checkout receipt and launch gate
+        run: bun test tests/mealdeck-dishbee-contract.test.ts
+
+      - name: Dishbee integration boundary lint
+        run: >-
+          bunx eslint src/lib/mealdeck-dishbee-contract.ts
+          src/lib/dishbee.functions.ts
+          tests/mealdeck-dishbee-contract.test.ts
+          --rule 'prettier/prettier: off'
+
+      - name: Synthetic paid-to-KDS integration rehearsal
+        run: bun test tests/mealdeck-runtime-acceptance.test.ts
+
+      - name: Synthetic payment and fulfilment test lint
+        run: >-
+          bunx eslint tests/mealdeck-runtime-acceptance.test.ts
+          --rule 'prettier/prettier: off'
