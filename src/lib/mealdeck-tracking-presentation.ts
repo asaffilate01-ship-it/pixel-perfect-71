@@ -96,9 +96,11 @@ function review(stages: TrackingStep[], updatedAtIso: string | null,
   headline = "We're checking your order's progress",
   description = "Our system cannot confirm the next step from the latest update. Please contact MealDeck support if you need help.",
 ): TrackingPresentation {
-  // Compatible with the current project's TS target (pre-ES2023).
+  // Review the first unconfirmed step after known-complete milestones;
+  // don't turn a verified payment into a payment warning when a courier fails.
   let index = 0;
   for (let i = 0; i < stages.length; i++) {
+    if (stages[i]?.state === "done") index = Math.min(i + 1, stages.length - 1);
     if (stages[i]?.state === "current") index = i;
   }
   stages[index] = { ...stages[index]!, state: "review",
