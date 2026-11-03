@@ -136,7 +136,7 @@ export function OrderingPreview() {
               <h3 className="mt-2 font-display text-xl font-bold">{item.name}</h3>
               {item.description&&<p className="mt-2 text-sm leading-6 text-[var(--md-muted)]">{item.description}</p>}
               <p className="mt-4 font-black">{formatPence(item.pricePence)} <span className="text-xs font-normal text-[var(--md-muted)]">illustrative</span></p>
-              <div className="mt-4 flex min-h-11 items-center gap-2" aria-label={`Sample basket quantity for ${item.name}`}>
+              <div role="group" className="mt-4 flex min-h-11 items-center gap-2" aria-label={`Sample basket quantity for ${item.name}`}>
                 <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,-1))}
                   disabled={quantity===0} aria-label={`Remove one ${item.name}`}
                   className="min-h-11 min-w-11 rounded-xl border border-[var(--md-line)] text-lg font-black transition-colors hover:bg-[var(--md-black)] hover:text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2">−</button>
