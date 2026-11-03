@@ -172,3 +172,12 @@ jobs:
           bunx eslint src/lib/mealdeck-live-price-estimate.ts
           tests/mealdeck-live-price-estimate.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Phase 28-30 signed quote, current repricing and expiry tests
+        run: bun test tests/mealdeck-quote.test.ts
+
+      - name: Phase 28-30 quote module lint
+        run: >-
+          bunx eslint src/server/mealdeck-quote.ts
+          tests/mealdeck-quote.test.ts
+          --rule 'prettier/prettier: off'
