@@ -88,6 +88,8 @@ describe("MealDeck tracking: trustworthy server statuses only", () => {
       }));
       expect(p.tone).toBe("review");
       expect(p.canOpenCourierTracking).toBe(false);
+      expect(p.stages[0]?.state).toBe("done");
+      expect(p.stages[3]?.state).toBe("review");
     }
     for (const orderStatus of ["cancelled", "refunded", "failed"]) {
       const p = presentMealDeckTracking(base({ orderStatus }));
