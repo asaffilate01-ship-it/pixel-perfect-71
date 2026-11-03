@@ -252,63 +252,110 @@ export const getCatalogue = createServerFn({ method: "GET" })
  * from a browser price. The final Dishbee order is repriced independently.
  */
 export type DeliveryEstimateResult =
-  | {ready:true;kind:"estimate";goodsPence:number;deliveryPence:number;totalPence:number}
+  | {ready:true;kind:"estimate";goodsPence:number;deliveryPence:number;
+     totalPence:number;quoteToken:string;expiresAt:string}
   | {ready:false;reason:"unavailable"|"menu_changed"|"policy_unavailable"};
 
+const activeFulfilmentSchema=z.enum(["delivery","pickup","curbside"]);
+const quoteLinesSchema=z.array(z.object({
+  itemId:z.string().uuid(),
+  quantity:z.number().int().min(1).max(50),
+  modifierIds:z.array(z.string().uuid()).max(20),
+})).min(1).max(60);
 const deliveryEstimateInput=z.object({
   location:locationSchema,
+  fulfilment:activeFulfilmentSchema,
   postcode:z.string().trim().min(5).max(12),
-  lines:z.array(z.object({
-    itemId:z.string().uuid(),
-    quantity:z.number().int().min(1).max(50),
-    modifierIds:z.array(z.string().uuid()).max(20),
-  })).min(1).max(60),
+  lines:quoteLinesSchema,
 });
+type QuoteRequest=z.infer<typeof deliveryEstimateInput>;
+type CurrentDishbeeQuote=
+  |{ready:true;amounts:{currency:"GBP";goodsPence:number;
+    deliveryPence:number;totalPence:number}}
+  |{ready:false;reason:"unavailable"|"menu_changed"|"policy_unavailable"};
+
+/** Shared canonical repricing for both the estimate and the final checkout.
+ * Each call reloads current serviceability, menu/option IDs and delivery
+ * policy from Dishbee. The client has no influence over amounts.
+ */
+async function readCurrentDishbeeQuote(
+  config:DishbeeConfig,request:QuoteRequest,
+):Promise<CurrentDishbeeQuote>{
+  const sb=dishbeeClient(config);
+  try{
+    const service=await sb.rpc("public_mealdeck_serviceability",{
+      p_postcode:request.postcode,p_fulfilment:request.fulfilment,
+    });
+    if(service.error)return{ready:false,reason:"unavailable"};
+    const approved=resolveDishbeeServiceability(service.data,[{
+      location:request.location,tenantId:config.tenantId,locationId:config.locationId,
+    }]);
+    if(!approved.served||approved.location!==request.location||!approved.channelOpen)
+      return{ready:false,reason:"unavailable"};
+    const catalogue=await sb.rpc("public_mealdeck_catalogue",{
+      p_tenant:config.tenantId,p_location:config.locationId,
+    });
+    if(catalogue.error||!Array.isArray(catalogue.data))
+      return{ready:false,reason:"unavailable"};
+    const priced=estimateGoodsFromDishbee(catalogue.data,request.lines);
+    if(!priced.valid)return{ready:false,reason:"menu_changed"};
+
+    let delivery=0;
+    if(request.fulfilment==="delivery"){
+      const fee=await sb.rpc("public_mealdeck_delivery_fee",{
+        p_location:config.locationId,p_order_value_pence:priced.goodsPence,
+      });
+      if(fee.error)return{ready:false,reason:"policy_unavailable"};
+      const verifiedFee=verifyDishbeeFeeResult(fee.data);
+      if(verifiedFee===null)return{ready:false,reason:"policy_unavailable"};
+      delivery=verifiedFee;
+    }
+    if(priced.goodsPence+delivery>10_000_000)
+      return{ready:false,reason:"policy_unavailable"};
+    return{
+      ready:true,
+      amounts:{
+        currency:"GBP",goodsPence:priced.goodsPence,
+        deliveryPence:delivery,totalPence:priced.goodsPence+delivery,
+      },
+    };
+  }catch{
+    // Do not expose postcode, menu, tenant or provider internals.
+    return{ready:false,reason:"unavailable"};
+  }
+}
 
 export const estimateDishbeeDelivery=createServerFn({method:"POST"})
   .inputValidator((input:unknown)=>deliveryEstimateInput.parse(input))
   .handler(async({data}):Promise<DeliveryEstimateResult>=>{
     const config=readConfig(data.location);
     if(!config)return{ready:false,reason:"unavailable"};
-    const sb=dishbeeClient(config);
-    try{
-      const service=await sb.rpc("public_mealdeck_serviceability",{
-        p_postcode:data.postcode,p_fulfilment:"delivery",
-      });
-      if(service.error)throw new Error("serviceability_unavailable");
-      const approved=resolveDishbeeServiceability(service.data,[{
-        location:data.location,tenantId:config.tenantId,locationId:config.locationId,
-      }]);
-      if(!approved.served||approved.location!==data.location||!approved.channelOpen)
-        return{ready:false,reason:"unavailable"};
-      const catalogue=await sb.rpc("public_mealdeck_catalogue",{
-        p_tenant:config.tenantId,p_location:config.locationId,
-      });
-      if(catalogue.error||!Array.isArray(catalogue.data))
-        return{ready:false,reason:"unavailable"};
-      const priced=estimateGoodsFromDishbee(catalogue.data,data.lines);
-      if(!priced.valid)return{ready:false,reason:"menu_changed"};
-      const fee=await sb.rpc("public_mealdeck_delivery_fee",{
-        p_location:config.locationId,p_order_value_pence:priced.goodsPence,
-      });
-      if(fee.error)return{ready:false,reason:"policy_unavailable"};
-      const delivery=verifyDishbeeFeeResult(fee.data);
-      if(delivery===null||priced.goodsPence+delivery>10_000_000)
-        return{ready:false,reason:"policy_unavailable"};
-      return{
-        ready:true,kind:"estimate",goodsPence:priced.goodsPence,
-        deliveryPence:delivery,totalPence:priced.goodsPence+delivery,
-      };
-    }catch{
-      // No backend or postcode details in the customer-facing message.
-      return{ready:false,reason:"unavailable"};
-    }
+    const current=await readCurrentDishbeeQuote(config,data);
+    if(!current.ready)return current;
+    const {issueMealDeckQuote}=await import("../server/mealdeck-quote");
+    const token=issueMealDeckQuote({
+      binding:{
+        tenantId:config.tenantId,locationId:config.locationId,
+        location:data.location,fulfilment:data.fulfilment,
+        postcode:data.postcode,lines:data.lines,
+      },
+      amounts:current.amounts,
+      secret:process.env["MEALDECK_QUOTE_SIGNING_SECRET"],
+      nowMs:Date.now(),
+    });
+    if(!token.ready)return{ready:false,reason:"policy_unavailable"};
+    return{
+      ready:true,kind:"estimate",
+      ...current.amounts,
+      quoteToken:token.token,expiresAt:token.expiresAt,
+    };
   });
 
 const orderSchema = z
   .object({
     location: locationSchema,
     fulfilment: fulfilmentSchema,
+    quoteToken: z.string().min(40).max(1536),
     lines: z
       .array(
         z.object({
@@ -426,9 +473,47 @@ export const placeOrder = createServerFn({ method: "POST" })
       return { status: "unconfigured" };
     }
 
-    // The public RPC still accepts a deprecated caller fee argument. Always
-    // send zero: Dishbee must calculate its own configured fee and enforce
-    // the database price guard (Phase 25) BEFORE this feature can go live.
+    // A short-lived signed estimate is not sufficient by itself. Re-read
+    // the live Dishbee catalogue, serviceability, and delivery policy here
+    // and refuse a changed bill before creating any pending order.
+    if(data.fulfilment==="dinein") {
+      return {status:"failed",message:"This MealDeck fulfilment is not available."};
+    }
+    const request:QuoteRequest={
+      location:data.location,fulfilment:data.fulfilment,
+      postcode:data.customer.postcode,
+      lines:data.lines.map(line=>({
+        itemId:line.itemId,quantity:line.quantity,
+        modifierIds:line.modifiers.map(option=>option.id),
+      })),
+    };
+    const {verifyMealDeckQuote,matchesCurrentDishbeeAmounts}
+      =await import("../server/mealdeck-quote");
+    const verified=verifyMealDeckQuote({
+      token:data.quoteToken,
+      binding:{
+        tenantId:config.tenantId,locationId:config.locationId,
+        location:data.location,fulfilment:data.fulfilment,
+        postcode:data.customer.postcode,lines:request.lines,
+      },
+      secret:process.env["MEALDECK_QUOTE_SIGNING_SECRET"],
+      nowMs:Date.now(),
+    });
+    if(!verified.valid)return{
+      status:"failed",message:"Your price estimate has expired or changed. Refresh your basket.",
+    };
+    const current=await readCurrentDishbeeQuote(config,request);
+    if(!current.ready||!matchesCurrentDishbeeAmounts(verified.amounts,current.amounts)){
+      return{
+        status:"failed",
+        message:"Your kitchen, menu or delivery quote changed. Refresh your basket to continue.",
+      };
+    }
+
+    // The legacy Dishbee public RPC still accepts p_delivery_pence. Only
+    // Dishbee may calculate the configured fee. The database price guard in
+    // draft Dishbee PR #83 and a dedicated Adyen session MUST be staged and
+    // approved before the independent checkout release gate is enabled.
 
     try {
       const { data: rows, error } = await dishbeeClient(config).rpc(
