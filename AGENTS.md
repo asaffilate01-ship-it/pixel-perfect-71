@@ -52,3 +52,17 @@
 - Do not enable checkout until Dishbee's signed webhook, group payment,
   source-of-funds split, KDS, one-delivery orchestration, full refunds,
   replays and customer payment UI are functional and accepted.
+
+## Phase 27 source-owned fee estimates
+
+- The customer basket never chooses a delivery fee. Dishbee's current
+  server-side catalogue reprices each item and modifier ID before a delivery
+  policy RPC can estimate one location-level fee. Missing live policy means
+  no checkout, not an assumed flat £2.99 or free delivery.
+- The MealDeck checkout RPC still accepts a deprecated p_delivery_pence
+  argument; this app deliberately passes zero and relies on the independent
+  Dishbee configured fee plus reviewed database guard. Never turn off
+  COMING_SOON or the other checkout gate until the Dishbee P25 migration
+  has passed staging and a real Adyen session exists.
+- An estimate is not a courier quote, final order, captured payment or
+  order confirmation; it can change during checkout.
