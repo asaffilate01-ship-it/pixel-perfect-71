@@ -19,7 +19,9 @@ jobs:
       - name: MealDeck Play game regressions
         run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/hero-food-deck.test.ts
       - name: Marketplace discovery, saved basket and category regressions
-        run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts
+        run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts tests/mealdeck-preview-basket.test.ts
+      - name: Sample-deck arithmetic and accessibility implementation lint
+        run: bunx eslint src/lib/mealdeck-preview-basket.ts tests/mealdeck-preview-basket.test.ts --rule 'prettier/prettier: off'
       - name: "WhatsApp assistant test: privacy, validation and multi-brand handoff"
         run: bun test tests/whatsapp-assistance.test.ts
       - name: MealDeck backend staff, costing, analytics and RLS source contracts
