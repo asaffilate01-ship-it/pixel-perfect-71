@@ -1,4 +1,5 @@
 import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
+import { canonicalDeliveryFeePence, validateCheckoutDeliveryFee } from "./mealdeck-checkout-delivery-fee";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
@@ -381,10 +382,15 @@ export const placeOrder = createServerFn({ method: "POST" })
       return { status: "unconfigured" };
     }
 
-    const deliveryPence =
-      data.fulfilment === "delivery"
-        ? data.deliveryPence
-        : 0;
+    // The browser can display the fee, but cannot set or discount it.
+    // Reject stale/tampered totals and always send the canonical server amount.
+    if (!validateCheckoutDeliveryFee(data.fulfilment, data.deliveryPence)) {
+      return {
+        status: "failed",
+        message: "The delivery charge has changed. Refresh your basket and try again.",
+      };
+    }
+    const deliveryPence = canonicalDeliveryFeePence(data.fulfilment);
 
     try {
       const { data: rows, error } = await dishbeeClient(config).rpc(
