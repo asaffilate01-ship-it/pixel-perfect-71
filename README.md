@@ -150,3 +150,14 @@ Dishbee/Omniqora/Cafe1 runtime contract and activation checks, `DESIGN.md`
 for retained visual rules, and `PRODUCT.md` for source-of-truth boundaries.
 
 Tests: `bun test tests/whatsapp-assistance.test.ts`
+
+## Phase 27: read-only delivery fee estimates
+
+Once the existing launch gate is independently lifted, the ordering UI
+retrieves **estimated** item prices and delivery fees from the current
+Dishbee catalogue and its canonical kitchen policy. The backend validates
+postcode serviceability, tenant/location identity, item/option IDs and
+quantity before asking the public fee RPC. Unknown policies and unavailable
+items fail closed, and the customer cannot send their own delivery fee to
+create a MealDeck order. This does not yet provide an Adyen session or
+activate payments. See docs/mealdeck-dishbee-pricing-phase27.md.

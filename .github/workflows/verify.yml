@@ -163,3 +163,12 @@ jobs:
         run: >-
           bunx eslint tests/mealdeck-runtime-acceptance.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Phase 27 Dishbee server-priced basket and fee estimate
+        run: bun test tests/mealdeck-live-price-estimate.test.ts
+
+      - name: Phase 27 quote module lint
+        run: >-
+          bunx eslint src/lib/mealdeck-live-price-estimate.ts
+          tests/mealdeck-live-price-estimate.test.ts
+          --rule 'prettier/prettier: off'
