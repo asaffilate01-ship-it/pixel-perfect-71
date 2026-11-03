@@ -8,7 +8,7 @@ import {BROWSE_CATEGORIES,matchesBrowseCategory,type BrowseCategory} from "@/lib
 import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
-import { brands, locations, sampleMenu, formatPence, type LocationKey, type FulfilmentType, type MenuItem } from "@/lib/mealdeck";
+import { brands, locations, sampleMenu, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
 
 export function ComingSoonBanner() {
   return <aside role="status" className="md-launch-banner">
