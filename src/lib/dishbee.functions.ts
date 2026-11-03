@@ -578,6 +578,12 @@ export const getOrderTracking = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<OrderTrackingResult> => {
+    // The route is hidden during Coming Soon, but the server function also
+    // needs an explicit gate: a direct POST must not bypass the UI state.
+    if (COMING_SOON) return {
+      found: false,
+      message: "MealDeck live tracking is not open yet.",
+    };
     const base = readBase();
     if (!base) {
       return {
