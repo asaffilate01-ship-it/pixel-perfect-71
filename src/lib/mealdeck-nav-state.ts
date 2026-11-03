@@ -1,5 +1,5 @@
 /** Shared navigation matching: only exact route/hash targets show as active. */
-export type NavTarget={to:string;hash?:string};
+export type NavTarget={to:string;hash?:string|undefined};
 export function isMealDeckNavCurrent(
   pathname:string, hash:string, target:NavTarget,
 ):boolean{
