@@ -232,3 +232,12 @@ jobs:
           bunx eslint src/lib/mealdeck-runtime-config.ts
           tests/mealdeck-runtime-config.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Checkout postcode request race regression
+        run: bun test tests/mealdeck-serviceability-generation.test.ts
+
+      - name: Postcode serviceability request lint
+        run: >-
+          bunx eslint src/lib/mealdeck-serviceability-generation.ts
+          tests/mealdeck-serviceability-generation.test.ts
+          --rule 'prettier/prettier: off'

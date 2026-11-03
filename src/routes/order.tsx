@@ -1,4 +1,5 @@
 import { COMING_SOON } from "@/lib/launch-status";
+import { createServiceabilityGeneration } from "@/lib/mealdeck-serviceability-generation";
 import { OrderingPreview } from "@/components/coming-soon";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -120,6 +121,7 @@ function OrderPage() {
   const [fulfilment, setFulfilment] = useState<FulfilmentType>(fulfilmentFromSearch ?? "delivery");
   const [postcode, setPostcode] = useState("");
   const [checking, setChecking] = useState(false);
+  const serviceabilityGeneration = useRef(createServiceabilityGeneration());
   const [serviceMessage, setServiceMessage] = useState<{ tone: "idle" | "ok" | "error"; text: string }>({
     tone: "idle",
     text: "Browsing the Luton menu. Enter your postcode when you're ready to order.",
@@ -274,15 +276,19 @@ function OrderPage() {
   const total=quoteFresh&&quote.ready?quote.totalPence:null;
 
   async function checkArea(nextFulfilment: FulfilmentType = fulfilment) {
-    if (!postcode.trim()) {
+    const requestedPostcode = postcode.trim();
+    const generation = serviceabilityGeneration.current.start();
+    if (!requestedPostcode) {
+      setChecking(false);
       setServiceMessage({ tone: "error", text: "Enter a postcode to find your nearest MealDeck." });
       return;
     }
     setChecking(true);
     try {
       const result = await runServiceability({
-        data: { postcode: postcode.trim(), fulfilment: nextFulfilment },
+        data: { postcode: requestedPostcode, fulfilment: nextFulfilment },
       });
+      if (!serviceabilityGeneration.current.current(generation)) return;
       if (!result.served) {
         setLocation(null);
         setActiveBrand(null);
@@ -299,7 +305,7 @@ function OrderPage() {
       setLocation(result.location);
       setCustomer((prev) => ({
         ...prev,
-        postcode: postcode.trim().toUpperCase(),
+        postcode: requestedPostcode.toUpperCase(),
       }));
       setServiceMessage({
         tone: result.channelOpen ? "ok" : "idle",
@@ -308,14 +314,17 @@ function OrderPage() {
           : `${result.message} Your local MealDeck is currently closed, but you can still browse.`,
       });
     } catch {
+      if (!serviceabilityGeneration.current.current(generation)) return;
       setLocation(null);
       setServiceMessage({ tone: "error", text: "We couldn't check that postcode right now. Please try again." });
     } finally {
-      setChecking(false);
+      if (serviceabilityGeneration.current.current(generation)) setChecking(false);
     }
   }
 
   function changeFulfilment(next: FulfilmentType) {
+    serviceabilityGeneration.current.invalidate();
+    setChecking(false);
     setFulfilment(next);
     setOrderReceipt(null);
     if (postcode.trim()) {
@@ -331,6 +340,8 @@ function OrderPage() {
   }
 
   function browseLocation(next: LocationKey) {
+    serviceabilityGeneration.current.invalidate();
+    setChecking(false);
     if (location === next) return;
     if (lines.length) {
       setLines([]);
@@ -744,7 +755,11 @@ function OrderPage() {
                 <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={postcode}
-                  onChange={(event) => setPostcode(event.target.value)}
+                  onChange={(event) => {
+                    serviceabilityGeneration.current.invalidate();
+                    setChecking(false);
+                    setPostcode(event.target.value);
+                  }}
                   onKeyDown={(event) => event.key === "Enter" && void checkArea()}
                   placeholder="Enter your postcode"
                   aria-label="Postcode"
