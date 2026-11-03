@@ -475,7 +475,8 @@ export type PlaceOrderResult =
       handoffCode: string;
       reused: boolean;
     }
-  | { status: "existing_order" | "needs_review"; orderId: string; handoffCode: string }
+  | { status: "existing_order"; orderId: string; handoffCode: string }
+  | { status: "needs_review"; orderId: string; handoffCode: string }
   | { status: "unconfigured" }
   | { status: "failed"; message: string };
 
