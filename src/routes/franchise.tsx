@@ -23,6 +23,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { seo } from "@/lib/seo";
+import { searchFranchiseFaqs } from "@/lib/mealdeck-franchise-faq-search";
 import { marketingBrands } from "@/lib/marketing-brands";
 import { BrandFranchiseCatalogue } from "@/components/franchise/brand-catalogue";
 import {
@@ -497,6 +498,7 @@ function FranchisePage() {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [reloadCount, setReloadCount] = useState(0);
   const [query, setQuery] = useState("");
+  const [faqQuery, setFaqQuery] = useState("");
   const [selected, setSelected] = useState<Territory | null>(null);
   const [submitted, setSubmitted] = useState<{
     reference: string | null;
@@ -1335,13 +1337,37 @@ function FranchisePage() {
             <p className="md-kicker md-kicker-red">Before you apply</p>
             <h2>Your franchise questions.</h2>
           </div>
-          <div className="md-franchise-faq-list">
-            {[...brandFaqs, ...(isCustom ? [] : faqs)].map((faq) => (
-              <details key={faq.question}>
-                <summary>{faq.question}</summary>
-                <p>{faq.answer}</p>
-              </details>
-            ))}
+          <div className="mx-auto mb-5 max-w-2xl">
+            <label htmlFor="franchise-faq-search" className="mb-2 block font-semibold">
+              Search approved franchise answers
+            </label>
+            <input
+              id="franchise-faq-search"
+              type="search"
+              autoComplete="off"
+              maxLength={120}
+              value={faqQuery}
+              onChange={(event) => setFaqQuery(event.target.value)}
+              placeholder="Try equipment, deposit, training or brands"
+              aria-controls="franchise-faq-results"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+            />
+            <p className="mt-2 text-sm text-slate-600">
+              Search our published FAQs. Answers are not personalised offers or approved territory reservations.
+            </p>
+          </div>
+          <div id="franchise-faq-results" className="md-franchise-faq-list" aria-live="polite">
+            {(() => {
+              const results = searchFranchiseFaqs(
+                [...brandFaqs, ...(isCustom ? [] : faqs)], faqQuery, 100,
+              );
+              return results.length ? results.map((faq) => (
+                <details key={faq.question}>
+                  <summary>{faq.question}</summary>
+                  <p>{faq.answer}</p>
+                </details>
+              )) : <p role="status">No matching published answers. Try another term or use the enquiry form below.</p>;
+            })()}
           </div>
         </section>
 
