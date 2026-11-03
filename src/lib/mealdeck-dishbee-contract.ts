@@ -24,7 +24,8 @@ const genericUnavailable = "Live MealDeck ordering is unavailable for this postc
 const unknownKitchen = "This MealDeck kitchen isn't configured for live ordering yet.";
 const publicMessage = (value: unknown, otherwise: string): string =>
   typeof value === "string" && value.length > 0 && value.length <= 220 &&
-    !/[\u0000-\u001f<>{}]/.test(value)
+    !/[<>{}]/.test(value) &&
+    ![...value].some(char => char.charCodeAt(0) < 32)
     ? value : otherwise;
 
 /** Server-side interpretation of the PUBLIC, trusted Dishbee RPC response. */
