@@ -34,7 +34,7 @@ describe("Phase 22 canonical Dishbee kitchen routing", () => {
     expect(resolveDishbeeServiceability(response({ location_id: tenants.other }), approved).served).toBe(false);
   });
   test("fails closed for ambiguous, absent or malformed kitchen configuration", () => {
-    expect(resolveDishbeeServiceability(response(), [])).served).toBe(false);
+    expect(resolveDishbeeServiceability(response(), []).served).toBe(false);
     expect(resolveDishbeeServiceability(response(), [...approved, approved[0]!]).served).toBe(false);
     expect(resolveDishbeeServiceability(response({ location_id: "not-uuid" }), approved).served).toBe(false);
   });
