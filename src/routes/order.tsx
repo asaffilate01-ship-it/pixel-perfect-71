@@ -1101,7 +1101,7 @@ function OrderPage() {
                <span className="truncate">View basket</span>
                <span className="text-[10px] font-normal opacity-80">{new Set(lines.map(line=>line.brandId)).size} brand(s) · one checkout</span>
              </span>
-            <span>{formatPence(total)}</span>
+            <span>{total===null?"Quote required":formatPence(total)}</span>
           </Button>
         </div>
       ) : null}
@@ -1159,7 +1159,7 @@ function OrderPage() {
           {lines.length ? (
             <div className="border-t border-border p-3">
               <Button variant="hero" size="lg" className="w-full rounded-xl" onClick={() => { setBrandMenuOpen(false); setBasketOpen(true); }}>
-                View your hand · {itemCount(lines)} · {formatPence(total)}
+                View your hand · {itemCount(lines)} · {total===null?"Quote required":formatPence(total)}
               </Button>
             </div>
           ) : null}
