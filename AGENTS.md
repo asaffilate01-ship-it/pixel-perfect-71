@@ -66,3 +66,21 @@
   has passed staging and a real Adyen session exists.
 - An estimate is not a courier quote, final order, captured payment or
   order confirmation; it can change during checkout.
+
+## Phases 28-30 signed checkout quotation
+
+- All customer-facing quotes must be issued by the MealDeck server after
+  checking Dishbee's current tenant/location serviceability, catalogue
+  modifiers and kitchen policy. Do not trust browser prices or a city name.
+- The quote token binds the tenant/kitchen, fulfillment, normalized customer
+  postcode, exact item IDs, quantities, modifier IDs and integer-pence amounts
+  to a short expiry using a server-only HMAC signing secret.
+- Verify the token and reprice again against the current canonical Dishbee
+  records before creating any pending order. Stale quotes fail closed.
+- Signed quotes are NOT a provider guarantee, fund capture, an order booking,
+  a payment session, or a sufficient go-live signal. The current checkout RPC
+  still lacks a proven idempotent pending-order creation and dedicated
+  MealDeck Adyen for Platforms session; production release gates stay off.
+- The payment and privacy secrets must not go in public environment
+  variables or public client modules. Never use unsigned browser status to
+  publish kitchen tickets.
