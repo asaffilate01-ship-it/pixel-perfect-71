@@ -260,3 +260,13 @@ jobs:
           src/components/marketing/offer-discovery-preview.tsx
           tests/mealdeck-preview-offers.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Luton and St Albans weekly paid-order goal regressions
+        run: bun test tests/mealdeck-weekly-paid-goal.test.ts
+
+      - name: Weekly paid-order goal source and UI lint
+        run: >-
+          bunx eslint src/lib/mealdeck-weekly-paid-goal.ts
+          src/components/ops/paid-orders-goal-panel.tsx
+          tests/mealdeck-weekly-paid-goal.test.ts
+          --rule 'prettier/prettier: off'

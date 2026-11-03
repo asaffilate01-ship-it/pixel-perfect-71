@@ -22,6 +22,8 @@ import {OpsSupplierInvoicesPanel} from "@/components/ops/supplier-invoices-panel
 import type {OpsSupplierInvoice,OpsSupplierCredit,OpsSupplierInvoiceSummary} from "@/lib/mealdeck-ops-invoice-types";
 import {OpsProcurementPanel} from "@/components/ops/procurement-panel";
 import {OpsStockBatchesPanel} from "@/components/ops/stock-batches-panel";
+import {PaidOrdersGoalPanel,type PaidGoalLocation} from "@/components/ops/paid-orders-goal-panel";
+import {paidOrderGoalRange,summariseWeeklyPaidOrders} from "@/lib/mealdeck-weekly-paid-goal";
 import type {OpsSupplier,OpsPurchase,OpsBatch} from "@/lib/mealdeck-ops-procurement-types";
 
 export const Route=createFileRoute("/ops")({
@@ -51,6 +53,7 @@ type WorkspaceData={
   costs:OpsCost[];recipeCosts:OpsRecipeCost[];
   expenses:OpsExpense[];finance:OpsFinance|null;
   analytics:OpsAnalytics|null;brandSales:OpsBrandSales[];staff:OpsStaff[];audit:OpsAudit[];
+  paidGoalLocations:PaidGoalLocation[];
   suppliers:OpsSupplier[];purchases:OpsPurchase[];batches:OpsBatch[];
   invoices:OpsSupplierInvoice[];credits:OpsSupplierCredit[];
   invoiceSummary:OpsSupplierInvoiceSummary|null;
@@ -58,7 +61,7 @@ type WorkspaceData={
 const blank=():WorkspaceData=>({
   menu:[],taxonomy:[],orders:[],recipes:[],ingredients:[],
   stock:[],costs:[],recipeCosts:[],expenses:[],finance:null,
-  analytics:null,brandSales:[],staff:[],audit:[],
+  analytics:null,brandSales:[],staff:[],audit:[],paidGoalLocations:[],
   suppliers:[],purchases:[],batches:[],
   invoices:[],credits:[],invoiceSummary:null,
 });
@@ -264,6 +267,30 @@ function MealDeckOperations(){
           ]);
           next.analytics=analytics;
           next.brandSales=row<OpsBrandSales>(brandSales);
+          // Read each location through the same authenticated, location-scoped
+          // analytics RPC. A missing/forbidden source is NOT a zero-order week.
+          const asOf=dateISO(new Date());
+          const range=paidOrderGoalRange(asOf);
+          const siteNames=["Luton","St Albans"] as const;
+          next.paidGoalLocations=await Promise.all(siteNames.map(async (city:PaidGoalLocation["city"]):Promise<PaidGoalLocation>=>{
+            const matching=locations.filter(place=>
+              city==="Luton"?/\bluton\b/i.test(place.location_name)
+              :/\bst[.\s-]*albans\b/i.test(place.location_name));
+            if(matching.length!==1)return {city,status:"not_configured",goal:null};
+            const site=matching[0]!;
+            if(!effectiveOpsPermissions(accesses,tenant,site.location_id).has("analytics.read"))
+              return {city,status:"no_access",goal:null};
+            if(!range)return {city,status:"unavailable",goal:null};
+            try{
+              const source=await opsRpc<OpsAnalytics>("mealdeck_ops_analytics",{
+                p_tenant:tenant,p_location:site.location_id,p_from:range.from,p_to:range.to,
+              });
+              const goal=summariseWeeklyPaidOrders(source,asOf);
+              return {city,status:goal?"ready":"unavailable",goal};
+            }catch{
+              return {city,status:"unavailable",goal:null};
+            }
+          }));
           break;
         }
         case "team":{
@@ -283,7 +310,7 @@ function MealDeckOperations(){
         setData(blank());
       }
     }finally{if(request===reqRef.current)setLoading(false);}
-  },[tenant,location,user,selectedSection,fromDate,toDate]);
+  },[tenant,location,user,selectedSection,fromDate,toDate,accesses,locations]);
   useEffect(()=>{if(tenant&&location&&user)void reload();},[tenant,location,user,reload]);
 
   async function signIn(event:FormEvent<HTMLFormElement>){
@@ -430,7 +457,10 @@ function MealDeckOperations(){
         {!location?<div className={columns}><p className="font-semibold">No accessible kitchen locations. Contact your tenant administrator.</p></div>
         :loading?<div role="status" className={columns}>Loading authorised records for this kitchen…</div>
         :<div>
-          {selectedSection==="overview"&&<OpsAnalyticsPanel analytics={data.analytics} brandSales={data.brandSales}/>}
+          {selectedSection==="overview"&&<div className="space-y-5">
+            <PaidOrdersGoalPanel locations={data.paidGoalLocations}/>
+            <OpsAnalyticsPanel analytics={data.analytics} brandSales={data.brandSales}/>
+          </div>}
           {selectedSection==="menu"&&<OpsMenuPanel {...common} menu={data.menu} taxonomy={data.taxonomy}/>}
           {selectedSection==="orders"&&<OpsOrdersPanel orders={data.orders} tenantId={tenant} locationId={location}/>}
           {selectedSection==="recipes"&&<OpsRecipePanel {...common}
