@@ -602,7 +602,10 @@ export const getOrderTracking = createServerFn({ method: "POST" })
         },
       );
 
-      if(error){
+      // Only downgrade to the legacy, less detailed RPC when v2 is truly
+      // missing. Permission, network and database failures must not silently
+      // show stale or weaker tracking evidence.
+      if(error && (error.code==="PGRST202" || error.code==="42883")){
         const fallback=await client.rpc(
           "public_mealdeck_order_tracking",
           {
@@ -615,8 +618,12 @@ export const getOrderTracking = createServerFn({ method: "POST" })
       }
 
       if(error)throw new Error(error.message);
-
-      const row=((rows??[]) as Array<Record<string,unknown>>)[0];
+      // Unexpected multi-row or malformed replies fail closed instead of
+      // exposing a possibly unrelated customer's order record.
+      if(!Array.isArray(rows) || rows.length>1){
+        throw new Error("dishbee_tracking_contract_invalid");
+      }
+      const row=(rows as Array<Record<string,unknown>>)[0];
       if (!row) {
         return {
           found: false,
