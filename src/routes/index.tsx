@@ -24,6 +24,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import { OfferDiscoveryPreview } from "@/components/marketing/offer-discovery-preview";
+import backEmblem from "@/assets/mealdeck-back-emblem.png";
+import { suitArtwork } from "@/lib/food-suit-artwork";
 import { ldScript, orgJsonLd, seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
