@@ -205,3 +205,12 @@ jobs:
           bunx eslint src/server/mealdeck-quote.ts
           tests/mealdeck-quote.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Single-delivery courier booking guard regression
+        run: bun test tests/mealdeck-courier-booking-guard.test.ts
+
+      - name: Courier booking guard lint
+        run: >-
+          bunx eslint src/lib/mealdeck-courier-booking-guard.ts
+          tests/mealdeck-courier-booking-guard.test.ts
+          --rule 'prettier/prettier: off'
