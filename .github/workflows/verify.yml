@@ -134,6 +134,16 @@ jobs:
           tests/mealdeck-tracking-links.test.ts
           --rule 'prettier/prettier: off'
 
+      - name: Phase 31 customer kitchen-pass-courier tracking truthfulness
+        run: bun test tests/mealdeck-tracking-presentation.test.ts
+
+      - name: Phase 31 tracking UI and privacy/claim boundary lint
+        run: >-
+          bunx eslint src/lib/mealdeck-tracking-presentation.ts
+          src/components/order/tracking-timeline.tsx src/routes/track.tsx
+          tests/mealdeck-tracking-presentation.test.ts
+          --rule 'prettier/prettier: off'
+
       - name: "Phase 19–21: penny-accurate group splits, AI tool limits, order review"
         run: >-
           bun test tests/mealdeck-group-allocation.test.ts
