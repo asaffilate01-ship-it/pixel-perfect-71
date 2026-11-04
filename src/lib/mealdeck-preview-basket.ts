@@ -68,6 +68,7 @@ export function summariseSampleBasket(lines: readonly SampleBasketLine[]): Sampl
   if (!Array.isArray(lines) || lines.length > SAMPLE_MAX_ITEMS) return invalid();
   const seen = new Set<string>();
   const itemBrands = new Map<string,string>();
+  const itemPrices = new Map<string,number>();
   const brands = new Set<string>();
   let dishes = 0;
   let subtotalPence = 0;
@@ -80,11 +81,13 @@ export function summariseSampleBasket(lines: readonly SampleBasketLine[]): Sampl
         !line.variantId.startsWith(line.item.id+"::variant:") ||
         line.variantId.length>160)) ||
       seen.has(line.variantId??line.item.id) ||
-      (itemBrands.has(line.item.id) && itemBrands.get(line.item.id)!==line.item.brandId)) return invalid();
+      (itemBrands.has(line.item.id) && itemBrands.get(line.item.id)!==line.item.brandId) ||
+      (itemPrices.has(line.item.id) && itemPrices.get(line.item.id)!==line.item.pricePence)) return invalid();
     const unitPrice=sampleLineUnitPrice(line);
     if(unitPrice===null)return invalid();
     seen.add(line.variantId??line.item.id);
     itemBrands.set(line.item.id,line.item.brandId);
+    itemPrices.set(line.item.id,line.item.pricePence);
     brands.add(line.item.brandId);
     dishes += line.quantity;
     subtotalPence += unitPrice * line.quantity;
@@ -105,7 +108,8 @@ export function adjustSampleBasket(
   if (!summary.valid || !isSampleItem(item) || (change !== -1 && change !== 1)) {
     return [...lines];
   }
-  const index = lines.findIndex(line => line.item.id === item.id);
+  // Menu +/- always targets the uncustomised base version, never an unrelated variant.
+  const index = lines.findIndex(line => line.item.id === item.id && line.variantId===undefined);
   if (index >= 0 && lines[index]!.item.brandId !== item.brandId) return [...lines];
   if (change === -1) {
     if (index === -1) return [...lines];
