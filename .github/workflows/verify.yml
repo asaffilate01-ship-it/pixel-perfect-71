@@ -15,7 +15,7 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - name: Launch menu transcription, unpriced basket and cross-brand choices
-        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts
+        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-navigation.test.ts
       - name: Launch menu and approved logo implementation lint
         run: >-
           bunx eslint src/lib/launch-menu-catalogue.ts src/lib/launch-menu-picks.ts
@@ -23,8 +23,10 @@ jobs:
           src/lib/brand-logos.ts src/components/mealdeck-logo.tsx
           src/components/menus/launch-menu-browser.tsx src/routes/menus.tsx
           src/components/menus/launch-basket.tsx src/components/menus/launch-item-customiser.tsx
+          src/components/menus/launch-menu-mobile-nav.tsx src/lib/launch-menu-navigation.ts src/routes/menu.tsx
           tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts
           tests/launch-menu-upsells.test.ts
+          tests/launch-menu-navigation.test.ts
           --rule 'prettier/prettier: off'
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts

@@ -3,6 +3,7 @@ import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BackToTop } from "@/components/back-to-top";
 import { SkipToMainContent } from "@/components/skip-to-main-content";
 import { ThemeProvider } from "@/components/theme-provider";
+import { isLaunchMenuRoute } from "@/lib/launch-menu-navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -167,13 +168,13 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const internal = pathname === "/ops" || pathname.startsWith("/ops/");
-  const basketPage = ["/menus", "/order"].includes(pathname.replace(/\/$/, ""));
+  const basketPage = isLaunchMenuRoute(pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       {!internal && <SkipToMainContent />}
-      {!internal && <ComingSoonBanner />}
+      {!internal && !basketPage && <ComingSoonBanner />}
       <div id="mealdeck-main" tabIndex={-1}>
         <Outlet />
       </div>

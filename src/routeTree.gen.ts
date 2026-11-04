@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BedfordRouteImport } from './routes/bedford'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as LutonRouteImport } from './routes/luton'
+import { Route as MenuRouteImport } from './routes/menu'
 import { Route as MenusRouteImport } from './routes/menus'
 import { Route as OpsRouteImport } from './routes/ops'
 import { Route as OrderRouteImport } from './routes/order'
@@ -43,6 +44,11 @@ const FranchiseRoute = FranchiseRouteImport.update({
 const LutonRoute = LutonRouteImport.update({
   id: '/luton',
   path: '/luton',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MenuRoute = MenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MenusRoute = MenusRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/bedford': typeof BedfordRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
+  '/menu': typeof MenuRoute
   '/menus': typeof MenusRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/bedford': typeof BedfordRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
+  '/menu': typeof MenuRoute
   '/menus': typeof MenusRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/bedford': typeof BedfordRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
+  '/menu': typeof MenuRoute
   '/menus': typeof MenusRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/bedford'
     | '/franchise'
     | '/luton'
+    | '/menu'
     | '/menus'
     | '/ops'
     | '/order'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/bedford'
     | '/franchise'
     | '/luton'
+    | '/menu'
     | '/menus'
     | '/ops'
     | '/order'
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/bedford'
     | '/franchise'
     | '/luton'
+    | '/menu'
     | '/menus'
     | '/ops'
     | '/order'
@@ -212,6 +224,7 @@ export interface RootRouteChildren {
   BedfordRoute: typeof BedfordRoute
   FranchiseRoute: typeof FranchiseRoute
   LutonRoute: typeof LutonRoute
+  MenuRoute: typeof MenuRoute
   MenusRoute: typeof MenusRoute
   OpsRoute: typeof OpsRoute
   OrderRoute: typeof OrderRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/luton'
       fullPath: '/luton'
       preLoaderRoute: typeof LutonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/menu': {
+      id: '/menu'
+      path: '/menu'
+      fullPath: '/menu'
+      preLoaderRoute: typeof MenuRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/menus': {
@@ -340,6 +360,7 @@ const rootRouteChildren: RootRouteChildren = {
   BedfordRoute: BedfordRoute,
   FranchiseRoute: FranchiseRoute,
   LutonRoute: LutonRoute,
+  MenuRoute: MenuRoute,
   MenusRoute: MenusRoute,
   OpsRoute: OpsRoute,
   OrderRoute: OrderRoute,

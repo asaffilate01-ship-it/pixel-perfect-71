@@ -1,5 +1,5 @@
-import type { CSSProperties } from "react";
-import { Bookmark, ChevronUp, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { useEffect, useRef, type CSSProperties } from "react";
+import { Bookmark, ChevronUp, Minus, Plus, RotateCcw, ShoppingBag, Trash2 } from "lucide-react";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import {
   MAX_LAUNCH_PICK_QUANTITY,
@@ -54,13 +54,35 @@ export function LaunchBasket({
   onQuantity,
   onEdit,
   onRemove,
+  onClear,
+  onUndoClear,
+  canUndoClear,
 }: {
   picks: LaunchMenuPick[];
   onQuantity: (key: string, value: number) => void;
   onEdit: (pick: LaunchMenuPick) => void;
   onRemove: (pick: LaunchMenuPick) => void;
+  onClear: () => void;
+  onUndoClear: () => void;
+  canUndoClear: boolean;
 }) {
   const total = launchPickCount(picks);
+  const clearButtonRef = useRef<HTMLButtonElement>(null);
+  const undoButtonRef = useRef<HTMLButtonElement>(null);
+  const focusAfterAction = useRef<"clear" | "undo" | null>(null);
+
+  useEffect(() => {
+    const target =
+      focusAfterAction.current === "clear"
+        ? undoButtonRef.current
+        : focusAfterAction.current === "undo"
+          ? clearButtonRef.current
+          : null;
+    if (target) {
+      focusAfterAction.current = null;
+      target.focus({ preventScroll: true });
+    }
+  }, [picks.length, canUndoClear]);
 
   return (
     <div className="lmb-basket">
@@ -70,111 +92,149 @@ export function LaunchBasket({
             <ShoppingBag size={30} strokeWidth={1.6} />
             <Plus size={14} className="lmb-empty-plus" />
           </span>
-          <h3>Your basket is empty</h3>
-          <p>Pick a dish from any brand. Your choices, upgrades and extras will appear here.</p>
+          <h3>{canUndoClear ? "Basket emptied" : "Your basket is empty"}</h3>
+          <p>
+            {canUndoClear
+              ? "Changed your mind? Bring back all your choices, upgrades and extras."
+              : "Pick a dish from any brand. Your choices, upgrades and extras will appear here."}
+          </p>
+          {canUndoClear && (
+            <button
+              type="button"
+              className="lmb-undo-clear"
+              aria-label="Undo empty basket"
+              ref={undoButtonRef}
+              onClick={() => {
+                focusAfterAction.current = "undo";
+                onUndoClear();
+              }}
+            >
+              <RotateCcw size={18} aria-hidden="true" />
+              Undo
+            </button>
+          )}
         </div>
       ) : (
-        <ul className="lmb-list" aria-label="Basket selections">
-          {picks.map((pick) => {
-            const found = findLaunchMenuItem(pick.brandId, pick.itemId);
-            if (!found) return null;
-            const labels = launchSelectionLabels(
-              found.brand,
-              found.item,
-              pick.selections,
-              pick.crossSelections,
-            );
-            const children = launchCrossSelectionSummaries(
-              found.brand,
-              found.item,
-              pick.selections,
-              pick.crossSelections ?? [],
-            );
+        <>
+          <div className="lmb-toolbar">
+            <span>
+              {total} {total === 1 ? "selection" : "selections"}
+            </span>
+            <button
+              type="button"
+              className="lmb-clear"
+              ref={clearButtonRef}
+              onClick={() => {
+                focusAfterAction.current = "clear";
+                onClear();
+              }}
+            >
+              <Trash2 size={17} aria-hidden="true" />
+              Empty basket
+            </button>
+          </div>
+          <ul className="lmb-list" aria-label="Basket selections">
+            {picks.map((pick) => {
+              const found = findLaunchMenuItem(pick.brandId, pick.itemId);
+              if (!found) return null;
+              const labels = launchSelectionLabels(
+                found.brand,
+                found.item,
+                pick.selections,
+                pick.crossSelections,
+              );
+              const children = launchCrossSelectionSummaries(
+                found.brand,
+                found.item,
+                pick.selections,
+                pick.crossSelections ?? [],
+              );
 
-            return (
-              <li
-                key={pick.key}
-                className="lmb-item"
-                style={{ "--lmb-brand-color": found.brand.accent } as CSSProperties}
-              >
-                <div className="lmb-item-heading">
-                  <img
-                    className="lmb-brand-logo"
-                    src={logoFor(found.brand.id)}
-                    alt=""
-                    width="54"
-                    height="48"
-                  />
-                  <div>
-                    <span className="lmb-item-brand">{found.brand.name}</span>
-                    <h3>{found.item.name}</h3>
-                  </div>
-                </div>
-                {labels.length > 0 && <p className="lmb-choices">{labels.join(" · ")}</p>}
-
-                {(["upgrade", "extra"] as const).map((mode) => {
-                  const additions = children.filter((child) => child.mode === mode);
-                  if (additions.length === 0) return null;
-                  const heading = mode === "upgrade" ? "Upgrades" : "Extras";
-                  return (
-                    <div key={mode} className="lmb-additions" data-addition-mode={mode}>
-                      <h4>{heading}</h4>
-                      <ul aria-label={heading + " for " + found.item.name}>
-                        {additions.map((child) => (
-                          <li
-                            className="lmb-child"
-                            key={child.slot + ":" + child.brandId + ":" + child.itemId}
-                            data-brand={child.brandId}
-                          >
-                            <div className="lmb-child-heading">
-                              <img src={logoFor(child.brandId)} alt="" width="40" height="36" />
-                              <div>
-                                <span className="lmb-child-brand">{child.brandName}</span>
-                                <strong>{child.itemName}</strong>
-                              </div>
-                              <span
-                                className="lmb-child-quantity"
-                                aria-label={"Quantity " + pick.quantity}
-                              >
-                                ×{pick.quantity}
-                              </span>
-                            </div>
-                            <p>{child.label}</p>
-                          </li>
-                        ))}
-                      </ul>
+              return (
+                <li
+                  key={pick.key}
+                  className="lmb-item"
+                  style={{ "--lmb-brand-color": found.brand.accent } as CSSProperties}
+                >
+                  <div className="lmb-item-heading">
+                    <img
+                      className="lmb-brand-logo"
+                      src={logoFor(found.brand.id)}
+                      alt=""
+                      width="54"
+                      height="48"
+                    />
+                    <div>
+                      <span className="lmb-item-brand">{found.brand.name}</span>
+                      <h3>{found.item.name}</h3>
                     </div>
-                  );
-                })}
+                  </div>
+                  {labels.length > 0 && <p className="lmb-choices">{labels.join(" · ")}</p>}
 
-                <div className="lmb-item-actions">
-                  <LaunchQuantityControl
-                    quantity={pick.quantity}
-                    onChange={(value) => onQuantity(pick.key, value)}
-                    name={found.item.name}
-                    canIncrease={total < MAX_LAUNCH_PICKS}
-                  />
-                  <button
-                    type="button"
-                    className="lmb-edit"
-                    aria-label={"Edit " + found.item.name}
-                    onClick={() => onEdit(pick)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="lmb-remove"
-                    aria-label={"Remove " + found.item.name}
-                    onClick={() => onRemove(pick)}
-                  >
-                    <Trash2 size={18} aria-hidden="true" />
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                  {(["upgrade", "extra"] as const).map((mode) => {
+                    const additions = children.filter((child) => child.mode === mode);
+                    if (additions.length === 0) return null;
+                    const heading = mode === "upgrade" ? "Upgrades" : "Extras";
+                    return (
+                      <div key={mode} className="lmb-additions" data-addition-mode={mode}>
+                        <h4>{heading}</h4>
+                        <ul aria-label={heading + " for " + found.item.name}>
+                          {additions.map((child) => (
+                            <li
+                              className="lmb-child"
+                              key={child.slot + ":" + child.brandId + ":" + child.itemId}
+                              data-brand={child.brandId}
+                            >
+                              <div className="lmb-child-heading">
+                                <img src={logoFor(child.brandId)} alt="" width="40" height="36" />
+                                <div>
+                                  <span className="lmb-child-brand">{child.brandName}</span>
+                                  <strong>{child.itemName}</strong>
+                                </div>
+                                <span
+                                  className="lmb-child-quantity"
+                                  aria-label={"Quantity " + pick.quantity}
+                                >
+                                  ×{pick.quantity}
+                                </span>
+                              </div>
+                              <p>{child.label}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+
+                  <div className="lmb-item-actions">
+                    <LaunchQuantityControl
+                      quantity={pick.quantity}
+                      onChange={(value) => onQuantity(pick.key, value)}
+                      name={found.item.name}
+                      canIncrease={total < MAX_LAUNCH_PICKS}
+                    />
+                    <button
+                      type="button"
+                      className="lmb-edit"
+                      aria-label={"Edit " + found.item.name}
+                      onClick={() => onEdit(pick)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="lmb-remove"
+                      aria-label={"Remove " + found.item.name}
+                      onClick={() => onRemove(pick)}
+                    >
+                      <Trash2 size={18} aria-hidden="true" />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
       <div className="lmb-note">
         <Bookmark size={17} aria-hidden="true" />

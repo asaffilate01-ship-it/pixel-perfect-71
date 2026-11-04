@@ -2,8 +2,14 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, LayoutGrid, Gamepad2, MapPin } from "lucide-react";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
+import { isLaunchMenuRoute } from "@/lib/launch-menu-navigation";
 
-type Tab = { label: string; to: "/" | "/order" | "/menus" | "/track" | "/play"; hash?: string; icon: typeof Home };
+type Tab = {
+  label: string;
+  to: "/" | "/order" | "/menus" | "/track" | "/play";
+  hash?: string;
+  icon: typeof Home;
+};
 
 const left: Tab[] = [
   { label: "Home", to: "/", icon: Home },
@@ -19,7 +25,12 @@ export function MobileTabBar() {
     select: (s) => ({ pathname: s.location.pathname, hash: s.location.hash }),
   });
 
-  if (pathname === "/franchise" || pathname.startsWith("/franchise/") || pathname === "/menus" || pathname === "/order") return null;
+  if (
+    pathname === "/franchise" ||
+    pathname.startsWith("/franchise/") ||
+    isLaunchMenuRoute(pathname)
+  )
+    return null;
 
   const isActive = (t: Tab) =>
     t.to === pathname && (t.hash ? hash === t.hash : !hash || t.to !== "/");
@@ -42,7 +53,9 @@ export function MobileTabBar() {
         >
           <Icon className="size-5" strokeWidth={active ? 2.5 : 2} />
         </span>
-        <span className={`font-display text-xs font-semibold tracking-wide ${active ? "text-accent" : "text-muted-foreground"}`}>
+        <span
+          className={`font-display text-xs font-semibold tracking-wide ${active ? "text-accent" : "text-muted-foreground"}`}
+        >
           {t.label}
         </span>
       </Link>
@@ -72,13 +85,25 @@ export function MobileTabBar() {
             >
               <span className="pointer-events-none absolute inset-1 rounded-[6px] border-[1.5px] border-primary/70" />
               <span className="absolute left-1.5 top-1 flex flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
-                A<img src={suitArtwork.burger} alt="" className="mt-0.5 h-2.5 w-2.5 object-contain" />
+                A
+                <img
+                  src={suitArtwork.burger}
+                  alt=""
+                  className="mt-0.5 h-2.5 w-2.5 object-contain"
+                />
               </span>
               <span className="absolute bottom-1 right-1.5 flex rotate-180 flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
-                A<img src={suitArtwork.burger} alt="" className="mt-0.5 h-2.5 w-2.5 object-contain" />
+                A
+                <img
+                  src={suitArtwork.burger}
+                  alt=""
+                  className="mt-0.5 h-2.5 w-2.5 object-contain"
+                />
               </span>
               <MealDeckLogo decorative className="h-8 w-8" />
-              <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">Menus</span>
+              <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">
+                Menus
+              </span>
             </Link>
           </div>
           {right.map(item)}
