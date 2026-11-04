@@ -23,3 +23,8 @@
 - [x] Franchise brand cards lead with approved brand logos on an ivory panel.
 - [x] Restore the published branch to the five launch menus at /menus; ordering stays coming soon. The previous order screen remains archived under src/_archive/current-ui/routes/order.tsx.
 - [x] Instagram and TikTok links use @mealdeckofficial.
+- [x] Mobile launch menus: canonical /menu link, all five brands visible, compact header and persistent brand/section/search controls.
+- [x] Empty the entire saved basket in one action, with Undo that restores quantities, upgrades and extras.
+- [ ] Connect the staff operations portal to the approved Dishbee backend and verify authorised staff access in staging.
+- [ ] Review and publish canonical launch menu records so admin changes can feed the public menu.
+- [ ] Add the MealDeck kitchen station/pass interface and verify its paid-order connection to Dishbee KDS.

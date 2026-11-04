@@ -15,6 +15,53 @@
   padding: 0 16px;
 }
 
+.lmb-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--lmb-line);
+}
+
+.lmb-toolbar > span {
+  color: var(--lmb-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.lmb-clear,
+.lmb-undo-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 13px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.lmb-clear {
+  margin-left: auto;
+  border: 1px solid #c9a39b;
+  background: #fff6f1;
+  color: #8e1820;
+}
+
+.lmb-undo-clear {
+  margin-top: 18px;
+  min-width: 140px;
+  border: 1px solid #951018;
+  background: #951018;
+  color: #fffaf2;
+}
+
 .lmb-empty {
   padding: 26px 4px 24px;
   text-align: center;
@@ -394,6 +441,14 @@
 }
 
 @media (hover: hover) {
+  .lmb-clear:hover {
+    background: #f9e6dc;
+  }
+
+  .lmb-undo-clear:hover {
+    background: #76101a;
+  }
+
   .lmb-quantity button:hover:not(:disabled),
   .lmb-edit:hover,
   .lmb-remove:hover {

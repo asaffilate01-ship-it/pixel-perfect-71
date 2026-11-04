@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { LaunchBasket, LaunchBasketDock } from "@/components/menus/launch-basket";
+import { LaunchMenuMobileNav } from "@/components/menus/launch-menu-mobile-nav";
 import {
   LaunchItemCustomiser,
   type LaunchItemDraft,
@@ -62,6 +63,7 @@ export function LaunchMenuBrowser({
   const pendingBrand = marketingBrands.find((entry) => entry.id === requestedBrandId);
   const [search, setSearch] = useState("");
   const [picks, setPicks] = useState<LaunchMenuPick[]>([]);
+  const [clearedPicks, setClearedPicks] = useState<LaunchMenuPick[] | null>(null);
   const [draft, setDraft] = useState<LaunchItemDraft | null>(null);
   const [picksOpen, setPicksOpen] = useState(false);
   const [notice, setNotice] = useState("");
@@ -84,6 +86,7 @@ export function LaunchMenuBrowser({
 
   function updatePicks(next: LaunchMenuPick[]) {
     setPicks(next);
+    setClearedPicks(null);
     try {
       window.localStorage.setItem(LAUNCH_PICKS_STORAGE_KEY, encodeLaunchPicks(next));
     } catch {
@@ -91,16 +94,33 @@ export function LaunchMenuBrowser({
     }
   }
 
-  function browse(brandId: string, sectionId?: string) {
+  function emptyBasket() {
+    if (!picks.length) return;
+    const previous = picks;
+    updatePicks([]);
+    setClearedPicks(previous);
+    setNotice("Basket emptied.");
+  }
+
+  function undoEmptyBasket() {
+    if (!clearedPicks || picks.length) return;
+    updatePicks(clearedPicks);
+    setNotice("Your basket has been restored.");
+  }
+
+  function browse(brandId: string, sectionId?: string, target: "brand" | "items" = "brand") {
     setSearch("");
     void navigate({
       to: "/menus",
       search: { brand: brandId, ...(sectionId ? { section: sectionId } : {}) },
       resetScroll: false,
     }).then(() => {
-      document
-        .getElementById(sectionId ? "launch-menu-items" : "launch-brand-selector")
-        ?.scrollIntoView({ block: "start" });
+      const mobile = window.matchMedia("(max-width: 800px)").matches;
+      const destination =
+        mobile || target === "items" || sectionId ? "launch-menu-items" : "launch-brand-selector";
+      requestAnimationFrame(() => {
+        document.getElementById(destination)?.scrollIntoView({ block: "start" });
+      });
     });
   }
 
@@ -218,6 +238,9 @@ export function LaunchMenuBrowser({
     });
   const pickProps = {
     picks,
+    onClear: emptyBasket,
+    onUndoClear: undoEmptyBasket,
+    canUndoClear: !!clearedPicks && picks.length === 0,
     onQuantity: (key: string, value: number) =>
       updatePicks(setLaunchPickQuantity(picks, key, value)),
     onEdit: (pick: LaunchMenuPick) => {
@@ -291,6 +314,21 @@ export function LaunchMenuBrowser({
               </div>
             </header>
 
+            <LaunchMenuMobileNav
+              brandId={brand.id}
+              brandName={brand.name}
+              brands={brandOrder.flatMap((id) => {
+                const entry = getLaunchMenuBrand(id);
+                return entry ? [{ id: entry.id, name: entry.name }] : [];
+              })}
+              sections={brand.sections.map((entry) => ({ id: entry.id, name: entry.title }))}
+              activeSection={activeSection}
+              search={search}
+              count={visibleCount}
+              onBrand={(id) => browse(id, undefined, "items")}
+              onSection={(id) => browse(brand.id, id, "items")}
+              onSearch={setSearch}
+            />
             <div className="lm-menu-toolbar">
               <label className="lm-search">
                 <Search size={19} aria-hidden="true" />
@@ -331,7 +369,7 @@ export function LaunchMenuBrowser({
                 type="button"
                 className={!activeSection ? "is-active" : ""}
                 aria-pressed={!activeSection}
-                onClick={() => browse(brand.id)}
+                onClick={() => browse(brand.id, undefined, "items")}
               >
                 All items
               </button>
@@ -354,6 +392,22 @@ export function LaunchMenuBrowser({
                   <Check size={18} aria-hidden="true" />
                   {notice}
                 </span>
+                {clearedPicks && picks.length === 0 && (
+                  <button
+                    type="button"
+                    className="lm-notice-undo"
+                    onClick={() => {
+                      undoEmptyBasket();
+                      requestAnimationFrame(() =>
+                        document
+                          .querySelector<HTMLButtonElement>(".lmb-dock-button")
+                          ?.focus({ preventScroll: true }),
+                      );
+                    }}
+                  >
+                    Undo
+                  </button>
+                )}
                 <button type="button" aria-label="Dismiss update" onClick={() => setNotice("")}>
                   <X size={18} />
                 </button>
