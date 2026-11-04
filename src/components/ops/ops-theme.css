@@ -1,0 +1,302 @@
+/* Private staff surfaces share MealDeck's public brand tokens. This scope keeps
+   the fixed, high-contrast kitchen canvas independent of customer theme state. */
+.md-ops {
+  --ops-paper: var(--md-paper);
+  --ops-canvas: var(--md-cream);
+  --ops-ink: var(--md-black);
+  --ops-text: #40372e;
+  --ops-muted: var(--md-muted);
+  --ops-line: var(--md-line);
+  --ops-divider: #eee4d6;
+  --ops-soft: #f6ecdd;
+  --ops-shadow: 0 4px 18px rgb(45 24 8 / 5%);
+  min-height: 100vh;
+  background: var(--ops-canvas);
+  color: var(--ops-ink);
+  color-scheme: light;
+  font-family: var(--md-body);
+}
+
+.md-ops :is(h1, h2, h3, h4) {
+  font-family: var(--md-display);
+}
+
+.md-ops :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--md-red);
+  outline-offset: 3px;
+}
+
+.md-ops :is(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+.md-ops :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--md-red);
+}
+
+.md-ops .md-ops-paper {
+  background-color: var(--ops-paper);
+}
+.md-ops .md-ops-wash {
+  background-color: var(--ops-canvas);
+}
+.md-ops .md-ops-soft {
+  background-color: var(--ops-soft);
+}
+.md-ops .md-ops-ink {
+  color: var(--ops-ink);
+}
+.md-ops .md-ops-text {
+  color: var(--ops-text);
+}
+.md-ops .md-ops-muted {
+  color: var(--ops-muted);
+}
+.md-ops .md-ops-accent {
+  color: var(--md-red-deep);
+}
+.md-ops .md-ops-border {
+  border-color: var(--ops-line);
+}
+.md-ops .md-ops-divider {
+  border-color: var(--ops-divider);
+}
+.md-ops .md-ops-dot {
+  background-color: var(--ops-muted);
+}
+.md-ops .md-ops-brand-fill {
+  background-color: var(--md-red);
+}
+.md-ops .md-ops-inverse {
+  background: var(--md-black);
+  color: var(--md-paper);
+}
+.md-ops .md-ops-inverse-muted {
+  color: #e4d8c7;
+}
+
+.md-ops .md-ops-card,
+.md-ops .md-ops-empty {
+  min-width: 0;
+  border: 1px solid var(--ops-line);
+  border-radius: 14px;
+  background: var(--ops-paper);
+  box-shadow: var(--ops-shadow);
+}
+
+.md-ops .md-ops-empty {
+  border-style: dashed;
+  color: var(--ops-muted);
+  box-shadow: none;
+}
+
+.md-ops .md-ops-field {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  background: var(--ops-paper);
+  padding: 9px 12px;
+  color: var(--ops-ink);
+  font-family: var(--md-body);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.md-ops .md-ops-field::placeholder {
+  color: var(--ops-muted);
+}
+.md-ops .md-ops-field:disabled {
+  opacity: 0.65;
+}
+.md-ops .md-ops-field-search {
+  padding-left: 36px;
+}
+
+.md-ops .md-ops-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-family: var(--md-display);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.md-ops .md-ops-button:disabled {
+  opacity: 0.5;
+}
+.md-ops .md-ops-primary {
+  background: var(--md-red);
+  color: #fff;
+}
+.md-ops .md-ops-primary:not(:disabled):hover {
+  background: var(--md-red-deep);
+}
+.md-ops .md-ops-secondary {
+  border-color: var(--ops-line);
+  background: var(--ops-paper);
+  color: var(--ops-ink);
+}
+.md-ops .md-ops-secondary:not(:disabled):hover {
+  border-color: var(--md-red);
+  background: var(--ops-canvas);
+}
+
+.md-ops .md-ops-masthead {
+  border-bottom: 3px solid var(--md-red);
+  background: var(--md-black);
+  color: var(--md-paper);
+}
+
+.md-ops .md-ops-logo-link {
+  display: flex;
+  min-width: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+}
+.md-ops .md-ops-logo {
+  display: block;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+.md-ops .md-ops-kicker {
+  color: var(--md-yellow);
+  font-family: var(--md-display);
+}
+.md-ops .md-ops-header-action {
+  border-color: #ffffff4d;
+  background: transparent;
+  color: var(--md-paper);
+}
+.md-ops .md-ops-header-action:not(:disabled):hover {
+  border-color: var(--md-yellow);
+  color: var(--md-yellow);
+}
+.md-ops .md-ops-masthead :is(a, button):focus-visible {
+  outline-color: var(--md-yellow);
+}
+
+.md-ops .md-ops-login {
+  border-radius: 14px;
+}
+.md-ops .md-ops-login-heading {
+  border-bottom: 4px solid var(--md-yellow);
+  background: var(--md-red);
+  color: #fff;
+}
+.md-ops .md-ops-login-mark {
+  color: var(--md-yellow);
+}
+.md-ops .md-ops-login-form {
+  padding: 24px;
+}
+
+.md-ops .md-ops-scopebar {
+  border: 1px solid var(--ops-line);
+  border-left: 4px solid var(--md-red);
+  border-radius: 10px;
+  background: var(--ops-paper);
+  color: var(--ops-ink);
+  box-shadow: var(--ops-shadow);
+}
+.md-ops .md-ops-nav {
+  border-bottom: 1px solid var(--ops-line);
+  padding-bottom: 16px;
+}
+.md-ops .md-ops-reporting {
+  background: var(--ops-paper);
+  border: 1px solid var(--ops-line);
+  border-radius: 10px;
+}
+.md-ops .md-ops-date {
+  width: auto;
+  max-width: 100%;
+}
+.md-ops .md-ops-selection {
+  border-color: var(--md-red);
+  background: #fff0ed;
+}
+.md-ops .md-ops-routing {
+  border-color: var(--ops-line);
+  background: var(--ops-canvas);
+}
+
+.md-ops .md-ops-kds-state {
+  border-top: 3px solid var(--md-red);
+}
+.md-ops .md-ops-state-mark {
+  background: var(--ops-canvas);
+  color: var(--md-red);
+}
+.md-ops .md-ops-ticket {
+  border-radius: 14px;
+  box-shadow: var(--ops-shadow);
+}
+.md-ops .md-ops-ticket-heading {
+  background: var(--ops-paper);
+}
+.md-ops .md-ops-ticket-brand {
+  color: var(--md-red-deep);
+  font-family: var(--md-display);
+}
+.md-ops .md-ops-ticket-quantity {
+  border: 1px solid var(--ops-line);
+  background: var(--ops-canvas);
+  color: var(--md-black);
+}
+.md-ops .md-ops-ticket-footer {
+  background: var(--ops-canvas);
+}
+
+/* Stage labels retain their operational meaning alongside the brand palette. */
+.md-ops .md-ops-stage-new {
+  border-top-color: #807467;
+}
+.md-ops .md-ops-stage-preparing {
+  border-top-color: #d58a05;
+}
+.md-ops .md-ops-stage-ready {
+  border-top-color: #059669;
+}
+.md-ops .md-ops-stage-packing {
+  border-top-color: #0284c7;
+}
+.md-ops .md-ops-stage-sealed {
+  border-top-color: var(--md-black);
+}
+
+@media (min-width: 640px) {
+  .md-ops .md-ops-logo {
+    width: 60px;
+    height: 60px;
+  }
+  .md-ops .md-ops-login-form {
+    padding: 28px;
+  }
+}
+
+@media (max-width: 359px) {
+  .md-ops .md-ops-logo {
+    width: 44px;
+    height: 44px;
+  }
+  .md-ops .md-ops-header-action {
+    padding-inline: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-ops .md-ops-button {
+    transition: none;
+  }
+}

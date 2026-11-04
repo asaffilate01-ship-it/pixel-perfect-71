@@ -1,0 +1,123 @@
+.md-install-card {
+  padding: 20px;
+  border: 1px solid var(--md-line, #e4d8c7);
+  border-radius: 18px;
+  background: var(--md-cream, #fff6e8);
+  color: var(--md-black, #111);
+  font-family: var(--md-body, "DM Sans", sans-serif);
+  color-scheme: light;
+}
+.md-install-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.md-install-heading > div {
+  min-width: 0;
+}
+.md-install-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  height: 46px;
+  color: var(--md-red, #d5141d);
+}
+.md-install-heading h3 {
+  margin: 0;
+  font: 800 22px/1.12 var(--md-display, "Outfit", sans-serif);
+  letter-spacing: -0.025em;
+}
+.md-install-heading p {
+  margin: 8px 0 0;
+  color: #655a4e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.md-install-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 18px;
+  padding: 12px 15px;
+  border: 1px solid var(--md-red, #d5141d);
+  border-radius: 11px;
+  background: var(--md-red, #d5141d);
+  color: white;
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.md-install-button:hover {
+  background: var(--md-red-deep, #951018);
+}
+.md-install-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.md-install-card button:focus-visible {
+  outline: 3px solid var(--md-red-deep, #951018);
+  outline-offset: 4px;
+}
+.md-install-help {
+  padding-top: 10px;
+}
+.md-install-help[hidden] {
+  display: none;
+}
+.md-install-help p,
+.md-install-message,
+.md-install-update p {
+  margin: 12px 0 0;
+  color: #655a4e;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.md-install-help strong {
+  display: block;
+  color: #191713;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+.md-install-confirmed {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 17px 0 0;
+  color: #185936;
+  font-size: 13px;
+  font-weight: 700;
+}
+.md-install-update {
+  margin-top: 18px;
+  border-top: 1px solid var(--md-line, #e4d8c7);
+}
+.md-install-update button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+  color: var(--md-red-deep, #951018);
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.md-offline-notice {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 16px;
+  background: #fff0ca;
+  color: #5a3a00;
+  font: 600 13px/1.4 var(--md-body, "DM Sans", sans-serif);
+  border-bottom: 1px solid #dcb45a;
+}
+.md-offline-notice svg {
+  flex-shrink: 0;
+}

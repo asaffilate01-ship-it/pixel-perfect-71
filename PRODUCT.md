@@ -3,7 +3,7 @@
 ## Responsibility and deployment boundary
 
 - Owner decision, 4 November 2026: **MealDeck is a trading name of 313 Brands Ltd**, with the technology credit **Powered by Dishbee**.
-- MealDeck must use its **own Supabase project and database**, separate from Dishbee and Cafe 1. The standalone deployment is prepared; hosted provisioning and activation are still required. MealDeck owns its customer experience, tenants/kitchens/brands, menu records and modifiers, server prices, staff access, recipes, inventory, operational reporting, orders and shared kitchen display.
+- MealDeck must use its **own Supabase project and database**, separate from Dishbee and Cafe 1. Lovable has provisioned its dedicated database; the reviewed application schema, confirmed owner bootstrap and authenticated acceptance are still pending. See `docs/mealdeck-cloud-deployment-status.md` for the precise deployment state. MealDeck owns its customer experience, tenants/kitchens/brands, menu records and modifiers, server prices, staff access, recipes, inventory, operational reporting, orders and shared kitchen display.
 - Dishbee supplies the technology and may provide explicitly configured integrations. The technology credit does not make Dishbee's shared database a runtime dependency or authorize copying other merchants' records.
 - Payment, release, refund and courier authority belongs to the verified server-side integration in the configured MealDeck backend. A fresh database and the foundation schema do not themselves implement or approve those integrations.
 - Omniqora: optional cross-product communications/WhatsApp/voice, AI-assisted intents, customer CRM, messages, event/usage infrastructure and human escalation. Omniqora is not an alternative catalogue or payment authority.

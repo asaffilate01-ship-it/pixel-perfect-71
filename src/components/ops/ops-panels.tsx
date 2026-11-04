@@ -14,11 +14,11 @@ import type {
   OpsFinance,OpsAnalytics,OpsStaff,OpsLocation,OpsBrandSales,OpsAudit,
 } from "@/lib/mealdeck-ops-types";
 
-const field="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500";
-const primary="min-h-11 rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50";
-const secondary="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 disabled:opacity-50";
-const card="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm";
-const empty="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center text-sm text-slate-500";
+const field="md-ops-field";
+const primary="md-ops-button md-ops-primary";
+const secondary="md-ops-button md-ops-secondary";
+const card="md-ops-card p-5";
+const empty="md-ops-empty px-5 py-8 text-center text-sm";
 
 type Common={
   tenantId:string;locationId:string;
@@ -28,12 +28,12 @@ type Common={
   notice:(message:string)=>void;
 };
 function Labelled({label,children}:{label:string;children:ReactNode}){
-  return <label className="block text-sm font-semibold text-slate-800">
+  return <label className="block text-sm font-semibold md-ops-text">
     {label}<span className="mt-2 block">{children}</span>
   </label>;
 }
 function Status({label}:{label:string}){
-  return <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">{label}</span>;
+  return <span className="rounded-full md-ops-soft px-2.5 py-1 text-xs font-bold uppercase tracking-wide md-ops-text">{label}</span>;
 }
 function useCommit({reload,notice}:Pick<Common,"reload"|"notice">){
   const[busy,setBusy]=useState(false);
@@ -89,7 +89,7 @@ export function OpsMenuPanel(props:Common&{
     <section className={card}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h2 className="text-xl font-black">Brand menus</h2>
-          <p className="mt-1 text-sm text-slate-500">MealDeck products, with visibility managed for each kitchen.</p>
+          <p className="mt-1 text-sm md-ops-muted">MealDeck products, with visibility managed for each kitchen.</p>
         </div><Status label={menu.length+" products"}/>
       </div>
       <Labelled label="Search menus and brands">
@@ -97,11 +97,11 @@ export function OpsMenuPanel(props:Common&{
           placeholder="Burger, Skorch, drinks, tacos…"/>
       </Labelled>
       <div className="mt-4 max-h-[34rem] space-y-2 overflow-y-auto pr-1">
-        {filtered.map(row=><div key={row.item_id} className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 p-3">
+        {filtered.map(row=><div key={row.item_id} className="flex items-start justify-between gap-3 rounded-xl border md-ops-border p-3">
           <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-wide text-amber-700">{row.brand_name??"Unassigned"} · {row.category_name}</p>
+            <p className="text-xs font-black uppercase tracking-wide md-ops-accent">{row.brand_name??"Unassigned"} · {row.category_name}</p>
             <p className="mt-1 font-bold">{row.item_name}</p>
-            <p className="text-sm text-slate-500">{penceToPounds(row.location_price_pence)} · {row.visible&&row.active?"Visible":"Hidden or inactive"}</p>
+            <p className="text-sm md-ops-muted">{penceToPounds(row.location_price_pence)} · {row.visible&&row.active?"Visible":"Hidden or inactive"}</p>
           </div>
           <div className="flex shrink-0 flex-col gap-2">
             <button type="button" className={secondary} disabled={menuBusy} onClick={()=>choose(row)}>Edit</button>
@@ -122,8 +122,8 @@ export function OpsMenuPanel(props:Common&{
     <div className="space-y-5">
       <section className={card}>
         <h2 className="text-lg font-black">Edit master product</h2>
-        <p className="mt-1 text-xs text-slate-500">Price and name changes affect the MealDeck master product across its kitchens. A business-wide menu role is required. Channel-specific price overrides may still apply.</p>
-        {!current?<p className="mt-4 text-sm text-slate-500">Select a product from the list to edit it.</p>:<div className="mt-4 space-y-3">
+        <p className="mt-1 text-xs md-ops-muted">Price and name changes affect the MealDeck master product across its kitchens. A business-wide menu role is required. Channel-specific price overrides may still apply.</p>
+        {!current?<p className="mt-4 text-sm md-ops-muted">Select a product from the list to edit it.</p>:<div className="mt-4 space-y-3">
           <Labelled label="Product name"><input value={name} disabled={!globalWrite||menuBusy}
             onChange={e=>setName(e.target.value)} className={field}/></Labelled>
           <Labelled label="Description"><textarea value={description} rows={3} disabled={!globalWrite||menuBusy}
@@ -150,7 +150,7 @@ export function OpsMenuPanel(props:Common&{
       </section>
       {globalWrite&&<section className={card}>
         <h2 className="text-lg font-black">Add product</h2>
-        <p className="mt-1 text-sm text-slate-500">Choose an existing approved brand and category. New products do not bypass station routing or live availability checks.</p>
+        <p className="mt-1 text-sm md-ops-muted">Choose an existing approved brand and category. New products do not bypass station routing or live availability checks.</p>
         <div className="mt-3 space-y-3">
           <Labelled label="Brand / category"><select className={field} value={category}
             onChange={e=>setCategory(e.target.value)}>
@@ -204,34 +204,34 @@ export function OpsOrdersPanel({
   }
   return <section className={card}>
     <div className="flex items-start gap-3">
-      <ClipboardList className="mt-1 size-6 text-amber-600"/>
+      <ClipboardList className="mt-1 size-6 md-ops-accent"/>
       <div><h2 className="text-xl font-black">Order history</h2>
-        <p className="mt-1 text-sm text-slate-500">MealDeck order records. Payment pending is not a completed sale; marketplace order numbers and delivery proofs require verified provider records.</p>
+        <p className="mt-1 text-sm md-ops-muted">MealDeck order records. Payment pending is not a completed sale; marketplace order numbers and delivery proofs require verified provider records.</p>
       </div>
     </div>
     <section aria-label="Order review watchlist" className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-base font-black text-slate-950">Orders needing review</h3>
-        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-900">{alerts.length} suggestions</span>
+        <h3 className="text-base font-black md-ops-ink">Orders needing review</h3>
+        <span className="rounded-full md-ops-paper px-3 py-1 text-xs font-bold text-amber-900">{alerts.length} suggestions</span>
       </div>
-      <p className="mt-1 text-xs leading-5 text-slate-700">Read-only watchlist based on recorded order status and timestamps. This does not verify Adyen captures, KDS readiness, courier ETA or refunds.</p>
+      <p className="mt-1 text-xs leading-5 md-ops-text">Read-only watchlist based on recorded order status and timestamps. This does not verify Adyen captures, KDS readiness, courier ETA or refunds.</p>
       {alerts.length?<ul className="mt-4 grid gap-2 sm:grid-cols-2">
-        {alerts.map(alert=><li key={alert.orderId} className="rounded-xl border border-amber-200 bg-white p-3">
+        {alerts.map(alert=><li key={alert.orderId} className="rounded-xl border border-amber-200 md-ops-paper p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-bold text-slate-950">{alert.title}</p>
-            <span className="rounded bg-slate-100 px-2 py-1 text-[11px] font-bold uppercase text-slate-800">{alert.priority}</span>
+            <p className="font-bold md-ops-ink">{alert.title}</p>
+            <span className="rounded md-ops-soft px-2 py-1 text-[11px] font-bold uppercase md-ops-text">{alert.priority}</span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Order {alert.orderId.slice(0,8).toUpperCase()} · {alert.ageMinutes} min since reference time</p>
-          <p className="mt-2 text-xs leading-5 text-slate-700">{alert.detail}</p>
+          <p className="mt-1 text-xs md-ops-muted">Order {alert.orderId.slice(0,8).toUpperCase()} · {alert.ageMinutes} min since reference time</p>
+          <p className="mt-2 text-xs leading-5 md-ops-text">{alert.detail}</p>
         </li>)}
-      </ul>:<p className="mt-3 text-sm text-slate-600">No potential exceptions found in these order rows. This is not a payment or fulfilment health certification.</p>}
+      </ul>:<p className="mt-3 text-sm md-ops-muted">No potential exceptions found in these order rows. This is not a payment or fulfilment health certification.</p>}
     </section>
     <div className="mt-5 overflow-x-auto">
       <table className="min-w-full text-left text-sm">
-        <thead><tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
+        <thead><tr className="border-b md-ops-border text-xs uppercase md-ops-muted">
           {["Order","Channel","Fulfilment","Received","Items","Amount","Status","Paid","Details"].map(x=><th key={x} className="whitespace-nowrap px-3 py-3">{x}</th>)}
         </tr></thead>
-        <tbody>{orders.map(row=><tr key={row.order_id} className="border-b border-slate-100">
+        <tbody>{orders.map(row=><tr key={row.order_id} className="border-b md-ops-divider">
           <td className="whitespace-nowrap px-3 py-4 font-bold">{row.order_id.slice(0,8).toUpperCase()}</td>
           <td className="px-3 py-4">{row.source??"—"}</td>
           <td className="px-3 py-4">{row.fulfilment}</td>
@@ -249,23 +249,23 @@ export function OpsOrdersPanel({
     {orders.length===0&&<div className={empty}>No orders are available for this period and kitchen. Sample baskets are not included.</div>}
     {selected&&<aside className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5" aria-label="Selected order lines">
       <h3 className="font-black">Order {selected.slice(0,8).toUpperCase()} · kitchen items</h3>
-      <p className="mt-1 text-xs text-slate-600">Item names, quantities, modifiers and order-item notes are from the canonical ledger. This view cannot change payment or KDS state.</p>
+      <p className="mt-1 text-xs md-ops-muted">Item names, quantities, modifiers and order-item notes are from the canonical ledger. This view cannot change payment or KDS state.</p>
       {loading?<p className="mt-3 text-sm">Loading order items…</p>
       :error?<ErrorRow error={error}/>:lines.length?<div className="mt-3 space-y-2">
-        {lines.map(line=><div key={line.item_id} className="rounded-xl bg-white p-3">
+        {lines.map(line=><div key={line.item_id} className="rounded-xl md-ops-paper p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-bold">{line.quantity} × {line.item_name}</p>
             <span className="text-sm font-semibold">{penceToPounds(line.unit_price_pence)} per item</span>
           </div>
-          {line.brand_name&&<p className="text-xs text-amber-700">{line.brand_name}</p>}
+          {line.brand_name&&<p className="text-xs md-ops-accent">{line.brand_name}</p>}
           {Array.isArray(line.modifiers)&&line.modifiers.length>0&&
-            <p className="mt-1 text-xs text-slate-600">Options: {line.modifiers.map((m:unknown)=>{
+            <p className="mt-1 text-xs md-ops-muted">Options: {line.modifiers.map((m:unknown)=>{
               const entry=m&&typeof m==="object"?m as Record<string,unknown>:null;
               return typeof entry?.["name"]==="string"?entry["name"]:"Selected option";
             }).join(", ")}</p>}
           {line.notes&&<p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm"><b>Kitchen note:</b> {line.notes}</p>}
         </div>)}
-      </div>:<p className="mt-3 text-sm text-slate-600">No item rows returned for this order.</p>}
+      </div>:<p className="mt-3 text-sm md-ops-muted">No item rows returned for this order.</p>}
     </aside>}
   </section>;
 }
@@ -295,24 +295,24 @@ export function OpsRecipePanel(props:Common&{
   const canEdit=canGlobal("recipes.write");
   return <div className="grid gap-5 xl:grid-cols-[1fr_1.25fr]">
     <section className={card}>
-      <div className="flex items-center gap-3"><BookOpen className="size-6 text-amber-600"/>
+      <div className="flex items-center gap-3"><BookOpen className="size-6 md-ops-accent"/>
         <div><h2 className="text-xl font-black">Recipe library</h2>
-          <p className="text-sm text-slate-500">Production yields, ingredient amounts and recipe versions.</p>
+          <p className="text-sm md-ops-muted">Production yields, ingredient amounts and recipe versions.</p>
         </div></div>
       <div className="mt-5 space-y-2">
         {recipes.map(entry=><button key={entry.recipe_id} type="button" onClick={()=>setItem(entry.menu_item_id)}
           aria-pressed={item===entry.menu_item_id}
-          className={"w-full rounded-xl border p-4 text-left "+(item===entry.menu_item_id?"border-amber-500 bg-amber-50":"border-slate-200")}>
-          <p className="text-xs font-bold uppercase text-amber-700">{entry.brand_name??"MealDeck"} · v{entry.version}</p>
+          className={"w-full rounded-xl border p-4 text-left "+(item===entry.menu_item_id?"md-ops-selection":"md-ops-border")}>
+          <p className="text-xs font-bold uppercase md-ops-accent">{entry.brand_name??"MealDeck"} · v{entry.version}</p>
           <p className="mt-1 font-bold">{entry.item_name}</p>
-          <p className="text-sm text-slate-500">{entry.ingredients.length} ingredients · {entry.prep_minutes} minutes</p>
+          <p className="text-sm md-ops-muted">{entry.ingredients.length} ingredients · {entry.prep_minutes} minutes</p>
         </button>)}
         {recipes.length===0&&<div className={empty}>No recipes entered. A staff member with global recipe permission can add the first one.</div>}
       </div>
     </section>
     <section className={card}>
       <h2 className="text-xl font-black">{recipe?"Edit recipe":"Create recipe"}</h2>
-      <p className="mt-1 text-sm text-slate-500">Every save increments the recipe version; prior ingredient quantities are retained in an audit snapshot. Only approved users can edit recipes across locations.</p>
+      <p className="mt-1 text-sm md-ops-muted">Every save increments the recipe version; prior ingredient quantities are retained in an audit snapshot. Only approved users can edit recipes across locations.</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2"><Labelled label="Dish"><select className={field} value={item}
           onChange={e=>setItem(e.target.value)}>
@@ -335,7 +335,7 @@ export function OpsRecipePanel(props:Common&{
         ])}><Plus className="mr-1 inline size-4"/> Add ingredient</button>}
       </div>
       <div className="mt-3 space-y-3">{lines.map((line,index)=><div key={index}
-        className="grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-[1fr_110px_100px_44px]">
+        className="grid gap-2 rounded-xl border md-ops-border p-3 sm:grid-cols-[1fr_110px_100px_44px]">
         <select aria-label={"Ingredient "+(index+1)} value={line.ingredientId}
           onChange={e=>setLines(old=>old.map((x,i)=>i===index?{...x,ingredientId:e.target.value}:x))}
           className={field}>
@@ -353,7 +353,7 @@ export function OpsRecipePanel(props:Common&{
           onClick={()=>setLines(old=>old.filter((_,i)=>i!==index))} className={secondary}>
           <Trash2 className="size-4"/></button>
       </div>)}</div>
-      <p className="mt-3 text-xs text-slate-500">Base units are grams, millilitres or each. Quantities and waste percentages are included in estimated food cost. No allergen-free claim is inferred from a recipe.</p>
+      <p className="mt-3 text-xs md-ops-muted">Base units are grams, millilitres or each. Quantities and waste percentages are included in estimated food cost. No allergen-free claim is inferred from a recipe.</p>
       <div className="mt-4">
         <button type="button" className={primary} disabled={!item||!canEdit||busy}
           onClick={()=>void commit(async()=>{
@@ -395,16 +395,16 @@ export function OpsIngredientPanel(props:Common&{
   return <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
     <section className={card}>
       <h2 className="text-xl font-black">Ingredient stock</h2>
-      <p className="mt-1 text-sm text-slate-500">Append-only purchase, production and waste movements. No automatic stock deductions or accounting postings are claimed.</p>
+      <p className="mt-1 text-sm md-ops-muted">Append-only purchase, production and waste movements. No automatic stock deductions or accounting postings are claimed.</p>
       <div className="mt-5 overflow-x-auto"><table className="min-w-full text-sm">
-        <thead className="text-left text-xs uppercase text-slate-500"><tr>
+        <thead className="text-left text-xs uppercase md-ops-muted"><tr>
           {["Ingredient","On hand","Reorder","State"].map(x=><th key={x} className="px-3 py-3">{x}</th>)}
         </tr></thead>
-        <tbody>{stock.map(row=><tr key={row.ingredient_id} className="border-t border-slate-100">
+        <tbody>{stock.map(row=><tr key={row.ingredient_id} className="border-t md-ops-divider">
           <td className="px-3 py-3 font-bold">{row.name}</td>
           <td className="px-3 py-3">{row.quantity} {row.base_unit}</td>
           <td className="px-3 py-3">{row.reorder_threshold} {row.base_unit}</td>
-          <td className="px-3 py-3">{row.quantity<=row.reorder_threshold?<span className="font-bold text-amber-700">Check stock</span>:"—"}</td>
+          <td className="px-3 py-3">{row.quantity<=row.reorder_threshold?<span className="font-bold md-ops-accent">Check stock</span>:"—"}</td>
         </tr>)}</tbody>
       </table></div>
       {!stock.length&&<div className={empty}>No stock or ingredients have been recorded for this location.</div>}
@@ -484,15 +484,15 @@ export function OpsCostsPanel(props:Common&{
   return <div className="space-y-5">
     <section className={card}>
       <h2 className="text-xl font-black">Dish costing and margin estimates</h2>
-      <p className="mt-1 text-sm text-slate-500">The recipe BOM uses the latest recorded supplier price at this location. This is an ingredient-only estimate, not realised COGS, gross profit, VAT, fees, packaging or delivery contribution.</p>
+      <p className="mt-1 text-sm md-ops-muted">The recipe BOM uses the latest recorded supplier price at this location. This is an ingredient-only estimate, not realised COGS, gross profit, VAT, fees, packaging or delivery contribution.</p>
       <div className="mt-4 overflow-x-auto"><table className="min-w-full text-sm">
-        <thead className="text-left text-xs uppercase text-slate-500"><tr>
+        <thead className="text-left text-xs uppercase md-ops-muted"><tr>
           {["Dish","Version","Menu price","Est. ingredients","Est. food-cost %","Missing quotes"].map(x=><th key={x} className="whitespace-nowrap px-3 py-3">{x}</th>)}
         </tr></thead>
         <tbody>{recipeCosts.map(row=>{
           const sale=menu.find(i=>i.item_id===row.menu_item_id)?.location_price_pence??null;
           const margin=sale===null?null:estimatedRecipeMargin(sale,row.estimated_cost_pence);
-          return <tr key={row.menu_item_id} className="border-t border-slate-100">
+          return <tr key={row.menu_item_id} className="border-t md-ops-divider">
             <td className="px-3 py-3 font-bold">{row.menu_item_name}</td>
             <td className="px-3 py-3">v{row.recipe_version}</td>
             <td className="px-3 py-3">{sale===null?"—":penceToPounds(sale)}</td>
@@ -508,16 +508,16 @@ export function OpsCostsPanel(props:Common&{
       <section className={card}>
         <h2 className="text-lg font-black">Supplier cost history</h2>
         <div className="mt-4 max-h-96 space-y-2 overflow-y-auto">
-          {costs.map(row=><div key={row.ingredient_id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 text-sm">
+          {costs.map(row=><div key={row.ingredient_id} className="flex items-center justify-between gap-3 rounded-xl border md-ops-border p-3 text-sm">
             <div><p className="font-bold">{row.ingredient_name}</p>
-              <p className="text-xs text-slate-500">{row.supplier||"No supplier"} · {row.effective_on??"No quote"}</p></div>
+              <p className="text-xs md-ops-muted">{row.supplier||"No supplier"} · {row.effective_on??"No quote"}</p></div>
             <span className="font-bold">{row.cost_per_unit_pence===null?"Missing":row.cost_per_unit_pence+"p/"+row.base_unit}</span>
           </div>)}
         </div>
       </section>
       {can("costs.write")&&<section className={card}>
         <h2 className="text-lg font-black">Record a supplier pack price</h2>
-        <p className="mt-1 text-xs text-slate-500">Enter the net pack price and pack size in grams, millilitres or units. We calculate the price per base unit; historical effective dates are retained.</p>
+        <p className="mt-1 text-xs md-ops-muted">Enter the net pack price and pack size in grams, millilitres or units. We calculate the price per base unit; historical effective dates are retained.</p>
         <div className="mt-4 space-y-3">
           <Labelled label="Ingredient"><select className={field} value={ingredientId}
             onChange={e=>setIngredientId(e.target.value)}>
@@ -571,7 +571,7 @@ export function OpsFinancePanel(props:Common&{
   return <div className="space-y-5">
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
       {metrics.map(x=><div key={x.label} className={card}>
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{x.label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide md-ops-muted">{x.label}</p>
         <p className="mt-3 text-2xl font-black">{x.value}</p>
       </div>)}
     </div>
@@ -583,10 +583,10 @@ export function OpsFinancePanel(props:Common&{
       <section className={card}>
         <h2 className="text-lg font-black">Recorded operating expenses</h2>
         <div className="mt-4 overflow-x-auto"><table className="min-w-full text-sm">
-          <thead className="text-left text-xs uppercase text-slate-500"><tr>
+          <thead className="text-left text-xs uppercase md-ops-muted"><tr>
             {["Date","Category","Amount","Note"].map(x=><th key={x} className="px-3 py-3">{x}</th>)}
           </tr></thead>
-          <tbody>{expenses.map(x=><tr key={x.expense_id} className="border-t border-slate-100">
+          <tbody>{expenses.map(x=><tr key={x.expense_id} className="border-t md-ops-divider">
             <td className="px-3 py-3">{x.occurred_on}</td><td className="px-3 py-3">{x.category}</td>
             <td className="px-3 py-3 font-semibold">{penceToPounds(x.amount_pence)}</td>
             <td className="px-3 py-3">{x.note||"—"}</td>
@@ -596,7 +596,7 @@ export function OpsFinancePanel(props:Common&{
       </section>
       {can("finance.manage")&&<section className={card}>
         <h2 className="text-lg font-black">Record an expense</h2>
-        <p className="mt-1 text-xs text-slate-500">Creates an append-only operations record; it does not post to the ledger, bank, HMRC or Adyen.</p>
+        <p className="mt-1 text-xs md-ops-muted">Creates an append-only operations record; it does not post to the ledger, bank, HMRC or Adyen.</p>
         <div className="mt-4 space-y-3">
           <Labelled label="Date"><input type="date" className={field} value={date}
             onChange={e=>setDate(e.target.value)}/></Labelled>
@@ -630,49 +630,49 @@ export function OpsAnalyticsPanel({analytics,brandSales}:{analytics:OpsAnalytics
   const biggest=Math.max(1,...points.map(x=>x.grossPence));
   return <div className="space-y-5">
     <div className="grid gap-3 sm:grid-cols-3">
-      <div className={card}><p className="text-sm text-slate-500">Recorded paid orders</p>
+      <div className={card}><p className="text-sm md-ops-muted">Recorded paid orders</p>
         <p className="mt-2 text-3xl font-black">{analytics?.paidOrders??"—"}</p></div>
-      <div className={card}><p className="text-sm text-slate-500">Recorded paid gross</p>
+      <div className={card}><p className="text-sm md-ops-muted">Recorded paid gross</p>
         <p className="mt-2 text-3xl font-black">{analytics?penceToPounds(analytics.recordedPaidGrossPence):"—"}</p></div>
-      <div className={card}><p className="text-sm text-slate-500">Reporting basis</p>
+      <div className={card}><p className="text-sm md-ops-muted">Reporting basis</p>
         <p className="mt-2 text-sm font-bold">Recorded payments, by kitchen</p>
-        <p className="mt-1 text-xs text-slate-500">Not independently settled or VAT-adjusted.</p></div>
+        <p className="mt-1 text-xs md-ops-muted">Not independently settled or VAT-adjusted.</p></div>
     </div>
     <section className={card}>
       <h2 className="text-xl font-black">Recorded paid sales by day</h2>
-      <p className="mt-1 text-sm text-slate-500">MealDeck orders with a recorded payment timestamp. No sample sales or estimated refunds.</p>
-      {points.length?<div className="mt-6 flex h-56 items-end gap-2 overflow-x-auto border-b border-slate-200 pb-2">
+      <p className="mt-1 text-sm md-ops-muted">MealDeck orders with a recorded payment timestamp. No sample sales or estimated refunds.</p>
+      {points.length?<div className="mt-6 flex h-56 items-end gap-2 overflow-x-auto border-b md-ops-border pb-2">
         {points.map(p=><div key={p.date} className="flex min-w-7 flex-1 flex-col items-center gap-2"
           title={p.date+": "+penceToPounds(p.grossPence)+" · "+p.orders+" orders"}>
           <div role="img" aria-label={p.date+": "+penceToPounds(p.grossPence)}
             style={{height:Math.max(3,Math.round(p.grossPence/biggest*175))}}
-            className="w-full max-w-10 rounded-t-lg bg-amber-500"/>
-          <span className="text-[10px] text-slate-500">{p.date.slice(5)}</span>
+            className="w-full max-w-10 rounded-t-lg md-ops-brand-fill"/>
+          <span className="text-[10px] md-ops-muted">{p.date.slice(5)}</span>
         </div>)}
       </div>:<div className={empty}>No recorded paid orders in the selected period.</div>}
     </section>
     <section className={card}>
       <h2 className="text-xl font-black">Multi-brand sales mix</h2>
-      <p className="mt-1 text-sm text-slate-500">Based on recorded paid order items by brand, excluding delivery charges, refunds, settlement fees and taxes.</p>
+      <p className="mt-1 text-sm md-ops-muted">Based on recorded paid order items by brand, excluding delivery charges, refunds, settlement fees and taxes.</p>
       {brandSales.length?<div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {brandSales.map(row=><div key={row.brand_id??row.brand_name}
-          className="rounded-xl border border-slate-200 p-4">
-          <p className="text-xs font-black uppercase tracking-wide text-amber-700">{row.brand_name}</p>
+          className="rounded-xl border md-ops-border p-4">
+          <p className="text-xs font-black uppercase tracking-wide md-ops-accent">{row.brand_name}</p>
           <p className="mt-2 text-2xl font-black">{penceToPounds(row.recorded_goods_gross_pence)}</p>
-          <p className="mt-1 text-sm text-slate-600">{row.item_count} items · {row.order_count} orders</p>
+          <p className="mt-1 text-sm md-ops-muted">{row.item_count} items · {row.order_count} orders</p>
         </div>)}
-      </div>:<p className="mt-4 text-sm text-slate-500">No paid items from this location in the selected period.</p>}
+      </div>:<p className="mt-4 text-sm md-ops-muted">No paid items from this location in the selected period.</p>}
     </section>
     <section className={card}>
       <h2 className="text-xl font-black">Source-channel breakdown</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {(analytics?.channels??[]).map(row=><div key={row.source} className="rounded-xl border border-slate-200 p-4">
-          <p className="text-xs font-black uppercase tracking-wide text-slate-500">{row.source}</p>
+        {(analytics?.channels??[]).map(row=><div key={row.source} className="rounded-xl border md-ops-border p-4">
+          <p className="text-xs font-black uppercase tracking-wide md-ops-muted">{row.source}</p>
           <p className="mt-2 text-2xl font-black">{penceToPounds(row.grossPence)}</p>
-          <p className="mt-1 text-sm text-slate-600">{row.orders} recorded paid orders</p>
+          <p className="mt-1 text-sm md-ops-muted">{row.orders} recorded paid orders</p>
         </div>)}
       </div>
-      {!analytics?.channels.length&&<p className="mt-3 text-sm text-slate-500">No verified channel totals available.</p>}
+      {!analytics?.channels.length&&<p className="mt-3 text-sm md-ops-muted">No verified channel totals available.</p>}
     </section>
   </div>;
 }
@@ -701,19 +701,19 @@ export function OpsTeamPanel(props:Common&{
   }
   return <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
     <section className={card}>
-      <div className="flex items-center gap-3"><ShieldCheck className="size-6 text-amber-600"/>
+      <div className="flex items-center gap-3"><ShieldCheck className="size-6 md-ops-accent"/>
         <div><h2 className="text-xl font-black">Staff role assignments</h2>
-          <p className="text-sm text-slate-500">Account access is enforced by tenant and kitchen in PostgreSQL, independently of this screen.</p>
+          <p className="text-sm md-ops-muted">Account access is enforced by tenant and kitchen in PostgreSQL, independently of this screen.</p>
         </div></div>
       <div className="mt-5 max-h-[36rem] space-y-2 overflow-y-auto">
-        {staff.map(row=><div key={row.access_id} className="rounded-xl border border-slate-200 p-4 text-sm">
+        {staff.map(row=><div key={row.access_id} className="rounded-xl border md-ops-border p-4 text-sm">
           <div className="flex flex-wrap justify-between gap-2">
             <p className="font-bold">{row.user_email??row.user_id.slice(0,8)}</p>
             <Status label={row.enabled?row.role:row.role+" · disabled"}/>
           </div>
-          <p className="mt-2 text-xs text-slate-600">Scope: {row.location_id?row.location_id.slice(0,8)+"…":"All tenant locations"}</p>
+          <p className="mt-2 text-xs md-ops-muted">Scope: {row.location_id?row.location_id.slice(0,8)+"…":"All tenant locations"}</p>
           {(row.grant_permissions.length>0||row.deny_permissions.length>0)&&
-            <p className="mt-1 text-xs text-slate-500">Extra grants: {row.grant_permissions.length} · Denials: {row.deny_permissions.length}</p>}
+            <p className="mt-1 text-xs md-ops-muted">Extra grants: {row.grant_permissions.length} · Denials: {row.deny_permissions.length}</p>}
           {ownerOrAdmin&&<button type="button" className="mt-2 min-h-10 text-sm font-semibold underline"
             onClick={()=>{setUser(row.user_id);setRole(row.role);setScope(row.location_id?"location":"global");
               setTargetLocation(row.location_id??locationId);
@@ -726,22 +726,22 @@ export function OpsTeamPanel(props:Common&{
     </section>
     {ownerOrAdmin&&<section className={card}>
       <h2 className="text-lg font-black">Staff and menu change audit</h2>
-      <p className="mt-1 text-xs text-slate-500">Immutable, actor-stamped changes. This history cannot change prices or permissions.</p>
+      <p className="mt-1 text-xs md-ops-muted">Immutable, actor-stamped changes. This history cannot change prices or permissions.</p>
       <div className="mt-3 max-h-72 space-y-2 overflow-y-auto">
-        {audit.map(row=><div key={row.event_id} className="rounded-xl border border-slate-200 p-3 text-sm">
+        {audit.map(row=><div key={row.event_id} className="rounded-xl border md-ops-border p-3 text-sm">
           <div className="flex items-center justify-between gap-2">
             <p className="font-bold">{row.action}</p>
-            <span className="text-xs text-slate-500">{new Date(row.created_at).toLocaleString("en-GB")}</span>
+            <span className="text-xs md-ops-muted">{new Date(row.created_at).toLocaleString("en-GB")}</span>
           </div>
-          <p className="mt-1 text-xs text-slate-600">Actor {row.actor_id?.slice(0,8)??"system"} · {row.entity_type} · {row.entity_id.slice(0,8)}</p>
-          <p className="mt-1 text-xs text-slate-500">Kitchen: {row.location_id?.slice(0,8)??"All tenant locations"}</p>
+          <p className="mt-1 text-xs md-ops-muted">Actor {row.actor_id?.slice(0,8)??"system"} · {row.entity_type} · {row.entity_id.slice(0,8)}</p>
+          <p className="mt-1 text-xs md-ops-muted">Kitchen: {row.location_id?.slice(0,8)??"All tenant locations"}</p>
         </div>)}
-        {!audit.length&&<p className="text-sm text-slate-500">No changes have been recorded.</p>}
+        {!audit.length&&<p className="text-sm md-ops-muted">No changes have been recorded.</p>}
       </div>
     </section>}
     {ownerOrAdmin&&<section className={card}>
       <h2 className="text-xl font-black">Assign or update staff</h2>
-      <p className="mt-1 text-sm text-slate-500">Provision the user in Supabase Auth first. Enter their verified UID; this page cannot create an Auth user or send an invitation. You cannot edit your own access.</p>
+      <p className="mt-1 text-sm md-ops-muted">Provision the user in Supabase Auth first. Enter their verified UID; this page cannot create an Auth user or send an invitation. You cannot edit your own access.</p>
       <div className="mt-4 space-y-3">
         <Labelled label="Provisioned staff user UUID"><input className={field} value={user}
           autoComplete="off" onChange={e=>setUser(e.target.value.trim())}/></Labelled>
@@ -762,8 +762,8 @@ export function OpsTeamPanel(props:Common&{
           Assignment enabled
         </label>
         <div><p className="text-sm font-black">Permission overrides</p>
-          <p className="mt-1 text-xs text-slate-500">Role defaults apply first; explicit denials win. Owner/admin assignment remains restricted by the database.</p>
-          <div className="mt-3 max-h-64 space-y-1 overflow-y-auto rounded-xl border border-slate-200 p-3">
+          <p className="mt-1 text-xs md-ops-muted">Role defaults apply first; explicit denials win. Owner/admin assignment remains restricted by the database.</p>
+          <div className="mt-3 max-h-64 space-y-1 overflow-y-auto rounded-xl border md-ops-border p-3">
             {OPS_PERMISSIONS.map(permission=><div key={permission} className="grid grid-cols-[1fr_70px_70px] items-center gap-2 py-1 text-xs">
               <span className="font-semibold">{permission}</span>
               <label className="flex items-center gap-1"><input type="checkbox" checked={grants.includes(permission)}

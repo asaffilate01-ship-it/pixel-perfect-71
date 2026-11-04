@@ -25,5 +25,7 @@ const csrfMiddleware = createCsrfMiddleware({
 });
 
 export const startInstance = createStart(() => ({
+  // MealDeck staff use their project-bound client and scoped RPCs. Public server
+  // functions must not initialise a separate generated browser auth session.
   requestMiddleware: [errorMiddleware, csrfMiddleware],
 }));

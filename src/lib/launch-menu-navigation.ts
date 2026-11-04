@@ -8,7 +8,7 @@ export function validateLaunchMenuSearch(search: Record<string, unknown>): Launc
   };
 }
 
-/** All menu entry paths use the basket dock instead of the general mobile bar. */
+/** Menu routes own their mobile menu bar and desktop basket dock. */
 export function isLaunchMenuRoute(pathname: string): boolean {
   const path = pathname.replace(/\/+$/, "");
   return path === "/menus" || path === "/menu" || path === "/order";

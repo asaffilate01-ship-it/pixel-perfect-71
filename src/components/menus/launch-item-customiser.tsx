@@ -225,7 +225,10 @@ export function LaunchItemCustomiser({
 
   return (
     <>
-      <header className="lmc-header">
+      <header
+        className="lmc-header"
+        data-customiser-layout={steps.length === 1 ? "compact" : "steps"}
+      >
         <img src={logoFor(brand.id)} alt={brand.name} width="62" height="48" />
         <div>
           <span className="lmc-eyebrow">{section.title}</span>

@@ -28,10 +28,8 @@ import {
 const POLL_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 12_000;
 const STALE_AFTER_MS = 45_000;
-const control =
-  "min-h-11 min-w-0 rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
-const button =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+const control = "md-ops-field min-w-0";
+const button = "md-ops-button";
 
 type Props = {
   tenantId: string;
@@ -49,11 +47,11 @@ const stageLabels: Record<Stage, string> = {
   sealed: "Sealed",
 };
 const stageStyles: Record<Stage, { badge: string; border: string }> = {
-  queued: { badge: "bg-slate-100 text-slate-700", border: "border-t-slate-400" },
-  preparing: { badge: "bg-amber-100 text-amber-900", border: "border-t-amber-500" },
-  ready: { badge: "bg-emerald-100 text-emerald-900", border: "border-t-emerald-600" },
-  packing: { badge: "bg-sky-100 text-sky-900", border: "border-t-sky-600" },
-  sealed: { badge: "bg-slate-900 text-white", border: "border-t-slate-800" },
+  queued: { badge: "md-ops-soft md-ops-text", border: "md-ops-stage-new" },
+  preparing: { badge: "bg-amber-100 text-amber-900", border: "md-ops-stage-preparing" },
+  ready: { badge: "bg-emerald-100 text-emerald-900", border: "md-ops-stage-ready" },
+  packing: { badge: "bg-sky-100 text-sky-900", border: "md-ops-stage-packing" },
+  sealed: { badge: "md-ops-inverse", border: "md-ops-stage-sealed" },
 };
 const fulfilmentLabels: Record<KdsOrder["fulfilment"], string> = {
   delivery: "Delivery",
@@ -365,7 +363,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
         </h2>
         {board?.readiness === "ready" ? (
           <div className="flex flex-wrap items-center gap-1.5" aria-label="Kitchen order counts">
-            <Count label="New" value={counts.queued} tone="bg-white text-slate-950" />
+            <Count label="New" value={counts.queued} tone="md-ops-paper md-ops-ink" />
             <Count label="Preparing" value={counts.preparing} tone="bg-amber-50 text-amber-950" />
             <Count
               label="To pack"
@@ -374,12 +372,12 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
             />
           </div>
         ) : (
-          <p className="text-sm font-semibold text-slate-600">
+          <p className="text-sm font-semibold md-ops-muted">
             All brands together. One card per order.
           </p>
         )}
         <div
-          className="flex items-center gap-1.5 text-xs font-semibold text-slate-600"
+          className="flex items-center gap-1.5 text-xs font-semibold md-ops-muted"
           aria-live="off"
         >
           {fresh ? (
@@ -419,7 +417,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
             <label className="relative col-span-2 min-w-0 sm:col-span-1">
               <span className="sr-only">Find an order, dish or brand</span>
               <Search
-                className="pointer-events-none absolute left-3 top-3.5 size-4 text-slate-500"
+                className="pointer-events-none absolute left-3 top-3.5 size-4 md-ops-muted"
                 aria-hidden="true"
               />
               <input
@@ -427,7 +425,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Find order, dish or brand"
-                className={`${control} w-full pl-9`}
+                className={`${control} md-ops-field-search w-full`}
               />
             </label>
             <label className="min-w-0">
@@ -450,7 +448,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
               type="button"
               onClick={() => void refresh()}
               disabled={refreshing || !!pendingOrder}
-              className={`${button} border border-slate-300 bg-white text-slate-900`}
+              className={`${button} md-ops-secondary`}
               aria-label="Refresh kitchen orders"
               title="Refresh kitchen orders"
             >
@@ -496,7 +494,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
         </p>
       )}
       {board?.readiness === "ready" && board.held_order_count > 0 && (
-        <p className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
+        <p className="rounded-xl border md-ops-border md-ops-paper p-3 text-sm md-ops-muted">
           {board.held_order_count} {board.held_order_count === 1 ? "order is" : "orders are"}{" "}
           waiting to be released to the kitchen.
         </p>
@@ -508,7 +506,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
         </p>
       )}
       {board?.readiness === "ready" && !can("orders.status") && (
-        <p className="flex items-center gap-2 text-sm text-slate-600">
+        <p className="flex items-center gap-2 text-sm md-ops-muted">
           <LockKeyhole className="size-4" aria-hidden="true" />
           Your role can view this kitchen board. Order changes require kitchen access.
         </p>
@@ -527,7 +525,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
             type="button"
             disabled={refreshing}
             onClick={() => void refresh()}
-            className={`${button} mt-5 bg-slate-950 text-white`}
+            className={`${button} md-ops-primary mt-5`}
           >
             Check connection
           </button>
@@ -539,7 +537,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
             type="button"
             disabled={refreshing}
             onClick={() => void refresh()}
-            className={`${button} mt-5 bg-slate-950 text-white`}
+            className={`${button} md-ops-primary mt-5`}
           >
             Check access again
           </button>
@@ -565,7 +563,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
               type="button"
               disabled={refreshing}
               onClick={() => void refresh()}
-              className={`${button} mt-5 bg-slate-950 text-white`}
+              className={`${button} md-ops-primary mt-5`}
             >
               Try again
             </button>
@@ -638,7 +636,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
           {(filter !== "all" || query) && (
             <button
               type="button"
-              className={`${button} mt-5 border border-slate-300 bg-white text-slate-900`}
+              className={`${button} md-ops-secondary mt-5`}
               onClick={() => {
                 setFilter("all");
                 setQuery("");
@@ -656,7 +654,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
 function Count({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
     <div
-      className={`inline-flex min-h-9 min-w-0 items-center gap-2 rounded-full border border-slate-200 px-2.5 py-1 ${tone}`}
+      className={`inline-flex min-h-9 min-w-0 items-center gap-2 rounded-full border md-ops-border px-2.5 py-1 ${tone}`}
     >
       <span className="text-xs font-semibold">{label}</span>
       <strong className="font-display text-lg font-black leading-none tabular-nums">{value}</strong>
@@ -674,14 +672,14 @@ function StateCard({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-5 py-9 text-center text-slate-600">
+    <div className="md-ops-card md-ops-kds-state px-5 py-9 text-center md-ops-muted">
       <div
-        className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700"
+        className="md-ops-state-mark mx-auto mb-4 flex size-14 items-center justify-center rounded-xl"
         aria-hidden="true"
       >
         {icon}
       </div>
-      <h3 className="font-display text-xl font-black text-slate-950">{title}</h3>
+      <h3 className="font-display text-xl font-black md-ops-ink">{title}</h3>
       <div className="mx-auto mt-2 max-w-lg text-sm leading-6">{children}</div>
     </div>
   );
@@ -729,15 +727,15 @@ function KitchenOrderCard({
       ref={cardRef}
       tabIndex={-1}
       aria-labelledby={`kds-order-${order.order_id}`}
-      className={`min-w-0 overflow-hidden rounded-2xl border border-slate-200 border-t-4 bg-white shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 ${stageStyles[stage].border}`}
+      className={`md-ops-ticket min-w-0 overflow-hidden border md-ops-border border-t-4 md-ops-paper outline-none ${stageStyles[stage].border}`}
       data-testid="kds-order-card"
       data-order-id={order.order_id}
     >
-      <header className="border-b border-slate-100 px-4 py-3">
+      <header className="md-ops-ticket-heading border-b md-ops-divider px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3
             id={`kds-order-${order.order_id}`}
-            className="min-w-0 break-words font-display text-2xl font-black tracking-tight text-slate-950"
+            className="min-w-0 break-words font-display text-2xl font-black tracking-tight md-ops-ink"
           >
             {order.display_code}
           </h3>
@@ -747,7 +745,7 @@ function KitchenOrderCard({
             {order.pass?.status === "ready_for_handoff" ? "Ready for handoff" : stageLabels[stage]}
           </span>
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-600">
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold md-ops-muted">
           <span>{fulfilmentLabels[order.fulfilment]}</span>
           <span>
             {totalItems} {totalItems === 1 ? "item" : "items"}
@@ -772,7 +770,7 @@ function KitchenOrderCard({
         {order.notes && <Note label="Order note" text={order.notes} />}
         {groups.map((group) => (
           <section key={group.key} aria-label={`${group.name} items`}>
-            <h4 className="mb-1.5 border-b border-slate-200 pb-1 text-xs font-black uppercase tracking-[0.12em] text-slate-600">
+            <h4 className="md-ops-ticket-brand mb-1.5 border-b md-ops-border pb-1 text-xs font-black uppercase tracking-[0.12em]">
               {group.name}
             </h4>
             <ul className="space-y-3">
@@ -780,29 +778,29 @@ function KitchenOrderCard({
                 <li key={item.order_item_id} className="min-w-0">
                   <div className="flex items-start gap-2.5">
                     <span
-                      className="grid min-h-7 min-w-7 shrink-0 place-items-center rounded-md bg-slate-100 px-1 text-sm font-black tabular-nums text-slate-900"
+                      className="md-ops-ticket-quantity grid min-h-7 min-w-7 shrink-0 place-items-center rounded-md px-1 text-sm font-black tabular-nums"
                       aria-label={`Quantity ${item.quantity}`}
                     >
                       {item.quantity}×
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="break-words text-base font-bold leading-6 text-slate-950">
+                      <p className="break-words text-base font-bold leading-6 md-ops-ink">
                         {item.item_name}
                       </p>
                       {order.group_order && item.participant_name && (
-                        <p className="mt-0.5 break-words text-xs font-semibold text-slate-500">
+                        <p className="mt-0.5 break-words text-xs font-semibold md-ops-muted">
                           For {item.participant_name}
                         </p>
                       )}
                       {item.modifiers.length > 0 && (
                         <ul
-                          className="mt-1.5 space-y-1 text-sm leading-5 text-slate-700"
+                          className="mt-1.5 space-y-1 text-sm leading-5 md-ops-text"
                           aria-label={`Choices for ${item.item_name}`}
                         >
                           {item.modifiers.map((modifier, index) => (
                             <li key={`${index}:${modifier}`} className="flex items-start gap-1.5">
                               <span
-                                className="mt-2 size-1 shrink-0 rounded-full bg-slate-400"
+                                className="mt-2 size-1 shrink-0 rounded-full md-ops-dot"
                                 aria-hidden="true"
                               />
                               <span className="min-w-0 break-words">{modifier}</span>
@@ -828,7 +826,7 @@ function KitchenOrderCard({
           </p>
         )}
       </div>
-      <footer className="border-t border-slate-100 bg-slate-50/70 px-4 py-3">
+      <footer className="md-ops-ticket-footer border-t md-ops-divider px-4 py-3">
         {confirmingSeal ? (
           <div
             className="space-y-3"
@@ -838,15 +836,11 @@ function KitchenOrderCard({
               if (event.key === "Escape") onCancelSeal();
             }}
           >
-            <p className="text-sm font-semibold leading-5 text-slate-800">
+            <p className="text-sm font-semibold leading-5 md-ops-text">
               Check every item and drink is packed before sealing this order.
             </p>
             <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">
-              <button
-                type="button"
-                onClick={onCancelSeal}
-                className={`${button} border border-slate-300 bg-white text-slate-800`}
-              >
+              <button type="button" onClick={onCancelSeal} className={`${button} md-ops-secondary`}>
                 Back
               </button>
               <button
@@ -854,7 +848,7 @@ function KitchenOrderCard({
                 type="button"
                 disabled={disabled}
                 onClick={onConfirmSeal}
-                className={`${button} bg-slate-950 text-white`}
+                className={`${button} md-ops-primary`}
               >
                 <PackageCheck className="size-4 shrink-0" aria-hidden="true" />
                 Confirm sealed
@@ -867,7 +861,7 @@ function KitchenOrderCard({
             type="button"
             disabled={disabled || !order.routing_complete}
             onClick={onAction}
-            className={`${button} w-full bg-slate-950 text-white`}
+            className={`${button} md-ops-primary w-full`}
             aria-label={`${action.label} · ${order.display_code}`}
           >
             {saving ? (
@@ -880,7 +874,7 @@ function KitchenOrderCard({
             {saving ? "Saving…" : action.label}
           </button>
         ) : (
-          <p className="flex min-h-11 items-center justify-center gap-2 text-center text-sm font-bold text-slate-600">
+          <p className="flex min-h-11 items-center justify-center gap-2 text-center text-sm font-bold md-ops-muted">
             {stage === "sealed" ? (
               <>
                 <PackageCheck className="size-5 shrink-0" aria-hidden="true" />

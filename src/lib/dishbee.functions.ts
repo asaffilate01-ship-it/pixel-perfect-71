@@ -6,6 +6,7 @@ import {
 } from "./mealdeck-runtime-config";
 import { estimateGoodsFromDishbee, verifyDishbeeFeeResult } from "./mealdeck-live-price-estimate";
 import { safeCourierTrackingUrl } from "./mealdeck-tracking-links";
+import { parseMealDeckTrackingReply } from "./mealdeck-tracking-contract";
 import {
   mayCreateCustomerOrder,
   parseDishbeeCheckoutAttemptReceipt,
@@ -607,8 +608,14 @@ export type OrderTrackingResult =
       deliveryStatus?: string | undefined;
       trackingUrl?: string | undefined;
       updatedAt?: string | undefined;
+      createdAt?: string | undefined;
+      observedAt?: string | undefined;
     }
-  | { found: false; message: string };
+  | {
+      found: false;
+      message: string;
+      reason?: "not_found" | "unavailable" | "forbidden" | "closed" | undefined;
+    };
 
 export const getOrderTracking = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
@@ -629,18 +636,24 @@ export const getOrderTracking = createServerFn({ method: "POST" })
       return {
         found: false,
         message: "MealDeck live tracking is not open yet.",
+        reason: "closed",
       };
     const base = readBase();
     if (!base) {
       return {
         found: false,
         message: "Live order tracking is not available yet.",
+        reason: "closed",
       };
     }
 
     try {
       const client = dishbeeClient(base);
-      let { data: rows, error } = await client.rpc("public_mealdeck_order_tracking_v2", {
+      let {
+        data: rows,
+        error,
+        status,
+      } = await client.rpc("public_mealdeck_order_tracking_v2", {
         p_order: data.orderId,
         p_handoff_code: data.handoffCode,
       });
@@ -655,40 +668,58 @@ export const getOrderTracking = createServerFn({ method: "POST" })
         });
         rows = fallback.data;
         error = fallback.error;
+        status = fallback.status;
       }
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        const temporarilyUnavailable = status === 0 || (status >= 500 && status < 600);
+        return {
+          found: false,
+          reason: temporarilyUnavailable ? "unavailable" : "forbidden",
+          message: temporarilyUnavailable
+            ? "Order tracking is temporarily unavailable. Please try again."
+            : "We couldn’t verify access to that order. Check the reference and handoff code.",
+        };
+      }
       // Unexpected multi-row or malformed replies fail closed instead of
       // exposing a possibly unrelated customer's order record.
-      if (!Array.isArray(rows) || rows.length > 1) {
+      const parsed = parseMealDeckTrackingReply(rows);
+      if (parsed.kind === "invalid") {
         throw new Error("dishbee_tracking_contract_invalid");
       }
-      const row = (rows as Array<Record<string, unknown>>)[0];
-      if (!row) {
+      if (parsed.kind === "not_found") {
         return {
           found: false,
           message: "We couldn't find an order with that reference and handoff code.",
+          reason: "not_found",
         };
       }
+      const row = parsed.row;
 
       return {
         found: true,
-        orderStatus: String(row["order_status"] ?? ""),
-        fulfilment: String(row["fulfilment"] ?? ""),
-        passStatus: row["pass_status"] ? String(row["pass_status"]) : undefined,
-        deliveryStatus: row["delivery_status"] ? String(row["delivery_status"]) : undefined,
+        orderStatus: row.orderStatus,
+        fulfilment: row.fulfilment,
+        passStatus: row.passStatus,
+        deliveryStatus: row.deliveryStatus,
         // Never expose arbitrary provider-supplied destinations to customers.
         trackingUrl:
-          String(row["fulfilment"] ?? "") === "delivery"
+          row.fulfilment === "delivery"
             ? (safeCourierTrackingUrl(
-                row["tracking_url"],
+                row.trackingUrlCandidate,
                 process.env["MEALDECK_TRACKING_ALLOWED_HOSTS"],
               ) ?? undefined)
             : undefined,
-        updatedAt: row["updated_at"] ? String(row["updated_at"]) : undefined,
+        updatedAt: row.updatedAt,
+        // Placement and update times have different meanings. Legacy RPCs may
+        // omit created_at; never substitute the latest update as order time.
+        createdAt: row.createdAt,
+        observedAt: new Date().toISOString(),
       };
-    } catch (error) {
-      console.error("Dishbee order tracking failed", error);
+    } catch {
+      // Unexpected contract failures must clear any prior displayed order;
+      // only explicit transport/server outages may retain a labelled stale view.
+      console.error("MealDeck order tracking unavailable");
       return {
         found: false,
         message: "Order tracking is temporarily unavailable. Please try again.",

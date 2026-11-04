@@ -6,11 +6,11 @@ import {canApprovePurchase,canSubmitPurchase,poRemainingBaseUnits,positiveBaseQu
 import type {OpsIngredient} from "@/lib/mealdeck-ops-types";
 import type {OpsPurchase,OpsPurchaseLine,OpsSupplier} from "@/lib/mealdeck-ops-procurement-types";
 
-const box="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm";
-const field="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600";
-const action="min-h-11 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white disabled:opacity-40";
-const secondary="min-h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 disabled:opacity-40";
-const label="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600";
+const box="md-ops-card p-5";
+const field="md-ops-field";
+const action="md-ops-button md-ops-primary";
+const secondary="md-ops-button md-ops-secondary";
+const label="mb-2 block text-xs font-bold uppercase tracking-wide md-ops-muted";
 type Props={
   tenantId:string;locationId:string;staffUserId:string;
   suppliers:OpsSupplier[];purchases:OpsPurchase[];ingredients:OpsIngredient[];
@@ -86,25 +86,25 @@ export function OpsProcurementPanel(props:Props){
   return <div className="space-y-5">
     <section className={box}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><div className="flex items-center gap-2"><Truck className="size-6 text-amber-600"/>
+        <div><div className="flex items-center gap-2"><Truck className="size-6 md-ops-accent"/>
           <h2 className="text-xl font-black">Suppliers & purchase orders</h2></div>
-          <p className="mt-2 max-w-3xl text-sm text-slate-600">
+          <p className="mt-2 max-w-3xl text-sm md-ops-muted">
             Draft purchases, obtain a separate finance approval, and record physical goods only when they arrive. This does not send supplier emails, make payments or post an invoice.
           </p>
         </div>
-        <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">
+        <span className="rounded-full md-ops-soft px-3 py-2 text-xs font-bold md-ops-text">
           {purchases.length} kitchen orders
         </span>
       </div>
       <div className="mt-5 overflow-x-auto">
         <table className="min-w-full text-left text-sm">
-          <thead><tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+          <thead><tr className="border-b md-ops-border text-xs uppercase tracking-wide md-ops-muted">
             {["PO reference","Supplier","Status","Received","Estimated goods","Action"].map(x=><th key={x} className="px-3 py-3">{x}</th>)}
           </tr></thead>
-          <tbody>{purchases.map(row=><tr key={row.order_id} className="border-b border-slate-100">
+          <tbody>{purchases.map(row=><tr key={row.order_id} className="border-b md-ops-divider">
             <td className="px-3 py-4 font-bold">{row.order_id.slice(0,8).toUpperCase()}</td>
             <td className="px-3 py-4">{row.supplier_name}</td>
-            <td className="px-3 py-4"><span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold">{row.status.replaceAll("_"," ")}</span></td>
+            <td className="px-3 py-4"><span className="rounded-lg md-ops-soft px-2.5 py-1 text-xs font-semibold">{row.status.replaceAll("_"," ")}</span></td>
             <td className="px-3 py-4">{row.received_line_count} / {row.line_count} lines</td>
             <td className="px-3 py-4">{row.quoted_total_pence===null?"Restricted":penceToPounds(row.quoted_total_pence)}</td>
             <td className="px-3 py-4"><button type="button" aria-pressed={selected===row.order_id}
@@ -114,13 +114,13 @@ export function OpsProcurementPanel(props:Props){
           </tr>)}</tbody>
         </table>
       </div>
-      {!purchases.length&&<p className="mt-4 text-sm text-slate-500">No purchase orders have been recorded for this kitchen.</p>}
+      {!purchases.length&&<p className="mt-4 text-sm md-ops-muted">No purchase orders have been recorded for this kitchen.</p>}
     </section>
 
     {canFinance&&<div className="grid gap-5 lg:grid-cols-2">
       {canFinanceGlobal&&<section className={box}>
         <h3 className="font-display text-lg font-black">Register an approved supplier</h3>
-        <p className="mt-1 text-sm text-slate-600">Supplier account details are tenant-wide. Bank details are deliberately not stored here.</p>
+        <p className="mt-1 text-sm md-ops-muted">Supplier account details are tenant-wide. Bank details are deliberately not stored here.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label><span className={label}>Supplier name</span>
             <input className={field} value={supplierName} maxLength={160}
@@ -145,7 +145,7 @@ export function OpsProcurementPanel(props:Props){
       </section>}
       <section className={box}>
         <h3 className="font-display text-lg font-black">Create a draft purchase order</h3>
-        <p className="mt-1 text-sm text-slate-600">An approved supplier and this exact kitchen are required.</p>
+        <p className="mt-1 text-sm md-ops-muted">An approved supplier and this exact kitchen are required.</p>
         <div className="mt-4 space-y-3">
           <label><span className={label}>Supplier</span>
             <select className={field} value={supplierId}
@@ -174,7 +174,7 @@ export function OpsProcurementPanel(props:Props){
       <section className={box}>
         <div className="flex items-start justify-between gap-3">
           <div><h3 className="text-lg font-black">PO {selectedOrder.order_id.slice(0,8).toUpperCase()}</h3>
-            <p className="mt-1 text-sm text-slate-600">{selectedOrder.supplier_name} · {selectedOrder.status}</p>
+            <p className="mt-1 text-sm md-ops-muted">{selectedOrder.supplier_name} · {selectedOrder.status}</p>
           </div>
           <button type="button" className={secondary} onClick={()=>setVersion(v=>v+1)}
             disabled={busy||loadingLines} aria-label="Refresh purchase lines">
@@ -183,18 +183,18 @@ export function OpsProcurementPanel(props:Props){
         </div>
         {loadingLines?<p className="mt-5 text-sm">Loading authorised purchase lines…</p>:
         <div className="mt-4 space-y-2">
-          {lines.map(line=><div key={line.line_id} className="rounded-xl border border-slate-200 p-3">
+          {lines.map(line=><div key={line.line_id} className="rounded-xl border md-ops-border p-3">
             <div className="flex justify-between gap-3"><b>{line.ingredient_name}</b>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs md-ops-muted">
                 {line.price_per_pack_pence===null?"Costs restricted":penceToPounds(line.price_per_pack_pence)+"/pack"}
               </span></div>
-            <p className="mt-1 text-sm text-slate-600">{line.pack_count} packs · {line.base_units_per_pack} {line.base_unit}/pack</p>
-            <p className="mt-1 text-xs text-slate-600">Received {line.received_base_units} {line.base_unit} · remaining {poRemainingBaseUnits(line)??"—"} {line.base_unit}</p>
+            <p className="mt-1 text-sm md-ops-muted">{line.pack_count} packs · {line.base_units_per_pack} {line.base_unit}/pack</p>
+            <p className="mt-1 text-xs md-ops-muted">Received {line.received_base_units} {line.base_unit} · remaining {poRemainingBaseUnits(line)??"—"} {line.base_unit}</p>
           </div>)}
-          {!lines.length&&<p className="text-sm text-slate-500">No ingredients on this PO yet.</p>}
-          {total!==null&&<p className="border-t border-slate-200 pt-3 text-sm font-bold">Quoted goods total: {penceToPounds(total)} <span className="font-normal text-slate-500">(not invoiced or paid)</span></p>}
+          {!lines.length&&<p className="text-sm md-ops-muted">No ingredients on this PO yet.</p>}
+          {total!==null&&<p className="border-t md-ops-border pt-3 text-sm font-bold">Quoted goods total: {penceToPounds(total)} <span className="font-normal md-ops-muted">(not invoiced or paid)</span></p>}
         </div>}
-        {canFinance&&selectedOrder.status==="draft"&&<div className="mt-5 space-y-4 rounded-xl bg-slate-50 p-4">
+        {canFinance&&selectedOrder.status==="draft"&&<div className="mt-5 space-y-4 rounded-xl md-ops-wash p-4">
           <h4 className="font-black">Add or update draft line</h4>
           <label><span className={label}>Ingredient</span><select className={field} value={ingredientId} onChange={e=>setIngredientId(e.target.value)}>
             <option value="">Choose ingredient</option>
@@ -261,8 +261,8 @@ export function OpsProcurementPanel(props:Props){
         </div>}
       </section>
       {canReceive&&eligibleReceipt&&<section className={box}>
-        <h3 className="flex items-center gap-2 text-lg font-black"><PackageCheck className="size-5 text-amber-600"/> Receive goods</h3>
-        <p className="mt-2 text-sm text-slate-600">Count physical stock, check the supplier docket, batch code and use-by/best-before date. Each delivery-reference/line is idempotent.</p>
+        <h3 className="flex items-center gap-2 text-lg font-black"><PackageCheck className="size-5 md-ops-accent"/> Receive goods</h3>
+        <p className="mt-2 text-sm md-ops-muted">Count physical stock, check the supplier docket, batch code and use-by/best-before date. Each delivery-reference/line is idempotent.</p>
         <div className="mt-4 space-y-3">
           <label><span className={label}>Approved PO line</span>
             <select className={field} value={receiptLine} onChange={e=>setReceiptLine(e.target.value)}>
@@ -308,7 +308,7 @@ export function OpsProcurementPanel(props:Props){
             },"Received approved goods. Stock and batch provenance updated together.")}>
             Verify & receive into stock
           </button>
-          <p className="text-xs text-slate-500">This is not a supplier invoice, bank payment, approved food-safety inspection or FEFO auto-consumption.</p>
+          <p className="text-xs md-ops-muted">This is not a supplier invoice, bank payment, approved food-safety inspection or FEFO auto-consumption.</p>
         </div>
       </section>}
     </div>}

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { buildStandaloneSql } from "../../deploy/mealdeck/build.mjs";
+import { buildManagedMigrationSql, buildStandaloneSql } from "../../deploy/mealdeck/build.mjs";
 import { asActor, createDatabase, id } from "./harness.mjs";
 
 // This suite installs the complete deployable profile. Only Supabase's local
@@ -30,6 +31,8 @@ const foreign = {
   orderItem: id(609),
 };
 const state = {};
+const managedContract = Object.freeze({ runnerOwnsTransaction: true, singleMigration: true });
+const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 let checks = 0;
 
 async function test(label, action) {
@@ -83,9 +86,76 @@ async function assign(user, role, location = state.location, enabled = true) {
   ]);
 }
 
+// A test-only migration runner: one connection, one complete SQL submission,
+// and a journal row inside the same explicit transaction. This is not evidence
+// that a particular hosted migration tool implements the same contract.
+async function runManagedMigration(version, { failAfterJournal = false } = {}) {
+  const sql = buildManagedMigrationSql(managedContract);
+  await db.exec("begin");
+  try {
+    await db.exec(sql);
+    await db.query(
+      "insert into supabase_migrations.test_runner_journal(version,body_sha256) values($1,$2)",
+      [version, sha256(sql)],
+    );
+    if (failAfterJournal) {
+      await db.exec("do $$ begin raise exception 'managed_late_install_failure'; end $$");
+    }
+    await db.exec("commit");
+  } catch (error) {
+    await db.exec("rollback");
+    throw error;
+  }
+}
+
 try {
   console.log(`Engine: ${(await db.query("select version() as version")).rows[0].version}`);
   await db.exec(await readFile(new URL("./standalone-auth-fixture.sql", import.meta.url), "utf8"));
+
+  await test("managed output preserves the reviewed standalone artifact and removes only its two known outer transaction statements", async () => {
+    const standalone = buildStandaloneSql();
+    assert.equal(
+      sha256(standalone),
+      "1f6f09e3057ca71bb60b646173d1ab48f7b0a0ef7bdbdbcd3bcf7abd724df8cf",
+    );
+    assert.equal(Buffer.byteLength(standalone), 190403);
+    const lines = standalone.split("\n");
+    assert.equal(lines[2], "begin;");
+    assert.equal(lines.at(-2), "commit;");
+    assert.equal(lines.at(-1), "");
+    const expectedBody = standalone.replace("\nbegin;\n", "\n").replace(/\ncommit;\n$/, "\n");
+    const managed = buildManagedMigrationSql(managedContract);
+    const managedLines = managed.split("\n");
+    assert.equal(
+      managedLines.slice(0, 3).every((line) => line.startsWith("-- ")),
+      true,
+    );
+    assert.equal(managedLines.slice(3).join("\n"), expectedBody);
+    assert.deepEqual(managed.match(/^[\t ]*(?:begin|commit);[\t ]*$/gim) ?? [], []);
+    assert.equal(buildStandaloneSql(), standalone);
+  });
+
+  await test("managed output rejects missing, false, mistyped, split and autocommit execution acknowledgements", async () => {
+    for (const options of [
+      undefined,
+      null,
+      {},
+      [],
+      { runnerOwnsTransaction: true },
+      { singleMigration: true },
+      { runnerOwnsTransaction: false, singleMigration: true },
+      { runnerOwnsTransaction: true, singleMigration: false },
+      { runnerOwnsTransaction: "true", singleMigration: true },
+      { runnerOwnsTransaction: true, singleMigration: "true" },
+      { ...managedContract, split: true },
+      { ...managedContract, autocommit: true },
+    ]) {
+      assert.throws(
+        () => buildManagedMigrationSql(options),
+        /one runner-owned atomic transaction.*one complete migration/,
+      );
+    }
+  });
 
   await test("private function-only, type-only and sequence-only projects reject installation without changing existing objects", async () => {
     await db.exec("create schema standalone_existing_app");
@@ -158,8 +228,66 @@ try {
     );
   });
 
+  await test("a late managed-runner failure rolls back the complete installation and its same-transaction journal row", async () => {
+    // Only a platform journal analogue exists before the managed migration.
+    // Keep a pre-existing row to prove rollback preserves earlier history.
+    await db.exec(`
+      create schema supabase_migrations;
+      create table supabase_migrations.test_runner_journal(
+        version text primary key,body_sha256 text not null
+      );
+      insert into supabase_migrations.test_runner_journal(version,body_sha256)
+        values('prior-platform-fixture','existing-fixture-history');
+    `);
+    const previousJournal = (
+      await db.query("select * from supabase_migrations.test_runner_journal order by version")
+    ).rows;
+    await rejects(
+      () => runManagedMigration("failed-managed-fixture", { failAfterJournal: true }),
+      /managed_late_install_failure/,
+    );
+    assert.deepEqual(
+      (await db.query("select * from supabase_migrations.test_runner_journal order by version"))
+        .rows,
+      previousJournal,
+    );
+    assert.deepEqual(
+      (await db.query("select nspname from pg_namespace where nspname like 'mealdeck%'")).rows,
+      [],
+    );
+    assert.deepEqual(
+      (
+        await db.query(`
+      select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
+      where n.nspname='public'
+    `)
+      ).rows,
+      [],
+    );
+    assert.deepEqual(
+      (
+        await db.query(`
+      select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='public'
+    `)
+      ).rows,
+      [],
+    );
+  });
+
   await test("fresh production profile installs all admin, recipe, procurement, invoice, group, fulfilment and KDS migrations", async () => {
-    await db.exec(buildStandaloneSql());
+    await runManagedMigration("successful-managed-fixture");
+    assert.deepEqual(
+      (await db.query("select * from supabase_migrations.test_runner_journal order by version"))
+        .rows,
+      [
+        { version: "prior-platform-fixture", body_sha256: "existing-fixture-history" },
+        {
+          version: "successful-managed-fixture",
+          body_sha256: sha256(buildManagedMigrationSql(managedContract)),
+        },
+      ],
+    );
     assert.equal(
       (await db.query("show check_function_bodies")).rows[0].check_function_bodies,
       "on",
