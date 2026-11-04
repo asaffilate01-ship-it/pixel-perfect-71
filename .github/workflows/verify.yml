@@ -290,3 +290,13 @@ jobs:
           src/components/mobile-tab-bar.tsx
           tests/mealdeck-skip-navigation.test.tsx
           --rule 'prettier/prettier: off'
+
+      - name: Mobile discovery basket shortcut regression
+        run: bun test tests/mealdeck-mobile-sample-basket-bar.test.ts
+
+      - name: Mobile preview basket source lint
+        run: >-
+          bunx eslint src/lib/mealdeck-sample-basket-bar.ts
+          src/components/order/mobile-sample-basket-bar.tsx
+          tests/mealdeck-mobile-sample-basket-bar.test.ts
+          --rule 'prettier/prettier: off'
