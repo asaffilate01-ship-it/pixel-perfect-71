@@ -7,6 +7,7 @@ import {adjustSampleBasket,summariseSampleBasket,SAMPLE_MAX_ITEMS,SAMPLE_MAX_PER
 import {BROWSE_CATEGORIES,matchesBrowseCategory,type BrowseCategory} from "@/lib/marketplace-discovery";
 import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { SiteHeader } from "./site-header";
+import { MobileSampleBasketBar } from "./order/mobile-sample-basket-bar";
 import { SiteFooter } from "./site-footer";
 import { brands, locations, sampleMenu, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
 
@@ -106,7 +107,14 @@ export function OrderingPreview() {
           <span aria-hidden="true">{category.emoji} </span>{category.label}
         </button>)}
       </nav>
-      <p role="status" className="mb-3 text-sm text-[var(--md-muted)]">{filtered.length} illustrative dishes match your filters.</p>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p role="status" className="text-sm text-[var(--md-muted)]">{filtered.length} illustrative dishes match your filters.</p>
+        {(search.trim()||activeBrand!=="all"||activeCategory!=="all")&&<button type="button"
+          onClick={()=>{setSearch("");setActiveBrand("all");setActiveCategory("all");}}
+          className="min-h-11 rounded-xl border border-[var(--md-line)] bg-[var(--md-paper)] px-4 text-sm font-semibold text-[var(--md-black)] focus-visible:outline-2 focus-visible:outline-offset-2">
+          Clear filters
+        </button>}
+      </div>
       <nav aria-label="Preview brands" className="mt-3 flex gap-2 overflow-x-auto pb-3">
         <button type="button" aria-pressed={activeBrand==="all"} onClick={()=>setActiveBrand("all")}
           className={activeBrand==="all"?"shrink-0 rounded-full bg-[var(--md-black)] px-5 py-3 text-sm font-bold text-white":"shrink-0 rounded-full border border-[var(--md-line)] bg-[var(--md-paper)] px-5 py-3 text-sm font-bold text-[var(--md-black)]"}>All brands</button>
@@ -245,6 +253,7 @@ export function OrderingPreview() {
       </section>
 
       <div className="mt-10 flex flex-wrap gap-4"><Link to="/" className="md-btn md-btn-yellow">Explore the brands</Link><Link to="/play" className="md-btn">Play free games</Link></div>
+      <MobileSampleBasketBar summary={summary}/>
     </main><SiteFooter/></div>;
 }
 
