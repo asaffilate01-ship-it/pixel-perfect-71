@@ -1,4 +1,4 @@
-import type { MenuItem } from "./mealdeck";
+import { modifierGroupsFor, type MenuItem } from "./mealdeck";
 
 /**
  * Browse-only sample basket for the Coming Soon experience.
@@ -8,7 +8,8 @@ export const SAMPLE_MAX_PER_DISH = 20;
 export const SAMPLE_MAX_ITEMS = 60;
 const MAX_SAMPLE_SUBTOTAL_PENCE = 10_000_000;
 
-export type SampleBasketLine = Readonly<{ item: MenuItem; quantity: number }>;
+export type SampleBasketSelection = Readonly<{groupId:string;optionId:string}>;
+export type SampleBasketLine = Readonly<{ item: MenuItem; quantity: number; selected?: readonly SampleBasketSelection[] }>;
 export type SampleBasketSummary = Readonly<{
   valid: boolean;
   dishes: number;
@@ -32,6 +33,36 @@ function isSampleItem(item: unknown): item is MenuItem {
     dish.pricePence <= MAX_SAMPLE_SUBTOTAL_PENCE;
 }
 
+/**
+ * Price is determined from the current item snapshot and its modifier groups,
+ * never from a client-supplied extra-price number. Invalid or duplicate
+ * selections fail closed.
+ */
+export function sampleLineUnitPrice(line:SampleBasketLine):number|null{
+  if(!isSampleItem(line.item))return null;
+  const groups=modifierGroupsFor(line.item);
+  const selections=line.selected??[];
+  if(!Array.isArray(selections)||selections.length>20)return null;
+  const seen=new Set<string>();
+  const counts=new Map<string,number>();
+  let delta=0;
+  for(const entry of selections){
+    if(!entry||typeof entry.groupId!=="string"||typeof entry.optionId!=="string")return null;
+    const group=groups.find(g=>g.id===entry.groupId);
+    const option=group?.options.find(o=>o.id===entry.optionId);
+    const key=entry.groupId+":"+entry.optionId;
+    if(!group||!option||seen.has(key)||!Number.isSafeInteger(option.priceDeltaPence)||
+       option.priceDeltaPence<0)return null;
+    seen.add(key);
+    counts.set(group.id,(counts.get(group.id)??0)+1);
+    delta+=option.priceDeltaPence;
+  }
+  if(groups.some(group=>(counts.get(group.id)??0)<group.minSelect||
+      (counts.get(group.id)??0)>group.maxSelect))return null;
+  const total=line.item.pricePence+delta;
+  return Number.isSafeInteger(total)&&total>=0&&total<=MAX_SAMPLE_SUBTOTAL_PENCE?total:null;
+}
+
 /** Penny-exact illustrative quantities, never a live delivery or checkout quote. */
 export function summariseSampleBasket(lines: readonly SampleBasketLine[]): SampleBasketSummary {
   if (!Array.isArray(lines) || lines.length > SAMPLE_MAX_ITEMS) return invalid();
@@ -44,10 +75,12 @@ export function summariseSampleBasket(lines: readonly SampleBasketLine[]): Sampl
       !Number.isSafeInteger(line.quantity) ||
       line.quantity < 1 || line.quantity > SAMPLE_MAX_PER_DISH ||
       seen.has(line.item.id)) return invalid();
+    const unitPrice=sampleLineUnitPrice(line);
+    if(unitPrice===null)return invalid();
     seen.add(line.item.id);
     brands.add(line.item.brandId);
     dishes += line.quantity;
-    subtotalPence += line.item.pricePence * line.quantity;
+    subtotalPence += unitPrice * line.quantity;
     if (dishes > SAMPLE_MAX_ITEMS ||
       !Number.isSafeInteger(subtotalPence) ||
       subtotalPence > MAX_SAMPLE_SUBTOTAL_PENCE) return invalid();
@@ -81,7 +114,7 @@ export function adjustSampleBasket(
   }
   const existing = lines[index]!;
   if (existing.quantity >= SAMPLE_MAX_PER_DISH ||
-    summary.subtotalPence + existing.item.pricePence > MAX_SAMPLE_SUBTOTAL_PENCE) return [...lines];
+    summary.subtotalPence + (sampleLineUnitPrice(existing)??MAX_SAMPLE_SUBTOTAL_PENCE+1) > MAX_SAMPLE_SUBTOTAL_PENCE) return [...lines];
   return lines.map((line, position) =>
     position === index ? { ...line, quantity: line.quantity + 1 } : line);
 }
