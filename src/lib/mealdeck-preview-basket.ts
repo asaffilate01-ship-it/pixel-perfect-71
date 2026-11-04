@@ -9,7 +9,7 @@ export const SAMPLE_MAX_ITEMS = 60;
 const MAX_SAMPLE_SUBTOTAL_PENCE = 10_000_000;
 
 export type SampleBasketSelection = Readonly<{groupId:string;optionId:string}>;
-export type SampleBasketLine = Readonly<{ item: MenuItem; quantity: number; selected?: readonly SampleBasketSelection[] }>;
+export type SampleBasketLine = Readonly<{ item: MenuItem; quantity: number; selected?: readonly SampleBasketSelection[]; variantId?:string }>;
 export type SampleBasketSummary = Readonly<{
   valid: boolean;
   dishes: number;
@@ -67,6 +67,7 @@ export function sampleLineUnitPrice(line:SampleBasketLine):number|null{
 export function summariseSampleBasket(lines: readonly SampleBasketLine[]): SampleBasketSummary {
   if (!Array.isArray(lines) || lines.length > SAMPLE_MAX_ITEMS) return invalid();
   const seen = new Set<string>();
+  const itemBrands = new Map<string,string>();
   const brands = new Set<string>();
   let dishes = 0;
   let subtotalPence = 0;
@@ -74,10 +75,16 @@ export function summariseSampleBasket(lines: readonly SampleBasketLine[]): Sampl
     if (!line || !isSampleItem(line.item) ||
       !Number.isSafeInteger(line.quantity) ||
       line.quantity < 1 || line.quantity > SAMPLE_MAX_PER_DISH ||
-      seen.has(line.item.id)) return invalid();
+      (line.variantId!==undefined && (typeof line.variantId!=="string" ||
+        !/^.+::variant:[1-9][0-9]*$/.test(line.variantId) ||
+        !line.variantId.startsWith(line.item.id+"::variant:") ||
+        line.variantId.length>160)) ||
+      seen.has(line.variantId??line.item.id) ||
+      (itemBrands.has(line.item.id) && itemBrands.get(line.item.id)!==line.item.brandId)) return invalid();
     const unitPrice=sampleLineUnitPrice(line);
     if(unitPrice===null)return invalid();
-    seen.add(line.item.id);
+    seen.add(line.variantId??line.item.id);
+    itemBrands.set(line.item.id,line.item.brandId);
     brands.add(line.item.brandId);
     dishes += line.quantity;
     subtotalPence += unitPrice * line.quantity;
