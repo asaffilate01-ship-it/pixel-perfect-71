@@ -10,6 +10,7 @@ import { SiteHeader } from "./site-header";
 import { MobileSampleBasketBar } from "./order/mobile-sample-basket-bar";
 import {duplicateSampleVariant,setSampleVariantQuantity,toggleSampleVariantOption,restoreSampleVariant,sampleVariantKey} from "@/lib/mealdeck-sample-variants";
 import {sampleLineUnitPrice} from "@/lib/mealdeck-preview-basket";
+import {previewAllergenInformation,previewDietaryDisclosure} from "@/lib/mealdeck-preview-allergens";
 import {clearSampleBasket} from "@/lib/mealdeck-sample-basket-edit";
 import { SiteFooter } from "./site-footer";
 import { brands, locations, sampleMenu, modifierGroupsFor, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
@@ -114,6 +115,9 @@ export function OrderingPreview() {
           <span aria-hidden="true">{category.emoji} </span>{category.label}
         </button>)}
       </nav>
+      <p className="mb-3 text-sm leading-6 text-[var(--md-muted)]">
+        Dietary categories are illustrative. Ingredients, allergens and cross-contact risks have not been verified for this sample menu.
+      </p>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p role="status" className="text-sm text-[var(--md-muted)]">{filtered.length} illustrative dishes match your filters.</p>
         {(search.trim()||activeBrand!=="all"||activeCategory!=="all")&&<button type="button"
@@ -151,6 +155,12 @@ export function OrderingPreview() {
               <p className="text-xs font-black uppercase tracking-wide text-[var(--md-red-deep)]">{brand?.name??"MealDeck"} · {item.category}</p>
               <h3 className="mt-2 font-display text-xl font-bold">{item.name}</h3>
               {item.description&&<p className="mt-2 text-sm leading-6 text-[var(--md-muted)]">{item.description}</p>}
+              <p className="mt-3 text-sm font-semibold text-[var(--md-red-deep)]">
+                {previewAllergenInformation(item).headline}
+              </p>
+              {previewDietaryDisclosure(item.category)&&<p className="mt-1 text-xs leading-5 text-[var(--md-muted)]">
+                {previewDietaryDisclosure(item.category)}
+              </p>}
               <p className="mt-4 font-black">{formatPence(item.pricePence)} <span className="text-xs font-normal text-[var(--md-muted)]">illustrative</span></p>
               <div role="group" className="mt-4 flex min-h-11 items-center gap-2" aria-label={`Sample basket quantity for ${item.name}`}>
                 <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,-1))}
@@ -220,9 +230,17 @@ export function OrderingPreview() {
             </button>
           </div>}
           <p className="mt-2 text-sm text-[var(--md-muted)]">{summary.dishes} dishes from {summary.brands} {summary.brands===1?"brand":"brands"} · illustrative subtotal {formatPence(estimate)}</p>
+          <aside className="mt-4 rounded-xl border border-amber-500/50 bg-amber-50 p-4 text-sm text-amber-950" aria-label="Food allergy information">
+            <strong>Food allergies and intolerances</strong>
+            <p className="mt-1 leading-6">{previewAllergenInformation({}).guidance}</p>
+          </aside>
           {previewLines.length?<ul className="mt-4 space-y-3">{previewLines.map((line)=>{const {item,quantity}=line;const variantKey=sampleVariantKey(line);return <li key={variantKey} className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--md-line)] pb-3 text-sm">
             <div className="min-w-0 flex-1"><strong className="block">{item.name}</strong>
-              <span className="text-xs text-[var(--md-muted)]">{brands.find(brand=>brand.id===item.brandId)?.name??"MealDeck"} · {quantity} × {formatPence(sampleLineUnitPrice(line)??item.pricePence)} illustrative · {line.variantId?"Custom version":"Original version"}</span></div>
+              <span className="text-xs text-[var(--md-muted)]">{brands.find(brand=>brand.id===item.brandId)?.name??"MealDeck"} · {quantity} × {formatPence(sampleLineUnitPrice(line)??item.pricePence)} illustrative · {line.variantId?"Custom version":"Original version"}</span>
+              <p className="mt-2 text-xs font-semibold text-[var(--md-red-deep)]">{previewAllergenInformation(item,line.selected).headline}</p>
+              {previewAllergenInformation(item,line.selected).modifierWarning&&<p className="mt-1 text-xs leading-5 text-[var(--md-muted)]">
+                {previewAllergenInformation(item,line.selected).modifierWarning}
+              </p>}</div>
             <strong>{formatPence(quantity*(sampleLineUnitPrice(line)??item.pricePence))}</strong>
             {modifierGroupsFor(item).length>0&&<div className="w-full rounded-xl border border-[var(--md-line)] bg-white p-3">
               <p className="mb-2 text-xs text-[var(--md-muted)]">Preview extras · apply to every serving of this version</p>
