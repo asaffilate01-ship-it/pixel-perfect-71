@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BedfordRouteImport } from './routes/bedford'
 import { Route as FranchiseRouteImport } from './routes/franchise'
+import { Route as KdsRouteImport } from './routes/kds'
 import { Route as LutonRouteImport } from './routes/luton'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as MenusRouteImport } from './routes/menus'
@@ -39,6 +40,11 @@ const BedfordRoute = BedfordRouteImport.update({
 const FranchiseRoute = FranchiseRouteImport.update({
   id: '/franchise',
   path: '/franchise',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KdsRoute = KdsRouteImport.update({
+  id: '/kds',
+  path: '/kds',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LutonRoute = LutonRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bedford': typeof BedfordRoute
   '/franchise': typeof FranchiseRoute
+  '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
   '/menus': typeof MenusRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bedford': typeof BedfordRoute
   '/franchise': typeof FranchiseRoute
+  '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
   '/menus': typeof MenusRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/bedford': typeof BedfordRoute
   '/franchise': typeof FranchiseRoute
+  '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
   '/menus': typeof MenusRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/'
     | '/bedford'
     | '/franchise'
+    | '/kds'
     | '/luton'
     | '/menu'
     | '/menus'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/'
     | '/bedford'
     | '/franchise'
+    | '/kds'
     | '/luton'
     | '/menu'
     | '/menus'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/'
     | '/bedford'
     | '/franchise'
+    | '/kds'
     | '/luton'
     | '/menu'
     | '/menus'
@@ -223,6 +235,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BedfordRoute: typeof BedfordRoute
   FranchiseRoute: typeof FranchiseRoute
+  KdsRoute: typeof KdsRoute
   LutonRoute: typeof LutonRoute
   MenuRoute: typeof MenuRoute
   MenusRoute: typeof MenusRoute
@@ -259,6 +272,13 @@ declare module '@tanstack/react-router' {
       path: '/franchise'
       fullPath: '/franchise'
       preLoaderRoute: typeof FranchiseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kds': {
+      id: '/kds'
+      path: '/kds'
+      fullPath: '/kds'
+      preLoaderRoute: typeof KdsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/luton': {
@@ -359,6 +379,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BedfordRoute: BedfordRoute,
   FranchiseRoute: FranchiseRoute,
+  KdsRoute: KdsRoute,
   LutonRoute: LutonRoute,
   MenuRoute: MenuRoute,
   MenusRoute: MenusRoute,

@@ -167,7 +167,11 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const internal = pathname === "/ops" || pathname.startsWith("/ops/");
+  const internal =
+    pathname === "/ops" ||
+    pathname.startsWith("/ops/") ||
+    pathname === "/kds" ||
+    pathname.startsWith("/kds/");
   const basketPage = isLaunchMenuRoute(pathname);
 
   return (
@@ -178,7 +182,7 @@ function RootComponent() {
       <div id="mealdeck-main" tabIndex={-1}>
         <Outlet />
       </div>
-      {!basketPage && <BackToTop />}
+      {!internal && !basketPage && <BackToTop />}
       {!internal && <MobileTabBar />}
       <Toaster position="top-center" />
     </QueryClientProvider>
