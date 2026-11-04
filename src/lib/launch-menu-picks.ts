@@ -4,6 +4,11 @@ import {
   type LaunchMenuItem,
   type LaunchMenuOptionGroup,
 } from "./launch-menu-catalogue";
+import {
+  cleanLaunchCrossConfiguration,
+  cleanLaunchSourceSelections,
+  type LaunchCrossSelection,
+} from "./launch-menu-upsells";
 
 /** Local meal planning only. These IDs and choices never create a priced order. */
 export type LaunchMenuSelections = Record<string, string[]>;
@@ -13,6 +18,7 @@ export type LaunchMenuPick = {
   itemId: string;
   quantity: number;
   selections: LaunchMenuSelections;
+  crossSelections?: LaunchCrossSelection[];
 };
 
 export const LAUNCH_PICKS_STORAGE_KEY = "mealdeck-launch-picks-v1";
@@ -52,23 +58,7 @@ export function cleanLaunchSelections(
   item: LaunchMenuItem,
   input: LaunchMenuSelections,
 ): LaunchMenuSelections {
-  const groups = launchItemGroups(brand, item);
-  const next: LaunchMenuSelections = {};
-  for (const group of groups) {
-    const supplied = input[group.id];
-    if (!Array.isArray(supplied)) continue;
-    const options = group.options
-      .filter((option) => supplied.includes(option.id))
-      .map((option) => option.id);
-    if (options.length) next[group.id] = group.kind === "single" ? options.slice(0, 1) : options;
-  }
-  // Resolve dependencies after canonicalising every group, regardless of display order.
-  for (let pass = 0; pass < groups.length; pass++) {
-    for (const group of groups) {
-      if (!isLaunchGroupActive(group, next, item)) delete next[group.id];
-    }
-  }
-  return next;
+  return cleanLaunchSourceSelections(brand, item, input);
 }
 
 export function toggleLaunchOption(
@@ -113,20 +103,48 @@ export function launchSelectionLabels(
   brand: LaunchMenuBrand,
   item: LaunchMenuItem,
   selections: LaunchMenuSelections,
+  crossSelections: LaunchCrossSelection[] = [],
 ) {
-  const clean = cleanLaunchSelections(brand, item, selections);
+  const clean = cleanLaunchCrossConfiguration(brand, item, selections, crossSelections);
+  const replacesFries = clean.crossSelections.some(
+    (choice) => choice.slot === "side" && choice.mode === "upgrade",
+  );
   return launchItemGroups(brand, item).flatMap((group) =>
     group.options
-      .filter((option) => clean[group.id]?.includes(option.id))
+      .filter((option) => clean.selections[group.id]?.includes(option.id))
+      .filter(
+        (option) =>
+          !replacesFries ||
+          !["souvano-heatwave-base-fries", "souvano-meal-side-fries"].includes(option.id),
+      )
       .map((option) => option.label),
   );
 }
 
-function pickKey(brandId: string, itemId: string, selections: LaunchMenuSelections) {
+function pickKey(
+  brandId: string,
+  itemId: string,
+  selections: LaunchMenuSelections,
+  crossSelections: LaunchCrossSelection[],
+) {
   const choices = Object.keys(selections)
     .sort()
     .map((id) => [id, [...(selections[id] ?? [])].sort()]);
-  return JSON.stringify([brandId, itemId, choices]);
+  const sourceKey = [brandId, itemId, choices];
+  // Existing picks retain their exact v1 key when they have no attached choices.
+  return JSON.stringify(
+    crossSelections.length
+      ? [
+          ...sourceKey,
+          crossSelections.map(({ slot, mode, brandId: targetBrandId, itemId: targetItemId }) => [
+            slot,
+            mode,
+            targetBrandId,
+            targetItemId,
+          ]),
+        ]
+      : sourceKey,
+  );
 }
 
 export function launchPickCount(picks: LaunchMenuPick[]) {
@@ -139,13 +157,14 @@ export function addLaunchPick(
   itemId: string,
   selections: LaunchMenuSelections,
   quantity = 1,
+  crossSelections: LaunchCrossSelection[] = [],
 ): LaunchMenuPick[] {
   const found = findLaunchMenuItem(brandId, itemId);
   if (!found || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_LAUNCH_PICK_QUANTITY)
     return picks;
-  const clean = cleanLaunchSelections(found.brand, found.item, selections);
-  if (missingLaunchChoices(found.brand, found.item, clean).length) return picks;
-  const key = pickKey(found.brand.id, itemId, clean);
+  const clean = cleanLaunchCrossConfiguration(found.brand, found.item, selections, crossSelections);
+  if (missingLaunchChoices(found.brand, found.item, clean.selections).length) return picks;
+  const key = pickKey(found.brand.id, itemId, clean.selections, clean.crossSelections);
   const existing = picks.find((pick) => pick.key === key);
   if (
     (existing?.quantity ?? 0) + quantity > MAX_LAUNCH_PICK_QUANTITY ||
@@ -156,7 +175,50 @@ export function addLaunchPick(
     ? picks.map((pick) =>
         pick.key === key ? { ...pick, quantity: pick.quantity + quantity } : pick,
       )
-    : [...picks, { key, brandId: found.brand.id, itemId, quantity, selections: clean }];
+    : [
+        ...picks,
+        {
+          key,
+          brandId: found.brand.id,
+          itemId,
+          quantity,
+          selections: clean.selections,
+          ...(clean.crossSelections.length ? { crossSelections: clean.crossSelections } : {}),
+        },
+      ];
+}
+
+/** Atomic same-dish edit: invalid choices/caps leave the previous line intact. */
+export function updateLaunchPick(
+  picks: LaunchMenuPick[],
+  key: string,
+  selections: LaunchMenuSelections,
+  quantity?: number,
+  crossSelections?: LaunchCrossSelection[],
+): LaunchMenuPick[] {
+  const existing = picks.find((pick) => pick.key === key);
+  if (!existing) return picks;
+  const candidate = addLaunchPick(
+    [],
+    existing.brandId,
+    existing.itemId,
+    selections,
+    quantity ?? existing.quantity,
+    crossSelections ?? existing.crossSelections ?? [],
+  )[0];
+  if (
+    !candidate ||
+    launchPickCount(picks) - existing.quantity + candidate.quantity > MAX_LAUNCH_PICKS
+  )
+    return picks;
+  const duplicate = picks.find((pick) => pick.key !== key && pick.key === candidate.key);
+  if (duplicate && duplicate.quantity + candidate.quantity > MAX_LAUNCH_PICK_QUANTITY) return picks;
+  return picks.flatMap((pick) => {
+    if (pick.key === key) return duplicate ? [] : [candidate];
+    return duplicate && pick.key === duplicate.key
+      ? [{ ...pick, quantity: pick.quantity + candidate.quantity }]
+      : [pick];
+  });
 }
 
 export function setLaunchPickQuantity(picks: LaunchMenuPick[], key: string, quantity: number) {
@@ -207,7 +269,22 @@ export function decodeLaunchPicks(raw: string | null): LaunchMenuPick[] {
         if (Array.isArray(options) && options.every((option) => typeof option === "string"))
           selections[group] = options;
       }
-      picks = addLaunchPick(picks, pick["brandId"], pick["itemId"], selections, pick["quantity"]);
+      const found = findLaunchMenuItem(pick["brandId"], pick["itemId"]);
+      if (!found) continue;
+      const clean = cleanLaunchCrossConfiguration(
+        found.brand,
+        found.item,
+        selections,
+        pick["crossSelections"],
+      );
+      picks = addLaunchPick(
+        picks,
+        pick["brandId"],
+        pick["itemId"],
+        clean.selections,
+        pick["quantity"],
+        clean.crossSelections,
+      );
     }
     return picks;
   } catch {
@@ -218,11 +295,23 @@ export function decodeLaunchPicks(raw: string | null): LaunchMenuPick[] {
 export function encodeLaunchPicks(picks: LaunchMenuPick[]) {
   return JSON.stringify({
     version: 1,
-    picks: picks.map(({ brandId, itemId, quantity, selections }) => ({
+    picks: picks.map(({ brandId, itemId, quantity, selections, crossSelections }) => ({
       brandId,
       itemId,
       quantity,
       selections,
+      ...(crossSelections?.length
+        ? {
+            crossSelections: crossSelections.map(
+              ({ slot, mode, brandId: targetBrandId, itemId: targetItemId }) => ({
+                slot,
+                mode,
+                brandId: targetBrandId,
+                itemId: targetItemId,
+              }),
+            ),
+          }
+        : {}),
     })),
   });
 }
