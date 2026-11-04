@@ -40,8 +40,33 @@ Portion, flavour and included-base groups use required single selection as a bro
 
 Every item and option has **`pricePence: null`** because the sheets print no prices. Null does not mean zero, free, or an estimated surcharge. No old sample prices are inherited.
 
-The sources supply no allergen declaration, drink serving sizes, lamb-chop quantity, rashers’ meat species, or milkshake flavours/sizes. Listed cans are standalone products; the sheets do not establish which qualify for a meal or how upgrades substitute for its contents. Generic Loaded Fries, Loaded Mac ’n Cheese and Mocktail upgrades do not name a fulfilment brand, so those cross-brand mappings remain unspecified. Upsell destinations only point to sections explicitly present in the supplied catalogue.
+The sources supply no allergen declaration, drink serving sizes, lamb-chop quantity, rashers’ meat species, or milkshake flavours/sizes. Listed cans are standalone products; the sheets do not establish which qualify for a meal. Generic Loaded Fries, Loaded Mac ’n Cheese and Mocktail upgrades do not name a fulfilment brand. The later owner instruction below supplies cross-brand planning and substitution rules separately from that unchanged sheet transcription. It supplies no prices, serving sizes, allergen assurances or live availability.
+
+## Owner-approved cross-brand planning — 4 November 2026
+
+The owner explicitly requested Moktl drinks and Load’d fries upgrades across the five launch menus. `src/lib/launch-menu-upsells.ts` implements these choices using actual catalogue item IDs. A side slot offers the **four Loaded Fries and five Loaded Mac ’n Cheese products** from Load’d; a drink slot offers the **eight Moktl mocktails**. Load’d Full House products and standalone cans are not side-upgrade targets. No forthcoming brand or same-brand recommendation is introduced.
+
+| Parent configuration                                          | Load’d choice                                              | Moktl choice                                                     |
+| ------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |
+| Tavo or Skorch main without a meal                            | One separate extra side                                    | One separate extra drink                                         |
+| Tavo or Skorch meal                                           | Replaces the included fries once                           | Replaces the included drink once                                 |
+| Tavo or Skorch kids meal                                      | Replaces its already included fries once                   | Replaces its already included drink once                         |
+| Souvano Donner or Lamb Chops without a meal                   | One separate extra side                                    | One separate extra drink                                         |
+| Souvano Donner or Lamb Chops meal with Fries                  | Replaces that meal side once                               | Replaces the included drink once                                 |
+| Souvano meal with Rice or Naan                                | No Load’d substitution; preserves Rice/Naan                | Replaces the included drink once                                 |
+| Heatwave with its included Fries base                         | Replaces that existing base once, with or without the meal | Replaces the meal drink, or is an extra when no meal is selected |
+| Heatwave with Rice or Naan, or without a required base choice | No Load’d choice; never adds a second base                 | Replaces the meal drink, or is an extra when no meal is selected |
+| Load’d Loaded Fries, Loaded Mac or Full House main            | No self-brand side recommendation                          | One separate extra drink                                         |
+| Standalone sides, cans and Moktl drinks                       | No cross-brand choices                                     | No cross-brand choices                                           |
+
+Selections remain attached to the parent dish. Each parent unit has at most one named side and one named drink. Changing the parent quantity changes the quantity of both attached choices; removing the parent removes them. Different target combinations remain separate basket selections. The `mode` stored with each child distinguishes a replacement from an extra; turning a Tavo/Skorch meal off discards its upgrades instead of silently converting them into extras. Heatwave may retain its Load’d replacement after turning the meal off because its fries base is still included. Switching that base to Rice or Naan removes the replacement.
+
+A specific Load’d choice clears generic Loaded Fries/Loaded Mac choices and Peri Salt. A specific Moktl choice clears generic Mocktail and Milkshake. Selecting Peri Salt later removes the Load’d replacement; selecting Milkshake later removes Moktl. This prevents conflicting replacements of the same included component. Existing saved generic choices remain readable and removable; they do not acquire an invented named target.
+
+Saved picks keep the existing version-1 format and optionally add `crossSelections` containing only slot, mode, brand ID and item ID. Restoration rechecks those fields against the current parent configuration and catalogue. Browser-supplied names, prices, child quantities, unknown brands, wrong-section targets and stale modes cannot define a choice. Edits validate atomically before replacing a saved line. All target and summary prices remain **`null`**; these are unpriced local meal plans, not Dishbee orders.
 
 ## Focused validation
 
 Run `bun test tests/launch-menu-catalogue.test.ts` to check the transcribed portions/flavours, distinct ring quantities, meal dependencies, Heatwave’s single base, unknown prices, unique identifiers and resolvable source references.
+
+Run `bun test tests/launch-menu-upsells.test.ts tests/launch-menu-picks.test.ts` to check actual cross-brand targets, replacement versus extra transitions, kids meals, Heatwave’s single base, conflicting upgrades, quantity/edit rules, forged storage and backwards-compatible restoration.

@@ -5,40 +5,34 @@ import {
   Check,
   ChevronRight,
   Layers3,
-  Minus,
   Plus,
   Search,
   ShoppingBag,
-  Trash2,
   X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { LaunchBasket, LaunchBasketDock } from "@/components/menus/launch-basket";
+import {
+  LaunchItemCustomiser,
+  type LaunchItemDraft,
+  type LaunchMenuEntry,
+} from "@/components/menus/launch-item-customiser";
+import type { LaunchCrossSelection } from "@/lib/launch-menu-upsells";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
-import {
-  getLaunchMenuBrand,
-  type LaunchMenuBrand,
-  type LaunchMenuItem,
-  type LaunchMenuSection,
-  type LaunchMenuUpsell,
-} from "@/lib/launch-menu-catalogue";
+import { getLaunchMenuBrand, type LaunchMenuUpsell } from "@/lib/launch-menu-catalogue";
 import {
   LAUNCH_PICKS_STORAGE_KEY,
-  MAX_LAUNCH_PICK_QUANTITY,
-  MAX_LAUNCH_PICKS,
   addLaunchPick,
   decodeLaunchPicks,
   encodeLaunchPicks,
   findLaunchMenuItem,
-  isLaunchGroupActive,
   launchItemGroups,
   launchPickCount,
-  launchSelectionLabels,
-  missingLaunchChoices,
   setLaunchPickQuantity,
-  toggleLaunchOption,
+  updateLaunchPick,
   type LaunchMenuPick,
   type LaunchMenuSelections,
 } from "@/lib/launch-menu-picks";
@@ -56,236 +50,6 @@ function logoFor(id: string) {
   return approvedBrandLogos[(id === "skorch-burgers" ? "skorch" : id) as ApprovedBrandId];
 }
 
-type MenuEntry = { brand: LaunchMenuBrand; section: LaunchMenuSection; item: LaunchMenuItem };
-type Draft = MenuEntry & { existing?: LaunchMenuPick };
-
-function QuantityControl({
-  quantity,
-  onChange,
-  name,
-  canIncrease = true,
-}: {
-  quantity: number;
-  onChange: (value: number) => void;
-  name: string;
-  canIncrease?: boolean;
-}) {
-  return (
-    <div className="lm-quantity">
-      <button
-        type="button"
-        aria-label={"Decrease " + name}
-        disabled={quantity <= 1}
-        onClick={() => onChange(quantity - 1)}
-      >
-        <Minus size={16} />
-      </button>
-      <span aria-label={"Quantity " + quantity}>{quantity}</span>
-      <button
-        type="button"
-        aria-label={"Increase " + name}
-        disabled={quantity >= MAX_LAUNCH_PICK_QUANTITY || !canIncrease}
-        onClick={() => onChange(quantity + 1)}
-      >
-        <Plus size={16} />
-      </button>
-    </div>
-  );
-}
-
-function Picks({
-  picks,
-  onQuantity,
-  onEdit,
-  onRemove,
-}: {
-  picks: LaunchMenuPick[];
-  onQuantity: (key: string, value: number) => void;
-  onEdit: (pick: LaunchMenuPick) => void;
-  onRemove: (pick: LaunchMenuPick) => void;
-}) {
-  const total = launchPickCount(picks);
-  return (
-    <div className="lm-picks-content">
-      {picks.length === 0 ? (
-        <div className="lm-empty-picks">
-          <Layers3 size={36} aria-hidden="true" />
-          <h3>A little of what you fancy.</h3>
-          <p>Choose dishes from any of these brands to build your launch-day picks.</p>
-        </div>
-      ) : (
-        <ul className="lm-pick-list">
-          {picks.map((pick) => {
-            const found = findLaunchMenuItem(pick.brandId, pick.itemId);
-            if (!found) return null;
-            const labels = launchSelectionLabels(found.brand, found.item, pick.selections);
-            return (
-              <li key={pick.key}>
-                <span className="lm-pick-brand">
-                  {found.brand.name} · {found.section.title}
-                </span>
-                <h3>{found.item.name}</h3>
-                {labels.length > 0 && <p>{labels.join(" · ")}</p>}
-                <div className="lm-pick-actions">
-                  <QuantityControl
-                    quantity={pick.quantity}
-                    onChange={(value) => onQuantity(pick.key, value)}
-                    name={found.item.name}
-                    canIncrease={total < MAX_LAUNCH_PICKS}
-                  />
-                  <button type="button" className="lm-text-button" onClick={() => onEdit(pick)}>
-                    Edit<span className="sr-only"> {found.item.name}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="lm-icon-button"
-                    aria-label={"Remove " + found.item.name}
-                    onClick={() => onRemove(pick)}
-                  >
-                    <Trash2 size={17} />
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <div className="lm-picks-note">
-        <strong>Saved on this device.</strong>
-        <p>Plan your favourites now. Prices and ordering are coming soon.</p>
-      </div>
-    </div>
-  );
-}
-
-function CustomisePick({
-  draft,
-  onSave,
-  onBack,
-  error,
-}: {
-  draft: Draft;
-  onSave: (selections: LaunchMenuSelections, quantity: number) => void;
-  onBack: () => void;
-  error: string;
-}) {
-  const { brand, section, item, existing } = draft;
-  const [selections, setSelections] = useState<LaunchMenuSelections>(existing?.selections ?? {});
-  const [quantity, setQuantity] = useState(existing?.quantity ?? 1);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    headingRef.current?.focus();
-  }, []);
-  const groups = launchItemGroups(brand, item);
-  const missing = missingLaunchChoices(brand, item, selections);
-  return (
-    <>
-      <div className="lm-dialog-heading">
-        <img src={logoFor(brand.id)} alt={brand.name} width="140" height="95" />
-        <span className="lm-eyebrow">{section.title}</span>
-        <DialogTitle ref={headingRef} tabIndex={-1} className="lm-dialog-title">
-          {item.name}
-        </DialogTitle>
-        <DialogDescription className="lm-dialog-description">
-          {item.description ?? "Add this to your MealDeck picks."}
-        </DialogDescription>
-        {section.description && <p className="lm-included">{section.description}</p>}
-      </div>
-      <div className="lm-customise-body">
-        {groups.map((group) =>
-          isLaunchGroupActive(group, selections, item) ? (
-            <fieldset className="lm-option-group" key={group.id}>
-              <legend>
-                {group.label}
-                <span>{group.required ? "Choose one" : "Optional"}</span>
-              </legend>
-              {group.description && <p>{group.description}</p>}
-              <div className="lm-option-grid">
-                {group.kind === "single" && !group.required && (
-                  <label
-                    className={"lm-option " + (!selections[group.id]?.length ? "is-selected" : "")}
-                  >
-                    <input
-                      type="radio"
-                      name={group.id}
-                      checked={!selections[group.id]?.length}
-                      onChange={() => {
-                        const active = selections[group.id]?.[0];
-                        if (active)
-                          setSelections(
-                            toggleLaunchOption(brand, item, selections, group.id, active),
-                          );
-                      }}
-                    />
-                    <span>
-                      {group.id.includes("make-it-a-meal") ? "Just the main" : "No upgrade"}
-                    </span>
-                  </label>
-                )}
-                {group.options.map((option) => {
-                  const selected = selections[group.id]?.includes(option.id) ?? false;
-                  return (
-                    <label
-                      key={option.id}
-                      className={"lm-option " + (selected ? "is-selected" : "")}
-                    >
-                      <input
-                        type={group.kind === "single" ? "radio" : "checkbox"}
-                        name={group.id}
-                        checked={selected}
-                        onChange={() =>
-                          setSelections(
-                            toggleLaunchOption(brand, item, selections, group.id, option.id),
-                          )
-                        }
-                      />
-                      <span>
-                        <strong>{option.label}</strong>
-                        {option.description && <small>{option.description}</small>}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </fieldset>
-          ) : null,
-        )}
-        <div className="lm-allergen-note">
-          For allergies or dietary needs, please check with the team before ordering when we launch.
-        </div>
-      </div>
-      <div className="lm-dialog-bottom">
-        {missing.length > 0 && (
-          <p className="lm-choice-hint" role="status">
-            Choose {missing.map((group) => group.label.toLowerCase()).join(" and ")} to continue.
-          </p>
-        )}
-        {error && (
-          <p className="lm-error" role="alert">
-            {error}
-          </p>
-        )}
-        <div className="lm-dialog-actions">
-          <QuantityControl name={item.name} quantity={quantity} onChange={setQuantity} />
-          <button
-            type="button"
-            className="lm-primary"
-            disabled={missing.length > 0}
-            onClick={() => onSave(selections, quantity)}
-          >
-            {existing ? "Save changes" : "Add to my picks"}
-            <Plus size={18} />
-          </button>
-        </div>
-        <p>Prices to follow · Ordering coming soon</p>
-        <button type="button" className="lm-text-button" onClick={onBack}>
-          Back to the menu
-        </button>
-      </div>
-    </>
-  );
-}
-
 export function LaunchMenuBrowser({
   requestedBrandId,
   requestedSectionId,
@@ -298,11 +62,12 @@ export function LaunchMenuBrowser({
   const pendingBrand = marketingBrands.find((entry) => entry.id === requestedBrandId);
   const [search, setSearch] = useState("");
   const [picks, setPicks] = useState<LaunchMenuPick[]>([]);
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draft, setDraft] = useState<LaunchItemDraft | null>(null);
   const [picksOpen, setPicksOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [saveError, setSaveError] = useState("");
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const basketHeadingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     try {
       setPicks(decodeLaunchPicks(window.localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY)));
@@ -313,6 +78,9 @@ export function LaunchMenuBrowser({
   useEffect(() => {
     setSearch("");
   }, [brand?.id]);
+  useEffect(() => {
+    if (picksOpen) basketHeadingRef.current?.focus();
+  }, [picksOpen]);
 
   function updatePicks(next: LaunchMenuPick[]) {
     setPicks(next);
@@ -336,7 +104,7 @@ export function LaunchMenuBrowser({
     });
   }
 
-  function openItem(entry: MenuEntry, existing?: LaunchMenuPick) {
+  function openItem(entry: LaunchMenuEntry, existing?: LaunchMenuPick) {
     if (!picksOpen)
       returnFocusRef.current =
         document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -345,23 +113,34 @@ export function LaunchMenuBrowser({
     setPicksOpen(false);
   }
 
-  function savePick(selections: LaunchMenuSelections, quantity: number) {
+  function savePick(
+    selections: LaunchMenuSelections,
+    quantity: number,
+    crossSelections: LaunchCrossSelection[],
+  ) {
     if (!draft) return;
-    const previous = draft.existing
-      ? picks.filter((pick) => pick.key !== draft.existing?.key)
-      : picks;
-    const next = addLaunchPick(previous, draft.brand.id, draft.item.id, selections, quantity);
-    if (next === previous) {
+    const next = draft.existing
+      ? updateLaunchPick(picks, draft.existing.key, selections, quantity, crossSelections)
+      : addLaunchPick(picks, draft.brand.id, draft.item.id, selections, quantity, crossSelections);
+    if (next === picks) {
       setSaveError(
-        "Your picks can hold up to 20 of a dish and 60 items in total. Reduce a quantity to continue.",
+        "Your basket can hold up to 20 of a dish and 60 selections in total. Check your choices or reduce a quantity to continue.",
       );
       return;
     }
     updatePicks(next);
     setNotice(
-      draft.item.name + (draft.existing ? " updated in your picks." : " added to your picks."),
+      draft.item.name + (draft.existing ? " updated in your basket." : " added to your basket."),
     );
     setDraft(null);
+    if (draft.existing) setPicksOpen(true);
+  }
+
+  function openBasket() {
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setDraft(null);
+    setPicksOpen(true);
   }
 
   function chooseUpsell(upsell: LaunchMenuUpsell) {
@@ -421,14 +200,22 @@ export function LaunchMenuBrowser({
     }))
     .filter((section) => section.items.length > 0);
   const visibleCount = sections.reduce((total, section) => total + section.items.length, 0);
-  const pairings =
-    brand?.id === "moktl"
-      ? ["skorch-burgers", "tavo-chicken"]
-      : brand?.id === "loadd"
-        ? ["skorch-burgers", "moktl"]
-        : brand?.id === "souvano"
-          ? ["moktl", "loadd"]
-          : ["loadd", "moktl"];
+  const pairingSections: Record<string, string> = {
+    "skorch-burgers": "beef-smash-deck",
+    "tavo-chicken": "burgers",
+    souvano: "heatwave",
+    loadd: "loaded-fries",
+    moktl: "mocktail-lounge",
+  };
+  const pairingOrder = ["loadd", "moktl", "skorch-burgers", "tavo-chicken", "souvano"];
+  const pairings: LaunchMenuEntry[] = pairingOrder
+    .filter((id) => id !== brand?.id)
+    .flatMap((id) => {
+      const pairing = getLaunchMenuBrand(id);
+      const section = pairing?.sections.find((entry) => entry.id === pairingSections[id]);
+      const item = section?.items[0];
+      return pairing && section && item ? [{ brand: pairing, section, item }] : [];
+    });
   const pickProps = {
     picks,
     onQuantity: (key: string, value: number) =>
@@ -440,7 +227,7 @@ export function LaunchMenuBrowser({
     onRemove: (pick: LaunchMenuPick) => {
       const entry = findLaunchMenuItem(pick.brandId, pick.itemId);
       updatePicks(setLaunchPickQuantity(picks, pick.key, 0));
-      setNotice((entry?.item.name ?? "Item") + " removed from your picks.");
+      setNotice((entry?.item.name ?? "Item") + " removed from your basket.");
     },
   };
   const menuStyle = { "--lm-accent": brand?.accent ?? "#951018" } as CSSProperties;
@@ -530,13 +317,13 @@ export function LaunchMenuBrowser({
               <button
                 type="button"
                 className="lm-your-picks-button"
-                onClick={() => {
-                  returnFocusRef.current = document.activeElement as HTMLElement;
-                  setPicksOpen(true);
-                }}
+                onClick={openBasket}
+                aria-label={
+                  "View basket, " + quantity + (quantity === 1 ? " selection" : " selections")
+                }
               >
                 <ShoppingBag size={18} />
-                Your picks<span>{quantity}</span>
+                View basket<span>{quantity}</span>
               </button>
             </div>
             <nav className="lm-category-nav" aria-label={brand.name + " menu sections"}>
@@ -660,35 +447,44 @@ export function LaunchMenuBrowser({
                   <div>
                     <span className="lm-eyebrow">Across the deck</span>
                     <h2 id="pairing-title">Something on the side?</h2>
-                    <p>Explore more brands and add a separate pick.</p>
+                    <p>
+                      Add another brand to your basket. Each dish is a separate extra; meal upgrades
+                      stay with your main.
+                    </p>
                   </div>
                   <div className="lm-pairing-grid">
-                    {pairings.map((id) => {
-                      const pairing = getLaunchMenuBrand(id);
-                      return pairing ? (
-                        <button type="button" key={id} onClick={() => browse(id)}>
-                          <img src={logoFor(id)} alt="" width="120" height="85" />
-                          <span>
-                            <strong>{pairing.name}</strong>
-                            <small>
-                              {id === "moktl"
-                                ? "Find your mocktail"
-                                : id === "loadd"
-                                  ? "Loaded fries & mac ’n cheese"
-                                  : id === "skorch-burgers"
-                                    ? "Explore smash burgers"
-                                    : "Chicken burgers, wings & more"}
-                            </small>
-                          </span>
-                          <ArrowRight size={20} />
-                        </button>
-                      ) : null;
-                    })}
+                    {pairings.map((entry) => (
+                      <button
+                        type="button"
+                        key={entry.brand.id}
+                        onClick={() => openItem(entry)}
+                        aria-label={"Add " + entry.item.name + " from " + entry.brand.name}
+                      >
+                        <img src={logoFor(entry.brand.id)} alt="" width="90" height="65" />
+                        <span>
+                          <strong>{entry.item.name}</strong>
+                          <small>
+                            {entry.brand.name} · {entry.section.title}
+                          </small>
+                        </span>
+                        <Plus size={20} aria-hidden="true" />
+                      </button>
+                    ))}
                   </div>
                 </section>
               </div>
 
-              <aside className="lm-sidebar" aria-label="Meal upgrades and your picks">
+              <aside className="lm-sidebar" aria-label="Your basket and meal upgrades">
+                <section className="lm-picks-panel">
+                  <div className="lm-picks-title">
+                    <h2>
+                      <ShoppingBag size={20} aria-hidden="true" />
+                      Your basket
+                    </h2>
+                    <span>{quantity}</span>
+                  </div>
+                  <LaunchBasket {...pickProps} />
+                </section>
                 <section className="lm-upsells">
                   <span className="lm-eyebrow">{brand.name} extras</span>
                   <h2>{brand.id === "moktl" ? "In the spotlight." : "Take it further."}</h2>
@@ -706,13 +502,6 @@ export function LaunchMenuBrowser({
                       <ChevronRight size={19} />
                     </button>
                   ))}
-                </section>
-                <section className="lm-picks-panel">
-                  <div className="lm-picks-title">
-                    <h2>Your picks</h2>
-                    <span>{quantity}</span>
-                  </div>
-                  <Picks {...pickProps} />
                 </section>
               </aside>
             </div>
@@ -760,30 +549,10 @@ export function LaunchMenuBrowser({
           <p>
             Launch menu preview · Prices and availability will be confirmed when ordering opens.
           </p>
-          <Link to="/order" search={{ preview: "sample" }}>
-            Try the illustrative group basket demo
-            <ArrowRight size={15} />
-          </Link>
         </footer>
       </main>
       <SiteFooter />
-      {quantity > 0 && (
-        <button
-          type="button"
-          className="lm-mobile-picks"
-          onClick={() => {
-            returnFocusRef.current = document.activeElement as HTMLElement;
-            setPicksOpen(true);
-          }}
-        >
-          <ShoppingBag size={19} />
-          <span>
-            View your picks<small>Ordering coming soon</small>
-          </span>
-          <b>{quantity}</b>
-          <ChevronRight size={20} />
-        </button>
-      )}
+      <LaunchBasketDock count={quantity} onOpen={openBasket} />
 
       <Dialog
         open={!!draft || picksOpen}
@@ -795,7 +564,7 @@ export function LaunchMenuBrowser({
         }}
       >
         <DialogContent
-          className="lm-dialog"
+          className={"lm-dialog " + (draft ? "lm-customise-dialog" : "lm-basket-dialog")}
           overlayClassName="lm-dialog-overlay"
           data-menu-brand={draft?.brand.id ?? brand?.id}
           style={
@@ -803,17 +572,20 @@ export function LaunchMenuBrowser({
           }
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            returnFocusRef.current?.focus();
+            const target = returnFocusRef.current?.isConnected
+              ? returnFocusRef.current
+              : document.querySelector<HTMLButtonElement>(".lmb-dock-button");
+            target?.focus();
           }}
         >
           {draft ? (
-            <CustomisePick
+            <LaunchItemCustomiser
               key={draft.item.id + (draft.existing?.key ?? "new")}
               draft={draft}
               onSave={savePick}
               onBack={() => {
                 setDraft(null);
-                setPicksOpen(false);
+                setPicksOpen(!!draft.existing);
               }}
               error={saveError}
             />
@@ -821,15 +593,15 @@ export function LaunchMenuBrowser({
             <>
               <div className="lm-dialog-heading">
                 <span className="lm-eyebrow">Your launch-day line-up</span>
-                <DialogTitle className="lm-dialog-title">
-                  Your picks <span>({quantity})</span>
+                <DialogTitle className="lm-dialog-title" ref={basketHeadingRef} tabIndex={-1}>
+                  Your basket <span>({quantity})</span>
                 </DialogTitle>
                 <DialogDescription className="lm-dialog-description">
-                  Mix brands and make it yours. These are saved picks, ready to revisit when
-                  ordering opens.
+                  Mix brands and make it yours. Your choices are saved on this device. Prices and
+                  ordering are coming soon.
                 </DialogDescription>
               </div>
-              <Picks {...pickProps} />
+              <LaunchBasket {...pickProps} />
               <div className="lm-dialog-bottom">
                 <button type="button" className="lm-primary" onClick={() => setPicksOpen(false)}>
                   Keep exploring

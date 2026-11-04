@@ -25,6 +25,8 @@ import dishbeePlayPremiumCss from "../styles.dishbee-play-premium.css?url";
 import marketplaceDiscoveryCss from "../styles.marketplace-discovery.css?url";
 import marketplacePremiumCss from "../styles.marketplace-premium.css?url";
 import launchMenusCss from "../styles.launch-menus.css?url";
+import launchBasketCss from "../styles.launch-basket.css?url";
+import launchCustomiserCss from "../styles.launch-customiser.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -124,6 +126,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: marketplaceDiscoveryCss },
       { rel: "stylesheet", href: marketplacePremiumCss },
       { rel: "stylesheet", href: launchMenusCss },
+      { rel: "stylesheet", href: launchBasketCss },
+      { rel: "stylesheet", href: launchCustomiserCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -161,19 +165,20 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const pathname=useRouterState({select:state=>state.location.pathname});
-  const internal=pathname==="/ops"||pathname.startsWith("/ops/");
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const internal = pathname === "/ops" || pathname.startsWith("/ops/");
+  const basketPage = ["/menus", "/order"].includes(pathname.replace(/\/$/, ""));
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      {!internal&&<SkipToMainContent />}
-      {!internal&&<ComingSoonBanner />}
+      {!internal && <SkipToMainContent />}
+      {!internal && <ComingSoonBanner />}
       <div id="mealdeck-main" tabIndex={-1}>
         <Outlet />
       </div>
-      <BackToTop />
-      {!internal&&<MobileTabBar />}
+      {!basketPage && <BackToTop />}
+      {!internal && <MobileTabBar />}
       <Toaster position="top-center" />
     </QueryClientProvider>
   );

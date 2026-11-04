@@ -1,6 +1,5 @@
 import { COMING_SOON } from "@/lib/launch-status";
 import { createServiceabilityGeneration } from "@/lib/mealdeck-serviceability-generation";
-import { OrderingPreview } from "@/components/coming-soon";
 import { LaunchMenuBrowser } from "@/components/menus/launch-menu-browser";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -30,10 +29,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { SiteFooter } from "@/components/site-footer";
-import { checkServiceability, getCatalogue, placeOrder, estimateDishbeeDelivery } from "@/lib/dishbee.functions";
+import {
+  checkServiceability,
+  getCatalogue,
+  placeOrder,
+  estimateDishbeeDelivery,
+} from "@/lib/dishbee.functions";
 import {
   addItem,
   brandById,
@@ -60,24 +70,35 @@ import { suitArtwork } from "@/lib/food-suit-artwork";
 import { BrandDiscoveryGallery, FavouriteDishRail } from "@/components/order/premium-discovery";
 import { WhatsAppBasketHandoff } from "@/components/order/whatsapp-basket-handoff";
 import {
-  FAVOURITES_STORAGE_KEY, BASKET_STORAGE_KEY,
-  decodeFavourites, toggleFavourite, encodeSavedBasket, decodeSavedBasket,
-  restoreSavedBasket, type SavedBasket,
+  FAVOURITES_STORAGE_KEY,
+  BASKET_STORAGE_KEY,
+  decodeFavourites,
+  toggleFavourite,
+  encodeSavedBasket,
+  decodeSavedBasket,
+  restoreSavedBasket,
+  type SavedBasket,
 } from "@/lib/marketplace-preferences";
-import { BROWSE_CATEGORIES, browseBrands, browseMenu, basketSuggestions, type BrowseCategory } from "@/lib/marketplace-discovery";
+import {
+  BROWSE_CATEGORIES,
+  browseBrands,
+  browseMenu,
+  basketSuggestions,
+  type BrowseCategory,
+} from "@/lib/marketplace-discovery";
 import { seo } from "@/lib/seo";
 import {
-  checkoutSnapshotFingerprint, getOrCreateCheckoutAttempt,
+  checkoutSnapshotFingerprint,
+  getOrCreateCheckoutAttempt,
   type CheckoutAttempt,
 } from "@/lib/mealdeck-checkout-attempt";
 
-type OrderSearch = { brand?: string; fulfilment?: FulfilmentType; preview?: "sample" };
+type OrderSearch = { brand?: string; fulfilment?: FulfilmentType };
 
 export const Route = createFileRoute("/order")({
   validateSearch: (search: Record<string, unknown>): OrderSearch => {
     const next: OrderSearch = {};
     if (typeof search["brand"] === "string") next.brand = search["brand"];
-    if (search["preview"] === "sample") next.preview = "sample";
     if (
       search["fulfilment"] === "delivery" ||
       search["fulfilment"] === "pickup" ||
@@ -91,16 +112,17 @@ export const Route = createFileRoute("/order")({
   head: () =>
     seo({
       title: "Coming soon — Preview our menu | MealDeck",
-      description: "Explore MealDeck’s launch menus and build your picks with meal upgrades and add-ons. Prices and ordering are coming soon.",
+      description:
+        "Explore MealDeck’s launch menus and build your basket with meal upgrades and extras from other brands. Prices and ordering are coming soon.",
       path: "/order",
     }),
   component: OrderRoute,
 });
 
 function OrderRoute() {
-  const { brand, preview } = Route.useSearch();
+  const { brand } = Route.useSearch();
   if (!COMING_SOON) return <OrderPage />;
-  return preview === "sample" ? <OrderingPreview /> : <LaunchMenuBrowser requestedBrandId={brand} />;
+  return <LaunchMenuBrowser requestedBrandId={brand} />;
 }
 
 const fulfilmentIcons = { delivery: Bike, pickup: Package, curbside: CarFront, dinein: UtensilsCrossed } as const;
