@@ -237,7 +237,7 @@ function PlayPage() {
           <div id="arcade-active-game" className="arcade-panel" tabIndex={-1} role="region" aria-label="Selected game">{playPanels[game]}</div>
           <section className="dp-collection">
             <div className="dp-section-title"><div><small>SHOPPING REWARDS ARE SEPARATE</small><h2>Full House Rewards</h2></div><Gift size={27}/></div>
-            <p>Customers will collect guaranteed food rewards from verified, eligible purchases after the Dishbee loyalty service and redemption controls are activated. Games never give points, food, cash or vouchers.</p>
+            <p>Customers will collect guaranteed food rewards from verified, eligible purchases once loyalty and redemption controls are activated. Games never give points, food, cash or vouchers.</p>
             <div className="dp-collection-cards">
               {collectionSuits.map((art, index) =>
                 <div key={art}><img src={suitArtwork[art]} alt="" loading="lazy"/><LockKeyhole size={15}/><small>{FOOD_SUITS[index]?.label}</small></div>
@@ -250,7 +250,7 @@ function PlayPage() {
             <div>
               <small>MATCHDAY &amp; FIGHT-NIGHT FOOD</small>
               <h2>More flavour for the big moments.</h2>
-              <p>Seasonal football and fight-night bundles can be offered to all eligible customers under published prices and conditions. Fanzeno fixture links and live event scheduling are planned, not yet connected. No game outcome or sports prediction can trigger a valuable prize.</p>
+              <p>Seasonal football and fight-night bundles can be offered to all eligible customers under published prices and conditions. No game outcome or sports prediction can trigger a valuable prize.</p>
             </div>
             <Link to="/order">Explore food brands <ArrowRight size={17}/></Link>
           </section>

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Bike, Clock3, MapPin, Package, Store, UtensilsCrossed } from "lucide-react";
+import { ArrowRight, Bike, Clock3, MapPin, Package, Store } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
@@ -8,6 +8,7 @@ import cafe1Logo from "@/assets/cafe1-logo.png";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import heroLuton from "@/assets/hero-luton.jpg";
 import heroStAlbans from "@/assets/hero-stalbans.jpg";
+import heroTable from "@/assets/hero-table.jpg";
 
 type Props = {
   town: string;
@@ -21,7 +22,8 @@ type Props = {
 
 export function LocationPage({ town, intro, hours, fulfilment, areas, includeCafe1, faqs }: Props) {
   const isLuton = town.toLowerCase() === "luton";
-  const heroImage = isLuton ? heroLuton : heroStAlbans;
+  const isStAlbans = town.toLowerCase() === "st albans";
+  const heroImage = isLuton ? heroLuton : isStAlbans ? heroStAlbans : heroTable;
 
   return (
     <div className="md-marketing-shell">
@@ -41,7 +43,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <span><Bike /> {fulfilment}</span>
             </div>
             <div className="md-hero-actions">
-              <Link to="/order" className="md-btn md-btn-yellow">Coming soon · Preview menu <ArrowRight /></Link>
+              <Link to="/menus" className="md-btn md-btn-yellow">Browse menus · Ordering soon <ArrowRight /></Link>
               <Link to="/" hash="brands" className="md-btn md-btn-outline-light">See the full brand deck</Link>
             </div>
           </div>
@@ -103,19 +105,18 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <span><MapPin /> Kerbside</span>
             </div>
           </section>
-        ) : (
+        ) : isStAlbans ? (
           <section className="md-collection-location">
             <div>
               <p className="md-kicker md-kicker-light">St Albans</p>
               <h2>Café1 · St Albans Crown Court, 6 Bricket Road, St Albans, AL1 3JU</h2>
-              <p>Delivery, pickup, kerbside and dine-in options can be presented here.</p>
+              <p>MealDeck is planned for delivery only in St Albans. Café1's own counter and dine-in services are separate. MealDeck ordering is coming soon.</p>
             </div>
             <div className="md-collection-icons">
-              <span><UtensilsCrossed /> Dine in</span>
-              <span><Package /> Pickup</span>
+              <span><Bike /> MealDeck delivery coming soon</span>
             </div>
           </section>
-        )}
+        ) : null}
 
         <section className="md-section md-section-cream">
           <div className="md-section-heading">

@@ -89,6 +89,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           ))}
           <Link to="/luton" onClick={() => setOpen(false)} aria-current={current("/luton")?"page":undefined} className={active("/luton")}>Luton</Link>
           <Link to="/st-albans" onClick={() => setOpen(false)} aria-current={current("/st-albans")?"page":undefined} className={active("/st-albans")}>St Albans</Link>
+          <Link to="/bedford" onClick={() => setOpen(false)} aria-current={current("/bedford")?"page":undefined} className={active("/bedford")}>Bedford</Link>
           <Link to="/play" onClick={() => setOpen(false)} aria-current={current("/play")?"page":undefined} className={active("/play")}>Play &amp; Rewards</Link>
           <Link to="/franchise" onClick={() => setOpen(false)} aria-current={current("/franchise")?"page":undefined} className={active("/franchise")}>Franchises</Link>
           <Link to="/blog" onClick={() => setOpen(false)} aria-current={current("/blog")?"page":undefined} className={active("/blog")}>Blog</Link>
