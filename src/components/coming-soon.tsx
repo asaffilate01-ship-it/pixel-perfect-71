@@ -8,9 +8,11 @@ import {BROWSE_CATEGORIES,matchesBrowseCategory,type BrowseCategory} from "@/lib
 import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { SiteHeader } from "./site-header";
 import { MobileSampleBasketBar } from "./order/mobile-sample-basket-bar";
+import {toggleSampleModifier} from "@/lib/mealdeck-sample-modifiers";
+import {sampleLineUnitPrice} from "@/lib/mealdeck-preview-basket";
 import {setSampleDishQuantity,clearSampleBasket,restoreRemovedSampleDish} from "@/lib/mealdeck-sample-basket-edit";
 import { SiteFooter } from "./site-footer";
-import { brands, locations, sampleMenu, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
+import { brands, locations, sampleMenu, modifierGroupsFor, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
 
 export function ComingSoonBanner() {
   return <aside role="status" className="md-launch-banner">
@@ -220,7 +222,29 @@ export function OrderingPreview() {
           {previewLines.length?<ul className="mt-4 space-y-3">{previewLines.map(({item,quantity})=><li key={item.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--md-line)] pb-3 text-sm">
             <div className="min-w-0 flex-1"><strong className="block">{item.name}</strong>
               <span className="text-xs text-[var(--md-muted)]">{brands.find(brand=>brand.id===item.brandId)?.name??"MealDeck"} · {quantity} × {formatPence(item.pricePence)}</span></div>
-            <strong>{formatPence(quantity*item.pricePence)}</strong>
+            <strong>{formatPence(quantity*(sampleLineUnitPrice(previewLines.find(line=>line.item.id===item.id)!)??item.pricePence))}</strong>
+            {modifierGroupsFor(item).length>0&&<div className="w-full rounded-xl border border-[var(--md-line)] bg-white p-3">
+              <p className="mb-2 text-xs text-[var(--md-muted)]">Preview extras · apply to every serving of this dish</p>
+              {modifierGroupsFor(item).map(group=><fieldset key={group.id} className="mb-3 space-y-2">
+                <legend className="text-sm font-bold">{group.name}</legend>
+                <p className="text-xs text-[var(--md-muted)]">Select {group.minSelect} to {group.maxSelect}</p>
+                {group.options.map(option=>{
+                  const selected=previewLines.find(line=>line.item.id===item.id)?.selected;
+                  const checked=!!selected?.some(value=>value.groupId===group.id&&value.optionId===option.id);
+                  return <label key={option.id} className="flex min-h-11 items-center justify-between gap-2 text-sm">
+                    <span className="flex items-center gap-2">
+                      <input type="checkbox" className="size-5" checked={checked}
+                        onChange={()=>{
+                          const result=toggleSampleModifier(previewLines,item.id,group.id,option.id);
+                          if(result.changed)setPreviewLines(result.lines);
+                        }}/>
+                      {option.name}
+                    </span>
+                    <span className="tabular-nums">{option.priceDeltaPence>0?"+"+formatPence(option.priceDeltaPence):"Included"}</span>
+                  </label>;
+                })}
+              </fieldset>)}
+            </div>}
             <div className="flex items-center gap-2">
               <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,-1))}
                 aria-label={`Remove one ${item.name}`}
