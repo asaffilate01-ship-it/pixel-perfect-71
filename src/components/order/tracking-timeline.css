@@ -1,0 +1,25 @@
+/* Customer tracking uses the same paper, cream, ink and red as MealDeck's site. */
+.md-tracking {
+  color-scheme: light;
+  --background: var(--md-cream);
+  --foreground: var(--md-black);
+  --card: var(--md-paper);
+  --card-foreground: var(--md-black);
+  --popover: var(--md-paper);
+  --popover-foreground: var(--md-black);
+  --primary: var(--md-red);
+  --primary-foreground: var(--md-paper);
+  --secondary: color-mix(in oklch, var(--md-cream) 80%, var(--md-paper));
+  --secondary-foreground: var(--md-black);
+  --muted: var(--md-cream);
+  --muted-foreground: var(--md-muted);
+  --accent: var(--md-gold);
+  --accent-foreground: var(--md-black);
+  --destructive: var(--md-red-deep);
+  --destructive-foreground: var(--md-paper);
+  --border: var(--md-line);
+  --input: var(--md-line);
+  --ring: var(--md-red);
+  background: var(--background);
+  color: var(--foreground);
+}

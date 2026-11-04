@@ -25,7 +25,7 @@
 - [x] Instagram and TikTok links use @mealdeckofficial.
 - [x] Mobile launch menus: canonical /menu link, all five brands visible, compact header and persistent brand/section/search controls.
 - [x] Empty the entire saved basket in one action, with Undo that restores quantities, upgrades and extras.
-- [ ] Provision the independent MealDeck Supabase project, connect the staff operations portal and verify authorised staff access in staging.
+- [ ] Complete the provisioned independent MealDeck database installation, connect the staff operations portal and verify authorised staff access in staging.
 - [ ] Review and publish canonical launch menu records so admin changes can feed the public menu.
 - [x] Build one shared kitchen board: one master-order card containing all brands, atomic preparation and inline packing/sealing; preserve location scoping for future kitchens.
 - [ ] Connect and accept the canonical paid-release evidence adapter, hosted operations migrations and live staff/kitchen workflow before production KDS activation.
@@ -36,9 +36,18 @@
 - [x] Show “MealDeck is a trading name of 313 Brands Ltd.” and “Powered by Dishbee” in the site footer; align structured organisation data.
 - [x] Prepare the fresh-project database installation, independent connection settings and staff session isolation; verify the actual database installation and admin permissions in disposable tests.
 - [x] Let authorised menu staff assign a draft product to the shared kitchen before activating it, while retaining one kitchen display for all brands.
-- [ ] Provision a separate MealDeck project in the owner-selected Supabase organisation and apply the reviewed standalone profile.
+- [ ] Apply the reviewed standalone profile to the owner-selected dedicated MealDeck Lovable Cloud database.
 - [x] Create a fresh dedicated MealDeck Lovable Cloud database and save the explicit server-owned public connection pair.
-- [ ] Install the complete phase-47 installer unchanged: blocked because the available Cloud migration tool forbids explicit transaction-control statements and owns its own transaction; no installer SQL has been applied.
+- [x] Add an explicit managed-transaction installer for Lovable's atomic migration runner; retain the original standalone installer and canonical SQL unchanged.
+- [ ] Submit the complete managed installer in one atomic Cloud migration and verify its receipt, schema, RLS and grants; no hosted installer SQL has yet been applied from this workspace.
 - [ ] Verify the confirmed owner account info@mealdeck.co.uk and bootstrap the kitchen named MealDeck: waiting for schema installation and a verified Auth account; ownership has not been assigned.
 - [ ] Configure the first verified staff owner and kitchen, then review and publish real catalogue prices and modifiers.
 - [ ] Complete and accept MealDeck's own verified payment/release, refund, group-payment and delivery integrations before enabling real orders.
+
+## App experience — 4 November 2026
+
+- [x] Align staff sign-in, operations, menu administration and the single shared kitchen board with MealDeck's approved site theme.
+- [x] Add Menus / Brands / Basket / More navigation and branded bottom sheets to the mobile launch menus; retain saved cross-brand choices and the desktop basket dock.
+- [x] Add the installable app manifest, approved icons, browser installation guidance, explicit app updates and a private-data-safe offline screen.
+- [x] Build the customer progress timeline, real placement/elapsed time and guarded status refresh; ordering remains coming soon and hosted integration acceptance is still required.
+- [ ] Publish the merged source through Lovable and verify installed-app behaviour on actual iOS/Android devices.

@@ -15,6 +15,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { LaunchBasket, LaunchBasketDock } from "@/components/menus/launch-basket";
 import { LaunchMenuMobileNav } from "@/components/menus/launch-menu-mobile-nav";
+import { LaunchMenuAppNav } from "@/components/menus/launch-menu-app-nav";
 import {
   LaunchItemCustomiser,
   type LaunchItemDraft,
@@ -49,6 +50,26 @@ const brandHeadlines: Record<string, string> = {
 
 function logoFor(id: string) {
   return approvedBrandLogos[(id === "skorch-burgers" ? "skorch" : id) as ApprovedBrandId];
+}
+
+function isVisibleFocusTarget(element: HTMLElement | null | undefined): element is HTMLElement {
+  return (
+    !!element?.isConnected &&
+    element.getClientRects().length > 0 &&
+    window.getComputedStyle(element).visibility !== "hidden"
+  );
+}
+
+function visibleBasketTrigger(): HTMLElement | undefined {
+  // The fixed mobile bar replaces the dock only on phones. Never restore focus
+  // to a dock/button hidden by the responsive layout or on-screen keyboard.
+  return (
+    [
+      document.querySelector<HTMLButtonElement>('[data-launch-basket-trigger="mobile"]'),
+      document.querySelector<HTMLButtonElement>(".lmb-dock-button"),
+      document.querySelector<HTMLButtonElement>('[data-launch-basket-trigger="toolbar"]'),
+    ].find(isVisibleFocusTarget) ?? undefined
+  );
 }
 
 export function LaunchMenuBrowser({
@@ -355,6 +376,7 @@ export function LaunchMenuBrowser({
               <button
                 type="button"
                 className="lm-your-picks-button"
+                data-launch-basket-trigger="toolbar"
                 onClick={openBasket}
                 aria-label={
                   "View basket, " + quantity + (quantity === 1 ? " selection" : " selections")
@@ -399,9 +421,7 @@ export function LaunchMenuBrowser({
                     onClick={() => {
                       undoEmptyBasket();
                       requestAnimationFrame(() =>
-                        document
-                          .querySelector<HTMLButtonElement>(".lmb-dock-button")
-                          ?.focus({ preventScroll: true }),
+                        visibleBasketTrigger()?.focus({ preventScroll: true }),
                       );
                     }}
                   >
@@ -607,6 +627,29 @@ export function LaunchMenuBrowser({
       </main>
       <SiteFooter />
       <LaunchBasketDock count={quantity} onOpen={openBasket} />
+      <LaunchMenuAppNav
+        brands={brandOrder.flatMap((id) => {
+          const entry = getLaunchMenuBrand(id);
+          return entry ? [{ id: entry.id, name: entry.name, logo: logoFor(id) }] : [];
+        })}
+        brandId={brand?.id}
+        count={quantity}
+        basketOpen={picksOpen}
+        dialogOpen={!!draft || picksOpen}
+        onMenus={() => {
+          const target =
+            document.getElementById("launch-menu-items") ??
+            document.getElementById("launch-brand-selector");
+          target?.scrollIntoView({
+            block: "start",
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+              ? "auto"
+              : "smooth",
+          });
+        }}
+        onBrand={(id) => browse(id, undefined, "items")}
+        onBasket={openBasket}
+      />
 
       <Dialog
         open={!!draft || picksOpen}
@@ -618,6 +661,7 @@ export function LaunchMenuBrowser({
         }}
       >
         <DialogContent
+          id="launch-menu-dialog"
           className={"lm-dialog " + (draft ? "lm-customise-dialog" : "lm-basket-dialog")}
           overlayClassName="lm-dialog-overlay"
           data-menu-brand={draft?.brand.id ?? brand?.id}
@@ -626,10 +670,10 @@ export function LaunchMenuBrowser({
           }
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            const target = returnFocusRef.current?.isConnected
+            const target = isVisibleFocusTarget(returnFocusRef.current)
               ? returnFocusRef.current
-              : document.querySelector<HTMLButtonElement>(".lmb-dock-button");
-            target?.focus();
+              : visibleBasketTrigger();
+            target?.focus({ preventScroll: true });
           }}
         >
           {draft ? (

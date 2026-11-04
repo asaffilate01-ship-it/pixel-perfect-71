@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import {
   ArrowLeft,
   BarChart3,
-  ChefHat,
   ClipboardList,
   LockKeyhole,
   LogOut,
@@ -22,6 +21,8 @@ import {
   type OpsAccess,
 } from "@/lib/mealdeck-ops-browser";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
+import { MealDeckLogo } from "@/components/mealdeck-logo";
+import "./ops-theme.css";
 import {
   effectiveOpsPermissions,
   OPS_SECTIONS,
@@ -71,11 +72,9 @@ import { paidOrderGoalRange, summariseWeeklyPaidOrders } from "@/lib/mealdeck-we
 import type { OpsSupplier, OpsPurchase, OpsBatch } from "@/lib/mealdeck-ops-procurement-types";
 
 import { OpsKdsPanel } from "@/components/ops/kds-panel";
-const field =
-  "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-amber-500";
-const btn =
-  "min-h-11 rounded-xl bg-slate-950 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50";
-const columns = "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm";
+const field = "md-ops-field";
+const btn = "md-ops-button md-ops-primary";
+const columns = "md-ops-card p-5";
 type WorkspaceData = {
   menu: OpsMenuItem[];
   taxonomy: OpsTaxonomy[];
@@ -532,32 +531,27 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
   const activeLocation = locations.find((x) => x.location_id === location);
 
   return (
-    <div className="min-h-screen bg-[#f6f5f1] text-slate-950" style={{ colorScheme: "light" }}>
-      <header className="border-b border-slate-200 bg-[#101716] text-white">
+    <div className="md-ops">
+      <header className="md-ops-masthead">
         <div
           className={
             "mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 " +
-            (kitchenMode ? "py-3" : "flex-wrap py-5")
+            (kitchenMode ? "py-2" : "flex-wrap py-3")
           }
         >
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <div
-              className={
-                "shrink-0 rounded-2xl bg-amber-400 text-slate-950 " +
-                (kitchenMode ? "p-2 sm:p-3" : "p-3")
-              }
-            >
-              <ChefHat className={kitchenMode ? "size-5 sm:size-6" : "size-6"} />
-            </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-300">
+            <Link to="/" className="md-ops-logo-link" aria-label="MealDeck home">
+              <MealDeckLogo className="md-ops-logo" decorative />
+            </Link>
+            <div className="min-w-0">
+              <p className="md-ops-kicker text-[11px] font-black uppercase tracking-[0.16em] sm:text-xs">
                 MealDeck
                 <span className={kitchenMode ? "hidden sm:inline" : ""}> · Back of house</span>
               </p>
               <h1
                 className={
                   "font-display font-black tracking-tight " +
-                  (kitchenMode ? "text-xl sm:text-2xl" : "text-2xl")
+                  (kitchenMode ? "text-lg sm:text-2xl" : "text-xl sm:text-2xl")
                 }
               >
                 {kitchenMode ? "Kitchen display" : "Operations & intelligence"}
@@ -570,7 +564,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
               aria-label={kitchenMode ? "Operations" : "Public website"}
               title={kitchenMode ? "Operations" : "Public website"}
               className={
-                "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-white/20 text-sm font-semibold text-white " +
+                "md-ops-button md-ops-header-action min-w-11 " +
                 (kitchenMode ? "px-3 sm:px-4" : "px-4")
               }
             >
@@ -586,7 +580,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 aria-label="Sign out"
                 title="Sign out"
                 className={
-                  "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl border border-white/30 text-sm font-bold " +
+                  "md-ops-button md-ops-header-action min-w-11 " +
                   (kitchenMode ? "px-3 sm:px-4" : "px-4")
                 }
               >
@@ -606,16 +600,16 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
             <p>Checking secure staff authentication…</p>
           </div>
         ) : !user ? (
-          <div className="mx-auto max-w-lg overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-            <div className="bg-[#132b24] p-7 text-white">
-              <LockKeyhole className="size-8 text-amber-300" />
+          <div className="md-ops-card md-ops-login mx-auto max-w-lg overflow-hidden">
+            <div className="md-ops-login-heading p-6 sm:p-7">
+              <LockKeyhole className="md-ops-login-mark size-8" />
               <h2 className="mt-4 font-display text-3xl font-black">Staff sign-in</h2>
-              <p className="mt-2 text-sm leading-6 text-white/80">
+              <p className="mt-2 text-sm leading-6">
                 For approved MealDeck kitchen, finance, menu and operations staff. Accounts must be
                 provisioned and assigned by an authorised administrator.
               </p>
             </div>
-            <form className="space-y-4 p-7" onSubmit={(event) => void signIn(event)}>
+            <form className="md-ops-login-form space-y-4" onSubmit={(event) => void signIn(event)}>
               <label className="block text-sm font-bold">
                 Staff email
                 <input
@@ -650,11 +644,11 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 type="button"
                 disabled={loginBusy}
                 onClick={() => void sendLoginLink()}
-                className="min-h-11 w-full rounded-xl border border-slate-300 p-3 text-sm font-semibold"
+                className="md-ops-button md-ops-secondary w-full"
               >
                 Email me a sign-in link instead
               </button>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs md-ops-muted">
                 No public staff sign-up. Staff roles and all operational data are checked by
                 Supabase RLS and authorised database functions; this screen alone grants no access.
               </p>
@@ -663,10 +657,10 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
         ) : accessBusy ? (
           <div className={columns}>Checking your tenant roles…</div>
         ) : accesses.length === 0 ? (
-          <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 bg-white p-7 text-center">
-            <ShieldCheck className="mx-auto size-10 text-amber-600" />
+          <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 md-ops-paper p-7 text-center">
+            <ShieldCheck className="mx-auto size-10 md-ops-accent" />
             <h2 className="mt-4 text-2xl font-black">No operational access assigned</h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm md-ops-muted">
               Your login is valid, but no active MealDeck tenant or kitchen role has been assigned.
               Ask an authorised administrator to grant a scoped role. Signing in alone does not
               expose private orders, recipes or financial records.
@@ -682,10 +676,10 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
             {kitchenSelected ? (
               <section
                 aria-label="Kitchen workspace"
-                className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-3"
+                className="md-ops-scopebar flex flex-wrap items-end gap-3 p-3"
               >
                 {tenants.length > 1 && (
-                  <label className="min-w-0 flex-1 text-xs font-bold text-slate-600">
+                  <label className="min-w-0 flex-1 text-xs font-bold md-ops-muted">
                     Business
                     <select
                       aria-label="Business"
@@ -707,7 +701,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                   </label>
                 )}
                 {locations.length > 1 ? (
-                  <label className="min-w-0 flex-1 text-xs font-bold text-slate-600">
+                  <label className="min-w-0 flex-1 text-xs font-bold md-ops-muted">
                     Kitchen
                     <select
                       aria-label="Kitchen"
@@ -734,24 +728,21 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                     <h2 className="font-display text-lg font-bold">
                       {activeLocation?.location_name ?? "Loading kitchen…"}
                     </h2>
-                    <p className="mt-0.5 text-xs text-slate-600">
+                    <p className="mt-0.5 text-xs md-ops-muted">
                       All brands · one shared kitchen board
                     </p>
                   </div>
                 )}
                 {!kitchenMode && (
-                  <Link
-                    to="/kds"
-                    className="inline-flex min-h-12 items-center rounded-xl border border-slate-300 px-4 text-sm font-bold"
-                  >
+                  <Link to="/kds" className="md-ops-button md-ops-secondary">
                     Open kitchen screen
                   </Link>
                 )}
               </section>
             ) : (
               <>
-                <section className="grid gap-4 rounded-3xl bg-[#132b24] p-5 text-white shadow-lg lg:grid-cols-[1fr_1fr_1.2fr]">
-                  <label className="text-xs font-bold uppercase tracking-wide text-white/70">
+                <section className="md-ops-scopebar grid gap-4 p-5 lg:grid-cols-[1fr_1fr_1.2fr]">
+                  <label className="text-xs font-bold uppercase tracking-wide md-ops-muted">
                     Business
                     <select
                       aria-label="Business"
@@ -770,7 +761,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                       ))}
                     </select>
                   </label>
-                  <label className="text-xs font-bold uppercase tracking-wide text-white/70">
+                  <label className="text-xs font-bold uppercase tracking-wide md-ops-muted">
                     Kitchen / location
                     <select
                       aria-label="Kitchen"
@@ -792,19 +783,19 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                   </label>
                   <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-white/70">
+                      <p className="text-xs font-bold uppercase tracking-wide md-ops-muted">
                         Access verified for
                       </p>
                       <p className="mt-2 font-bold">
                         {activeLocation?.location_name ?? "Choose kitchen"}
                       </p>
-                      <p className="mt-1 text-xs text-white/65">
+                      <p className="mt-1 break-words text-xs md-ops-muted">
                         {user.email ?? "Authenticated staff"} · {permissions.size} permissions
                       </p>
                     </div>
                     <button
                       type="button"
-                      className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/30 px-4 text-sm font-bold"
+                      className="md-ops-button md-ops-secondary"
                       onClick={() => void reload()}
                       disabled={!location || loading}
                     >
@@ -816,7 +807,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
             )}
             {!kitchenMode && (
               <>
-                <label className="block text-xs font-bold text-slate-600 md:hidden">
+                <label className="block text-xs font-bold md-ops-muted md:hidden">
                   Operations area
                   <select
                     className={"mt-1 " + field}
@@ -834,7 +825,10 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                     ))}
                   </select>
                 </label>
-                <nav aria-label="Operations areas" className="hidden flex-wrap gap-2 md:flex">
+                <nav
+                  aria-label="Operations areas"
+                  className="md-ops-nav hidden flex-wrap gap-2 md:flex"
+                >
                   {accessibleSections.map((x) => (
                     <button
                       key={x.id}
@@ -847,8 +841,8 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                       }}
                       className={
                         x.id === selectedSection
-                          ? "min-h-11 rounded-xl bg-slate-950 px-4 text-sm font-bold text-white"
-                          : "min-h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800"
+                          ? "md-ops-button md-ops-primary"
+                          : "md-ops-button md-ops-secondary"
                       }
                     >
                       {x.label}
@@ -862,15 +856,15 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
               selectedSection === "orders" ||
               selectedSection === "finance" ||
               selectedSection === "invoices") && (
-              <section className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+              <section className="md-ops-reporting flex flex-wrap items-end gap-3 p-4">
                 <div className="flex items-center gap-2">
-                  <BarChart3 className="size-5 text-amber-600" />
+                  <BarChart3 className="size-5 md-ops-accent" />
                   <p className="text-sm font-bold">Reporting period</p>
                 </div>
                 <label className="text-xs font-semibold">
                   From
                   <input
-                    className={"ml-2 min-h-11 rounded-lg border border-slate-300 px-2"}
+                    className="md-ops-field md-ops-date ml-2"
                     type="date"
                     value={fromDate}
                     onChange={(e) => setFromDate(e.target.value)}
@@ -879,13 +873,13 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 <label className="text-xs font-semibold">
                   To
                   <input
-                    className={"ml-2 min-h-11 rounded-lg border border-slate-300 px-2"}
+                    className="md-ops-field md-ops-date ml-2"
                     type="date"
                     value={toDate}
                     onChange={(e) => setToDate(e.target.value)}
                   />
                 </label>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs md-ops-muted">
                   Up to 94 calendar days; data is scoped to one kitchen.
                 </p>
               </section>
@@ -1022,7 +1016,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
               </div>
             )}
             {!kitchenSelected && (
-              <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <p className="flex flex-wrap items-center gap-2 text-xs md-ops-muted">
                 <Store className="size-4" /> Records belong to MealDeck’s independent database.{" "}
                 {MEALDECK_BUSINESS.technologyCredit}. Owner approval is required for tenant-wide
                 editing.

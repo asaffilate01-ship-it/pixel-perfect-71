@@ -1,0 +1,48 @@
+{
+  "id": "/",
+  "name": "MealDeck",
+  "short_name": "MealDeck",
+  "description": "One order. Every craving. Explore the MealDeck menus and save your favourites.",
+  "lang": "en-GB",
+  "start_url": "/menus",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff6e8",
+  "theme_color": "#111111",
+  "categories": ["food", "shopping"],
+  "icons": [
+    {
+      "src": "/pwa/mealdeck-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/mealdeck-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/mealdeck-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Explore the menus",
+      "short_name": "Menus",
+      "url": "/menus",
+      "description": "Find your next favourite across the MealDeck brands."
+    },
+    {
+      "name": "Moktl mocktails",
+      "short_name": "Moktl",
+      "url": "/menus?brand=moktl",
+      "description": "Explore the mocktail lounge."
+    }
+  ],
+  "prefer_related_applications": false
+}

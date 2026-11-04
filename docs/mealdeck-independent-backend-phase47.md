@@ -44,6 +44,30 @@ All seven historical source files remain unchanged and hash-pinned. The generate
 
 The runtime separately replaces `mealdeck_ops_save_recipe` with the same scoped/versioned implementation and the correct `8-4-4-4-12` UUID validation. Its historical validator required an extra four-character group, rejecting real ingredient UUIDs. This correction does not alter historical migration content or relax ingredient ownership, quantities, waste percentages or recipe-history rules.
 
+### Managed migration transactions, including Lovable Cloud
+
+Some managed migration interfaces own their transaction and reject an explicit outer `begin;` / `commit;` in submitted SQL. Use the explicit managed mode only when the selected interface guarantees that **one complete migration request runs in one atomic transaction**:
+
+```sh
+node deploy/mealdeck/build.mjs --managed-transaction --check
+node deploy/mealdeck/build.mjs --managed-transaction --out deploy/mealdeck/generated/install-managed.sql
+```
+
+Submit the **entire generated file, unchanged, in one migration request**. For the recorded Lovable Cloud interface, that means one `lov_database.migration` call containing the full file contents. Do not submit one call per source file, chunk the SQL across requests, or run it through an autocommit query interface. If the interface cannot accept the complete migration atomically, use an authorised interface that accepts the default standalone installer instead.
+
+The managed builder derives its output from `buildStandaloneSql()` and removes only the two exact **builder-owned outer transaction lines**. It adds three transaction-contract comments. Every other canonical statement is unchanged, including source-hash validation, the fresh-project guard, privilege revocations, `SET LOCAL` timeouts and enabled function-body validation. The default standalone output remains byte-for-byte identical. Neither mode creates an owner or relaxes payment release.
+
+The execution contract is:
+
+- The runner starts its transaction **before the first statement**, including `SET LOCAL` and the fresh-project check.
+- All installation SQL runs in that same transaction, with no intermediate commits, retries of individual sections or parallel submissions.
+- Success commits only after the complete SQL and the runner's migration bookkeeping succeed; any failure rolls back the entire installation. The runner must report the failure rather than continue after it.
+- The existing database-role and freshness requirements still apply. If migration bookkeeping introduces an object rejected by the fresh-project guard, report the exact object and runner behaviour for review. Do not delete it or broaden the allowlist merely to force installation.
+
+The programmatic API, `buildManagedMigrationSql({ runnerOwnsTransaction: true, singleMigration: true })`, rejects missing, false or additional execution options. There is no split mode. The CLI flag is an explicit acknowledgement of that contract. This local builder validates files and the requested execution mode; it cannot independently attest a remote runner's transaction behaviour. Local tests therefore execute the exact managed body inside a runner-owned PostgreSQL transaction and prove complete rollback on late failure as well as equality of all canonical SQL.
+
+See [the Cloud deployment status](mealdeck-cloud-deployment-status.md) for the recorded provisioning state and the exact next installation step. Creating a Cloud database and generating either installer do not mean the application schema has been installed.
+
 ## Fresh-project boundary
 
 Apply the generated installer only to an explicitly selected **new dedicated MealDeck Supabase project**, using a privileged database operator. Verify the selected project in the dashboard before executing SQL. Do not run the root historical migration chain directly against a new MealDeck project and do not apply this profile to Dishbee, Cafe 1 or an existing populated application database.

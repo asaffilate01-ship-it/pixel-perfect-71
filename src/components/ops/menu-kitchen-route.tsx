@@ -128,25 +128,25 @@ export function MenuKitchenRoute({
   return (
     <section
       aria-label="Product kitchen preparation"
-      className="rounded-xl border border-amber-200 bg-amber-50/70 p-4"
+      className="md-ops-routing rounded-xl border p-4"
     >
-      <h3 className="font-bold text-slate-900">Prepare in this kitchen</h3>
-      <p className="mt-1 text-xs leading-5 text-slate-600">
+      <h3 className="font-bold md-ops-ink">Prepare in this kitchen</h3>
+      <p className="mt-1 text-xs leading-5 md-ops-muted">
         Assign this draft product before activating it. All brands stay on the same kitchen display.
       </p>
       {loading ? (
-        <p className="mt-3 text-sm text-slate-600" role="status">
+        <p className="mt-3 text-sm md-ops-muted" role="status">
           Loading kitchen preparation options…
         </p>
       ) : stations.length ? (
         <div className="mt-3 space-y-3">
           {stations.length === 1 ? (
-            <p className="text-sm font-semibold text-slate-800">{stations[0]!.station_name}</p>
+            <p className="text-sm font-semibold md-ops-text">{stations[0]!.station_name}</p>
           ) : (
-            <label className="block text-sm font-semibold text-slate-800">
+            <label className="block text-sm font-semibold md-ops-text">
               Preparation station
               <select
-                className="mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                className="md-ops-field mt-2"
                 value={selected}
                 disabled={disabled || busy || assigned !== null}
                 onChange={(event) => setSelected(event.target.value)}
@@ -176,14 +176,14 @@ export function MenuKitchenRoute({
               type="button"
               onClick={() => void assign()}
               disabled={disabled || busy || !selected}
-              className="min-h-11 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:opacity-50"
+              className="md-ops-button md-ops-primary"
             >
               {busy ? "Assigning…" : "Assign to kitchen"}
             </button>
           )}
         </div>
       ) : !error ? (
-        <p className="mt-3 text-sm leading-6 text-slate-700">
+        <p className="mt-3 text-sm leading-6 md-ops-text">
           No active preparation station is configured for this kitchen. Ask your administrator to
           finish kitchen setup.
         </p>
@@ -199,7 +199,7 @@ export function MenuKitchenRoute({
           type="button"
           disabled={disabled || busy}
           onClick={() => setRetry((value) => value + 1)}
-          className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50"
+          className="md-ops-button md-ops-secondary mt-3"
         >
           <RefreshCcw className="size-4" aria-hidden="true" /> Reload kitchen options
         </button>

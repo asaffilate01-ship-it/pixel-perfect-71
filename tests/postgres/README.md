@@ -130,14 +130,46 @@ npm ci --prefix tests/postgres
 npm run test:standalone --prefix tests/postgres
 ```
 
-`standalone-behavior.mjs` imports `buildStandaloneSql()` from the deployable
-MealDeck profile and executes its output unchanged. It installs the real
-foundation, all seven existing operations/KDS migrations, and the independent
-runtime overlay. It does **not** load `canonical-fixture.sql`, a Dishbee schema,
-or a payment/release-authority test double. The only platform shim supplies
-Supabase's local Auth table, `auth.uid()` and API roles. Deliberately broad legacy
-default grants verify that the actual installer revokes table and sequence
-access explicitly.
+`standalone-behavior.mjs` imports `buildStandaloneSql()` and
+`buildManagedMigrationSql()` from the deployable MealDeck profile. It verifies
+that the default standalone artifact keeps its reviewed SHA-256
+`1f6f09e3057ca71bb60b646173d1ab48f7b0a0ef7bdbdbcd3bcf7abd724df8cf`
+and that the managed body is byte-for-byte identical after removing only the
+two known builder-owned outer `BEGIN`/`COMMIT` statements. Historical source
+statements, source hashes, local settings, fresh-project guards and permissions
+must remain intact. An intentional future profile change requires review and
+an explicit update to this artifact compatibility assertion.
+
+The managed API requires both explicit acknowledgements:
+
+```js
+buildManagedMigrationSql({ runnerOwnsTransaction: true, singleMigration: true });
+```
+
+Missing, false or mistyped acknowledgements, and options requesting split or
+autocommit execution, are rejected. These flags declare an execution contract;
+they do not detect or establish a transaction in an external tool. The entire
+managed body must be submitted once inside a documented runner-owned atomic
+transaction.
+
+The SQL suite supplies that wrapper explicitly on one connection. It executes
+the complete managed body, writes a row to a **test-only migration-journal
+analogue** in the same transaction, and commits only after both succeed. A
+deliberate failure after the journal write must roll back all application
+objects, the private installation marker and that new journal row, while
+preserving earlier journal history. The original standalone late-failure check
+also remains. This verifies database behavior under the stated contract; it
+does not certify a particular hosted migration runner or its actual journal.
+
+All 23 existing profile/admin/security groups are retained, and the successful
+installation used by the administration checks now runs through the managed
+wrapper. It installs the real foundation, all seven existing operations/KDS
+migrations, and the independent runtime overlay. It does **not** load
+`canonical-fixture.sql`, a Dishbee schema, or a payment/release-authority test
+double. The platform shim supplies Supabase's local Auth table, `auth.uid()` and
+API roles; the journal analogue only models runner-owned history. Deliberately
+broad legacy default grants verify that the actual installer revokes table and
+sequence access explicitly.
 
 The suite checks late-installation rollback, protected one-time owner bootstrap,
 Auth account eligibility, one shared kitchen and the five launch brands with

@@ -3,6 +3,7 @@ import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BackToTop } from "@/components/back-to-top";
 import { SkipToMainContent } from "@/components/skip-to-main-content";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PwaConnectionNotice, PwaProvider } from "@/components/pwa-provider";
 import { isLaunchMenuRoute } from "@/lib/launch-menu-navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -95,13 +96,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "MealDeck — One Order. Every Craving." },
       {
         name: "description",
         content: "Multi-brand food ordering. One basket, one delivery fee, every craving.",
       },
       { name: "author", content: "MealDeck" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "MealDeck" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black" },
       { property: "og:title", content: "MealDeck — One Order. Every Craving." },
       {
         property: "og:description",
@@ -131,6 +136,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: launchCustomiserCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -176,15 +182,18 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      {!internal && <SkipToMainContent />}
-      {!internal && !basketPage && <ComingSoonBanner />}
-      <div id="mealdeck-main" tabIndex={-1}>
-        <Outlet />
-      </div>
-      {!internal && !basketPage && <BackToTop />}
-      {!internal && <MobileTabBar />}
-      <Toaster position="top-center" />
+      <PwaProvider>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        {!internal && <SkipToMainContent />}
+        {!internal && !basketPage && <ComingSoonBanner />}
+        {!internal && <PwaConnectionNotice />}
+        <div id="mealdeck-main" tabIndex={-1}>
+          <Outlet />
+        </div>
+        {!internal && !basketPage && <BackToTop />}
+        {!internal && <MobileTabBar />}
+        <Toaster position="top-center" />
+      </PwaProvider>
     </QueryClientProvider>
   );
 }

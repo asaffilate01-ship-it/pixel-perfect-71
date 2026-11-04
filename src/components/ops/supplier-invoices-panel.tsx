@@ -6,11 +6,11 @@ import {TAX_CATEGORIES,canApproveSupplierInvoice,canApproveSupplierCredit,isInvo
 import type {OpsSupplierInvoice,OpsSupplierInvoiceLine,OpsSupplierCredit,OpsSupplierInvoiceSummary} from "@/lib/mealdeck-ops-invoice-types";
 import type {OpsPurchase,OpsPurchaseLine} from "@/lib/mealdeck-ops-procurement-types";
 
-const box="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm";
-const field="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600";
-const primary="min-h-11 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white disabled:opacity-40";
-const secondary="min-h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 disabled:opacity-40";
-const label="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600";
+const box="md-ops-card p-5";
+const field="md-ops-field";
+const primary="md-ops-button md-ops-primary";
+const secondary="md-ops-button md-ops-secondary";
+const label="mb-2 block text-xs font-bold uppercase tracking-wide md-ops-muted";
 const currentDate=()=>new Date().toISOString().slice(0,10);
 
 type Props={
@@ -117,9 +117,9 @@ export function OpsSupplierInvoicesPanel({
 
   return <div className="space-y-5">
     <section className={box}>
-      <div className="flex items-start gap-3"><ReceiptText className="mt-1 size-6 text-amber-600"/>
+      <div className="flex items-start gap-3"><ReceiptText className="mt-1 size-6 md-ops-accent"/>
         <div><h2 className="text-xl font-black">Supplier invoices & VAT document checks</h2>
-          <p className="mt-1 max-w-3xl text-sm text-slate-600">Three-way match against approved purchasing and physically received goods. An internal invoice approval is not proof of payment, bank settlement, correct VAT treatment or an HMRC filing.</p>
+          <p className="mt-1 max-w-3xl text-sm md-ops-muted">Three-way match against approved purchasing and physically received goods. An internal invoice approval is not proof of payment, bank settlement, correct VAT treatment or an HMRC filing.</p>
         </div>
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -128,8 +128,8 @@ export function OpsSupplierInvoicesPanel({
           ["VAT stated on invoices",fmt(summary?.supplierVatDeclaredPence)],
           ["Invoices requiring review",String(summary?.unmatchedInvoiceCount??"—")],
           ["Approved supplier credits (net)",fmt(summary?.approvedCreditNetPence)],
-        ].map(([title,value])=><div key={title} className="rounded-xl border border-slate-200 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
+        ].map(([title,value])=><div key={title} className="rounded-xl border md-ops-border p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide md-ops-muted">{title}</p>
           <p className="mt-2 text-xl font-black">{value}</p>
         </div>)}
       </div>
@@ -146,22 +146,22 @@ export function OpsSupplierInvoicesPanel({
           {invoices.map(item=><button key={item.invoice_id} type="button"
             aria-pressed={selectedId===item.invoice_id}
             onClick={()=>setSelectedId(item.invoice_id)}
-            className={"w-full rounded-xl border p-4 text-left "+(selectedId===item.invoice_id?"border-amber-500 bg-amber-50":"border-slate-200")}>
+            className={"w-full rounded-xl border p-4 text-left "+(selectedId===item.invoice_id?"md-ops-selection":"md-ops-border")}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="font-black">{item.invoice_number}</p>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black uppercase text-slate-700">{item.status}</span>
+              <span className="rounded-full md-ops-soft px-3 py-1 text-xs font-black uppercase md-ops-text">{item.status}</span>
             </div>
-            <p className="mt-1 text-sm text-slate-600">{item.supplier_name} · {item.invoice_date}</p>
+            <p className="mt-1 text-sm md-ops-muted">{item.supplier_name} · {item.invoice_date}</p>
             <p className="mt-2 text-sm font-bold">{fmt(item.declared_gross_pence)}
-              <span className="ml-3 font-normal text-slate-500">{item.line_count} PO line{item.line_count===1?"":"s"} entered</span>
+              <span className="ml-3 font-normal md-ops-muted">{item.line_count} PO line{item.line_count===1?"":"s"} entered</span>
             </p>
           </button>)}
-          {!invoices.length&&<p className="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">No supplier invoices recorded in the selected period.</p>}
+          {!invoices.length&&<p className="rounded-xl border border-dashed md-ops-border p-6 text-sm md-ops-muted">No supplier invoices recorded in the selected period.</p>}
         </div>
       </section>
       {canManage&&<section className={box}>
         <h3 className="text-lg font-black">Create draft supplier invoice</h3>
-        <p className="mt-1 text-xs text-slate-600">A supplier invoice can only reference an already approved PO at this kitchen. The original supplier and purchase must match the backend record.</p>
+        <p className="mt-1 text-xs md-ops-muted">A supplier invoice can only reference an already approved PO at this kitchen. The original supplier and purchase must match the backend record.</p>
         <div className="mt-4 space-y-3">
           <label><span className={label}>Approved purchase order</span>
             <select value={poId} onChange={e=>setPoId(e.target.value)} className={field}>
@@ -209,26 +209,26 @@ export function OpsSupplierInvoicesPanel({
     {current&&<section className={box}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h3 className="text-xl font-black">{current.invoice_number} — PO matching</h3>
-          <p className="mt-1 text-sm text-slate-600">Supplier: {current.supplier_name} · invoice {current.status} · {current.tax_document_reviewed?"Tax document reviewed":"Tax document not reviewed"}</p>
+          <p className="mt-1 text-sm md-ops-muted">Supplier: {current.supplier_name} · invoice {current.status} · {current.tax_document_reviewed?"Tax document reviewed":"Tax document not reviewed"}</p>
         </div>
         <button type="button" aria-label="Refresh invoice lines" className={secondary} disabled={loading||busy}
           onClick={()=>setReloadLines(x=>x+1)}><RefreshCcw className="size-4"/></button>
       </div>
       {loading?<p className="mt-4 text-sm">Loading restricted invoice lines…</p>:
       <div className="mt-5 space-y-3">
-        {lines.map(line=><div key={line.line_id} className="rounded-xl border border-slate-200 p-4">
+        {lines.map(line=><div key={line.line_id} className="rounded-xl border md-ops-border p-4">
           <div className="flex flex-wrap justify-between gap-3">
             <div><p className="font-bold">{line.ingredient_name}</p>
-              <p className="mt-1 text-xs text-slate-500">{line.base_quantity} {line.base_unit} invoiced · {line.po_received_quantity} physically received</p></div>
+              <p className="mt-1 text-xs md-ops-muted">{line.base_quantity} {line.base_unit} invoiced · {line.po_received_quantity} physically received</p></div>
             <div className="text-right">
               <p className="font-bold">Net {fmt(line.net_pence)} + VAT {fmt(line.vat_pence)}</p>
-              <p className="mt-1 text-xs text-slate-500">PO quoted net {fmt(line.po_quoted_net_pence)} · {line.tax_category.replaceAll("_"," ")}</p>
+              <p className="mt-1 text-xs md-ops-muted">PO quoted net {fmt(line.po_quoted_net_pence)} · {line.tax_category.replaceAll("_"," ")}</p>
             </div>
           </div>
         </div>)}
-        {!lines.length&&<p className="text-sm text-slate-600">No invoice lines yet. Add the corresponding PO items and stated amounts.</p>}
+        {!lines.length&&<p className="text-sm md-ops-muted">No invoice lines yet. Add the corresponding PO items and stated amounts.</p>}
       </div>}
-      <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+      <div className="mt-5 rounded-xl border md-ops-border md-ops-wash p-4 text-sm">
         <p><b>Declared:</b> net {fmt(current.declared_net_pence)} · VAT {fmt(current.declared_vat_pence)}</p>
         <p className="mt-1"><b>Entered lines:</b> net {fmt(vatTotals.net)} · VAT {fmt(vatTotals.vat)}</p>
         <p className={"mt-2 font-semibold "+(totalsMatch?"text-emerald-700":"text-amber-800")}>
@@ -261,7 +261,7 @@ export function OpsSupplierInvoicesPanel({
                 {TAX_CATEGORIES.map(k=><option key={k} value={k}>{k.replaceAll("_"," ")}</option>)}
               </select></label>
           </div>
-          {costCheck&&<p className={"mt-2 text-xs font-semibold "+(costCheck.withinTolerance?"text-slate-600":"text-rose-800")}>
+          {costCheck&&<p className={"mt-2 text-xs font-semibold "+(costCheck.withinTolerance?"md-ops-muted":"text-rose-800")}>
             Expected PO net {fmt(costCheck.expectedPence)}.
             Difference {fmt(costCheck.differencePence)} — {costCheck.withinTolerance?"within rounding tolerance":"requires supplier review"}.
           </p>}
@@ -281,10 +281,10 @@ export function OpsSupplierInvoicesPanel({
             Save invoice line
           </button>
         </div>
-        <div className="rounded-xl bg-slate-50 p-4">
-          <FileCheck2 className="size-7 text-amber-700"/>
+        <div className="rounded-xl md-ops-wash p-4">
+          <FileCheck2 className="size-7 md-ops-accent"/>
           <h4 className="mt-3 font-black">Three independent records</h4>
-          <p className="mt-2 text-sm leading-6 text-slate-600">The backend compares this supplier invoice against the original PO pricing and physically received quantities, then prevents overlapping claims from previously matched/approved invoices. VAT category review and second-person approval are separate.</p>
+          <p className="mt-2 text-sm leading-6 md-ops-muted">The backend compares this supplier invoice against the original PO pricing and physically received quantities, then prevents overlapping claims from previously matched/approved invoices. VAT category review and second-person approval are separate.</p>
         </div>
       </div>}
 
@@ -339,17 +339,17 @@ export function OpsSupplierInvoicesPanel({
 
     <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
       <section className={box}>
-        <div className="flex items-center gap-2"><FileMinus className="size-5 text-amber-600"/>
+        <div className="flex items-center gap-2"><FileMinus className="size-5 md-ops-accent"/>
           <h3 className="text-lg font-black">Supplier credit notes</h3></div>
-        <p className="mt-1 text-sm text-slate-600">Credits reduce internal supplier claims only after an independent approval. No money is returned and no VAT filing occurs automatically.</p>
+        <p className="mt-1 text-sm md-ops-muted">Credits reduce internal supplier claims only after an independent approval. No money is returned and no VAT filing occurs automatically.</p>
         <div className="mt-4 space-y-2">
           {credits.map(credit=><div key={credit.credit_id}
-            className="rounded-xl border border-slate-200 p-4">
+            className="rounded-xl border md-ops-border p-4">
             <div className="flex flex-wrap justify-between gap-2">
               <p className="font-bold">{credit.credit_number}</p>
-              <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold">{credit.status}</span>
+              <span className="rounded-lg md-ops-soft px-2.5 py-1 text-xs font-bold">{credit.status}</span>
             </div>
-            <p className="mt-1 text-xs text-slate-600">{credit.issued_on} · {credit.reason}</p>
+            <p className="mt-1 text-xs md-ops-muted">{credit.issued_on} · {credit.reason}</p>
             <p className="mt-2 font-bold">Net {fmt(credit.net_pence)} · VAT {fmt(credit.vat_pence)}</p>
             {canManage&&<div className="mt-3 flex flex-wrap gap-2">
               {credit.status==="draft"&&<button type="button" className={secondary} disabled={busy}
@@ -367,12 +367,12 @@ export function OpsSupplierInvoicesPanel({
                 }),"Unapproved credit voided.")}>Void</button>}
             </div>}
           </div>)}
-          {!credits.length&&<p className="rounded-xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">No supplier credits recorded in this period.</p>}
+          {!credits.length&&<p className="rounded-xl border border-dashed md-ops-border p-5 text-sm md-ops-muted">No supplier credits recorded in this period.</p>}
         </div>
       </section>
       {canManage&&current?.status==="approved"&&<section className={box}>
         <h3 className="text-lg font-black">Record supplier credit</h3>
-        <p className="mt-1 text-xs text-slate-600">The approved invoice is the original source. Credit amounts cannot exceed the outstanding net and VAT components after other approved credits.</p>
+        <p className="mt-1 text-xs md-ops-muted">The approved invoice is the original source. Credit amounts cannot exceed the outstanding net and VAT components after other approved credits.</p>
         <div className="mt-4 space-y-3">
           <label><span className={label}>Supplier credit note number</span>
             <input className={field} maxLength={100} value={creditNo}

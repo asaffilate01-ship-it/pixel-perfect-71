@@ -2,6 +2,8 @@
 
 ## Completed
 
+These are the provisioning results recorded by Lovable. The managed-installer source update below does not apply SQL or independently recheck the hosted database.
+
 - Provisioned a fresh, dedicated Lovable Cloud backend for this project; no external backend connection prevented provisioning.
 - Confirmed PostgreSQL 17.11, zero public application tables and no confirmed Auth account matching the intended owner at inspection time.
 - Current source includes merged PR #67.
@@ -11,11 +13,22 @@
 - Public ordering remains coming soon; no checkout approval or payment-release authority was configured.
 - Existing `/ops` and `/kds` staff sign-in screens render without browser runtime errors. This is not an authenticated administration acceptance check.
 
-## Installation blocker
+## Installation pending — managed transaction mode available
 
-The available `lov_database.migration` interface requires SQL **without transaction-control statements** and owns its transaction and migration journal. The reviewed installer explicitly contains its own outer `begin;` and `commit;`. The owner requested preservation and execution of the complete generated installer unchanged. No compatible SQL-file installation interface is available through the documented CLI or loaded database tools.
+The available `lov_database.migration` interface requires SQL **without transaction-control statements** and owns its transaction and migration journal. The initial attempt stopped because the default standalone installer owns its outer `begin;` and `commit;`. **No installer SQL was submitted or applied.**
 
-**No installer SQL has been submitted or applied.** Do not strip the transaction, split the installer, apply historical migrations independently, weaken the fresh-project guard, or create a privileged browser/service RPC to work around this blocker. Use an authorised installation interface that supports the complete reviewed transaction, or obtain an explicitly reviewed installation procedure compatible with the managed migration transaction and freshness checks.
+The reviewed builder now provides an explicit managed mode for this execution contract. It removes only its own two outer transaction-control lines, leaves all canonical SQL unchanged and requires the runner to execute the entire file as **one atomic migration**. The original standalone installer remains unchanged: 190403 bytes, SHA-256 `1f6f09e3057ca71bb60b646173d1ab48f7b0a0ef7bdbdbcd3bcf7abd724df8cf`.
+
+The next Lovable step, using the updated repository source, is:
+
+```sh
+node deploy/mealdeck/build.mjs --managed-transaction --check
+node deploy/mealdeck/build.mjs --managed-transaction --out deploy/mealdeck/generated/install-managed.sql
+```
+
+The managed output is 190662 bytes, SHA-256 `23cb86413ff2f5cfab50fad078224411355bb1f6409c406c7638cfe1cd71ddbb`. Read that complete file and submit its contents unchanged to **one** `lov_database.migration` call. The tool must begin its own transaction before the first statement, commit only after all SQL and migration bookkeeping succeed, and roll everything back on failure. Do not use an autocommit query tool, split requests, run historical migrations separately, weaken the fresh-project guard or add a privileged browser/service RPC. If the tool rejects the full migration or its bookkeeping conflicts with the fresh guard, report that exact blocker for review.
+
+After the migration succeeds, record its receipt and verify the installation marker, expected application tables/RPCs, restrictive grants and RLS before owner bootstrap. Until that result is recorded, the status remains **database provisioned; application schema installation pending**. Source tests verify managed-body equality and rollback in a real local PostgreSQL transaction; they do not establish hosted installation.
 
 ## Owner and kitchen
 
@@ -25,7 +38,7 @@ After successful schema installation and account verification, use the documente
 
 ## Remaining acceptance
 
-- Complete installer application and database integrity/permission checks.
+- Submit the complete managed installer in one atomic migration, then verify database integrity and permissions.
 - Confirm the owner account, perform the private bootstrap and configure actual tenant/kitchen bindings.
 - Authenticated `/ops` checks: menu editing, draft routing, recipes, stock and staff permissions using approved inputs/prices.
 - Authenticated `/kds` must report setup required until accepted independent payment-release authority exists; never fabricate paid orders for testing.

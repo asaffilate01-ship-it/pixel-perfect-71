@@ -7,6 +7,14 @@
   overflow: hidden;
   color: #211b16;
 }
+/* Plain drinks and other one-step items need only their content height.
+   Keep the same bounded scroll area when a small viewport requires it. */
+.lm-dialog.lm-customise-dialog:has(> .lmc-header[data-customiser-layout="compact"]) {
+  height: auto;
+}
+.lm-dialog.lm-customise-dialog:has(> .lmc-header[data-customiser-layout="compact"]) > .lmc-body {
+  flex: 0 1 auto;
+}
 .lmc-header {
   display: flex;
   align-items: center;
@@ -432,6 +440,15 @@
   min-height: 48px;
   flex: 1;
   max-width: 260px;
+}
+.lm-customise-dialog .lmc-next {
+  border-color: var(--md-red, #d5141d);
+  background: var(--md-red, #d5141d);
+  color: #fff;
+}
+.lm-customise-dialog .lmc-next:hover:not(:disabled) {
+  border-color: var(--md-red-deep, #951018);
+  background: var(--md-red-deep, #951018);
 }
 .lmc-price-note {
   margin: 10px 0 0;

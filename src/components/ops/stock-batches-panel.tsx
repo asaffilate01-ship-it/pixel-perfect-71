@@ -9,9 +9,9 @@ type Props={
   canIssue:boolean;
   onRefresh:()=>Promise<void>;onNotice:(text:string)=>void;
 };
-const box="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm";
-const field="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus-visible:ring-2 focus-visible:ring-amber-500";
-const primary="min-h-11 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white disabled:opacity-40";
+const box="md-ops-card p-5";
+const field="md-ops-field";
+const primary="md-ops-button md-ops-primary";
 
 export function OpsStockBatchesPanel({
   tenantId,locationId,batches,canIssue,onRefresh,onNotice,
@@ -62,15 +62,15 @@ export function OpsStockBatchesPanel({
     <section className={box}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <Archive className="mt-1 size-6 text-amber-600"/>
+          <Archive className="mt-1 size-6 md-ops-accent"/>
           <div>
             <h2 className="text-xl font-black">Stock batches & date checks</h2>
-            <p className="mt-1 max-w-3xl text-sm text-slate-600">
+            <p className="mt-1 max-w-3xl text-sm md-ops-muted">
               Supplier provenance, printed use-by or best-before dates, and batch issues recorded against the MealDeck kitchen. This is a manually tracked lot view—not a full food-safety certification or automatically reconciled legacy stock count.
             </p>
           </div>
         </div>
-        <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-bold">
+        <span className="rounded-full md-ops-soft px-3 py-2 text-xs font-bold">
           {counts.tracked} tracked lots
         </span>
       </div>
@@ -83,8 +83,8 @@ export function OpsStockBatchesPanel({
           <p className="text-sm font-bold text-amber-800">Due within 14 days</p>
           <p className="mt-2 text-3xl font-black text-amber-950">{counts.due}</p>
         </div>
-        <div className="rounded-xl border border-slate-200 p-4">
-          <p className="text-sm font-bold text-slate-700">Tracked batches</p>
+        <div className="rounded-xl border md-ops-border p-4">
+          <p className="text-sm font-bold md-ops-text">Tracked batches</p>
           <p className="mt-2 text-3xl font-black">{counts.tracked}</p>
         </div>
       </div>
@@ -94,22 +94,22 @@ export function OpsStockBatchesPanel({
       </div>}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <label className="text-sm font-semibold">Show batches
-          <select className="ml-3 min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm"
+          <select className="ml-3 min-h-11 rounded-xl border md-ops-border md-ops-paper px-3 text-sm"
             value={filter} onChange={e=>setFilter(e.target.value)}>
             <option value="attention">Due soon / expired</option>
             <option value="expired">Expired only</option>
             <option value="all">All tracked batches</option>
           </select>
         </label>
-        <p className="text-xs text-slate-500">Ordered by expiry date · 14-day review window</p>
+        <p className="text-xs md-ops-muted">Ordered by expiry date · 14-day review window</p>
       </div>
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full text-left text-sm">
-          <thead><tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
+          <thead><tr className="border-b md-ops-border text-xs uppercase md-ops-muted">
             {["Ingredient","Batch","Supplier","Date","Tracked balance","Review","Action"].map(x=>
               <th key={x} className="px-3 py-3">{x}</th>)}
           </tr></thead>
-          <tbody>{visible.map(batch=><tr key={batch.batch_id} className="border-b border-slate-100">
+          <tbody>{visible.map(batch=><tr key={batch.batch_id} className="border-b md-ops-divider">
             <td className="px-3 py-4 font-bold">{batch.ingredient_name}</td>
             <td className="px-3 py-4">{batch.batch_code}</td>
             <td className="px-3 py-4">{batch.supplier_name}</td>
@@ -118,42 +118,42 @@ export function OpsStockBatchesPanel({
             <td className="px-3 py-4">
               <span className={batch.expiry_state==="expired"?
                 "font-bold text-rose-800":batch.expiry_state==="due_soon"?
-                "font-bold text-amber-700":"text-slate-600"}>
+                "font-bold md-ops-accent":"md-ops-muted"}>
                 {expiryLabel(batch.expiry_state,batch.expiry_kind)}
               </span>
             </td>
             <td className="px-3 py-4">{canIssue&&<button type="button"
-              aria-pressed={selected===batch.batch_id} className="min-h-11 rounded-xl border border-slate-300 px-3 font-bold"
+              aria-pressed={selected===batch.batch_id} className="min-h-11 rounded-xl border md-ops-border px-3 font-bold"
               onClick={()=>{setSelected(batch.batch_id);setError("");}}>
               Issue / waste
             </button>}</td>
           </tr>)}</tbody>
         </table>
       </div>
-      {!visible.length&&<p className="mt-5 text-sm text-slate-600">No tracked batches match this filter. This does not prove all stock or suppliers are free of expiry risks.</p>}
+      {!visible.length&&<p className="mt-5 text-sm md-ops-muted">No tracked batches match this filter. This does not prove all stock or suppliers are free of expiry risks.</p>}
     </section>
 
     {canIssue&&selectedBatch&&<section className={box}>
-      <div className="flex items-center gap-2"><ClipboardCheck className="size-5 text-amber-600"/>
+      <div className="flex items-center gap-2"><ClipboardCheck className="size-5 md-ops-accent"/>
         <h3 className="text-lg font-black">Record usage or waste — {selectedBatch.batch_code}</h3></div>
-      <p className="mt-2 text-sm text-slate-600">
+      <p className="mt-2 text-sm md-ops-muted">
         {selectedBatch.ingredient_name} · {selectedBatch.tracked_balance} {selectedBatch.unit} currently tracked.
         A batch issue also writes a matching negative movement to the canonical ingredient stock ledger.
       </p>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <label><span className="mb-2 block text-xs font-bold text-slate-600">Quantity ({selectedBatch.unit})</span>
+        <label><span className="mb-2 block text-xs font-bold md-ops-muted">Quantity ({selectedBatch.unit})</span>
           <input className={field} value={qty} inputMode="decimal"
             onChange={e=>setQty(e.target.value)}/></label>
-        <label><span className="mb-2 block text-xs font-bold text-slate-600">Reason</span>
+        <label><span className="mb-2 block text-xs font-bold md-ops-muted">Reason</span>
           <select className={field} value={reason} onChange={e=>setReason(e.target.value)}>
             <option value="production">Production (approved in-date food only)</option>
             <option value="waste">Waste / disposal</option>
             <option value="adjustment">Stock correction</option>
           </select></label>
-        <label><span className="mb-2 block text-xs font-bold text-slate-600">Unique issue reference</span>
+        <label><span className="mb-2 block text-xs font-bold md-ops-muted">Unique issue reference</span>
           <input className={field} value={reference} maxLength={100}
             onChange={e=>setReference(e.target.value)} placeholder="Kitchen shift / waste log reference"/></label>
-        <label><span className="mb-2 block text-xs font-bold text-slate-600">Note (optional)</span>
+        <label><span className="mb-2 block text-xs font-bold md-ops-muted">Note (optional)</span>
           <input className={field} value={note} maxLength={300}
             onChange={e=>setNote(e.target.value)}/></label>
       </div>
@@ -169,7 +169,7 @@ export function OpsStockBatchesPanel({
         Record one batch movement
       </button>
       {error&&<p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
-      <p className="mt-4 text-xs text-slate-500">
+      <p className="mt-4 text-xs md-ops-muted">
         This tracks usage against new batches only. Older unassigned stock deductions, supplier invoice pricing and FEFO automation still require reconciliation.
       </p>
     </section>}

@@ -24,10 +24,17 @@ jobs:
           src/components/menus/launch-menu-browser.tsx src/routes/menus.tsx
           src/components/menus/launch-basket.tsx src/components/menus/launch-item-customiser.tsx
           src/components/menus/launch-menu-mobile-nav.tsx src/lib/launch-menu-navigation.ts src/routes/menu.tsx
+          src/components/menus/launch-menu-app-nav.tsx
           tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts
           tests/launch-menu-upsells.test.ts
           tests/launch-menu-navigation.test.ts
           --rule 'prettier/prettier: off'
+      - name: Installable app cache isolation and offline behavior
+        run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
+      - name: Installable app implementation checks
+        run: |
+          node --check public/sw.js
+          bunx eslint src/components/pwa-provider.tsx src/components/pwa-install-card.tsx src/lib/mealdeck-pwa-context.ts tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - name: MealDeck Play game regressions
@@ -154,11 +161,12 @@ jobs:
           --rule 'prettier/prettier: off'
 
       - name: Phase 31 customer kitchen-pass-courier tracking truthfulness
-        run: bun test tests/mealdeck-tracking-presentation.test.ts
+        run: bun test tests/mealdeck-tracking-presentation.test.ts tests/mealdeck-tracking-contract.test.ts
 
       - name: Phase 31 tracking UI and privacy/claim boundary lint
         run: >-
           bunx eslint src/lib/mealdeck-tracking-presentation.ts
+          src/lib/mealdeck-tracking-contract.ts tests/mealdeck-tracking-contract.test.ts
           src/components/order/tracking-timeline.tsx src/routes/track.tsx
           tests/mealdeck-tracking-presentation.test.ts
           --rule 'prettier/prettier: off'

@@ -9,7 +9,7 @@ People ordering food for different cravings should feel the pleasure of choosing
 ## Established visual identity
 
 - Marketing: MealDeck red `#d5141d`, deep red `#951018`, black `#111111`, warm cream `#fff6e8`, paper `#fffdf7`, yellow `#ffd51f` and gold `#e7b53a`. The CSS variables, not these examples, remain the source of truth.
-- App: semantic light/dark tokens in OKLCH. The current root shell forces a dark initial appearance; do not mix marketing paper text with dark app card tokens.
+- App: legacy surfaces retain semantic light/dark tokens in OKLCH. The current root shell forces a dark initial appearance. Launch menus, customer tracking and staff operations use explicitly scoped MealDeck cream/paper surfaces and ink text; their overlays and controls must use the same scope rather than mixing paper surfaces with dark-theme text.
 - Typography: Outfit for display, DM Sans for controls and content, Caveat only where the existing brand script treatment calls for it.
 - Imagery: use the repository's approved brand and dish assets. When a generic/category image represents a *sample* menu item, label it **illustrative**. Never show an illustrative image as an exact product photograph.
 - Surfaces: readable dish details, clear interactive target areas and restrained depth. Do not layer generic icon cards or rainbow glows onto the card/food identity.
@@ -39,3 +39,12 @@ Inspect existing pages and CSS before changes. Run build, tests, lint and a keyb
 - Equal share previews distribute integer pennies exactly (and delivery is a **single** order-level charge, omitted until quoted). Never round every share up or imply a payment has been collected.
 - Back-office exception cards are read-only operational prompts. A late-looking order is **not** proof of a failed kitchen or courier. Operations remains a protected, distinct UI mode.
 - Model-generated text must never be exposed as confirmed price, allergen assurance, payment completion, availability, fulfilment or refund.
+
+## Shared app experience — 4 November 2026
+
+- Staff operations and the shared kitchen display use the approved MealDeck logo, compact black header, warm cream canvas, paper cards and red primary actions. Keep meaningful kitchen state colours and text labels; brand colours must not replace operational meaning.
+- The launch menus own one four-action mobile bar: Menus, Brands, Basket and More. The basket stays prominent, with its actual saved quantity. Brand changes preserve choices. All five approved launch logos remain available in the brand sheet and menu header.
+- At widths up to 800px, use bottom sheets with one scroll area, safe-area spacing, visible close controls and restored keyboard focus. Hide the fixed navigation while searching or while the main site navigation is open. Retain the existing desktop basket dock above that breakpoint.
+- The installable app uses the approved artwork. Show installation only after a browser request or clear platform instructions; an accepted prompt is not proof of installation. App updates require a user action and preserve the locally saved basket.
+- The offline screen must explain the connection state without showing stale live availability, payment confirmation or order progress. Only static offline artwork and the offline screen belong in the service-worker cache; staff, tracking, API and authentication traffic remain on the network.
+- Customer progress follows verified order, kitchen, packing and fulfilment evidence. Payment alone does not mean cooking has started. Show the real placement time and elapsed time only when valid server timestamps exist; do not fabricate ETAs or milestone timestamps.
