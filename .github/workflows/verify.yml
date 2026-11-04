@@ -300,3 +300,12 @@ jobs:
           src/components/order/mobile-sample-basket-bar.tsx
           tests/mealdeck-mobile-sample-basket-bar.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Phase 40 safe sample basket editing tests
+        run: bun test tests/mealdeck-sample-basket-edit.test.ts
+
+      - name: Phase 40 sample basket edit module lint
+        run: >-
+          bunx eslint src/lib/mealdeck-sample-basket-edit.ts
+          tests/mealdeck-sample-basket-edit.test.ts
+          --rule 'prettier/prettier: off'
