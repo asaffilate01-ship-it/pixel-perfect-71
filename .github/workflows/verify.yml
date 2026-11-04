@@ -329,3 +329,12 @@ jobs:
           src/lib/mealdeck-preview-basket.ts
           tests/mealdeck-sample-variants.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Phase 43 allergen and dietary preview regressions
+        run: bun test tests/mealdeck-preview-allergens.test.ts
+
+      - name: Phase 43 allergen guidance lint
+        run: >-
+          bunx eslint src/lib/mealdeck-preview-allergens.ts
+          tests/mealdeck-preview-allergens.test.ts
+          --rule 'prettier/prettier: off'
