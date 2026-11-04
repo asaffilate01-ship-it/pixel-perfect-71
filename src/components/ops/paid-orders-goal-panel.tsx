@@ -17,7 +17,7 @@ export function PaidOrdersGoalPanel({locations}:{locations:readonly PaidGoalLoca
     <h2 id="mealdeck-paid-goal" className="mt-2 max-w-3xl text-2xl font-black tracking-tight sm:text-3xl">
       Diners in Luton and St Albans get the meals they’re craving
     </h2>
-    <p className="mt-2 text-sm text-slate-600">Measured by: <strong>orders paid for each week</strong>, using recorded Dishbee payment timestamps.</p>
+    <p className="mt-2 text-sm text-slate-600">Measured by: <strong>orders paid for each week</strong>, using recorded MealDeck payment timestamps.</p>
     <div className="mt-5 grid gap-3 sm:grid-cols-2">
       <div className="rounded-2xl bg-slate-950 p-5 text-white">
         <p className="text-sm font-semibold text-slate-300">Both locations · This week so far</p>
@@ -61,7 +61,7 @@ export function PaidOrdersGoalPanel({locations}:{locations:readonly PaidGoalLoca
       })}
     </div>
     <p className="mt-4 text-xs text-slate-500">
-      Reporting uses the canonical Dishbee paid_at field. Each paid order counts once, regardless of the number of brands or payers.
+      Reporting uses MealDeck’s recorded payment dates. Each paid order counts once, regardless of the number of brands or payers.
       This is a recorded paid-order KPI, not a bank-settlement, refund-adjusted or delivery-completion measure.
       No figures are fabricated if an authorised data source is missing.
     </p>

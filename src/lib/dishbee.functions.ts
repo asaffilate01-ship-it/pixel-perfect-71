@@ -1,8 +1,16 @@
 import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
-import { readMealDeckRuntimeConfig } from "./mealdeck-runtime-config";
+import {
+  readMealDeckBackendConfig,
+  readMealDeckCheckoutServerKey,
+  readMealDeckRuntimeConfig,
+} from "./mealdeck-runtime-config";
 import { estimateGoodsFromDishbee, verifyDishbeeFeeResult } from "./mealdeck-live-price-estimate";
 import { safeCourierTrackingUrl } from "./mealdeck-tracking-links";
-import { mayCreateCustomerOrder, parseDishbeeCheckoutAttemptReceipt, resolveDishbeeServiceability } from "./mealdeck-dishbee-contract";
+import {
+  mayCreateCustomerOrder,
+  parseDishbeeCheckoutAttemptReceipt,
+  resolveDishbeeServiceability,
+} from "./mealdeck-dishbee-contract";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
@@ -27,9 +35,10 @@ type DishbeeConfig = {
 };
 
 function readBase() {
-  const url = process.env["DISHBEE_SUPABASE_URL"];
-  const anonKey = process.env["DISHBEE_SUPABASE_ANON_KEY"];
-  return url && anonKey ? { url, anonKey } : null;
+  const selected = readMealDeckBackendConfig(process.env);
+  return selected.status === "ready"
+    ? { url: selected.backend.url, anonKey: selected.backend.publishableKey }
+    : null;
 }
 
 function readConfig(location: LocationKey): DishbeeConfig | null {
@@ -45,14 +54,13 @@ function dishbeeClient(config: { url: string; anonKey: string }) {
   });
 }
 
-/** Server-only key for Dishbee P27's service-role-only idempotent RPC.
+/** Server-only key for MealDeck's service-role-only idempotent RPC.
  * Never used by the browser, marketplace catalogue or public tracking.
  * Refuse legacy anonymous checkout rather than silently bypass P27.
  */
 function checkoutServerClient(config: DishbeeConfig) {
-  const key = process.env["DISHBEE_MEALDECK_CHECKOUT_SERVER_KEY"];
-  if (!key || key.length < 40 || key === config.anonKey ||
-      key.startsWith("sb_publishable_")) return null;
+  const key = readMealDeckCheckoutServerKey(process.env, config);
+  if (!key) return null;
   return createClient(config.url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -118,10 +126,13 @@ export const checkServiceability = createServerFn({ method: "POST" })
     };
 
     const base = readBase();
-    if (!base) return COMING_SOON ? fallback() : {
-      served: false,
-      message: "Live MealDeck serviceability is not connected yet.",
-    };
+    if (!base)
+      return COMING_SOON
+        ? fallback()
+        : {
+            served: false,
+            message: "Live MealDeck serviceability is not connected yet.",
+          };
 
     try {
       const { data: rows, error } = await dishbeeClient(base).rpc(
@@ -133,13 +144,17 @@ export const checkServiceability = createServerFn({ method: "POST" })
       );
       if (error) throw new Error(error.message);
 
-      const approved = (["luton", "stalbans"] as const).flatMap(key => {
+      const approved = (["luton", "stalbans"] as const).flatMap((key) => {
         const kitchen = readConfig(key);
-        return kitchen ? [{
-          location: key,
-          tenantId: kitchen.tenantId,
-          locationId: kitchen.locationId,
-        }] : [];
+        return kitchen
+          ? [
+              {
+                location: key,
+                tenantId: kitchen.tenantId,
+                locationId: kitchen.locationId,
+              },
+            ]
+          : [];
       });
       // Dishbee tenant and location UUIDs determine the kitchen. Never infer
       // a payment destination from a city name or postcode prefix.
@@ -173,77 +188,70 @@ export const getCatalogue = createServerFn({ method: "GET" })
         source: "sample",
         channelOpen: sampleLocationOpen(data.location),
         items: sampleMenu(data.location),
-        notice:
-          "Showing a preview menu while live ordering is unavailable.",
+        notice: "Showing a preview menu while live ordering is unavailable.",
       };
     }
 
     try {
-      const client=dishbeeClient(config);
-      let legacyCatalogue=false;
-      let {data:rows,error}=await client.rpc(
-        "public_mealdeck_catalogue",
-        {
-          p_tenant:config.tenantId,
-          p_location:config.locationId,
-        },
-      );
+      const client = dishbeeClient(config);
+      let legacyCatalogue = false;
+      let { data: rows, error } = await client.rpc("public_mealdeck_catalogue", {
+        p_tenant: config.tenantId,
+        p_location: config.locationId,
+      });
 
       // Backward-compatible fallback during staggered deployments.
-      if(error){
-        legacyCatalogue=true;
-        const fallback=await client.rpc(
-          "public_location_catalogue",
-          {
-            p_tenant:config.tenantId,
-            p_location:config.locationId,
-            p_channel:"mealdeck",
-          },
-        );
-        rows=fallback.data;
-        error=fallback.error;
+      if (error) {
+        legacyCatalogue = true;
+        const fallback = await client.rpc("public_location_catalogue", {
+          p_tenant: config.tenantId,
+          p_location: config.locationId,
+          p_channel: "mealdeck",
+        });
+        rows = fallback.data;
+        error = fallback.error;
       }
 
-      if(error)throw new Error(error.message);
+      if (error) throw new Error(error.message);
 
-      const list=(rows??[]) as Array<Record<string,unknown>>;
+      const list = (rows ?? []) as Array<Record<string, unknown>>;
 
       return {
-        source:legacyCatalogue?"sample":"live",
-        channelOpen:list.length?Boolean(list[0]!["channel_open"]):false,
-        notice:legacyCatalogue
-          ?"The live menu is updating. Checkout is temporarily disabled."
-          :undefined,
-        items:list.map((row)=>{
-          const groups=Array.isArray(row["modifier_groups"])
-            ? (row["modifier_groups"] as Array<Record<string,unknown>>).map((group)=>({
-                id:String(group["id"]),
-                name:String(group["name"]??"Options"),
-                minSelect:Number(group["minSelect"]??0),
-                maxSelect:Number(group["maxSelect"]??1),
-                options:Array.isArray(group["options"])
-                  ? (group["options"] as Array<Record<string,unknown>>).map((option)=>({
-                      id:String(option["id"]),
-                      name:String(option["name"]),
-                      priceDeltaPence:Number(option["priceDeltaPence"]??0),
+        source: legacyCatalogue ? "sample" : "live",
+        channelOpen: list.length ? Boolean(list[0]!["channel_open"]) : false,
+        notice: legacyCatalogue
+          ? "The live menu is updating. Checkout is temporarily disabled."
+          : undefined,
+        items: list.map((row) => {
+          const groups = Array.isArray(row["modifier_groups"])
+            ? (row["modifier_groups"] as Array<Record<string, unknown>>).map((group) => ({
+                id: String(group["id"]),
+                name: String(group["name"] ?? "Options"),
+                minSelect: Number(group["minSelect"] ?? 0),
+                maxSelect: Number(group["maxSelect"] ?? 1),
+                options: Array.isArray(group["options"])
+                  ? (group["options"] as Array<Record<string, unknown>>).map((option) => ({
+                      id: String(option["id"]),
+                      name: String(option["name"]),
+                      priceDeltaPence: Number(option["priceDeltaPence"] ?? 0),
                     }))
                   : [],
               }))
             : [];
 
-          const item:MenuItem={
-            id:String(row["item_id"]),
-            brandId:frontendBrandId(row),
-            category:String(row["category_name"]??"Menu"),
-            name:String(row["item_name"]),
-            pricePence:Number(row["price_pence"]??0),
-            imageUrl:row["image_url"]?String(row["image_url"]):null,
-            allergens:Array.isArray(row["allergens"])?row["allergens"].map(String):[],
-            hasModifiers:groups.length>0,
-            modifierGroups:groups,
+          const item: MenuItem = {
+            id: String(row["item_id"]),
+            brandId: frontendBrandId(row),
+            category: String(row["category_name"] ?? "Menu"),
+            name: String(row["item_name"]),
+            pricePence: Number(row["price_pence"] ?? 0),
+            imageUrl: row["image_url"] ? String(row["image_url"]) : null,
+            allergens: Array.isArray(row["allergens"]) ? row["allergens"].map(String) : [],
+            hasModifiers: groups.length > 0,
+            modifierGroups: groups,
           };
 
-          if(row["description"])item.description=String(row["description"]);
+          if (row["description"]) item.description = String(row["description"]);
           return item;
         }),
       };
@@ -253,8 +261,7 @@ export const getCatalogue = createServerFn({ method: "GET" })
         source: "sample",
         channelOpen: sampleLocationOpen(data.location),
         items: sampleMenu(data.location),
-        notice:
-          "The live menu is temporarily unavailable, so a preview menu is shown.",
+        notice: "The live menu is temporarily unavailable, so a preview menu is shown.",
       };
     }
   });
@@ -264,102 +271,131 @@ export const getCatalogue = createServerFn({ method: "GET" })
  * from a browser price. The final Dishbee order is repriced independently.
  */
 export type DeliveryEstimateResult =
-  | {ready:true;kind:"estimate";goodsPence:number;deliveryPence:number;
-     totalPence:number;quoteToken:string;expiresAt:string}
-  | {ready:false;reason:"unavailable"|"menu_changed"|"policy_unavailable"};
+  | {
+      ready: true;
+      kind: "estimate";
+      goodsPence: number;
+      deliveryPence: number;
+      totalPence: number;
+      quoteToken: string;
+      expiresAt: string;
+    }
+  | { ready: false; reason: "unavailable" | "menu_changed" | "policy_unavailable" };
 
-const activeFulfilmentSchema=z.enum(["delivery","pickup","curbside"]);
-const quoteLinesSchema=z.array(z.object({
-  itemId:z.string().uuid(),
-  quantity:z.number().int().min(1).max(50),
-  modifierIds:z.array(z.string().uuid()).max(20),
-})).min(1).max(60);
-const deliveryEstimateInput=z.object({
-  location:locationSchema,
-  fulfilment:activeFulfilmentSchema,
-  postcode:z.string().trim().min(5).max(12),
-  lines:quoteLinesSchema,
+const activeFulfilmentSchema = z.enum(["delivery", "pickup", "curbside"]);
+const quoteLinesSchema = z
+  .array(
+    z.object({
+      itemId: z.string().uuid(),
+      quantity: z.number().int().min(1).max(50),
+      modifierIds: z.array(z.string().uuid()).max(20),
+    }),
+  )
+  .min(1)
+  .max(60);
+const deliveryEstimateInput = z.object({
+  location: locationSchema,
+  fulfilment: activeFulfilmentSchema,
+  postcode: z.string().trim().min(5).max(12),
+  lines: quoteLinesSchema,
 });
-type QuoteRequest=z.infer<typeof deliveryEstimateInput>;
-type CurrentDishbeeQuote=
-  |{ready:true;amounts:{currency:"GBP";goodsPence:number;
-    deliveryPence:number;totalPence:number}}
-  |{ready:false;reason:"unavailable"|"menu_changed"|"policy_unavailable"};
+type QuoteRequest = z.infer<typeof deliveryEstimateInput>;
+type CurrentDishbeeQuote =
+  | {
+      ready: true;
+      amounts: { currency: "GBP"; goodsPence: number; deliveryPence: number; totalPence: number };
+    }
+  | { ready: false; reason: "unavailable" | "menu_changed" | "policy_unavailable" };
 
 /** Shared canonical repricing for both the estimate and the final checkout.
  * Each call reloads current serviceability, menu/option IDs and delivery
  * policy from Dishbee. The client has no influence over amounts.
  */
 async function readCurrentDishbeeQuote(
-  config:DishbeeConfig,request:QuoteRequest,
-):Promise<CurrentDishbeeQuote>{
-  const sb=dishbeeClient(config);
-  try{
-    const service=await sb.rpc("public_mealdeck_serviceability",{
-      p_postcode:request.postcode,p_fulfilment:request.fulfilment,
+  config: DishbeeConfig,
+  request: QuoteRequest,
+): Promise<CurrentDishbeeQuote> {
+  const sb = dishbeeClient(config);
+  try {
+    const service = await sb.rpc("public_mealdeck_serviceability", {
+      p_postcode: request.postcode,
+      p_fulfilment: request.fulfilment,
     });
-    if(service.error)return{ready:false,reason:"unavailable"};
-    const approved=resolveDishbeeServiceability(service.data,[{
-      location:request.location,tenantId:config.tenantId,locationId:config.locationId,
-    }]);
-    if(!approved.served||approved.location!==request.location||!approved.channelOpen)
-      return{ready:false,reason:"unavailable"};
-    const catalogue=await sb.rpc("public_mealdeck_catalogue",{
-      p_tenant:config.tenantId,p_location:config.locationId,
+    if (service.error) return { ready: false, reason: "unavailable" };
+    const approved = resolveDishbeeServiceability(service.data, [
+      {
+        location: request.location,
+        tenantId: config.tenantId,
+        locationId: config.locationId,
+      },
+    ]);
+    if (!approved.served || approved.location !== request.location || !approved.channelOpen)
+      return { ready: false, reason: "unavailable" };
+    const catalogue = await sb.rpc("public_mealdeck_catalogue", {
+      p_tenant: config.tenantId,
+      p_location: config.locationId,
     });
-    if(catalogue.error||!Array.isArray(catalogue.data))
-      return{ready:false,reason:"unavailable"};
-    const priced=estimateGoodsFromDishbee(catalogue.data,request.lines);
-    if(!priced.valid)return{ready:false,reason:"menu_changed"};
+    if (catalogue.error || !Array.isArray(catalogue.data))
+      return { ready: false, reason: "unavailable" };
+    const priced = estimateGoodsFromDishbee(catalogue.data, request.lines);
+    if (!priced.valid) return { ready: false, reason: "menu_changed" };
 
-    let delivery=0;
-    if(request.fulfilment==="delivery"){
-      const fee=await sb.rpc("public_mealdeck_delivery_fee",{
-        p_location:config.locationId,p_order_value_pence:priced.goodsPence,
+    let delivery = 0;
+    if (request.fulfilment === "delivery") {
+      const fee = await sb.rpc("public_mealdeck_delivery_fee", {
+        p_location: config.locationId,
+        p_order_value_pence: priced.goodsPence,
       });
-      if(fee.error)return{ready:false,reason:"policy_unavailable"};
-      const verifiedFee=verifyDishbeeFeeResult(fee.data);
-      if(verifiedFee===null)return{ready:false,reason:"policy_unavailable"};
-      delivery=verifiedFee;
+      if (fee.error) return { ready: false, reason: "policy_unavailable" };
+      const verifiedFee = verifyDishbeeFeeResult(fee.data);
+      if (verifiedFee === null) return { ready: false, reason: "policy_unavailable" };
+      delivery = verifiedFee;
     }
-    if(priced.goodsPence+delivery>10_000_000)
-      return{ready:false,reason:"policy_unavailable"};
-    return{
-      ready:true,
-      amounts:{
-        currency:"GBP",goodsPence:priced.goodsPence,
-        deliveryPence:delivery,totalPence:priced.goodsPence+delivery,
+    if (priced.goodsPence + delivery > 10_000_000)
+      return { ready: false, reason: "policy_unavailable" };
+    return {
+      ready: true,
+      amounts: {
+        currency: "GBP",
+        goodsPence: priced.goodsPence,
+        deliveryPence: delivery,
+        totalPence: priced.goodsPence + delivery,
       },
     };
-  }catch{
+  } catch {
     // Do not expose postcode, menu, tenant or provider internals.
-    return{ready:false,reason:"unavailable"};
+    return { ready: false, reason: "unavailable" };
   }
 }
 
-export const estimateDishbeeDelivery=createServerFn({method:"POST"})
-  .inputValidator((input:unknown)=>deliveryEstimateInput.parse(input))
-  .handler(async({data}):Promise<DeliveryEstimateResult>=>{
-    const config=readConfig(data.location);
-    if(!config)return{ready:false,reason:"unavailable"};
-    const current=await readCurrentDishbeeQuote(config,data);
-    if(!current.ready)return current;
-    const {issueMealDeckQuote}=await import("../server/mealdeck-quote");
-    const token=issueMealDeckQuote({
-      binding:{
-        tenantId:config.tenantId,locationId:config.locationId,
-        location:data.location,fulfilment:data.fulfilment,
-        postcode:data.postcode,lines:data.lines,
+export const estimateDishbeeDelivery = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => deliveryEstimateInput.parse(input))
+  .handler(async ({ data }): Promise<DeliveryEstimateResult> => {
+    const config = readConfig(data.location);
+    if (!config) return { ready: false, reason: "unavailable" };
+    const current = await readCurrentDishbeeQuote(config, data);
+    if (!current.ready) return current;
+    const { issueMealDeckQuote } = await import("../server/mealdeck-quote");
+    const token = issueMealDeckQuote({
+      binding: {
+        tenantId: config.tenantId,
+        locationId: config.locationId,
+        location: data.location,
+        fulfilment: data.fulfilment,
+        postcode: data.postcode,
+        lines: data.lines,
       },
-      amounts:current.amounts,
-      secret:process.env["MEALDECK_QUOTE_SIGNING_SECRET"],
-      nowMs:Date.now(),
+      amounts: current.amounts,
+      secret: process.env["MEALDECK_QUOTE_SIGNING_SECRET"],
+      nowMs: Date.now(),
     });
-    if(!token.ready)return{ready:false,reason:"policy_unavailable"};
-    return{
-      ready:true,kind:"estimate",
+    if (!token.ready) return { ready: false, reason: "policy_unavailable" };
+    return {
+      ready: true,
+      kind: "estimate",
       ...current.amounts,
-      quoteToken:token.token,expiresAt:token.expiresAt,
+      quoteToken: token.token,
+      expiresAt: token.expiresAt,
     };
   });
 
@@ -368,10 +404,12 @@ const orderSchema = z
     location: locationSchema,
     fulfilment: fulfilmentSchema,
     quoteToken: z.string().min(40).max(1536),
-    attemptId: z.string().regex(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-      "A secure checkout attempt identifier is required",
-    ),
+    attemptId: z
+      .string()
+      .regex(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        "A secure checkout attempt identifier is required",
+      ),
     lines: z
       .array(
         z.object({
@@ -395,61 +433,24 @@ const orderSchema = z
     customer: z.object({
       name: z.string().trim().min(1).max(120),
       phone: z.string().trim().min(5).max(40),
-      email: z
-        .string()
-        .email()
-        .max(160)
-        .optional()
-        .or(z.literal("")),
-      vehicleRegistration: z
-        .string()
-        .trim()
-        .max(12)
-        .optional()
-        .or(z.literal("")),
-      carMake: z
-        .string()
-        .trim()
-        .max(60)
-        .optional()
-        .or(z.literal("")),
-      address1: z
-        .string()
-        .max(200)
-        .optional()
-        .or(z.literal("")),
-      city: z
-        .string()
-        .max(120)
-        .optional()
-        .or(z.literal("")),
-      postcode: z
-        .string()
-        .trim()
-        .min(2)
-        .max(12),
-      notes: z
-        .string()
-        .max(400)
-        .optional()
-        .or(z.literal("")),
+      email: z.string().email().max(160).optional().or(z.literal("")),
+      vehicleRegistration: z.string().trim().max(12).optional().or(z.literal("")),
+      carMake: z.string().trim().max(60).optional().or(z.literal("")),
+      address1: z.string().max(200).optional().or(z.literal("")),
+      city: z.string().max(120).optional().or(z.literal("")),
+      postcode: z.string().trim().min(2).max(12),
+      notes: z.string().max(400).optional().or(z.literal("")),
     }),
   })
   .superRefine((value, ctx) => {
-    if (
-      value.location === "stalbans" &&
-      value.fulfilment !== "delivery"
-    ) {
+    if (value.location === "stalbans" && value.fulfilment !== "delivery") {
       ctx.addIssue({
         code: "custom",
         message: "St Albans is delivery only",
       });
     }
 
-    if (
-      value.fulfilment === "delivery" &&
-      (!value.customer.address1 || !value.customer.postcode)
-    ) {
+    if (value.fulfilment === "delivery" && (!value.customer.address1 || !value.customer.postcode)) {
       ctx.addIssue({
         code: "custom",
         message: "Delivery address required",
@@ -484,11 +485,14 @@ export const placeOrder = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<PlaceOrderResult> => {
     if (COMING_SOON) return { status: "failed", message: COMING_SOON_MESSAGE };
     const config = readConfig(data.location);
-    if (!mayCreateCustomerOrder({
-      comingSoon: COMING_SOON,
-      kitchenConfigured: config !== null,
-      checkoutApproval: process.env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"],
-    }) || !config) {
+    if (
+      !mayCreateCustomerOrder({
+        comingSoon: COMING_SOON,
+        kitchenConfigured: config !== null,
+        checkoutApproval: process.env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"],
+      }) ||
+      !config
+    ) {
       return { status: "unconfigured" };
     }
 
@@ -498,37 +502,44 @@ export const placeOrder = createServerFn({ method: "POST" })
     // A short-lived signed estimate is not sufficient by itself. Re-read
     // the live Dishbee catalogue, serviceability, and delivery policy here
     // and refuse a changed bill before creating any pending order.
-    if(data.fulfilment==="dinein") {
-      return {status:"failed",message:"This MealDeck fulfilment is not available."};
+    if (data.fulfilment === "dinein") {
+      return { status: "failed", message: "This MealDeck fulfilment is not available." };
     }
-    const request:QuoteRequest={
-      location:data.location,fulfilment:data.fulfilment,
-      postcode:data.customer.postcode,
-      lines:data.lines.map(line=>({
-        itemId:line.itemId,quantity:line.quantity,
-        modifierIds:line.modifiers.map(option=>option.id),
+    const request: QuoteRequest = {
+      location: data.location,
+      fulfilment: data.fulfilment,
+      postcode: data.customer.postcode,
+      lines: data.lines.map((line) => ({
+        itemId: line.itemId,
+        quantity: line.quantity,
+        modifierIds: line.modifiers.map((option) => option.id),
       })),
     };
-    const {verifyMealDeckQuote,matchesCurrentDishbeeAmounts}
-      =await import("../server/mealdeck-quote");
-    const verified=verifyMealDeckQuote({
-      token:data.quoteToken,
-      binding:{
-        tenantId:config.tenantId,locationId:config.locationId,
-        location:data.location,fulfilment:data.fulfilment,
-        postcode:data.customer.postcode,lines:request.lines,
+    const { verifyMealDeckQuote, matchesCurrentDishbeeAmounts } =
+      await import("../server/mealdeck-quote");
+    const verified = verifyMealDeckQuote({
+      token: data.quoteToken,
+      binding: {
+        tenantId: config.tenantId,
+        locationId: config.locationId,
+        location: data.location,
+        fulfilment: data.fulfilment,
+        postcode: data.customer.postcode,
+        lines: request.lines,
       },
-      secret:process.env["MEALDECK_QUOTE_SIGNING_SECRET"],
-      nowMs:Date.now(),
+      secret: process.env["MEALDECK_QUOTE_SIGNING_SECRET"],
+      nowMs: Date.now(),
     });
-    if(!verified.valid)return{
-      status:"failed",message:"Your price estimate has expired or changed. Refresh your basket.",
-    };
-    const current=await readCurrentDishbeeQuote(config,request);
-    if(!current.ready||!matchesCurrentDishbeeAmounts(verified.amounts,current.amounts)){
-      return{
-        status:"failed",
-        message:"Your kitchen, menu or delivery quote changed. Refresh your basket to continue.",
+    if (!verified.valid)
+      return {
+        status: "failed",
+        message: "Your price estimate has expired or changed. Refresh your basket.",
+      };
+    const current = await readCurrentDishbeeQuote(config, request);
+    if (!current.ready || !matchesCurrentDishbeeAmounts(verified.amounts, current.amounts)) {
+      return {
+        status: "failed",
+        message: "Your kitchen, menu or delivery quote changed. Refresh your basket to continue.",
       };
     }
 
@@ -550,9 +561,7 @@ export const placeOrder = createServerFn({ method: "POST" })
           p_lines: data.lines,
           p_delivery_pence: 0,
           p_address:
-            data.fulfilment === "delivery"
-              ? data.customer
-              : { postcode: data.customer.postcode },
+            data.fulfilment === "delivery" ? data.customer : { postcode: data.customer.postcode },
           p_vehicle_registration:
             data.fulfilment === "curbside"
               ? `${data.customer.carMake} · ${data.customer.vehicleRegistration}`
@@ -583,11 +592,11 @@ export const placeOrder = createServerFn({ method: "POST" })
       console.error("Dishbee idempotent checkout unavailable");
       return {
         status: "failed",
-        message: "We couldn't create the order through the secure kitchen system. Please try again or contact support.",
+        message:
+          "We couldn't create the order through the secure kitchen system. Please try again or contact support.",
       };
     }
   });
-
 
 export type OrderTrackingResult =
   | {
@@ -606,17 +615,21 @@ export const getOrderTracking = createServerFn({ method: "POST" })
     z
       .object({
         orderId: z.string().uuid(),
-        handoffCode: z.string().trim().regex(/^\d{4}$/),
+        handoffCode: z
+          .string()
+          .trim()
+          .regex(/^\d{4}$/),
       })
       .parse(input),
   )
   .handler(async ({ data }): Promise<OrderTrackingResult> => {
     // The route is hidden during Coming Soon, but the server function also
     // needs an explicit gate: a direct POST must not bypass the UI state.
-    if (COMING_SOON) return {
-      found: false,
-      message: "MealDeck live tracking is not open yet.",
-    };
+    if (COMING_SOON)
+      return {
+        found: false,
+        message: "MealDeck live tracking is not open yet.",
+      };
     const base = readBase();
     if (!base) {
       return {
@@ -626,37 +639,31 @@ export const getOrderTracking = createServerFn({ method: "POST" })
     }
 
     try {
-      const client=dishbeeClient(base);
-      let {data:rows,error}=await client.rpc(
-        "public_mealdeck_order_tracking_v2",
-        {
-          p_order:data.orderId,
-          p_handoff_code:data.handoffCode,
-        },
-      );
+      const client = dishbeeClient(base);
+      let { data: rows, error } = await client.rpc("public_mealdeck_order_tracking_v2", {
+        p_order: data.orderId,
+        p_handoff_code: data.handoffCode,
+      });
 
       // Only downgrade to the legacy, less detailed RPC when v2 is truly
       // missing. Permission, network and database failures must not silently
       // show stale or weaker tracking evidence.
-      if(error && (error.code==="PGRST202" || error.code==="42883")){
-        const fallback=await client.rpc(
-          "public_mealdeck_order_tracking",
-          {
-            p_order:data.orderId,
-            p_handoff_code:data.handoffCode,
-          },
-        );
-        rows=fallback.data;
-        error=fallback.error;
+      if (error && (error.code === "PGRST202" || error.code === "42883")) {
+        const fallback = await client.rpc("public_mealdeck_order_tracking", {
+          p_order: data.orderId,
+          p_handoff_code: data.handoffCode,
+        });
+        rows = fallback.data;
+        error = fallback.error;
       }
 
-      if(error)throw new Error(error.message);
+      if (error) throw new Error(error.message);
       // Unexpected multi-row or malformed replies fail closed instead of
       // exposing a possibly unrelated customer's order record.
-      if(!Array.isArray(rows) || rows.length>1){
+      if (!Array.isArray(rows) || rows.length > 1) {
         throw new Error("dishbee_tracking_contract_invalid");
       }
-      const row=(rows as Array<Record<string,unknown>>)[0];
+      const row = (rows as Array<Record<string, unknown>>)[0];
       if (!row) {
         return {
           found: false,
@@ -668,22 +675,17 @@ export const getOrderTracking = createServerFn({ method: "POST" })
         found: true,
         orderStatus: String(row["order_status"] ?? ""),
         fulfilment: String(row["fulfilment"] ?? ""),
-        passStatus: row["pass_status"]
-          ? String(row["pass_status"])
-          : undefined,
-        deliveryStatus: row["delivery_status"]
-          ? String(row["delivery_status"])
-          : undefined,
+        passStatus: row["pass_status"] ? String(row["pass_status"]) : undefined,
+        deliveryStatus: row["delivery_status"] ? String(row["delivery_status"]) : undefined,
         // Never expose arbitrary provider-supplied destinations to customers.
-        trackingUrl: String(row["fulfilment"] ?? "") === "delivery"
-          ? safeCourierTrackingUrl(
-              row["tracking_url"],
-              process.env["MEALDECK_TRACKING_ALLOWED_HOSTS"],
-            ) ?? undefined
-          : undefined,
-        updatedAt: row["updated_at"]
-          ? String(row["updated_at"])
-          : undefined,
+        trackingUrl:
+          String(row["fulfilment"] ?? "") === "delivery"
+            ? (safeCourierTrackingUrl(
+                row["tracking_url"],
+                process.env["MEALDECK_TRACKING_ALLOWED_HOSTS"],
+              ) ?? undefined)
+            : undefined,
+        updatedAt: row["updated_at"] ? String(row["updated_at"]) : undefined,
       };
     } catch (error) {
       console.error("Dishbee order tracking failed", error);

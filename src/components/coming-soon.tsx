@@ -84,7 +84,7 @@ export function OrderingPreview() {
               onChange={e=>setPostcode(e.target.value.toUpperCase().slice(0,10))}
               placeholder="e.g. LU1 2AB" className="min-h-12 w-full rounded-xl border border-[var(--md-line)] bg-white pl-10 pr-3"/>
           </div>
-          <p className="mt-2 text-xs text-[var(--md-muted)]">Postcode availability will be checked live through Dishbee at launch. Entering it here does not confirm serviceability.</p>
+          <p className="mt-2 text-xs text-[var(--md-muted)]">Delivery availability will be checked at launch. Entering your postcode here does not confirm delivery is available.</p>
         </div>
         <div>
           <p className="text-xs font-black uppercase tracking-wide text-[var(--md-muted)]">Choose how you would order</p>
@@ -316,7 +316,7 @@ export function OrderingPreview() {
               </li>)}</ul>
               <p className="mt-2 text-xs text-[var(--md-muted)]">Total {formatPence(split.totalPence)}; the penny remainder is assigned deterministically. Delivery excluded.</p>
             </div>}
-            <p className="text-xs text-[var(--md-muted)]">Sample basket value: {formatPence(estimate)}. Only Dishbee's captured payment confirmation can release kitchen tickets.</p>
+            <p className="text-xs text-[var(--md-muted)]">Sample basket value: {formatPence(estimate)}. Preparation will only begin after payment is verified.</p>
           </div>}
           <div className="mt-5 rounded-xl border border-[var(--md-line)] p-4 text-sm">
             <p className="font-black">Handoff checklist · {fulfilment==="curbside"?"kerbside":fulfilment}</p>
@@ -345,7 +345,7 @@ export function OrderingPreview() {
         <div className="flex items-start gap-3">
           <MessageCircle className="mt-1 size-6 shrink-0 text-[var(--md-yellow)]"/>
           <div><h2 className="font-display text-xl font-bold">Website, app and WhatsApp — one kitchen system</h2>
-            <p className="mt-2 text-sm leading-6 text-white/80">We are preparing one Dishbee-powered order journey across all channels. Verified payment, brand-specific KDS, invitation payments, handoff codes and courier tracking are required before launch. A WhatsApp conversation alone will never be a paid order.</p>
+            <p className="mt-2 text-sm leading-6 text-white/80">We are preparing one MealDeck order journey across all channels, with secure payments, group ordering, collection codes and delivery updates. All your brands will be prepared together in one kitchen. WhatsApp ordering is coming soon.</p>
           </div>
         </div>
       </section>

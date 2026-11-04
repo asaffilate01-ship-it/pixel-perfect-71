@@ -1,3 +1,5 @@
+import { MEALDECK_BUSINESS } from "./business-identity";
+
 export const SITE_URL = "https://mealdeck.co.uk";
 export const OG_IMAGE = `${SITE_URL}/og-image.png`;
 
@@ -63,7 +65,7 @@ export const stAlbansBusiness = business("St Albans", {
 export const orgJsonLd = {
   "@context": "https://schema.org",
   "@graph": [
-    { "@type": "Organization", name: "MealDeck", url: SITE_URL, logo: `${SITE_URL}/favicon.png`, slogan: "One Order. Every Craving." },
+    { "@type": "Organization", name: MEALDECK_BUSINESS.tradingName, legalName: MEALDECK_BUSINESS.legalName, url: SITE_URL, logo: `${SITE_URL}/favicon.png`, slogan: "One Order. Every Craving." },
     { "@type": "WebSite", name: "MealDeck", url: SITE_URL },
     lutonBusiness,
     stAlbansBusiness,

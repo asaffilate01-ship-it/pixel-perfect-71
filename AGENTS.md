@@ -9,6 +9,14 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
+## Independent MealDeck backend — owner decision, 4 November 2026
+
+- MealDeck is a trading name of **313 Brands Ltd**, with the technology credit **Powered by Dishbee**.
+- Use an independent MealDeck Supabase project/database. This explicit owner decision supersedes the earlier shared-Dishbee database ownership assumption in historical phase documents. Keep verified payment, staff permissions, tenant/kitchen scoping, source isolation and launch gates intact.
+- The standalone database profile is documented in `docs/mealdeck-independent-backend-phase47.md`. Never apply its fresh-project bootstrap to Dishbee, Cafe 1 or another existing application database. Never copy production merchant/customer/payment records as seed data.
+- Staff and customer runtime connections must use the same explicitly configured MealDeck project. Do not silently fall back to Dishbee credentials or combine a URL from one project with a key from another.
+- One current kitchen means one shared KDS screen for all brands. Future kitchens get separately authorised screens. Keep one complete order card through preparation and packing.
+
 - Keep the commercial homepage brand collection independent from location-filtered ordering menus, because marketing and operational availability can differ.
 
 - SEO head tags come from the shared `seo()` helper with mealdeck.co.uk as the canonical base — keeps canonical/og consistent per page.
@@ -23,13 +31,13 @@
 
 - Review `PRODUCT.md` and `DESIGN.md` before MealDeck feature/UI changes. Preserve the card/food identity, existing approved artwork, app vs marketing contrast tokens, and clearly marked sample/illustrative menus.
 - Develop via the GitHub codebase and tests; do not invoke Lovable as a build environment. Leave all existing Git/Lovable history untouched.
-- MealDeck must never assume that a WhatsApp chat, agent response, browser redirect or illustrative price is a paid order. Only Dishbee's verified server-side payment/order authority can release KDS.
+- MealDeck must never assume that a WhatsApp chat, agent response, browser redirect or illustrative price is a paid order. Only the configured MealDeck backend's verified server-side payment/order authority can release KDS.
 - Per-location official WhatsApp business numbers are server-configured, verified and disabled by default. No private account/customer data, checkout state or prices in chat-link query strings. Omniqora keeps channel identity; Cafe 1's independent EPOS and restricted menus stay separate.
 
 
 ## MealDeck Phases 19–21 safety and design contract
 
-- Treat source module group allocations as **illustrative plans**. The only live settlement authority is Dishbee's immutable server-priced order/share ledger plus verified Adyen event receipt.
+- Treat source module group allocations as **illustrative plans**. The only live settlement authority is the MealDeck backend's immutable server-priced order/share ledger plus verified provider event receipt.
 - Keep multi-brand delivery fee once per master order. Allocations must have no lost/duplicated pennies or unassigned quantity.
 - Use src/lib/mealdeck-agent-guardrails.ts as a **server-side admission policy only**: never convert a model-provided boolean, role, tenant, order ID or permission to trusted identity. Do not enable arbitrary MCP/SQL, provider webhooks, KDS releases, payments or courier bookings from an LLM.
 - Human review is mandatory for allergens, disputed payments, delivery exceptions and refunds. AI outputs and traces must redact personal information and secrets.
@@ -38,7 +46,7 @@
 
 ## MealDeck Phase 22/23 canonical runtime boundaries
 
-- Match Dishbee serviceability responses only by trusted server-configured
+- Match the configured backend's serviceability responses only by trusted server-configured
   tenant and location UUID pairs. City and postcode strings are never routing
   authority. Unknown, ambiguous, missing and failed RPC responses mean not
   verified; never turn them into sample-confirmed live serviceability.
@@ -49,33 +57,33 @@
   separate server-only `MEALDECK_CHECKOUT_INTEGRATION_APPROVED=signed-off`
   release switch are intentionally changed after staging acceptance. The
   environment switch is NOT a replacement for a real Adyen session adapter.
-- Do not enable checkout until Dishbee's signed webhook, group payment,
+- Do not enable checkout until MealDeck's signed webhook, group payment,
   source-of-funds split, KDS, one-delivery orchestration, full refunds,
   replays and customer payment UI are functional and accepted.
 
 ## Phase 27 source-owned fee estimates
 
-- The customer basket never chooses a delivery fee. Dishbee's current
+- The customer basket never chooses a delivery fee. MealDeck's current
   server-side catalogue reprices each item and modifier ID before a delivery
   policy RPC can estimate one location-level fee. Missing live policy means
   no checkout, not an assumed flat £2.99 or free delivery.
 - The MealDeck checkout RPC still accepts a deprecated p_delivery_pence
   argument; this app deliberately passes zero and relies on the independent
-  Dishbee configured fee plus reviewed database guard. Never turn off
-  COMING_SOON or the other checkout gate until the Dishbee P25 migration
-  has passed staging and a real Adyen session exists.
+  backend-configured fee plus reviewed database guard. Never turn off
+  COMING_SOON or the other checkout gate until that guard passes staging in
+  the independent MealDeck project and a real provider payment session exists.
 - An estimate is not a courier quote, final order, captured payment or
   order confirmation; it can change during checkout.
 
 ## Phases 28-30 signed checkout quotation
 
 - All customer-facing quotes must be issued by the MealDeck server after
-  checking Dishbee's current tenant/location serviceability, catalogue
+  checking MealDeck's current tenant/location serviceability, catalogue
   modifiers and kitchen policy. Do not trust browser prices or a city name.
 - The quote token binds the tenant/kitchen, fulfillment, normalized customer
   postcode, exact item IDs, quantities, modifier IDs and integer-pence amounts
   to a short expiry using a server-only HMAC signing secret.
-- Verify the token and reprice again against the current canonical Dishbee
+- Verify the token and reprice again against the current canonical MealDeck
   records before creating any pending order. Stale quotes fail closed.
 - Signed quotes are NOT a provider guarantee, fund capture, an order booking,
   a payment session, or a sufficient go-live signal. The current checkout RPC

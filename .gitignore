@@ -20,6 +20,11 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Local Supabase CLI metadata; project links and generated state are not source.
+supabase/.temp/
+deploy/mealdeck/supabase/.temp/
+deploy/mealdeck/generated/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

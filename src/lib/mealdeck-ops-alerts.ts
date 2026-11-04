@@ -68,7 +68,7 @@ export function reviewOrderExceptions(
       alerts.push({
         orderId: order.order_id, priority: "info", reason: "payment_pending",
         ageMinutes: sinceCreated, title: "Review unresolved checkout",
-        detail: "Payment remains unrecorded after the review threshold. Do not send to KDS unless Dishbee verifies capture.",
+        detail: "Payment remains unrecorded after the review threshold. Do not send to KDS until the payment integration verifies capture.",
       });
     }
   }

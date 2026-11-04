@@ -13,7 +13,15 @@ import {
   UserRoundCog,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
-import { getMealDeckOpsClient, opsRpc, opsRows, type OpsAccess } from "@/lib/mealdeck-ops-browser";
+import {
+  getMealDeckOpsClient,
+  initializeMealDeckOpsClient,
+  resetMealDeckOpsClient,
+  opsRpc,
+  opsRows,
+  type OpsAccess,
+} from "@/lib/mealdeck-ops-browser";
+import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 import {
   effectiveOpsPermissions,
   OPS_SECTIONS,
@@ -126,6 +134,7 @@ function lastMonth() {
 export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: boolean }) {
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [authCycle, setAuthCycle] = useState(0);
   const [authError, setAuthError] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
   const [email, setEmail] = useState("");
@@ -143,62 +152,98 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
   const [toDate, setToDate] = useState(dateISO(new Date()));
   const [data, setData] = useState<WorkspaceData>(blank);
   const reqRef = useRef(0);
+  const accessRequest = useRef(0);
+  const authRequest = useRef(0);
+  const activeUserId = useRef<string | null>(null);
+  const signingOut = useRef(false);
+
+  const clearStaffState = useCallback(() => {
+    reqRef.current++;
+    accessRequest.current++;
+    authRequest.current++;
+    activeUserId.current = null;
+    setUser(null);
+    setAccesses([]);
+    setTenant("");
+    setLocation("");
+    setLocations([]);
+    setData(blank());
+    setNotice("");
+    setError("");
+    setPassword("");
+    setAccessBusy(false);
+    setLoading(false);
+  }, []);
 
   const fetchAccess = useCallback(async () => {
+    const request = ++accessRequest.current;
     setAccessBusy(true);
     try {
       const rows = opsRows<OpsAccess>(await opsRpc<unknown>("mealdeck_ops_my_access"));
+      if (request !== accessRequest.current) return;
       setAccesses(rows);
       setTenant((previous) =>
         rows.some((x) => x.tenant_id === previous) ? previous : (rows[0]?.tenant_id ?? ""),
       );
     } catch (reason) {
+      if (request !== accessRequest.current) return;
       setAccesses([]);
       setAuthError(
         reason instanceof Error ? reason.message : "Staff access could not be verified.",
       );
     } finally {
-      setAccessBusy(false);
+      if (request === accessRequest.current) setAccessBusy(false);
     }
   }, []);
 
   useEffect(() => {
     let current = true;
-    try {
-      const sb = getMealDeckOpsClient();
-      void sb.auth.getUser().then(({ data: result, error: authIssue }) => {
+    const request = ++authRequest.current;
+    let unsubscribe: (() => void) | undefined;
+    setCheckingAuth(true);
+    setAuthError("");
+    void initializeMealDeckOpsClient(true)
+      .then(async (sb) => {
         if (!current) return;
+        const {
+          data: { subscription },
+        } = sb.auth.onAuthStateChange((event, session) => {
+          if (!current) return;
+          const changedUser =
+            event === "SIGNED_IN" &&
+            activeUserId.current !== null &&
+            session?.user.id !== activeUserId.current;
+          if (event === "SIGNED_OUT" || changedUser) {
+            clearStaffState();
+            if (!signingOut.current) {
+              resetMealDeckOpsClient();
+              setAuthCycle((cycle) => cycle + 1);
+            }
+          }
+        });
+        unsubscribe = () => subscription.unsubscribe();
+        const { data: result, error: authIssue } = await sb.auth.getUser();
+        if (!current || request !== authRequest.current) return;
         if (authIssue || !result.user) {
-          setUser(null);
+          clearStaffState();
         } else {
+          activeUserId.current = result.user.id;
           setUser(result.user);
           void fetchAccess();
         }
         setCheckingAuth(false);
+      })
+      .catch((reason) => {
+        if (!current || request !== authRequest.current) return;
+        clearStaffState();
+        setAuthError(reason instanceof Error ? reason.message : "Staff login is not configured.");
+        setCheckingAuth(false);
       });
-      const {
-        data: { subscription },
-      } = sb.auth.onAuthStateChange((event) => {
-        if (!current) return;
-        if (event === "SIGNED_OUT") {
-          reqRef.current++;
-          setUser(null);
-          setAccesses([]);
-          setTenant("");
-          setLocation("");
-          setData(blank());
-        }
-      });
-      return () => {
-        current = false;
-        subscription.unsubscribe();
-      };
-    } catch (reason) {
-      setAuthError(reason instanceof Error ? reason.message : "Staff login is not configured.");
-      setCheckingAuth(false);
-      return undefined; // Effect cleanup is optional when no client exists.
-    }
-  }, [fetchAccess]);
+    return () => {
+      current = false;
+      unsubscribe?.();
+    };
+  }, [fetchAccess, clearStaffState, authCycle]);
 
   useEffect(() => {
     let current = true;
@@ -415,16 +460,20 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
     setAuthError("");
     setLoginBusy(true);
     try {
-      const sb = getMealDeckOpsClient();
+      const sb = await initializeMealDeckOpsClient(true);
       const { data: result, error: issue } = await sb.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (issue || !result.user)
         throw new Error("Staff sign-in was not accepted. Check your credentials.");
+      if (getMealDeckOpsClient() !== sb)
+        throw new Error("The staff connection changed. Please sign in again.");
       setPassword("");
-      setUser(result.user);
-      await fetchAccess();
+      // Reattach the auth observer to the currently selected MealDeck client
+      // and re-read access; no role/tenant state crosses a new staff session.
+      clearStaffState();
+      setAuthCycle((cycle) => cycle + 1);
     } catch (reason) {
       setAuthError(reason instanceof Error ? reason.message : "Staff sign-in failed.");
     } finally {
@@ -435,7 +484,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
     setAuthError("");
     setLoginBusy(true);
     try {
-      const sb = getMealDeckOpsClient();
+      const sb = await initializeMealDeckOpsClient(true);
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
         throw new Error("Enter your existing staff email first.");
       const { error: issue } = await sb.auth.signInWithOtp({
@@ -456,15 +505,17 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
     }
   }
   async function signOut() {
-    reqRef.current++;
+    signingOut.current = true;
+    clearStaffState();
     try {
-      await getMealDeckOpsClient().auth.signOut();
+      await getMealDeckOpsClient().auth.signOut({ scope: "local" });
+    } catch {
+      // Private UI is already cleared. Retire this connection even if the
+      // authentication SDK cannot finish its remote logout request.
     } finally {
-      setUser(null);
-      setAccesses([]);
-      setTenant("");
-      setLocation("");
-      setData(blank());
+      resetMealDeckOpsClient();
+      signingOut.current = false;
+      setAuthCycle((cycle) => cycle + 1);
     }
   }
   const kitchenSelected = selectedSection === "kitchen";
@@ -972,8 +1023,9 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
             )}
             {!kitchenSelected && (
               <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <Store className="size-4" /> Records are from the approved Dishbee data source.
-                Owner approval is required for tenant-wide editing.
+                <Store className="size-4" /> Records belong to MealDeck’s independent database.{" "}
+                {MEALDECK_BUSINESS.technologyCredit}. Owner approval is required for tenant-wide
+                editing.
                 <UserRoundCog className="ml-2 size-4" /> No automatic staff invitations or checkout
                 activation.
                 <ClipboardList className="ml-2 size-4" /> Coming-soon customer ordering remains

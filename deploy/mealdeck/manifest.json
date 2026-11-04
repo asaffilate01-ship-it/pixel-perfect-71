@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "profile": "mealdeck-independent-v1",
+  "sources": [
+    {
+      "path": "deploy/mealdeck/source-migrations/20261104213833_mealdeck_standalone_foundation.sql"
+    },
+    {
+      "path": "supabase/migrations/20261102191000_mealdeck_ops_core.sql",
+      "sha256": "87468e5fd45243900c57b580ef4be3636e353f0a83fa438393768ac8a9517efa"
+    },
+    {
+      "path": "supabase/migrations/20261102191500_mealdeck_ops_recipe_finance.sql",
+      "sha256": "f67d80d3916fc5566c37ad24b95c4a231e05cecced91ebfad3f378710d922a59",
+      "normalizeAnalyticsDayAlias": true
+    },
+    {
+      "path": "supabase/migrations/20261102202500_mealdeck_ops_procurement_batches.sql",
+      "sha256": "fac123ffb274e2954ceca8744290b2fbd5a286c761c75be6f2221386819485a7"
+    },
+    {
+      "path": "supabase/migrations/20261102214500_mealdeck_ops_invoice_matching.sql",
+      "sha256": "501911f2bc9ccf2e438aa8317a878bcef030c2b8890ac4611c6a33b74ec18c96"
+    },
+    {
+      "path": "supabase/migrations/20261102220000_mealdeck_group_invite_foundation.sql",
+      "sha256": "b58e95c8cc1672b8fb71638616f7346f1c531e08e7ba2ab39081a4e460c71e0d"
+    },
+    {
+      "path": "supabase/migrations/20261102224500_mealdeck_fulfilment_foundation.sql",
+      "sha256": "b72838eeddeeb27f8b05c91b2c2dca6aa444586082eb3e3683bee01d1c83ff34"
+    },
+    {
+      "path": "supabase/migrations/20261104210005_mealdeck_ops_kds_workspace.sql",
+      "sha256": "9bebcdb4a9c1c1be668a70eac636781487ff0072ee7ecbc3c199b363e5779673",
+      "normalizeTopLevelTransaction": true
+    },
+    {
+      "path": "deploy/mealdeck/source-migrations/20261104213840_mealdeck_standalone_runtime.sql"
+    }
+  ]
+}

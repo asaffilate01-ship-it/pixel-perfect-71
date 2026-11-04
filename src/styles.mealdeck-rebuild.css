@@ -550,7 +550,7 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 .md-app-logo { display: flex; align-items: center; justify-content: center; transition: transform .2s ease, filter .2s ease; }
 .md-app-logo:hover { transform: translateY(-2px); filter: drop-shadow(0 8px 16px rgba(0,0,0,.45)); }
 .md-app-logo img { height: 64px; width: auto; border-radius: 14px; display: block; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
-.md-footer-bottom { padding: 16px 20px; display: flex; justify-content: center; gap: 28px; border-top: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.45); font-size: 12px; }
+.md-footer-bottom { padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 28px; border-top: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.65); font-size: 12px; line-height: 1.6; text-align: center; }
 
 /* Location pages */
 .md-location-hero { position: relative; overflow: hidden; min-height: 600px; padding: 80px max(20px, calc((100vw - 1440px)/2)); display: grid; grid-template-columns: 1.25fr .75fr; align-items: center; gap: 50px; background: linear-gradient(90deg, rgba(95,5,12,.97) 0%, rgba(125,8,17,.9) 42%, rgba(125,8,17,.62) 72%, rgba(95,5,12,.82) 100%), var(--md-location-hero-img, none) center 45% / cover no-repeat, var(--md-red-deep); color: white; border-bottom: 8px solid var(--md-yellow); }

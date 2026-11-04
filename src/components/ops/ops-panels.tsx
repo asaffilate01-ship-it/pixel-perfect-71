@@ -4,6 +4,7 @@ import {
   Plus,ShieldCheck,Trash2,
 } from "lucide-react";
 import {opsRpc} from "@/lib/mealdeck-ops-browser";
+import {MenuKitchenRoute} from "./menu-kitchen-route";
 import {reviewOrderExceptions} from "@/lib/mealdeck-ops-alerts";
 import {OPS_PERMISSIONS,type OpsPermission} from "@/lib/mealdeck-ops-access";
 import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cleanDailySeries} from "@/lib/mealdeck-ops-math";
@@ -60,6 +61,8 @@ export function OpsMenuPanel(props:Common&{
 }){
   const{menu,taxonomy,tenantId,locationId,can,canGlobal,reload,notice}=props;
   const{busy,error,commit}=useCommit({reload,notice});
+  const[routingBusy,setRoutingBusy]=useState(false);
+  const menuBusy=busy||routingBusy;
   const[query,setQuery]=useState("");
   const[editing,setEditing]=useState("");
   const[name,setName]=useState("");
@@ -86,7 +89,7 @@ export function OpsMenuPanel(props:Common&{
     <section className={card}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h2 className="text-xl font-black">Brand menus</h2>
-          <p className="mt-1 text-sm text-slate-500">Canonical Dishbee products, with MealDeck location visibility.</p>
+          <p className="mt-1 text-sm text-slate-500">MealDeck products, with visibility managed for each kitchen.</p>
         </div><Status label={menu.length+" products"}/>
       </div>
       <Labelled label="Search menus and brands">
@@ -101,8 +104,8 @@ export function OpsMenuPanel(props:Common&{
             <p className="text-sm text-slate-500">{penceToPounds(row.location_price_pence)} · {row.visible&&row.active?"Visible":"Hidden or inactive"}</p>
           </div>
           <div className="flex shrink-0 flex-col gap-2">
-            <button type="button" className={secondary} onClick={()=>choose(row)}>Edit</button>
-            {can("menu.write")&&<button type="button" className={secondary} disabled={busy}
+            <button type="button" className={secondary} disabled={menuBusy} onClick={()=>choose(row)}>Edit</button>
+            {can("menu.write")&&<button type="button" className={secondary} disabled={menuBusy}
               onClick={()=>void commit(async()=>{
                 const ok=await opsRpc<boolean>("mealdeck_ops_set_menu_visibility",{
                   p_tenant:tenantId,p_location:locationId,p_item:row.item_id,p_visible:!row.visible,
@@ -119,17 +122,21 @@ export function OpsMenuPanel(props:Common&{
     <div className="space-y-5">
       <section className={card}>
         <h2 className="text-lg font-black">Edit master product</h2>
-        <p className="mt-1 text-xs text-slate-500">Price and name changes affect the shared canonical Dishbee item. A tenant-wide menu role is required. Channel-specific price overrides may still apply.</p>
+        <p className="mt-1 text-xs text-slate-500">Price and name changes affect the MealDeck master product across its kitchens. A business-wide menu role is required. Channel-specific price overrides may still apply.</p>
         {!current?<p className="mt-4 text-sm text-slate-500">Select a product from the list to edit it.</p>:<div className="mt-4 space-y-3">
-          <Labelled label="Product name"><input value={name} disabled={!globalWrite||busy}
+          <Labelled label="Product name"><input value={name} disabled={!globalWrite||menuBusy}
             onChange={e=>setName(e.target.value)} className={field}/></Labelled>
-          <Labelled label="Description"><textarea value={description} rows={3} disabled={!globalWrite||busy}
+          <Labelled label="Description"><textarea value={description} rows={3} disabled={!globalWrite||menuBusy}
             onChange={e=>setDescription(e.target.value)} className={field}/></Labelled>
           <Labelled label="Base price (£)"><input inputMode="decimal" value={price}
-            disabled={!globalWrite||busy} onChange={e=>setPrice(e.target.value)} className={field}/></Labelled>
+            disabled={!globalWrite||menuBusy} onChange={e=>setPrice(e.target.value)} className={field}/></Labelled>
+          {!current.active&&can("menu.write")&&<MenuKitchenRoute
+            key={tenantId+":"+locationId+":"+current.item_id}
+            tenantId={tenantId} locationId={locationId} itemId={current.item_id}
+            disabled={busy} canActivate={globalWrite} onBusyChange={setRoutingBusy}/>}
           <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={active}
-            disabled={!globalWrite||busy} onChange={e=>setActive(e.target.checked)} className="size-5"/> Active in canonical menu</label>
-          <button type="button" className={primary} disabled={!globalWrite||busy}
+            disabled={!globalWrite||menuBusy} onChange={e=>setActive(e.target.checked)} className="size-5"/> Active in canonical menu</label>
+          <button type="button" className={primary} disabled={!globalWrite||menuBusy}
             onClick={()=>void commit(async()=>{
               const value=poundsToPence(price);
               if(value===null)throw new Error("Enter a valid price with no more than two decimals.");
@@ -155,16 +162,17 @@ export function OpsMenuPanel(props:Common&{
             onChange={e=>setNewPrice(e.target.value)} className={field}/></Labelled>
           <Labelled label="Description"><textarea value={newDesc} rows={2}
             onChange={e=>setNewDesc(e.target.value)} className={field}/></Labelled>
-          <button type="button" className={primary} disabled={busy||!selection}
+          <button type="button" className={primary} disabled={menuBusy||!selection}
             onClick={()=>void commit(async()=>{
               const value=poundsToPence(newPrice);
               if(value===null||!selection)throw new Error("Choose a category and valid price.");
-              await opsRpc("mealdeck_ops_create_menu_item",{
+              const created=await opsRpc<string>("mealdeck_ops_create_menu_item",{
                 p_tenant:tenantId,p_brand:selection.brand_id,p_category:selection.category_id,
                 p_name:newName,p_description:newDesc,p_price_pence:value,
               });
+              if(typeof created!=="string")throw new Error("The new product could not be confirmed. Reload the menu before trying again.");
               setNewName("");setNewPrice("");setNewDesc("");
-            },"Product saved as INACTIVE draft. Confirm allergens, modifiers and KDS station routing before activating.")}>
+            },"Product saved as an inactive draft. Choose Edit to assign it to the kitchen and review allergens and modifiers before activating.")}>
             <Plus className="mr-1 inline size-4"/> Add product
           </button>
         </div>
@@ -198,7 +206,7 @@ export function OpsOrdersPanel({
     <div className="flex items-start gap-3">
       <ClipboardList className="mt-1 size-6 text-amber-600"/>
       <div><h2 className="text-xl font-black">Order history</h2>
-        <p className="mt-1 text-sm text-slate-500">Real Dishbee orders only. Payment pending is not a completed sale; marketplace order numbers and delivery proofs follow provider integrations, not guessed labels.</p>
+        <p className="mt-1 text-sm text-slate-500">MealDeck order records. Payment pending is not a completed sale; marketplace order numbers and delivery proofs require verified provider records.</p>
       </div>
     </div>
     <section aria-label="Order review watchlist" className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
@@ -569,7 +577,7 @@ export function OpsFinancePanel(props:Common&{
     </div>
     <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
       <ShieldCheck className="mt-0.5 size-5 shrink-0"/>
-      <p><b>Not an audited profit-and-loss statement.</b> Paid totals are recorded in Dishbee, not independently bank-reconciled. Refunds are settled Hive allocations; manual expenses may be incomplete. VAT, actual stock consumption, provider fees, payroll accruals and merchant settlement verification are not yet calculated.</p>
+      <p><b>Not an audited profit-and-loss statement.</b> Paid totals are recorded in MealDeck and have not been independently bank-reconciled. Refund figures use recorded settled allocations; manual expenses may be incomplete. VAT, actual stock consumption, provider fees, payroll accruals and merchant settlement verification are not yet calculated.</p>
     </div>
     <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
       <section className={card}>
@@ -627,12 +635,12 @@ export function OpsAnalyticsPanel({analytics,brandSales}:{analytics:OpsAnalytics
       <div className={card}><p className="text-sm text-slate-500">Recorded paid gross</p>
         <p className="mt-2 text-3xl font-black">{analytics?penceToPounds(analytics.recordedPaidGrossPence):"—"}</p></div>
       <div className={card}><p className="text-sm text-slate-500">Reporting basis</p>
-        <p className="mt-2 text-sm font-bold">Dishbee paid_at, by kitchen</p>
+        <p className="mt-2 text-sm font-bold">Recorded payments, by kitchen</p>
         <p className="mt-1 text-xs text-slate-500">Not independently settled or VAT-adjusted.</p></div>
     </div>
     <section className={card}>
       <h2 className="text-xl font-black">Recorded paid sales by day</h2>
-      <p className="mt-1 text-sm text-slate-500">Only canonical Dishbee orders with a recorded paid_at timestamp. No sample sales or estimated refunds.</p>
+      <p className="mt-1 text-sm text-slate-500">MealDeck orders with a recorded payment timestamp. No sample sales or estimated refunds.</p>
       {points.length?<div className="mt-6 flex h-56 items-end gap-2 overflow-x-auto border-b border-slate-200 pb-2">
         {points.map(p=><div key={p.date} className="flex min-w-7 flex-1 flex-col items-center gap-2"
           title={p.date+": "+penceToPounds(p.grossPence)+" · "+p.orders+" orders"}>

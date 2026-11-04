@@ -72,7 +72,7 @@ export function TrackingTimeline({ value }: TimelineProps) {
         })}
       </ol>
       <p className="mt-4 text-xs leading-5 text-muted-foreground">
-        These milestones reflect recorded Dishbee or courier statuses, not a live location or
+        These milestones reflect recorded kitchen or courier statuses, not a live location or
         a guaranteed ETA. Customer handoff and payment evidence are verified by the kitchen
         system separately.
       </p>

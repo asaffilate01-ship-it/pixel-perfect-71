@@ -147,17 +147,17 @@ export function presentMealDeckTracking(snapshot: TrackingSnapshot): TrackingPre
       "progress", stages, false, updatedAtIso);
   }
 
-  stages[0] = stage("payment", "Payment", "Payment marked confirmed by Dishbee", "done");
+  stages[0] = stage("payment", "Payment", "Payment confirmation recorded", "done");
   const kitchenReady = pass !== null || ["ready", "fulfilled", "completed", "delivered"].includes(order);
   stages[1] = stage("kitchen", "Kitchen preparation",
-    kitchenReady ? "Dishbee reports preparation complete" : "Your brands are preparing their dishes",
+    kitchenReady ? "The kitchen reports preparation complete" : "Your brands are preparing their dishes",
     kitchenReady ? "done" : "current");
   if (pass === "ready_to_pack" || pass === "packing") {
     stages[2] = stage("packing", "One MealDeck pack",
       "All brands are being packed together", "current");
   } else if (pass && packedStatuses.has(pass)) {
     stages[2] = stage("packing", "One MealDeck pack",
-      "Dishbee reports the complete multi-brand pack is ready", "done");
+      "The kitchen reports your complete order is packed", "done");
   } else if (kitchenReady) {
     stages[2] = stage("packing", "One MealDeck pack",
       "Packing status is not confirmed yet", "current");
@@ -168,7 +168,7 @@ export function presentMealDeckTracking(snapshot: TrackingSnapshot): TrackingPre
       stages[3] = stage("handoff", mode === "curbside" ? "Kerbside handoff" : "Collection",
         "The kitchen reports that the order was handed over", "done");
       return view("Order recorded as handed over",
-        "Dishbee reports the collection or kerbside handoff complete.",
+        "The kitchen reports the collection or kerbside handoff complete.",
         "reported", stages, false, updatedAtIso);
     }
     if (handoffOrders.has(order) && (!pass || !packedStatuses.has(pass))) {

@@ -94,6 +94,7 @@ jobs:
           src/lib/mealdeck-kds.ts src/lib/mealdeck-kds-presentation.ts
           tests/mealdeck-kds*.test.ts
           src/components/ops/ops-panels.tsx
+          src/components/ops/menu-kitchen-route.tsx
           src/lib/mealdeck-ops-browser.ts src/lib/mealdeck-ops-access.ts
           src/lib/mealdeck-ops-math.ts src/lib/mealdeck-ops-types.ts
           tests/mealdeck-ops.test.ts
@@ -242,13 +243,16 @@ jobs:
           tests/mealdeck-courier-booking-recovery.test.ts
           --rule 'prettier/prettier: off'
 
-      - name: Canonical MealDeck Dishbee tenant configuration regression
-        run: bun test tests/mealdeck-runtime-config.test.ts
+      - name: Independent MealDeck connection and staff session lifecycle
+        run: bun test tests/mealdeck-runtime-config.test.ts tests/mealdeck-backend-client-cache.test.ts
 
-      - name: Tenant configuration module lint
+      - name: Independent backend configuration lint
         run: >-
           bunx eslint src/lib/mealdeck-runtime-config.ts
+          src/lib/mealdeck-backend.functions.ts src/lib/mealdeck-backend-client-cache.ts
+          src/lib/business-identity.ts
           tests/mealdeck-runtime-config.test.ts
+          tests/mealdeck-backend-client-cache.test.ts
           --rule 'prettier/prettier: off'
 
       - name: Checkout postcode request race regression
@@ -386,3 +390,33 @@ jobs:
         env:
           MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test
         run: npm run test:postgres --prefix tests/postgres
+
+  standalone-postgres17:
+    name: Independent MealDeck PostgreSQL 17 installation and admin security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_standalone
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_standalone"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated PostgreSQL test dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Execute the complete independent production profile and authorized admin workflows
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_standalone
+        run: npm run test:standalone:postgres --prefix tests/postgres

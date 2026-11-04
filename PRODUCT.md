@@ -2,16 +2,22 @@
 
 ## Responsibility and deployment boundary
 
-- MealDeck: consumer-facing restaurant discovery, kitchen choice, one multi-brand basket, transparent checkout/tracking UX, offers and franchise marketing.
-- Dishbee: authoritative tenant/location, live menus and modifiers, server prices and discount eligibility, payment/order state, KDS and station tickets, central pass, delivery selection, EPOS connectors and provider credentials.
+- Owner decision, 4 November 2026: **MealDeck is a trading name of 313 Brands Ltd**, with the technology credit **Powered by Dishbee**.
+- MealDeck must use its **own Supabase project and database**, separate from Dishbee and Cafe 1. The standalone deployment is prepared; hosted provisioning and activation are still required. MealDeck owns its customer experience, tenants/kitchens/brands, menu records and modifiers, server prices, staff access, recipes, inventory, operational reporting, orders and shared kitchen display.
+- Dishbee supplies the technology and may provide explicitly configured integrations. The technology credit does not make Dishbee's shared database a runtime dependency or authorize copying other merchants' records.
+- Payment, release, refund and courier authority belongs to the verified server-side integration in the configured MealDeck backend. A fresh database and the foundation schema do not themselves implement or approve those integrations.
 - Omniqora: optional cross-product communications/WhatsApp/voice, AI-assisted intents, customer CRM, messages, event/usage infrastructure and human escalation. Omniqora is not an alternative catalogue or payment authority.
 - Cafe 1 EPOS: a separate merchant operation whose counter till, inventory, vouchers, SumUp and staff controls must remain isolated. Only explicitly mapped, authorised MealDeck catalogue/order integrations may share operational events.
+
+Use the standalone deployment profile described in `docs/mealdeck-independent-backend-phase47.md` for a fresh MealDeck database. Historical migrations and integration documents describe the previous shared-Dishbee deployment; do not apply them alone to a new project or use them to override this decision. No data migration from Dishbee is implied.
+
+The current kitchen uses one display for all brands, with one complete master-order card and preparation/packing together. Future kitchens get separately authorised views of their own orders; adding a brand does not require another screen.
 
 ## Launch and safety
 
 Current source has `COMING_SOON = true`. Browse-only sample menus are not live availability. No registration, WhatsApp-order placement, customer payment or KDS release should be represented as operational. Do not remove this gate in a design or marketing PR.
 
-Normal paid MealDeck orders must reach Dishbee's existing server-priced ordering/payment pathway. A chat, browser redirect, model response, or client-side state update must **never** be used to mark an order paid or create kitchen tickets. The St Albans MealDeck channel's declared launch scope is delivery-only; Cafe 1's direct ordering modes are separate. Outstanding safety work is tracked in the existing draft MealDeck payment/tenant PR and its Dishbee counterpart.
+Normal paid MealDeck orders require an accepted server-priced ordering/payment pathway in the independent MealDeck backend. A chat, browser redirect, model response, or client-side state update must **never** be used to mark an order paid or create kitchen tickets. The St Albans MealDeck channel's declared launch scope is delivery-only; Cafe 1's direct ordering modes are separate. Existing payment contracts can be adapted to the independent backend, but need their own provider, refund, replay and group-payment acceptance checks before activation.
 
 ## WhatsApp enquiry contract
 

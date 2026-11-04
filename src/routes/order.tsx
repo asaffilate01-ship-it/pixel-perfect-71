@@ -510,7 +510,7 @@ function OrderPage() {
         });
       } else if (result.status === "unconfigured") {
         toast.error("Secure checkout is not connected yet", {
-          description: "Ordering will open after the Dishbee payment and idempotency staging checks are approved.",
+          description: "Online ordering is coming soon. Secure checkout is being prepared.",
         });
       } else {
         toast.error(result.message);
@@ -645,8 +645,8 @@ function OrderPage() {
                 </div>
                 <p className="text-xs text-muted-foreground" aria-live="polite">
                   {!quoteReady
-                    ?"Check your postcode and refresh the current Dishbee prices before checkout."
-                    :"Quote valid for up to two minutes. Dishbee reprices the final order before payment."}
+                    ?"Check your postcode and refresh the current menu prices before checkout."
+                    :"Quote valid for up to two minutes. Your final order is priced again before payment."}
                 </p>
                 <Button type="button" variant="ghost" size="sm"
                   className="h-8 gap-1.5 rounded-full px-3 text-xs"
@@ -829,7 +829,7 @@ function OrderPage() {
                 {orderReceipt.kind === "pending" ?
                   "Your order is awaiting verified payment. Preparation has not started." :
                   orderReceipt.kind === "existing" ?
-                  "Dishbee has located your original order. No second order was created." :
+                  "We found your original order. No second order was created." :
                   "The previous order needs support review. Do not submit a new payment attempt."}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
