@@ -8,9 +8,9 @@ import {BROWSE_CATEGORIES,matchesBrowseCategory,type BrowseCategory} from "@/lib
 import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { SiteHeader } from "./site-header";
 import { MobileSampleBasketBar } from "./order/mobile-sample-basket-bar";
-import {toggleSampleModifier} from "@/lib/mealdeck-sample-modifiers";
+import {duplicateSampleVariant,setSampleVariantQuantity,toggleSampleVariantOption,restoreSampleVariant,sampleVariantKey} from "@/lib/mealdeck-sample-variants";
 import {sampleLineUnitPrice} from "@/lib/mealdeck-preview-basket";
-import {setSampleDishQuantity,clearSampleBasket,restoreRemovedSampleDish} from "@/lib/mealdeck-sample-basket-edit";
+import {clearSampleBasket} from "@/lib/mealdeck-sample-basket-edit";
 import { SiteFooter } from "./site-footer";
 import { brands, locations, sampleMenu, modifierGroupsFor, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
 
@@ -140,7 +140,8 @@ export function OrderingPreview() {
         {filtered.map(item=>{
           const brand=brands.find(b=>b.id===item.brandId);
           const photo=marketplaceItemPhoto(item,brand);
-          const quantity=previewLines.find(line=>line.item.id===item.id)?.quantity??0;
+          const quantity=previewLines.find(line=>line.item.id===item.id&&!line.variantId)?.quantity??0;
+          const totalDishQuantity=previewLines.filter(line=>line.item.id===item.id).reduce((sum,line)=>sum+line.quantity,0);
           return <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] text-[var(--md-black)] shadow-sm">
             {photo.src&&<div className="relative aspect-[16/9] overflow-hidden bg-[var(--md-line)]">
               <img src={photo.src} alt="" loading="lazy" className="h-full w-full object-cover"/>
@@ -155,10 +156,10 @@ export function OrderingPreview() {
                 <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,-1))}
                   disabled={quantity===0} aria-label={`Remove one ${item.name}`}
                   className="min-h-11 min-w-11 rounded-xl border border-[var(--md-line)] text-lg font-black transition-colors hover:bg-[var(--md-black)] hover:text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2">−</button>
-                <span className="min-w-0 flex-1 text-center text-sm font-bold" aria-live="polite">{quantity} in deck</span>
+                <span className="min-w-0 flex-1 text-center text-sm font-bold" aria-live="polite">{totalDishQuantity} in deck</span>
                 <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,1))}
                   disabled={quantity>=SAMPLE_MAX_PER_DISH||summary.dishes>=SAMPLE_MAX_ITEMS}
-                  aria-label={`Add one ${item.name} to sample basket`}
+                  aria-label={`Add one standard ${item.name} to sample basket`}
                   className="min-h-11 rounded-xl bg-[var(--md-black)] px-4 font-bold text-white transition-opacity hover:opacity-85 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2">+ Add</button>
               </div>
             </div>
@@ -211,7 +212,7 @@ export function OrderingPreview() {
             <p className="grow">Removed {removedLine.item.name} from your sample deck.</p>
             <button type="button" className="min-h-11 rounded-lg border border-[var(--md-line)] px-4 font-bold"
               onClick={()=>{
-                setPreviewLines(lines=>restoreRemovedSampleDish(lines,removedLine,menu).lines);
+                setPreviewLines(lines=>restoreSampleVariant(lines,removedLine,menu).lines);
                 setRemovedLine(null);
               }}>Undo removal</button>
             <button type="button" className="min-h-11 px-3 font-semibold" onClick={()=>setRemovedLine(null)}>
@@ -219,23 +220,23 @@ export function OrderingPreview() {
             </button>
           </div>}
           <p className="mt-2 text-sm text-[var(--md-muted)]">{summary.dishes} dishes from {summary.brands} {summary.brands===1?"brand":"brands"} · illustrative subtotal {formatPence(estimate)}</p>
-          {previewLines.length?<ul className="mt-4 space-y-3">{previewLines.map(({item,quantity})=><li key={item.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--md-line)] pb-3 text-sm">
+          {previewLines.length?<ul className="mt-4 space-y-3">{previewLines.map((line)=>{const {item,quantity}=line;const variantKey=sampleVariantKey(line);return <li key={variantKey} className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--md-line)] pb-3 text-sm">
             <div className="min-w-0 flex-1"><strong className="block">{item.name}</strong>
-              <span className="text-xs text-[var(--md-muted)]">{brands.find(brand=>brand.id===item.brandId)?.name??"MealDeck"} · {quantity} × {formatPence(item.pricePence)}</span></div>
-            <strong>{formatPence(quantity*(sampleLineUnitPrice(previewLines.find(line=>line.item.id===item.id)!)??item.pricePence))}</strong>
+              <span className="text-xs text-[var(--md-muted)]">{brands.find(brand=>brand.id===item.brandId)?.name??"MealDeck"} · {quantity} × {formatPence(sampleLineUnitPrice(line)??item.pricePence)} illustrative · {line.variantId?"Custom version":"Original version"}</span></div>
+            <strong>{formatPence(quantity*(sampleLineUnitPrice(line)??item.pricePence))}</strong>
             {modifierGroupsFor(item).length>0&&<div className="w-full rounded-xl border border-[var(--md-line)] bg-white p-3">
-              <p className="mb-2 text-xs text-[var(--md-muted)]">Preview extras · apply to every serving of this dish</p>
+              <p className="mb-2 text-xs text-[var(--md-muted)]">Preview extras · apply to every serving of this version</p>
               {modifierGroupsFor(item).map(group=><fieldset key={group.id} className="mb-3 space-y-2">
                 <legend className="text-sm font-bold">{group.name}</legend>
                 <p className="text-xs text-[var(--md-muted)]">Select {group.minSelect} to {group.maxSelect}</p>
                 {group.options.map(option=>{
-                  const selected=previewLines.find(line=>line.item.id===item.id)?.selected;
+                  const selected=line.selected;
                   const checked=!!selected?.some(value=>value.groupId===group.id&&value.optionId===option.id);
                   return <label key={option.id} className="flex min-h-11 items-center justify-between gap-2 text-sm">
                     <span className="flex items-center gap-2">
                       <input type="checkbox" className="size-5" checked={checked}
                         onChange={()=>{
-                          const result=toggleSampleModifier(previewLines,item.id,group.id,option.id);
+                          const result=toggleSampleVariantOption(previewLines,variantKey,group.id,option.id);
                           if(result.changed)setPreviewLines(result.lines);
                         }}/>
                       {option.name}
@@ -246,32 +247,38 @@ export function OrderingPreview() {
               </fieldset>)}
             </div>}
             <div className="flex items-center gap-2">
-              <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,-1))}
-                aria-label={`Remove one ${item.name}`}
+              <button type="button" onClick={()=>setPreviewLines(lines=>setSampleVariantQuantity(lines,variantKey,quantity-1).lines)}
+                aria-label={`Remove one ${item.name} from this version`}
                 className="min-h-11 min-w-11 rounded-lg border border-[var(--md-line)] text-lg font-black">−</button>
-              <label className="sr-only" htmlFor={`sample-qty-${item.id}`}>Quantity for {item.name}</label>
-              <select id={`sample-qty-${item.id}`} value={quantity}
-                aria-label={`Quantity for ${item.name}`}
+              <label className="sr-only" htmlFor={`sample-qty-${variantKey}`}>Quantity for {item.name}</label>
+              <select id={`sample-qty-${variantKey}`} value={quantity}
+                aria-label={`Quantity for ${item.name}, this version`}
                 onChange={event=>{
-                  const result=setSampleDishQuantity(previewLines,item.id,Number(event.target.value));
+                  const result=setSampleVariantQuantity(previewLines,variantKey,Number(event.target.value));
                   if(result.changed){setPreviewLines(result.lines);setRemovedLine(null);}
                 }}
                 className="min-h-11 rounded-lg border border-[var(--md-line)] bg-white px-2 text-sm font-bold"
               >{Array.from({length:Math.min(SAMPLE_MAX_PER_DISH,quantity+SAMPLE_MAX_ITEMS-summary.dishes)},(_,i)=>i+1)
                 .map(n=><option key={n} value={n}>{n}</option>)}</select>
-              <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,1))}
+              <button type="button" onClick={()=>setPreviewLines(lines=>setSampleVariantQuantity(lines,variantKey,quantity+1).lines)}
                 disabled={quantity>=SAMPLE_MAX_PER_DISH||summary.dishes>=SAMPLE_MAX_ITEMS}
-                aria-label={`Add one ${item.name}`}
+                aria-label={`Add one ${item.name} to this version`}
                 className="min-h-11 min-w-11 rounded-lg border border-[var(--md-line)] text-lg font-black disabled:opacity-40">+</button>
               <button type="button" className="min-h-11 rounded-lg border border-[var(--md-line)] px-3 text-sm font-semibold"
-                aria-label={`Remove all ${item.name}`}
                 onClick={()=>{
-                  const line=previewLines.find(entry=>entry.item.id===item.id);
-                  const result=setSampleDishQuantity(previewLines,item.id,0);
-                  if(line&&result.changed){setPreviewLines(result.lines);setRemovedLine(line);setConfirmClear(false);}
+                  const result=duplicateSampleVariant(previewLines,variantKey);
+                  if(result.changed){setPreviewLines(result.lines);setRemovedLine(null);}
+                }}
+                disabled={summary.dishes>=SAMPLE_MAX_ITEMS}
+                aria-label={`Create another customised version of ${item.name}`}>Another version</button>
+              <button type="button" className="min-h-11 rounded-lg border border-[var(--md-line)] px-3 text-sm font-semibold"
+                aria-label={`Remove this version of ${item.name}`}
+                onClick={()=>{
+                  const result=setSampleVariantQuantity(previewLines,variantKey,0);
+                  if(result.changed){setPreviewLines(result.lines);setRemovedLine(line);setConfirmClear(false);}
                 }}>Remove</button>
             </div>
-          </li>)}</ul>:<p className="mt-4 text-sm text-[var(--md-muted)]">Choose dishes from different brands to preview a combined basket.</p>}
+          </li>})}</ul>:<p className="mt-4 text-sm text-[var(--md-muted)]">Choose dishes from different brands to preview a combined basket.</p>}
           <label className="mt-5 flex items-center gap-3 rounded-xl border border-[var(--md-line)] p-3 text-sm font-semibold">
             <input type="checkbox" checked={groupEnabled} onChange={e=>setGroupEnabled(e.target.checked)} className="size-5"/>
             Invite friends and split the order (preview)
