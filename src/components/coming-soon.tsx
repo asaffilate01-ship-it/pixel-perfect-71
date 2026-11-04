@@ -8,6 +8,7 @@ import {BROWSE_CATEGORIES,matchesBrowseCategory,type BrowseCategory} from "@/lib
 import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { SiteHeader } from "./site-header";
 import { MobileSampleBasketBar } from "./order/mobile-sample-basket-bar";
+import {setSampleDishQuantity,clearSampleBasket,restoreRemovedSampleDish} from "@/lib/mealdeck-sample-basket-edit";
 import { SiteFooter } from "./site-footer";
 import { brands, locations, sampleMenu, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
 
@@ -23,6 +24,8 @@ export function OrderingPreview() {
   const [activeBrand,setActiveBrand]=useState<string>("all");
   const [activeCategory,setActiveCategory]=useState<BrowseCategory>("all");
   const [previewLines,setPreviewLines]=useState<SampleBasketLine[]>([]);
+  const [removedLine,setRemovedLine]=useState<SampleBasketLine|null>(null);
+  const [confirmClear,setConfirmClear]=useState(false);
   const [fulfilment,setFulfilment]=useState<FulfilmentType>("delivery");
   const [postcode,setPostcode]=useState("");
   const [groupEnabled,setGroupEnabled]=useState(false);
@@ -52,6 +55,8 @@ export function OrderingPreview() {
     setSearch("");
     setPostcode("");
     setPreviewLines([]);
+    setRemovedLine(null);
+    setConfirmClear(false);
     setFulfilment("delivery");
   }
   return <div className="md-marketing-shell"><SiteHeader/>
@@ -183,7 +188,34 @@ export function OrderingPreview() {
           <p className="mt-4 text-xs text-[var(--md-muted)]">Only eligible live products will be offered when ordering opens. Suggested upgrades do not automatically replace a side or apply a discount.</p>
         </section>
         <section id="sample-deck" aria-label="Sample shared basket" className="scroll-mt-28 rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] p-5 text-[var(--md-black)]">
-          <h2 className="font-display text-xl font-black">Your sample deck</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-xl font-black">Your sample deck</h2>
+            {previewLines.length>0&&<button type="button" onClick={()=>{setConfirmClear(true);setRemovedLine(null);}}
+              className="min-h-11 rounded-xl border border-[var(--md-line)] px-4 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2">
+              Clear sample deck
+            </button>}
+          </div>
+          {confirmClear&&<div role="group" aria-label="Confirm clear sample basket"
+            className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--md-line)] bg-white p-3 text-sm">
+            <p className="grow font-semibold">Remove all illustrative dishes?</p>
+            <button type="button" className="min-h-11 rounded-lg bg-[var(--md-red-deep)] px-4 font-bold text-white"
+              onClick={()=>{setPreviewLines(lines=>clearSampleBasket(lines).lines);setConfirmClear(false);setRemovedLine(null);}}>
+              Yes, clear deck
+            </button>
+            <button type="button" className="min-h-11 rounded-lg border border-[var(--md-line)] px-4 font-semibold"
+              onClick={()=>setConfirmClear(false)}>Keep dishes</button>
+          </div>}
+          {removedLine&&<div role="status" className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--md-line)] bg-white p-3 text-sm">
+            <p className="grow">Removed {removedLine.item.name} from your sample deck.</p>
+            <button type="button" className="min-h-11 rounded-lg border border-[var(--md-line)] px-4 font-bold"
+              onClick={()=>{
+                setPreviewLines(lines=>restoreRemovedSampleDish(lines,removedLine,menu).lines);
+                setRemovedLine(null);
+              }}>Undo removal</button>
+            <button type="button" className="min-h-11 px-3 font-semibold" onClick={()=>setRemovedLine(null)}>
+              Dismiss
+            </button>
+          </div>}
           <p className="mt-2 text-sm text-[var(--md-muted)]">{summary.dishes} dishes from {summary.brands} {summary.brands===1?"brand":"brands"} · illustrative subtotal {formatPence(estimate)}</p>
           {previewLines.length?<ul className="mt-4 space-y-3">{previewLines.map(({item,quantity})=><li key={item.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--md-line)] pb-3 text-sm">
             <div className="min-w-0 flex-1"><strong className="block">{item.name}</strong>
@@ -193,11 +225,27 @@ export function OrderingPreview() {
               <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,-1))}
                 aria-label={`Remove one ${item.name}`}
                 className="min-h-11 min-w-11 rounded-lg border border-[var(--md-line)] text-lg font-black">−</button>
-              <span aria-label={`Quantity ${quantity}`} className="w-5 text-center font-bold">{quantity}</span>
+              <label className="sr-only" htmlFor={`sample-qty-${item.id}`}>Quantity for {item.name}</label>
+              <select id={`sample-qty-${item.id}`} value={quantity}
+                aria-label={`Quantity for ${item.name}`}
+                onChange={event=>{
+                  const result=setSampleDishQuantity(previewLines,item.id,Number(event.target.value));
+                  if(result.changed){setPreviewLines(result.lines);setRemovedLine(null);}
+                }}
+                className="min-h-11 rounded-lg border border-[var(--md-line)] bg-white px-2 text-sm font-bold"
+              >{Array.from({length:Math.min(SAMPLE_MAX_PER_DISH,quantity+SAMPLE_MAX_ITEMS-summary.dishes)},(_,i)=>i+1)
+                .map(n=><option key={n} value={n}>{n}</option>)}</select>
               <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,1))}
                 disabled={quantity>=SAMPLE_MAX_PER_DISH||summary.dishes>=SAMPLE_MAX_ITEMS}
                 aria-label={`Add one ${item.name}`}
                 className="min-h-11 min-w-11 rounded-lg border border-[var(--md-line)] text-lg font-black disabled:opacity-40">+</button>
+              <button type="button" className="min-h-11 rounded-lg border border-[var(--md-line)] px-3 text-sm font-semibold"
+                aria-label={`Remove all ${item.name}`}
+                onClick={()=>{
+                  const line=previewLines.find(entry=>entry.item.id===item.id);
+                  const result=setSampleDishQuantity(previewLines,item.id,0);
+                  if(line&&result.changed){setPreviewLines(result.lines);setRemovedLine(line);setConfirmClear(false);}
+                }}>Remove</button>
             </div>
           </li>)}</ul>:<p className="mt-4 text-sm text-[var(--md-muted)]">Choose dishes from different brands to preview a combined basket.</p>}
           <label className="mt-5 flex items-center gap-3 rounded-xl border border-[var(--md-line)] p-3 text-sm font-semibold">
