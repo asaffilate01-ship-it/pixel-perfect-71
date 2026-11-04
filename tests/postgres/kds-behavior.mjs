@@ -471,6 +471,39 @@ try {
         /release|eligible|payment|order|not_found/i,
       );
     }
+    // Keep the real chronology guard strict, including sub-millisecond
+    // precision. This reproduces the former fixture clock mismatch without
+    // relying on host timing or weakening the production release condition.
+    await db.query(
+      `update public.orders set
+        created_at=date_trunc('second',now())-interval '1 second'+interval '123456 microseconds',
+        paid_at=date_trunc('second',now())-interval '1 second'+interval '123456 microseconds'
+       where id=$1`,
+      [entry.order],
+    );
+    await db.query(
+      `update kds_test_private.release_evidence e
+       set payload=jsonb_set($2::jsonb,'{verified_at}',to_jsonb(date_trunc('milliseconds',o.created_at)))
+       from public.orders o where e.order_id=$1 and o.id=e.order_id`,
+      [entry.order, JSON.stringify(original)],
+    );
+    assert.equal(
+      await card(entry.order),
+      undefined,
+      "A release 456 microseconds before creation is still invalid",
+    );
+    await noChange(
+      entry.order,
+      () => transitionOrder(db, entry.order, "0".repeat(32), "preparing"),
+      /release|eligible|payment|order|not_found/i,
+    );
+    await db.query(
+      `update kds_test_private.release_evidence e
+       set payload=jsonb_set($2::jsonb,'{verified_at}',to_jsonb(o.created_at))
+       from public.orders o where e.order_id=$1 and o.id=e.order_id`,
+      [entry.order, JSON.stringify(original)],
+    );
+    assert.ok(await card(entry.order), "An exact database-precision release timestamp is eligible");
   });
 
   await test("revoking staff access is enforced on the next read and write despite an old card version", async () => {
@@ -584,7 +617,23 @@ try {
       status: "ready",
       passStatus: "ready_to_pack",
     });
+    const timeline = (
+      await db.query(
+        `select (e.payload->>'verified_at')::timestamptz>=o.created_at
+          and (e.payload->>'verified_at')::timestamptz<=now()
+          and o.paid_at<=now() as valid
+       from public.orders o join kds_test_private.release_evidence e on e.order_id=o.id
+       where o.id=$1`,
+        [empty.order],
+      )
+    ).rows[0];
+    assert.equal(
+      timeline.valid,
+      true,
+      "Fixture clocks must not turn a routing test into a held-payment test",
+    );
     const emptyCard = await card(empty.order);
+    assert.ok(emptyCard, "The paid fixture is visible but must be blocked by missing routing");
     assert.equal(emptyCard.routing_complete, false);
     await noChange(
       empty.order,

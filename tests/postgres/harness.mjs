@@ -264,7 +264,7 @@ export async function seedOrder(db, number, options = {}) {
       id,tenant_id,location_id,status,fulfilment,payment_status,source,paid_at,
       customer_name,customer_phone,delivery_address,payment_reference,
       subtotal_pence,total_pence,handoff_code,notes
-    ) values($1,$2,$3,$4,'delivery',$5,$6,$7,
+    ) values($1,$2,$3,$4,'delivery',$5,$6,case when $7::boolean then now() else null end,
       'DO NOT EXPOSE CUSTOMER','DO NOT EXPOSE PHONE','{"line1":"DO NOT EXPOSE ADDRESS"}',
       'DO NOT EXPOSE PAYMENT REFERENCE',2400,2400,'1234','Kitchen note: separate cold drinks')
   `,
@@ -275,7 +275,7 @@ export async function seedOrder(db, number, options = {}) {
       options.status ?? "accepted",
       options.paymentStatus ?? "paid",
       options.source ?? "mealdeck",
-      options.paidAt === null ? null : new Date().toISOString(),
+      options.paidAt !== null,
     ],
   );
   const items = [];
@@ -301,17 +301,15 @@ export async function seedOrder(db, number, options = {}) {
       if (!ticket) {
         ticket = id(number * 1000 + Number.parseInt(route.station_id.slice(-3), 16));
         await db.query(
-          "insert into public.kds_tickets(id,tenant_id,order_id,station_id,status,started_at,ready_at) values($1,$2,$3,$4,$5,$6,$7)",
+          "insert into public.kds_tickets(id,tenant_id,order_id,station_id,status,started_at,ready_at) values($1,$2,$3,$4,$5,case when $6::boolean then now() else null end,case when $7::boolean then now() else null end)",
           [
             ticket,
             tenant,
             order,
             route.station_id,
             options.preparation ?? "queued",
-            options.preparation === "preparing" || options.preparation === "ready"
-              ? new Date().toISOString()
-              : null,
-            options.preparation === "ready" ? new Date().toISOString() : null,
+            options.preparation === "preparing" || options.preparation === "ready",
+            options.preparation === "ready",
           ],
         );
         tickets.set(route.station_id, ticket);
@@ -323,20 +321,25 @@ export async function seedOrder(db, number, options = {}) {
     }
   }
   if (options.authority !== false) {
-    const payload = options.authorityPayload ?? {
-      schema_version: 1,
-      order_id: order,
-      tenant_id: tenant,
-      location_id: location,
-      source: "mealdeck",
-      release_id: id(number + 900000),
-      verified_at: new Date().toISOString(),
-      eligible: true,
-    };
-    await db.query(
-      "insert into kds_test_private.release_evidence(order_id,payload) values($1,$2)",
-      [order, JSON.stringify(payload)],
-    );
+    if (options.authorityPayload != null) {
+      await db.query(
+        "insert into kds_test_private.release_evidence(order_id,payload) values($1,$2)",
+        [order, JSON.stringify(options.authorityPayload)],
+      );
+    } else {
+      // Match the canonical database clock and preserve microseconds. A Node
+      // Date truncates to milliseconds and can predate created_at when an empty
+      // order and its release are inserted within the same millisecond.
+      await db.query(
+        `insert into kds_test_private.release_evidence(order_id,payload)
+         select o.id,jsonb_build_object(
+           'schema_version',1,'order_id',o.id,'tenant_id',o.tenant_id,
+           'location_id',o.location_id,'source','mealdeck',
+           'release_id',$2::uuid,'verified_at',now(),'eligible',true
+         ) from public.orders o where o.id=$1`,
+        [order, id(number + 900000)],
+      );
+    }
   }
   if (options.passStatus) {
     await db.query(
