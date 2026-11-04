@@ -309,3 +309,13 @@ jobs:
           bunx eslint src/lib/mealdeck-sample-basket-edit.ts
           tests/mealdeck-sample-basket-edit.test.ts
           --rule 'prettier/prettier: off'
+
+      - name: Phase 41 sample dish modifiers regressions
+        run: bun test tests/mealdeck-sample-modifiers.test.ts
+
+      - name: Phase 41 modifiers and preview basket lint
+        run: >-
+          bunx eslint src/lib/mealdeck-sample-modifiers.ts
+          src/lib/mealdeck-preview-basket.ts
+          tests/mealdeck-sample-modifiers.test.ts
+          --rule 'prettier/prettier: off'
