@@ -10,7 +10,7 @@ import { SiteHeader } from "./site-header";
 import { MobileSampleBasketBar } from "./order/mobile-sample-basket-bar";
 import {duplicateSampleVariant,setSampleVariantQuantity,toggleSampleVariantOption,restoreSampleVariant,sampleVariantKey} from "@/lib/mealdeck-sample-variants";
 import {sampleLineUnitPrice} from "@/lib/mealdeck-preview-basket";
-import {setSampleDishQuantity,clearSampleBasket,restoreRemovedSampleDish} from "@/lib/mealdeck-sample-basket-edit";
+import {clearSampleBasket} from "@/lib/mealdeck-sample-basket-edit";
 import { SiteFooter } from "./site-footer";
 import { brands, locations, sampleMenu, modifierGroupsFor, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
 
@@ -140,7 +140,8 @@ export function OrderingPreview() {
         {filtered.map(item=>{
           const brand=brands.find(b=>b.id===item.brandId);
           const photo=marketplaceItemPhoto(item,brand);
-          const quantity=previewLines.find(line=>line.item.id===item.id)?.quantity??0;
+          const quantity=previewLines.find(line=>line.item.id===item.id&&!line.variantId)?.quantity??0;
+          const totalDishQuantity=previewLines.filter(line=>line.item.id===item.id).reduce((sum,line)=>sum+line.quantity,0);
           return <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] text-[var(--md-black)] shadow-sm">
             {photo.src&&<div className="relative aspect-[16/9] overflow-hidden bg-[var(--md-line)]">
               <img src={photo.src} alt="" loading="lazy" className="h-full w-full object-cover"/>
@@ -155,10 +156,10 @@ export function OrderingPreview() {
                 <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,-1))}
                   disabled={quantity===0} aria-label={`Remove one ${item.name}`}
                   className="min-h-11 min-w-11 rounded-xl border border-[var(--md-line)] text-lg font-black transition-colors hover:bg-[var(--md-black)] hover:text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2">−</button>
-                <span className="min-w-0 flex-1 text-center text-sm font-bold" aria-live="polite">{quantity} in deck</span>
+                <span className="min-w-0 flex-1 text-center text-sm font-bold" aria-live="polite">{totalDishQuantity} in deck</span>
                 <button type="button" onClick={()=>setPreviewLines(lines=>adjustSampleBasket(lines,item,1))}
                   disabled={quantity>=SAMPLE_MAX_PER_DISH||summary.dishes>=SAMPLE_MAX_ITEMS}
-                  aria-label={`Add one ${item.name} to sample basket`}
+                  aria-label={`Add one standard ${item.name} to sample basket`}
                   className="min-h-11 rounded-xl bg-[var(--md-black)] px-4 font-bold text-white transition-opacity hover:opacity-85 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2">+ Add</button>
               </div>
             </div>
@@ -221,7 +222,7 @@ export function OrderingPreview() {
           <p className="mt-2 text-sm text-[var(--md-muted)]">{summary.dishes} dishes from {summary.brands} {summary.brands===1?"brand":"brands"} · illustrative subtotal {formatPence(estimate)}</p>
           {previewLines.length?<ul className="mt-4 space-y-3">{previewLines.map((line)=>{const {item,quantity}=line;const variantKey=sampleVariantKey(line);return <li key={variantKey} className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--md-line)] pb-3 text-sm">
             <div className="min-w-0 flex-1"><strong className="block">{item.name}</strong>
-              <span className="text-xs text-[var(--md-muted)]">{brands.find(brand=>brand.id===item.brandId)?.name??"MealDeck"} · {quantity} × {formatPence(item.pricePence)}</span></div>
+              <span className="text-xs text-[var(--md-muted)]">{brands.find(brand=>brand.id===item.brandId)?.name??"MealDeck"} · {quantity} × {formatPence(sampleLineUnitPrice(line)??item.pricePence)} illustrative · {line.variantId?"Custom version":"Original version"}</span></div>
             <strong>{formatPence(quantity*(sampleLineUnitPrice(line)??item.pricePence))}</strong>
             {modifierGroupsFor(item).length>0&&<div className="w-full rounded-xl border border-[var(--md-line)] bg-white p-3">
               <p className="mb-2 text-xs text-[var(--md-muted)]">Preview extras · apply to every serving of this version</p>
@@ -271,7 +272,7 @@ export function OrderingPreview() {
                 disabled={summary.dishes>=SAMPLE_MAX_ITEMS}
                 aria-label={`Create another customised version of ${item.name}`}>Another version</button>
               <button type="button" className="min-h-11 rounded-lg border border-[var(--md-line)] px-3 text-sm font-semibold"
-                aria-label={`Remove all ${item.name}`}
+                aria-label={`Remove this version of ${item.name}`}
                 onClick={()=>{
                   const result=setSampleVariantQuantity(previewLines,variantKey,0);
                   if(result.changed){setPreviewLines(result.lines);setRemovedLine(line);setConfirmClear(false);}
