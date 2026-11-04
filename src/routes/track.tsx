@@ -3,7 +3,7 @@ import { ComingSoonPage } from "@/components/coming-soon";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertCircle, Bike, CheckCircle2, Loader2, RefreshCcw, Search } from "lucide-react";
+import { AlertCircle, Bike, CheckCircle2, Gamepad2, Loader2, RefreshCcw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,7 +73,7 @@ function TrackOrderPage() {
 
   return <div className="min-h-screen bg-background">
     <SiteHeader context={
-      <Link to="/order" className="font-display text-sm font-black uppercase tracking-wide text-accent">
+      <Link to="/menus" className="font-display text-sm font-black uppercase tracking-wide text-accent">
         Explore menus
       </Link>
     }/>
@@ -152,6 +152,15 @@ function TrackOrderPage() {
             </Button>
           </div>
           <TrackingTimeline value={projection}/>
+          {projection.tone !== "review" && ["paid", "accepted", "preparing"].includes(result.orderStatus) ? (
+            <div className="border-t border-border p-5 sm:p-6">
+              <p className="mb-3 text-sm text-muted-foreground">Fancy a free food-card game while you wait?</p>
+              <Link to="/play" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2">
+                <Gamepad2 aria-hidden="true" className="size-5"/> Play while you wait
+              </Link>
+              <p className="mt-2 text-xs text-muted-foreground">Games are for fun only, with no prizes or wagering. Return here to track your order.</p>
+            </div>
+          ) : null}
           {projection.canOpenCourierTracking && result.trackingUrl ? (
             <div className="border-t border-border p-5 sm:p-6">
               <a href={result.trackingUrl} rel="noopener noreferrer" target="_blank"

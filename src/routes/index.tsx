@@ -82,6 +82,7 @@ function LandingPage() {
                 <Link to="/menus" className="md-btn md-btn-yellow">Explore the launch menus <ArrowRight /></Link>
                 <Link to="/" hash="brands" className="md-btn md-btn-outline-light">See all brands</Link>
               </div>
+              <p className="md-hero-soon">Coming soon to a table near you.</p>
               <div className="md-hero-proof">
                 <span><Check /> Mix brands</span>
                 <span><Clock3 /> Ordering coming soon</span>
@@ -206,7 +207,7 @@ function LandingPage() {
             <p className="md-kicker md-kicker-red">Locations</p>
             <h2>Your local MealDeck.</h2>
           </div>
-          <div className="md-location-grid">
+          <div className="md-location-grid md-order-locations">
             <Link to="/luton" className="md-location-card">
               <span>Luton</span>
               <h3>Evening cravings, dealt together.</h3>
@@ -218,6 +219,12 @@ function LandingPage() {
               <h3>Weekday breakfast and lunch, one hand.</h3>
               <p>Coming soon · MealDeck ordering</p>
               <strong>Explore St Albans <ArrowRight /></strong>
+            </Link>
+            <Link to="/bedford" className="md-location-card">
+              <span>Bedford</span>
+              <h3>Coming soon to a table near you.</h3>
+              <p>Launch details confirmed soon</p>
+              <strong>Explore Bedford <ArrowRight /></strong>
             </Link>
           </div>
         </section>

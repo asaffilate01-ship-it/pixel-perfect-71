@@ -166,28 +166,31 @@
   border-color: var(--md-yellow);
   box-shadow: 0 0 0 2px var(--md-yellow);
 }
-.md-franchise-brand-card-photo {
+.md-franchise-brand-card-logo-stage {
   position: relative;
-  aspect-ratio: 1.9;
+  height: 224px;
   overflow: hidden;
-  background: var(--md-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 26px;
+  background: var(--md-paper);
+  border-bottom: 1px solid var(--ff-border);
 }
-.md-franchise-brand-card-photo > img {
-  width: 100%;
-  height: 100%;
+.md-franchise-brand-card-logo-stage > img {
   display: block;
-  object-fit: cover;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
   transition: transform 0.35s ease;
 }
-
-.md-franchise-brand-card.is-identity .md-franchise-brand-card-photo { background: var(--md-paper); }
-.md-franchise-brand-card.is-identity .md-franchise-brand-card-photo > img { object-fit: contain; padding: 24px; }
-.md-franchise-brand-card.is-identity .md-franchise-brand-card-logo { display: none; }
-.md-franchise-brand-promo-card.is-identity .md-franchise-brand-promo-logo { min-height: 360px; }
-.md-franchise-brand-promo-card.is-identity .md-franchise-brand-promo-logo img { width: min(320px, 85%); max-height: 300px; }
-.md-franchise-brand-promo-card.is-identity .md-franchise-brand-promo-food { display: none; }
-.md-franchise-brand-card:hover .md-franchise-brand-card-photo > img {
-  transform: scale(1.025);
+.md-franchise-brand-card-logo-stage .md-franchise-logo-fallback {
+  font-size: clamp(20px, 2.4vw, 30px);
+}
+.md-franchise-brand-card:hover .md-franchise-brand-card-logo-stage > img {
+  transform: scale(1.03);
 }
 .md-franchise-brand-card-suit {
   position: absolute;
@@ -201,12 +204,13 @@
   padding: 6px 7px;
   color: var(--md-red-deep);
   background: var(--md-paper);
+  border: 1px solid var(--md-line);
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   font-family: var(--md-display);
   font-size: 17px;
   line-height: 1;
   font-weight: 800;
-  box-shadow: 0 3px 12px #0003;
-  border-radius: 3px;
 }
 .md-franchise-brand-card-suit > span {
   font-size: 15px;
@@ -532,25 +536,21 @@
 .md-franchise-brand-promo-logo {
   display: grid;
   place-items: center;
-  height: 190px;
-  padding: 10px 36px;
+  min-height: clamp(250px, 26vw, 330px);
+  padding: 26px 28px;
+  border-radius: 6px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='96'%3E%3Cg fill='%23C7A24B' fill-opacity='0.13'%3E%3Cpath d='M36 8c2 8 6 12 14 14-8 2-12 6-14 14-2-8-6-12-14-14 8-2 12-6 14-14z'/%3E%3Cpath d='M36 48l3.2 10.8L50 62l-10.8 3.2L36 76l-3.2-10.8L22 62l10.8-3.2z'/%3E%3Cpath d='M27 80a7.5 7.5 0 0 1 2.4-14.6 9.4 9.4 0 0 1 17.2 0A7.5 7.5 0 0 1 49 80z'/%3E%3Crect x='28' y='81' width='20' height='5.5' rx='2'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 54px 72px,
+    radial-gradient(circle at 50% 42%, #ffffff 0%, #fbf6ee 58%, #f2e8db 100%);
+  border: 1px solid #e2d3bd;
+  box-shadow: inset 0 0 0 4px #fffdf8, inset 0 0 34px #d9c9ae55;
 }
 .md-franchise-brand-promo-logo img {
   display: block;
   width: 100%;
   height: 100%;
+  max-height: 250px;
   object-fit: contain;
-}
-.md-franchise-brand-promo-food {
-  aspect-ratio: 1.14;
-  overflow: hidden;
-  border-radius: 4px;
-}
-.md-franchise-brand-promo-food img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 .md-franchise-brand-promo-caption {
   display: flex;
@@ -915,15 +915,12 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 22px;
   }
-  .md-franchise-brand-card-photo {
-    aspect-ratio: 1.9;
+  .md-franchise-brand-card-logo-stage {
+    height: 186px;
+    padding: 18px 22px;
   }
   .md-franchise-brand-card-body {
     padding: 21px;
-  }
-  .md-franchise-brand-card-logo {
-    width: 84px;
-    height: 70px;
   }
   .md-franchise-brand-card-identity h3 {
     font-size: 28px;
@@ -971,11 +968,11 @@
     padding: 10px;
   }
   .md-franchise-brand-promo-logo {
-    height: 125px;
-    padding: 5px 24px;
+    min-height: 165px;
+    padding: 14px 20px;
   }
-  .md-franchise-brand-promo-food {
-    aspect-ratio: 1.4;
+  .md-franchise-brand-promo-logo img {
+    max-height: 120px;
   }
   .md-franchise-brand-promo-caption {
     padding: 14px 6px 6px;
@@ -1023,12 +1020,12 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .md-franchise-brand-card,
-  .md-franchise-brand-card-photo > img,
+  .md-franchise-brand-card-logo-stage > img,
   .md-franchise-brand-toggle,
   .md-franchise-brands-filters button {
     transition: none;
   }
-  .md-franchise-brand-card:hover .md-franchise-brand-card-photo > img {
+  .md-franchise-brand-card:hover .md-franchise-brand-card-logo-stage > img {
     transform: none;
   }
 }

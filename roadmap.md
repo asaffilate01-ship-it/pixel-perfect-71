@@ -18,3 +18,8 @@
 - [x] Branded in-app success messages
 - [x] Play page: remove Fanzeno / fixture-based scheduling and "predictions for prizes" wording
 - [x] Play: make "Play as" brand skins meaningful (each brand deals its own dishes) + further table polish
+
+- [x] Preserve Bedford as a coming-soon location in the site navigation and location pages.
+- [x] Franchise brand cards lead with approved brand logos on an ivory panel.
+- [x] Restore the published branch to the five launch menus at /menus; ordering stays coming soon. The previous order screen remains archived under src/_archive/current-ui/routes/order.tsx.
+- [x] Instagram and TikTok links use @mealdeckofficial.
