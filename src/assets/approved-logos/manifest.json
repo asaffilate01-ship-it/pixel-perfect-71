@@ -1,0 +1,181 @@
+{
+  "description": "Approved corrected logo PNGs encoded as lossless WebP without resizing, cropping, redraw, recolour, alpha changes, or new effects. Every decoded RGBA byte matches its source PNG.",
+  "logos": [
+    {
+      "id": "mealdeck",
+      "source": "00_mealdeck.png",
+      "source_sha256": "1772be91157f44f5085af4079cb629c81b2d203fcdfdc9fd95121ff4d67790a0",
+      "rgba_sha256": "189f6d001fc02fae56197c6f9d771892ca1f6fae79625600c5596ad4f47639c3",
+      "width": 1106,
+      "height": 1116,
+      "original_bytes": 1223831,
+      "webp_bytes": 870802,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "paratique",
+      "source": "01_paratique.png",
+      "source_sha256": "6002308ea6a22b5d6915a839eb3a48abecc59d0da66ea2e682357c443373e3d7",
+      "rgba_sha256": "1fdec7c64dd1b33410ac4c0b3a6f0a808f28879855dd77a829c451c008dc81f6",
+      "width": 1658,
+      "height": 1146,
+      "original_bytes": 378057,
+      "webp_bytes": 268044,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "taconelle",
+      "source": "02_taconelle.png",
+      "source_sha256": "30dda9a0fbf66c76499186d02135b104e8cfe204288fd531d8f5d6933f95f22e",
+      "rgba_sha256": "3b5313a4c03b562acb27bf9449c7c9b2e1c8184b1570c6183b5fb88413e66913",
+      "width": 1658,
+      "height": 1197,
+      "original_bytes": 813990,
+      "webp_bytes": 584464,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "tavo-chicken",
+      "source": "03_tavo_chicken.png",
+      "source_sha256": "025afdb52805abb7a82ce7c0e6c0f68c525f7d51949d87a0628ecc3899555b2c",
+      "rgba_sha256": "94c1dc2efbad0c269766be8266db242b218e129833246369fb178633b05b66fc",
+      "width": 1314,
+      "height": 1406,
+      "original_bytes": 587412,
+      "webp_bytes": 402052,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "skorch",
+      "source": "04_skorch.png",
+      "source_sha256": "325b2b5ed8c4b22bb340b55bf81ece6a5c709d95e00445c72e6e952b062c3d58",
+      "rgba_sha256": "637a7cfcaf5bf6609532d7f9f950fbeb8290d86963b6753ecf0b86a7e4d65cfb",
+      "width": 1658,
+      "height": 1200,
+      "original_bytes": 497642,
+      "webp_bytes": 327406,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "loadd",
+      "source": "05_loadd.png",
+      "source_sha256": "f597fd7674c360e98050b20270fcbec31bd731bac4e10f308c9d470de071167b",
+      "rgba_sha256": "e0fd4739de4265f0ec7696898eb695d588cc271808bbaf2de63523e3aecdec32",
+      "width": 1658,
+      "height": 1209,
+      "original_bytes": 662810,
+      "webp_bytes": 455610,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "vyta",
+      "source": "06_vyta.png",
+      "source_sha256": "0abf83be47c20df8a1b3cdab46311eb8a2539d3653943268341aca3a0269e86a",
+      "rgba_sha256": "d48605cca473dfea05a1fbcb7701473868f622a79d3be1b7a9f0752b3b33561a",
+      "width": 1354,
+      "height": 1389,
+      "original_bytes": 592396,
+      "webp_bytes": 406996,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "moktl",
+      "source": "07_moktl.png",
+      "source_sha256": "5f5e25765fd2fbac5c806a129c31400f4db15f6207d1f3591073b864ef561c42",
+      "rgba_sha256": "fcda2fe71b8b1e1649ddc85761b6095b68109fb7495fa04256b68e4532392799",
+      "width": 1658,
+      "height": 1146,
+      "original_bytes": 403739,
+      "webp_bytes": 260792,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "icova",
+      "source": "08_icova.png",
+      "source_sha256": "79a31b9d40c195d15f9f187409f46f4b4d24b32a074d681a4a755cf2cb04cb29",
+      "rgba_sha256": "e983b54dd7c00ebc0aef02775e6746519df706bb4203dee0aaf8466949940bb0",
+      "width": 2246,
+      "height": 1006,
+      "original_bytes": 646135,
+      "webp_bytes": 450976,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "tarka-box",
+      "source": "09_tarka_box.png",
+      "source_sha256": "cc4eacd32ab7e3060892fbe57e4a255003cd438e687d0cf4df1b4bc0c6f0f821",
+      "rgba_sha256": "58b38075a5925c393cbcb50ad775b0d0320b75f2892a85e387e7ee001f3231e1",
+      "width": 1658,
+      "height": 1211,
+      "original_bytes": 489472,
+      "webp_bytes": 342770,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "sabzora",
+      "source": "10_sabzora.png",
+      "source_sha256": "ca1a960bfd64c0ee2ea2f9f03b482780019f5bd8b0f2155e92bd31366dcd223b",
+      "rgba_sha256": "815bd27729716859fa18f6a5e2c3dee8cba133758d7cf14ded3a17082b9d725f",
+      "width": 1354,
+      "height": 1394,
+      "original_bytes": 708051,
+      "webp_bytes": 517412,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "nusara",
+      "source": "11_nusara.png",
+      "source_sha256": "f2cca8926b8829810acd969d8c2f80f76cc84a5ba426f7f86c6dafbfdf0b2c42",
+      "rgba_sha256": "421aaf024b8d9b5b2e887f72e2e2311b2d5afff40ea4a72d3ed2af7d882864f4",
+      "width": 1264,
+      "height": 640,
+      "original_bytes": 345901,
+      "webp_bytes": 225360,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "forvello",
+      "source": "12_forvello.png",
+      "source_sha256": "3e3f31ed41048825af50a392fa7be9f812719ee76b43bf684fb434e88712fea8",
+      "rgba_sha256": "0d980f5ff4d1352bc8a5368a56705c6924c602732b65020590fcf624d7c9b64e",
+      "width": 1658,
+      "height": 1197,
+      "original_bytes": 531191,
+      "webp_bytes": 372124,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "pastarivo",
+      "source": "13_pastarivo.png",
+      "source_sha256": "87be755cdebce36a12d8f6e332d1165877887449c3af2640b29031c5ba306403",
+      "rgba_sha256": "4b95e3fe8d4c1a08ac9fd3ffd6545858707bbb69c83e77760f8dd6a930fe92b0",
+      "width": 1484,
+      "height": 1286,
+      "original_bytes": 864122,
+      "webp_bytes": 654168,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "souvano",
+      "source": "14_souvano.png",
+      "source_sha256": "4f7c6b9e735e1deec1859ac2f9374a1b9aa8d5ca3b8e3ff18a69414239a129a7",
+      "rgba_sha256": "c03b367be94ca5ebb9df661a85c87c41138bc00040221e36fdf3ee35a1dc832a",
+      "width": 1286,
+      "height": 713,
+      "original_bytes": 527847,
+      "webp_bytes": 390218,
+      "exact_rgba_match": true
+    },
+    {
+      "id": "rise-and-griddle",
+      "source": "15_rise_griddle.png",
+      "source_sha256": "df68caf279df516ab040e9996b9107757dda69e0634ec47e4bc0d3999d1089fa",
+      "rgba_sha256": "1f9ebb151ce55b27e5c8d98af2723e3c4272c0a55bb348cb2b0de0e289fbca70",
+      "width": 1564,
+      "height": 1281,
+      "original_bytes": 1473147,
+      "webp_bytes": 1064676,
+      "exact_rgba_match": true
+    }
+  ]
+}

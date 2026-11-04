@@ -1,5 +1,5 @@
 import {useState} from "react";
-import backEmblem from "@/assets/mealdeck-back-emblem.png";
+import {MealDeckLogo} from "@/components/mealdeck-logo";
 import {suitArtwork} from "@/lib/food-suit-artwork";
 import {
   PREVIEW_OFFER_FILTERS,PREVIEW_OFFERS,selectPreviewOffers,
@@ -34,7 +34,7 @@ export function OfferDiscoveryPreview(){
         <div className="md-offer-corner md-offer-corner-br" aria-hidden="true">
           <strong>{offer.rank}</strong><img src={suitArtwork[offer.suit]} alt="" />
         </div>
-        <img className="md-offer-pip" src={backEmblem} alt="" aria-hidden="true" />
+        <MealDeckLogo className="md-offer-pip" decorative loading="lazy" />
         <p className="md-offer-label">{offer.label}</p>
         <h3>{offer.value}</h3>
         <p>{offer.copy}</p>

@@ -1,4 +1,4 @@
-import mealdeckCardFront from "@/assets/mealdeck-card-front.png";
+import { mealDeckArtwork } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
 import type { BrandTheme } from "@/lib/dishbee-play";
 
@@ -11,7 +11,7 @@ function exactBrandLogo(id: string): string {
   return brand.logo;
 }
 export const gameBrandArtwork: Record<BrandTheme, string> = {
-  mealdeck: mealdeckCardFront,
+  mealdeck: mealDeckArtwork.src,
   skorch: exactBrandLogo("skorch"),
   taconelle: exactBrandLogo("taconelle"),
   loadd: exactBrandLogo("loadd"),

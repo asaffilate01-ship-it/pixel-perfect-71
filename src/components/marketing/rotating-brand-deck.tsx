@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import cardFront from "@/assets/mealdeck-card-front.png";
 import cardBack from "@/assets/mealdeck-card-back.png";
+import { MealDeckLogo } from "@/components/mealdeck-logo";
+import { mealDeckArtwork, logoDimensionsBySrc } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
 import { chefTitles, heroFoodDeck } from "@/lib/hero-food-deck";
 import { suitArtwork } from "@/lib/food-suit-artwork";
@@ -33,10 +34,10 @@ export function RotatingBrandDeck() {
   // Random starting order each load — shuffled after mount so SSR and the
   // first client render stay identical (no hydration mismatch).
   const [brandOrder, setBrandOrder] = useState(marketingBrands);
-  const logoCard = { id: "mealdeck", name: "MealDeck", category: "One Order. Every Craving.", logo: cardFront, rank: "M", suit: "burger" as const };
+  const logoCard = { id: "mealdeck", name: "MealDeck", category: "One Order. Every Craving.", logo: mealDeckArtwork.src, rank: "M", suit: "burger" as const };
   const brandCards = heroFoodDeck.map((foodCard, index) => {
     const brand = brandOrder[index % brandOrder.length];
-    return { ...brand, ...foodCard, name: brand?.name ?? "MealDeck", category: brand?.category ?? "", logo: brand?.logo ?? cardFront };
+    return { ...brand, ...foodCard, name: brand?.name ?? "MealDeck", category: brand?.category ?? "", logo: brand?.logo ?? mealDeckArtwork.src };
   });
   // Show every restaurant once in the opening fan; the full four-suit deck
   // follows, with the MealDeck artwork as a separate title card.
@@ -75,11 +76,7 @@ export function RotatingBrandDeck() {
               aria-label={`${card.name}${isMealDeck ? "" : `, ${chefTitles[card.rank] ?? card.rank} of ${card.suit}`}`}
             >
               {isMealDeck ? (
-                <img
-                  src={card.logo}
-                  alt="MealDeck — One Order. Every Craving."
-                  className="md-deck-card-art"
-                />
+                <MealDeckLogo className="md-deck-card-art" />
               ) : (
                 <>
                   <span className="md-deck-corner md-deck-corner-tl" aria-hidden="true">
@@ -90,7 +87,14 @@ export function RotatingBrandDeck() {
                     <b>{card.rank}</b>
                     <img src={suitArtwork[card.suit]} alt="" className="md-deck-food-suit" />
                   </span>
-                  <img src={card.logo} alt="" className="md-deck-brand-logo" />
+                  <img
+                    src={card.logo}
+                    alt=""
+                    className="md-deck-brand-logo"
+                    width={logoDimensionsBySrc[card.logo]?.width}
+                    height={logoDimensionsBySrc[card.logo]?.height}
+                    decoding="async"
+                  />
                   <div className="md-deck-caption">
                     <strong>{card.name}</strong>
                     <span>{card.category}</span>

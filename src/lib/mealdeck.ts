@@ -1,3 +1,4 @@
+import { approvedBrandLogos } from "@/lib/brand-logos";
 import brandTavo from "@/assets/brand-tavo.jpg";
 import brandLoadd from "@/assets/brand-loadd.jpg";
 import brandSkorch from "@/assets/brand-skorchd.jpg";
@@ -10,26 +11,11 @@ import brandSabzora from "@/assets/brand-sabzora.jpg";
 import brandMoktl from "@/assets/brand-moktl.jpg";
 import brandCafe1 from "@/assets/brand-cafe1.jpg";
 import brandForvello from "@/assets/brand-forvello.jpg";
-import logoTaconelle from "@/assets/premium-logos/taconelle-premium.png";
-import logoIcova from "@/assets/premium-logos/icova-premium.png";
-import logoParatique from "@/assets/premium-logos/paratique-premium.png";
-import logoTavo from "@/assets/premium-logos/tavo-chicken-premium.png";
-import logoSkorch from "@/assets/premium-logos/skorch-premium.png";
-import logoLoadd from "@/assets/premium-logos/loadd-premium.png";
-import logoTarka from "@/assets/premium-logos/tarka-box-premium.png";
-import logoSabzora from "@/assets/premium-logos/sabzora-premium.png";
-import logoVyta from "@/assets/premium-logos/vyta-premium.png";
-import logoMoktl from "@/assets/premium-logos/moktl-premium.png";
 import logoCafe1 from "@/assets/cafe1-logo.png";
 import brandPastarivo from "@/assets/brand-pastarivo.jpg";
 import brandNusara from "@/assets/brand-nusara.jpg";
 import brandRise from "@/assets/brand-rise-griddle.jpg";
 import brandSouvano from "@/assets/brand-souvano.jpg";
-import logoPastarivo from "@/assets/premium-logos/pastarivo-premium.png";
-import logoNusara from "@/assets/premium-logos/nusara-premium.png";
-import logoRise from "@/assets/premium-logos/rise-and-griddle-premium.png";
-import logoSouvano from "@/assets/premium-logos/souvano-premium.png";
-import logoForvelloAsset from "@/assets/premium-logos/forvello-logo.png.asset.json";
 import { cafe1Menu, coreMenu } from "./sample-menus";
 
 export type LocationKey = "luton" | "stalbans";
@@ -104,22 +90,22 @@ export type MealDeckLocation = {
 export const DELIVERY_FEE_PENCE = 299;
 
 export const brands: Brand[] = [
-  { id: "tavo-chicken", name: "Tavo Chicken", strapline: "Turn up the flavour.", tagline: "Big flavour. Bigger moments.", image: brandTavo, category: "All things chicken", logo: logoTavo },
-  { id: "paratique", name: "Paratique", strapline: "Signature parathas.", tagline: "Layered, loaded, lovely.", image: brandParatique, category: "Parathas", logo: logoParatique },
-  { id: "taconelle", name: "Taconelle", strapline: "Beautifully loaded.", tagline: "French tacos with attitude.", image: brandTaconelle, category: "French tacos", logo: logoTaconelle },
-  { id: "loadd", name: "Load'd", strapline: "Folded, loaded, cheesy.", tagline: "French tacos and mac n cheese.", image: brandLoadd, category: "French tacos · mac n cheese", logo: logoLoadd },
-  { id: "vyta", name: "Vyta", strapline: "Fresh juices for a brighter you.", tagline: "Good food. Brighter you.", image: brandVyta, category: "Fresh juices", logo: logoVyta },
-  { id: "tarka-box", name: "Tarka Box", strapline: "Big flavour. Boxed.", tagline: "Desi classics, done right.", image: brandTarka, category: "Desi food", logo: logoTarka },
-  { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: logoSabzora },
-  { id: "skorch-burgers", name: "Skorch Burgers", strapline: "Seared on steel.", tagline: "Smashed, seared, sensational.", image: brandSkorch, category: "Smash burgers", logo: logoSkorch },
+  { id: "tavo-chicken", name: "Tavo Chicken", strapline: "Turn up the flavour.", tagline: "Big flavour. Bigger moments.", image: brandTavo, category: "All things chicken", logo: approvedBrandLogos["tavo-chicken"] },
+  { id: "paratique", name: "Paratique", strapline: "Signature parathas.", tagline: "Layered, loaded, lovely.", image: brandParatique, category: "Parathas", logo: approvedBrandLogos.paratique },
+  { id: "taconelle", name: "Taconelle", strapline: "Beautifully loaded.", tagline: "French tacos with attitude.", image: brandTaconelle, category: "French tacos", logo: approvedBrandLogos.taconelle },
+  { id: "loadd", name: "Load'd", strapline: "Folded, loaded, cheesy.", tagline: "French tacos and mac n cheese.", image: brandLoadd, category: "French tacos · mac n cheese", logo: approvedBrandLogos.loadd },
+  { id: "vyta", name: "Vyta", strapline: "Fresh juices for a brighter you.", tagline: "Good food. Brighter you.", image: brandVyta, category: "Fresh juices", logo: approvedBrandLogos.vyta },
+  { id: "tarka-box", name: "Tarka Box", strapline: "Big flavour. Boxed.", tagline: "Desi classics, done right.", image: brandTarka, category: "Desi food", logo: approvedBrandLogos["tarka-box"] },
+  { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: approvedBrandLogos.sabzora },
+  { id: "skorch-burgers", name: "Skorch Burgers", strapline: "Seared on steel.", tagline: "Smashed, seared, sensational.", image: brandSkorch, category: "Smash burgers", logo: approvedBrandLogos.skorch },
   { id: "cafe1", name: "Café1", strapline: "Café Classics", tagline: "All-day comfort classics.", image: brandCafe1, category: "Café Classics", logo: logoCafe1 },
-  { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: logoIcova },
-  { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: logoMoktl },
-  { id: "forvello", name: "Forvello", strapline: "The art of great pizza.", tagline: "Artisan pizza, beautifully crafted.", image: brandForvello, category: "Artisan Pizza", logo: logoForvelloAsset.url },
-  { id: "pastarivo", name: "Pastarivo", strapline: "Fresh pasta, freshly tossed.", tagline: "Pasta plates worth twirling.", image: brandPastarivo, category: "Fresh pasta", logo: logoPastarivo },
-  { id: "nusara", name: "Nusara", strapline: "South East Asian fusion.", tagline: "Bold bowls, bright flavours.", image: brandNusara, category: "South East Asian fusion", logo: logoNusara },
-  { id: "rise-and-griddle", name: "Rise & Griddle", strapline: "Breakfast & brunch.", tagline: "Stacks, eggs and good mornings.", image: brandRise, category: "Breakfast & brunch", logo: logoRise },
-  { id: "souvano", name: "Souvano", strapline: "Eastern Mediterranean grill.", tagline: "Fire-grilled and generous.", image: brandSouvano, category: "Eastern Mediterranean grill", logo: logoSouvano },
+  { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: approvedBrandLogos.icova },
+  { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: approvedBrandLogos.moktl },
+  { id: "forvello", name: "Forvello", strapline: "The art of great pizza.", tagline: "Artisan pizza, beautifully crafted.", image: brandForvello, category: "Artisan Pizza", logo: approvedBrandLogos.forvello },
+  { id: "pastarivo", name: "Pastarivo", strapline: "Fresh pasta, freshly tossed.", tagline: "Pasta plates worth twirling.", image: brandPastarivo, category: "Fresh pasta", logo: approvedBrandLogos.pastarivo },
+  { id: "nusara", name: "Nusara", strapline: "South East Asian fusion.", tagline: "Bold bowls, bright flavours.", image: brandNusara, category: "South East Asian fusion", logo: approvedBrandLogos.nusara },
+  { id: "rise-and-griddle", name: "Rise & Griddle", strapline: "Breakfast & brunch.", tagline: "Stacks, eggs and good mornings.", image: brandRise, category: "Breakfast & brunch", logo: approvedBrandLogos["rise-and-griddle"] },
+  { id: "souvano", name: "Souvano", strapline: "Eastern Mediterranean grill.", tagline: "Fire-grilled and generous.", image: brandSouvano, category: "Eastern Mediterranean grill", logo: approvedBrandLogos.souvano },
 ];
 
 export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd", "vyta", "tarka-box", "sabzora", "skorch-burgers", "forvello", "pastarivo", "nusara", "rise-and-griddle", "souvano"];

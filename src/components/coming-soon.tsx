@@ -17,7 +17,7 @@ import { brands, locations, sampleMenu, modifierGroupsFor, formatPence, type Loc
 
 export function ComingSoonBanner() {
   return <aside role="status" className="md-launch-banner">
-    <strong className="text-accent">Coming soon</strong><span>Browse only — registration, ordering and payments are closed.</span><Link to="/play">Play free games →</Link>
+    <strong className="text-accent">Ordering coming soon</strong><span>Browse the five launch menus. More brands in the next deck.</span><Link to="/menus">View menus →</Link>
   </aside>;
 }
 
@@ -66,6 +66,7 @@ export function OrderingPreview() {
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <p className="font-bold uppercase tracking-widest text-[var(--md-red-deep)]">MealDeck · Multibrand preview</p>
       <h1 className="mt-3 font-display text-4xl font-black sm:text-5xl">Every craving. One deck.</h1>
+      <Link to="/menus" className="md-btn md-btn-red mt-5">Explore the launch menus →</Link>
       <p className="mt-4 max-w-3xl text-[var(--md-muted)]">Explore individual brand menus, discover cross-brand pairings and plan a group basket. This is a non-transactional preview; prices are illustrative and orders, payments and delivery bookings remain closed.</p>
 
       <section aria-label="Location and fulfilment preview" className="mt-7 grid gap-4 rounded-3xl border border-[var(--md-line)] bg-[var(--md-paper)] p-5 text-[var(--md-black)] shadow-sm lg:grid-cols-[1fr_1fr_1.4fr]">

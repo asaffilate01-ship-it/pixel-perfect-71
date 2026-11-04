@@ -1,4 +1,4 @@
-import {describe,expect,it} from "bun:test";
+import {describe,expect,test} from "bun:test";
 import {reconcileSupplierPayments,type SupplierPayable,type BankDebit} from "../src/lib/mealdeck-ops-payment-reconciliation";
 const invoice=(changes:Partial<SupplierPayable>={}):SupplierPayable=>({
  invoiceId:"inv-1",supplierId:"supplier-1",invoiceNumber:"INV-2026-1042",

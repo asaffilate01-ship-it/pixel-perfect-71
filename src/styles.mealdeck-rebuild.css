@@ -51,13 +51,15 @@
 
 .md-header-logo { display: flex; align-items: center; flex: 0 0 auto; }
 .md-header-logo img { width: 68px; height: 68px; object-fit: contain; }
+.md-mealdeck-logo { display: block; max-width: 100%; height: auto; object-fit: contain; object-position: center; }
 
-.md-desktop-nav { display: flex; align-items: center; gap: 28px; }
+.md-desktop-nav { display: flex; align-items: center; gap: clamp(14px, 1.5vw, 24px); }
 .md-desktop-nav a {
   color: rgba(255,255,255,.82);
   font-family: var(--md-display);
   font-weight: 700;
   font-size: 14px;
+  white-space: nowrap;
   transition: color .2s ease;
 }
 .md-desktop-nav a:hover { color: var(--md-yellow); }
@@ -263,8 +265,8 @@
   overflow: hidden;
   box-shadow: 0 40px 90px rgba(0,0,0,.42);
 }
-.md-deck-card-inner.is-mealdeck { padding: 0; border: 0; background: none; }
-.md-deck-card-art { display: block; width: 100%; height: 100%; object-fit: cover; }
+.md-deck-card-inner.is-mealdeck { padding: 0; border: 0; background: none; box-shadow: none; }
+.md-deck-card-art { display: block; width: 100%; height: 100%; object-fit: contain; }
 .md-deck-index,
 .md-deck-suit {
   position: absolute;
@@ -280,7 +282,7 @@
 .md-deck-food-suit { width: 22px; height: 23px; margin-top: 3px; object-fit: contain; }
 .md-deck-corner-tl { top: 8px; left: 9px; }
 .md-deck-corner-br { bottom: 8px; right: 9px; transform: rotate(180deg); }
-.md-deck-brand-logo { width: 76%; flex: 1 1 auto; min-height: 0; object-fit: contain; }
+.md-deck-brand-logo { width: 90%; height: 0; flex: 1 1 auto; min-height: 0; object-fit: contain; }
 .md-deck-suit-cutlery { width: .92em; height: .92em; display: block; }
 .md-deck-caption { flex: 0 0 auto; margin-top: auto; padding-top: 10px; width: 100%; text-align: center; }
 .md-deck-caption strong { display: block; font-family: var(--md-display); font-size: 17px; }
@@ -562,7 +564,7 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 .md-location-hero-card { position: relative; aspect-ratio: 2.5/3.5; max-width: 340px; width: 100%; justify-self: center; padding: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; background: var(--md-paper); color: var(--md-red); border: 10px solid #9f1019; transform: rotate(5deg); box-shadow: 0 40px 90px rgba(0,0,0,.42); }
 .md-location-hero-card strong { font-family: var(--md-display); font-size: clamp(30px,3.4vw,46px); line-height: 1; text-transform: uppercase; white-space: nowrap; }
 .md-location-hero-card > span:not(.md-location-card-corner) { font-family: var(--md-display); font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-.md-location-card-emblem { width: 46%; max-width: 130px; margin-bottom: 10px; }
+.md-location-card-emblem { width: 70%; max-width: 190px; height: auto; object-fit: contain; margin-bottom: 10px; }
 .md-location-card-corner { position: absolute; display: flex; flex-direction: column; align-items: center; font-family: var(--md-display); font-size: 26px; font-weight: 900; line-height: 1; color: var(--md-red); }
 .md-location-card-corner i { font-style: normal; font-size: 18px; }
 .md-location-card-corner-tl { top: 14px; left: 14px; }
@@ -626,10 +628,10 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 .md-soon-card-wild .md-soon-corner { color: var(--md-red); }
 .md-soon-card-wild .md-soon-corner img { filter: none; }
 .md-soon-emblem {
-  width: 52px;
+  width: 76px;
   margin: 10px auto 0;
   opacity: .92;
-  filter: drop-shadow(0 0 1px rgba(255,246,232,.85)) drop-shadow(0 2px 4px rgba(0,0,0,.35));
+  filter: none;
 }
 .md-soon-emblem-food {
   width: 92px;
@@ -655,7 +657,7 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 .md-soon-card-wild .md-soon-suit { color: var(--md-black); opacity: .85; }
 .md-soon-card-wild p { color: rgba(17,17,17,.75); }
 .md-soon-card-wild .md-soon-emblem {
-  filter: brightness(.4) saturate(1.6) drop-shadow(0 2px 4px rgba(0,0,0,.25));
+  filter: none;
   opacity: 1;
 }
 
@@ -748,8 +750,10 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .md-deck-card { animation: none; opacity: 0; }
-  .md-deck-card:nth-of-type(3) { opacity: 1; transform: none; }
+  .md-deck-stage.is-gathering .md-deck-card,
+  .md-deck-stage.is-cycling .md-deck-card { animation: none; opacity: 0; transform: none; }
+  .md-deck-stage.is-gathering .md-deck-card:nth-of-type(3),
+  .md-deck-stage.is-cycling .md-deck-card:nth-of-type(3) { opacity: 1; }
   .md-deck-shadow { opacity: 1; transition: none; }
   .md-btn, .md-brand-tile { transition: none; }
 }
