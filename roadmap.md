@@ -25,7 +25,17 @@
 - [x] Instagram and TikTok links use @mealdeckofficial.
 - [x] Mobile launch menus: canonical /menu link, all five brands visible, compact header and persistent brand/section/search controls.
 - [x] Empty the entire saved basket in one action, with Undo that restores quantities, upgrades and extras.
-- [ ] Connect the staff operations portal to the approved Dishbee backend and verify authorised staff access in staging.
+- [ ] Provision the independent MealDeck Supabase project, connect the staff operations portal and verify authorised staff access in staging.
 - [ ] Review and publish canonical launch menu records so admin changes can feed the public menu.
 - [x] Build one shared kitchen board: one master-order card containing all brands, atomic preparation and inline packing/sealing; preserve location scoping for future kitchens.
 - [ ] Connect and accept the canonical paid-release evidence adapter, hosted operations migrations and live staff/kitchen workflow before production KDS activation.
+
+## Independent database — 4 November 2026
+
+- [x] Record the owner decision: MealDeck will have its own database; Dishbee supplies the technology.
+- [x] Show “MealDeck is a trading name of 313 Brands Ltd.” and “Powered by Dishbee” in the site footer; align structured organisation data.
+- [x] Prepare the fresh-project database installation, independent connection settings and staff session isolation; verify the actual database installation and admin permissions in disposable tests.
+- [x] Let authorised menu staff assign a draft product to the shared kitchen before activating it, while retaining one kitchen display for all brands.
+- [ ] Provision a separate MealDeck project in the owner-selected Supabase organisation and apply the reviewed standalone profile.
+- [ ] Configure the first verified staff owner and kitchen, then review and publish real catalogue prices and modifiers.
+- [ ] Complete and accept MealDeck's own verified payment/release, refund, group-payment and delivery integrations before enabling real orders.

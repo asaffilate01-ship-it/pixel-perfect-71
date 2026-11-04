@@ -112,9 +112,56 @@ side-effect traps with preserved definitions and ACLs. The suite verifies that
 the workspace neither rewrites nor invokes them. It does not claim to test those
 separate canonical implementations, all historical Dishbee migrations/triggers,
 Supabase Auth/JWT verification, Realtime transport, live devices or provider
-replays. Those remain part of acceptance on the approved Dishbee staging system.
+replays. Those separate runtime integrations still require acceptance against
+the independent MealDeck staging project. The historical reference fixture is
+retained as a consumer-contract regression, not a MealDeck hosting dependency.
 
 The default embedded run is available where a native non-root PostgreSQL server
 cannot start. The native CI run supplies PostgreSQL 17 and independent-session
 locking evidence; it still uses disposable fixture data and is not a production
 go-live signal.
+
+## Independent MealDeck production-profile integration
+
+Run the complete independent profile locally with:
+
+```sh
+npm ci --prefix tests/postgres
+npm run test:standalone --prefix tests/postgres
+```
+
+`standalone-behavior.mjs` imports `buildStandaloneSql()` from the deployable
+MealDeck profile and executes its output unchanged. It installs the real
+foundation, all seven existing operations/KDS migrations, and the independent
+runtime overlay. It does **not** load `canonical-fixture.sql`, a Dishbee schema,
+or a payment/release-authority test double. The only platform shim supplies
+Supabase's local Auth table, `auth.uid()` and API roles. Deliberately broad legacy
+default grants verify that the actual installer revokes table and sequence
+access explicitly.
+
+The suite checks late-installation rollback, protected one-time owner bootstrap,
+Auth account eligibility, one shared kitchen and the five launch brands with
+ordering disabled, real scoped staff and menu administration, recipe versions
+and rollback, costs and stock, second-actor purchase approval, idempotent goods
+receipts, draft invoice administration, tenant isolation, and the closed kitchen
+release gate. All business records used by these checks are disposable fixture
+data inserted after installation. The installer itself contains no menu prices,
+orders, payment evidence, or supplier transactions.
+
+For a native run, provide a **new, empty, localhost-only** test database:
+
+```sh
+MEALDECK_KDS_TEST_DATABASE_URL='postgresql://postgres:DISPOSABLE_PASSWORD@127.0.0.1:5432/mealdeck_kds_test_standalone' \
+  npm run test:standalone:postgres --prefix tests/postgres
+```
+
+The same URL and empty-database guards protect both suites. The runner never
+drops an existing schema or resets a populated database. GitHub Actions runs
+the independent profile in its own fresh PostgreSQL 17.6 service. The original
+KDS job retains its six independent-session concurrency checks unchanged.
+
+A successful profile test proves local installation and bounded administration;
+it does not attest live payment capture, webhook authentication, Supabase session
+verification, group financial release, provider dispatch, or production launch
+readiness. The production release authority is intentionally absent until a
+reviewed MealDeck payment integration supplies verified evidence.

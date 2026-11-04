@@ -4,19 +4,19 @@
 
 MealDeck is the customer-facing multi-brand ordering platform for the 313 Brands food portfolio. Customers enter a postcode, choose Delivery / Pickup / Kerbside where available, browse every active brand for that kitchen, keep one basket and checkout once.
 
+**MealDeck is a trading name of 313 Brands Ltd. Powered by Dishbee.**
+
 This project is connected to Lovable. Do not rewrite published Git history.
 
 ## Runtime architecture
 
-MealDeck is the consumer experience. Dishbee is the operational engine underneath.
+MealDeck is configured to use an independent Supabase project for its own data and staff access. Dishbee is the technology provider. There is no required runtime connection to Dishbee's shared database. The standalone installation is prepared in this repository; the hosted project still needs provisioning and connection.
 
 ### MealDeck
 - postcode-first customer journey
 - brand switching and one cross-brand basket
 - customer checkout and tracking UI
 - loyalty/offers/account experience
-
-### Dishbee
 - tenant/location configuration
 - serviceability and live opening hours
 - brand/menu/channel availability
@@ -27,6 +27,12 @@ MealDeck is the consumer experience. Dishbee is the operational engine underneat
 - delivery orchestration
 - subscription/add-on entitlement
 
+### Dishbee
+
+Technology credit and explicitly configured service integrations. Any future Dishbee integration must use a scoped API boundary; it must not silently switch MealDeck back to a shared merchant database.
+
+The fresh-project deployment profile, owner bootstrap and remaining activation work are in [the independent backend guide](docs/mealdeck-independent-backend-phase47.md). A prepared schema is not a provisioned database or a working payment integration. Historical `supabase/migrations` files remain unchanged for existing deployments and are composed by the standalone profile; do not run them alone against a new project.
+
 ### Haccora
 Food-safety and compliance software included in the MealDeck franchise technology offer, with location access, configuration and training arranged through Dishbee.
 
@@ -36,25 +42,19 @@ Optional AI/CRM/WhatsApp/voice/automation/analytics layer requested and billed t
 ## Launch location rules
 
 ### Luton
-9 primary brands:
+The five public launch menus are:
 - Tavo Chicken
-- Paratique
-- Taconelle
 - Load'd
-- Vyta
-- Tarka Box
-- Fyrra
-- Sabzora
 - Skorch Burgers
+- Souvano
+- Moktl
 
-Icova and Moktl are cross-menu add-ons.
+Other brands are presented as coming in a later deck. Cross-brand extras can be browsed together; published availability and prices still require review in the new backend.
 
 Delivery, Pickup and Kerbside may be enabled by the location.
 
 ### St Albans
-The same 9 primary brands + Café1 as the 10th.
-
-Icova and Moktl remain add-ons.
+Brand availability must be configured for this kitchen independently. Cafe 1's merchant data and EPOS remain separate.
 
 Current MealDeck service:
 - Delivery only
@@ -65,20 +65,22 @@ Café1's direct/in-store menu remains separate from the curated Café1 MealDeck 
 
 ## Order/KDS rule
 
-Checkout creates a Dishbee `payment_pending` order and a short handoff code.
+The checkout contract creates a MealDeck `payment_pending` order and a short handoff code. The independent backend's provider path still needs implementation and acceptance before customer checkout is enabled.
 
 **Normal MealDeck orders do not appear on KDS until payment is confirmed server-side.**
 
-After payment:
-1. Dishbee marks the order paid.
-2. Dishbee creates KDS station tickets.
-3. KDS shows brand colour, customer name and handoff code.
-4. Kerbside additionally shows vehicle registration.
-5. Delivery additionally enters the Dishbee last-mile orchestration flow.
+The intended live flow is:
+1. The verified server-side payment integration records accepted payment/release evidence.
+2. MealDeck creates the master order's kitchen tickets.
+3. One shared KDS card shows all brands, quantities, modifiers and kitchen notes.
+4. Preparation and packing advance on the same screen: start order, ready to pack, start packing, seal order.
+5. A separately verified handoff/delivery integration completes fulfilment. Sealing a kitchen order is not a courier booking or customer handoff.
+
+Future kitchens receive separately authorised views; each brand does not need a separate screen.
 
 ## Delivery
 
-Dishbee delivery orchestration can compare:
+The planned delivery integration can compare:
 - MealDeck/Dishbee own fleet
 - Uber Direct
 - Deliveroo Express
@@ -89,7 +91,7 @@ The customer sees one MealDeck delivery experience. Provider selection is intern
 
 ## Customer tracking
 
-`/track` uses the Dishbee public tracking RPC with:
+`/track` uses the configured backend's public tracking RPC contract with:
 - order UUID
 - 4-digit handoff code
 
@@ -99,12 +101,12 @@ The public response is normalized and does not expose provider credentials or ki
 
 Copy `.env.example` into your environment and add:
 
-- Dishbee Supabase URL
-- Dishbee public/anon key
+- `MEALDECK_SUPABASE_URL` for the independent MealDeck project
+- `MEALDECK_SUPABASE_PUBLISHABLE_KEY` from that same project
 - Luton tenant + location IDs
 - St Albans tenant + location IDs
 
-Payment and courier provider secrets stay server-side and are configured separately.
+Staff sign-in obtains the same validated public connection from the MealDeck server. Old `DISHBEE_*` or independently configured staff project credentials must not silently become a fallback. Payment and courier provider secrets stay server-side and are configured separately. Keep `COMING_SOON` and checkout approval gates closed until the independent deployment is accepted.
 
 ## Development
 
@@ -155,7 +157,7 @@ Tests: `bun test tests/whatsapp-assistance.test.ts`
 
 Once the existing launch gate is independently lifted, the ordering UI
 retrieves **estimated** item prices and delivery fees from the current
-Dishbee catalogue and its canonical kitchen policy. The backend validates
+MealDeck catalogue and its canonical kitchen policy. The backend validates
 postcode serviceability, tenant/location identity, item/option IDs and
 quantity before asking the public fee RPC. Unknown policies and unavailable
 items fail closed, and the customer cannot send their own delivery fee to

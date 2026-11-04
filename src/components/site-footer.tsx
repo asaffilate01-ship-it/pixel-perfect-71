@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Music2, Youtube } from "lucide-react";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
+import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 import deliverooLogo from "@/assets/deliveroo-app.png.asset.json";
 import uberEatsLogo from "@/assets/ubereats-app.png.asset.json";
 import justEatLogo from "@/assets/justeat-app.png.asset.json";
@@ -69,8 +70,9 @@ export function SiteFooter() {
       </div>
 
       <div className="md-footer-bottom">
-        <span>© {new Date().getFullYear()} MealDeck.</span>
-        <span>Good food brings people together.</span>
+        <span>© {new Date().getFullYear()} {MEALDECK_BUSINESS.legalName}.</span>
+        <span>{MEALDECK_BUSINESS.tradingStatement}</span>
+        <span>{MEALDECK_BUSINESS.technologyCredit}</span>
       </div>
     </footer>
   );

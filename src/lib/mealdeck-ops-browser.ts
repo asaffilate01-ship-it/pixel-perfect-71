@@ -1,25 +1,58 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getMealDeckPublicBackend } from "./mealdeck-backend.functions";
+import {
+  createMealDeckBackendClientCache,
+  MealDeckBackendSetupError,
+} from "./mealdeck-backend-client-cache";
 
 /**
- * Browser-only authenticated staff client. NEVER use a service-role key here.
- * Points to the existing Dishbee Supabase project that owns canonical orders.
+ * Browser-only authenticated staff client for MealDeck's independent database.
+ * Its validated public connection comes from the same server configuration used
+ * by public catalogue/tracking clients. NEVER use a service-role key here.
  */
-let client: SupabaseClient | null = null;
+const clients = createMealDeckBackendClientCache<SupabaseClient>({
+  read: () => getMealDeckPublicBackend(),
+  create: ({ url, publishableKey }) =>
+    createClient(url, publishableKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storageKey: `mealdeck-ops-${new URL(url).hostname}-auth-token`,
+      },
+      global: { headers: { "X-Client-Info": "mealdeck-ops-web" } },
+    }),
+  retire: (client) => {
+    void client.auth.stopAutoRefresh().catch(() => {});
+  },
+});
+
+export async function initializeMealDeckOpsClient(refresh = false): Promise<SupabaseClient> {
+  if (typeof window === "undefined") throw new Error("mealdeck_ops_browser_only");
+  try {
+    return await clients.initialise(refresh);
+  } catch (reason) {
+    throw new OpsRequestError(
+      "unconfigured",
+      reason instanceof MealDeckBackendSetupError
+        ? reason.message
+        : "MealDeck’s staff connection could not be loaded. Please retry or ask your administrator to check the dedicated database settings.",
+    );
+  }
+}
+
+export function resetMealDeckOpsClient() {
+  clients.reset();
+}
 
 export function getMealDeckOpsClient(): SupabaseClient {
   if (typeof window === "undefined") throw new Error("mealdeck_ops_browser_only");
-  if (client) return client;
-  const url = import.meta.env["VITE_MEALDECK_OPS_SUPABASE_URL"] as string | undefined;
-  const key = import.meta.env["VITE_MEALDECK_OPS_SUPABASE_ANON_KEY"] as string | undefined;
-  if (!url?.startsWith("https://") || !key?.trim()) {
-    throw new Error(
-      "Staff operations is not configured. Connect the approved Dishbee Supabase public URL and publishable key.",
+  const client = clients.get();
+  if (!client)
+    throw new OpsRequestError(
+      "unconfigured",
+      "MealDeck’s staff connection is not ready. Please sign in again.",
     );
-  }
-  client = createClient(url, key, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-    global: { headers: { "X-Client-Info": "mealdeck-ops-web" } },
-  });
   return client;
 }
 
@@ -62,6 +95,12 @@ export async function opsRpc<T>(
   // Every private RPC checks the signed-in user via auth.uid() and verifies
   // explicit per-tenant/location permissions. UI visibility is not authority.
   const { data, error } = await db.rpc(name, parameters);
+  if (clients.get() !== db) {
+    throw new OpsRequestError(
+      "unauthenticated",
+      "Your staff connection has changed. Sign in again to continue.",
+    );
+  }
   if (error) {
     if (
       error.code === "PGRST301" ||
@@ -114,6 +153,28 @@ export async function opsRpc<T>(
     }
     // Narrow, reviewed operational errors are translated without returning
     // raw SQL, database schema details, user IDs or provider credentials.
+    if (name === "mealdeck_ops_kitchen_stations" && error.code === "PGRST202") {
+      throw new OpsRequestError(
+        "unconfigured",
+        "Kitchen preparation setup is not installed yet. Ask your administrator to finish the MealDeck database setup.",
+      );
+    }
+    const menuFailures: readonly [string, string][] = [
+      [
+        "mealdeck_ops_route_has_active_orders",
+        "This product is used by an order still in the kitchen. Finish those orders before changing its preparation route.",
+      ],
+      [
+        "mealdeck_ops_station_route_required_before_activation",
+        "Assign the draft product to a preparation station in this kitchen before activating it.",
+      ],
+      [
+        "mealdeck_ops_location_or_item_mismatch",
+        "The product or preparation station is no longer available for this kitchen. Reload the menu and try again.",
+      ],
+    ];
+    const menuFailure = menuFailures.find(([code]) => error.message.includes(code));
+    if (menuFailure) throw new Error(menuFailure[1]);
     const invoiceFailures: readonly [string, string][] = [
       [
         "mealdeck_ops_invoice_totals_mismatch",
