@@ -43,6 +43,8 @@ jobs:
         run: bun test tests/whatsapp-assistance.test.ts
       - name: MealDeck backend staff, costing, analytics and RLS source contracts
         run: bun test tests/mealdeck-ops.test.ts
+      - name: Shared kitchen board, strict feed and full-order presentation
+        run: bun test tests/mealdeck-kds*.test.ts
       - name: Supplier, purchase approval, stock batch and expiry regressions
         run: bun test tests/mealdeck-procurement.test.ts
       - name: Supplier invoice, VAT review and credit-note regressions
@@ -87,7 +89,10 @@ jobs:
 
       - name: Staff console lint
         run: >
-          bunx eslint src/routes/ops.tsx
+          bunx eslint src/routes/ops.tsx src/routes/kds.tsx
+          src/components/ops/operations-workspace.tsx src/components/ops/kds-panel.tsx
+          src/lib/mealdeck-kds.ts src/lib/mealdeck-kds-presentation.ts
+          tests/mealdeck-kds*.test.ts
           src/components/ops/ops-panels.tsx
           src/lib/mealdeck-ops-browser.ts src/lib/mealdeck-ops-access.ts
           src/lib/mealdeck-ops-math.ts src/lib/mealdeck-ops-types.ts
@@ -351,3 +356,33 @@ jobs:
           bunx eslint src/lib/mealdeck-preview-allergens.ts
           tests/mealdeck-preview-allergens.test.ts
           --rule 'prettier/prettier: off'
+
+  kds-postgres17:
+    name: Kitchen PostgreSQL 17 permissions and concurrency
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated PostgreSQL test dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Execute actual SQL permissions, whole-order transitions and two-session races
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test
+        run: npm run test:postgres --prefix tests/postgres

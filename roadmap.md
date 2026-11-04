@@ -27,4 +27,5 @@
 - [x] Empty the entire saved basket in one action, with Undo that restores quantities, upgrades and extras.
 - [ ] Connect the staff operations portal to the approved Dishbee backend and verify authorised staff access in staging.
 - [ ] Review and publish canonical launch menu records so admin changes can feed the public menu.
-- [ ] Add the MealDeck kitchen station/pass interface and verify its paid-order connection to Dishbee KDS.
+- [x] Build one shared kitchen board: one master-order card containing all brands, atomic preparation and inline packing/sealing; preserve location scoping for future kitchens.
+- [ ] Connect and accept the canonical paid-release evidence adapter, hosted operations migrations and live staff/kitchen workflow before production KDS activation.

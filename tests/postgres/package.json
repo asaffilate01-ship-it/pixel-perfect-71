@@ -1,0 +1,13 @@
+{
+  "name": "mealdeck-kds-postgres-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node kds-behavior.mjs",
+    "test:postgres": "node kds-behavior.mjs --native"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.15",
+    "pg": "8.23.1"
+  }
+}
