@@ -37,5 +37,8 @@
 - [x] Prepare the fresh-project database installation, independent connection settings and staff session isolation; verify the actual database installation and admin permissions in disposable tests.
 - [x] Let authorised menu staff assign a draft product to the shared kitchen before activating it, while retaining one kitchen display for all brands.
 - [ ] Provision a separate MealDeck project in the owner-selected Supabase organisation and apply the reviewed standalone profile.
+- [x] Create a fresh dedicated MealDeck Lovable Cloud database and save the explicit server-owned public connection pair.
+- [ ] Install the complete phase-47 installer unchanged: blocked because the available Cloud migration tool forbids explicit transaction-control statements and owns its own transaction; no installer SQL has been applied.
+- [ ] Verify the confirmed owner account info@mealdeck.co.uk and bootstrap the kitchen named MealDeck: waiting for schema installation and a verified Auth account; ownership has not been assigned.
 - [ ] Configure the first verified staff owner and kitchen, then review and publish real catalogue prices and modifiers.
 - [ ] Complete and accept MealDeck's own verified payment/release, refund, group-payment and delivery integrations before enabling real orders.
