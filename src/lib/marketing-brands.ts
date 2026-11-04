@@ -1,19 +1,5 @@
+import { approvedBrandLogos } from "@/lib/brand-logos";
 import cafe1Logo from "@/assets/cafe1-logo.png";
-import forvelloAsset from "@/assets/premium-logos/forvello-logo.png.asset.json";
-import icova from "@/assets/premium-logos/icova-premium.png";
-import loadd from "@/assets/premium-logos/loadd-premium.png";
-import moktl from "@/assets/premium-logos/moktl-premium.png";
-import nusara from "@/assets/premium-logos/nusara-premium.png";
-import paratique from "@/assets/premium-logos/paratique-premium.png";
-import pastarivo from "@/assets/premium-logos/pastarivo-premium.png";
-import riseAndGriddle from "@/assets/premium-logos/rise-and-griddle-premium.png";
-import sabzora from "@/assets/premium-logos/sabzora-premium.png";
-import skorch from "@/assets/premium-logos/skorch-premium.png";
-import souvano from "@/assets/premium-logos/souvano-premium.png";
-import taconelle from "@/assets/premium-logos/taconelle-premium.png";
-import tarkaBox from "@/assets/premium-logos/tarka-box-premium.png";
-import tavoChicken from "@/assets/premium-logos/tavo-chicken-premium.png";
-import vyta from "@/assets/premium-logos/vyta-premium.png";
 
 export type MarketingBrand = {
   id: string;
@@ -30,21 +16,21 @@ export type MarketingBrand = {
  * story can grow without coupling it to the ordering backend.
  */
 export const marketingBrands: MarketingBrand[] = [
-  { id: "taconelle", name: "Taconelle", category: "French tacos", logo: taconelle, rank: "A", suit: "🍔" },
-  { id: "paratique", name: "Paratique", category: "Signature parathas", logo: paratique, rank: "K", suit: "🌮" },
-  { id: "tavo-chicken", name: "Tavo Chicken", category: "All things chicken", logo: tavoChicken, rank: "Q", suit: "🍟" },
-  { id: "loadd", name: "Load'd", category: "Loaded fries & mac n cheese", logo: loadd, rank: "J", suit: "🥤" },
-  { id: "sabzora", name: "Sabzora", category: "Vegetarian Indian", logo: sabzora, rank: "10", suit: "🍔" },
-  { id: "icova", name: "Icova", category: "Iced coffee, chai & desserts", logo: icova, rank: "9", suit: "🌮" },
-  { id: "vyta", name: "Vyta", category: "Fresh juices", logo: vyta, rank: "8", suit: "🍟" },
-  { id: "moktl", name: "Moktl", category: "Zero-alcohol mocktails", logo: moktl, rank: "7", suit: "🥤" },
-  { id: "tarka-box", name: "Tarka Box", category: "Desi food", logo: tarkaBox, rank: "6", suit: "🍔" },
-  { id: "skorch", name: "Skorch", category: "Smash burgers", logo: skorch, rank: "5", suit: "🌮" },
-  { id: "pastarivo", name: "Pastarivo", category: "Fresh pasta", logo: pastarivo, rank: "4", suit: "🍟" },
-  { id: "nusara", name: "Nusara", category: "South East Asian fusion", logo: nusara, rank: "3", suit: "🥤" },
-  { id: "rise-and-griddle", name: "Rise & Griddle", category: "Breakfast & brunch", logo: riseAndGriddle, rank: "2", suit: "🍔" },
-  { id: "souvano", name: "Souvano", category: "Eastern Mediterranean grill", logo: souvano, rank: "A", suit: "🌮" },
-  { id: "forvello", name: "Forvello", category: "Artisan Pizza", logo: forvelloAsset.url, rank: "F", suit: "🥤" },
+  { id: "taconelle", name: "Taconelle", category: "French tacos", logo: approvedBrandLogos.taconelle, rank: "A", suit: "🍔" },
+  { id: "paratique", name: "Paratique", category: "Signature parathas", logo: approvedBrandLogos.paratique, rank: "K", suit: "🌮" },
+  { id: "tavo-chicken", name: "Tavo Chicken", category: "All things chicken", logo: approvedBrandLogos["tavo-chicken"], rank: "Q", suit: "🍟" },
+  { id: "loadd", name: "Load'd", category: "Loaded fries & mac n cheese", logo: approvedBrandLogos.loadd, rank: "J", suit: "🥤" },
+  { id: "sabzora", name: "Sabzora", category: "Vegetarian Indian", logo: approvedBrandLogos.sabzora, rank: "10", suit: "🍔" },
+  { id: "icova", name: "Icova", category: "Iced coffee, chai & desserts", logo: approvedBrandLogos.icova, rank: "9", suit: "🌮" },
+  { id: "vyta", name: "Vyta", category: "Fresh juices", logo: approvedBrandLogos.vyta, rank: "8", suit: "🍟" },
+  { id: "moktl", name: "Moktl", category: "Zero-alcohol mocktails", logo: approvedBrandLogos.moktl, rank: "7", suit: "🥤" },
+  { id: "tarka-box", name: "Tarka Box", category: "Desi food", logo: approvedBrandLogos["tarka-box"], rank: "6", suit: "🍔" },
+  { id: "skorch", name: "Skorch", category: "Smash burgers", logo: approvedBrandLogos.skorch, rank: "5", suit: "🌮" },
+  { id: "pastarivo", name: "Pastarivo", category: "Fresh pasta", logo: approvedBrandLogos.pastarivo, rank: "4", suit: "🍟" },
+  { id: "nusara", name: "Nusara", category: "South East Asian fusion", logo: approvedBrandLogos.nusara, rank: "3", suit: "🥤" },
+  { id: "rise-and-griddle", name: "Rise & Griddle", category: "Breakfast & brunch", logo: approvedBrandLogos["rise-and-griddle"], rank: "2", suit: "🍔" },
+  { id: "souvano", name: "Souvano", category: "Eastern Mediterranean grill", logo: approvedBrandLogos.souvano, rank: "A", suit: "🌮" },
+  { id: "forvello", name: "Forvello", category: "Artisan Pizza", logo: approvedBrandLogos.forvello, rank: "F", suit: "🥤" },
 ];
 
 /**

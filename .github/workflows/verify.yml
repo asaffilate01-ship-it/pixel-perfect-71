@@ -14,6 +14,15 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+      - name: Launch menu transcription and unpriced meal picks
+        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts
+      - name: Launch menu and approved logo implementation lint
+        run: >-
+          bunx eslint src/lib/launch-menu-catalogue.ts src/lib/launch-menu-picks.ts
+          src/lib/brand-logos.ts src/components/mealdeck-logo.tsx
+          src/components/menus/launch-menu-browser.tsx src/routes/menus.tsx
+          tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts
+          --rule 'prettier/prettier: off'
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - name: MealDeck Play game regressions

@@ -24,7 +24,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import { OfferDiscoveryPreview } from "@/components/marketing/offer-discovery-preview";
-import backEmblem from "@/assets/mealdeck-back-emblem.png";
+import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { ldScript, orgJsonLd, seo } from "@/lib/seo";
 
@@ -79,7 +79,7 @@ function LandingPage() {
               <p className="md-hero-foods">Artisan pizza · French tacos · Parathas · Burgers · Pasta · Fresh juices · Chai · Desserts</p>
               <p className="md-hero-tagline">One Order. Every Craving.</p>
               <div className="md-hero-actions">
-                <Link to="/order" className="md-btn md-btn-yellow">Coming soon · Preview menu <ArrowRight /></Link>
+                <Link to="/menus" className="md-btn md-btn-yellow">Explore the launch menus <ArrowRight /></Link>
                 <Link to="/" hash="brands" className="md-btn md-btn-outline-light">See all brands</Link>
               </div>
               <div className="md-hero-proof">
@@ -114,10 +114,10 @@ function LandingPage() {
           <div className="md-section-heading md-section-heading-split">
             <div>
               <p className="md-kicker md-kicker-red">Our brands. Your cravings.</p>
-              <h2>Multiple brands. One premium collection.</h2>
-              <p>Every identity stays distinct. MealDeck brings them together in one ordering experience.</p>
+              <h2>Your first five menus are here.</h2>
+              <p>Explore Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Build your picks now — ordering is coming soon.</p>
             </div>
-            <Link to="/order" className="md-btn md-btn-red">Preview our menus <ArrowRight /></Link>
+            <Link to="/menus" className="md-btn md-btn-red">Explore our menus <ArrowRight /></Link>
           </div>
           <BrandLogoGrid />
         </section>
@@ -245,7 +245,7 @@ function LandingPage() {
                 <span className="md-soon-corner md-soon-corner-tl" aria-hidden="true"><b>{rank}</b><img src={suitArtwork[suit]} alt="" /></span>
                 <span className="md-soon-corner md-soon-corner-br" aria-hidden="true"><b>{rank}</b><img src={suitArtwork[suit]} alt="" /></span>
                 {city === "Your city"
-                  ? <img src={backEmblem} alt="" className="md-soon-emblem" aria-hidden="true" />
+                  ? <MealDeckLogo decorative loading="lazy" className="md-soon-emblem" />
                   : <img src={suitArtwork[suit]} alt="" className="md-soon-emblem md-soon-emblem-food" aria-hidden="true" />}
                 <h3>{city}</h3><p>{copy}</p>
               </article>

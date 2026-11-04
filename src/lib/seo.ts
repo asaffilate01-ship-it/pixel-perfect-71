@@ -1,5 +1,5 @@
 export const SITE_URL = "https://mealdeck.co.uk";
-export const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+export const OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 type SeoInput = {
   title: string;
@@ -12,6 +12,7 @@ type SeoInput = {
 
 export function seo({ title, description, path, image = OG_IMAGE, type = "website", keywords }: SeoInput) {
   const url = `${SITE_URL}${path}`;
+  const usesMasterArtwork = image === OG_IMAGE;
   return {
     meta: [
       { title },
@@ -22,9 +23,11 @@ export function seo({ title, description, path, image = OG_IMAGE, type = "websit
       { property: "og:type", content: type },
       { property: "og:url", content: url },
       { property: "og:image", content: image },
-      { property: "og:image:width", content: "1200" },
-      { property: "og:image:height", content: "630" },
-      { name: "twitter:card", content: "summary_large_image" },
+      ...(usesMasterArtwork ? [
+        { property: "og:image:width", content: "1106" },
+        { property: "og:image:height", content: "1116" },
+      ] : []),
+      { name: "twitter:card", content: usesMasterArtwork ? "summary" : "summary_large_image" },
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: description },
       { name: "twitter:image", content: image },

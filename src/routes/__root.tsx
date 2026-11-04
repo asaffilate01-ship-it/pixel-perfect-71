@@ -24,6 +24,7 @@ import dishbeePlayCss from "../styles.dishbee-play.css?url";
 import dishbeePlayPremiumCss from "../styles.dishbee-play-premium.css?url";
 import marketplaceDiscoveryCss from "../styles.marketplace-discovery.css?url";
 import marketplacePremiumCss from "../styles.marketplace-premium.css?url";
+import launchMenusCss from "../styles.launch-menus.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -108,7 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:locale", content: "en_GB" },
       { name: "theme-color", content: "#faf6ed", media: "(prefers-color-scheme: light)" },
       { name: "theme-color", content: "#120a0a", media: "(prefers-color-scheme: dark)" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [
       {
@@ -122,6 +123,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: dishbeePlayPremiumCss },
       { rel: "stylesheet", href: marketplaceDiscoveryCss },
       { rel: "stylesheet", href: marketplacePremiumCss },
+      { rel: "stylesheet", href: launchMenusCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },

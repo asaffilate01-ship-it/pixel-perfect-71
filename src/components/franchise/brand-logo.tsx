@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logoDimensionsBySrc } from "@/lib/brand-logos";
 
 export function FranchiseBrandLogo({
   src,
@@ -23,8 +24,9 @@ export function FranchiseBrandLogo({
       src={src}
       alt={decorative ? "" : `${name} logo`}
       loading={lazy ? "lazy" : "eager"}
-      width={320}
-      height={190}
+      width={logoDimensionsBySrc[src]?.width ?? 320}
+      height={logoDimensionsBySrc[src]?.height ?? 190}
+      decoding="async"
       onError={() => setFailed(true)}
     />
   );

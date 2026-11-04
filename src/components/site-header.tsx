@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { isMealDeckNavCurrent } from "@/lib/mealdeck-nav-state";
 import { ArrowRight, MapPin, Menu, X } from "lucide-react";
-import mealDeckLogo from "@/assets/mealdeck-main-logo.png.asset.json";
+import { MealDeckLogo } from "@/components/mealdeck-logo";
 
 const navItems = [
   { label: "Brands", to: "/", hash: "brands" },
@@ -40,12 +40,13 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
     <header className="md-site-header">
       <div className="md-header-inner">
         <Link to="/" className="md-header-logo" aria-label="MealDeck home">
-          <img src={mealDeckLogo.url} alt="MealDeck — One Order. Every Craving." />
+          <MealDeckLogo />
         </Link>
 
         {nav ? (
           <nav className="md-desktop-nav" aria-label="Main navigation">
             <Link to="/" aria-current={current("/")?"page":undefined} className={active("/")}>Home</Link>
+            <Link to="/menus" aria-current={current("/menus")?"page":undefined} className={active("/menus")}>Menus</Link>
             {navItems.map((item) => (
               <Link key={item.label} to={item.to} hash={item.hash} aria-current={current(item.to,item.hash)?"location":undefined} className={active(item.to,item.hash)}>{item.label}</Link>
             ))}
@@ -60,7 +61,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           {context ?? (
             <>
               <Link to="/luton" className="md-header-location"><MapPin /> Luton</Link>
-              <Link to="/order" className="md-btn md-btn-yellow">Coming soon <ArrowRight /></Link>
+              <Link to="/menus" className="md-btn md-btn-yellow">Browse menus <ArrowRight /></Link>
             </>
           )}
           {nav ? (
@@ -82,6 +83,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
       {nav && open ? (
         <nav id={menuId} className="md-mobile-nav" aria-label="Mobile navigation">
           <Link to="/" ref={firstLinkRef} onClick={() => setOpen(false)} aria-current={current("/")?"page":undefined} className={active("/")}>Home</Link>
+          <Link to="/menus" onClick={() => setOpen(false)} aria-current={current("/menus")?"page":undefined} className={active("/menus")}>Menus</Link>
           {navItems.map((item) => (
             <Link key={item.label} to={item.to} hash={item.hash} onClick={() => setOpen(false)} aria-current={current(item.to,item.hash)?"location":undefined} className={active(item.to,item.hash)}>{item.label}</Link>
           ))}
@@ -91,7 +93,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           <Link to="/franchise" onClick={() => setOpen(false)} aria-current={current("/franchise")?"page":undefined} className={active("/franchise")}>Franchises</Link>
           <Link to="/blog" onClick={() => setOpen(false)} aria-current={current("/blog")?"page":undefined} className={active("/blog")}>Blog</Link>
           <Link to="/track" onClick={() => setOpen(false)} aria-current={current("/track")?"page":undefined} className={active("/track")}>Track order</Link>
-          <Link to="/order" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Coming soon <ArrowRight /></Link>
+          <Link to="/menus" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Browse menus <ArrowRight /></Link>
         </nav>
       ) : null}
     </header>

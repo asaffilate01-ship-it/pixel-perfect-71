@@ -1,6 +1,7 @@
 import { COMING_SOON } from "@/lib/launch-status";
 import { createServiceabilityGeneration } from "@/lib/mealdeck-serviceability-generation";
 import { OrderingPreview } from "@/components/coming-soon";
+import { LaunchMenuBrowser } from "@/components/menus/launch-menu-browser";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -70,12 +71,13 @@ import {
   type CheckoutAttempt,
 } from "@/lib/mealdeck-checkout-attempt";
 
-type OrderSearch = { brand?: string; fulfilment?: FulfilmentType };
+type OrderSearch = { brand?: string; fulfilment?: FulfilmentType; preview?: "sample" };
 
 export const Route = createFileRoute("/order")({
   validateSearch: (search: Record<string, unknown>): OrderSearch => {
     const next: OrderSearch = {};
     if (typeof search["brand"] === "string") next.brand = search["brand"];
+    if (search["preview"] === "sample") next.preview = "sample";
     if (
       search["fulfilment"] === "delivery" ||
       search["fulfilment"] === "pickup" ||
@@ -89,11 +91,17 @@ export const Route = createFileRoute("/order")({
   head: () =>
     seo({
       title: "Coming soon — Preview our menu | MealDeck",
-      description: "Enter your postcode and build one basket across every MealDeck brand. Delivery, pickup or kerbside in Luton; MealDeck St Albans is delivery only. Café 1 has separate direct ordering.",
+      description: "Explore MealDeck’s launch menus and build your picks with meal upgrades and add-ons. Prices and ordering are coming soon.",
       path: "/order",
     }),
-  component: () => COMING_SOON ? <OrderingPreview /> : <OrderPage />,
+  component: OrderRoute,
 });
+
+function OrderRoute() {
+  const { brand, preview } = Route.useSearch();
+  if (!COMING_SOON) return <OrderPage />;
+  return preview === "sample" ? <OrderingPreview /> : <LaunchMenuBrowser requestedBrandId={brand} />;
+}
 
 const fulfilmentIcons = { delivery: Bike, pickup: Package, curbside: CarFront, dinein: UtensilsCrossed } as const;
 
@@ -1054,7 +1062,7 @@ function OrderPage() {
                               onClick={() => beginAdd(item)}
                               className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-accent disabled:opacity-50"
                             >
-                              {brand ? <BrandMark brand={brand} className="h-12 w-16 shrink-0 rounded-lg bg-ink p-1" /> : null}
+                              {brand ? <BrandMark brand={brand} className="h-12 w-16 shrink-0 rounded-lg bg-paper p-1" /> : null}
                               <span className="min-w-0 flex-1">
                                 <span className="block truncate font-semibold">{item.name}</span>
                                 <span className="text-sm text-muted-foreground">{formatPence(item.pricePence)} · customise</span>

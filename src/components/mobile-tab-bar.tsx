@@ -1,9 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, LayoutGrid, Gamepad2, MapPin } from "lucide-react";
 import { suitArtwork } from "@/lib/food-suit-artwork";
-import backEmblem from "@/assets/mealdeck-back-emblem.png";
+import { MealDeckLogo } from "@/components/mealdeck-logo";
 
-type Tab = { label: string; to: "/" | "/order" | "/track" | "/play"; hash?: string; icon: typeof Home };
+type Tab = { label: string; to: "/" | "/order" | "/menus" | "/track" | "/play"; hash?: string; icon: typeof Home };
 
 const left: Tab[] = [
   { label: "Home", to: "/", icon: Home },
@@ -19,7 +19,7 @@ export function MobileTabBar() {
     select: (s) => ({ pathname: s.location.pathname, hash: s.location.hash }),
   });
 
-  if (pathname === "/franchise" || pathname.startsWith("/franchise/")) return null;
+  if (pathname === "/franchise" || pathname.startsWith("/franchise/") || pathname === "/menus" || pathname === "/order") return null;
 
   const isActive = (t: Tab) =>
     t.to === pathname && (t.hash ? hash === t.hash : !hash || t.to !== "/");
@@ -63,7 +63,7 @@ export function MobileTabBar() {
           {left.map(item)}
           <div className="flex flex-1 justify-center">
             <Link
-              to="/order"
+              to="/menus"
               aria-label="Preview the MealDeck menu. Ordering coming soon"
               aria-current={dealActive ? "page" : undefined}
               className={`relative -mt-8 flex h-20 w-14 rotate-[-6deg] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent flex-col items-center justify-center rounded-lg border border-ink/15 bg-paper shadow-xl transition-transform duration-300 active:scale-90 ${
@@ -77,8 +77,8 @@ export function MobileTabBar() {
               <span className="absolute bottom-1 right-1.5 flex rotate-180 flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
                 A<img src={suitArtwork.burger} alt="" className="mt-0.5 h-2.5 w-2.5 object-contain" />
               </span>
-              <img src={backEmblem} alt="" className="h-[18px] w-auto object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]" />
-              <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">Soon</span>
+              <MealDeckLogo decorative className="h-8 w-8" />
+              <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">Menus</span>
             </Link>
           </div>
           {right.map(item)}

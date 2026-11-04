@@ -4,7 +4,7 @@ import tavoImage from "@/assets/brand-tavo.jpg";
 import loaddImage from "@/assets/brand-loadd.jpg";
 import sabzoraImage from "@/assets/brand-sabzora.jpg";
 import icovaImage from "@/assets/brand-icova.jpg";
-import vytaImage from "@/assets/premium-logos/vyta-premium.png";
+import { approvedBrandLogos } from "@/lib/brand-logos";
 import moktlImage from "@/assets/brand-moktl.jpg";
 import tarkaImage from "@/assets/brand-tarka.jpg";
 import skorchImage from "@/assets/brand-skorchd.jpg";
@@ -98,7 +98,7 @@ const promotions: Record<FranchiseBrandId, FranchisePromotion> = {
   },
   vyta: {
     // The legacy brand-vyta food photo depicts salad; use the current juice identity.
-    image: vytaImage,
+    image: approvedBrandLogos.vyta,
     artwork: "identity",
     collection: "drinks-desserts",
     tagline: "Put fresh juices in the spotlight.",

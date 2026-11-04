@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as LutonRouteImport } from './routes/luton'
+import { Route as MenusRouteImport } from './routes/menus'
+import { Route as OpsRouteImport } from './routes/ops'
 import { Route as OrderRouteImport } from './routes/order'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -35,6 +37,16 @@ const FranchiseRoute = FranchiseRouteImport.update({
 const LutonRoute = LutonRouteImport.update({
   id: '/luton',
   path: '/luton',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MenusRoute = MenusRouteImport.update({
+  id: '/menus',
+  path: '/menus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpsRoute = OpsRouteImport.update({
+  id: '/ops',
+  path: '/ops',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrderRoute = OrderRouteImport.update({
@@ -87,6 +99,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
+  '/menus': typeof MenusRoute
+  '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -101,6 +115,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
+  '/menus': typeof MenusRoute
+  '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -116,6 +132,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/franchise': typeof FranchiseRoute
   '/luton': typeof LutonRoute
+  '/menus': typeof MenusRoute
+  '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -132,6 +150,8 @@ export interface FileRouteTypes {
     | '/'
     | '/franchise'
     | '/luton'
+    | '/menus'
+    | '/ops'
     | '/order'
     | '/play'
     | '/sitemap.xml'
@@ -146,6 +166,8 @@ export interface FileRouteTypes {
     | '/'
     | '/franchise'
     | '/luton'
+    | '/menus'
+    | '/ops'
     | '/order'
     | '/play'
     | '/sitemap.xml'
@@ -160,6 +182,8 @@ export interface FileRouteTypes {
     | '/'
     | '/franchise'
     | '/luton'
+    | '/menus'
+    | '/ops'
     | '/order'
     | '/play'
     | '/sitemap.xml'
@@ -175,6 +199,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FranchiseRoute: typeof FranchiseRoute
   LutonRoute: typeof LutonRoute
+  MenusRoute: typeof MenusRoute
+  OpsRoute: typeof OpsRoute
   OrderRoute: typeof OrderRoute
   PlayRoute: typeof PlayRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -207,6 +233,20 @@ declare module '@tanstack/react-router' {
       path: '/luton'
       fullPath: '/luton'
       preLoaderRoute: typeof LutonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/menus': {
+      id: '/menus'
+      path: '/menus'
+      fullPath: '/menus'
+      preLoaderRoute: typeof MenusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ops': {
+      id: '/ops'
+      path: '/ops'
+      fullPath: '/ops'
+      preLoaderRoute: typeof OpsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/order': {
@@ -279,6 +319,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FranchiseRoute: FranchiseRoute,
   LutonRoute: LutonRoute,
+  MenusRoute: MenusRoute,
+  OpsRoute: OpsRoute,
   OrderRoute: OrderRoute,
   PlayRoute: PlayRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
