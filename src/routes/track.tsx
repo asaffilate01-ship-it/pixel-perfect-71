@@ -1,6 +1,5 @@
 import { COMING_SOON } from "@/lib/launch-status";
-import { ComingSoonPage } from "@/components/coming-soon";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -24,18 +23,23 @@ import { presentMealDeckTracking } from "@/lib/mealdeck-tracking-presentation";
 import { getOrderTracking, type OrderTrackingResult } from "@/lib/dishbee.functions";
 
 export const Route = createFileRoute("/track")({
+  // Collection launch orders and progress belong to the verified customer's
+  // account. Keep the legacy reference lookup behind its existing release gate.
+  beforeLoad: () => {
+    if (COMING_SOON)
+      throw redirect({ to: "/account", hash: "customer-orders-title", replace: true });
+  },
   head: () => ({
     meta: [
-      { title: "MealDeck order tracking — Coming soon" },
+      { title: "Your MealDeck order progress" },
       {
         name: "description",
         content:
-          "Follow your complete MealDeck order with your order reference and handoff code once ordering is open.",
+          "Sign in to see your MealDeck orders, collection progress and full itemised receipts.",
       },
     ],
   }),
-  component: () =>
-    COMING_SOON ? <ComingSoonPage title="Order tracking is coming soon" /> : <TrackOrderPage />,
+  component: TrackOrderPage,
 });
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

@@ -1,4 +1,4 @@
-# Independent MealDeck Cloud deployment — 4 November 2026
+# Independent MealDeck Cloud deployment — 5 November 2026
 
 ## Current verified position — 5 November 2026
 
@@ -13,6 +13,28 @@ No Auth users or businesses exist yet. `info@mealdeck.co.uk` must register and v
 The separate customer membership extension was also applied atomically and verified: five private customer tables all have RLS, the customer profile RPC is unavailable to `anon` and available to authenticated users, and no public owner-bootstrap RPC was introduced. Its public capability response confirms registration availability, with push sending and loyalty earning still disabled pending configuration. No customer account, email or order was created by the installation.
 
 The owner's latest detailed prices for **Skorch, Tavo, Load’d, Moktl and Souvano** supersede the £20 placeholders discussed in the historical records below. The current source catalogue contains 79 items; Souvano's three mains are £6.50, £6.99 and £9.99 including fries/rice/naan. The reviewed price revision checks old values and preserves unrelated administrator edits. Milkshake upgrades retain the supplied £2.99 price but remain unavailable until flavour choices are supplied. Opening-weekend dates are not supplied; the 30% campaign must remain unscheduled until confirmed.
+
+### Checkout, kitchen and printer installation — 09:38 UTC
+
+The complete release source is in [PR #70](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/70), implementation commit `e6968308f4ec4c4f779027ebdb745a38183b6d57`. All seven jobs in [Verify MealDeck run 729](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42003738119) passed before the following database writes. Native PostgreSQL 17 verified 19 checkout groups, including simultaneous kitchen-scoped handoff-code allocation, and 16 kitchen/printer groups, including competing terminal claims. Local checks also passed 674 unit tests, 23 bridge tests, the production build, TypeScript validation and responsive browser flows.
+
+Each unchanged additive migration below was submitted to the same MealDeck Lovable project as **one complete query with its own outer transaction**. Both returned success, followed by independent read-only verification. The historical foundation installer was not rerun or edited.
+
+| Migration | UTF-8 bytes | SHA-256 |
+| --- | ---: | --- |
+| `20261105082900_mealdeck_stripe_checkout.sql` | 44,646 | `d526795e1d691c4f14936191b4cf1b7a4c4c8c6fa2b8d695d54410fe65bd681e` |
+| `20261105090147_mealdeck_kitchen_printer.sql` | 39,573 | `3a6662a3361e9dbe45d71f93044a7a72f8a0c7e07deb1ed8b4b33dd94595c9fc` |
+
+At `2026-11-05 09:38:16.468866+00`, hosted verification confirmed:
+
+- All seven new checkout/printer tables have RLS; no public application table has RLS disabled.
+- No direct public/extension-table grants exist for `anon`, `authenticated` or `service_role`.
+- Anonymous callers cannot read the printer queue or claim a receipt. Authenticated callers can reach the narrow RPCs, which independently enforce verified identity and the assigned kitchen. Service API credentials cannot use the staff printer queue.
+- Authenticated customers cannot execute the private owner bootstrap. Own-order history is authenticated only.
+- There are still **zero Auth users, businesses, orders and receipts**. Installation created no merchant/customer account, order, captured payment or physical print.
+- Registration is available. Push sending and loyalty earning remain disabled pending their configuration.
+
+The installed schema and merged/published source are distinct from live ordering activation. The next required input is the intended owner's verified account, `info@mealdeck.co.uk`, followed by private owner/kitchen bootstrap and reviewed catalogue publication. Server-only Stripe credentials, account/mode/webhook settings, release acceptance, opening dates and pickup estimates still need their real configuration. The printer requires a compatible device, local bridge/TLS setup and a physical paper check. See the [checkout guide](mealdeck-opening-checkout.md), [customer guide](mealdeck-customer-membership.md) and [kitchen/printer guide](mealdeck-kitchen-printer.md).
 
 The following sections retain the earlier provisioning and investigation record. Their “installation pending” and “connector unavailable” observations are superseded by the verified position above.
 
