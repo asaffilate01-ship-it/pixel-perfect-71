@@ -46,6 +46,16 @@ At `2026-11-05 15:10:28.725356+00`, a separate read-only query verified all secu
 
 The same verification found zero Auth users, owner accounts, businesses, orders, receipts, guest sessions, quotes, Stripe records, customer profiles, consent entries, loyalty entries or push subscriptions. Checkout settings remain disabled/unbound; push and loyalty remain disabled. Installation did not create an owner, customer, payment or print. Owner verification and real checkout activation are still required. The later Online/Busy/Pause/Closed addition is tracked separately below when installed.
 
+### Online / Busy / Pause / Closed installation — 15:21 UTC
+
+The admin availability addition is implementation commit `7973feda911f1dd55dd700d0eb086f08b5a2daa5` in the same PR #71. All nine jobs in [Verify MealDeck run 737](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42053777999) passed before installation. Native PostgreSQL 17 passed all 16 availability groups, including concurrent audit changes, an ETA update waiting for payment preparation, and an estimate-only save waiting behind another admin's Pause. The completed application passed 693 local unit tests with 5,813 assertions, production build, TypeScript and scoped lint; the receipt bridge's 23 tests also passed.
+
+The unchanged `20261105150406_mealdeck_kitchen_availability.sql` (15,352 UTF-8 bytes; SHA-256 `dc9d88fe6f7abe7ebbdde3c69bfcc7c1ad00bc2da9c6eaa80d06d41ea1fbabc0`) was submitted as one complete query with its outer transaction to the same verified independent MealDeck project. The request succeeded.
+
+Independent verification at `2026-11-05 15:21:37.306427+00` confirmed the Closed default, state/enabled consistency constraints, hardened routine grants, RLS and two INSERT-only admission guards. Both new admin write RPCs are authenticated-only and enforce verified owner/admin kitchen authority; anonymous and service API roles cannot use them. The runtime still uses the original server clock and the confirmed launch windows. Unbound public status returns ordering closed, guest checkout ineligible and no invented kitchen estimate.
+
+A separate full guest/security verification at `2026-11-05 15:21:38.693227+00` passed again after the availability installation. All 42 public tables retain RLS and no direct grants to `anon`, `authenticated` or `service_role`. Auth users, businesses, orders, receipts, guest sessions, payment records and customer/consent/loyalty/push records remain at zero; no checkout was enabled. Push and loyalty remain disabled. The state controls are available in source on admin Overview and Finance; using them on the hosted project still requires the intended owner's verified account and real kitchen setup. See the [availability guide](mealdeck-kitchen-availability.md).
+
 The following sections retain the earlier provisioning and investigation record. Their “installation pending” and “connector unavailable” observations are superseded by the verified position above.
 
 ## Historical provisioning record — before the current installation
