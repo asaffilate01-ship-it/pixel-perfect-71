@@ -51,3 +51,9 @@
 - [x] Add the installable app manifest, approved icons, browser installation guidance, explicit app updates and a private-data-safe offline screen.
 - [x] Build the customer progress timeline, real placement/elapsed time and guarded status refresh; ordering remains coming soon and hosted integration acceptance is still required.
 - [ ] Publish the merged source through Lovable and verify installed-app behaviour on actual iOS/Android devices.
+
+## Stripe checkout — 5 November 2026
+
+- [x] Enable built-in Stripe payments in test mode with the owner's confirmation; preserve all ordering and kitchen-release gates.
+- [ ] Create payment products from owner-approved canonical menu prices, not illustrative menus: waiting for approved menu/pricing and hosted catalogue installation.
+- [ ] Implement and verify embedded MealDeck checkout and signed payment reconciliation: waiting for approved products and canonical order/payment authority; no checkout form or webhook handler has been implemented.
