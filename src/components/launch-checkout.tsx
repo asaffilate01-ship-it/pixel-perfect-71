@@ -29,7 +29,9 @@ import {
 import {
   CHECKOUT_BASKET_HANDOFF_KEY,
   clearLaunchCheckoutTransfer,
+  readLaunchCheckoutTransfer,
   readLaunchCheckoutPicks,
+  type LaunchCheckoutGroup,
 } from "@/lib/launch-basket-transfer";
 import type { MealDeckPackingPlan } from "@/lib/mealdeck-checkout-selection";
 import {
@@ -386,9 +388,11 @@ function PriceSummary({
 export function LaunchCheckout({
   orderId,
   cancelled = false,
+  groupExpected = false,
 }: {
   orderId?: string;
   cancelled?: boolean;
+  groupExpected?: boolean;
 }) {
   const [picks, setPicks] = useState<LaunchMenuPick[]>([]);
   const [basketLoaded, setBasketLoaded] = useState(false);
@@ -410,6 +414,8 @@ export function LaunchCheckout({
   const [separateBags, setSeparateBags] = useState(false);
   const [bagCount, setBagCount] = useState(1);
   const [bagQuantities, setBagQuantities] = useState<Record<string, number[]>>({});
+  const [groupCheckout, setGroupCheckout] = useState<LaunchCheckoutGroup | null>(null);
+  const [basketIssue, setBasketIssue] = useState<string | null>(null);
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const [receiptRefreshed, setReceiptRefreshed] = useState(false);
   const attempt = useRef<{ quoteId: string; attemptId: string } | null>(null);
@@ -429,21 +435,52 @@ export function LaunchCheckout({
   const guestEligible = orderingAvailable && status?.guestCheckout.eligible === true;
   const canViewReceipt = checkoutMode === "guest" ? Boolean(guestSession) : registered;
   const canCheckout =
-    orderingAvailable && canViewReceipt && (checkoutMode === "member" || guestEligible);
+    !basketIssue &&
+    picks.length > 0 &&
+    orderingAvailable &&
+    canViewReceipt &&
+    (checkoutMode === "member" || guestEligible);
   const customerIdentity =
     checkoutMode === "guest"
       ? "guest:" + (guestSession?.id ?? "new")
       : "member:" + (account?.status === "signed_in" ? account.profile.userId : "signed-out");
   const displayTotal = launchMenuBasketDisplayPrice(picks).itemsSubtotalPence;
+  const accountReturnTo =
+    !orderId && (groupExpected || groupCheckout) ? "/checkout?group=1" : "/checkout";
+
+  useEffect(() => {
+    const transfer = readLaunchCheckoutTransfer(groupExpected);
+    const savedPicks = transfer.picks;
+    const savedGroup = transfer.group;
+    setPicks(savedPicks);
+    setBasketIssue(transfer.issue);
+    setQuote(null);
+    setReviewConfirmed(false);
+    attempt.current = null;
+    setBasketLoaded(true);
+    setGroupCheckout(savedGroup);
+    setSeparateBags(!!savedGroup);
+    setBagCount(savedGroup?.packing.bagCount ?? 1);
+    setBagQuantities(
+      Object.fromEntries(
+        savedPicks.map((pick, index) => [
+          "line-" + (index + 1),
+          savedGroup
+            ? Array.from(
+                { length: savedGroup.packing.bagCount },
+                (_, bag) =>
+                  savedGroup.packing.allocations.find(
+                    (entry) => entry.lineId === "line-" + (index + 1) && entry.bag === bag + 1,
+                  )?.quantity ?? 0,
+              )
+            : [pick.quantity],
+        ]),
+      ),
+    );
+  }, [groupExpected]);
 
   useEffect(() => {
     alive.current = true;
-    const savedPicks = readLaunchCheckoutPicks();
-    setPicks(savedPicks);
-    setBasketLoaded(true);
-    setBagQuantities(
-      Object.fromEntries(savedPicks.map((pick, index) => ["line-" + (index + 1), [pick.quantity]])),
-    );
     try {
       const saved = sessionStorage.getItem(FULFILMENT_KEY);
       if (saved === "pickup" || saved === "curbside") setFulfilment(saved);
@@ -630,13 +667,17 @@ export function LaunchCheckout({
       const saved = JSON.parse(sessionStorage.getItem(ATTEMPT_KEY) ?? "null") as {
         orderId?: string;
         basket?: string;
+        preserveSavedBasket?: boolean;
       } | null;
       if (saved?.orderId === receipt.orderId && saved.basket) {
         // An older paid order must not remove a newer basket prepared on this
         // device while payment was in progress.
         const clearTransfer = encodeLaunchPicks(readLaunchCheckoutPicks()) === saved.basket;
         try {
-          if (localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY) === saved.basket)
+          if (
+            !saved.preserveSavedBasket &&
+            localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY) === saved.basket
+          )
             localStorage.removeItem(LAUNCH_PICKS_STORAGE_KEY);
         } catch {
           /* Session transfer can still be cleared if persistent storage is blocked. */
@@ -840,6 +881,7 @@ export function LaunchCheckout({
             ...selected,
             orderId: result.orderId,
             basket: encodeLaunchPicks(picks),
+            preserveSavedBasket: !!groupCheckout,
           }),
         );
       } catch {
@@ -874,6 +916,30 @@ export function LaunchCheckout({
           </div>
           <MealDeckLogo className="md-checkout-logo" />
         </header>
+        {!orderId && basketIssue && (
+          <section className="md-checkout-notice md-checkout-error" role="alert">
+            <h2>Review the complete group again</h2>
+            <p>{basketIssue}</p>
+            <Link to="/group-order">Return to your group draft</Link>
+          </section>
+        )}
+        {!orderId && groupCheckout && (
+          <section className="md-checkout-notice" aria-label="Group order review">
+            <h2>One group order. You pay for everyone.</h2>
+            <p>
+              Each person’s choices start in a separate numbered bag. Your personal menu basket is
+              still saved. Split payments are not available.
+            </p>
+            <p>
+              {groupCheckout.bags.map((bag) => "Bag " + bag.number + ": " + bag.label).join(" · ")}
+            </p>
+            <p>
+              Names are a reminder on this device; the kitchen receives bag numbers. If you change
+              the packing below, check the new bag contents before paying.
+            </p>
+            <Link to="/group-order">Back to your group draft</Link>
+          </section>
+        )}
         <KitchenAvailabilityNotice
           status={status}
           current={statusCurrent}
@@ -917,7 +983,7 @@ export function LaunchCheckout({
             <Link
               to="/account"
               onClick={() => chooseCheckoutMode("member")}
-              search={{ returnTo: "/checkout" }}
+              search={{ returnTo: accountReturnTo }}
               className="md-checkout-primary"
             >
               Sign in securely
@@ -1048,7 +1114,7 @@ export function LaunchCheckout({
                         </p>
                         <Link
                           to="/account"
-                          search={{ returnTo: "/checkout" }}
+                          search={{ returnTo: accountReturnTo }}
                           className="md-checkout-refresh"
                           onClick={() => chooseCheckoutMode("member")}
                         >
@@ -1274,7 +1340,7 @@ export function LaunchCheckout({
                         <span>{account.profile.phone}</span>
                         <small>Email verified</small>
                       </div>
-                      <Link to="/account" search={{ returnTo: "/checkout" }}>
+                      <Link to="/account" search={{ returnTo: accountReturnTo }}>
                         Edit
                       </Link>
                     </div>
@@ -1298,7 +1364,7 @@ export function LaunchCheckout({
                       )}
                       <Link
                         to="/account"
-                        search={{ returnTo: "/checkout" }}
+                        search={{ returnTo: accountReturnTo }}
                         className="md-checkout-primary"
                       >
                         {account?.status === "signed_in"

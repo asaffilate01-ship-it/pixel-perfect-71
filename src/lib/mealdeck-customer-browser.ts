@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { getMealDeckPublicBackend } from "./mealdeck-backend.functions";
 import { createMealDeckBackendClientCache } from "./mealdeck-backend-client-cache";
+import { customerEmailReturnPath, type CustomerReturnTarget } from "./mealdeck-customer-return";
 import {
   CUSTOMER_CONSENT_VERSION,
   CUSTOMER_PRIVACY_VERSION,
@@ -200,7 +201,7 @@ export async function readMealDeckCustomerAccount(): Promise<CustomerAccountStat
 export async function requestCustomerEmail(
   emailInput: string,
   registration?: CustomerRegistration,
-  returnTo: "/menus" | "/checkout" = "/menus",
+  returnTo: CustomerReturnTarget = "/menus",
 ): Promise<void> {
   const email = normalizeCustomerEmail(emailInput);
   if (!email) throw new CustomerAccountError("invalid", "Enter a valid email address.");
@@ -212,10 +213,7 @@ export async function requestCustomerEmail(
     email,
     options: {
       shouldCreateUser: Boolean(details),
-      emailRedirectTo: new URL(
-        returnTo === "/checkout" ? "/account?returnTo=%2Fcheckout" : "/account",
-        window.location.origin,
-      ).href,
+      emailRedirectTo: new URL(customerEmailReturnPath(returnTo), window.location.origin).href,
       ...(details ? { data: { mealdeck_name: details.name, mealdeck_phone: details.phone } } : {}),
     },
   });

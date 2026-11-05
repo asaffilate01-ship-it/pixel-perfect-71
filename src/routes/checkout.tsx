@@ -4,12 +4,17 @@ import { seo } from "@/lib/seo";
 import checkoutCss from "../styles.launch-checkout.css?url";
 
 export const Route = createFileRoute("/checkout")({
-  validateSearch: (search: Record<string, unknown>): { order?: string; cancelled?: boolean } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { order?: string; cancelled?: boolean; group?: boolean } => ({
     ...(typeof search["order"] === "string" && /^[a-f0-9-]{36}$/i.test(search["order"])
       ? { order: search["order"] }
       : {}),
     ...(search["cancelled"] === "1" || search["cancelled"] === 1 || search["cancelled"] === true
       ? { cancelled: true }
+      : {}),
+    ...(search["group"] === "1" || search["group"] === 1 || search["group"] === true
+      ? { group: true }
       : {}),
   }),
   head: () => {
@@ -29,8 +34,12 @@ export const Route = createFileRoute("/checkout")({
 });
 
 function CheckoutPage() {
-  const { order, cancelled } = Route.useSearch();
+  const { order, cancelled, group } = Route.useSearch();
   return (
-    <LaunchCheckout {...(order ? { orderId: order } : {})} {...(cancelled ? { cancelled } : {})} />
+    <LaunchCheckout
+      {...(order ? { orderId: order } : {})}
+      {...(cancelled ? { cancelled } : {})}
+      groupExpected={group === true}
+    />
   );
 }

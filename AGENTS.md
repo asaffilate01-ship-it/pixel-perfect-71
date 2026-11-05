@@ -1,4 +1,5 @@
 <!-- LOVABLE:BEGIN -->
+
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
 > published git history — force pushing, or rebasing/amending/squashing commits
@@ -7,7 +8,15 @@
 >
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
+
 <!-- LOVABLE:END -->
+
+## Current host-pays group flow — 5 November 2026
+
+- The owner requested that group ordering be opened. The implemented `/group-order` flow collects exact choices through individual invitation and return links, lets one organiser review and combine them, and hands one basket with numbered bags to existing checkout. It supports up to ten people, matching the packing contract. It is not a server-synchronised group or separate-payment service; do not present those future capabilities as live.
+- Keep organiser drafts and reply drafts separate from the personal menu basket. Shared links contain identifiers and food choices in their fragment, never contact details, names, account credentials, authoritative prices or payment state. Choices are untrusted and must pass current-catalogue and final server validation.
+- Preserve explicit reply review, replacement instead of duplication, reviewed-response history and the saved-draft freshness check. Restore a group checkout atomically with its complete packing allocation; stale/missing choices or group metadata must produce a recoverable group error, never a partial order or personal-basket fallback.
+- Authentication may return only to the fixed allowlisted destinations, including `/checkout?group=1`. Keep actual member/guest eligibility, kitchen state, payment readiness and verified-only KDS release unchanged. See `docs/mealdeck-group-ordering.md`.
 
 ## Three November consumer offers — latest owner decision, 5 November 2026
 
@@ -58,12 +67,10 @@
 - Play uses a separate realistic food artwork map so game imagery can improve without changing approved logo and marketing card emblems.
 - Ordering uses a browse-first, restaurant-led marketplace layout while serviceability is confirmed separately — keeps discovery fast without weakening location rules.
 
-
 - Review `PRODUCT.md` and `DESIGN.md` before MealDeck feature/UI changes. Preserve the card/food identity, existing approved artwork, app vs marketing contrast tokens, and clearly marked sample/illustrative menus.
 - Develop via the GitHub codebase and tests; do not invoke Lovable as a build environment. Leave all existing Git/Lovable history untouched.
 - MealDeck must never assume that a WhatsApp chat, agent response, browser redirect or illustrative price is a paid order. Only the configured MealDeck backend's verified server-side payment/order authority can release KDS.
 - Per-location official WhatsApp business numbers are server-configured, verified and disabled by default. No private account/customer data, checkout state or prices in chat-link query strings. Omniqora keeps channel identity; Cafe 1's independent EPOS and restricted menus stay separate.
-
 
 ## MealDeck Phases 19–21 safety and design contract
 
