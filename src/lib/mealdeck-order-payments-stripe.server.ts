@@ -223,7 +223,10 @@ async function bindCollection(
       p_collection: collection.collectionId,
       p_session: session ? session["id"] : null,
       p_intent: intent ? intent["id"] : (resourceId(session?.["payment_intent"]) ?? null),
-      p_url: session ? (safeStripeCheckoutUrl(session["url"]) ?? collection.sessionUrl) : null,
+      p_url: session
+        ? (safeStripeCheckoutUrl(session["url"], stripe.checkoutDomain) ??
+          safeStripeCheckoutUrl(collection.sessionUrl, stripe.checkoutDomain))
+        : null,
       p_account: stripe.accountId,
       p_livemode: stripe.livemode,
     }),
@@ -241,6 +244,7 @@ export async function ensureCheckoutCollection(
 ) {
   checkScope(collection, clients, stripe);
   if (collection.method !== "checkout") mismatch();
+  if (stripe.checkoutDomain?.status === "invalid") throw paymentUnavailable();
   if (!collection.sessionId) requireRecoverableCreation(collection);
   let session = collection.sessionId
     ? await stripeRequest(
@@ -285,11 +289,11 @@ export async function ensureCheckoutCollection(
     session["payment_status"] === "unpaid" &&
     !current.cancelRequested &&
     Date.parse(current.expiresAt) > Date.now()
-      ? safeStripeCheckoutUrl(session["url"])
+      ? safeStripeCheckoutUrl(session["url"], stripe.checkoutDomain)
       : null;
   if (
     session["status"] === "open" &&
-    !checkoutUrl &&
+    (!checkoutUrl || new URL(checkoutUrl).pathname !== "/c/pay/" + session["id"]) &&
     !current.cancelRequested &&
     Date.parse(current.expiresAt) > Date.now()
   )

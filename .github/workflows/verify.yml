@@ -104,6 +104,16 @@ jobs:
         run: bun test tests/whatsapp-assistance.test.ts
       - name: MealDeck backend staff, costing, analytics and RLS source contracts
         run: bun test tests/mealdeck-ops.test.ts
+      - name: Private payment and email connection diagnostics
+        run: bun test tests/mealdeck-integration-status.test.ts tests/mealdeck-checkout-domain.test.ts
+      - name: Payment and email diagnostics implementation checks
+        run: >-
+          bunx eslint src/lib/mealdeck-integration-status.ts src/lib/mealdeck-integration-status.server.ts
+          src/routes/api.ops.integrations.ts src/components/ops/integration-status-panel.tsx
+          src/lib/mealdeck-checkout-url.ts src/lib/mealdeck-stripe-checkout-domain.server.ts
+          tests/mealdeck-integration-status.test.ts tests/mealdeck-checkout-domain.test.ts
+          deploy/mealdeck/checkout-domain.mjs tests/postgres/checkout-domain-behavior.mjs
+          --rule 'prettier/prettier: off'
       - name: Shared kitchen board, strict feed and full-order presentation
         run: bun test tests/mealdeck-kds*.test.ts
       - name: Supplier, purchase approval, stock batch and expiry regressions
@@ -600,6 +610,7 @@ jobs:
             guest-checkout,
             kitchen-availability,
             shared-terminal-payments,
+            checkout-domain,
           ]
     services:
       postgres:

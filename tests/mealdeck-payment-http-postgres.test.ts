@@ -10,16 +10,18 @@ import { parseSharedPaymentResult } from "../src/lib/mealdeck-shared-payments";
 import { handleTerminalRequest } from "../src/lib/mealdeck-terminal.server";
 import { asActor, createDatabase } from "./postgres/harness.mjs";
 import { setupSharedPaymentsFixture } from "./postgres/shared-terminal-payments-fixture.mjs";
+import { buildCheckoutDomainSql } from "../deploy/mealdeck/checkout-domain.mjs";
 
 /** A real HTTP-handler -> Supabase named-RPC -> PostgreSQL contract test.
  * Auth and Stripe are simulated external services. No RPC result, price,
  * payment state, permission check or kitchen release is mocked.
  * There is deliberately no fallback to global fetch: unexpected URLs fail.
  */
-async function integrationFixture() {
+async function integrationFixture(checkoutHostname = "checkout.stripe.com") {
   const db = await createDatabase();
   try {
     const f = await setupSharedPaymentsFixture(db);
+    await db.exec(buildCheckoutDomainSql());
     const env = {
       MEALDECK_SUPABASE_URL: "https://paymentintegration.supabase.co",
       MEALDECK_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_payment_integration_fixture",
@@ -30,6 +32,8 @@ async function integrationFixture() {
       MEALDECK_STRIPE_WEBHOOK_SECRET: "whsec_" + "b".repeat(32),
       MEALDECK_STRIPE_ACCOUNT_ID: "acct_Fixture",
       MEALDECK_STRIPE_MODE: "test",
+      MEALDECK_STRIPE_CHECKOUT_HOST:
+        checkoutHostname === "pay.mealdeck.co.uk" ? checkoutHostname : "",
       MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "signed-off",
       MEALDECK_ONLINE_CHECKOUT_ENABLED: "true",
       MEALDECK_SHARED_PAYMENTS_ENABLED: "true",
@@ -286,7 +290,7 @@ async function integrationFixture() {
               metadata: meta,
               payment_intent: null,
               expires_at: Number(form.get("expires_at")),
-              url: "https://checkout.stripe.com/c/pay/" + id,
+              url: "https://" + checkoutHostname + "/c/pay/" + id,
             };
             assert.equal(form.get("line_items[0][quantity]"), "1");
             sessions.set(id, session);
@@ -386,8 +390,8 @@ function successful(result: { response: Response; body: unknown }) {
   return result.body;
 }
 
-test("group and phone HTTP payments execute real scoped SQL and release each canonical order only after verified full funding", async () => {
-  const h = await integrationFixture();
+async function verifyGroupAndPhonePayments(hostname: string) {
+  const h = await integrationFixture(hostname);
   try {
     const quoteInput = (quantity: number, group: boolean) => ({
       action: "quote",
@@ -485,9 +489,8 @@ test("group and phone HTTP payments execute real scoped SQL and release each can
       cookie,
     );
     successful(participantPay);
-    expect(participantPay.body.checkoutUrl).toMatch(
-      /^https:\/\/checkout\.stripe\.com\/c\/pay\/cs_test_http/,
-    );
+    expect(new URL(participantPay.body.checkoutUrl).hostname).toBe(hostname);
+    expect(new URL(participantPay.body.checkoutUrl).pathname).toMatch(/^\/c\/pay\/cs_test_http/);
     expect(participantPay.body.resumePayments).toEqual([
       { attemptId: participantAttempt, amountPence: 559, coverRemaining: false },
     ]);
@@ -594,7 +597,11 @@ test("group and phone HTTP payments execute real scoped SQL and release each can
     const terminalAttempt = h.f.next();
     const prepared = await h.post(
       "terminal",
-      { action: "prepare", quoteId: terminalQuote.body.quote.quoteId, attemptId: terminalAttempt },
+      {
+        action: "prepare",
+        quoteId: terminalQuote.body.quote.quoteId,
+        attemptId: terminalAttempt,
+      },
       "staff",
     );
     successful(prepared);
@@ -678,6 +685,80 @@ test("group and phone HTTP payments execute real scoped SQL and release each can
       "select sum(captured_pence)::int n from mealdeck_private.payment_collections",
     );
     expect(captured).toBe(1117);
+    expect(h.unexpectedRequests).toEqual([]);
+  } finally {
+    await h.db.close();
+  }
+}
+
+test.each(["checkout.stripe.com", "pay.mealdeck.co.uk"])(
+  "group and phone HTTP payments through %s execute real scoped SQL and release only after verified full funding",
+  verifyGroupAndPhonePayments,
+  30_000,
+);
+
+test("ordinary custom-domain checkout resumes one saved Session and reconciles even after a domain configuration error", async () => {
+  const h = await integrationFixture("pay.mealdeck.co.uk");
+  try {
+    const quote = await h.post(
+      "checkout",
+      {
+        action: "quote",
+        fulfilment: "pickup",
+        picks: [{ brandId: "skorch-burgers", itemId: h.f.ace.id, quantity: 1, selections: {} }],
+        packing: { cutleryRequested: false, separateBags: false, bagCount: 1, allocations: [] },
+      },
+      "organiser",
+    );
+    successful(quote);
+    const input = {
+      action: "pay",
+      quoteId: quote.body.quote.quoteId,
+      attemptId: h.f.next(),
+      reviewConfirmed: true,
+    };
+    const paidRequest = await h.post("checkout", input, "organiser");
+    successful(paidRequest);
+    expect(new URL(paidRequest.body.checkoutUrl).hostname).toBe("pay.mealdeck.co.uk");
+    const resumed = await h.post("checkout", input, "organiser");
+    successful(resumed);
+    expect(resumed.body).toEqual(paidRequest.body);
+    expect(
+      h.providerCalls.filter((call) => call.method === "POST" && call.path === "checkout/sessions"),
+    ).toHaveLength(1);
+    expect(h.sessions.size).toBe(1);
+    expect(
+      (
+        await h.db.query(
+          "select session_url from mealdeck_private.stripe_orders where order_id=$1",
+          [paidRequest.body.orderId],
+        )
+      ).rows[0].session_url,
+    ).toBe(paidRequest.body.checkoutUrl);
+    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(0);
+
+    const session = h.captureSession(paidRequest.body.checkoutUrl);
+    const completedRetry = await h.post("checkout", input, "organiser");
+    expect(completedRetry.response.status).toBe(409);
+    expect(completedRetry.body.error).toBe("payment_confirmation_pending");
+    expect(h.sessions.size).toBe(1);
+    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(0);
+
+    h.env.MEALDECK_STRIPE_CHECKOUT_HOST = "https://wrong.invalid";
+    expect((await h.webhook(session)).status).toBe(200);
+    expect((await h.webhook(session)).status).toBe(200);
+    const receipt = await h.post(
+      "checkout",
+      { action: "receipt", orderId: paidRequest.body.orderId },
+      "organiser",
+    );
+    successful(receipt);
+    expect(receipt.body.receipt.verifiedPaid).toBe(true);
+    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(1);
+    expect(
+      h.providerCalls.filter((call) => call.method === "POST" && call.path === "checkout/sessions"),
+    ).toHaveLength(1);
+    expect(h.rpcErrors.filter((error) => error.code === "PGRST202")).toEqual([]);
     expect(h.unexpectedRequests).toEqual([]);
   } finally {
     await h.db.close();

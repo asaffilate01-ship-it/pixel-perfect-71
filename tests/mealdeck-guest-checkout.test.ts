@@ -136,7 +136,7 @@ function fixture() {
         : error("mealdeck_checkout_order_unavailable");
     if (url.hostname === "api.stripe.com" && name === "account")
       return Response.json({ id: env.MEALDECK_STRIPE_ACCOUNT_ID, charges_enabled: true });
-    if (url.hostname === "api.stripe.com" && name === "sessions")
+    if (url.hostname === "api.stripe.com" && ["sessions", "cs_test_guest"].includes(name))
       return Response.json({
         id: "cs_test_guest",
         url: "https://checkout.stripe.com/c/pay/cs_test_guest",
@@ -144,7 +144,15 @@ function fixture() {
         client_reference_id: orderId,
         amount_total: 279,
         currency: "gbp",
+        mode: "payment",
+        status: "open",
         payment_status: "unpaid",
+        metadata: {
+          source: "mealdeck",
+          mealdeck_order_id: orderId,
+          mealdeck_quote_id: quoteId,
+          mealdeck_request_hash: prepared.requestHash,
+        },
       });
     if (name === "mealdeck_bind_stripe_session") return Response.json(true);
     throw new Error("Unexpected call: " + name);

@@ -1,4 +1,5 @@
 import type { MealDeckCheckoutMode } from "./mealdeck-checkout-browser";
+import { safeMealDeckCheckoutRedirect } from "./mealdeck-checkout-url";
 import {
   isSharedPaymentRoomId,
   parseSharedPaymentCapabilities,
@@ -141,18 +142,7 @@ export function safeSharedPaymentInviteUrl(
 }
 
 export function safeSharedPaymentCheckoutUrl(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  try {
-    const url = new URL(value);
-    return url.origin === "https://checkout.stripe.com" &&
-      url.pathname.startsWith("/c/pay/") &&
-      !url.username &&
-      !url.password
-      ? url.href
-      : null;
-  } catch {
-    return null;
-  }
+  return safeMealDeckCheckoutRedirect(value);
 }
 
 /** The only saved room information is its UUID, which grants no access by itself. */

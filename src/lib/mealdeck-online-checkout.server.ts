@@ -38,13 +38,12 @@ import {
 } from "./mealdeck-opening-offer";
 import {
   readMealDeckStripeConfig,
-  safeStripeCheckoutUrl,
-  stripeRequest,
-  stripeSessionParameters,
+  resolveStripeCheckoutSession,
   verifiedStripeEvent,
   verifyStripeAccount,
   type PreparedStripeOrder,
 } from "./mealdeck-stripe.server";
+import { readMealDeckStripeCheckoutDomain } from "./mealdeck-stripe-checkout-domain.server";
 
 type Json = Record<string, unknown>;
 const object = (value: unknown): Json =>
@@ -252,7 +251,8 @@ export async function readOnlineCheckoutStatus(
       clients.service !== null &&
       env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] === "true" &&
       env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] === "signed-off" &&
-      readMealDeckStripeConfig(env) !== null;
+      readMealDeckStripeConfig(env) !== null &&
+      readMealDeckStripeCheckoutDomain(env).status !== "invalid";
     return {
       ...base,
       openingOffer,
@@ -498,26 +498,11 @@ export async function handleOnlineCheckoutRequest(
     if (!z.uuid().safeParse(prepared["orderId"]).success || !Array.isArray(prepared["lines"]))
       throw backendProblem({});
     const order = prepared as unknown as PreparedStripeOrder;
-    let url = safeStripeCheckoutUrl(order.sessionUrl);
-    if (!url) {
-      const session = await stripeRequest(stripe, "checkout/sessions", fetcher, {
-        body: stripeSessionParameters(order),
-        idempotencyKey: "mealdeck-order-" + order.orderId,
-      });
-      url = safeStripeCheckoutUrl(session["url"]);
-      if (
-        !url ||
-        typeof session["id"] !== "string" ||
-        session["livemode"] !== stripe.livemode ||
-        session["client_reference_id"] !== order.orderId ||
-        session["amount_total"] !== order.totalPence ||
-        session["currency"] !== "gbp" ||
-        session["payment_status"] !== "unpaid"
-      )
-        throw backendProblem({});
+    const { sessionId, url } = await resolveStripeCheckoutSession(stripe, order, fetcher);
+    if (!order.sessionId) {
       const { error } = await clients.service.rpc("mealdeck_bind_stripe_session", {
         p_order: order.orderId,
-        p_session: session["id"],
+        p_session: sessionId,
         p_url: url,
         p_account: stripe.accountId,
         p_livemode: stripe.livemode,

@@ -40,6 +40,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
 import { Route as ApiAuthEmailRouteImport } from './routes/api.auth.email'
+import { Route as ApiOpsIntegrationsRouteImport } from './routes/api.ops.integrations'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -197,6 +198,11 @@ const ApiAuthEmailRoute = ApiAuthEmailRouteImport.update({
   path: '/api/auth/email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOpsIntegrationsRoute = ApiOpsIntegrationsRouteImport.update({
+  id: '/api/ops/integrations',
+  path: '/api/ops/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesById {
@@ -304,6 +312,7 @@ export interface FileRoutesById {
   '/franchise_/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRouteTypes {
@@ -340,6 +349,7 @@ export interface FileRouteTypes {
     | '/franchise/$brandId'
     | '/blog/'
     | '/api/auth/email'
+    | '/api/ops/integrations'
     | '/api/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -374,6 +384,7 @@ export interface FileRouteTypes {
     | '/franchise/$brandId'
     | '/blog'
     | '/api/auth/email'
+    | '/api/ops/integrations'
     | '/api/stripe/webhook'
   id:
     | '__root__'
@@ -408,6 +419,7 @@ export interface FileRouteTypes {
     | '/franchise_/$brandId'
     | '/blog/'
     | '/api/auth/email'
+    | '/api/ops/integrations'
     | '/api/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -443,6 +455,7 @@ export interface RootRouteChildren {
   FranchiseBrandIdRoute: typeof FranchiseBrandIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
   ApiAuthEmailRoute: typeof ApiAuthEmailRoute
+  ApiOpsIntegrationsRoute: typeof ApiOpsIntegrationsRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
@@ -665,6 +678,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ops/integrations': {
+      id: '/api/ops/integrations'
+      path: '/api/ops/integrations'
+      fullPath: '/api/ops/integrations'
+      preLoaderRoute: typeof ApiOpsIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
@@ -707,6 +727,7 @@ const rootRouteChildren: RootRouteChildren = {
   FranchiseBrandIdRoute: FranchiseBrandIdRoute,
   BlogIndexRoute: BlogIndexRoute,
   ApiAuthEmailRoute: ApiAuthEmailRoute,
+  ApiOpsIntegrationsRoute: ApiOpsIntegrationsRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport

@@ -13,11 +13,13 @@ Use the standalone deployment profile described in `docs/mealdeck-independent-ba
 
 The current kitchen uses one display for all brands, with one complete master-order card and preparation/packing together. Future kitchens get separately authorised views of their own orders; adding a brand does not require another screen.
 
-## Group preparation and one-payer checkout
+## Group preparation and payment choices
 
 The public `/group-order` flow lets an organiser create a local draft for up to ten people and share an individual link with each participant. Participants choose from the same five confirmed menus and send a return link; the organiser reviews it before replacing that person's previous choices. Everyone's selected variants and attached extras combine into one basket, with each nonempty person's items assigned to a numbered bag. One organiser continues through the existing collection/kerbside checkout and pays the whole order when ordering is available.
 
-The organiser's draft stays in their browser, with explicit saving/error and stale-tab handling. Links are not live-synchronised baskets, payment invitations or identity evidence. Person labels stay local; checkout receives bag numbers and food choices. The normal personal basket remains separate. Missing or stale group handoff data blocks checkout and links back to the draft; it must never silently remove dishes or switch to a personal basket. Split settlement remains unimplemented and unavailable until real server-owned group records, verified per-share payments and full-funding release are accepted. See `docs/mealdeck-group-ordering.md`.
+The organiser's draft stays in their browser, with explicit saving/error and stale-tab handling. Choice links are not live-synchronised baskets, payment invitations or identity evidence. Person labels stay local; checkout receives bag numbers and food choices. The normal personal basket remains separate. Missing or stale group handoff data blocks checkout and links back to the draft; it must never silently remove dishes or switch to a personal basket. See `docs/mealdeck-group-ordering.md`.
+
+The later shared-payment release adds a separate server payment room after order review, with pay by numbered bag, equal split and organiser cover-remaining. The immutable server quote, per-share claims, verified provider amounts and full-funding release are authoritative. Existing payer-owned sessions resume without replacing unknown payment attempts. Split settlement remains disabled until the configured merchant and integration acceptance are complete. See `docs/mealdeck-shared-payments.md`.
 
 ## Launch and safety
 
