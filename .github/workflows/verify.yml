@@ -10,6 +10,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -37,7 +40,42 @@ jobs:
       - name: Installable app implementation checks
         run: |
           node --check public/sw.js
+          node --check public/kds-sw.js
+          node --check public/printer-sw.js
           bunx eslint src/components/pwa-provider.tsx src/components/pwa-install-card.tsx src/lib/mealdeck-pwa-context.ts tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
+      - name: Verified customer checkout, packing, receipt printing and distinct staff alerts
+        run: >-
+          bun test tests/mealdeck-customer.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
+          tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts
+          tests/mealdeck-staff-alerts.test.ts
+      - name: Receipt bridge one-copy delivery, pairing and canonical order verification
+        run: node --test tools/receipt-bridge/test/*.test.mjs
+      - name: Receipt bridge and printer terminal implementation lint
+        run: >-
+          bunx eslint tools/receipt-bridge src/routes/printer.tsx
+          src/components/ops/printer-workspace.tsx src/components/ops/receipt-preview.tsx
+          src/components/ops/staff-alerts.tsx src/lib/mealdeck-printer.ts
+          src/lib/mealdeck-printer-browser.ts src/lib/mealdeck-printer-recovery.ts
+          src/lib/mealdeck-staff-alerts.ts tests/mealdeck-printer.test.ts
+          tests/mealdeck-staff-alerts.test.ts
+          --rule 'prettier/prettier: off'
+      - name: Customer launch implementation lint
+        run: >-
+          bunx eslint src/components/customer-account.tsx src/components/customer-orders.tsx
+          src/lib/mealdeck-customer.ts src/lib/mealdeck-customer-orders.ts
+          src/lib/mealdeck-customer-browser.ts src/lib/mealdeck-customer.functions.ts
+          src/lib/mealdeck-customer-notifications.ts src/routes/account.tsx
+          src/components/launch-checkout.tsx src/lib/mealdeck-online-checkout.server.ts
+          src/lib/mealdeck-checkout-selection.ts src/lib/mealdeck-stripe.server.ts
+          src/lib/mealdeck-opening-offer.ts src/lib/mealdeck-opening-offer.functions.ts
+          src/lib/mealdeck-customer-order-timing.ts
+          src/routes/checkout.tsx src/routes/api.checkout.ts src/routes/api.stripe.webhook.ts
+          src/components/opening-weekend-offer.tsx src/components/menus/menu-install-prompt.tsx
+          src/lib/launch-basket-transfer.ts src/lib/mealdeck-pwa-surface.ts
+          src/routes/meta-ad.tsx src/routes/opening-offer.tsx src/routes/privacy.tsx
+          src/components/ops/checkout-launch-settings.tsx
+          tests/mealdeck-customer.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
+          --rule 'prettier/prettier: off'
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - name: MealDeck Play game regressions
@@ -472,3 +510,39 @@ jobs:
         env:
           MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_catalogue
         run: npm run test:catalogue:postgres --prefix tests/postgres
+
+  launch-extension-postgres17:
+    name: Launch extension PostgreSQL 17 — ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # The catalogue job above executes the price-revision helper in its full fixture.
+        suite: [customer-membership, stripe-checkout, kitchen-printer]
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_launch_extension
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_launch_extension"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated PostgreSQL test dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Exercise extension permissions and state transitions in a fresh database
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_launch_extension
+          MEALDECK_TEST_SUITE: ${{ matrix.suite }}
+        run: node "tests/postgres/${MEALDECK_TEST_SUITE}-behavior.mjs" --native

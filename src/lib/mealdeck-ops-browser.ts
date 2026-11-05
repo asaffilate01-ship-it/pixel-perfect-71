@@ -145,6 +145,20 @@ export async function opsRpc<T>(
       }
     }
     if (name.startsWith("mealdeck_ops_kds_")) {
+      if (/mealdeck_kds_handoff_code_required/.test(error.message))
+        throw new OpsRequestError(
+          "invalid_transition",
+          "Check the four-digit order number with the customer.",
+        );
+      if (
+        /mealdeck_kds_(all_items_required|accept_required|start_required|packing_locked)/.test(
+          error.message,
+        )
+      )
+        throw new OpsRequestError(
+          "invalid_transition",
+          "Accept and start this order, then tick every item before packing. Packed orders cannot be changed.",
+        );
       if (/mealdeck_kds_instructions_unavailable/i.test(error.message)) {
         throw new OpsRequestError(
           "unavailable",

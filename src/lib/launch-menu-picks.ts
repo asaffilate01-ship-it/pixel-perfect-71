@@ -46,7 +46,18 @@ export function isLaunchGroupActive(
   group: LaunchMenuOptionGroup,
   selections: LaunchMenuSelections,
   item: LaunchMenuItem,
+  crossSelections: LaunchCrossSelection[] = [],
 ) {
+  if (
+    group.replacedBy &&
+    (crossSelections.some(
+      (choice) => choice.slot === group.replacedBy!.crossSlot && choice.mode === "upgrade",
+    ) ||
+      Object.values(selections).some((options) =>
+        options.some((id) => group.replacedBy!.optionIds.includes(id)),
+      ))
+  )
+    return false;
   if (!group.when) return true;
   if (!item.optionGroupIds.includes(group.when.groupId)) return false;
   const trigger = selections[group.when.groupId] ?? [];
@@ -71,7 +82,7 @@ export function toggleLaunchOption(
   const group = launchItemGroups(brand, item).find((entry) => entry.id === groupId);
   if (
     !group ||
-    !group.options.some((option) => option.id === optionId) ||
+    !group.options.some((option) => option.id === optionId && option.available !== false) ||
     !isLaunchGroupActive(group, selections, item)
   ) {
     return selections;
@@ -91,11 +102,14 @@ export function missingLaunchChoices(
   brand: LaunchMenuBrand,
   item: LaunchMenuItem,
   selections: LaunchMenuSelections,
+  crossSelections: LaunchCrossSelection[] = [],
 ) {
-  const clean = cleanLaunchSelections(brand, item, selections);
+  const clean = cleanLaunchCrossConfiguration(brand, item, selections, crossSelections);
   return launchItemGroups(brand, item).filter(
     (group) =>
-      group.required && isLaunchGroupActive(group, clean, item) && !clean[group.id]?.length,
+      group.required &&
+      isLaunchGroupActive(group, clean.selections, item, clean.crossSelections) &&
+      !clean.selections[group.id]?.length,
   );
 }
 
@@ -163,7 +177,8 @@ export function addLaunchPick(
   if (!found || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_LAUNCH_PICK_QUANTITY)
     return picks;
   const clean = cleanLaunchCrossConfiguration(found.brand, found.item, selections, crossSelections);
-  if (missingLaunchChoices(found.brand, found.item, clean.selections).length) return picks;
+  if (missingLaunchChoices(found.brand, found.item, clean.selections, clean.crossSelections).length)
+    return picks;
   const key = pickKey(found.brand.id, itemId, clean.selections, clean.crossSelections);
   const existing = picks.find((pick) => pick.key === key);
   if (

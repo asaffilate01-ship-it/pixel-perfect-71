@@ -42,6 +42,41 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "MEALDECK_ACTIVATE_UPDATE") event.waitUntil(self.skipWaiting());
 });
 
+// Only the configured sender can address the encrypted push subscription.
+// It must recheck current account preferences before each send. Keep lock-screen
+// messages generic: no name, vehicle, address, basket or order-payment details.
+self.addEventListener("push", (event) => {
+  let payload;
+  try { payload = event.data?.json(); } catch { return; }
+  if (!payload || !["order_update", "offer"].includes(payload.type)) return;
+  const offer = payload.type === "offer";
+  event.waitUntil(self.registration.showNotification("MealDeck", {
+    body: offer ? "There’s a new MealDeck offer to explore." : "There’s an update in your MealDeck account.",
+    icon: "/pwa/mealdeck-icon-192.png",
+    badge: "/pwa/mealdeck-icon-192.png",
+    tag: offer ? "mealdeck-offer" : "mealdeck-order-update",
+    data: { path: offer ? "/menus" : "/account" },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const path = event.notification.data?.path === "/menus" ? "/menus" : "/account";
+  const target = new URL(path, self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
+    for (const client of windows) {
+      const clientUrl = new URL(client.url);
+      // Customer notifications must never navigate a kitchen/printer/staff app.
+      const customerPage = ["/", "/menu", "/menus", "/account", "/checkout", "/order", "/play", "/track"].includes(clientUrl.pathname.replace(/\/+$/, "") || "/");
+      if (clientUrl.origin === self.location.origin && customerPage && "focus" in client) {
+        await client.navigate(target);
+        return client.focus();
+      }
+    }
+    return self.clients.openWindow(target);
+  }));
+});
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);

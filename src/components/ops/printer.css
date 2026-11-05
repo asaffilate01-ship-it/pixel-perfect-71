@@ -1,0 +1,27 @@
+.md-printer-print-only {
+  display: none;
+}
+.md-receipt-preview {
+  overflow-wrap: anywhere;
+}
+@media print {
+  body > * {
+    display: none !important;
+  }
+  body > .md-printer-print-only {
+    display: block !important;
+    width: 72mm;
+    margin: 0;
+    padding: 0;
+  }
+  .md-printer-print-only .md-receipt-preview {
+    padding: 2mm;
+    font-family: monospace;
+  }
+  .md-printer-print-only li {
+    break-inside: avoid;
+  }
+  @page {
+    margin: 0;
+  }
+}

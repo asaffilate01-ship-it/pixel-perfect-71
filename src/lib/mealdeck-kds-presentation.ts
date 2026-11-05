@@ -1,5 +1,4 @@
 import {
-  nextKdsOrderStatus,
   nextKdsPassStatus,
   type KdsOrderItem,
   type KdsMutation,
@@ -8,7 +7,10 @@ import {
 
 export type KdsOrderStage = "queued" | "preparing" | "ready" | "packing" | "sealed";
 export type KdsOrderAction = {
-  target: "order" | "pass";
+  target: "accept" | "order" | "pass" | "item" | "handoff";
+  itemId?: string;
+  ready?: boolean;
+  code?: string;
   status: KdsMutation["status"];
   label: string;
 };
@@ -24,6 +26,7 @@ export function kdsOrderStage(order: KdsOrder): KdsOrderStage {
 
 export function nextKdsOrderAction(order: KdsOrder): KdsOrderAction | null {
   if (!order.routing_complete) return null;
+  if (!order.accepted_at) return { target: "accept", status: "accepted", label: "Accept order" };
   if (order.pass?.status === "sealed" || order.pass?.status === "ready_for_handoff") return null;
   if (order.pass?.status === "packing" || order.pass?.status === "ready_to_pack") {
     if (order.preparation_status !== "ready") return null;
@@ -35,13 +38,10 @@ export function nextKdsOrderAction(order: KdsOrder): KdsOrderAction | null {
       label: packing === "packing" ? "Start packing" : "Seal order",
     };
   }
-  const preparation = nextKdsOrderStatus(order.preparation_status);
-  return preparation
-    ? {
-        target: "order",
-        status: preparation,
-        label: preparation === "preparing" ? "Start order" : "Ready to pack",
-      }
+  // Readiness comes only from the individual item checklist. There is no
+  // bulk-ready action that can bypass a forgotten drink or another brand.
+  return order.preparation_status === "queued"
+    ? { target: "order", status: "preparing", label: "Start preparing" }
     : null;
 }
 
@@ -53,10 +53,16 @@ export function nextKdsOrderAction(order: KdsOrder): KdsOrderAction | null {
  */
 export function groupKdsItems(order: KdsOrder): KdsBrandItems[] {
   const groups = new Map<string, KdsBrandItems>();
-  for (const item of order.items) {
+  for (const item of order.items.filter((i) => !i.parent_checkout_line_id)) {
     const key = item.brand_id ?? item.brand_name;
     const group = groups.get(key) ?? { key, name: item.brand_name, items: [] };
-    group.items.push(item);
+    group.items.push(
+      item,
+      ...order.items.filter(
+        (child) =>
+          child.parent_checkout_line_id && child.parent_checkout_line_id === item.checkout_line_id,
+      ),
+    );
     groups.set(key, group);
   }
   return [...groups.values()];

@@ -1,0 +1,1204 @@
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { createPortal, flushSync } from "react-dom";
+import { Link } from "@tanstack/react-router";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  AlertTriangle,
+  Check,
+  LockKeyhole,
+  LogOut,
+  Printer,
+  RefreshCw,
+  ShieldCheck,
+} from "lucide-react";
+import { MealDeckLogo } from "@/components/mealdeck-logo";
+import { PwaInstallCard } from "@/components/pwa-install-card";
+import {
+  initializePrinterClient,
+  printerRpc,
+  printerBridge,
+  PrinterBridgeError,
+} from "@/lib/mealdeck-printer-browser";
+import { confirmReceiptPaper } from "@/lib/mealdeck-printer-recovery";
+import { OpsRequestError } from "@/lib/mealdeck-ops-browser";
+import {
+  parsePrinterBoard,
+  parsePrinterScopes,
+  parseClaim,
+  printerStatusLabel,
+  type PrinterJob,
+  type PrinterScope,
+} from "@/lib/mealdeck-printer";
+import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
+import { ReceiptPreview } from "./receipt-preview";
+import "./ops-theme.css";
+import "./printer.css";
+const errorMessage = (reason: unknown, fallback: string) =>
+  reason instanceof OpsRequestError ? reason.message : fallback;
+const accessError = (e: unknown) =>
+  e instanceof OpsRequestError && (e.code === "forbidden" || e.code === "unauthenticated");
+
+export function PrinterWorkspace() {
+  const client = useRef<SupabaseClient | null>(null),
+    live = useRef(false),
+    accessRequest = useRef(0),
+    activeUser = useRef<string | null>(null);
+  const [authId, setAuthId] = useState("");
+  const [email, setEmail] = useState(""),
+    [password, setPassword] = useState(""),
+    [signedIn, setSignedIn] = useState(false);
+  const [scopes, setScopes] = useState<PrinterScope[]>([]),
+    [scopeId, setScopeId] = useState("");
+  const [loginNotice, setLoginNotice] = useState("");
+  const [loading, setLoading] = useState(true),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  const loadAccess = useCallback(async () => {
+    const request = ++accessRequest.current;
+    const result = parsePrinterScopes(await printerRpc("mealdeck_printer_my_access"));
+    if (!live.current || request !== accessRequest.current) return;
+    setScopes(result);
+    setScopeId(result[0]?.locationId ?? "");
+    setSignedIn(true);
+  }, []);
+  useEffect(() => {
+    live.current = true;
+    let unsubscribe: (() => void) | undefined;
+    void (async () => {
+      try {
+        const db = await initializePrinterClient();
+        if (!live.current) return;
+        client.current = db;
+        const subscription = db.auth.onAuthStateChange((event, session) => {
+          if (!live.current) return;
+          const changed = activeUser.current !== null && session?.user.id !== activeUser.current;
+          if (!session || event === "SIGNED_OUT" || changed) {
+            accessRequest.current++;
+            setSignedIn(false);
+            setScopes([]);
+            setScopeId("");
+            setAuthId("");
+          }
+          if (session) {
+            activeUser.current = session.user.id;
+            setAuthId(session.user.id);
+            if (event === "SIGNED_IN")
+              setTimeout(() => {
+                if (live.current)
+                  void loadAccess().catch((e) =>
+                    setError(errorMessage(e, "Printer access could not be verified.")),
+                  );
+              }, 0);
+          } else activeUser.current = null;
+        }).data.subscription;
+        unsubscribe = () => subscription.unsubscribe();
+        const { data, error: issue } = await db.auth.getUser();
+        if (data.user && !issue) {
+          activeUser.current = data.user.id;
+          setAuthId(data.user.id);
+          await loadAccess();
+        }
+      } catch (e) {
+        if (live.current)
+          setError(
+            errorMessage(
+              e,
+              "The printer connection could not be loaded. Retry or ask your administrator to check setup.",
+            ),
+          );
+      } finally {
+        if (live.current) setLoading(false);
+      }
+    })();
+    return () => {
+      live.current = false;
+      accessRequest.current++;
+      unsubscribe?.();
+      client.current = null;
+    };
+  }, [loadAccess]);
+  async function signIn(event: FormEvent) {
+    event.preventDefault();
+    if (!client.current || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const { error } = await client.current.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      setPassword("");
+      if (error) throw new Error("signin");
+      await loadAccess();
+    } catch (e) {
+      setError(
+        errorMessage(e, "Sign-in was not confirmed. Check your details and verified email."),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function emailLink() {
+    if (!client.current || busy || !email.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      const { error } = await client.current.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: new URL("/printer", window.location.origin).href,
+        },
+      });
+      if (error) throw new Error("email link");
+      setLoginNotice(
+        "If this account is registered, check your inbox for a secure sign-in link. Printer access is checked after sign-in.",
+      );
+    } catch {
+      setError("A sign-in link could not be requested. Check the email address and try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function signOut() {
+    accessRequest.current++;
+    activeUser.current = null;
+    setAuthId("");
+    setSignedIn(false);
+    setScopes([]);
+    setScopeId("");
+    setPassword("");
+    await client.current?.auth.signOut({ scope: "local" });
+  }
+  const scope = scopes.find((s) => s.locationId === scopeId);
+  return (
+    <div className="md-ops md-printer min-h-screen">
+      <header className="md-ops-inverse px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <MealDeckLogo className="h-14 w-16 object-contain" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.18em] opacity-75">
+                MealDeck staff
+              </p>
+              <h1 className="text-2xl font-black">Receipt printer</h1>
+            </div>
+          </div>
+          {signedIn && (
+            <button
+              className="md-ops-button md-ops-secondary"
+              onClick={() => void signOut()}
+              type="button"
+            >
+              <LogOut className="size-4" />
+              Sign out
+            </button>
+          )}
+        </div>
+      </header>
+      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6">
+        {error && (
+          <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-950">
+            {error}
+          </p>
+        )}
+        {loading ? (
+          <p role="status" className="md-ops-card p-8 text-center">
+            Connecting to the receipt service…
+          </p>
+        ) : !signedIn ? (
+          <section className="md-ops-card mx-auto max-w-md space-y-4 p-6">
+            <LockKeyhole className="size-8 md-ops-accent" />
+            <h2 className="text-2xl font-black">Printer sign-in</h2>
+            <p className="text-sm leading-6 md-ops-muted">
+              Use a verified account assigned to this kitchen’s printer. This terminal has its own
+              session and installation.
+            </p>
+            <form onSubmit={(event) => void signIn(event)} className="space-y-4">
+              <label className="block text-sm font-bold">
+                Email
+                <input
+                  className="md-ops-field mt-2 w-full"
+                  type="email"
+                  autoComplete="username"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </label>
+              <label className="block text-sm font-bold">
+                Password
+                <input
+                  className="md-ops-field mt-2 w-full"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </label>
+              <button className="md-ops-button md-ops-primary w-full" disabled={busy} type="submit">
+                {busy ? "Signing in…" : "Sign in with password"}
+              </button>
+              <button
+                className="md-ops-button md-ops-secondary w-full"
+                disabled={busy || !email.trim()}
+                type="button"
+                onClick={() => void emailLink()}
+              >
+                Email me a sign-in link
+              </button>
+              {loginNotice && (
+                <p role="status" className="text-sm leading-6 md-ops-muted">
+                  {loginNotice}
+                </p>
+              )}
+            </form>
+            <p className="text-xs leading-5 md-ops-muted">
+              An owner can assign printer access after the account’s email is verified.{" "}
+              <Link to="/account" className="font-bold underline">
+                Register or verify an account
+              </Link>
+              .
+            </p>
+          </section>
+        ) : !scope ? (
+          <section className="md-ops-card p-6">
+            <h2 className="text-xl font-black">Printer access needed</h2>
+            <p className="mt-2 text-sm md-ops-muted">
+              Ask your owner to assign this verified account to a kitchen in the printer app.
+            </p>
+            <button
+              type="button"
+              className="md-ops-button md-ops-primary mt-4"
+              onClick={() =>
+                void loadAccess().catch((e) =>
+                  setError(errorMessage(e, "Access could not be checked.")),
+                )
+              }
+            >
+              Check access again
+            </button>
+          </section>
+        ) : (
+          <>
+            {scopes.length > 1 && (
+              <label className="block text-sm font-bold">
+                Kitchen
+                <select
+                  className="md-ops-field ml-3"
+                  value={scopeId}
+                  onChange={(e) => setScopeId(e.target.value)}
+                >
+                  {scopes.map((s) => (
+                    <option key={s.locationId} value={s.locationId}>
+                      {s.locationName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <ReceiptTerminal
+              key={`${authId}:${scope.tenantId}:${scope.locationId}`}
+              scope={scope}
+            />
+          </>
+        )}
+        <PwaInstallCard appName="MealDeck Printer" />
+      </main>
+    </div>
+  );
+}
+
+function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
+  const [feedError, setFeedError] = useState("");
+  const [jobs, setJobs] = useState<PrinterJob[]>([]),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState("");
+  const [syncAt, setSyncAt] = useState<number | null>(null),
+    [now, setNow] = useState(Date.now),
+    [busy, setBusy] = useState(false);
+  const [pairCode, setPairCode] = useState(""),
+    [paired, setPaired] = useState(false),
+    [automatic, setAutomatic] = useState(false);
+  const [localHolds, setLocalHolds] = useState<{ jobId: string; copyNumber: number }[]>([]);
+  const [preview, setPreview] = useState<string | null>(null),
+    [printJob, setPrintJob] = useState<PrinterJob | null>(null);
+  const mounted = useRef(false),
+    generation = useRef(0),
+    mutating = useRef(false),
+    reading = useRef(false);
+  const token = useRef<string | null>(null),
+    terminal = useRef<string>(""),
+    currentJobs = useRef<PrinterJob[]>([]);
+  const alerts = useStaffAlerts("printer", `${scope.tenantId}:${scope.locationId}`);
+  const params = { p_tenant: scope.tenantId, p_location: scope.locationId };
+  const call = useCallback(
+    (name: string, extra: Record<string, unknown> = {}) =>
+      printerRpc(`mealdeck_printer_${name}`, {
+        p_tenant: scope.tenantId,
+        p_location: scope.locationId,
+        ...extra,
+      }),
+    [scope.tenantId, scope.locationId],
+  );
+  const refresh = useCallback(async () => {
+    if (mutating.current || reading.current) return;
+    const g = ++generation.current;
+    reading.current = true;
+    try {
+      const raw = await Promise.race([
+        call("board"),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000)),
+      ]);
+      const board = parsePrinterBoard(raw, scope);
+      if (!mounted.current || g !== generation.current) return;
+      setJobs(board.jobs);
+      currentJobs.current = board.jobs;
+      setSyncAt(Date.now());
+      setNow(Date.now());
+      setFeedError("");
+    } catch (e) {
+      if (!mounted.current || g !== generation.current) return;
+      setSyncAt(null);
+      setFeedError(
+        errorMessage(
+          e,
+          "Receipt connection interrupted. Printing is paused until the queue is verified again.",
+        ),
+      );
+      if (accessError(e)) {
+        setJobs([]);
+        setPrintJob(null);
+        setPreview(null);
+        setLocalHolds([]);
+        setNotice("");
+        currentJobs.current = [];
+        token.current = null;
+        setPaired(false);
+        setAutomatic(false);
+      }
+    } finally {
+      reading.current = false;
+    }
+  }, [call, scope]);
+  useEffect(() => {
+    mounted.current = true;
+    terminal.current = crypto.randomUUID();
+    void refresh();
+    const poll = setInterval(() => {
+      if (navigator.onLine && document.visibilityState === "visible") void refresh();
+    }, 15000);
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const resume = () => void refresh();
+    window.addEventListener("online", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      mounted.current = false;
+      generation.current++;
+      token.current = null;
+      currentJobs.current = [];
+      clearInterval(poll);
+      clearInterval(tick);
+      window.removeEventListener("online", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [refresh]);
+  const fresh =
+    syncAt !== null && now - syncAt < 45000 && typeof navigator !== "undefined" && navigator.onLine;
+  useEffect(() => {
+    alerts.observe(
+      jobs.map((j) => j.jobId),
+      fresh,
+    );
+  }, [jobs, fresh, alerts.observe]);
+  async function pair() {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await printerBridge("/v1/pair", null, { code: pairCode.trim() });
+      if (typeof result["token"] !== "string" || result["token"].length < 20)
+        throw new Error("pair");
+      token.current = result["token"];
+      setPairCode("");
+      setPaired(true);
+      setNotice("Printer bridge paired. Enable automatic printing when this terminal is ready.");
+    } catch {
+      setError(
+        "The local printer bridge could not be paired. Check its installation, trusted certificate and current pairing code on this device.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function send(job: PrinterJob, mode: "bridge" | "dialog") {
+    if (
+      mutating.current ||
+      !fresh ||
+      job.status !== "queued" ||
+      (mode === "bridge" && !token.current)
+    )
+      return;
+    mutating.current = true;
+    generation.current++;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    let claim: string | null = null;
+    try {
+      const claimed = parseClaim(
+        await call("claim_job", { p_job: job.jobId, p_terminal: terminal.current }),
+        job.jobId,
+      );
+      claim = claimed.claimToken;
+      const begun = (await call("begin_send", { p_job: job.jobId, p_claim: claim })) as {
+        ok?: boolean;
+        replayed?: boolean;
+      };
+      if (begun.ok !== true || begun.replayed !== false || !mounted.current)
+        throw new Error("send not newly authorised");
+      if (mode === "bridge") {
+        const db = await initializePrinterClient();
+        const session = await db.auth.getSession();
+        const jwt = session.data.session?.access_token;
+        if (!jwt || !token.current || !mounted.current) throw new Error("session unavailable");
+        const result = await printerBridge(
+          "/v1/jobs",
+          token.current,
+          { jobId: job.jobId, claimToken: claim, receipt: claimed.receipt },
+          jwt,
+        );
+        if (result["status"] !== "sent_unconfirmed")
+          throw new Error("printer delivery unconfirmed");
+      } else {
+        flushSync(() => setPrintJob(claimed));
+        window.print();
+      }
+      await call("send_result", {
+        p_job: job.jobId,
+        p_claim: claim,
+        p_outcome: "sent_unconfirmed",
+      });
+      if (mounted.current)
+        setNotice(
+          `${job.receipt.displayCode}: check that one complete receipt printed, then confirm the paper below.`,
+        );
+    } catch (e) {
+      if (claim)
+        try {
+          await call("send_result", { p_job: job.jobId, p_claim: claim, p_outcome: "held" });
+        } catch {
+          /* The lease expires into a hold. Never resend. */
+        }
+      if (mounted.current) {
+        setError(
+          errorMessage(
+            e,
+            "Printing was not confirmed. Inspect the printer; this receipt will not be sent again automatically.",
+          ),
+        );
+        setAutomatic(false);
+      }
+    } finally {
+      mutating.current = false;
+      if (mounted.current) {
+        setBusy(false);
+        await refresh();
+      }
+    }
+  }
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  useEffect(() => {
+    if (!automatic || !paired || !fresh || busy || mutating.current) return;
+    const next = jobs.find((j) => j.status === "queued");
+    if (next) void sendRef.current(next, "bridge");
+  }, [jobs, automatic, paired, fresh, busy]);
+  async function inspectBridge(job: PrinterJob) {
+    if (!token.current || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await printerBridge(`/v1/jobs/${job.jobId}`, token.current);
+      const state = typeof result["status"] === "string" ? result["status"] : "unknown";
+      setNotice(
+        `Local printer record: ${state.replaceAll("_", " ")}. No receipt was resent. Inspect the paper before confirming below.`,
+      );
+    } catch {
+      setError(
+        "The local receipt record could not be read. Nothing was resent. Inspect the printer before resolving this receipt.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function syncLocal(job: PrinterJob) {
+    if (!token.current || busy || !["printed", "failed"].includes(job.status)) return;
+    setBusy(true);
+    setError("");
+    try {
+      await printerBridge(`/v1/jobs/${job.jobId}/resolve`, token.current, {
+        outcome: job.status === "printed" ? "printed" : "not_printed",
+        reason: job.resolution ?? "Synchronised prior operator paper inspection.",
+      });
+      setNotice(
+        "Local printer record resolved from the recorded paper inspection. Nothing was resent.",
+      );
+    } catch (e) {
+      setError(
+        e instanceof PrinterBridgeError && e.status === 404
+          ? "This receipt has no record on the paired bridge. It may have used the browser print dialog."
+          : "The local record could not be resolved. Reconnect the bridge and try this recovery action again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function reviewLocalHolds() {
+    if (!token.current || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const data = await printerBridge("/v1/recovery", token.current);
+      if (!Array.isArray(data["jobs"])) throw new Error("invalid recovery queue");
+      const held = data["jobs"].filter(
+        (j): j is { jobId: string; copyNumber: number } =>
+          !!j &&
+          typeof j === "object" &&
+          typeof j.jobId === "string" &&
+          /^[a-f0-9-]{36}$/.test(j.jobId) &&
+          Number.isInteger(j.copyNumber),
+      );
+      setLocalHolds(held);
+      if (!held.length) setNotice("No interrupted receipts are held by this local printer.");
+    } catch {
+      setError("The local recovery queue could not be read. Nothing was resent.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function resolveLocalHold(jobId: string, outcome: "printed" | "not_printed") {
+    if (!token.current || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await printerBridge(`/v1/jobs/${jobId}/resolve`, token.current, {
+        outcome,
+        reason: "Operator inspected printer and paper during local recovery.",
+      });
+      setLocalHolds((previous) => previous.filter((j) => j.jobId !== jobId));
+      setNotice(
+        "Local interrupted receipt resolved. No receipt was resent. Confirm any outstanding server paper check below.",
+      );
+    } catch {
+      setError(
+        "Local recovery was not confirmed. Inspect the printer and retry only this resolution action.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function confirm(job: PrinterJob, outcome: "printed" | "not_printed", reason: string) {
+    if (mutating.current || !fresh) return;
+    mutating.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      await confirmReceiptPaper({
+        ...(token.current
+          ? {
+              resolveLocal: async () => {
+                try {
+                  await printerBridge(`/v1/jobs/${job.jobId}/resolve`, token.current, {
+                    outcome,
+                    reason,
+                  });
+                  return "resolved" as const;
+                } catch (e) {
+                  if (e instanceof PrinterBridgeError && e.status === 404)
+                    return "missing" as const;
+                  throw e;
+                }
+              },
+            }
+          : {}),
+        confirmServer: () =>
+          call("confirm_paper", { p_job: job.jobId, p_outcome: outcome, p_reason: reason }),
+      });
+      setPrintJob(null);
+      setNotice(
+        outcome === "printed"
+          ? "Paper receipt confirmed. No further copy will print."
+          : "Recorded as not printed. A replacement requires the separate COPY action.",
+      );
+    } catch (e) {
+      setError(
+        errorMessage(
+          e,
+          "Paper confirmation was not saved. Check the local bridge connection and try the inspection action again; nothing was resent.",
+        ),
+      );
+    } finally {
+      mutating.current = false;
+      setBusy(false);
+      await refresh();
+    }
+  }
+  async function reprint(job: PrinterJob, reason: string) {
+    if (mutating.current || !fresh) return;
+    mutating.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      await call("reprint", { p_job: job.jobId, p_reason: reason, p_request: crypto.randomUUID() });
+      setNotice("One replacement receipt is queued and clearly marked COPY.");
+    } catch (e) {
+      setError(
+        errorMessage(e, "A copy was not confirmed. Refresh the queue before requesting another."),
+      );
+    } finally {
+      mutating.current = false;
+      setBusy(false);
+      await refresh();
+    }
+  }
+  return (
+    <section className="space-y-4" aria-label="Receipt terminal">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[.14em] md-ops-muted">
+            {scope.locationName}
+          </p>
+          <h2 className="mt-1 text-2xl font-black">One order. One receipt.</h2>
+          <p className="mt-2 text-sm md-ops-muted">
+            Paid orders enter this queue when the kitchen accepts them.
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void refresh()}
+          className="md-ops-button md-ops-secondary"
+        >
+          <RefreshCw className="size-4" />
+          Refresh
+        </button>
+      </div>
+      <StaffAlertControls alerts={alerts} kind="printer" />
+      <details className="md-ops-card p-4" open={!paired}>
+        <summary className="cursor-pointer text-sm font-bold">
+          {paired ? "Printer connected on this device" : "Connect the receipt printer"}
+        </summary>
+        <div className="mt-4 space-y-3">
+          <p className="text-sm leading-6 md-ops-muted">
+            Install and configure the MealDeck local printer bridge on the device connected to your
+            supported receipt printer. It sends one bounded receipt and stops. Paper cutting is
+            enabled only for a configured, supported model.
+          </p>
+          {!paired && (
+            <form
+              className="flex flex-wrap items-end gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void pair();
+              }}
+            >
+              <label className="min-w-0 flex-1 text-sm font-bold">
+                Pairing code
+                <input
+                  className="md-ops-field mt-2 w-full"
+                  autoComplete="off"
+                  value={pairCode}
+                  onChange={(e) => setPairCode(e.target.value)}
+                  placeholder="Code from the local bridge"
+                  required
+                />
+              </label>
+              <button
+                className="md-ops-button md-ops-primary"
+                type="submit"
+                disabled={busy || !pairCode.trim()}
+              >
+                Pair this device
+              </button>
+            </form>
+          )}
+          {paired && (
+            <label className="flex min-h-11 items-center gap-3 text-sm font-bold">
+              <input
+                type="checkbox"
+                className="size-5"
+                checked={automatic}
+                disabled={busy}
+                onChange={(e) => setAutomatic(e.target.checked)}
+              />
+              Print waiting and new receipts automatically
+            </label>
+          )}
+          {paired && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void reviewLocalHolds()}
+                className="md-ops-button md-ops-secondary"
+              >
+                Review interrupted local receipts
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  token.current = null;
+                  setPaired(false);
+                  setAutomatic(false);
+                  setLocalHolds([]);
+                }}
+                className="md-ops-button md-ops-secondary"
+              >
+                Disconnect bridge
+              </button>
+            </div>
+          )}
+          <p className="text-xs leading-5 md-ops-muted">
+            Keep this staff app open and the device awake. If a send is interrupted, the receipt is
+            held for inspection. Browser printing is available below and always opens a dialog; set
+            its copy count to 1.
+          </p>
+        </div>
+      </details>
+      {localHolds.length > 0 && (
+        <section
+          className="md-ops-card space-y-3 border-amber-300 p-4"
+          aria-label="Interrupted local receipt recovery"
+        >
+          <h3 className="text-lg font-black">Inspect interrupted receipts</h3>
+          <p className="text-sm md-ops-muted">
+            These local holds can block the printer even if an older server receipt has left the
+            queue. Check the actual paper before resolving each record. These actions do not print.
+          </p>
+          {localHolds.map((hold) => (
+            <LocalReceiptRecovery
+              key={hold.jobId}
+              job={hold}
+              disabled={busy}
+              onResolve={(outcome) => void resolveLocalHold(hold.jobId, outcome)}
+            />
+          ))}
+        </section>
+      )}
+      {!fresh && (
+        <p
+          role="status"
+          className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
+        >
+          <AlertTriangle className="mr-2 inline size-4" />
+          Printing is paused until the live queue is verified.
+        </p>
+      )}
+      {feedError && (
+        <p
+          role="alert"
+          className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
+        >
+          {feedError}
+        </p>
+      )}
+      {error && (
+        <p
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-950"
+        >
+          {error}
+        </p>
+      )}
+      {notice && (
+        <p
+          role="status"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"
+        >
+          {notice}
+        </p>
+      )}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        {jobs.map((job) => (
+          <ReceiptJobCard
+            key={job.jobId}
+            job={job}
+            disabled={busy || !fresh}
+            paired={paired}
+            showing={preview === job.jobId}
+            onPreview={() => setPreview(preview === job.jobId ? null : job.jobId)}
+            onPrint={(mode) => void send(job, mode)}
+            onInspect={() => void inspectBridge(job)}
+            onSyncLocal={() => void syncLocal(job)}
+            onConfirm={(outcome, reason) => void confirm(job, outcome, reason)}
+            onReprint={(reason) => void reprint(job, reason)}
+          />
+        ))}
+      </div>
+      {fresh && !jobs.length && (
+        <div className="md-ops-card p-8 text-center">
+          <Printer className="mx-auto size-8 md-ops-muted" />
+          <h3 className="mt-3 text-xl font-black">Receipt queue clear</h3>
+          <p className="mt-2 text-sm md-ops-muted">
+            The next accepted, paid order will appear here.
+          </p>
+        </div>
+      )}
+      {scope.canManage && <PrinterAccessManager scope={scope} />}
+      {printJob &&
+        createPortal(
+          <div className="md-printer-print-only">
+            <ReceiptPreview receipt={printJob.receipt} />
+          </div>,
+          document.body,
+        )}
+    </section>
+  );
+}
+
+function ReceiptJobCard({
+  job,
+  disabled,
+  paired,
+  showing,
+  onPreview,
+  onPrint,
+  onInspect,
+  onSyncLocal,
+  onConfirm,
+  onReprint,
+}: {
+  job: PrinterJob;
+  disabled: boolean;
+  paired: boolean;
+  showing: boolean;
+  onPreview: () => void;
+  onPrint: (mode: "bridge" | "dialog") => void;
+  onInspect: () => void;
+  onSyncLocal: () => void;
+  onConfirm: (outcome: "printed" | "not_printed", reason: string) => void;
+  onReprint: (reason: string) => void;
+}) {
+  const [inspection, setInspection] = useState(false),
+    [reason, setReason] = useState(""),
+    [copyOpen, setCopyOpen] = useState(false);
+  const needsCheck = ["sending", "sent_unconfirmed", "held"].includes(job.status);
+  return (
+    <article className="md-ops-card overflow-hidden" data-testid="printer-job">
+      <header className="md-ops-ticket-heading flex flex-wrap items-center justify-between gap-3 border-b md-ops-border p-4">
+        <div>
+          <h3 className="text-2xl font-black">{job.receipt.displayCode}</h3>
+          <p className="mt-1 text-xs font-bold md-ops-muted">
+            {job.receipt.fulfilment === "curbside" ? "Kerbside" : "Collection"} ·{" "}
+            {job.copyNumber === 1 ? "Original" : `COPY ${job.copyNumber}`}
+          </p>
+        </div>
+        <span
+          className={`rounded-full px-3 py-2 text-xs font-bold ${job.status === "printed" ? "bg-emerald-100 text-emerald-950" : needsCheck ? "bg-amber-100 text-amber-950" : "md-ops-soft"}`}
+        >
+          {printerStatusLabel[job.status]}
+        </span>
+      </header>
+      <div className="space-y-3 p-4">
+        <p className="text-sm md-ops-muted">
+          Accepted{" "}
+          {new Date(job.receipt.acceptedAt).toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}{" "}
+          · {job.receipt.items.reduce((n, i) => n + i.quantity, 0)} items ·{" "}
+          {job.receipt.packingPlan.bags.length} bag
+          {job.receipt.packingPlan.bags.length === 1 ? "" : "s"}
+        </p>
+        {job.resolution && <p className="text-sm md-ops-text">{job.resolution}</p>}
+        <button type="button" onClick={onPreview} className="min-h-11 text-sm font-bold underline">
+          {showing ? "Hide itemised receipt" : "View items, extras and bag numbers"}
+        </button>
+        {showing && <ReceiptPreview receipt={job.receipt} />}
+        {job.status === "queued" && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={disabled || !paired}
+              onClick={() => onPrint("bridge")}
+              className="md-ops-button md-ops-primary"
+            >
+              <Printer className="size-4" />
+              Print one receipt
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onPrint("dialog")}
+              className="md-ops-button md-ops-secondary"
+            >
+              Browser print dialog
+            </button>
+          </div>
+        )}
+        {needsCheck && (
+          <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <p className="text-sm font-bold text-amber-950">
+              Check the printer before taking another action.
+            </p>
+            {paired && (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={onInspect}
+                className="md-ops-button md-ops-secondary"
+              >
+                Check local printer status
+              </button>
+            )}
+            <label className="flex min-h-11 items-center gap-2 text-sm text-amber-950">
+              <input
+                type="checkbox"
+                className="size-5"
+                checked={inspection}
+                onChange={(e) => setInspection(e.target.checked)}
+              />
+              I have inspected the paper and printer.
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={disabled || !inspection}
+                onClick={() =>
+                  onConfirm("printed", "Operator inspected one complete paper receipt.")
+                }
+                className="md-ops-button md-ops-primary"
+              >
+                <Check className="size-4" />
+                One receipt printed
+              </button>
+              <button
+                type="button"
+                disabled={disabled || !inspection}
+                onClick={() =>
+                  onConfirm(
+                    "not_printed",
+                    "Operator inspected printer and confirmed no usable receipt.",
+                  )
+                }
+                className="md-ops-button md-ops-secondary"
+              >
+                Not printed / unusable
+              </button>
+            </div>
+          </div>
+        )}
+        {(job.status === "printed" || job.status === "failed") && (
+          <div>
+            {paired && (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={onSyncLocal}
+                className="md-ops-button md-ops-secondary mb-2"
+              >
+                Sync local printer record
+              </button>
+            )}
+            <button
+              type="button"
+              className="min-h-11 text-sm font-bold underline"
+              onClick={() => setCopyOpen(!copyOpen)}
+            >
+              Request a marked COPY
+            </button>
+            {copyOpen && (
+              <form
+                className="mt-2 space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (reason.trim().length >= 5) onReprint(reason.trim());
+                }}
+              >
+                <label className="block text-sm font-bold">
+                  Why is another copy needed?
+                  <input
+                    className="md-ops-field mt-2 w-full"
+                    value={reason}
+                    minLength={5}
+                    maxLength={300}
+                    required
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="For example, paper jam inspected"
+                  />
+                </label>
+                <p className="text-xs md-ops-muted">
+                  This deliberately queues one additional receipt marked COPY and records your
+                  account and reason.
+                </p>
+                <button
+                  type="submit"
+                  disabled={disabled || reason.trim().length < 5}
+                  className="md-ops-button md-ops-secondary"
+                >
+                  Queue one COPY
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+function LocalReceiptRecovery({
+  job,
+  disabled,
+  onResolve,
+}: {
+  job: { jobId: string; copyNumber: number };
+  disabled: boolean;
+  onResolve: (outcome: "printed" | "not_printed") => void;
+}) {
+  const [checked, setChecked] = useState(false);
+  return (
+    <div className="space-y-2 rounded-xl border md-ops-border p-3">
+      <p className="break-all text-xs md-ops-muted">
+        Local receipt {job.jobId} · copy {job.copyNumber}
+      </p>
+      <label className="flex min-h-11 items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          className="size-5"
+          checked={checked}
+          onChange={(e) => setChecked(e.target.checked)}
+        />
+        I inspected the printer and paper for this interrupted receipt.
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={disabled || !checked}
+          onClick={() => onResolve("printed")}
+          className="md-ops-button md-ops-secondary"
+        >
+          Paper printed
+        </button>
+        <button
+          type="button"
+          disabled={disabled || !checked}
+          onClick={() => onResolve("not_printed")}
+          className="md-ops-button md-ops-secondary"
+        >
+          No usable paper
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PrinterAccessManager({ scope }: { scope: PrinterScope }) {
+  const [email, setEmail] = useState(""),
+    [busy, setBusy] = useState(false),
+    [message, setMessage] = useState("");
+  const [access, setAccess] = useState<{ userId: string; email: string; enabled: boolean }[]>([]);
+  const args = { p_tenant: scope.tenantId, p_location: scope.locationId };
+  const load = useCallback(async () => {
+    const result = await printerRpc("mealdeck_printer_access_list", {
+      p_tenant: scope.tenantId,
+      p_location: scope.locationId,
+    });
+    if (!Array.isArray(result)) return;
+    setAccess(
+      result.filter(
+        (x): x is { userId: string; email: string; enabled: boolean } =>
+          !!x &&
+          typeof x === "object" &&
+          typeof x.userId === "string" &&
+          typeof x.email === "string" &&
+          typeof x.enabled === "boolean",
+      ),
+    );
+  }, [scope.tenantId, scope.locationId]);
+  useEffect(() => {
+    void load().catch(() => {});
+  }, [load]);
+  async function assign(address: string, enabled: boolean) {
+    setBusy(true);
+    setMessage("");
+    try {
+      await printerRpc("mealdeck_printer_assign_access", {
+        ...args,
+        p_email: address,
+        p_enabled: enabled,
+      });
+      setEmail("");
+      setMessage(
+        enabled ? "Printer-only access assigned to this kitchen." : "Printer access removed.",
+      );
+      await load();
+    } catch (e) {
+      setMessage(errorMessage(e, "Printer access was not saved."));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <details className="md-ops-card p-4">
+      <summary className="cursor-pointer text-sm font-bold">
+        <ShieldCheck className="mr-2 inline size-4" />
+        Owner setup · printer accounts
+      </summary>
+      <div className="mt-4 space-y-4">
+        <p className="text-sm leading-6 md-ops-muted">
+          Assign an existing, email-verified account to {scope.locationName}. Printer access permits
+          accepted receipts only. It does not grant kitchen, menu or financial administration.
+        </p>
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void assign(email.trim(), true);
+          }}
+        >
+          <label className="min-w-0 flex-1 text-sm font-bold">
+            Verified account email
+            <input
+              type="email"
+              required
+              className="md-ops-field mt-2 w-full"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </label>
+          <button type="submit" disabled={busy} className="md-ops-button md-ops-primary">
+            Assign printer access
+          </button>
+        </form>
+        {message && (
+          <p role="status" className="text-sm md-ops-text">
+            {message}
+          </p>
+        )}
+        <ul className="space-y-2">
+          {access.map((a) => (
+            <li
+              key={a.userId}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border md-ops-border p-3"
+            >
+              <span className="min-w-0 break-all text-sm">
+                {a.email} · {a.enabled ? "Enabled" : "Disabled"}
+              </span>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void assign(a.email, !a.enabled)}
+                className="md-ops-button md-ops-secondary"
+              >
+                {a.enabled ? "Remove access" : "Restore access"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </details>
+  );
+}

@@ -206,12 +206,14 @@ export async function verifyModifierPrices(db, { tenantId, locationId, owner }) 
 
   const initialGates = await gates();
   const rows = await list();
-  const linked = rows.find((row) => row.affected_item_count > 1 && row.price_delta_pence === 2000);
+  const linked = rows.find((row) => row.affected_item_count > 1 && row.price_delta_pence > 0);
   const unlinked = rows.find((row) => row.affected_item_count === 0);
   assert.ok(
     linked && unlinked,
     "The real import must contain shared source and unlinked replacement groups",
   );
+
+  const approvedPrice = linked.price_delta_pence;
 
   await test("all canonical choices are listed, including unlinked replacement drafts, with exact shared-item counts", async () => {
     const expected = (
@@ -248,7 +250,7 @@ export async function verifyModifierPrices(db, { tenantId, locationId, owner }) 
           asActor(
             db,
             owner,
-            () => db.query(updateSql, [tenantId, linked.option_id, 1750, 2000]),
+            () => db.query(updateSql, [tenantId, linked.option_id, 1750, approvedPrice]),
             role,
           ),
         /permission denied/,
@@ -256,7 +258,7 @@ export async function verifyModifierPrices(db, { tenantId, locationId, owner }) 
     }
     for (const actor of [null, users.customer, users.local, users.disabled, users.foreign]) {
       await assert.rejects(() => list(actor), /forbidden/);
-      await assert.rejects(() => update(actor, linked.option_id, 1750, 2000), /forbidden/);
+      await assert.rejects(() => update(actor, linked.option_id, 1750, approvedPrice), /forbidden/);
     }
     for (const role of ["anon", "authenticated", "service_role"]) {
       const acl = (
@@ -279,11 +281,11 @@ export async function verifyModifierPrices(db, { tenantId, locationId, owner }) 
     const before = await optionRow(linked.option_id);
     const count = (await audit()).length;
     for (const actor of [users.reader, users.denied])
-      await assert.rejects(() => update(actor, linked.option_id, 1750, 2000), /forbidden/);
+      await assert.rejects(() => update(actor, linked.option_id, 1750, approvedPrice), /forbidden/);
     await assert.rejects(() => list(owner, foreignTenant), /forbidden/);
     await assert.rejects(() => update(owner, foreignOption, 1750, 800), /not_found/);
     await assert.rejects(
-      () => update(owner, linked.option_id, 1750, 2000, foreignTenant),
+      () => update(owner, linked.option_id, 1750, approvedPrice, foreignTenant),
       /forbidden/,
     );
     assert.deepEqual(await optionRow(linked.option_id), before);
@@ -291,10 +293,10 @@ export async function verifyModifierPrices(db, { tenantId, locationId, owner }) 
     assert.equal((await optionRow(foreignOption)).price_delta_pence, 800);
   });
 
-  await test("an authorized editor saves £20 to £17.50, changes only the price and records its exact actor, old/new values and shared count", async () => {
+  await test("an authorized editor changes an approved price to £17.50, changes only the price and records its exact actor, old/new values and shared count", async () => {
     const before = await optionRow(linked.option_id);
     const count = (await audit()).length;
-    const receipt = await update(users.editor, linked.option_id, 1750, 2000);
+    const receipt = await update(users.editor, linked.option_id, 1750, approvedPrice);
     assert.deepEqual(await optionRow(linked.option_id), { ...before, price_delta_pence: 1750 });
     assert.equal(receipt.price_delta_pence, 1750);
     assert.equal(receipt.affected_item_count, linked.affected_item_count);
@@ -307,14 +309,17 @@ export async function verifyModifierPrices(db, { tenantId, locationId, owner }) 
     assert.equal(event.tenant_id, tenantId);
     assert.equal(event.location_id, null);
     assert.equal(event.entity_id, linked.option_id);
-    assert.equal(event.previous_value.pricePence, 2000);
+    assert.equal(event.previous_value.pricePence, approvedPrice);
     assert.equal(event.next_value.pricePence, 1750);
     assert.equal(event.next_value.affectedItemCount, linked.affected_item_count);
   });
 
   await test("stale or invalid prices reject without mutation or audit, while an intentional £0 option saves and replays without duplicate audit", async () => {
     const count = (await audit()).length;
-    await assert.rejects(() => update(owner, linked.option_id, 1600, 2000), /price_conflict/);
+    await assert.rejects(
+      () => update(owner, linked.option_id, 1600, approvedPrice),
+      /price_conflict/,
+    );
     for (const [next, expected] of [
       [null, 1750],
       [-1, 1750],

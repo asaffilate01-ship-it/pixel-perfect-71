@@ -6,7 +6,7 @@ import {
   MAX_LAUNCH_PICKS,
   findLaunchMenuItem,
   launchPickCount,
-  launchSelectionLabels,
+  launchItemGroups,
   type LaunchMenuPick,
 } from "@/lib/launch-menu-picks";
 import { launchCrossSelectionSummaries } from "@/lib/launch-menu-upsells";
@@ -171,12 +171,7 @@ export function LaunchBasket({
               if (!found) return null;
               const controlName = found.item.name + " from " + found.section.title;
               const price = launchMenuPickDisplayPrice(pick);
-              const labels = launchSelectionLabels(
-                found.brand,
-                found.item,
-                pick.selections,
-                pick.crossSelections,
-              );
+              const groups = launchItemGroups(found.brand, found.item);
               const children = launchCrossSelectionSummaries(
                 found.brand,
                 found.item,
@@ -210,19 +205,25 @@ export function LaunchBasket({
                     </span>
                     <strong>{formatLaunchMenuPrice(price.baseLinePence)}</strong>
                   </div>
-                  {labels.length > 0 && <p className="lmb-choices">{labels.join(" · ")}</p>}
-                  {price.options.some((option) => option.unitPence !== 0) && (
+                  {price.options.length > 0 && (
                     <dl className="lmb-option-prices" aria-label={"Options for " + controlName}>
-                      {price.options
-                        .filter((option) => option.unitPence !== 0)
-                        .map((option) => (
-                          <div key={option.optionId}>
-                            <dt>
+                      {price.options.map((option) => (
+                        <div key={option.optionId}>
+                          <dt>
+                            <small>
+                              {groups.find((group) => group.id === option.groupId)?.label}
+                            </small>
+                            <span>
                               {option.label} × {pick.quantity}
-                            </dt>
-                            <dd>{formatLaunchMenuPrice(option.linePence)}</dd>
-                          </div>
-                        ))}
+                            </span>
+                          </dt>
+                          <dd>
+                            {option.unitPence === 0
+                              ? "Included"
+                              : "+" + formatLaunchMenuPrice(option.linePence)}
+                          </dd>
+                        </div>
+                      ))}
                     </dl>
                   )}
 
@@ -315,7 +316,7 @@ export function LaunchBasket({
             {basketPrice.hasPaidChoices && (
               <p>Includes your selected upgrades, add-ons and extras.</p>
             )}
-            <p>Any delivery charge is confirmed at checkout.</p>
+            <p>Collection or kerbside pickup. Your final total is confirmed before payment.</p>
           </div>
         </>
       )}

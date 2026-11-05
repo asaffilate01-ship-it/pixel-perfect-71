@@ -14,6 +14,8 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import { PwaInstallCard } from "@/components/pwa-install-card";
+import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
 import type { OpsPermission } from "@/lib/mealdeck-ops-access";
 import { OpsRequestError, opsRpc } from "@/lib/mealdeck-ops-browser";
 import { parseKdsBoard, parseKdsMutation, type KdsBoard, type KdsOrder } from "@/lib/mealdeck-kds";
@@ -119,6 +121,7 @@ export function OpsKdsPanel(props: Props) {
 }
 
 function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
+  const alerts = useStaffAlerts("kds", `${tenantId}:${locationId}`);
   const [board, setBoard] = useState<KdsBoard | null>(null);
   const [feedState, setFeedState] = useState<FeedState>("loading");
   const [feedError, setFeedError] = useState("");
@@ -244,6 +247,12 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
 
   const fresh =
     online && feedState === "connected" && lastSync !== null && now - lastSync < STALE_AFTER_MS;
+  useEffect(() => {
+    alerts.observe(
+      board?.orders.map((order) => order.order_id) ?? [],
+      fresh && board?.readiness === "ready",
+    );
+  }, [board, fresh, alerts.observe]);
   const canChange = can("orders.status") && fresh && board?.readiness === "ready" && !pendingOrder;
   const counts = useMemo(() => {
     const result: Record<Stage, number> = {
@@ -275,7 +284,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
       void refresh();
       return;
     }
-    const expectedVersion = action.target === "order" ? order.version : order.pass?.version;
+    const expectedVersion = action.target === "pass" ? order.pass?.version : order.version;
     if (!expectedVersion) return;
     mutating.current = true;
     invalidateRead();
@@ -287,23 +296,29 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
     setSealConfirmation(null);
     let saved = false;
     try {
-      const raw = await opsRpc<unknown>(
-        action.target === "order"
-          ? "mealdeck_ops_kds_transition_order"
-          : "mealdeck_ops_kds_transition_pass",
-        {
-          p_tenant: tenantId,
-          p_location: locationId,
-          p_order: order.order_id,
-          p_expected_version: expectedVersion,
-          p_status: action.status,
-        },
-      );
+      const names = {
+        accept: "mealdeck_ops_kds_accept_order",
+        order: "mealdeck_ops_kds_transition_order",
+        pass: "mealdeck_ops_kds_transition_pass",
+        item: "mealdeck_ops_kds_set_item_ready",
+        handoff: "mealdeck_ops_kds_complete_handoff",
+      };
+      const raw = await opsRpc<unknown>(names[action.target], {
+        p_tenant: tenantId,
+        p_location: locationId,
+        p_order: order.order_id,
+        p_expected_version: expectedVersion,
+        ...(action.target === "order" || action.target === "pass"
+          ? { p_status: action.status }
+          : {}),
+        ...(action.target === "item" ? { p_item: action.itemId, p_ready: action.ready } : {}),
+        ...(action.target === "handoff" ? { p_code: action.code } : {}),
+      });
       parseKdsMutation(raw, { orderId: order.order_id, status: action.status });
       saved = true;
       if (!mounted.current) return;
       setNotice(
-        `${order.display_code} · ${action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Order sealed"}.`,
+        `${order.display_code} · ${action.status === "accepted" ? "Accepted · receipt queued" : action.status === "completed" ? "Collection completed" : action.target === "item" ? "Item checklist updated" : action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Order sealed"}.`,
       );
     } catch (reason) {
       if (!mounted.current) return;
@@ -411,6 +426,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
         </div>
       </header>
 
+      <StaffAlertControls alerts={alerts} kind="kds" />
       {board?.readiness === "ready" && (
         <>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,15rem)_auto]">
@@ -596,6 +612,28 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
                   if (element) orderCards.current.set(order.order_id, element);
                   else orderCards.current.delete(order.order_id);
                 }}
+                onItemReady={(itemId, ready) => {
+                  const allReady =
+                    ready &&
+                    order.items.every(
+                      (item) => item.order_item_id === itemId || item.status === "ready",
+                    );
+                  void updateOrder(order, {
+                    target: "item",
+                    itemId,
+                    ready,
+                    status: allReady ? "ready" : "preparing",
+                    label: "Update item",
+                  });
+                }}
+                onHandoff={(code) =>
+                  void updateOrder(order, {
+                    target: "handoff",
+                    code,
+                    status: "completed",
+                    label: "Complete collection",
+                  })
+                }
                 onAction={() => {
                   if (!action) return;
                   if (action.status === "sealed")
@@ -647,6 +685,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
           )}
         </StateCard>
       )}
+      <PwaInstallCard appName="MealDeck Kitchen" />
     </section>
   );
 }
@@ -698,6 +737,8 @@ function KitchenOrderCard({
   onAction,
   onConfirmSeal,
   onCancelSeal,
+  onItemReady,
+  onHandoff,
 }: {
   order: KdsOrder;
   stage: Stage;
@@ -711,7 +752,10 @@ function KitchenOrderCard({
   onAction: () => void;
   onConfirmSeal: () => void;
   onCancelSeal: () => void;
+  onItemReady: (itemId: string, ready: boolean) => void;
+  onHandoff: (code: string) => void;
 }) {
+  const [handoffCode, setHandoffCode] = useState("");
   const confirmButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (confirmingSeal) confirmButton.current?.focus();
@@ -767,6 +811,23 @@ function KitchenOrderCard({
         </div>
       </header>
       <div className="space-y-3 px-4 py-3">
+        <div className="flex flex-wrap gap-2 text-xs font-bold md-ops-text">
+          <span className="rounded-md border md-ops-border px-2 py-1">
+            {order.cutlery_requested ? "Include cutlery" : "No cutlery requested"}
+          </span>
+          {order.vehicle && (
+            <span className="rounded-md border md-ops-border px-2 py-1">
+              {order.vehicle.colour} {order.vehicle.make} · Reg ends{" "}
+              {order.vehicle.registrationLast4}
+            </span>
+          )}
+        </div>
+        {order.accepted_at && (
+          <p className="text-xs md-ops-muted">
+            {order.items.filter((item) => item.status === "ready").length} of {order.items.length}{" "}
+            lines ready · tick each item and its extras.
+          </p>
+        )}
         {order.notes && <Note label="Order note" text={order.notes} />}
         {groups.map((group) => (
           <section key={group.key} aria-label={`${group.name} items`}>
@@ -775,8 +836,28 @@ function KitchenOrderCard({
             </h4>
             <ul className="space-y-3">
               {group.items.map((item) => (
-                <li key={item.order_item_id} className="min-w-0">
+                <li
+                  key={item.order_item_id}
+                  className={`min-w-0 ${item.parent_checkout_line_id ? "ml-5 border-l-2 md-ops-border pl-3" : ""}`}
+                >
                   <div className="flex items-start gap-2.5">
+                    <label className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border md-ops-border">
+                      <input
+                        type="checkbox"
+                        className="size-6 accent-emerald-700"
+                        checked={item.status === "ready"}
+                        aria-label={`Ready: ${item.quantity} ${item.item_name}`}
+                        disabled={
+                          disabled ||
+                          !order.accepted_at ||
+                          order.preparation_status === "queued" ||
+                          stage === "packing" ||
+                          stage === "sealed" ||
+                          !order.routing_complete
+                        }
+                        onChange={(event) => onItemReady(item.order_item_id, event.target.checked)}
+                      />
+                    </label>
                     <span
                       className="md-ops-ticket-quantity grid min-h-7 min-w-7 shrink-0 place-items-center rounded-md px-1 text-sm font-black tabular-nums"
                       aria-label={`Quantity ${item.quantity}`}
@@ -787,6 +868,24 @@ function KitchenOrderCard({
                       <p className="break-words text-base font-bold leading-6 md-ops-ink">
                         {item.item_name}
                       </p>
+                      {item.parent_checkout_line_id && (
+                        <p className="text-xs font-semibold md-ops-muted">
+                          Extra from {item.brand_name} · with the item above
+                        </p>
+                      )}
+                      {!!item.bags?.length && (
+                        <p className="mt-1 text-xs font-bold md-ops-text">
+                          {item.bags
+                            .map((bag) => `Bag ${bag.number}: ${bag.quantity}×`)
+                            .join(" · ")}
+                        </p>
+                      )}
+                      {item.unit_pence != null && (
+                        <p className="mt-1 text-xs md-ops-muted">
+                          £{(item.unit_pence / 100).toFixed(2)} each · £
+                          {((item.quantity * item.unit_pence) / 100).toFixed(2)} total
+                        </p>
+                      )}
                       {order.group_order && item.participant_name && (
                         <p className="mt-0.5 break-words text-xs font-semibold md-ops-muted">
                           For {item.participant_name}
@@ -803,7 +902,18 @@ function KitchenOrderCard({
                                 className="mt-2 size-1 shrink-0 rounded-full md-ops-dot"
                                 aria-hidden="true"
                               />
-                              <span className="min-w-0 break-words">{modifier}</span>
+                              <span className="min-w-0 break-words">
+                                {modifier}
+                                {item.modifier_details?.[index] && (
+                                  <span className="ml-1 text-xs md-ops-muted">
+                                    {" "}
+                                    · {item.modifier_details[index].quantity_per_parent}× each
+                                    {item.modifier_details[index].price_delta_pence
+                                      ? ` · +£${(item.modifier_details[index].price_delta_pence / 100).toFixed(2)}`
+                                      : " · included"}
+                                  </span>
+                                )}
+                              </span>
                             </li>
                           ))}
                         </ul>
@@ -827,7 +937,37 @@ function KitchenOrderCard({
         )}
       </div>
       <footer className="md-ops-ticket-footer border-t md-ops-divider px-4 py-3">
-        {confirmingSeal ? (
+        {order.pass?.status === "ready_for_handoff" ? (
+          <form
+            className="space-y-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (/^\d{4}$/.test(handoffCode) && !disabled) onHandoff(handoffCode);
+            }}
+          >
+            <label className="block text-sm font-semibold md-ops-text">
+              Confirm the customer’s four-digit order number
+              <input
+                className="md-ops-field mt-2 w-full text-center text-xl tracking-[.3em]"
+                aria-label={`Collection code for ${order.display_code}`}
+                inputMode="numeric"
+                autoComplete="off"
+                pattern="[0-9]{4}"
+                maxLength={4}
+                value={handoffCode}
+                onChange={(event) => setHandoffCode(event.target.value.replace(/\D/g, ""))}
+                disabled={disabled}
+              />
+            </label>
+            <button
+              type="submit"
+              className={`${button} md-ops-primary w-full`}
+              disabled={disabled || !/^\d{4}$/.test(handoffCode)}
+            >
+              {saving ? "Confirming…" : "Confirm collection"}
+            </button>
+          </form>
+        ) : confirmingSeal ? (
           <div
             className="space-y-3"
             role="group"
@@ -878,12 +1018,14 @@ function KitchenOrderCard({
             {stage === "sealed" ? (
               <>
                 <PackageCheck className="size-5 shrink-0" aria-hidden="true" />
-                {order.pass?.status === "ready_for_handoff"
-                  ? "Ready for handoff"
-                  : "Sealed · awaiting handoff"}
+                Sealed · awaiting handoff
               </>
             ) : order.routing_complete ? (
-              "Waiting for packing status"
+              order.preparation_status === "preparing" ? (
+                "Tick each item when ready"
+              ) : (
+                "Waiting for packing status"
+              )
             ) : (
               "Preparation paused"
             )}

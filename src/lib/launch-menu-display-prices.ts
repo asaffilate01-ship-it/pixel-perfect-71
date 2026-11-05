@@ -1,3 +1,4 @@
+import { launchMenuConfiguredItemPrice } from "./launch-menu-catalogue";
 import {
   findLaunchMenuItem,
   launchItemGroups,
@@ -32,9 +33,10 @@ export function launchMenuCrossChoicePrice(
   brandId: string,
   itemId: string,
 ): number | null {
+  const found = findLaunchMenuItem(brandId, itemId);
   const itemPrice = launchMenuItemPrice(brandId, itemId);
-  if (itemPrice === null) return null;
-  return knownPrice(priceForLaunchCrossChoice(mode, itemPrice));
+  if (!found || itemPrice === null) return null;
+  return knownPrice(priceForLaunchCrossChoice(mode, itemPrice, found.section.id));
 }
 
 type PriceSelection = Pick<
@@ -92,12 +94,11 @@ function sumKnownPrices(amounts: (number | null)[]): number | null {
  */
 export function launchMenuPickDisplayPrice(pick: PriceSelection): LaunchPickDisplayPrice {
   const found = findLaunchMenuItem(pick.brandId, pick.itemId);
-  const baseUnitPence = launchMenuItemPrice(pick.brandId, pick.itemId);
-  const baseLinePence = linePrice(baseUnitPence, pick.quantity);
+
   if (!found) {
     return {
-      baseUnitPence,
-      baseLinePence,
+      baseUnitPence: null,
+      baseLinePence: null,
       additions: [],
       options: [],
       itemsSubtotalPence: null,
@@ -110,6 +111,12 @@ export function launchMenuPickDisplayPrice(pick: PriceSelection): LaunchPickDisp
     pick.selections,
     pick.crossSelections ?? [],
   );
+  const baseUnitPence = launchMenuConfiguredItemPrice(
+    pick.brandId,
+    pick.itemId,
+    configuration.selections,
+  );
+  const baseLinePence = linePrice(baseUnitPence, pick.quantity);
   const children = launchCrossSelectionSummaries(
     found.brand,
     found.item,

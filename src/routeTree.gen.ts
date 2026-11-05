@@ -10,31 +10,49 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as BedfordRouteImport } from './routes/bedford'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as KdsRouteImport } from './routes/kds'
 import { Route as LutonRouteImport } from './routes/luton'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as MenusRouteImport } from './routes/menus'
+import { Route as MetaAdRouteImport } from './routes/meta-ad'
+import { Route as OpeningOfferRouteImport } from './routes/opening-offer'
 import { Route as OpsRouteImport } from './routes/ops'
 import { Route as OrderRouteImport } from './routes/order'
 import { Route as PlayRouteImport } from './routes/play'
+import { Route as PrinterRouteImport } from './routes/printer'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StAlbansRouteImport } from './routes/st-albans'
 import { Route as TrackRouteImport } from './routes/track'
+import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
 import { Route as ApiFranchiseRouteImport } from './routes/api.franchise'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BedfordRoute = BedfordRouteImport.update({
   id: '/bedford',
   path: '/bedford',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FranchiseRoute = FranchiseRouteImport.update({
@@ -62,6 +80,16 @@ const MenusRoute = MenusRouteImport.update({
   path: '/menus',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MetaAdRoute = MetaAdRouteImport.update({
+  id: '/meta-ad',
+  path: '/meta-ad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpeningOfferRoute = OpeningOfferRouteImport.update({
+  id: '/opening-offer',
+  path: '/opening-offer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OpsRoute = OpsRouteImport.update({
   id: '/ops',
   path: '/ops',
@@ -77,6 +105,16 @@ const PlayRoute = PlayRouteImport.update({
   path: '/play',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrinterRoute = PrinterRouteImport.update({
+  id: '/printer',
+  path: '/printer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -90,6 +128,11 @@ const StAlbansRoute = StAlbansRouteImport.update({
 const TrackRoute = TrackRouteImport.update({
   id: '/track',
   path: '/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCheckoutRoute = ApiCheckoutRouteImport.update({
+  id: '/api/checkout',
+  path: '/api/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiFranchiseRoute = ApiFranchiseRouteImport.update({
@@ -112,143 +155,204 @@ const FranchiseBrandIdRoute = FranchiseBrandIdRouteImport.update({
   path: '/franchise/$brandId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/bedford': typeof BedfordRoute
+  '/checkout': typeof CheckoutRoute
   '/franchise': typeof FranchiseRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
   '/menus': typeof MenusRoute
+  '/meta-ad': typeof MetaAdRoute
+  '/opening-offer': typeof OpeningOfferRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
+  '/printer': typeof PrinterRoute
+  '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st-albans': typeof StAlbansRoute
   '/track': typeof TrackRoute
+  '/api/checkout': typeof ApiCheckoutRoute
   '/api/franchise': typeof ApiFranchiseRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/bedford': typeof BedfordRoute
+  '/checkout': typeof CheckoutRoute
   '/franchise': typeof FranchiseRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
   '/menus': typeof MenusRoute
+  '/meta-ad': typeof MetaAdRoute
+  '/opening-offer': typeof OpeningOfferRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
+  '/printer': typeof PrinterRoute
+  '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st-albans': typeof StAlbansRoute
   '/track': typeof TrackRoute
+  '/api/checkout': typeof ApiCheckoutRoute
   '/api/franchise': typeof ApiFranchiseRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog': typeof BlogIndexRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/bedford': typeof BedfordRoute
+  '/checkout': typeof CheckoutRoute
   '/franchise': typeof FranchiseRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
   '/menus': typeof MenusRoute
+  '/meta-ad': typeof MetaAdRoute
+  '/opening-offer': typeof OpeningOfferRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
+  '/printer': typeof PrinterRoute
+  '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/st-albans': typeof StAlbansRoute
   '/track': typeof TrackRoute
+  '/api/checkout': typeof ApiCheckoutRoute
   '/api/franchise': typeof ApiFranchiseRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise_/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/bedford'
+    | '/checkout'
     | '/franchise'
     | '/kds'
     | '/luton'
     | '/menu'
     | '/menus'
+    | '/meta-ad'
+    | '/opening-offer'
     | '/ops'
     | '/order'
     | '/play'
+    | '/printer'
+    | '/privacy'
     | '/sitemap.xml'
     | '/st-albans'
     | '/track'
+    | '/api/checkout'
     | '/api/franchise'
     | '/blog/$slug'
     | '/franchise/$brandId'
     | '/blog/'
+    | '/api/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/bedford'
+    | '/checkout'
     | '/franchise'
     | '/kds'
     | '/luton'
     | '/menu'
     | '/menus'
+    | '/meta-ad'
+    | '/opening-offer'
     | '/ops'
     | '/order'
     | '/play'
+    | '/printer'
+    | '/privacy'
     | '/sitemap.xml'
     | '/st-albans'
     | '/track'
+    | '/api/checkout'
     | '/api/franchise'
     | '/blog/$slug'
     | '/franchise/$brandId'
     | '/blog'
+    | '/api/stripe/webhook'
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/bedford'
+    | '/checkout'
     | '/franchise'
     | '/kds'
     | '/luton'
     | '/menu'
     | '/menus'
+    | '/meta-ad'
+    | '/opening-offer'
     | '/ops'
     | '/order'
     | '/play'
+    | '/printer'
+    | '/privacy'
     | '/sitemap.xml'
     | '/st-albans'
     | '/track'
+    | '/api/checkout'
     | '/api/franchise'
     | '/blog/$slug'
     | '/franchise_/$brandId'
     | '/blog/'
+    | '/api/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   BedfordRoute: typeof BedfordRoute
+  CheckoutRoute: typeof CheckoutRoute
   FranchiseRoute: typeof FranchiseRoute
   KdsRoute: typeof KdsRoute
   LutonRoute: typeof LutonRoute
   MenuRoute: typeof MenuRoute
   MenusRoute: typeof MenusRoute
+  MetaAdRoute: typeof MetaAdRoute
+  OpeningOfferRoute: typeof OpeningOfferRoute
   OpsRoute: typeof OpsRoute
   OrderRoute: typeof OrderRoute
   PlayRoute: typeof PlayRoute
+  PrinterRoute: typeof PrinterRoute
+  PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StAlbansRoute: typeof StAlbansRoute
   TrackRoute: typeof TrackRoute
+  ApiCheckoutRoute: typeof ApiCheckoutRoute
   ApiFranchiseRoute: typeof ApiFranchiseRoute
   BlogSlugRoute: typeof BlogSlugRoute
   FranchiseBrandIdRoute: typeof FranchiseBrandIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -260,11 +364,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bedford': {
       id: '/bedford'
       path: '/bedford'
       fullPath: '/bedford'
       preLoaderRoute: typeof BedfordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/franchise': {
@@ -302,6 +420,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MenusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/meta-ad': {
+      id: '/meta-ad'
+      path: '/meta-ad'
+      fullPath: '/meta-ad'
+      preLoaderRoute: typeof MetaAdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/opening-offer': {
+      id: '/opening-offer'
+      path: '/opening-offer'
+      fullPath: '/opening-offer'
+      preLoaderRoute: typeof OpeningOfferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ops': {
       id: '/ops'
       path: '/ops'
@@ -323,6 +455,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/printer': {
+      id: '/printer'
+      path: '/printer'
+      fullPath: '/printer'
+      preLoaderRoute: typeof PrinterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -342,6 +488,13 @@ declare module '@tanstack/react-router' {
       path: '/track'
       fullPath: '/track'
       preLoaderRoute: typeof TrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/checkout': {
+      id: '/api/checkout'
+      path: '/api/checkout'
+      fullPath: '/api/checkout'
+      preLoaderRoute: typeof ApiCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/franchise': {
@@ -372,27 +525,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FranchiseBrandIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   BedfordRoute: BedfordRoute,
+  CheckoutRoute: CheckoutRoute,
   FranchiseRoute: FranchiseRoute,
   KdsRoute: KdsRoute,
   LutonRoute: LutonRoute,
   MenuRoute: MenuRoute,
   MenusRoute: MenusRoute,
+  MetaAdRoute: MetaAdRoute,
+  OpeningOfferRoute: OpeningOfferRoute,
   OpsRoute: OpsRoute,
   OrderRoute: OrderRoute,
   PlayRoute: PlayRoute,
+  PrinterRoute: PrinterRoute,
+  PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StAlbansRoute: StAlbansRoute,
   TrackRoute: TrackRoute,
+  ApiCheckoutRoute: ApiCheckoutRoute,
   ApiFranchiseRoute: ApiFranchiseRoute,
   BlogSlugRoute: BlogSlugRoute,
   FranchiseBrandIdRoute: FranchiseBrandIdRoute,
   BlogIndexRoute: BlogIndexRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -73,6 +73,7 @@ import { paidOrderGoalRange, summariseWeeklyPaidOrders } from "@/lib/mealdeck-we
 import type { OpsSupplier, OpsPurchase, OpsBatch } from "@/lib/mealdeck-ops-procurement-types";
 
 import { OpsKdsPanel } from "@/components/ops/kds-panel";
+import { CheckoutLaunchSettings } from "@/components/ops/checkout-launch-settings";
 const field = "md-ops-field";
 const btn = "md-ops-button md-ops-primary";
 const columns = "md-ops-card p-5";
@@ -1099,7 +1100,13 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                   />
                 )}
                 {selectedSection === "finance" && (
-                  <OpsFinancePanel {...common} finance={data.finance} expenses={data.expenses} />
+                  <>
+                    {!!location && can("finance.manage") && accesses.some((access) =>
+                      access.tenant_id === tenant && (access.location_id === null || access.location_id === location) &&
+                      (access.role === "owner" || access.role === "admin")) &&
+                      <CheckoutLaunchSettings key={tenant + ":" + location} tenantId={tenant} locationId={location} />}
+                    <OpsFinancePanel {...common} finance={data.finance} expenses={data.expenses} />
+                  </>
                 )}
                 {selectedSection === "team" && (
                   <OpsTeamPanel
@@ -1118,8 +1125,8 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 editing.
                 <UserRoundCog className="ml-2 size-4" /> No automatic staff invitations or checkout
                 activation.
-                <ClipboardList className="ml-2 size-4" /> Coming-soon customer ordering remains
-                closed.
+                <ClipboardList className="ml-2 size-4" /> Customer ordering follows kitchen, menu
+                and payment readiness.
               </p>
             )}
           </div>

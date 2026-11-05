@@ -10,6 +10,7 @@ import {
   MapPin,
   ShoppingBag,
   UtensilsCrossed,
+  UserRound,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PwaInstallCard } from "@/components/pwa-install-card";
@@ -201,6 +202,11 @@ export function LaunchMenuAppNav({
           ) : (
             <div className="lma-more-content">
               <nav className="lma-more-links" aria-label="Explore MealDeck">
+                <Link to="/account" onClick={followLink}>
+                  <UserRound size={21} aria-hidden="true" />
+                  <span>My account &amp; rewards</span>
+                  <ArrowUpRight size={18} aria-hidden="true" />
+                </Link>
                 <Link to="/" onClick={followLink}>
                   <Home size={21} aria-hidden="true" />
                   <span>Home</span>
@@ -218,7 +224,11 @@ export function LaunchMenuAppNav({
                 </Link>
               </nav>
               <PwaInstallCard />
+              <Link to="/opening-offer" onClick={followLink} className="lma-more-note">
+                Opening weekend · 30% off · Offer details
+              </Link>
               <p className="lma-more-note">Browse the launch menus now. Ordering is coming soon.</p>
+              <p className="lma-more-note">WhatsApp ordering — coming soon</p>
             </div>
           )}
         </DialogContent>

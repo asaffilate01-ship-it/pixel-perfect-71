@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "priceRevision": "owner-menu-20261105-v2",
   "profile": "mealdeck-independent-v1",
   "currency": "GBP",
   "approvedOn": "2026-11-05",
-  "initialItemPricePence": 2000,
-  "optionalUpgradePricePence": 2000,
-  "crossBrandReplacementPricePence": 2000,
+  "excludedPendingBrands": [],
+  "pricing": "per-item and per-option integer GBP pence; explicit portion/flavour matrix",
   "publication": "draft",
   "conditionalRulesModule": "src/lib/launch-menu-upsells.ts",
   "crossReplacementLinks": "not imported; requires the verified server substitution adapter",
@@ -16,83 +16,121 @@
       "accent": "#D7141A",
       "description": "Chicken burgers, wings & more.",
       "sourceRefs": [
-        "tavo-menu"
+        "tavo-menu",
+        "owner-menu-20261105-v2#tavo-chicken"
       ],
       "sections": [
         {
           "id": "burgers",
           "title": "Burgers",
-          "description": "All burgers with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.",
+          "description": "All burgers with lettuce, cheese, gherkin & Algerian sauce.",
           "sourceRefs": [
-            "tavo-menu#burgers"
+            "tavo-menu#burgers",
+            "owner-menu-20261105-v2#tavo-chicken"
           ],
           "items": [
             {
               "id": "tavo-chicken-burgers-cruncher",
               "name": "Cruncher",
-              "description": "Fried chicken fillet",
-              "pricePence": 2000,
+              "description": "Buttermilk fried chicken fillet",
+              "pricePence": 449,
               "optionGroupIds": [
                 "tavo-chicken-dipped-burger",
                 "tavo-chicken-burger-add-ons",
                 "tavo-chicken-make-it-a-meal",
-                "tavo-chicken-meal-upgrades"
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
               ],
               "sourceRefs": [
-                "tavo-menu#burgers"
+                "tavo-menu#burgers",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
-              "importDescription": "All burgers with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.\n\nFried chicken fillet",
+              "canonicalOptionGroupIds": [
+                "tavo-chicken-dipped-burger",
+                "tavo-chicken-burger-add-ons",
+                "tavo-chicken-make-it-a-meal",
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
+              ],
+              "importDescription": "All burgers with lettuce, cheese, gherkin & Algerian sauce.\n\nButtermilk fried chicken fillet",
               "prepKind": "prep"
             },
             {
               "id": "tavo-chicken-burgers-twin-crunch",
               "name": "Twin Crunch",
-              "description": "2 fried chicken fillets",
-              "pricePence": 2000,
+              "description": "2 buttermilk fried chicken fillets",
+              "pricePence": 599,
               "optionGroupIds": [
                 "tavo-chicken-dipped-burger",
                 "tavo-chicken-burger-add-ons",
                 "tavo-chicken-make-it-a-meal",
-                "tavo-chicken-meal-upgrades"
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
               ],
               "sourceRefs": [
-                "tavo-menu#burgers"
+                "tavo-menu#burgers",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
-              "importDescription": "All burgers with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.\n\n2 fried chicken fillets",
+              "canonicalOptionGroupIds": [
+                "tavo-chicken-dipped-burger",
+                "tavo-chicken-burger-add-ons",
+                "tavo-chicken-make-it-a-meal",
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
+              ],
+              "importDescription": "All burgers with lettuce, cheese, gherkin & Algerian sauce.\n\n2 buttermilk fried chicken fillets",
               "prepKind": "prep"
             },
             {
               "id": "tavo-chicken-burgers-flame",
               "name": "Flame",
-              "description": "Grilled chicken fillet",
-              "pricePence": 2000,
+              "description": "Spicy grilled chicken fillet",
+              "pricePence": 550,
               "optionGroupIds": [
                 "tavo-chicken-dipped-burger",
                 "tavo-chicken-burger-add-ons",
                 "tavo-chicken-make-it-a-meal",
-                "tavo-chicken-meal-upgrades"
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
               ],
               "sourceRefs": [
-                "tavo-menu#burgers"
+                "tavo-menu#burgers",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
-              "importDescription": "All burgers with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.\n\nGrilled chicken fillet",
+              "canonicalOptionGroupIds": [
+                "tavo-chicken-dipped-burger",
+                "tavo-chicken-burger-add-ons",
+                "tavo-chicken-make-it-a-meal",
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
+              ],
+              "importDescription": "All burgers with lettuce, cheese, gherkin & Algerian sauce.\n\nSpicy grilled chicken fillet",
               "prepKind": "prep"
             },
             {
               "id": "tavo-chicken-burgers-big-flame",
               "name": "Big Flame",
-              "description": "2 grilled chicken fillets",
-              "pricePence": 2000,
+              "description": "2 spicy grilled chicken fillets",
+              "pricePence": 650,
               "optionGroupIds": [
                 "tavo-chicken-dipped-burger",
                 "tavo-chicken-burger-add-ons",
                 "tavo-chicken-make-it-a-meal",
-                "tavo-chicken-meal-upgrades"
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
               ],
               "sourceRefs": [
-                "tavo-menu#burgers"
+                "tavo-menu#burgers",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
-              "importDescription": "All burgers with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.\n\n2 grilled chicken fillets",
+              "canonicalOptionGroupIds": [
+                "tavo-chicken-dipped-burger",
+                "tavo-chicken-burger-add-ons",
+                "tavo-chicken-make-it-a-meal",
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
+              ],
+              "importDescription": "All burgers with lettuce, cheese, gherkin & Algerian sauce.\n\n2 spicy grilled chicken fillets",
               "prepKind": "prep"
             }
           ]
@@ -100,24 +138,158 @@
         {
           "id": "fried-chicken-wings",
           "title": "Fried Chicken Wings",
+          "description": "Choose your portion and flavour.",
           "sourceRefs": [
-            "tavo-menu#fried-chicken-wings"
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ],
           "items": [
             {
               "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings",
               "name": "Fried Chicken Wings",
-              "pricePence": 2000,
+              "pricePence": 299,
               "optionGroupIds": [
                 "tavo-chicken-portion",
                 "tavo-chicken-flavour",
                 "tavo-chicken-make-it-a-meal",
-                "tavo-chicken-meal-upgrades"
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
               ],
               "sourceRefs": [
-                "tavo-menu#fried-chicken-wings"
+                "tavo-menu#fried-chicken-wings",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
-              "importDescription": "",
+              "priceVariants": [
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-plain-flavour-3-pcs",
+                  "label": "Plain Flavour · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+                  },
+                  "pricePence": 299
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-plain-flavour-5-pcs",
+                  "label": "Plain Flavour · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+                  },
+                  "pricePence": 550
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-plain-flavour-8-pcs",
+                  "label": "Plain Flavour · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+                  },
+                  "pricePence": 649
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-korean-bbq-3-pcs",
+                  "label": "Korean BBQ · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+                  },
+                  "pricePence": 350
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-korean-bbq-5-pcs",
+                  "label": "Korean BBQ · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+                  },
+                  "pricePence": 650
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-korean-bbq-8-pcs",
+                  "label": "Korean BBQ · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+                  },
+                  "pricePence": 799
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-dynamite-3-pcs",
+                  "label": "Dynamite · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+                  },
+                  "pricePence": 350
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-dynamite-5-pcs",
+                  "label": "Dynamite · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+                  },
+                  "pricePence": 650
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-dynamite-8-pcs",
+                  "label": "Dynamite · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+                  },
+                  "pricePence": 799
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-fiery-sweet-chilli-3-pcs",
+                  "label": "Fiery Sweet Chilli · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+                  },
+                  "pricePence": 350
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-fiery-sweet-chilli-5-pcs",
+                  "label": "Fiery Sweet Chilli · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+                  },
+                  "pricePence": 650
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-fiery-sweet-chilli-8-pcs",
+                  "label": "Fiery Sweet Chilli · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+                  },
+                  "pricePence": 899
+                }
+              ],
+              "canonicalOptionGroupIds": [
+                "tavo-chicken-portion",
+                "tavo-chicken-flavour",
+                "tavo-chicken-make-it-a-meal",
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink",
+                "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant"
+              ],
+              "importDescription": "Choose your portion and flavour.",
               "prepKind": "prep"
             }
           ]
@@ -125,24 +297,158 @@
         {
           "id": "fried-chicken-tenders",
           "title": "Fried Chicken Tenders",
+          "description": "Choose your portion and flavour.",
           "sourceRefs": [
-            "tavo-menu#fried-chicken-tenders"
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
           ],
           "items": [
             {
               "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders",
               "name": "Fried Chicken Tenders",
-              "pricePence": 2000,
+              "pricePence": 299,
               "optionGroupIds": [
                 "tavo-chicken-portion",
                 "tavo-chicken-flavour",
                 "tavo-chicken-make-it-a-meal",
-                "tavo-chicken-meal-upgrades"
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
               ],
               "sourceRefs": [
-                "tavo-menu#fried-chicken-tenders"
+                "tavo-menu#fried-chicken-tenders",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
-              "importDescription": "",
+              "priceVariants": [
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-plain-flavour-3-pcs",
+                  "label": "Plain Flavour · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+                  },
+                  "pricePence": 299
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-plain-flavour-5-pcs",
+                  "label": "Plain Flavour · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+                  },
+                  "pricePence": 550
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-plain-flavour-8-pcs",
+                  "label": "Plain Flavour · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+                  },
+                  "pricePence": 649
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-korean-bbq-3-pcs",
+                  "label": "Korean BBQ · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+                  },
+                  "pricePence": 350
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-korean-bbq-5-pcs",
+                  "label": "Korean BBQ · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+                  },
+                  "pricePence": 650
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-korean-bbq-8-pcs",
+                  "label": "Korean BBQ · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+                  },
+                  "pricePence": 799
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-dynamite-3-pcs",
+                  "label": "Dynamite · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+                  },
+                  "pricePence": 350
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-dynamite-5-pcs",
+                  "label": "Dynamite · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+                  },
+                  "pricePence": 650
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-dynamite-8-pcs",
+                  "label": "Dynamite · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+                  },
+                  "pricePence": 799
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-fiery-sweet-chilli-3-pcs",
+                  "label": "Fiery Sweet Chilli · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+                  },
+                  "pricePence": 350
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-fiery-sweet-chilli-5-pcs",
+                  "label": "Fiery Sweet Chilli · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+                  },
+                  "pricePence": 650
+                },
+                {
+                  "groupId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+                  "optionId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-fiery-sweet-chilli-8-pcs",
+                  "label": "Fiery Sweet Chilli · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+                  },
+                  "pricePence": 899
+                }
+              ],
+              "canonicalOptionGroupIds": [
+                "tavo-chicken-portion",
+                "tavo-chicken-flavour",
+                "tavo-chicken-make-it-a-meal",
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink",
+                "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant"
+              ],
+              "importDescription": "Choose your portion and flavour.",
               "prepKind": "prep"
             }
           ]
@@ -150,24 +456,158 @@
         {
           "id": "grilled-chicken-wings",
           "title": "Grilled Chicken Wings",
+          "description": "Choose your portion and flavour.",
           "sourceRefs": [
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ],
           "items": [
             {
               "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings",
               "name": "Grilled Chicken Wings",
-              "pricePence": 2000,
+              "pricePence": 249,
               "optionGroupIds": [
                 "tavo-chicken-portion",
-                "tavo-chicken-flavour",
+                "tavo-grilled-chicken-flavour",
                 "tavo-chicken-make-it-a-meal",
-                "tavo-chicken-meal-upgrades"
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink"
               ],
               "sourceRefs": [
-                "tavo-menu#grilled-chicken-wings"
+                "tavo-menu#grilled-chicken-wings",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
-              "importDescription": "",
+              "priceVariants": [
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-plain-flavour-3-pcs",
+                  "label": "Plain Flavour · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-plain-flavour"
+                  },
+                  "pricePence": 249
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-plain-flavour-5-pcs",
+                  "label": "Plain Flavour · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-plain-flavour"
+                  },
+                  "pricePence": 449
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-plain-flavour-8-pcs",
+                  "label": "Plain Flavour · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-plain-flavour"
+                  },
+                  "pricePence": 649
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-spicy-honey-bbq-3-pcs",
+                  "label": "Spicy Honey BBQ · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-spicy-honey-bbq"
+                  },
+                  "pricePence": 299
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-spicy-honey-bbq-5-pcs",
+                  "label": "Spicy Honey BBQ · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-spicy-honey-bbq"
+                  },
+                  "pricePence": 499
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-spicy-honey-bbq-8-pcs",
+                  "label": "Spicy Honey BBQ · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-spicy-honey-bbq"
+                  },
+                  "pricePence": 699
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-dynamite-3-pcs",
+                  "label": "Dynamite · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-dynamite"
+                  },
+                  "pricePence": 299
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-dynamite-5-pcs",
+                  "label": "Dynamite · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-dynamite"
+                  },
+                  "pricePence": 499
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-dynamite-8-pcs",
+                  "label": "Dynamite · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-dynamite"
+                  },
+                  "pricePence": 699
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-fiery-sweet-chilli-3-pcs",
+                  "label": "Fiery Sweet Chilli · 3 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-fiery-sweet-chilli"
+                  },
+                  "pricePence": 299
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-fiery-sweet-chilli-5-pcs",
+                  "label": "Fiery Sweet Chilli · 5 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-fiery-sweet-chilli"
+                  },
+                  "pricePence": 499
+                },
+                {
+                  "groupId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+                  "optionId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-fiery-sweet-chilli-8-pcs",
+                  "label": "Fiery Sweet Chilli · 8 pcs",
+                  "selections": {
+                    "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+                    "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-fiery-sweet-chilli"
+                  },
+                  "pricePence": 699
+                }
+              ],
+              "canonicalOptionGroupIds": [
+                "tavo-chicken-portion",
+                "tavo-grilled-chicken-flavour",
+                "tavo-chicken-make-it-a-meal",
+                "tavo-chicken-meal-upgrades",
+                "tavo-chicken-included-meal-drink",
+                "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant"
+              ],
+              "importDescription": "Choose your portion and flavour.",
               "prepKind": "prep"
             }
           ]
@@ -176,19 +616,26 @@
           "id": "kids-meals",
           "title": "Kids Meals",
           "sourceRefs": [
-            "tavo-menu#kids-meals"
+            "tavo-menu#kids-meals",
+            "owner-menu-20261105-v2#tavo-chicken"
           ],
           "items": [
             {
               "id": "tavo-chicken-kids-meals-little-jacks-nugget-meal",
-              "name": "Little Jacks Nugget Meal",
+              "name": "Nuggets Meal",
               "description": "6 nuggets, fries & drink.",
-              "pricePence": 2000,
+              "pricePence": 500,
               "optionGroupIds": [
-                "tavo-chicken-kids-meal-upgrades"
+                "tavo-chicken-kids-meal-upgrades",
+                "tavo-chicken-kids-included-drink"
               ],
               "sourceRefs": [
-                "tavo-menu#kids-meals"
+                "tavo-menu#kids-meals",
+                "owner-menu-20261105-v2#tavo-chicken"
+              ],
+              "canonicalOptionGroupIds": [
+                "tavo-chicken-kids-meal-upgrades",
+                "tavo-chicken-kids-included-drink"
               ],
               "importDescription": "6 nuggets, fries & drink.",
               "prepKind": "prep"
@@ -199,72 +646,85 @@
           "id": "sides",
           "title": "Sides",
           "sourceRefs": [
-            "tavo-menu#sides"
+            "tavo-menu#sides",
+            "owner-menu-20261105-v2#tavo-chicken"
           ],
           "items": [
             {
               "id": "tavo-chicken-sides-fries",
               "name": "Fries",
-              "pricePence": 2000,
+              "pricePence": 200,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#sides"
+                "tavo-menu#sides",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "tavo-chicken-sides-peri-fries",
               "name": "Peri Fries",
-              "pricePence": 2000,
+              "pricePence": 250,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#sides"
+                "tavo-menu#sides",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "tavo-chicken-sides-onion-rings-x6",
               "name": "Onion Rings (x6)",
-              "pricePence": 2000,
+              "pricePence": 250,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#sides"
+                "tavo-menu#sides",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "tavo-chicken-sides-mozzarella-sticks-x6",
               "name": "Mozzarella Sticks (x6)",
-              "pricePence": 2000,
+              "pricePence": 300,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#sides"
+                "tavo-menu#sides",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "tavo-chicken-sides-chilli-cheese-nuggets-x6",
               "name": "Chilli Cheese Nuggets (x6)",
-              "pricePence": 2000,
+              "pricePence": 300,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#sides"
+                "tavo-menu#sides",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "tavo-chicken-sides-chicken-nuggets-x6",
               "name": "Chicken Nuggets (x6)",
-              "pricePence": 2000,
+              "pricePence": 350,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#sides"
+                "tavo-menu#sides",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             }
@@ -274,83 +734,111 @@
           "id": "cans-drinks",
           "title": "Cans & Drinks",
           "sourceRefs": [
-            "tavo-menu#cans-drinks"
+            "tavo-menu#cans-drinks",
+            "owner-menu-20261105-v2#tavo-chicken"
           ],
           "items": [
             {
               "id": "tavo-chicken-cans-drinks-coke",
               "name": "Coke",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#cans-drinks"
+                "tavo-menu#cans-drinks",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "tavo-chicken-cans-drinks-pepsi-max",
               "name": "Pepsi Max",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#cans-drinks"
+                "tavo-menu#cans-drinks",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "tavo-chicken-cans-drinks-tango-apple",
               "name": "Tango Apple",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#cans-drinks"
+                "tavo-menu#cans-drinks",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "tavo-chicken-cans-drinks-miranda-orange",
               "name": "Miranda Orange",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#cans-drinks"
+                "tavo-menu#cans-drinks",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "tavo-chicken-cans-drinks-miranda-strawberry",
               "name": "Miranda Strawberry",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#cans-drinks"
+                "tavo-menu#cans-drinks",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "tavo-chicken-cans-drinks-barr-limeade",
               "name": "Barr Limeade",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#cans-drinks"
+                "tavo-menu#cans-drinks",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "tavo-chicken-cans-drinks-water-bottle",
               "name": "Water Bottle",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "tavo-menu#cans-drinks"
+                "tavo-menu#cans-drinks",
+                "owner-menu-20261105-v2#tavo-chicken"
               ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "drink"
+            },
+            {
+              "id": "tavo-chicken-cans-drinks-red-bull",
+              "name": "Red Bull",
+              "pricePence": 220,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "tavo-menu#cans-drinks",
+                "owner-menu-20261105-v2#tavo-chicken"
+              ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             }
@@ -367,13 +855,14 @@
             "tavo-menu#burgers",
             "tavo-menu#fried-chicken-wings",
             "tavo-menu#fried-chicken-tenders",
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-upsell-dipped-burger",
-          "label": "Upgrade to a Dipped Burger",
-          "description": "Turn any burger into a dipped burger for an extra kick.",
+          "label": "Dip Your Burger",
+          "description": "Choose Korean BBQ, Fiery Sweet Chilli or Dynamite.",
           "optionGroupId": "tavo-chicken-dipped-burger",
           "sourceRefs": [
             "tavo-menu#dipped-burger"
@@ -393,7 +882,8 @@
           "optionGroupId": "tavo-chicken-meal-upgrades",
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
@@ -413,7 +903,8 @@
       "accent": "#AD7C12",
       "description": "Premium mocktails. Zero alcohol. Full vibe.",
       "sourceRefs": [
-        "moktl-menu"
+        "moktl-menu",
+        "owner-menu-20261105-v2#moktl"
       ],
       "sections": [
         {
@@ -421,90 +912,105 @@
           "title": "Mocktail Lounge",
           "sourceRefs": [
             "moktl-menu#mocktail-lounge",
-            "moktl-menu#rush-hour"
+            "moktl-menu#rush-hour",
+            "owner-menu-20261105-v2#moktl"
           ],
           "items": [
             {
               "id": "moktl-mocktail-lounge-virgin-mojito",
               "name": "Virgin Mojito",
-              "pricePence": 2000,
+              "pricePence": 450,
               "optionGroupIds": [],
               "sourceRefs": [
                 "moktl-menu#mocktail-lounge",
-                "moktl-menu#rush-hour"
+                "moktl-menu#rush-hour",
+                "owner-menu-20261105-v2#moktl"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "moktl-mocktail-lounge-mango-mirage",
               "name": "Mango Mirage",
-              "pricePence": 2000,
+              "pricePence": 450,
               "optionGroupIds": [],
               "sourceRefs": [
                 "moktl-menu#mocktail-lounge",
-                "moktl-menu#rush-hour"
+                "moktl-menu#rush-hour",
+                "owner-menu-20261105-v2#moktl"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "moktl-mocktail-lounge-lychee-breeze",
               "name": "Lychee Breeze",
-              "pricePence": 2000,
+              "pricePence": 450,
               "optionGroupIds": [],
               "sourceRefs": [
                 "moktl-menu#mocktail-lounge",
-                "moktl-menu#rush-hour"
+                "moktl-menu#rush-hour",
+                "owner-menu-20261105-v2#moktl"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "moktl-mocktail-lounge-apple-rush",
               "name": "Apple Rush",
-              "pricePence": 2000,
+              "pricePence": 450,
               "optionGroupIds": [],
               "sourceRefs": [
                 "moktl-menu#mocktail-lounge",
-                "moktl-menu#rush-hour"
+                "moktl-menu#rush-hour",
+                "owner-menu-20261105-v2#moktl"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "moktl-mocktail-lounge-blue-wave",
               "name": "Blue Wave",
-              "pricePence": 2000,
+              "pricePence": 450,
               "optionGroupIds": [],
               "sourceRefs": [
                 "moktl-menu#mocktail-lounge",
-                "moktl-menu#rush-hour"
+                "moktl-menu#rush-hour",
+                "owner-menu-20261105-v2#moktl"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "moktl-mocktail-lounge-strawberry-splash",
               "name": "Strawberry Splash",
-              "pricePence": 2000,
+              "pricePence": 450,
               "optionGroupIds": [],
               "sourceRefs": [
                 "moktl-menu#mocktail-lounge",
-                "moktl-menu#rush-hour"
+                "moktl-menu#rush-hour",
+                "owner-menu-20261105-v2#moktl"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "moktl-mocktail-lounge-passion-paradise",
               "name": "Passion Paradise",
-              "pricePence": 2000,
+              "pricePence": 450,
               "optionGroupIds": [],
               "sourceRefs": [
                 "moktl-menu#mocktail-lounge",
-                "moktl-menu#rush-hour"
+                "moktl-menu#rush-hour",
+                "owner-menu-20261105-v2#moktl"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
@@ -512,12 +1018,14 @@
               "id": "moktl-mocktail-lounge-rush-hour",
               "name": "Rush Hour",
               "description": "Energy drink flavour",
-              "pricePence": 2000,
+              "pricePence": 600,
               "optionGroupIds": [],
               "sourceRefs": [
                 "moktl-menu#mocktail-lounge",
-                "moktl-menu#rush-hour"
+                "moktl-menu#rush-hour",
+                "owner-menu-20261105-v2#moktl"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "Energy drink flavour",
               "prepKind": "drink"
             }
@@ -543,7 +1051,8 @@
       "accent": "#A66E00",
       "description": "Loaded fries • Mac n cheese. Fries, taken further.",
       "sourceRefs": [
-        "loadd-menu"
+        "loadd-menu",
+        "owner-menu-20261105-v2#loadd"
       ],
       "sections": [
         {
@@ -551,18 +1060,21 @@
           "title": "Loaded Fries",
           "description": "All with cheese, Algerian sauce, and spring onions.",
           "sourceRefs": [
-            "loadd-menu#loaded-fries"
+            "loadd-menu#loaded-fries",
+            "owner-menu-20261105-v2#loadd"
           ],
           "items": [
             {
               "id": "loadd-loaded-fries-king-of-hearts",
               "name": "King of Hearts",
               "description": "Fried chicken",
-              "pricePence": 2000,
+              "pricePence": 550,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#loaded-fries"
+                "loadd-menu#loaded-fries",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "All with cheese, Algerian sauce, and spring onions.\n\nFried chicken",
               "prepKind": "prep"
             },
@@ -570,11 +1082,13 @@
               "id": "loadd-loaded-fries-queen-of-hearts",
               "name": "Queen of Hearts",
               "description": "Grilled chicken",
-              "pricePence": 2000,
+              "pricePence": 550,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#loaded-fries"
+                "loadd-menu#loaded-fries",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "All with cheese, Algerian sauce, and spring onions.\n\nGrilled chicken",
               "prepKind": "prep"
             },
@@ -582,11 +1096,13 @@
               "id": "loadd-loaded-fries-jack-of-diamonds",
               "name": "Jack of Diamonds",
               "description": "Chicken shawarma",
-              "pricePence": 2000,
+              "pricePence": 550,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#loaded-fries"
+                "loadd-menu#loaded-fries",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "All with cheese, Algerian sauce, and spring onions.\n\nChicken shawarma",
               "prepKind": "prep"
             },
@@ -594,11 +1110,13 @@
               "id": "loadd-loaded-fries-king-of-spades",
               "name": "King of Spades",
               "description": "Smash beef",
-              "pricePence": 2000,
+              "pricePence": 550,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#loaded-fries"
+                "loadd-menu#loaded-fries",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "All with cheese, Algerian sauce, and spring onions.\n\nSmash beef",
               "prepKind": "prep"
             }
@@ -608,30 +1126,35 @@
           "id": "loaded-mac-cheese",
           "title": "Loaded Mac ’n Cheese",
           "sourceRefs": [
-            "loadd-menu#loaded-mac-cheese"
+            "loadd-menu#loaded-mac-cheese",
+            "owner-menu-20261105-v2#loadd"
           ],
           "items": [
             {
               "id": "loadd-loaded-mac-cheese-ace-mac",
               "name": "Ace Mac",
-              "description": "Mac n cheese.",
-              "pricePence": 2000,
+              "description": "Plain mac & cheese.",
+              "pricePence": 500,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#loaded-mac-cheese"
+                "loadd-menu#loaded-mac-cheese",
+                "owner-menu-20261105-v2#loadd"
               ],
-              "importDescription": "Mac n cheese.",
+              "canonicalOptionGroupIds": [],
+              "importDescription": "Plain mac & cheese.",
               "prepKind": "prep"
             },
             {
               "id": "loadd-loaded-mac-cheese-jacks-mac",
               "name": "Jack’s Mac",
               "description": "Fried chicken, Algerian sauce & crispy fried onions.",
-              "pricePence": 2000,
+              "pricePence": 599,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#loaded-mac-cheese"
+                "loadd-menu#loaded-mac-cheese",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "Fried chicken, Algerian sauce & crispy fried onions.",
               "prepKind": "prep"
             },
@@ -639,11 +1162,13 @@
               "id": "loadd-loaded-mac-cheese-diamond-melt",
               "name": "Diamond Melt",
               "description": "Chicken shawarma, Algerian sauce & crispy fried onions.",
-              "pricePence": 2000,
+              "pricePence": 599,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#loaded-mac-cheese"
+                "loadd-menu#loaded-mac-cheese",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "Chicken shawarma, Algerian sauce & crispy fried onions.",
               "prepKind": "prep"
             },
@@ -651,11 +1176,13 @@
               "id": "loadd-loaded-mac-cheese-spade-stack",
               "name": "Spade Stack",
               "description": "Smash beef, Algerian sauce & crispy fried onions.",
-              "pricePence": 2000,
+              "pricePence": 599,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#loaded-mac-cheese"
+                "loadd-menu#loaded-mac-cheese",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "Smash beef, Algerian sauce & crispy fried onions.",
               "prepKind": "prep"
             },
@@ -663,11 +1190,13 @@
               "id": "loadd-loaded-mac-cheese-kings-mac",
               "name": "King’s Mac",
               "description": "Grilled chicken, Algerian sauce & crispy fried onions.",
-              "pricePence": 2000,
+              "pricePence": 599,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#loaded-mac-cheese"
+                "loadd-menu#loaded-mac-cheese",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "Grilled chicken, Algerian sauce & crispy fried onions.",
               "prepKind": "prep"
             }
@@ -678,18 +1207,21 @@
           "title": "The Full House",
           "description": "The best of both worlds. Loaded fries and mac ’n cheese together in one box, topped with cheese, Algerian sauce, spring onions and crispy fried onions.",
           "sourceRefs": [
-            "loadd-menu#full-house"
+            "loadd-menu#full-house",
+            "owner-menu-20261105-v2#loadd"
           ],
           "items": [
             {
               "id": "loadd-full-house-king-of-hearts",
               "name": "King of Hearts",
               "description": "Fried chicken, loaded fries and mac ’n cheese.",
-              "pricePence": 2000,
+              "pricePence": 699,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#full-house"
+                "loadd-menu#full-house",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "The best of both worlds. Loaded fries and mac ’n cheese together in one box, topped with cheese, Algerian sauce, spring onions and crispy fried onions.\n\nFried chicken, loaded fries and mac ’n cheese.",
               "prepKind": "prep"
             },
@@ -697,11 +1229,13 @@
               "id": "loadd-full-house-queen-of-hearts",
               "name": "Queen of Hearts",
               "description": "Grilled chicken, loaded fries and mac ’n cheese.",
-              "pricePence": 2000,
+              "pricePence": 699,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#full-house"
+                "loadd-menu#full-house",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "The best of both worlds. Loaded fries and mac ’n cheese together in one box, topped with cheese, Algerian sauce, spring onions and crispy fried onions.\n\nGrilled chicken, loaded fries and mac ’n cheese.",
               "prepKind": "prep"
             },
@@ -709,11 +1243,13 @@
               "id": "loadd-full-house-jack-of-diamonds",
               "name": "Jack of Diamonds",
               "description": "Chicken shawarma, loaded fries and mac ’n cheese.",
-              "pricePence": 2000,
+              "pricePence": 699,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#full-house"
+                "loadd-menu#full-house",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "The best of both worlds. Loaded fries and mac ’n cheese together in one box, topped with cheese, Algerian sauce, spring onions and crispy fried onions.\n\nChicken shawarma, loaded fries and mac ’n cheese.",
               "prepKind": "prep"
             },
@@ -721,12 +1257,95 @@
               "id": "loadd-full-house-king-of-spades",
               "name": "King of Spades",
               "description": "Smashed beef, loaded fries and mac ’n cheese.",
-              "pricePence": 2000,
+              "pricePence": 699,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#full-house"
+                "loadd-menu#full-house",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "The best of both worlds. Loaded fries and mac ’n cheese together in one box, topped with cheese, Algerian sauce, spring onions and crispy fried onions.\n\nSmashed beef, loaded fries and mac ’n cheese.",
+              "prepKind": "prep"
+            }
+          ]
+        },
+        {
+          "id": "sides",
+          "title": "Sides",
+          "sourceRefs": [
+            "owner-menu-20261105-v2#loadd"
+          ],
+          "items": [
+            {
+              "id": "loadd-sides-fries",
+              "name": "Fries",
+              "pricePence": 200,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "owner-menu-20261105-v2#loadd"
+              ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "prep"
+            },
+            {
+              "id": "loadd-sides-peri-fries",
+              "name": "Peri Fries",
+              "pricePence": 250,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "owner-menu-20261105-v2#loadd"
+              ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "prep"
+            },
+            {
+              "id": "loadd-sides-onion-rings-x6",
+              "name": "Onion Rings (x6)",
+              "pricePence": 250,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "owner-menu-20261105-v2#loadd"
+              ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "prep"
+            },
+            {
+              "id": "loadd-sides-mozzarella-sticks-x6",
+              "name": "Mozzarella Sticks (x6)",
+              "pricePence": 300,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "owner-menu-20261105-v2#loadd"
+              ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "prep"
+            },
+            {
+              "id": "loadd-sides-chilli-cheese-nuggets-x6",
+              "name": "Chilli Cheese Nuggets (x6)",
+              "pricePence": 300,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "owner-menu-20261105-v2#loadd"
+              ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "prep"
+            },
+            {
+              "id": "loadd-sides-chicken-nuggets-x6",
+              "name": "Chicken Nuggets (x6)",
+              "pricePence": 400,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "owner-menu-20261105-v2#loadd"
+              ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
               "prepKind": "prep"
             }
           ]
@@ -735,83 +1354,111 @@
           "id": "cans-drinks",
           "title": "Cans & Drinks",
           "sourceRefs": [
-            "loadd-menu#cans-drinks"
+            "loadd-menu#cans-drinks",
+            "owner-menu-20261105-v2#loadd"
           ],
           "items": [
             {
-              "id": "loadd-cans-drinks-coke",
-              "name": "Coke",
-              "pricePence": 2000,
+              "id": "loadd-cans-drinks-pepsi",
+              "name": "Pepsi",
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#cans-drinks"
+                "loadd-menu#cans-drinks",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "loadd-cans-drinks-pepsi-max",
               "name": "Pepsi Max",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#cans-drinks"
+                "loadd-menu#cans-drinks",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "drink"
+            },
+            {
+              "id": "loadd-cans-drinks-tango-orange",
+              "name": "Tango Orange",
+              "pricePence": 100,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "loadd-menu#cans-drinks",
+                "owner-menu-20261105-v2#loadd"
+              ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "loadd-cans-drinks-tango-apple",
               "name": "Tango Apple",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#cans-drinks"
+                "loadd-menu#cans-drinks",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
-              "id": "loadd-cans-drinks-miranda-orange",
-              "name": "Miranda Orange",
-              "pricePence": 2000,
+              "id": "loadd-cans-drinks-rubicon-mango",
+              "name": "Rubicon Mango",
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#cans-drinks"
+                "loadd-menu#cans-drinks",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
-              "id": "loadd-cans-drinks-miranda-strawberry",
-              "name": "Miranda Strawberry",
-              "pricePence": 2000,
+              "id": "loadd-cans-drinks-7up",
+              "name": "7up",
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#cans-drinks"
+                "loadd-menu#cans-drinks",
+                "owner-menu-20261105-v2#loadd"
               ],
-              "importDescription": "",
-              "prepKind": "drink"
-            },
-            {
-              "id": "loadd-cans-drinks-barr-limeade",
-              "name": "Barr Limeade",
-              "pricePence": 2000,
-              "optionGroupIds": [],
-              "sourceRefs": [
-                "loadd-menu#cans-drinks"
-              ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "loadd-cans-drinks-water-bottle",
               "name": "Water Bottle",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "loadd-menu#cans-drinks"
+                "loadd-menu#cans-drinks",
+                "owner-menu-20261105-v2#loadd"
               ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "drink"
+            },
+            {
+              "id": "loadd-cans-drinks-red-bull",
+              "name": "Red Bull",
+              "pricePence": 220,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "loadd-menu#cans-drinks",
+                "owner-menu-20261105-v2#loadd"
+              ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             }
@@ -846,79 +1493,113 @@
       "accent": "#D94900",
       "description": "Smash burgers. Seared on steel.",
       "sourceRefs": [
-        "skorch-menu"
+        "skorch-menu",
+        "owner-menu-20261105-v2#skorch-burgers"
       ],
       "sections": [
         {
           "id": "beef-smash-deck",
           "title": "The Beef Smash Deck",
-          "description": "All burgers come with cheese, gherkin, caramelised onion & Algerian sauce.",
+          "description": "All with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.",
           "sourceRefs": [
-            "skorch-menu#beef-smash-deck"
+            "skorch-menu#beef-smash-deck",
+            "owner-menu-20261105-v2#skorch-burgers"
           ],
           "items": [
             {
               "id": "skorch-burgers-beef-smash-deck-the-ace",
               "name": "The Ace",
               "description": "Single beef smash – 1 patty.",
-              "pricePence": 2000,
+              "pricePence": 399,
               "optionGroupIds": [
                 "skorch-burgers-burger-add-ons",
                 "skorch-burgers-make-it-a-meal",
-                "skorch-burgers-meal-upgrades"
+                "skorch-burgers-meal-upgrades",
+                "skorch-burgers-included-meal-drink"
               ],
               "sourceRefs": [
-                "skorch-menu#beef-smash-deck"
+                "skorch-menu#beef-smash-deck",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
-              "importDescription": "All burgers come with cheese, gherkin, caramelised onion & Algerian sauce.\n\nSingle beef smash – 1 patty.",
+              "canonicalOptionGroupIds": [
+                "skorch-burgers-burger-add-ons",
+                "skorch-burgers-make-it-a-meal",
+                "skorch-burgers-meal-upgrades",
+                "skorch-burgers-included-meal-drink"
+              ],
+              "importDescription": "All with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.\n\nSingle beef smash – 1 patty.",
               "prepKind": "prep"
             },
             {
               "id": "skorch-burgers-beef-smash-deck-double-deal",
               "name": "Double Deal",
               "description": "Double beef smash – 2 patties.",
-              "pricePence": 2000,
+              "pricePence": 550,
               "optionGroupIds": [
                 "skorch-burgers-burger-add-ons",
                 "skorch-burgers-make-it-a-meal",
-                "skorch-burgers-meal-upgrades"
+                "skorch-burgers-meal-upgrades",
+                "skorch-burgers-included-meal-drink"
               ],
               "sourceRefs": [
-                "skorch-menu#beef-smash-deck"
+                "skorch-menu#beef-smash-deck",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
-              "importDescription": "All burgers come with cheese, gherkin, caramelised onion & Algerian sauce.\n\nDouble beef smash – 2 patties.",
+              "canonicalOptionGroupIds": [
+                "skorch-burgers-burger-add-ons",
+                "skorch-burgers-make-it-a-meal",
+                "skorch-burgers-meal-upgrades",
+                "skorch-burgers-included-meal-drink"
+              ],
+              "importDescription": "All with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.\n\nDouble beef smash – 2 patties.",
               "prepKind": "prep"
             },
             {
               "id": "skorch-burgers-beef-smash-deck-triple-stack",
               "name": "Triple Stack",
               "description": "Triple beef smash – 3 patties.",
-              "pricePence": 2000,
+              "pricePence": 700,
               "optionGroupIds": [
                 "skorch-burgers-burger-add-ons",
                 "skorch-burgers-make-it-a-meal",
-                "skorch-burgers-meal-upgrades"
+                "skorch-burgers-meal-upgrades",
+                "skorch-burgers-included-meal-drink"
               ],
               "sourceRefs": [
-                "skorch-menu#beef-smash-deck"
+                "skorch-menu#beef-smash-deck",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
-              "importDescription": "All burgers come with cheese, gherkin, caramelised onion & Algerian sauce.\n\nTriple beef smash – 3 patties.",
+              "canonicalOptionGroupIds": [
+                "skorch-burgers-burger-add-ons",
+                "skorch-burgers-make-it-a-meal",
+                "skorch-burgers-meal-upgrades",
+                "skorch-burgers-included-meal-drink"
+              ],
+              "importDescription": "All with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.\n\nTriple beef smash – 3 patties.",
               "prepKind": "prep"
             },
             {
               "id": "skorch-burgers-beef-smash-deck-four-of-a-kind",
               "name": "Four of a Kind",
               "description": "Quadruple beef smash – 4 patties.",
-              "pricePence": 2000,
+              "pricePence": 899,
               "optionGroupIds": [
                 "skorch-burgers-burger-add-ons",
                 "skorch-burgers-make-it-a-meal",
-                "skorch-burgers-meal-upgrades"
+                "skorch-burgers-meal-upgrades",
+                "skorch-burgers-included-meal-drink"
               ],
               "sourceRefs": [
-                "skorch-menu#beef-smash-deck"
+                "skorch-menu#beef-smash-deck",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
-              "importDescription": "All burgers come with cheese, gherkin, caramelised onion & Algerian sauce.\n\nQuadruple beef smash – 4 patties.",
+              "canonicalOptionGroupIds": [
+                "skorch-burgers-burger-add-ons",
+                "skorch-burgers-make-it-a-meal",
+                "skorch-burgers-meal-upgrades",
+                "skorch-burgers-included-meal-drink"
+              ],
+              "importDescription": "All with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.\n\nQuadruple beef smash – 4 patties.",
               "prepKind": "prep"
             }
           ]
@@ -927,19 +1608,26 @@
           "id": "kids-meal",
           "title": "Kids Meal",
           "sourceRefs": [
-            "skorch-menu#kids-meal"
+            "skorch-menu#kids-meal",
+            "owner-menu-20261105-v2#skorch-burgers"
           ],
           "items": [
             {
               "id": "skorch-burgers-kids-meal-little-jacks-nuggets-meal",
-              "name": "Little Jack’s Nuggets Meal",
+              "name": "Nuggets Meal",
               "description": "6 nuggets, fries & drink.",
-              "pricePence": 2000,
+              "pricePence": 500,
               "optionGroupIds": [
-                "skorch-burgers-kids-meal-upgrades"
+                "skorch-burgers-kids-meal-upgrades",
+                "skorch-burgers-kids-included-drink"
               ],
               "sourceRefs": [
-                "skorch-menu#kids-meal"
+                "skorch-menu#kids-meal",
+                "owner-menu-20261105-v2#skorch-burgers"
+              ],
+              "canonicalOptionGroupIds": [
+                "skorch-burgers-kids-meal-upgrades",
+                "skorch-burgers-kids-included-drink"
               ],
               "importDescription": "6 nuggets, fries & drink.",
               "prepKind": "prep"
@@ -950,72 +1638,85 @@
           "id": "sides",
           "title": "Sides",
           "sourceRefs": [
-            "skorch-menu#sides"
+            "skorch-menu#sides",
+            "owner-menu-20261105-v2#skorch-burgers"
           ],
           "items": [
             {
               "id": "skorch-burgers-sides-fries",
               "name": "Fries",
-              "pricePence": 2000,
+              "pricePence": 200,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#sides"
+                "skorch-menu#sides",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "skorch-burgers-sides-peri-fries",
               "name": "Peri Fries",
-              "pricePence": 2000,
+              "pricePence": 250,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#sides"
+                "skorch-menu#sides",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "skorch-burgers-sides-onion-rings-x6",
               "name": "Onion Rings (x6)",
-              "pricePence": 2000,
+              "pricePence": 250,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#sides"
+                "skorch-menu#sides",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "skorch-burgers-sides-mozzarella-sticks-x6",
               "name": "Mozzarella Sticks (x6)",
-              "pricePence": 2000,
+              "pricePence": 300,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#sides"
+                "skorch-menu#sides",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "skorch-burgers-sides-chilli-cheese-nuggets-x6",
               "name": "Chilli Cheese Nuggets (x6)",
-              "pricePence": 2000,
+              "pricePence": 300,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#sides"
+                "skorch-menu#sides",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             },
             {
               "id": "skorch-burgers-sides-chicken-nuggets-x6",
               "name": "Chicken Nuggets (x6)",
-              "pricePence": 2000,
+              "pricePence": 400,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#sides"
+                "skorch-menu#sides",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "prep"
             }
@@ -1025,83 +1726,111 @@
           "id": "cans-drinks",
           "title": "Cans & Drinks",
           "sourceRefs": [
-            "skorch-menu#cans-drinks"
+            "skorch-menu#cans-drinks",
+            "owner-menu-20261105-v2#skorch-burgers"
           ],
           "items": [
             {
-              "id": "skorch-burgers-cans-drinks-coke",
-              "name": "Coke",
-              "pricePence": 2000,
+              "id": "skorch-burgers-cans-drinks-pepsi",
+              "name": "Pepsi",
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#cans-drinks"
+                "skorch-menu#cans-drinks",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "skorch-burgers-cans-drinks-pepsi-max",
               "name": "Pepsi Max",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#cans-drinks"
+                "skorch-menu#cans-drinks",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "drink"
+            },
+            {
+              "id": "skorch-burgers-cans-drinks-tango-orange",
+              "name": "Tango Orange",
+              "pricePence": 100,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "skorch-menu#cans-drinks",
+                "owner-menu-20261105-v2#skorch-burgers"
+              ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "skorch-burgers-cans-drinks-tango-apple",
               "name": "Tango Apple",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#cans-drinks"
+                "skorch-menu#cans-drinks",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
-              "id": "skorch-burgers-cans-drinks-miranda-orange",
-              "name": "Miranda Orange",
-              "pricePence": 2000,
+              "id": "skorch-burgers-cans-drinks-rubicon-mango",
+              "name": "Rubicon Mango",
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#cans-drinks"
+                "skorch-menu#cans-drinks",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
-              "id": "skorch-burgers-cans-drinks-miranda-strawberry",
-              "name": "Miranda Strawberry",
-              "pricePence": 2000,
+              "id": "skorch-burgers-cans-drinks-7up",
+              "name": "7up",
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#cans-drinks"
+                "skorch-menu#cans-drinks",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
-              "importDescription": "",
-              "prepKind": "drink"
-            },
-            {
-              "id": "skorch-burgers-cans-drinks-barr-limeade",
-              "name": "Barr Limeade",
-              "pricePence": 2000,
-              "optionGroupIds": [],
-              "sourceRefs": [
-                "skorch-menu#cans-drinks"
-              ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             },
             {
               "id": "skorch-burgers-cans-drinks-water-bottle",
               "name": "Water Bottle",
-              "pricePence": 2000,
+              "pricePence": 100,
               "optionGroupIds": [],
               "sourceRefs": [
-                "skorch-menu#cans-drinks"
+                "skorch-menu#cans-drinks",
+                "owner-menu-20261105-v2#skorch-burgers"
               ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "drink"
+            },
+            {
+              "id": "skorch-burgers-cans-drinks-red-bull",
+              "name": "Red Bull",
+              "pricePence": 220,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "skorch-menu#cans-drinks",
+                "owner-menu-20261105-v2#skorch-burgers"
+              ],
+              "canonicalOptionGroupIds": [],
               "importDescription": "",
               "prepKind": "drink"
             }
@@ -1112,7 +1841,7 @@
         {
           "id": "skorch-burgers-upsell-meal",
           "label": "Make It a Meal",
-          "description": "Add fries & a drink.",
+          "description": "Fries and drink.",
           "optionGroupId": "skorch-burgers-make-it-a-meal",
           "sourceRefs": [
             "skorch-menu#make-it-a-meal"
@@ -1149,31 +1878,38 @@
       "id": "souvano",
       "name": "Souvano",
       "accent": "#C85600",
-      "description": "Mediterranean grill.",
+      "description": "Mediterranean grill. Your choice of fries, rice or naan included.",
       "sourceRefs": [
-        "souvano-menu"
+        "souvano-menu",
+        "owner-menu-20261105-v2#souvano"
       ],
       "sections": [
         {
           "id": "stir-fry-donner",
-          "title": "Stir Fry Donner",
+          "title": "Stir-Fry Doner",
+          "description": "Choose Plain, Fiery Sweet Chilli, Dynamite or Korean BBQ, with fries, rice or naan included.",
           "sourceRefs": [
-            "souvano-menu#stir-fry-donner"
+            "souvano-menu#stir-fry-donner",
+            "owner-menu-20261105-v2#souvano"
           ],
           "items": [
             {
               "id": "souvano-stir-fry-donner-stir-fry-donner",
-              "name": "Stir Fry Donner",
-              "pricePence": 2000,
+              "name": "Stir-Fry Doner",
+              "pricePence": 650,
               "optionGroupIds": [
                 "souvano-donner-flavour",
-                "souvano-make-it-a-meal",
                 "souvano-meal-side"
               ],
               "sourceRefs": [
-                "souvano-menu#stir-fry-donner"
+                "souvano-menu#stir-fry-donner",
+                "owner-menu-20261105-v2#souvano"
               ],
-              "importDescription": "",
+              "canonicalOptionGroupIds": [
+                "souvano-donner-flavour",
+                "souvano-meal-side"
+              ],
+              "importDescription": "Choose Plain, Fiery Sweet Chilli, Dynamite or Korean BBQ, with fries, rice or naan included.",
               "prepKind": "prep"
             }
           ]
@@ -1181,23 +1917,28 @@
         {
           "id": "heatwave",
           "title": "Heatwave",
+          "description": "Your choice of fries, rice or naan included.",
           "sourceRefs": [
-            "souvano-menu#heatwave"
+            "souvano-menu#heatwave",
+            "owner-menu-20261105-v2#souvano"
           ],
           "items": [
             {
               "id": "souvano-heatwave-heatwave",
               "name": "Heatwave",
-              "description": "Chopped grilled chicken shawarma style, over a bed of fragrant spicy rice/naan/fries, and a side of fresh salad.",
-              "pricePence": 2000,
+              "description": "Spicy Middle Eastern Chicken. Chopped & shredded chicken.",
+              "pricePence": 699,
               "optionGroupIds": [
-                "souvano-heatwave-base",
-                "souvano-make-it-a-meal"
+                "souvano-heatwave-base"
               ],
               "sourceRefs": [
-                "souvano-menu#heatwave"
+                "souvano-menu#heatwave",
+                "owner-menu-20261105-v2#souvano"
               ],
-              "importDescription": "Chopped grilled chicken shawarma style, over a bed of fragrant spicy rice/naan/fries, and a side of fresh salad.",
+              "canonicalOptionGroupIds": [
+                "souvano-heatwave-base"
+              ],
+              "importDescription": "Your choice of fries, rice or naan included.\n\nSpicy Middle Eastern Chicken. Chopped & shredded chicken.",
               "prepKind": "prep"
             }
           ]
@@ -1205,136 +1946,34 @@
         {
           "id": "lamb-chops",
           "title": "Lamb Chops",
+          "description": "Middle Eastern flavour. Your choice of fries, rice or naan included.",
           "sourceRefs": [
-            "souvano-menu#lamb-chops"
+            "souvano-menu#lamb-chops",
+            "owner-menu-20261105-v2#souvano"
           ],
           "items": [
             {
               "id": "souvano-lamb-chops-lamb-chops",
               "name": "Lamb Chops",
-              "description": "Spicy Middle Eastern Kick (Flavour)",
-              "pricePence": 2000,
+              "description": "Tender, flavourful lamb chops.",
+              "pricePence": 999,
               "optionGroupIds": [
-                "souvano-make-it-a-meal",
                 "souvano-meal-side"
               ],
               "sourceRefs": [
-                "souvano-menu#lamb-chops"
+                "souvano-menu#lamb-chops",
+                "owner-menu-20261105-v2#souvano"
               ],
-              "importDescription": "Spicy Middle Eastern Kick (Flavour)",
+              "canonicalOptionGroupIds": [
+                "souvano-meal-side"
+              ],
+              "importDescription": "Middle Eastern flavour. Your choice of fries, rice or naan included.\n\nTender, flavourful lamb chops.",
               "prepKind": "prep"
-            }
-          ]
-        },
-        {
-          "id": "cans-drinks",
-          "title": "Cans & Drinks",
-          "sourceRefs": [
-            "souvano-menu#cans-drinks"
-          ],
-          "items": [
-            {
-              "id": "souvano-cans-drinks-coke",
-              "name": "Coke",
-              "pricePence": 2000,
-              "optionGroupIds": [],
-              "sourceRefs": [
-                "souvano-menu#cans-drinks"
-              ],
-              "importDescription": "",
-              "prepKind": "drink"
-            },
-            {
-              "id": "souvano-cans-drinks-pepsi-max",
-              "name": "Pepsi Max",
-              "pricePence": 2000,
-              "optionGroupIds": [],
-              "sourceRefs": [
-                "souvano-menu#cans-drinks"
-              ],
-              "importDescription": "",
-              "prepKind": "drink"
-            },
-            {
-              "id": "souvano-cans-drinks-tango-apple",
-              "name": "Tango Apple",
-              "pricePence": 2000,
-              "optionGroupIds": [],
-              "sourceRefs": [
-                "souvano-menu#cans-drinks"
-              ],
-              "importDescription": "",
-              "prepKind": "drink"
-            },
-            {
-              "id": "souvano-cans-drinks-miranda-orange",
-              "name": "Miranda Orange",
-              "pricePence": 2000,
-              "optionGroupIds": [],
-              "sourceRefs": [
-                "souvano-menu#cans-drinks"
-              ],
-              "importDescription": "",
-              "prepKind": "drink"
-            },
-            {
-              "id": "souvano-cans-drinks-miranda-strawberry",
-              "name": "Miranda Strawberry",
-              "pricePence": 2000,
-              "optionGroupIds": [],
-              "sourceRefs": [
-                "souvano-menu#cans-drinks"
-              ],
-              "importDescription": "",
-              "prepKind": "drink"
-            },
-            {
-              "id": "souvano-cans-drinks-barr-limeade",
-              "name": "Barr Limeade",
-              "pricePence": 2000,
-              "optionGroupIds": [],
-              "sourceRefs": [
-                "souvano-menu#cans-drinks"
-              ],
-              "importDescription": "",
-              "prepKind": "drink"
-            },
-            {
-              "id": "souvano-cans-drinks-water-bottle",
-              "name": "Water Bottle",
-              "pricePence": 2000,
-              "optionGroupIds": [],
-              "sourceRefs": [
-                "souvano-menu#cans-drinks"
-              ],
-              "importDescription": "",
-              "prepKind": "drink"
             }
           ]
         }
       ],
-      "upsells": [
-        {
-          "id": "souvano-upsell-meal",
-          "label": "Make It a Meal",
-          "description": "With your choice of Fries, Rice or Naan & a Drink",
-          "optionGroupId": "souvano-make-it-a-meal",
-          "sourceRefs": [
-            "souvano-menu#stir-fry-donner",
-            "souvano-menu#heatwave",
-            "souvano-menu#lamb-chops"
-          ]
-        },
-        {
-          "id": "souvano-upsell-drinks",
-          "label": "Cans & Drinks",
-          "targetBrandId": "souvano",
-          "targetSectionId": "cans-drinks",
-          "sourceRefs": [
-            "souvano-menu#cans-drinks"
-          ]
-        }
-      ]
+      "upsells": []
     }
   ],
   "modifierGroups": [
@@ -1343,10 +1982,12 @@
       "label": "Portion",
       "kind": "single",
       "required": true,
+      "description": "Your dish price updates for the selected portion and flavour.",
       "sourceRefs": [
         "tavo-menu#fried-chicken-wings",
         "tavo-menu#fried-chicken-tenders",
-        "tavo-menu#grilled-chicken-wings"
+        "tavo-menu#grilled-chicken-wings",
+        "owner-menu-20261105-v2#tavo-chicken"
       ],
       "options": [
         {
@@ -1356,7 +1997,8 @@
           "sourceRefs": [
             "tavo-menu#fried-chicken-wings",
             "tavo-menu#fried-chicken-tenders",
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
@@ -1366,7 +2008,8 @@
           "sourceRefs": [
             "tavo-menu#fried-chicken-wings",
             "tavo-menu#fried-chicken-tenders",
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
@@ -1376,7 +2019,8 @@
           "sourceRefs": [
             "tavo-menu#fried-chicken-wings",
             "tavo-menu#fried-chicken-tenders",
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         }
       ],
@@ -1391,10 +2035,12 @@
       "label": "Flavour",
       "kind": "single",
       "required": true,
+      "description": "Your dish price includes the selected flavour.",
       "sourceRefs": [
         "tavo-menu#fried-chicken-wings",
         "tavo-menu#fried-chicken-tenders",
-        "tavo-menu#grilled-chicken-wings"
+        "tavo-menu#grilled-chicken-wings",
+        "owner-menu-20261105-v2#tavo-chicken"
       ],
       "options": [
         {
@@ -1404,7 +2050,8 @@
           "sourceRefs": [
             "tavo-menu#fried-chicken-wings",
             "tavo-menu#fried-chicken-tenders",
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
@@ -1414,7 +2061,8 @@
           "sourceRefs": [
             "tavo-menu#fried-chicken-wings",
             "tavo-menu#fried-chicken-tenders",
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
@@ -1424,7 +2072,8 @@
           "sourceRefs": [
             "tavo-menu#fried-chicken-wings",
             "tavo-menu#fried-chicken-tenders",
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
@@ -1434,7 +2083,8 @@
           "sourceRefs": [
             "tavo-menu#fried-chicken-wings",
             "tavo-menu#fried-chicken-tenders",
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         }
       ],
@@ -1445,41 +2095,99 @@
       "maxSelect": 1
     },
     {
+      "id": "tavo-grilled-chicken-flavour",
+      "label": "Flavour",
+      "kind": "single",
+      "required": true,
+      "description": "Your dish price includes the selected flavour.",
+      "sourceRefs": [
+        "tavo-menu#grilled-chicken-wings",
+        "owner-menu-20261105-v2#tavo-chicken"
+      ],
+      "options": [
+        {
+          "id": "tavo-grilled-chicken-flavour-plain-flavour",
+          "label": "Plain Flavour",
+          "pricePence": 0,
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-grilled-chicken-flavour-spicy-honey-bbq",
+          "label": "Spicy Honey BBQ",
+          "pricePence": 0,
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-grilled-chicken-flavour-dynamite",
+          "label": "Dynamite",
+          "pricePence": 0,
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-grilled-chicken-flavour-fiery-sweet-chilli",
+          "label": "Fiery Sweet Chilli",
+          "pricePence": 0,
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        }
+      ],
+      "name": "Tavo Chicken · Flavour (grilled wings)",
+      "brandId": "tavo-chicken",
+      "importKind": "source",
+      "minSelect": 1,
+      "maxSelect": 1
+    },
+    {
       "id": "tavo-chicken-dipped-burger",
-      "label": "Upgrade to a Dipped Burger",
+      "label": "Dip Your Burger",
       "kind": "single",
       "required": false,
-      "description": "Turn any burger into a dipped burger for an extra kick. Choose your dip:",
+      "description": "Dip your burger for £1.50. Choose one flavour; the dip is charged once.",
       "sourceRefs": [
-        "tavo-menu#dipped-burger"
+        "tavo-menu#dipped-burger",
+        "owner-menu-20261105-v2#tavo-chicken"
       ],
       "options": [
         {
           "id": "tavo-chicken-dipped-burger-korean-bbq",
           "label": "Korean BBQ",
-          "pricePence": 2000,
+          "pricePence": 150,
           "sourceRefs": [
-            "tavo-menu#dipped-burger"
+            "tavo-menu#dipped-burger",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-dipped-burger-dynamite",
           "label": "Dynamite",
-          "pricePence": 2000,
+          "pricePence": 150,
           "sourceRefs": [
-            "tavo-menu#dipped-burger"
+            "tavo-menu#dipped-burger",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-dipped-burger-fiery-sweet-chilli",
           "label": "Fiery Sweet Chilli",
-          "pricePence": 2000,
+          "pricePence": 150,
           "sourceRefs": [
-            "tavo-menu#dipped-burger"
+            "tavo-menu#dipped-burger",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         }
       ],
-      "name": "Tavo Chicken · Upgrade to a Dipped Burger",
+      "name": "Tavo Chicken · Dip Your Burger",
       "brandId": "tavo-chicken",
       "importKind": "source",
       "minSelect": 0,
@@ -1491,31 +2199,35 @@
       "kind": "multiple",
       "required": false,
       "sourceRefs": [
-        "tavo-menu#burger-add-ons"
+        "tavo-menu#burger-add-ons",
+        "owner-menu-20261105-v2#tavo-chicken"
       ],
       "options": [
         {
           "id": "tavo-chicken-burger-add-ons-2-rashers",
           "label": "2 Rashers",
-          "pricePence": 2000,
+          "pricePence": 150,
           "sourceRefs": [
-            "tavo-menu#burger-add-ons"
+            "tavo-menu#burger-add-ons",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-burger-add-ons-onion-rings",
           "label": "Onion Rings",
-          "pricePence": 2000,
+          "pricePence": 150,
           "sourceRefs": [
-            "tavo-menu#burger-add-ons"
+            "tavo-menu#burger-add-ons",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-burger-add-ons-cheese-slice",
           "label": "Cheese Slice",
-          "pricePence": 2000,
+          "pricePence": 50,
           "sourceRefs": [
-            "tavo-menu#burger-add-ons"
+            "tavo-menu#burger-add-ons",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         }
       ],
@@ -1534,19 +2246,21 @@
         "tavo-menu#burgers",
         "tavo-menu#fried-chicken-wings",
         "tavo-menu#fried-chicken-tenders",
-        "tavo-menu#grilled-chicken-wings"
+        "tavo-menu#grilled-chicken-wings",
+        "owner-menu-20261105-v2#tavo-chicken"
       ],
       "options": [
         {
           "id": "tavo-chicken-make-it-a-meal-make-it-a-meal",
           "label": "Make it a meal",
           "description": "Fries and drink.",
-          "pricePence": 2000,
+          "pricePence": 250,
           "sourceRefs": [
             "tavo-menu#burgers",
             "tavo-menu#fried-chicken-wings",
             "tavo-menu#fried-chicken-tenders",
-            "tavo-menu#grilled-chicken-wings"
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         }
       ],
@@ -1569,52 +2283,60 @@
       },
       "sourceRefs": [
         "tavo-menu#meal-upgrades-page-1",
-        "tavo-menu#meal-upgrades-page-2"
+        "tavo-menu#meal-upgrades-page-2",
+        "owner-menu-20261105-v2#tavo-chicken"
       ],
       "options": [
         {
           "id": "tavo-chicken-meal-upgrades-peri-salt",
           "label": "Peri Salt",
-          "pricePence": 2000,
+          "pricePence": 50,
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-meal-upgrades-loaded-fries-upgrade",
           "label": "Loaded Fries Upgrade",
-          "pricePence": 2000,
+          "pricePence": 299,
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-meal-upgrades-loaded-mac-n-cheese-upgrade",
           "label": "Loaded Mac ’n Cheese Upgrade",
-          "pricePence": 2000,
+          "pricePence": 399,
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-meal-upgrades-mocktail-upgrade",
           "label": "Mocktail Upgrade",
-          "pricePence": 2000,
+          "pricePence": 299,
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-meal-upgrades-milkshake-upgrade",
           "label": "Milkshake Upgrade",
-          "pricePence": 2000,
+          "pricePence": 299,
+          "available": false,
+          "unavailableReason": "Flavours coming soon",
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         }
       ],
@@ -1631,52 +2353,60 @@
       "required": false,
       "sourceRefs": [
         "tavo-menu#meal-upgrades-page-1",
-        "tavo-menu#meal-upgrades-page-2"
+        "tavo-menu#meal-upgrades-page-2",
+        "owner-menu-20261105-v2#tavo-chicken"
       ],
       "options": [
         {
           "id": "tavo-chicken-kids-meal-upgrades-peri-salt",
           "label": "Peri Salt",
-          "pricePence": 2000,
+          "pricePence": 50,
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-kids-meal-upgrades-loaded-fries-upgrade",
           "label": "Loaded Fries Upgrade",
-          "pricePence": 2000,
+          "pricePence": 299,
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-kids-meal-upgrades-loaded-mac-n-cheese-upgrade",
           "label": "Loaded Mac ’n Cheese Upgrade",
-          "pricePence": 2000,
+          "pricePence": 399,
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-kids-meal-upgrades-mocktail-upgrade",
           "label": "Mocktail Upgrade",
-          "pricePence": 2000,
+          "pricePence": 299,
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         },
         {
           "id": "tavo-chicken-kids-meal-upgrades-milkshake-upgrade",
           "label": "Milkshake Upgrade",
-          "pricePence": 2000,
+          "pricePence": 299,
+          "available": false,
+          "unavailableReason": "Flavours coming soon",
           "sourceRefs": [
             "tavo-menu#meal-upgrades-page-1",
-            "tavo-menu#meal-upgrades-page-2"
+            "tavo-menu#meal-upgrades-page-2",
+            "owner-menu-20261105-v2#tavo-chicken"
           ]
         }
       ],
@@ -1687,36 +2417,728 @@
       "maxSelect": 5
     },
     {
+      "id": "tavo-chicken-included-meal-drink",
+      "label": "Included meal drink",
+      "kind": "single",
+      "required": true,
+      "when": {
+        "groupId": "tavo-chicken-make-it-a-meal",
+        "optionIds": [
+          "tavo-chicken-make-it-a-meal-make-it-a-meal"
+        ]
+      },
+      "description": "Choose a standard can or water, included with your meal.",
+      "sourceRefs": [
+        "owner-menu-20261105-v2#tavo-chicken"
+      ],
+      "options": [
+        {
+          "id": "tavo-chicken-included-meal-drink-coke",
+          "label": "Coke",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-included-meal-drink-pepsi-max",
+          "label": "Pepsi Max",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-included-meal-drink-tango-apple",
+          "label": "Tango Apple",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-included-meal-drink-miranda-orange",
+          "label": "Miranda Orange",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-included-meal-drink-miranda-strawberry",
+          "label": "Miranda Strawberry",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-included-meal-drink-barr-limeade",
+          "label": "Barr Limeade",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-included-meal-drink-water-bottle",
+          "label": "Water Bottle",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        }
+      ],
+      "replacedBy": {
+        "crossSlot": "drink",
+        "optionIds": [
+          "tavo-chicken-meal-upgrades-mocktail-upgrade",
+          "tavo-chicken-meal-upgrades-milkshake-upgrade"
+        ]
+      },
+      "name": "Tavo Chicken · Included meal drink",
+      "brandId": "tavo-chicken",
+      "importKind": "source",
+      "minSelect": 0,
+      "maxSelect": 1
+    },
+    {
+      "id": "tavo-chicken-kids-included-drink",
+      "label": "Included meal drink",
+      "kind": "single",
+      "required": true,
+      "description": "Choose a standard can or water, included with your meal.",
+      "sourceRefs": [
+        "owner-menu-20261105-v2#tavo-chicken"
+      ],
+      "options": [
+        {
+          "id": "tavo-chicken-kids-included-drink-coke",
+          "label": "Coke",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-kids-included-drink-pepsi-max",
+          "label": "Pepsi Max",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-kids-included-drink-tango-apple",
+          "label": "Tango Apple",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-kids-included-drink-miranda-orange",
+          "label": "Miranda Orange",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-kids-included-drink-miranda-strawberry",
+          "label": "Miranda Strawberry",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-kids-included-drink-barr-limeade",
+          "label": "Barr Limeade",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-kids-included-drink-water-bottle",
+          "label": "Water Bottle",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        }
+      ],
+      "replacedBy": {
+        "crossSlot": "drink",
+        "optionIds": [
+          "tavo-chicken-kids-meal-upgrades-mocktail-upgrade",
+          "tavo-chicken-kids-meal-upgrades-milkshake-upgrade"
+        ]
+      },
+      "name": "Tavo Chicken · Included meal drink (kids meals)",
+      "brandId": "tavo-chicken",
+      "importKind": "source",
+      "minSelect": 0,
+      "maxSelect": 1
+    },
+    {
+      "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant",
+      "name": "Tavo Chicken · Fried Chicken Wings · Portion and flavour price",
+      "label": "Portion and flavour price",
+      "importKind": "price-variant",
+      "brandId": "tavo-chicken",
+      "itemId": "tavo-chicken-fried-chicken-wings-fried-chicken-wings",
+      "kind": "single",
+      "required": true,
+      "minSelect": 1,
+      "maxSelect": 1,
+      "options": [
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-plain-flavour-3-pcs",
+          "label": "Plain Flavour · 3 pcs",
+          "pricePence": 0,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-plain-flavour-5-pcs",
+          "label": "Plain Flavour · 5 pcs",
+          "pricePence": 251,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-plain-flavour-8-pcs",
+          "label": "Plain Flavour · 8 pcs",
+          "pricePence": 350,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-korean-bbq-3-pcs",
+          "label": "Korean BBQ · 3 pcs",
+          "pricePence": 51,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-korean-bbq-5-pcs",
+          "label": "Korean BBQ · 5 pcs",
+          "pricePence": 351,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-korean-bbq-8-pcs",
+          "label": "Korean BBQ · 8 pcs",
+          "pricePence": 500,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-dynamite-3-pcs",
+          "label": "Dynamite · 3 pcs",
+          "pricePence": 51,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-dynamite-5-pcs",
+          "label": "Dynamite · 5 pcs",
+          "pricePence": 351,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-dynamite-8-pcs",
+          "label": "Dynamite · 8 pcs",
+          "pricePence": 500,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-fiery-sweet-chilli-3-pcs",
+          "label": "Fiery Sweet Chilli · 3 pcs",
+          "pricePence": 51,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-fiery-sweet-chilli-5-pcs",
+          "label": "Fiery Sweet Chilli · 5 pcs",
+          "pricePence": 351,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-wings-fried-chicken-wings-price-variant-fiery-sweet-chilli-8-pcs",
+          "label": "Fiery Sweet Chilli · 8 pcs",
+          "pricePence": 600,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        }
+      ],
+      "sourceRefs": [
+        "tavo-menu#fried-chicken-wings",
+        "owner-menu-20261105-v2#tavo-chicken"
+      ]
+    },
+    {
+      "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant",
+      "name": "Tavo Chicken · Fried Chicken Tenders · Portion and flavour price",
+      "label": "Portion and flavour price",
+      "importKind": "price-variant",
+      "brandId": "tavo-chicken",
+      "itemId": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders",
+      "kind": "single",
+      "required": true,
+      "minSelect": 1,
+      "maxSelect": 1,
+      "options": [
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-plain-flavour-3-pcs",
+          "label": "Plain Flavour · 3 pcs",
+          "pricePence": 0,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-plain-flavour-5-pcs",
+          "label": "Plain Flavour · 5 pcs",
+          "pricePence": 251,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-plain-flavour-8-pcs",
+          "label": "Plain Flavour · 8 pcs",
+          "pricePence": 350,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-plain-flavour"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-korean-bbq-3-pcs",
+          "label": "Korean BBQ · 3 pcs",
+          "pricePence": 51,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-korean-bbq-5-pcs",
+          "label": "Korean BBQ · 5 pcs",
+          "pricePence": 351,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-korean-bbq-8-pcs",
+          "label": "Korean BBQ · 8 pcs",
+          "pricePence": 500,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-korean-bbq"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-dynamite-3-pcs",
+          "label": "Dynamite · 3 pcs",
+          "pricePence": 51,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-dynamite-5-pcs",
+          "label": "Dynamite · 5 pcs",
+          "pricePence": 351,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-dynamite-8-pcs",
+          "label": "Dynamite · 8 pcs",
+          "pricePence": 500,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-dynamite"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-fiery-sweet-chilli-3-pcs",
+          "label": "Fiery Sweet Chilli · 3 pcs",
+          "pricePence": 51,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-fiery-sweet-chilli-5-pcs",
+          "label": "Fiery Sweet Chilli · 5 pcs",
+          "pricePence": 351,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders-price-variant-fiery-sweet-chilli-8-pcs",
+          "label": "Fiery Sweet Chilli · 8 pcs",
+          "pricePence": 600,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-chicken-flavour": "tavo-chicken-flavour-fiery-sweet-chilli"
+          },
+          "sourceRefs": [
+            "tavo-menu#fried-chicken-tenders",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        }
+      ],
+      "sourceRefs": [
+        "tavo-menu#fried-chicken-tenders",
+        "owner-menu-20261105-v2#tavo-chicken"
+      ]
+    },
+    {
+      "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant",
+      "name": "Tavo Chicken · Grilled Chicken Wings · Portion and flavour price",
+      "label": "Portion and flavour price",
+      "importKind": "price-variant",
+      "brandId": "tavo-chicken",
+      "itemId": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings",
+      "kind": "single",
+      "required": true,
+      "minSelect": 1,
+      "maxSelect": 1,
+      "options": [
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-plain-flavour-3-pcs",
+          "label": "Plain Flavour · 3 pcs",
+          "pricePence": 0,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-plain-flavour"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-plain-flavour-5-pcs",
+          "label": "Plain Flavour · 5 pcs",
+          "pricePence": 200,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-plain-flavour"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-plain-flavour-8-pcs",
+          "label": "Plain Flavour · 8 pcs",
+          "pricePence": 400,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-plain-flavour"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-spicy-honey-bbq-3-pcs",
+          "label": "Spicy Honey BBQ · 3 pcs",
+          "pricePence": 50,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-spicy-honey-bbq"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-spicy-honey-bbq-5-pcs",
+          "label": "Spicy Honey BBQ · 5 pcs",
+          "pricePence": 250,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-spicy-honey-bbq"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-spicy-honey-bbq-8-pcs",
+          "label": "Spicy Honey BBQ · 8 pcs",
+          "pricePence": 450,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-spicy-honey-bbq"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-dynamite-3-pcs",
+          "label": "Dynamite · 3 pcs",
+          "pricePence": 50,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-dynamite"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-dynamite-5-pcs",
+          "label": "Dynamite · 5 pcs",
+          "pricePence": 250,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-dynamite"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-dynamite-8-pcs",
+          "label": "Dynamite · 8 pcs",
+          "pricePence": 450,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-dynamite"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-fiery-sweet-chilli-3-pcs",
+          "label": "Fiery Sweet Chilli · 3 pcs",
+          "pricePence": 50,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-3-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-fiery-sweet-chilli"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-fiery-sweet-chilli-5-pcs",
+          "label": "Fiery Sweet Chilli · 5 pcs",
+          "pricePence": 250,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-5-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-fiery-sweet-chilli"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        },
+        {
+          "id": "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings-price-variant-fiery-sweet-chilli-8-pcs",
+          "label": "Fiery Sweet Chilli · 8 pcs",
+          "pricePence": 450,
+          "sourceSelections": {
+            "tavo-chicken-portion": "tavo-chicken-portion-8-pcs",
+            "tavo-grilled-chicken-flavour": "tavo-grilled-chicken-flavour-fiery-sweet-chilli"
+          },
+          "sourceRefs": [
+            "tavo-menu#grilled-chicken-wings",
+            "owner-menu-20261105-v2#tavo-chicken"
+          ]
+        }
+      ],
+      "sourceRefs": [
+        "tavo-menu#grilled-chicken-wings",
+        "owner-menu-20261105-v2#tavo-chicken"
+      ]
+    },
+    {
       "id": "skorch-burgers-burger-add-ons",
       "label": "Burger Add-ons",
       "kind": "multiple",
       "required": false,
       "sourceRefs": [
-        "skorch-menu#burger-add-ons"
+        "skorch-menu#burger-add-ons",
+        "owner-menu-20261105-v2#skorch-burgers"
       ],
       "options": [
         {
           "id": "skorch-burgers-burger-add-ons-2-rashers",
           "label": "2 Rashers",
-          "pricePence": 2000,
+          "pricePence": 199,
           "sourceRefs": [
-            "skorch-menu#burger-add-ons"
+            "skorch-menu#burger-add-ons",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-burger-add-ons-3-onion-rings",
           "label": "3 Onion Rings",
-          "pricePence": 2000,
+          "pricePence": 199,
           "sourceRefs": [
-            "skorch-menu#burger-add-ons"
+            "skorch-menu#burger-add-ons",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-burger-add-ons-cheese-slice",
           "label": "Cheese Slice",
-          "pricePence": 2000,
+          "pricePence": 50,
           "sourceRefs": [
-            "skorch-menu#burger-add-ons"
+            "skorch-menu#burger-add-ons",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         }
       ],
@@ -1732,16 +3154,18 @@
       "kind": "single",
       "required": false,
       "sourceRefs": [
-        "skorch-menu#make-it-a-meal"
+        "skorch-menu#make-it-a-meal",
+        "owner-menu-20261105-v2#skorch-burgers"
       ],
       "options": [
         {
           "id": "skorch-burgers-make-it-a-meal-make-it-a-meal",
           "label": "Make it a meal",
-          "description": "Add fries & a drink.",
-          "pricePence": 2000,
+          "description": "Fries and drink.",
+          "pricePence": 250,
           "sourceRefs": [
-            "skorch-menu#make-it-a-meal"
+            "skorch-menu#make-it-a-meal",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         }
       ],
@@ -1763,47 +3187,55 @@
         ]
       },
       "sourceRefs": [
-        "skorch-menu#meal-upgrades"
+        "skorch-menu#meal-upgrades",
+        "owner-menu-20261105-v2#skorch-burgers"
       ],
       "options": [
         {
           "id": "skorch-burgers-meal-upgrades-peri-salt",
           "label": "Peri Salt",
-          "pricePence": 2000,
+          "pricePence": 50,
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-meal-upgrades-loaded-fries",
           "label": "Loaded Fries",
-          "pricePence": 2000,
+          "pricePence": 299,
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-meal-upgrades-loaded-mac-n-cheese",
           "label": "Loaded Mac ’n’ Cheese",
-          "pricePence": 2000,
+          "pricePence": 399,
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-meal-upgrades-mocktail",
           "label": "Mocktail",
-          "pricePence": 2000,
+          "pricePence": 299,
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-meal-upgrades-milkshake",
           "label": "Milkshake",
-          "pricePence": 2000,
+          "pricePence": 299,
+          "available": false,
+          "unavailableReason": "Flavours coming soon",
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         }
       ],
@@ -1819,47 +3251,55 @@
       "kind": "multiple",
       "required": false,
       "sourceRefs": [
-        "skorch-menu#meal-upgrades"
+        "skorch-menu#meal-upgrades",
+        "owner-menu-20261105-v2#skorch-burgers"
       ],
       "options": [
         {
           "id": "skorch-burgers-kids-meal-upgrades-peri-salt",
           "label": "Peri Salt",
-          "pricePence": 2000,
+          "pricePence": 50,
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-kids-meal-upgrades-loaded-fries",
           "label": "Loaded Fries",
-          "pricePence": 2000,
+          "pricePence": 299,
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-kids-meal-upgrades-loaded-mac-n-cheese",
           "label": "Loaded Mac ’n’ Cheese",
-          "pricePence": 2000,
+          "pricePence": 399,
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-kids-meal-upgrades-mocktail",
           "label": "Mocktail",
-          "pricePence": 2000,
+          "pricePence": 299,
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         },
         {
           "id": "skorch-burgers-kids-meal-upgrades-milkshake",
           "label": "Milkshake",
-          "pricePence": 2000,
+          "pricePence": 299,
+          "available": false,
+          "unavailableReason": "Flavours coming soon",
           "sourceRefs": [
-            "skorch-menu#meal-upgrades"
+            "skorch-menu#meal-upgrades",
+            "owner-menu-20261105-v2#skorch-burgers"
           ]
         }
       ],
@@ -1870,12 +3310,179 @@
       "maxSelect": 5
     },
     {
+      "id": "skorch-burgers-included-meal-drink",
+      "label": "Included meal drink",
+      "kind": "single",
+      "required": true,
+      "when": {
+        "groupId": "skorch-burgers-make-it-a-meal",
+        "optionIds": [
+          "skorch-burgers-make-it-a-meal-make-it-a-meal"
+        ]
+      },
+      "description": "Choose a standard can or water, included with your meal.",
+      "sourceRefs": [
+        "owner-menu-20261105-v2#skorch-burgers"
+      ],
+      "options": [
+        {
+          "id": "skorch-burgers-included-meal-drink-pepsi",
+          "label": "Pepsi",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-included-meal-drink-pepsi-max",
+          "label": "Pepsi Max",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-included-meal-drink-tango-orange",
+          "label": "Tango Orange",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-included-meal-drink-tango-apple",
+          "label": "Tango Apple",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-included-meal-drink-rubicon-mango",
+          "label": "Rubicon Mango",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-included-meal-drink-7up",
+          "label": "7up",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-included-meal-drink-water-bottle",
+          "label": "Water Bottle",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        }
+      ],
+      "replacedBy": {
+        "crossSlot": "drink",
+        "optionIds": [
+          "skorch-burgers-meal-upgrades-mocktail",
+          "skorch-burgers-meal-upgrades-milkshake"
+        ]
+      },
+      "name": "Skorch · Included meal drink",
+      "brandId": "skorch-burgers",
+      "importKind": "source",
+      "minSelect": 0,
+      "maxSelect": 1
+    },
+    {
+      "id": "skorch-burgers-kids-included-drink",
+      "label": "Included meal drink",
+      "kind": "single",
+      "required": true,
+      "description": "Choose a standard can or water, included with your meal.",
+      "sourceRefs": [
+        "owner-menu-20261105-v2#skorch-burgers"
+      ],
+      "options": [
+        {
+          "id": "skorch-burgers-kids-included-drink-pepsi",
+          "label": "Pepsi",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-kids-included-drink-pepsi-max",
+          "label": "Pepsi Max",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-kids-included-drink-tango-orange",
+          "label": "Tango Orange",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-kids-included-drink-tango-apple",
+          "label": "Tango Apple",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-kids-included-drink-rubicon-mango",
+          "label": "Rubicon Mango",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-kids-included-drink-7up",
+          "label": "7up",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
+          "id": "skorch-burgers-kids-included-drink-water-bottle",
+          "label": "Water Bottle",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        }
+      ],
+      "replacedBy": {
+        "crossSlot": "drink",
+        "optionIds": [
+          "skorch-burgers-kids-meal-upgrades-mocktail",
+          "skorch-burgers-kids-meal-upgrades-milkshake"
+        ]
+      },
+      "name": "Skorch · Included meal drink (kids meals)",
+      "brandId": "skorch-burgers",
+      "importKind": "source",
+      "minSelect": 0,
+      "maxSelect": 1
+    },
+    {
       "id": "souvano-donner-flavour",
       "label": "Flavour",
       "kind": "single",
       "required": true,
       "sourceRefs": [
-        "souvano-menu#stir-fry-donner"
+        "souvano-menu#stir-fry-donner",
+        "owner-menu-20261105-v2#souvano"
       ],
       "options": [
         {
@@ -1883,7 +3490,8 @@
           "label": "Plain",
           "pricePence": 0,
           "sourceRefs": [
-            "souvano-menu#stir-fry-donner"
+            "souvano-menu#stir-fry-donner",
+            "owner-menu-20261105-v2#souvano"
           ]
         },
         {
@@ -1891,7 +3499,8 @@
           "label": "Fiery Sweet Chilli",
           "pricePence": 0,
           "sourceRefs": [
-            "souvano-menu#stir-fry-donner"
+            "souvano-menu#stir-fry-donner",
+            "owner-menu-20261105-v2#souvano"
           ]
         },
         {
@@ -1899,7 +3508,8 @@
           "label": "Dynamite",
           "pricePence": 0,
           "sourceRefs": [
-            "souvano-menu#stir-fry-donner"
+            "souvano-menu#stir-fry-donner",
+            "owner-menu-20261105-v2#souvano"
           ]
         },
         {
@@ -1907,7 +3517,8 @@
           "label": "Korean BBQ",
           "pricePence": 0,
           "sourceRefs": [
-            "souvano-menu#stir-fry-donner"
+            "souvano-menu#stir-fry-donner",
+            "owner-menu-20261105-v2#souvano"
           ]
         }
       ],
@@ -1919,19 +3530,30 @@
     },
     {
       "id": "souvano-heatwave-base",
-      "label": "Base",
+      "label": "Included side",
       "kind": "single",
       "required": true,
       "sourceRefs": [
-        "souvano-menu#heatwave"
+        "souvano-menu#heatwave",
+        "owner-menu-20261105-v2#souvano"
       ],
       "options": [
         {
-          "id": "souvano-heatwave-base-fragrant-spicy-rice",
-          "label": "Fragrant spicy rice",
+          "id": "souvano-heatwave-base-fries",
+          "label": "Fries",
           "pricePence": 0,
           "sourceRefs": [
-            "souvano-menu#heatwave"
+            "souvano-menu#heatwave",
+            "owner-menu-20261105-v2#souvano"
+          ]
+        },
+        {
+          "id": "souvano-heatwave-base-fragrant-spicy-rice",
+          "label": "Rice",
+          "pricePence": 0,
+          "sourceRefs": [
+            "souvano-menu#heatwave",
+            "owner-menu-20261105-v2#souvano"
           ]
         },
         {
@@ -1939,69 +3561,24 @@
           "label": "Naan",
           "pricePence": 0,
           "sourceRefs": [
-            "souvano-menu#heatwave"
-          ]
-        },
-        {
-          "id": "souvano-heatwave-base-fries",
-          "label": "Fries",
-          "pricePence": 0,
-          "sourceRefs": [
-            "souvano-menu#heatwave"
+            "souvano-menu#heatwave",
+            "owner-menu-20261105-v2#souvano"
           ]
         }
       ],
-      "name": "Souvano · Base",
+      "name": "Souvano · Included side (Heatwave)",
       "brandId": "souvano",
       "importKind": "source",
       "minSelect": 1,
       "maxSelect": 1
     },
     {
-      "id": "souvano-make-it-a-meal",
-      "label": "Make It a Meal",
-      "kind": "single",
-      "required": false,
-      "description": "With your choice of Fries, Rice or Naan & a Drink",
-      "sourceRefs": [
-        "souvano-menu#stir-fry-donner",
-        "souvano-menu#heatwave",
-        "souvano-menu#lamb-chops"
-      ],
-      "options": [
-        {
-          "id": "souvano-make-it-a-meal-make-it-a-meal",
-          "label": "Make it a meal",
-          "description": "With your choice of Fries, Rice or Naan & a Drink",
-          "pricePence": 2000,
-          "sourceRefs": [
-            "souvano-menu#stir-fry-donner",
-            "souvano-menu#heatwave",
-            "souvano-menu#lamb-chops"
-          ]
-        }
-      ],
-      "name": "Souvano · Make It a Meal",
-      "brandId": "souvano",
-      "importKind": "source",
-      "minSelect": 0,
-      "maxSelect": 1
-    },
-    {
       "id": "souvano-meal-side",
-      "label": "Meal side",
+      "label": "Included side",
       "kind": "single",
       "required": true,
-      "when": {
-        "groupId": "souvano-make-it-a-meal",
-        "optionIds": [
-          "souvano-make-it-a-meal-make-it-a-meal"
-        ]
-      },
       "sourceRefs": [
-        "souvano-menu#stir-fry-donner",
-        "souvano-menu#heatwave",
-        "souvano-menu#lamb-chops"
+        "owner-menu-20261105-v2#souvano"
       ],
       "options": [
         {
@@ -2009,9 +3586,7 @@
           "label": "Fries",
           "pricePence": 0,
           "sourceRefs": [
-            "souvano-menu#stir-fry-donner",
-            "souvano-menu#heatwave",
-            "souvano-menu#lamb-chops"
+            "owner-menu-20261105-v2#souvano"
           ]
         },
         {
@@ -2019,9 +3594,7 @@
           "label": "Rice",
           "pricePence": 0,
           "sourceRefs": [
-            "souvano-menu#stir-fry-donner",
-            "souvano-menu#heatwave",
-            "souvano-menu#lamb-chops"
+            "owner-menu-20261105-v2#souvano"
           ]
         },
         {
@@ -2029,16 +3602,14 @@
           "label": "Naan",
           "pricePence": 0,
           "sourceRefs": [
-            "souvano-menu#stir-fry-donner",
-            "souvano-menu#heatwave",
-            "souvano-menu#lamb-chops"
+            "owner-menu-20261105-v2#souvano"
           ]
         }
       ],
-      "name": "Souvano · Meal side",
+      "name": "Souvano · Included side (Doner / Lamb Chops)",
       "brandId": "souvano",
       "importKind": "source",
-      "minSelect": 0,
+      "minSelect": 1,
       "maxSelect": 1
     },
     {
@@ -2055,96 +3626,106 @@
         {
           "id": "cross-side-replacement-loadd-loaded-fries-king-of-hearts",
           "label": "King of Hearts · Loaded Fries",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-fries-king-of-hearts",
           "sourceRefs": [
-            "loadd-menu#loaded-fries"
+            "loadd-menu#loaded-fries",
+            "owner-menu-20261105-v2#loadd"
           ]
         },
         {
           "id": "cross-side-replacement-loadd-loaded-fries-queen-of-hearts",
           "label": "Queen of Hearts · Loaded Fries",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-fries-queen-of-hearts",
           "sourceRefs": [
-            "loadd-menu#loaded-fries"
+            "loadd-menu#loaded-fries",
+            "owner-menu-20261105-v2#loadd"
           ]
         },
         {
           "id": "cross-side-replacement-loadd-loaded-fries-jack-of-diamonds",
           "label": "Jack of Diamonds · Loaded Fries",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-fries-jack-of-diamonds",
           "sourceRefs": [
-            "loadd-menu#loaded-fries"
+            "loadd-menu#loaded-fries",
+            "owner-menu-20261105-v2#loadd"
           ]
         },
         {
           "id": "cross-side-replacement-loadd-loaded-fries-king-of-spades",
           "label": "King of Spades · Loaded Fries",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-fries-king-of-spades",
           "sourceRefs": [
-            "loadd-menu#loaded-fries"
+            "loadd-menu#loaded-fries",
+            "owner-menu-20261105-v2#loadd"
           ]
         },
         {
           "id": "cross-side-replacement-loadd-loaded-mac-cheese-ace-mac",
           "label": "Ace Mac · Loaded Mac ’n Cheese",
-          "pricePence": 2000,
+          "pricePence": 399,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-mac-cheese-ace-mac",
           "sourceRefs": [
-            "loadd-menu#loaded-mac-cheese"
+            "loadd-menu#loaded-mac-cheese",
+            "owner-menu-20261105-v2#loadd"
           ]
         },
         {
           "id": "cross-side-replacement-loadd-loaded-mac-cheese-jacks-mac",
           "label": "Jack’s Mac · Loaded Mac ’n Cheese",
-          "pricePence": 2000,
+          "pricePence": 399,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-mac-cheese-jacks-mac",
           "sourceRefs": [
-            "loadd-menu#loaded-mac-cheese"
+            "loadd-menu#loaded-mac-cheese",
+            "owner-menu-20261105-v2#loadd"
           ]
         },
         {
           "id": "cross-side-replacement-loadd-loaded-mac-cheese-diamond-melt",
           "label": "Diamond Melt · Loaded Mac ’n Cheese",
-          "pricePence": 2000,
+          "pricePence": 399,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-mac-cheese-diamond-melt",
           "sourceRefs": [
-            "loadd-menu#loaded-mac-cheese"
+            "loadd-menu#loaded-mac-cheese",
+            "owner-menu-20261105-v2#loadd"
           ]
         },
         {
           "id": "cross-side-replacement-loadd-loaded-mac-cheese-spade-stack",
           "label": "Spade Stack · Loaded Mac ’n Cheese",
-          "pricePence": 2000,
+          "pricePence": 399,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-mac-cheese-spade-stack",
           "sourceRefs": [
-            "loadd-menu#loaded-mac-cheese"
+            "loadd-menu#loaded-mac-cheese",
+            "owner-menu-20261105-v2#loadd"
           ]
         },
         {
           "id": "cross-side-replacement-loadd-loaded-mac-cheese-kings-mac",
           "label": "King’s Mac · Loaded Mac ’n Cheese",
-          "pricePence": 2000,
+          "pricePence": 399,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-mac-cheese-kings-mac",
           "sourceRefs": [
-            "loadd-menu#loaded-mac-cheese"
+            "loadd-menu#loaded-mac-cheese",
+            "owner-menu-20261105-v2#loadd"
           ]
         }
       ],
       "sourceRefs": [
-        "loadd-menu"
+        "loadd-menu",
+        "owner-menu-20261105-v2#loadd"
       ]
     },
     {
@@ -2161,94 +3742,103 @@
         {
           "id": "cross-drink-replacement-moktl-mocktail-lounge-virgin-mojito",
           "label": "Virgin Mojito",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "moktl",
           "targetItemId": "moktl-mocktail-lounge-virgin-mojito",
           "sourceRefs": [
             "moktl-menu#mocktail-lounge",
-            "moktl-menu#rush-hour"
+            "moktl-menu#rush-hour",
+            "owner-menu-20261105-v2#moktl"
           ]
         },
         {
           "id": "cross-drink-replacement-moktl-mocktail-lounge-mango-mirage",
           "label": "Mango Mirage",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "moktl",
           "targetItemId": "moktl-mocktail-lounge-mango-mirage",
           "sourceRefs": [
             "moktl-menu#mocktail-lounge",
-            "moktl-menu#rush-hour"
+            "moktl-menu#rush-hour",
+            "owner-menu-20261105-v2#moktl"
           ]
         },
         {
           "id": "cross-drink-replacement-moktl-mocktail-lounge-lychee-breeze",
           "label": "Lychee Breeze",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "moktl",
           "targetItemId": "moktl-mocktail-lounge-lychee-breeze",
           "sourceRefs": [
             "moktl-menu#mocktail-lounge",
-            "moktl-menu#rush-hour"
+            "moktl-menu#rush-hour",
+            "owner-menu-20261105-v2#moktl"
           ]
         },
         {
           "id": "cross-drink-replacement-moktl-mocktail-lounge-apple-rush",
           "label": "Apple Rush",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "moktl",
           "targetItemId": "moktl-mocktail-lounge-apple-rush",
           "sourceRefs": [
             "moktl-menu#mocktail-lounge",
-            "moktl-menu#rush-hour"
+            "moktl-menu#rush-hour",
+            "owner-menu-20261105-v2#moktl"
           ]
         },
         {
           "id": "cross-drink-replacement-moktl-mocktail-lounge-blue-wave",
           "label": "Blue Wave",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "moktl",
           "targetItemId": "moktl-mocktail-lounge-blue-wave",
           "sourceRefs": [
             "moktl-menu#mocktail-lounge",
-            "moktl-menu#rush-hour"
+            "moktl-menu#rush-hour",
+            "owner-menu-20261105-v2#moktl"
           ]
         },
         {
           "id": "cross-drink-replacement-moktl-mocktail-lounge-strawberry-splash",
           "label": "Strawberry Splash",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "moktl",
           "targetItemId": "moktl-mocktail-lounge-strawberry-splash",
           "sourceRefs": [
             "moktl-menu#mocktail-lounge",
-            "moktl-menu#rush-hour"
+            "moktl-menu#rush-hour",
+            "owner-menu-20261105-v2#moktl"
           ]
         },
         {
           "id": "cross-drink-replacement-moktl-mocktail-lounge-passion-paradise",
           "label": "Passion Paradise",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "moktl",
           "targetItemId": "moktl-mocktail-lounge-passion-paradise",
           "sourceRefs": [
             "moktl-menu#mocktail-lounge",
-            "moktl-menu#rush-hour"
+            "moktl-menu#rush-hour",
+            "owner-menu-20261105-v2#moktl"
           ]
         },
         {
           "id": "cross-drink-replacement-moktl-mocktail-lounge-rush-hour",
           "label": "Rush Hour",
-          "pricePence": 2000,
+          "pricePence": 299,
           "targetBrandId": "moktl",
           "targetItemId": "moktl-mocktail-lounge-rush-hour",
           "sourceRefs": [
             "moktl-menu#mocktail-lounge",
-            "moktl-menu#rush-hour"
+            "moktl-menu#rush-hour",
+            "owner-menu-20261105-v2#moktl"
           ]
         }
       ],
       "sourceRefs": [
-        "moktl-menu"
+        "moktl-menu",
+        "owner-menu-20261105-v2#moktl"
       ]
     }
   ]

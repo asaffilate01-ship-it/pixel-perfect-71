@@ -1,15 +1,7 @@
 /**
- * Catalogue transcribed from the five menu sheets supplied by the owner.
- *
- * The owner approved an initial £20 for every standalone item on 5 November 2026.
- * This browse catalogue supplies the reviewed draft import; the independent
- * MealDeck backend remains the authority for live prices, stock and orders.
- * The supplied sheets contain no prices. The owner's later instruction also
- * approves £20 per selected optional add-on, meal deal or upgrade. Included
- * flavour, portion and base choices remain part of their parent item's price.
- * Required single choices below describe the printed flavour/portion/base choices;
- * optional add-ons and upgrades use the later approved £20 price without
- * inventing ingredient details or additional combination limits.
+ * Owner-reviewed menu content and integer-pence prices. The 5 November typed
+ * menus supersede the earlier £20 placeholders for all five launch brands.
+ * Live pricing and availability are database-owned.
  */
 
 export type LaunchMenuBrandId = "tavo-chicken" | "moktl" | "loadd" | "skorch-burgers" | "souvano";
@@ -18,7 +10,9 @@ export type LaunchMenuOption = {
   id: string;
   label: string;
   description?: string;
-  pricePence: number;
+  pricePence: number | null;
+  available?: boolean;
+  unavailableReason?: string;
   sourceRefs: string[];
 };
 
@@ -29,16 +23,28 @@ export type LaunchMenuOptionGroup = {
   kind: "single" | "multiple";
   required: boolean;
   when?: { groupId: string; optionIds: string[] };
+  /** An upgrade replaces this included component instead of adding a second one. */
+  replacedBy?: { crossSlot: "drink"; optionIds: string[] };
   options: LaunchMenuOption[];
   sourceRefs: string[];
+};
+
+export type LaunchMenuPriceVariant = {
+  groupId: string;
+  optionId: string;
+  label: string;
+  selections: Record<string, string>;
+  /** Full dish price, including this exact flavour and portion. */
+  pricePence: number;
 };
 
 export type LaunchMenuItem = {
   id: string;
   name: string;
   description?: string;
-  pricePence: number;
+  pricePence: number | null;
   optionGroupIds: string[];
+  priceVariants?: LaunchMenuPriceVariant[];
   sourceRefs: string[];
 };
 
@@ -210,24 +216,35 @@ export const launchMenuSources: LaunchMenuSource[] = [
   },
 ];
 
-type MenuRow = readonly [name: string, description?: string];
+type MenuRow = readonly [
+  name: string,
+  pricePence: number | null,
+  description?: string | undefined,
+  /** Preserve a known item ID when its display name is revised. */
+  stableSlug?: string,
+];
 
-/** Owner-approved starting price for each standalone item, including cans/drinks. */
-export const LAUNCH_ITEM_PRICE_PENCE = 2_000;
-/** Owner-approved price for each selected optional add-on, meal deal or upgrade. */
-export const LAUNCH_UPGRADE_PRICE_PENCE = 2_000;
-/** A replacement surcharge is independent of the target item's standalone price. */
-export const LAUNCH_CROSS_UPGRADE_PRICE_PENCE = 2_000;
+/** The owner's typed menu replaces the earlier blanket £20 placeholders. */
+export const LAUNCH_MENU_PRICE_REVISION = "owner-menu-20261105-v2";
+export const launchMenuPriceApproval = {
+  id: LAUNCH_MENU_PRICE_REVISION,
+  approvedOn: "2026-11-05",
+  description: "Owner-supplied typed Skorch, Load’d, Moktl, Tavo and Souvano menus and prices.",
+  brandIds: ["skorch-burgers", "loadd", "moktl", "tavo-chicken", "souvano"] as const,
+};
+export const LAUNCH_MEAL_PRICE_PENCE = 250;
+export const LAUNCH_SIDE_UPGRADE_PRICE_PENCE = {
+  "loaded-fries": 299,
+  "loaded-mac-cheese": 399,
+} as const;
+export const LAUNCH_MOCKTAIL_UPGRADE_PRICE_PENCE = 299;
 
-// These are included dish choices, rather than optional paid upgrades. Explicit
-// IDs keep an unrelated future required modifier from silently becoming free.
-const includedChoiceGroupIds = new Set([
-  "tavo-chicken-portion",
-  "tavo-chicken-flavour",
-  "souvano-donner-flavour",
-  "souvano-heatwave-base",
-  "souvano-meal-side",
-]);
+export function launchCrossReplacementPricePence(targetSectionId: string): number | null {
+  if (targetSectionId === "mocktail-lounge") return LAUNCH_MOCKTAIL_UPGRADE_PRICE_PENCE;
+  if (targetSectionId === "loaded-fries" || targetSectionId === "loaded-mac-cheese")
+    return LAUNCH_SIDE_UPGRADE_PRICE_PENCE[targetSectionId];
+  return null;
+}
 
 function slug(value: string): string {
   return value
@@ -236,6 +253,10 @@ function slug(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function reviewedRefs(brandId: LaunchMenuBrandId, refs: string[]) {
+  return [...new Set([...refs, `${LAUNCH_MENU_PRICE_REVISION}#${brandId}`])];
 }
 
 function section(
@@ -247,18 +268,19 @@ function section(
   description?: string,
   optionGroupIds: string[] = [],
 ): LaunchMenuSection {
+  const refs = reviewedRefs(brandId, sourceRefs);
   return {
     id,
     title,
     ...(description ? { description } : {}),
-    sourceRefs: [...sourceRefs],
-    items: rows.map(([name, itemDescription]) => ({
-      id: brandId + "-" + id + "-" + slug(name),
+    sourceRefs: refs,
+    items: rows.map(([name, pricePence, itemDescription, stableSlug]) => ({
+      id: brandId + "-" + id + "-" + (stableSlug ?? slug(name)),
       name,
       ...(itemDescription ? { description: itemDescription } : {}),
-      pricePence: LAUNCH_ITEM_PRICE_PENCE,
+      pricePence,
       optionGroupIds: [...optionGroupIds],
-      sourceRefs: [...sourceRefs],
+      sourceRefs: refs,
     })),
   };
 }
@@ -281,40 +303,74 @@ function group(
     ...(when ? { when } : {}),
     ...(description ? { description } : {}),
     sourceRefs: [...sourceRefs],
-    options: rows.map(([optionLabel, optionDescription]) => ({
-      id: id + "-" + slug(optionLabel),
+    options: rows.map(([optionLabel, pricePence, optionDescription, stableSlug]) => ({
+      id: id + "-" + (stableSlug ?? slug(optionLabel)),
       label: optionLabel,
       ...(optionDescription ? { description: optionDescription } : {}),
-      pricePence: includedChoiceGroupIds.has(id) ? 0 : LAUNCH_UPGRADE_PRICE_PENCE,
+      pricePence,
+      ...(/^milkshake/i.test(optionLabel)
+        ? { available: false, unavailableReason: "Flavours coming soon" }
+        : {}),
       sourceRefs: [...sourceRefs],
     })),
   };
 }
 
-// These seven drink names are printed on each of Tavo, Skorch, Load’d and Souvano.
-// Reusing the names does not imply a serving size or a particular meal inclusion.
-const cansAndDrinks: readonly MenuRow[] = [
-  ["Coke"],
-  ["Pepsi Max"],
-  ["Tango Apple"],
-  ["Miranda Orange"],
-  ["Miranda Strawberry"],
-  ["Barr Limeade"],
-  ["Water Bottle"],
+const tavoDrinks: readonly MenuRow[] = [
+  ["Coke", 100],
+  ["Pepsi Max", 100],
+  ["Tango Apple", 100],
+  ["Miranda Orange", 100],
+  ["Miranda Strawberry", 100],
+  ["Barr Limeade", 100],
+  ["Water Bottle", 100],
+  ["Red Bull", 220],
 ];
-
+const skorchLoaddDrinks: readonly MenuRow[] = [
+  ["Pepsi", 100],
+  ["Pepsi Max", 100],
+  ["Tango Orange", 100],
+  ["Tango Apple", 100],
+  ["Rubicon Mango", 100],
+  ["7up", 100],
+  ["Water Bottle", 100],
+  ["Red Bull", 220],
+];
+const sharedSides: readonly MenuRow[] = [
+  ["Fries", 200],
+  ["Peri Fries", 250],
+  ["Onion Rings (x6)", 250],
+  ["Mozzarella Sticks (x6)", 300],
+  ["Chilli Cheese Nuggets (x6)", 300],
+  ["Chicken Nuggets (x6)", 400],
+];
+const tavoSides: readonly MenuRow[] = sharedSides.map((row) =>
+  row[0] === "Chicken Nuggets (x6)" ? [row[0], 350] : row,
+);
 const tavoChickenRefs = [
   "tavo-menu#fried-chicken-wings",
   "tavo-menu#fried-chicken-tenders",
   "tavo-menu#grilled-chicken-wings",
+  `${LAUNCH_MENU_PRICE_REVISION}#tavo-chicken`,
 ];
-const tavoMealUpgradeRefs = ["tavo-menu#meal-upgrades-page-1", "tavo-menu#meal-upgrades-page-2"];
+const tavoMealUpgradeRefs = [
+  "tavo-menu#meal-upgrades-page-1",
+  "tavo-menu#meal-upgrades-page-2",
+  `${LAUNCH_MENU_PRICE_REVISION}#tavo-chicken`,
+];
 const tavoMealUpgradeRows: readonly MenuRow[] = [
-  ["Peri Salt"],
-  ["Loaded Fries Upgrade"],
-  ["Loaded Mac ’n Cheese Upgrade"],
-  ["Mocktail Upgrade"],
-  ["Milkshake Upgrade"],
+  ["Peri Salt", 50],
+  ["Loaded Fries Upgrade", 299],
+  ["Loaded Mac ’n Cheese Upgrade", 399],
+  ["Mocktail Upgrade", 299],
+  ["Milkshake Upgrade", 299],
+];
+const skorchMealUpgradeRows: readonly MenuRow[] = [
+  ["Peri Salt", 50],
+  ["Loaded Fries", 299],
+  ["Loaded Mac ’n’ Cheese", 399],
+  ["Mocktail", 299],
+  ["Milkshake", 299],
 ];
 const tavoBurgerGroupIds = [
   "tavo-chicken-dipped-burger",
@@ -328,81 +384,91 @@ const tavoChickenGroupIds = [
   "tavo-chicken-make-it-a-meal",
   "tavo-chicken-meal-upgrades",
 ];
+const tavoGrilledGroupIds = tavoChickenGroupIds.map((id) =>
+  id === "tavo-chicken-flavour" ? "tavo-grilled-chicken-flavour" : id,
+);
+
+/** Full prices: flavour and portion interact, so neither is a flat surcharge. */
+const tavoFriedPriceMatrix = [
+  ["Plain Flavour", [299, 550, 649]],
+  ["Korean BBQ", [350, 650, 799]],
+  ["Dynamite", [350, 650, 799]],
+  ["Fiery Sweet Chilli", [350, 650, 899]],
+] as const;
+const tavoGrilledPriceMatrix = [
+  ["Plain Flavour", [249, 449, 649]],
+  ["Spicy Honey BBQ", [299, 499, 699]],
+  ["Dynamite", [299, 499, 699]],
+  ["Fiery Sweet Chilli", [299, 499, 699]],
+] as const;
+
+function chickenSection(id: string, title: string, grilled = false): LaunchMenuSection {
+  const rows = grilled ? tavoGrilledPriceMatrix : tavoFriedPriceMatrix;
+  const flavourGroup = grilled ? "tavo-grilled-chicken-flavour" : "tavo-chicken-flavour";
+  const result = section(
+    "tavo-chicken",
+    id,
+    title,
+    [[title, grilled ? 249 : 299]],
+    [`tavo-menu#${id}`],
+    "Choose your portion and flavour.",
+    grilled ? tavoGrilledGroupIds : tavoChickenGroupIds,
+  );
+  const item = result.items[0]!;
+  item.priceVariants = rows.flatMap(([flavour, prices]) =>
+    prices.map((pricePence, index) => {
+      const portion = [3, 5, 8][index];
+      const groupId = `${item.id}-price-variant`;
+      return {
+        groupId,
+        optionId: `${groupId}-${slug(flavour)}-${portion}-pcs`,
+        label: `${flavour} · ${portion} pcs`,
+        selections: {
+          "tavo-chicken-portion": `tavo-chicken-portion-${portion}-pcs`,
+          [flavourGroup]: `${flavourGroup}-${slug(flavour)}`,
+        },
+        pricePence,
+      };
+    }),
+  );
+  return result;
+}
 
 const tavo: LaunchMenuBrand = {
   id: "tavo-chicken",
   name: "Tavo Chicken",
   accent: "#D7141A",
   description: "Chicken burgers, wings & more.",
-  sourceRefs: ["tavo-menu"],
+  sourceRefs: ["tavo-menu", `${LAUNCH_MENU_PRICE_REVISION}#tavo-chicken`],
   sections: [
     section(
       "tavo-chicken",
       "burgers",
       "Burgers",
       [
-        ["Cruncher", "Fried chicken fillet"],
-        ["Twin Crunch", "2 fried chicken fillets"],
-        ["Flame", "Grilled chicken fillet"],
-        ["Big Flame", "2 grilled chicken fillets"],
+        ["Cruncher", 449, "Buttermilk fried chicken fillet"],
+        ["Twin Crunch", 599, "2 buttermilk fried chicken fillets"],
+        ["Flame", 550, "Spicy grilled chicken fillet"],
+        ["Big Flame", 650, "2 spicy grilled chicken fillets"],
       ],
       ["tavo-menu#burgers"],
-      "All burgers with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.",
+      "All burgers with lettuce, cheese, gherkin & Algerian sauce.",
       tavoBurgerGroupIds,
     ),
-    section(
-      "tavo-chicken",
-      "fried-chicken-wings",
-      "Fried Chicken Wings",
-      [["Fried Chicken Wings"]],
-      ["tavo-menu#fried-chicken-wings"],
-      undefined,
-      tavoChickenGroupIds,
-    ),
-    section(
-      "tavo-chicken",
-      "fried-chicken-tenders",
-      "Fried Chicken Tenders",
-      [["Fried Chicken Tenders"]],
-      ["tavo-menu#fried-chicken-tenders"],
-      undefined,
-      tavoChickenGroupIds,
-    ),
-    section(
-      "tavo-chicken",
-      "grilled-chicken-wings",
-      "Grilled Chicken Wings",
-      [["Grilled Chicken Wings"]],
-      ["tavo-menu#grilled-chicken-wings"],
-      undefined,
-      tavoChickenGroupIds,
-    ),
+    chickenSection("fried-chicken-wings", "Fried Chicken Wings"),
+    chickenSection("fried-chicken-tenders", "Fried Chicken Tenders"),
+    chickenSection("grilled-chicken-wings", "Grilled Chicken Wings", true),
     section(
       "tavo-chicken",
       "kids-meals",
       "Kids Meals",
-      [["Little Jacks Nugget Meal", "6 nuggets, fries & drink."]],
+      [["Nuggets Meal", 500, "6 nuggets, fries & drink.", "little-jacks-nugget-meal"]],
       ["tavo-menu#kids-meals"],
       undefined,
       ["tavo-chicken-kids-meal-upgrades"],
     ),
-    section(
-      "tavo-chicken",
-      "sides",
-      "Sides",
-      [
-        ["Fries"],
-        ["Peri Fries"],
-        ["Onion Rings (x6)"],
-        ["Mozzarella Sticks (x6)"],
-        ["Chilli Cheese Nuggets (x6)"],
-        ["Chicken Nuggets (x6)"],
-      ],
-      ["tavo-menu#sides"],
-    ),
-    section("tavo-chicken", "cans-drinks", "Cans & Drinks", cansAndDrinks, [
-      "tavo-menu#cans-drinks",
-    ]),
+    section("tavo-chicken", "sides", "Sides", tavoSides, ["tavo-menu#sides"]),
+    section("tavo-chicken", "cans-drinks", "Cans & Drinks", tavoDrinks, ["tavo-menu#cans-drinks"]),
   ],
   optionGroups: [
     group(
@@ -410,40 +476,73 @@ const tavo: LaunchMenuBrand = {
       "Portion",
       "single",
       true,
-      [["3 pcs"], ["5 pcs"], ["8 pcs"]],
+      [
+        ["3 pcs", 0],
+        ["5 pcs", 0],
+        ["8 pcs", 0],
+      ],
       tavoChickenRefs,
+      "Your dish price updates for the selected portion and flavour.",
     ),
     group(
       "tavo-chicken-flavour",
       "Flavour",
       "single",
       true,
-      [["Plain Flavour"], ["Korean BBQ"], ["Dynamite"], ["Fiery Sweet Chilli"]],
+      [
+        ["Plain Flavour", 0],
+        ["Korean BBQ", 0],
+        ["Dynamite", 0],
+        ["Fiery Sweet Chilli", 0],
+      ],
       tavoChickenRefs,
+      "Your dish price includes the selected flavour.",
+    ),
+    group(
+      "tavo-grilled-chicken-flavour",
+      "Flavour",
+      "single",
+      true,
+      [
+        ["Plain Flavour", 0],
+        ["Spicy Honey BBQ", 0],
+        ["Dynamite", 0],
+        ["Fiery Sweet Chilli", 0],
+      ],
+      ["tavo-menu#grilled-chicken-wings", `${LAUNCH_MENU_PRICE_REVISION}#tavo-chicken`],
+      "Your dish price includes the selected flavour.",
     ),
     group(
       "tavo-chicken-dipped-burger",
-      "Upgrade to a Dipped Burger",
+      "Dip Your Burger",
       "single",
       false,
-      [["Korean BBQ"], ["Dynamite"], ["Fiery Sweet Chilli"]],
-      ["tavo-menu#dipped-burger"],
-      "Turn any burger into a dipped burger for an extra kick. Choose your dip:",
+      [
+        ["Korean BBQ", 150],
+        ["Dynamite", 150],
+        ["Fiery Sweet Chilli", 150],
+      ],
+      ["tavo-menu#dipped-burger", `${LAUNCH_MENU_PRICE_REVISION}#tavo-chicken`],
+      "Dip your burger for £1.50. Choose one flavour; the dip is charged once.",
     ),
     group(
       "tavo-chicken-burger-add-ons",
       "Burger Add Ons",
       "multiple",
       false,
-      [["2 Rashers"], ["Onion Rings"], ["Cheese Slice"]],
-      ["tavo-menu#burger-add-ons"],
+      [
+        ["2 Rashers", 150],
+        ["Onion Rings", 150],
+        ["Cheese Slice", 50],
+      ],
+      ["tavo-menu#burger-add-ons", `${LAUNCH_MENU_PRICE_REVISION}#tavo-chicken`],
     ),
     group(
       "tavo-chicken-make-it-a-meal",
       "Make It a Meal",
       "single",
       false,
-      [["Make it a meal", "Fries and drink."]],
+      [["Make it a meal", LAUNCH_MEAL_PRICE_PENCE, "Fries and drink."]],
       ["tavo-menu#burgers", ...tavoChickenRefs],
     ),
     group(
@@ -478,8 +577,8 @@ const tavo: LaunchMenuBrand = {
     },
     {
       id: "tavo-chicken-upsell-dipped-burger",
-      label: "Upgrade to a Dipped Burger",
-      description: "Turn any burger into a dipped burger for an extra kick.",
+      label: "Dip Your Burger",
+      description: "Choose Korean BBQ, Fiery Sweet Chilli or Dynamite.",
       optionGroupId: "tavo-chicken-dipped-burger",
       sourceRefs: ["tavo-menu#dipped-burger"],
     },
@@ -510,21 +609,21 @@ const moktl: LaunchMenuBrand = {
   name: "Moktl",
   accent: "#AD7C12",
   description: "Premium mocktails. Zero alcohol. Full vibe.",
-  sourceRefs: ["moktl-menu"],
+  sourceRefs: ["moktl-menu", `${LAUNCH_MENU_PRICE_REVISION}#moktl`],
   sections: [
     section(
       "moktl",
       "mocktail-lounge",
       "Mocktail Lounge",
       [
-        ["Virgin Mojito"],
-        ["Mango Mirage"],
-        ["Lychee Breeze"],
-        ["Apple Rush"],
-        ["Blue Wave"],
-        ["Strawberry Splash"],
-        ["Passion Paradise"],
-        ["Rush Hour", "Energy drink flavour"],
+        ["Virgin Mojito", 450],
+        ["Mango Mirage", 450],
+        ["Lychee Breeze", 450],
+        ["Apple Rush", 450],
+        ["Blue Wave", 450],
+        ["Strawberry Splash", 450],
+        ["Passion Paradise", 450],
+        ["Rush Hour", 600, "Energy drink flavour"],
       ],
       ["moktl-menu#mocktail-lounge", "moktl-menu#rush-hour"],
     ),
@@ -547,17 +646,17 @@ const loadd: LaunchMenuBrand = {
   name: "Load’d",
   accent: "#A66E00",
   description: "Loaded fries • Mac n cheese. Fries, taken further.",
-  sourceRefs: ["loadd-menu"],
+  sourceRefs: ["loadd-menu", `${LAUNCH_MENU_PRICE_REVISION}#loadd`],
   sections: [
     section(
       "loadd",
       "loaded-fries",
       "Loaded Fries",
       [
-        ["King of Hearts", "Fried chicken"],
-        ["Queen of Hearts", "Grilled chicken"],
-        ["Jack of Diamonds", "Chicken shawarma"],
-        ["King of Spades", "Smash beef"],
+        ["King of Hearts", 550, "Fried chicken"],
+        ["Queen of Hearts", 550, "Grilled chicken"],
+        ["Jack of Diamonds", 550, "Chicken shawarma"],
+        ["King of Spades", 550, "Smash beef"],
       ],
       ["loadd-menu#loaded-fries"],
       "All with cheese, Algerian sauce, and spring onions.",
@@ -567,11 +666,11 @@ const loadd: LaunchMenuBrand = {
       "loaded-mac-cheese",
       "Loaded Mac ’n Cheese",
       [
-        ["Ace Mac", "Mac n cheese."],
-        ["Jack’s Mac", "Fried chicken, Algerian sauce & crispy fried onions."],
-        ["Diamond Melt", "Chicken shawarma, Algerian sauce & crispy fried onions."],
-        ["Spade Stack", "Smash beef, Algerian sauce & crispy fried onions."],
-        ["King’s Mac", "Grilled chicken, Algerian sauce & crispy fried onions."],
+        ["Ace Mac", 500, "Plain mac & cheese."],
+        ["Jack’s Mac", 599, "Fried chicken, Algerian sauce & crispy fried onions."],
+        ["Diamond Melt", 599, "Chicken shawarma, Algerian sauce & crispy fried onions."],
+        ["Spade Stack", 599, "Smash beef, Algerian sauce & crispy fried onions."],
+        ["King’s Mac", 599, "Grilled chicken, Algerian sauce & crispy fried onions."],
       ],
       ["loadd-menu#loaded-mac-cheese"],
     ),
@@ -580,15 +679,16 @@ const loadd: LaunchMenuBrand = {
       "full-house",
       "The Full House",
       [
-        ["King of Hearts", "Fried chicken, loaded fries and mac ’n cheese."],
-        ["Queen of Hearts", "Grilled chicken, loaded fries and mac ’n cheese."],
-        ["Jack of Diamonds", "Chicken shawarma, loaded fries and mac ’n cheese."],
-        ["King of Spades", "Smashed beef, loaded fries and mac ’n cheese."],
+        ["King of Hearts", 699, "Fried chicken, loaded fries and mac ’n cheese."],
+        ["Queen of Hearts", 699, "Grilled chicken, loaded fries and mac ’n cheese."],
+        ["Jack of Diamonds", 699, "Chicken shawarma, loaded fries and mac ’n cheese."],
+        ["King of Spades", 699, "Smashed beef, loaded fries and mac ’n cheese."],
       ],
       ["loadd-menu#full-house"],
       "The best of both worlds. Loaded fries and mac ’n cheese together in one box, topped with cheese, Algerian sauce, spring onions and crispy fried onions.",
     ),
-    section("loadd", "cans-drinks", "Cans & Drinks", cansAndDrinks, ["loadd-menu#cans-drinks"]),
+    section("loadd", "sides", "Sides", sharedSides, [`${LAUNCH_MENU_PRICE_REVISION}#loadd`]),
+    section("loadd", "cans-drinks", "Cans & Drinks", skorchLoaddDrinks, ["loadd-menu#cans-drinks"]),
   ],
   optionGroups: [],
   upsells: [
@@ -615,20 +715,20 @@ const skorch: LaunchMenuBrand = {
   name: "Skorch",
   accent: "#D94900",
   description: "Smash burgers. Seared on steel.",
-  sourceRefs: ["skorch-menu"],
+  sourceRefs: ["skorch-menu", `${LAUNCH_MENU_PRICE_REVISION}#skorch-burgers`],
   sections: [
     section(
       "skorch-burgers",
       "beef-smash-deck",
       "The Beef Smash Deck",
       [
-        ["The Ace", "Single beef smash – 1 patty."],
-        ["Double Deal", "Double beef smash – 2 patties."],
-        ["Triple Stack", "Triple beef smash – 3 patties."],
-        ["Four of a Kind", "Quadruple beef smash – 4 patties."],
+        ["The Ace", 399, "Single beef smash – 1 patty."],
+        ["Double Deal", 550, "Double beef smash – 2 patties."],
+        ["Triple Stack", 700, "Triple beef smash – 3 patties."],
+        ["Four of a Kind", 899, "Quadruple beef smash – 4 patties."],
       ],
       ["skorch-menu#beef-smash-deck"],
-      "All burgers come with cheese, gherkin, caramelised onion & Algerian sauce.",
+      "All with lettuce, cheese, gherkin, caramelised onion & Algerian sauce.",
       [
         "skorch-burgers-burger-add-ons",
         "skorch-burgers-make-it-a-meal",
@@ -639,26 +739,13 @@ const skorch: LaunchMenuBrand = {
       "skorch-burgers",
       "kids-meal",
       "Kids Meal",
-      [["Little Jack’s Nuggets Meal", "6 nuggets, fries & drink."]],
+      [["Nuggets Meal", 500, "6 nuggets, fries & drink.", "little-jacks-nuggets-meal"]],
       ["skorch-menu#kids-meal"],
       undefined,
       ["skorch-burgers-kids-meal-upgrades"],
     ),
-    section(
-      "skorch-burgers",
-      "sides",
-      "Sides",
-      [
-        ["Fries"],
-        ["Peri Fries"],
-        ["Onion Rings (x6)"],
-        ["Mozzarella Sticks (x6)"],
-        ["Chilli Cheese Nuggets (x6)"],
-        ["Chicken Nuggets (x6)"],
-      ],
-      ["skorch-menu#sides"],
-    ),
-    section("skorch-burgers", "cans-drinks", "Cans & Drinks", cansAndDrinks, [
+    section("skorch-burgers", "sides", "Sides", sharedSides, ["skorch-menu#sides"]),
+    section("skorch-burgers", "cans-drinks", "Cans & Drinks", skorchLoaddDrinks, [
       "skorch-menu#cans-drinks",
     ]),
   ],
@@ -668,24 +755,28 @@ const skorch: LaunchMenuBrand = {
       "Burger Add-ons",
       "multiple",
       false,
-      [["2 Rashers"], ["3 Onion Rings"], ["Cheese Slice"]],
-      ["skorch-menu#burger-add-ons"],
+      [
+        ["2 Rashers", 199],
+        ["3 Onion Rings", 199],
+        ["Cheese Slice", 50],
+      ],
+      ["skorch-menu#burger-add-ons", `${LAUNCH_MENU_PRICE_REVISION}#skorch-burgers`],
     ),
     group(
       "skorch-burgers-make-it-a-meal",
       "Make It a Meal",
       "single",
       false,
-      [["Make it a meal", "Add fries & a drink."]],
-      ["skorch-menu#make-it-a-meal"],
+      [["Make it a meal", LAUNCH_MEAL_PRICE_PENCE, "Fries and drink."]],
+      ["skorch-menu#make-it-a-meal", `${LAUNCH_MENU_PRICE_REVISION}#skorch-burgers`],
     ),
     group(
       "skorch-burgers-meal-upgrades",
       "Meal Upgrades",
       "multiple",
       false,
-      [["Peri Salt"], ["Loaded Fries"], ["Loaded Mac ’n’ Cheese"], ["Mocktail"], ["Milkshake"]],
-      ["skorch-menu#meal-upgrades"],
+      skorchMealUpgradeRows,
+      ["skorch-menu#meal-upgrades", `${LAUNCH_MENU_PRICE_REVISION}#skorch-burgers`],
       undefined,
       {
         groupId: "skorch-burgers-make-it-a-meal",
@@ -697,15 +788,15 @@ const skorch: LaunchMenuBrand = {
       "Meal Upgrades",
       "multiple",
       false,
-      [["Peri Salt"], ["Loaded Fries"], ["Loaded Mac ’n’ Cheese"], ["Mocktail"], ["Milkshake"]],
-      ["skorch-menu#meal-upgrades"],
+      skorchMealUpgradeRows,
+      ["skorch-menu#meal-upgrades", `${LAUNCH_MENU_PRICE_REVISION}#skorch-burgers`],
     ),
   ],
   upsells: [
     {
       id: "skorch-burgers-upsell-meal",
       label: "Make It a Meal",
-      description: "Add fries & a drink.",
+      description: "Fries and drink.",
       optionGroupId: "skorch-burgers-make-it-a-meal",
       sourceRefs: ["skorch-menu#make-it-a-meal"],
     },
@@ -731,51 +822,41 @@ const skorch: LaunchMenuBrand = {
   ],
 };
 
-const souvanoMealRefs = [
-  "souvano-menu#stir-fry-donner",
-  "souvano-menu#heatwave",
-  "souvano-menu#lamb-chops",
-];
+const souvanoRefs = [`${LAUNCH_MENU_PRICE_REVISION}#souvano`];
 const souvano: LaunchMenuBrand = {
   id: "souvano",
   name: "Souvano",
   accent: "#C85600",
-  description: "Mediterranean grill.",
-  sourceRefs: ["souvano-menu"],
+  description: "Mediterranean grill. Your choice of fries, rice or naan included.",
+  sourceRefs: ["souvano-menu", ...souvanoRefs],
   sections: [
     section(
       "souvano",
       "stir-fry-donner",
-      "Stir Fry Donner",
-      [["Stir Fry Donner"]],
+      "Stir-Fry Doner",
+      [["Stir-Fry Doner", 650, undefined, "stir-fry-donner"]],
       ["souvano-menu#stir-fry-donner"],
-      undefined,
-      ["souvano-donner-flavour", "souvano-make-it-a-meal", "souvano-meal-side"],
+      "Choose Plain, Fiery Sweet Chilli, Dynamite or Korean BBQ, with fries, rice or naan included.",
+      ["souvano-donner-flavour", "souvano-meal-side"],
     ),
     section(
       "souvano",
       "heatwave",
       "Heatwave",
-      [
-        [
-          "Heatwave",
-          "Chopped grilled chicken shawarma style, over a bed of fragrant spicy rice/naan/fries, and a side of fresh salad.",
-        ],
-      ],
+      [["Heatwave", 699, "Spicy Middle Eastern Chicken. Chopped & shredded chicken."]],
       ["souvano-menu#heatwave"],
-      undefined,
-      ["souvano-heatwave-base", "souvano-make-it-a-meal"],
+      "Your choice of fries, rice or naan included.",
+      ["souvano-heatwave-base"],
     ),
     section(
       "souvano",
       "lamb-chops",
       "Lamb Chops",
-      [["Lamb Chops", "Spicy Middle Eastern Kick (Flavour)"]],
+      [["Lamb Chops", 999, "Tender, flavourful lamb chops."]],
       ["souvano-menu#lamb-chops"],
-      undefined,
-      ["souvano-make-it-a-meal", "souvano-meal-side"],
+      "Middle Eastern flavour. Your choice of fries, rice or naan included.",
+      ["souvano-meal-side"],
     ),
-    section("souvano", "cans-drinks", "Cans & Drinks", cansAndDrinks, ["souvano-menu#cans-drinks"]),
   ],
   optionGroups: [
     group(
@@ -783,62 +864,90 @@ const souvano: LaunchMenuBrand = {
       "Flavour",
       "single",
       true,
-      [["Plain"], ["Fiery Sweet Chilli"], ["Dynamite"], ["Korean BBQ"]],
-      ["souvano-menu#stir-fry-donner"],
+      [
+        ["Plain", 0],
+        ["Fiery Sweet Chilli", 0],
+        ["Dynamite", 0],
+        ["Korean BBQ", 0],
+      ],
+      ["souvano-menu#stir-fry-donner", ...souvanoRefs],
     ),
     group(
       "souvano-heatwave-base",
-      "Base",
+      "Included side",
       "single",
       true,
-      [["Fragrant spicy rice"], ["Naan"], ["Fries"]],
-      ["souvano-menu#heatwave"],
-    ),
-    group(
-      "souvano-make-it-a-meal",
-      "Make It a Meal",
-      "single",
-      false,
-      [["Make it a meal", "With your choice of Fries, Rice or Naan & a Drink"]],
-      souvanoMealRefs,
-      "With your choice of Fries, Rice or Naan & a Drink",
+      [
+        ["Fries", 0],
+        ["Rice", 0, undefined, "fragrant-spicy-rice"],
+        ["Naan", 0],
+      ],
+      ["souvano-menu#heatwave", ...souvanoRefs],
     ),
     group(
       "souvano-meal-side",
-      "Meal side",
+      "Included side",
       "single",
       true,
-      [["Fries"], ["Rice"], ["Naan"]],
-      souvanoMealRefs,
-      undefined,
-      {
-        groupId: "souvano-make-it-a-meal",
-        optionIds: ["souvano-make-it-a-meal-make-it-a-meal"],
-      },
+      [
+        ["Fries", 0],
+        ["Rice", 0],
+        ["Naan", 0],
+      ],
+      souvanoRefs,
     ),
   ],
-  upsells: [
-    {
-      id: "souvano-upsell-meal",
-      label: "Make It a Meal",
-      description: "With your choice of Fries, Rice or Naan & a Drink",
-      optionGroupId: "souvano-make-it-a-meal",
-      sourceRefs: souvanoMealRefs,
-    },
-    {
-      id: "souvano-upsell-drinks",
-      label: "Cans & Drinks",
-      targetBrandId: "souvano",
-      targetSectionId: "cans-drinks",
-      sourceRefs: ["souvano-menu#cans-drinks"],
-    },
-  ],
+  upsells: [],
 };
 
-/**
- * 5 supplied brands, 20 sections, 77 products.
- * Portion/flavour variants are choices, not duplicated products.
- */
+function addIncludedMealDrinks(brand: LaunchMenuBrand, drinks: readonly MenuRow[]) {
+  const mealGroupId = `${brand.id}-make-it-a-meal`;
+  const mainId = `${brand.id}-included-meal-drink`;
+  const kidsId = `${brand.id}-kids-included-drink`;
+  const refs = [`${LAUNCH_MENU_PRICE_REVISION}#${brand.id}`];
+  const rows: MenuRow[] = drinks.filter((row) => row[1] === 100).map(([name]) => [name, 0]);
+  const main = group(
+    mainId,
+    "Included meal drink",
+    "single",
+    true,
+    rows,
+    refs,
+    "Choose a standard can or water, included with your meal.",
+    { groupId: mealGroupId, optionIds: [`${mealGroupId}-make-it-a-meal`] },
+  );
+  const kids = group(
+    kidsId,
+    "Included meal drink",
+    "single",
+    true,
+    rows,
+    refs,
+    "Choose a standard can or water, included with your meal.",
+  );
+  for (const entry of [main, kids]) {
+    const upgradeId =
+      entry.id === mainId ? `${brand.id}-meal-upgrades` : `${brand.id}-kids-meal-upgrades`;
+    const upgrade = brand.optionGroups.find((candidate) => candidate.id === upgradeId)!;
+    entry.replacedBy = {
+      crossSlot: "drink",
+      optionIds: upgrade.options
+        .filter((option) => /mocktail|milkshake/i.test(option.label))
+        .map((option) => option.id),
+    };
+    brand.optionGroups.push(entry);
+  }
+  for (const section of brand.sections) {
+    for (const item of section.items) {
+      if (item.optionGroupIds.includes(mealGroupId)) item.optionGroupIds.push(mainId);
+      else if (section.id.startsWith("kids-")) item.optionGroupIds.push(kidsId);
+    }
+  }
+}
+addIncludedMealDrinks(tavo, tavoDrinks);
+addIncludedMealDrinks(skorch, skorchLoaddDrinks);
+
+/** Five owner-priced menus; portion/flavour variants remain selectable choices. */
 export const launchMenuBrands: LaunchMenuBrand[] = [tavo, moktl, loadd, skorch, souvano];
 
 export function getLaunchMenuBrand(id: string): LaunchMenuBrand | undefined {
@@ -846,18 +955,58 @@ export function getLaunchMenuBrand(id: string): LaunchMenuBrand | undefined {
   return launchMenuBrands.find((brand) => brand.id === canonicalId);
 }
 
-/** Editorial gaps to preserve when preparing a server-owned live catalogue. */
+/** Price approval is not proof of opening hours, stock, payment or availability. */
+export function isLaunchBrandPriceApproved(id: string): boolean {
+  const brand = getLaunchMenuBrand(id);
+  return !!brand && launchMenuPriceApproval.brandIds.some((approved) => approved === brand.id);
+}
+
+/** Derive the single hidden canonical variant option from explicit source choices. */
+export function getLaunchMenuPriceVariant(
+  brandId: string,
+  itemId: string,
+  selections: Record<string, string[]>,
+): LaunchMenuPriceVariant | undefined {
+  const item = getLaunchMenuBrand(brandId)
+    ?.sections.flatMap((entry) => entry.items)
+    .find((entry) => entry.id === itemId);
+  return item?.priceVariants?.find((variant) =>
+    Object.entries(variant.selections).every(
+      ([groupId, optionId]) =>
+        Array.isArray(selections[groupId]) &&
+        selections[groupId].length === 1 &&
+        selections[groupId][0] === optionId,
+    ),
+  );
+}
+
+/** Source/display amount only. Live checkout must read current database prices. */
+export function launchMenuConfiguredItemPrice(
+  brandId: string,
+  itemId: string,
+  selections: Record<string, string[]>,
+): number | null {
+  if (!isLaunchBrandPriceApproved(brandId)) return null;
+  const item = getLaunchMenuBrand(brandId)
+    ?.sections.flatMap((entry) => entry.items)
+    .find((entry) => entry.id === itemId);
+  if (!item) return null;
+  return item.priceVariants
+    ? (getLaunchMenuPriceVariant(brandId, itemId, selections)?.pricePence ?? null)
+    : item.pricePence;
+}
+
 export const launchMenuSourceNotes = [
-  "The owner approved an initial £20 per standalone item on 5 November 2026, including sides, cans and mocktails; the supplied sheets themselves print no prices.",
-  "The owner also approved £20 per selected optional add-on, meal deal and upgrade on 5 November 2026. Required included flavour, portion and base choices have no extra charge.",
+  "The owner’s typed menus and prices dated 5 November 2026 supersede the earlier £20 placeholders for all five launch brands.",
+  "Souvano’s three approved mains each include fries, rice or naan. No extra meal charge or standalone Souvano drinks were supplied; cross-brand additions are separately priced extras.",
+  "Tavo wing and tender prices depend on the exact portion and flavour together. Grilled wings use Spicy Honey BBQ; fried wings and tenders use Korean BBQ.",
+  "Nuggets Meal is the current display name for both kids meals; stable IDs preserve existing catalogue references.",
+  "Skorch and Load’d use the revised Pepsi/Tango/Rubicon/7up drink list. Tavo retains its separate Coke/Miranda/Barr list. Red Bull is £2.20 in all three menus.",
+  "A named Load’d meal replacement is £2.99 for loaded fries or £3.99 for loaded mac ’n cheese. Moktl meal replacements are £2.99. Standalone extras retain their full item price.",
+  "Milkshake upgrades remain displayed at £2.99 but unavailable until the owner supplies the flavour choices; no milkshake flavours are invented.",
   "No allergen declaration or ingredient-completeness assurance is supplied.",
   "No drink serving sizes, lamb-chop quantity, or meat species for the rashers are specified.",
-  "Tavo's Onion Rings burger add-on has no stated quantity; Skorch explicitly lists 3 Onion Rings.",
-  "Tavo prints Little Jacks Nugget Meal; Skorch prints Little Jack’s Nuggets Meal. Their names are retained separately.",
-  "Milkshake upgrades are £20 under the owner's blanket upgrade instruction, but no milkshake flavours, sizes or fulfilment brand are supplied.",
-  "The sheets do not state which listed cans or drinks qualify for a meal, or how upgrades substitute for its contents.",
-  "Meal-upgrade groups are available to browse for meals; no per-option combination limits are supplied.",
-  "Heatwave names an included rice/naan/fries base and separately repeats the meal offer. This does not establish a second base or an extra charge.",
-  "No third-party brand is named for the generic Loaded Fries, Loaded Mac ’n Cheese or Mocktail upgrades; cross-brand fulfilment mappings remain unspecified.",
-  "Accent colours and single/multiple presentation are UI metadata; they do not establish prices, live availability or kitchen rules.",
+  "Tavo’s Onion Rings burger add-on has no stated quantity; Skorch explicitly lists 3 Onion Rings.",
+  "The included meal drink selector uses each brand’s listed £1 cans/water. Red Bull stays a separate £2.20 purchase; a named Moktl or milkshake upgrade replaces the included drink.",
+  "Accent colours and single/multiple presentation are UI metadata, not live availability or kitchen rules.",
 ];

@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { ArrowDownToLine, Check, RefreshCw, Smartphone } from "lucide-react";
 import { useMealDeckPwa } from "@/lib/mealdeck-pwa-context";
 
-export function PwaInstallCard() {
+export function PwaInstallCard({ appName = "MealDeck" }: { appName?: string }) {
   const { installed, canInstall, updateReady, install, update } = useMealDeckPwa();
   const [helpOpen, setHelpOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -15,32 +15,40 @@ export function PwaInstallCard() {
     setBusy(false);
     setMessage(
       result === "accepted"
-        ? "Finish adding MealDeck in your browser’s installation window."
+        ? `Finish adding ${appName} in your browser’s installation window.`
         : result === "dismissed"
-          ? "You can add MealDeck later from your browser menu."
+          ? `You can add ${appName} later from your browser menu.`
           : "Open your browser menu to see installation options.",
     );
     if (result !== "accepted") setHelpOpen(true);
   }
 
   return (
-    <section className="md-install-card" aria-label="MealDeck on your home screen">
+    <section className="md-install-card" aria-label={`${appName} on your home screen`}>
       <div className="md-install-heading">
         <span className="md-install-icon" aria-hidden="true">
           <Smartphone size={25} />
         </span>
         <div>
-          <h3>{installed ? "Your MealDeck app" : "A place on your home screen."}</h3>
-          <p>
+          <h3>
             {installed
-              ? "Your favourite menus, ready to explore."
-              : "Open the deck in one tap. Keep your favourites close."}
+              ? `Your ${appName} app`
+              : appName === "MealDeck"
+                ? "A place on your home screen."
+                : `Install ${appName}`}
+          </h3>
+          <p>
+            {appName !== "MealDeck"
+              ? "A dedicated staff app. Authorised sign-in is required every time your session expires."
+              : installed
+                ? "Your favourite menus, ready to explore."
+                : "Open the deck in one tap. Keep your favourites close."}
           </p>
         </div>
       </div>
       {installed ? (
         <p className="md-install-confirmed">
-          <Check size={17} aria-hidden="true" /> MealDeck is installed
+          <Check size={17} aria-hidden="true" /> Running as an app
         </p>
       ) : canInstall ? (
         <button
@@ -50,7 +58,7 @@ export function PwaInstallCard() {
           onClick={() => void requestInstall()}
         >
           <ArrowDownToLine size={18} aria-hidden="true" />
-          {busy ? "Opening installation…" : "Install MealDeck"}
+          {busy ? "Opening installation…" : `Install ${appName}`}
         </button>
       ) : (
         <button

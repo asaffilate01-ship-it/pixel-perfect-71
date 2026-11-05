@@ -72,7 +72,17 @@ describe("MealDeck canonical KDS response boundaries", () => {
   test("retains exact food instructions in one purchased master line", () => {
     const result = parseKdsBoard(board(), scope);
     expect(result.orders).toHaveLength(1);
-    expect(result.orders[0]!.items).toEqual([item()]);
+    expect(result.orders[0]!.items).toEqual([
+      {
+        ...item(),
+        checkout_line_id: null,
+        parent_checkout_line_id: null,
+        base_unit_pence: null,
+        unit_pence: null,
+        modifier_details: [],
+        bags: [],
+      },
+    ]);
     expect(result.orders[0]!.display_code).toBe("0438");
   });
 

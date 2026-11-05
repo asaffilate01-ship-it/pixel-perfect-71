@@ -1,6 +1,6 @@
 import {
   getLaunchMenuBrand,
-  LAUNCH_CROSS_UPGRADE_PRICE_PENCE,
+  launchCrossReplacementPricePence,
   type LaunchMenuBrand,
   type LaunchMenuItem,
 } from "./launch-menu-catalogue";
@@ -54,8 +54,14 @@ export type LaunchCrossConfiguration = {
   crossSelections: LaunchCrossSelection[];
 };
 
-export function priceForLaunchCrossChoice(mode: LaunchCrossMode, standalonePricePence: number) {
-  return mode === "upgrade" ? LAUNCH_CROSS_UPGRADE_PRICE_PENCE : standalonePricePence;
+export function priceForLaunchCrossChoice(
+  mode: LaunchCrossMode,
+  standalonePricePence: number,
+  targetSectionId: string,
+): number | null {
+  if (!Number.isSafeInteger(standalonePricePence) || standalonePricePence < 0) return null;
+  if (mode === "extra") return standalonePricePence;
+  return launchCrossReplacementPricePence(targetSectionId);
 }
 
 const upgradeGroups = [
@@ -105,16 +111,20 @@ export function cleanLaunchSourceSelections(
     const supplied = input[group.id];
     if (!Array.isArray(supplied)) continue;
     const options = group.options
-      .filter((option) => supplied.includes(option.id))
+      .filter((option) => option.available !== false && supplied.includes(option.id))
       .map((option) => option.id);
     if (options.length) next[group.id] = group.kind === "single" ? options.slice(0, 1) : options;
   }
   for (let pass = 0; pass < groups.length; pass++) {
     for (const group of groups) {
       if (
-        group.when &&
-        (!parent.item.optionGroupIds.includes(group.when.groupId) ||
-          !group.when.optionIds.some((id) => next[group.when!.groupId]?.includes(id)))
+        (group.when &&
+          (!parent.item.optionGroupIds.includes(group.when.groupId) ||
+            !group.when.optionIds.some((id) => next[group.when!.groupId]?.includes(id)))) ||
+        (group.replacedBy &&
+          Object.values(next).some((options) =>
+            options.some((id) => group.replacedBy!.optionIds.includes(id)),
+          ))
       )
         delete next[group.id];
     }
@@ -130,15 +140,17 @@ function targetChoices(brandId: LaunchCrossBrandId): LaunchCrossChoice[] {
     brand?.sections
       .filter((section) => sections.includes(section.id))
       .flatMap((section) =>
-        section.items.map((item) => ({
-          brandId,
-          itemId: item.id,
-          name: item.name,
-          sectionId: section.id,
-          sectionTitle: section.title,
-          ...(item.description ? { description: item.description } : {}),
-          pricePence: item.pricePence,
-        })),
+        section.items
+          .filter((item) => item.pricePence !== null)
+          .map((item) => ({
+            brandId,
+            itemId: item.id,
+            name: item.name,
+            sectionId: section.id,
+            sectionTitle: section.title,
+            ...(item.description ? { description: item.description } : {}),
+            pricePence: item.pricePence!,
+          })),
       ) ?? []
   );
 }
@@ -170,18 +182,8 @@ export function getLaunchCrossOffers(
     parent.section.id === "kids-meal" ||
     parent.section.id === "kids-meals" ||
     !!clean[mealGroup]?.includes(`${mealGroup}-make-it-a-meal`);
-  const heatwave = parent.brand.id === "souvano" && parent.section.id === "heatwave";
-  let sideMode: LaunchCrossMode | undefined = meal ? "upgrade" : "extra";
-  if (parent.brand.id === "loadd") sideMode = undefined;
-  if (heatwave) {
-    sideMode = clean["souvano-heatwave-base"]?.includes("souvano-heatwave-base-fries")
-      ? "upgrade"
-      : undefined;
-  } else if (parent.brand.id === "souvano" && meal) {
-    sideMode = clean["souvano-meal-side"]?.includes("souvano-meal-side-fries")
-      ? "upgrade"
-      : undefined;
-  }
+  const sideMode: LaunchCrossMode | undefined =
+    parent.brand.id === "loadd" ? undefined : meal ? "upgrade" : "extra";
   const offers: LaunchCrossOffer[] = [];
   if (sideMode)
     offers.push({
@@ -193,9 +195,7 @@ export function getLaunchCrossOffers(
       description:
         sideMode === "extra"
           ? "Add one Load’d side alongside this main."
-          : heatwave
-            ? "Replace the included fries base with one Load’d choice."
-            : "Replace the included meal fries with one Load’d side.",
+          : "Replace the included meal fries with one Load’d side.",
       replaces: sideMode === "upgrade" ? "fries" : null,
       choices: targetChoices("loadd"),
     });
@@ -265,6 +265,11 @@ export function cleanLaunchCrossConfiguration(
       itemId: selected.itemId,
     });
     clean = withoutOptions(clean, offer.slot === "side" ? mappedSideOptions : mappedDrinkOptions);
+    if (offer.mode === "upgrade") {
+      for (const group of brand.optionGroups) {
+        if (group.replacedBy?.crossSlot === offer.slot) delete clean[group.id];
+      }
+    }
   }
   return { selections: clean, crossSelections };
 }
@@ -308,6 +313,12 @@ export function launchCrossSelectionSummaries(
     const choice = offer?.choices.find((entry) => entry.itemId === selection.itemId);
     const target = getLaunchMenuBrand(selection.brandId);
     if (!choice || !target) return [];
+    const pricePence = priceForLaunchCrossChoice(
+      selection.mode,
+      choice.pricePence,
+      choice.sectionId,
+    );
+    if (pricePence === null) return [];
     const component =
       selection.slot === "drink"
         ? "Meal drink"
@@ -325,7 +336,7 @@ export function launchCrossSelectionSummaries(
           selection.mode === "upgrade"
             ? `${component} replaced with ${target.name} · ${name}`
             : `Extra ${target.name} ${selection.slot} · ${name}`,
-        pricePence: priceForLaunchCrossChoice(selection.mode, choice.pricePence),
+        pricePence,
       },
     ];
   });

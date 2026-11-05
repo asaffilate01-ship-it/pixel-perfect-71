@@ -1,132 +1,122 @@
-# Approved launch catalogue and activation contracts — 5 November 2026
+# Approved launch menus and price revision — 5 November 2026
 
-## Owner decision and delivered source
+## Current approved menu
 
-The owner requested **£20 for every standalone menu item**, then clarified **£20 for every optional add-on, meal deal and upgrade**, and asked to activate ordering/backend administration so prices can be changed later. This is approved starting-price data; it supersedes the earlier absence of price approval. Included flavour, portion and base selectors describe an already priced dish and add £0.
+The owner's typed Skorch, Load’d, Moktl, Tavo and Souvano menus replace the earlier **£20 placeholders**. Prices are integer GBP pence in `src/lib/launch-menu-catalogue.ts`; generated database input is `deploy/mealdeck/catalogue/launch-catalogue.json`. The price revision is `owner-menu-20261105-v2`.
 
-`src/lib/launch-menu-catalogue.ts` is the single source for the five launch menus and their initial prices. `deploy/mealdeck/catalogue-import.mjs` derives the complete reviewable `deploy/mealdeck/catalogue/launch-catalogue.json` and a bound SQL import from that source. No separate manually transcribed product/price list exists.
+| Menu | Main prices | Included choices and changes |
+| --- | --- | --- |
+| Skorch | The Ace £3.99; Double Deal £5.50; Triple Stack £7; Four of a Kind £8.99 | Lettuce included in the revised description. Nuggets Meal £5. Add-ons £1.99/£1.99/£0.50. |
+| Load’d | Loaded fries £5.50; Ace Mac £5; other mac dishes £5.99; Full House £6.99 | Six sides added. Distinct named dishes retain their stable IDs. |
+| Moktl | Seven mocktails £4.50; Rush Hour £6 | Named meal mocktail replacement is £2.99; a separate drink retains its standalone price. |
+| Tavo | Cruncher £4.49; Twin Crunch £5.99; Flame £5.50; Big Flame £6.50 | Buttermilk/spicy grilled descriptions updated; caramelised onion removed from Tavo's common burger description. Nuggets Meal £5. A selected burger dip costs £1.50 once. |
+| Souvano | Stir-Fry Doner £6.50; Heatwave £6.99; Lamb Chops £9.99 | Each includes one mandatory fries/rice/naan selection. Doner also requires a flavour. No extra meal charge or unapproved Souvano drinks. |
 
-| Import records | Count | Initial state |
+Skorch/Load’d use Pepsi, Pepsi Max, Tango Orange, Tango Apple, Rubicon Mango, 7up and Water Bottle at £1. Tavo uses Coke, Pepsi Max, Tango Apple, Miranda Orange, Miranda Strawberry, Barr Limeade and Water Bottle at £1. Red Bull is £2.20 in all three menus. Tavo's six chicken nuggets are £3.50; Skorch/Load’d's are £4. Other corresponding sides retain the owner's supplied prices.
+
+For Skorch/Tavo, a meal adds £2.50. Peri salt is £0.50, a Load’d fries replacement £2.99, a Load’d mac replacement £3.99, and mocktail/milkshake replacement £2.99. Named replacements remove the corresponding generic choice before pricing, so the same component is charged once. Standalone cross-brand extras use their full item price. Souvano's cross-brand additions are full-priced extras; its latest three-dish menu did not specify replacement surcharges.
+
+The included standard meal-drink selector uses the brand's listed £1 cans/water. Red Bull is not an included can. A Moktl replacement removes that included drink selection. Kids meals follow the same rule without a paid meal toggle. Milkshake upgrades retain the supplied £2.99 display price but are unavailable until actual flavour choices are supplied. Their options have `available: false` and `unavailableReason: "Flavours coming soon"`; stale selections cannot be quoted and their database options stay inactive. No flavours or serving sizes are invented.
+
+## Exact Tavo portion/flavour pricing
+
+These are full dish prices, not a flat portion surcharge. The same fried table applies to both fried wings and fried tenders.
+
+| Dish/flavour | 3 pcs | 5 pcs | 8 pcs |
+| --- | ---: | ---: | ---: |
+| Fried, Plain | £2.99 | £5.50 | £6.49 |
+| Fried, Korean BBQ | £3.50 | £6.50 | £7.99 |
+| Fried, Dynamite | £3.50 | £6.50 | £7.99 |
+| Fried, Fiery Sweet Chilli | £3.50 | £6.50 | £8.99 |
+| Grilled, Plain | £2.49 | £4.49 | £6.49 |
+| Grilled, Spicy Honey BBQ | £2.99 | £4.99 | £6.99 |
+| Grilled, Dynamite | £2.99 | £4.99 | £6.99 |
+| Grilled, Fiery Sweet Chilli | £2.99 | £4.99 | £6.99 |
+
+Each of the three wing/tender products has twelve explicit source `priceVariants`. `getLaunchMenuPriceVariant(brandId, itemId, selections)` derives the single canonical pricing option from the two visible selectors. It never accepts a browser-provided amount or arbitrary hidden variant ID. `launchMenuConfiguredItemPrice` is a display/source calculation only; live checkout reads current canonical database prices.
+
+The database import creates one hidden required `price-variant` modifier group per such item. The visible flavour/portion options carry £0; the derived hidden option carries `full variant price − minimum base price`. This makes every combination editable through canonical base and modifier prices without guessing additive flavour/portion prices. The server adapter must enforce the selector-to-variant mapping.
+
+## Generated records
+
+| Record | Count | Initial imported state |
 | --- | ---: | --- |
-| Existing launch brands required | 5 | No brands created, renamed or activated |
-| Actual menu sections | 20 | Missing categories inserted as drafts |
-| Standalone items, including cans, water, sides and drinks | 77 | £20 each; inactive |
-| Source modifier groups/options | 15 / 49 | Included choices £0; optional choices £20; all options inactive |
-| Named cross-brand replacement groups/options | 2 / 17 | Nine Load’d sides and eight Moktl drinks; £20 replacement surcharge; inactive and unattached |
-| Source item-to-group links | 49 | Original source group associations, subject to the conditional-rule limitation below |
-| Item-to-kitchen routes | 77 | The explicitly selected existing `SHARED` station |
-| Channel visibility rules | 77 | New rules hidden; existing rules preserved |
+| Approved brands | 5 | Existing bootstrap brand UUIDs resolved by stable slug |
+| Menu sections | 20 | New sections inactive |
+| Standalone items | 79 | Reviewed prices; new items inactive |
+| Source modifier groups/options | 19 / 80 | Includes standard meal drinks and Souvano sides |
+| Hidden price-variant groups/options | 3 / 36 | Twelve exact combinations for each Tavo wings/tenders item |
+| Named cross-brand replacement groups/options | 2 / 17 | Nine Load’d sides and eight Moktl drinks; inactive and unattached |
+| All modifier groups/options | 24 / 133 | New options inactive |
+| Item/group associations | 62 | Includes hidden variant groups; replacement groups need the server adapter |
+| Shared station routes | 79 | Actual existing `SHARED` station only |
+| MealDeck visibility rules | 79 | New rules hidden |
 
-The five existing bootstrap `Menu` categories remain untouched; importing twenty real sections therefore leaves twenty-five categories in a fresh bootstrapped profile. Shared toppings/descriptions are included in each imported item's description. No serving sizes, recipes, allergens, preparation times, tax codes or delivery charges are invented.
+Stable source item IDs remain the canonical `menu_items.sku`. Renamed kids meals and Souvano Doner retain their prior SKU. Modifier UUIDs use the existing tenant-scoped UUIDv5 scheme in `launchModifierDatabaseId`; public display names are never identifiers.
 
-Standalone extras use their target item's price. A named replacement uses its own £20 surcharge, independent of that target's full standalone price. Generic and named replacements must not both charge for the same included component.
+Conditional groups have canonical `min_select=0` when they depend on a meal or replaceable component. The server applies the stricter semantic requirement from `when`/`replacedBy`, using normalized source and cross-brand selections. This avoids forcing an extra can after a paid drink replacement. Required hidden price-variant groups remain `min_select=1`.
 
-## Scope and execution
+## Two distinct import operations
 
-The importer never connects to a database itself. Its SQL is for an authorised database owner in the dedicated MealDeck project, after the [independent profile](mealdeck-independent-backend-phase47.md) is installed and its real confirmed owner/business bootstrap has succeeded. It does not create users, confirm emails, assign roles, create tenants, open channels or claim a payment account.
+**Default insert-only import:** creates missing draft records and associations, preserves existing names, prices, activation, routing and administrator edits. It does **not** change existing £20 records. Its `catalogue.launch_import` audit event is not proof that every existing price is current.
 
-The generator requires the **actual returned tenant, kitchen and station UUIDs**. Its SQL verifies all of the following before importing:
+**Reviewed menu revision:** run with `--apply-reviewed-prices`. It performs that import and a guarded update in the **same transaction**. The expected previous values are recorded in `catalogue/placeholder-price-baseline.json`, which is historical migration input rather than a current menu.
 
-- The private `mealdeck-independent-v1` installation marker and completed owner bootstrap exist, and their business matches the explicit tenant UUID.
-- The business is MealDeck / 313 Brands Ltd in GBP. The supplied location is its active `shared-kitchen` and the tenant's only active kitchen. This first-launch import must not alter a second kitchen's shared catalogue.
-- The supplied station belongs to that location, has code `SHARED`, and is its only active station.
-- The existing MealDeck ordering channel is disabled, and no MealDeck channel elsewhere in the same tenant is enabled (including at an inactive location). An enabled/missing channel aborts; the importer never changes its setting.
-- The five exact launch-brand slugs already exist. The presence of a `dishbee_private` schema rejects the import.
-- The executing role owns the installation table or inherits its owner role. Anonymous, authenticated and service-role API identities are rejected.
+The revision:
 
-The complete import is atomic. It uses bounded table locks because the existing schema has no unique SKU constraint; checking duplicates without those locks would permit competing writes between the check and insert. A five-second lock timeout aborts instead of indefinitely waiting behind staff edits. It does not change schema, RLS, grants or function permissions.
+- Updates an existing item/option price only when it is the known previous price or already the reviewed new price.
+- Refuses unexpected item prices, option prices or MealDeck location price overrides, rolling back the whole operation so an administrator change is never silently erased.
+- Updates an old price override when it still matches the expected placeholder, preventing a hidden £20 override from surviving the base-price change.
+- Refreshes names/descriptions only when they still match the previous source. Unrelated administrator text remains intact.
+- Removes only obsolete source-owned associations, including the old Souvano paid meal and the old grilled-wing flavour group.
+- Hides retired Skorch/Load’d drinks and the unpriced old Souvano drinks, preserving their IDs and historical order references. It also disables the four milkshake upgrade options until their real flavours are configured.
+- Writes an audited `catalogue.menu_revision` event with `next_value.priceRevision = 'owner-menu-20261105-v2'`, source hash, changed prices and retired SKUs.
+- Runs once. A repeat revision preserves price edits made afterwards.
 
-Use Node 22.18+ or the project's supported Bun runtime; the generator imports the existing TypeScript data module directly.
+Checkout readiness may require the **`catalogue.menu_revision`** receipt. A fresh database must also run the reviewed revision to obtain this receipt; an insert-only import marker is insufficient because it could have left earlier £20 prices untouched.
+
+## Database identity and execution
+
+Use the independent MealDeck project only. The importer requires its installed standalone profile, verified owner bootstrap, the actual MealDeck tenant UUID, one active kitchen and its single shared station. It refuses a shared Dishbee schema, wrong tenant/kitchen/station, API roles, duplicate SKUs, conflicting routes, or any enabled MealDeck ordering channel. It cannot create a business or grant staff access as an import side effect.
+
+Preview the source without accessing a database:
 
 ```sh
 node deploy/mealdeck/catalogue-import.mjs --check
 node deploy/mealdeck/catalogue-import.mjs --json
 ```
 
-The reviewed JSON is committed at `deploy/mealdeck/catalogue/launch-catalogue.json`. After an intentional source catalogue change, regenerate that derived file and keep the source-parity test green. To create a new export without overwriting any existing artifact:
-
-```sh
-node deploy/mealdeck/catalogue-import.mjs --json \
-  --out deploy/mealdeck/generated/launch-catalogue-review.json
-```
-
-Set the three task-specific variables below from the verified bootstrap receipt. They are database identifiers, not a substitute for choosing the correct hosted project or obtaining database-owner access.
+Generate a reviewed revision after obtaining the three real IDs from the verified MealDeck bootstrap:
 
 ```sh
 node deploy/mealdeck/catalogue-import.mjs \
-  --tenant "$MEALDECK_IMPORT_TENANT_UUID" \
-  --kitchen "$MEALDECK_IMPORT_KITCHEN_UUID" \
-  --station "$MEALDECK_IMPORT_STATION_UUID" \
-  --out deploy/mealdeck/generated/launch-catalogue-import.sql
+  --tenant "$MEALDECK_TENANT_UUID" \
+  --kitchen "$MEALDECK_KITCHEN_UUID" \
+  --station "$MEALDECK_STATION_UUID" \
+  --apply-reviewed-prices \
+  --out /tmp/mealdeck-reviewed-menu.sql
 ```
 
-This output owns its `BEGIN`/`COMMIT`. For Lovable's documented runner-owned migration transaction, add `--managed-transaction` and use a different output filename. Submit that entire generated body in **one atomic migration**; do not split it into requests or execute it through an autocommit tool. The JavaScript managed builder additionally requires `runnerOwnsTransaction: true` and `singleMigration: true`. These are an execution contract, not a claim that an arbitrary runner is transactional.
+The output is a complete `BEGIN`/`COMMIT` transaction. Execute the whole file as the database owner in the correct project. Do not split it into multiple autocommit requests. The script locks the bounded catalogue tables and installation row; a short lock timeout aborts instead of waiting behind active edits.
 
-## Reruns and later price editing
+For a migration runner that owns a single atomic transaction, add `--managed-transaction`, or use `buildManagedLaunchCataloguePriceRevisionSql({ tenantId, locationId, stationId, runnerOwnsTransaction: true, singleMigration: true })`. The equivalent standalone builder is `buildLaunchCataloguePriceRevisionSql(binding)`. The managed contract intentionally rejects missing transaction guarantees.
 
-Each product's existing source ID becomes its `sku`. Existing SKU rows are preserved; a duplicate source SKU, wrong brand/category or conflicting kitchen route aborts the whole import. Modifier groups/options have deterministic UUIDv5 identifiers scoped to the actual tenant and stable source ID. A conflicting identifier or unrelated same-name record is reported rather than adopted.
+This operation never enables the ordering channel, publishes records, creates an order, marks a payment paid, releases KDS or sends customer messages. The frozen standalone foundational installer remains unchanged. Hosted execution and publication must be verified separately from source changes.
 
-Rerunning inserts only missing categories, items, groups, options, routes, visibility rules and associations. It does **not** overwrite existing names, descriptions, item prices, option surcharges, channel overrides, active flags, visibility, quantity limits or preparation times. A no-op rerun creates no additional import audit entry. A rerun does restore missing source associations, so do not use this as an automatic reconciliation job after deliberately retiring source content; keep retired records inactive or review the changed source first.
+## Administrator price editing
 
-The current item-price administration RPC is `mealdeck_ops_update_menu_item`, with global `menu.write` permission and an audit record. The separate modifier-price administration extension, `deploy/mealdeck/post-install-migrations/20261105071120_mealdeck_ops_modifier_prices.sql`, adds `mealdeck_ops_modifier_prices` and a conflict-checked `mealdeck_ops_modifier_update_price` with the same global permission boundary. Its migration must be installed before that editor can operate; the draft importer does not install additional RPCs. Neither an edit nor this import publishes products or supplies checkout authority.
+The item editor uses `mealdeck_ops_update_menu_item`. The separately installed modifier-price extension exposes `mealdeck_ops_modifier_prices` and conflict-checked `mealdeck_ops_modifier_update_price`. Both require global menu permissions and retain audit records. Editing a price is separate from publishing a product or granting checkout authority.
 
-For the transaction-owning Lovable runner, generate this extension using its explicit managed builder:
-
-```sh
-node --input-type=module <<'NODE'
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { buildManagedModifierPriceSql } from './deploy/mealdeck/modifier-prices.mjs';
-
-mkdirSync('deploy/mealdeck/generated', { recursive: true });
-writeFileSync(
-  'deploy/mealdeck/generated/modifier-prices-managed.sql',
-  buildManagedModifierPriceSql({ runnerOwnsTransaction: true, singleMigration: true }),
-  { flag: 'wx', mode: 0o600 },
-);
-NODE
-```
-
-The builder removes only the two known outer transaction statements; guards, function bodies, access checks and grants remain unchanged. Submit the complete generated body in one runner-owned atomic migration. The exclusive file write deliberately refuses to replace an already reviewed output.
-
-## Conditional modifiers and cross-brand replacements
-
-The generated JSON retains the exact source `when` dependencies, required/single/multiple choices, source item associations, and named replacement target brand/item IDs. Required groups with no condition import with minimum one. A conditional group imports with minimum zero because the generic database columns cannot represent “required only when this other choice is selected.” All new products/options remain inactive.
-
-The two named replacement groups are **not attached unconditionally to products**. Their editable draft price records and target SKU mappings are ready, but the server must apply `src/lib/launch-menu-upsells.ts`'s eligibility and substitution rules against current approved records: one side and one drink per parent, meal-triggered upgrades, Heatwave's single base, preserving Rice/Naan, and removal of conflicting generic upgrades. It must price extras and replacements differently and multiply each selected child by its parent quantity exactly once.
-
-Publishing these generic rows without that rule adapter would lose the conditional/whole-meal behavior. A public catalogue response must also distinguish draft/inactive options from selectable ones. Empty imported allergen arrays mean **not yet supplied**, not an allergen-free declaration.
-
-## Exact remaining runtime contracts
-
-The user's activation request authorises the intended outcome. These missing runtime contracts still need implementation and verification; price approval alone does not supply them.
-
-| Runtime dependency | Required behaviour and current source gap |
-| --- | --- |
-| Hosted installation and identity | The dedicated project must contain the actual independent profile, confirmed owner/bootstrap receipt, approved catalogue import and modifier-price administration extension. No hosted installation or owner bootstrap is claimed by local source tests. |
-| Published catalogue and routing | `public_mealdeck_serviceability`, `public_mealdeck_catalogue` and `public_mealdeck_delivery_fee` must implement the existing server contracts for the independently configured tenant/kitchen. The standalone installer does not define these customer APIs. Source SKUs must resolve to canonical UUIDs, and the UI must read current published prices when live; the static launch display cannot reflect later database edits by itself. |
-| Pending order creation | `create_mealdeck_checkout_order_once` must atomically persist an idempotent, freshly server-priced pending order, approved modifiers/substitutions and one delivery fee. It is called by `placeOrder` but not defined by the standalone profile. Its receipt must never mean paid. |
-| Stripe session and confirmation | The recorded test publishable token is unused by app source. An actual adapter needs either the verified Lovable built-in payment contract or same-account server Stripe credentials, server-created payment sessions, an authenticated raw-body webhook, merchant/mode/currency/amount/order binding, duplicate/concurrent event handling and reconciliation. No API endpoint, secret, product or provider protocol can be inferred from the public token. The current client only displays a pending-order receipt. |
-| Payment-to-kitchen authority | `mealdeck_private.kds_release_authority(uuid)` and, for split payments, `mealdeck_private.group_payment_authority(uuid)` must read accepted immutable payment/release evidence, including refund/replay handling. They are intentionally absent in the standalone profile. A mutable paid flag or return-page URL cannot release the kitchen. |
-| Customer tracking | `public_mealdeck_order_tracking_v2` must provide the verified order, preparation, packing and fulfilment state using the private handoff code. The UI/progress presentation exists; the standalone installer does not define this public tracking API. |
-
-The separately connected Lovable account is the owner-confirmed destination. The available connected tools did not expose that MealDeck project; the visible Dishbee project is not an alternative. No hosted SQL, payment products, charges, emails or account changes were made by this work. `COMING_SOON` and the server checkout-approval switch remain closed until the real path above works; opening the switches now would expose an incomplete checkout rather than activate it.
+After this revision, subsequent owner edits remain authoritative. A public menu display must read the current canonical catalogue to reflect later edits; a rebuilt static source file alone cannot establish that connection. The checkout adapter must always re-read current canonical prices and reject stale client quotes.
 
 ## Verification
 
-```sh
-npm ci --prefix tests/postgres
-npm run test:catalogue --prefix tests/postgres
-```
+The catalogue tests cover every standalone price, all 36 Tavo combinations, exact add-on prices, dip charging, brand-specific drinks/nuggets, included drink substitution, source references and saved-basket normalization.
 
-The suite executes the full actual independent profile plus the generated import in disposable PostgreSQL. It verifies the committed JSON matches the source, all £20/zero-included prices, complete sections and shared routing, blocked wrong-project/role/kitchen imports, closed channels, duplicate/collision rejection, late atomic rollback, idempotent reruns and preservation of an item price changed through the real owner RPC. The native path adds an independent-session locking check using `pg_blocking_pids()`.
-
-The same suite then installs the separate modifier-price extension and checks scoped staff access, tenant isolation, exact price/audit writes, stale-price rejection, rollback and unchanged publication. Its managed variant is verified for complete wrapper-only transformation and atomic rollback. Native PostgreSQL additionally verifies competing price edits and permission revocation while an update waits on a row lock.
+The PostgreSQL suite executes the actual standalone profile and generated SQL on a disposable local database. It checks draft imports, stable IDs, correct variant deltas, denied roles/projects, closed-channel gates, scope collisions, duplicate SKUs, idempotence and administrator-edit preservation. Four additional revision cases exercise a fresh revision marker, unexpected-price rollback, real placeholder replacement and a late-error rollback. The native PostgreSQL path also exercises independent-session locking; the embedded engine has one connection.
 
 ```sh
-MEALDECK_KDS_TEST_DATABASE_URL='postgresql://postgres:DISPOSABLE_PASSWORD@127.0.0.1:5432/mealdeck_kds_test_catalogue' \
-  npm run test:catalogue:postgres --prefix tests/postgres
+node tests/postgres/catalogue-import-behavior.mjs
+# Only against a fresh disposable localhost test database:
+node tests/postgres/catalogue-import-behavior.mjs --native
 ```
-
-Use a fresh local database/server fixture. The shared harness rejects external hosts and nonempty databases; it never clears an existing application. Local/native results do not attest hosted deployment or Stripe acceptance.
-
-Technical references: [Stripe fulfillment](https://docs.stripe.com/checkout/fulfillment.md?ui=full-page), [Stripe webhook verification](https://docs.stripe.com/webhooks), [Supabase RLS and grants](https://supabase.com/docs/guides/database/postgres/row-level-security). The implementation keeps the existing profile's table/RPC boundary rather than granting browser imports.
