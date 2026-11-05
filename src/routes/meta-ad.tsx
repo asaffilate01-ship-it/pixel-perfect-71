@@ -269,14 +269,15 @@ function FirstOrderExplainer() {
             <p className="md-first-eyebrow">Make yourself at home</p>
             <h2>One account. More to look forward to.</h2>
             <p>
-              Register as a member for member offers and get ready for loyalty points when the
-              rewards programme launches. Offer emails and promotional app alerts are for members
-              who opt in. Choose each separately — saying no does not affect the opening offer.
+              Register and spend £15 or more by and including Friday 13 November 2026 for double
+              loyalty points. Offer emails and promotional app alerts are separate, optional choices
+              — saying no does not affect an eligible offer.
             </p>
             <Link to="/account" className="md-btn md-btn-red">
               Create your account <ArrowRight size={18} aria-hidden="true" />
             </Link>
             <p className="md-first-small">
+              <Link to="/offers">See all three offers</Link> ·{" "}
               <Link to="/privacy">Privacy and your choices</Link> · St Albans and Bedford are coming
               in a future deck.
             </p>

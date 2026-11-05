@@ -611,8 +611,9 @@ export function LaunchMenuBrowser({
                         Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
                       </Link>
                       <p>
-                        Opening offer: 30% off during the confirmed three days. Verified account and
-                        Luton collection or kerbside required.
+                        Opening offer: 30% off the entire menu during our 6–8 November opening
+                        hours. No minimum order. Guests and members welcome for Luton collection or
+                        kerbside. <Link to="/offers">See all three offers.</Link>
                       </p>
                     </div>
                   )}

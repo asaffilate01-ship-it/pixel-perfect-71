@@ -56,6 +56,16 @@ Independent verification at `2026-11-05 15:21:37.306427+00` confirmed the Closed
 
 A separate full guest/security verification at `2026-11-05 15:21:38.693227+00` passed again after the availability installation. All 42 public tables retain RLS and no direct grants to `anon`, `authenticated` or `service_role`. Auth users, businesses, orders, receipts, guest sessions, payment records and customer/consent/loyalty/push records remain at zero; no checkout was enabled. Push and loyalty remain disabled. The state controls are available in source on admin Overview and Finance; using them on the hosted project still requires the intended owner's verified account and real kitchen setup. See the [availability guide](mealdeck-kitchen-availability.md).
 
+### Published source and live review — later on 5 November
+
+The hosting project follows the historical branch `feature/dishbee-play-food-cards`, not `main`. A normal merge preserved its independently generated database types and the approved launch release at `052c621692a9c4c9ee9e44ac243f4edc370f6105`. Both branches were aligned without rewriting history. Native publication then exposed the updated opening hours, guest/member 30% terms and collection/kerbside guide at `https://mealdeck.co.uk/meta-ad`.
+
+The games redesign was merged through [PR #72](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/72) as `f2347fc727ac00d1dd5efc53b93595ab1ca8bf8c`. All nine checks passed on the PR and the merged [main workflow](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42075057525). The hosting branch was fast-forwarded to the same revision, Lovable reported that source ready, and native deployment `3e6e5a32-4cac-46f3-a6a5-2a4401251fb2` was requested. The public `/play` page was then reloaded and visibly verified with the new searchable library and cream/paper layout. Desktop interaction covered 2048 start/move feedback, search preserving an active round, Food Pairs reveal/mismatch, Recipe Rush completion and next-action focus, and Order Echo untimed play/pause/resume/round progression. Actual phone and multiple-viewport checks remain outstanding; the managed local preview host is blocked and the native preview requires dashboard sign-in.
+
+The same live-site review confirmed that `/menus` displays the approved prices and `/account` exposes registration with separate optional marketing preferences. A new read-only inspection of the independent database still found **zero Auth users**, no intended-owner account or verification, and no bootstrapped business. No ownership, paid checkout, catalogue publication, loyalty delivery or physical printing was activated during this review.
+
+Group audit found reserved tables and historical payment decision models, but no create/join invitation RPC or installed group-payment authority. The host-pays group preparation flow is therefore separate from future server-synchronised groups and split settlement. See the current [build and launch checklist](../roadmap.md) for the remaining concrete setup and acceptance work.
+
 The following sections retain the earlier provisioning and investigation record. Their “installation pending” and “connector unavailable” observations are superseded by the verified position above.
 
 ## Historical provisioning record — before the current installation

@@ -16,7 +16,7 @@ export const Route = createFileRoute("/checkout")({
     const metadata = seo({
       title: "Secure collection checkout | MealDeck",
       description:
-        "Register, choose collection or kerbside pickup and securely pay for your MealDeck order in Luton.",
+        "Review your MealDeck basket, choose collection or kerbside pickup and check the current ordering status. Guest checkout is available during the confirmed opening-weekend hours when ordering is open.",
       path: "/checkout",
     });
     return {

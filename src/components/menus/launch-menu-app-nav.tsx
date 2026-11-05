@@ -224,8 +224,8 @@ export function LaunchMenuAppNav({
                 </Link>
               </nav>
               <PwaInstallCard />
-              <Link to="/opening-offer" onClick={followLink} className="lma-more-note">
-                Opening weekend · 30% off · Offer details
+              <Link to="/offers" onClick={followLink} className="lma-more-note">
+                Offers · 30% off, 99p milk cake &amp; double points
               </Link>
               <p className="lma-more-note">Browse the launch menus now. Ordering is coming soon.</p>
               <p className="lma-more-note">WhatsApp ordering — coming soon</p>

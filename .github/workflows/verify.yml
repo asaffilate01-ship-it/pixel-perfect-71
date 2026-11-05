@@ -346,14 +346,14 @@ jobs:
           tests/mealdeck-franchise-faq-search.test.ts
           --rule 'prettier/prettier: off'
 
-      - name: Homepage preview offer discovery
-        run: bun test tests/mealdeck-preview-offers.test.ts
+      - name: Confirmed November offers and retired-copy regressions
+        run: bun test tests/mealdeck-offers.test.ts
 
-      - name: Homepage offer preview lint
+      - name: Offers catalogue and page lint
         run: >-
-          bunx eslint src/lib/mealdeck-preview-offers.ts
-          src/components/marketing/offer-discovery-preview.tsx
-          tests/mealdeck-preview-offers.test.ts
+          bunx eslint src/lib/mealdeck-offers.ts src/routes/offers.tsx
+          src/components/marketing/offer-discovery.tsx
+          tests/mealdeck-offers.test.ts
           --rule 'prettier/prettier: off'
 
       - name: Luton and St Albans weekly paid-order goal regressions
