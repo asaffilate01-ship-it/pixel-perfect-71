@@ -26,7 +26,7 @@ public final class MealDeckTapEducationModule: Module {
           }
           var presenter = root
           while let presented = presenter.presentedViewController { presenter = presented }
-          discovery.presentContent(content, from: presenter)
+          try await discovery.presentContent(content, from: presenter)
           promise.resolve("presented")
         } catch {
           // No claim of completed education if Apple's content failed to load/present.
