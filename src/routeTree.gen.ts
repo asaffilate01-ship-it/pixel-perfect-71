@@ -35,9 +35,11 @@ import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
 import { Route as ApiFranchiseRouteImport } from './routes/api.franchise'
 import { Route as ApiGroupPaymentsRouteImport } from './routes/api.group-payments'
 import { Route as ApiTerminalRouteImport } from './routes/api.terminal'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
+import { Route as ApiAuthEmailRouteImport } from './routes/api.auth.email'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -170,6 +172,11 @@ const ApiTerminalRoute = ApiTerminalRouteImport.update({
   path: '/api/terminal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -183,6 +190,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
 const FranchiseBrandIdRoute = FranchiseBrandIdRouteImport.update({
   id: '/franchise_/$brandId',
   path: '/franchise/$brandId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthEmailRoute = ApiAuthEmailRouteImport.update({
+  id: '/api/auth/email',
+  path: '/api/auth/email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
@@ -218,9 +230,11 @@ export interface FileRoutesByFullPath {
   '/api/franchise': typeof ApiFranchiseRoute
   '/api/group-payments': typeof ApiGroupPaymentsRoute
   '/api/terminal': typeof ApiTerminalRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/auth/email': typeof ApiAuthEmailRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -250,9 +264,11 @@ export interface FileRoutesByTo {
   '/api/franchise': typeof ApiFranchiseRoute
   '/api/group-payments': typeof ApiGroupPaymentsRoute
   '/api/terminal': typeof ApiTerminalRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog': typeof BlogIndexRoute
+  '/api/auth/email': typeof ApiAuthEmailRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesById {
@@ -283,9 +299,11 @@ export interface FileRoutesById {
   '/api/franchise': typeof ApiFranchiseRoute
   '/api/group-payments': typeof ApiGroupPaymentsRoute
   '/api/terminal': typeof ApiTerminalRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise_/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/auth/email': typeof ApiAuthEmailRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRouteTypes {
@@ -317,9 +335,11 @@ export interface FileRouteTypes {
     | '/api/franchise'
     | '/api/group-payments'
     | '/api/terminal'
+    | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
     | '/blog/'
+    | '/api/auth/email'
     | '/api/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -349,9 +369,11 @@ export interface FileRouteTypes {
     | '/api/franchise'
     | '/api/group-payments'
     | '/api/terminal'
+    | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
     | '/blog'
+    | '/api/auth/email'
     | '/api/stripe/webhook'
   id:
     | '__root__'
@@ -381,9 +403,11 @@ export interface FileRouteTypes {
     | '/api/franchise'
     | '/api/group-payments'
     | '/api/terminal'
+    | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise_/$brandId'
     | '/blog/'
+    | '/api/auth/email'
     | '/api/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -414,9 +438,11 @@ export interface RootRouteChildren {
   ApiFranchiseRoute: typeof ApiFranchiseRoute
   ApiGroupPaymentsRoute: typeof ApiGroupPaymentsRoute
   ApiTerminalRoute: typeof ApiTerminalRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   BlogSlugRoute: typeof BlogSlugRoute
   FranchiseBrandIdRoute: typeof FranchiseBrandIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  ApiAuthEmailRoute: typeof ApiAuthEmailRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
@@ -604,6 +630,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTerminalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog/': {
       id: '/blog/'
       path: '/blog'
@@ -623,6 +656,13 @@ declare module '@tanstack/react-router' {
       path: '/franchise/$brandId'
       fullPath: '/franchise/$brandId'
       preLoaderRoute: typeof FranchiseBrandIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/email': {
+      id: '/api/auth/email'
+      path: '/api/auth/email'
+      fullPath: '/api/auth/email'
+      preLoaderRoute: typeof ApiAuthEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/stripe/webhook': {
@@ -662,9 +702,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFranchiseRoute: ApiFranchiseRoute,
   ApiGroupPaymentsRoute: ApiGroupPaymentsRoute,
   ApiTerminalRoute: ApiTerminalRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   BlogSlugRoute: BlogSlugRoute,
   FranchiseBrandIdRoute: FranchiseBrandIdRoute,
   BlogIndexRoute: BlogIndexRoute,
+  ApiAuthEmailRoute: ApiAuthEmailRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport

@@ -96,34 +96,194 @@ export type MealDeckLocation = {
 export const DELIVERY_FEE_PENCE = 299;
 
 export const brands: Brand[] = [
-  { id: "tavo-chicken", name: "Tavo Chicken", strapline: "Turn up the flavour.", tagline: "Big flavour. Bigger moments.", image: brandTavo, category: "All things chicken", logo: approvedBrandLogos["tavo-chicken"] },
-  { id: "paratique", name: "Paratique", strapline: "Signature parathas.", tagline: "Layered, loaded, lovely.", image: brandParatique, category: "Parathas", logo: approvedBrandLogos.paratique },
-  { id: "taconelle", name: "Taconelle", strapline: "Beautifully loaded.", tagline: "French tacos with attitude.", image: brandTaconelle, category: "French tacos", logo: approvedBrandLogos.taconelle },
-  { id: "loadd", name: "Load'd", strapline: "Folded, loaded, cheesy.", tagline: "French tacos and mac n cheese.", image: brandLoadd, category: "French tacos · mac n cheese", logo: approvedBrandLogos.loadd },
-  { id: "vyta", name: "Vyta", strapline: "Fresh juices for a brighter you.", tagline: "Good food. Brighter you.", image: brandVyta, category: "Fresh juices", logo: approvedBrandLogos.vyta },
-  { id: "tarka-box", name: "Tarka Box", strapline: "Big flavour. Boxed.", tagline: "Desi classics, done right.", image: brandTarka, category: "Desi food", logo: approvedBrandLogos["tarka-box"] },
-  { id: "sabzora", name: "Sabzora", strapline: "Indian veg delights.", tagline: "Plants with personality.", image: brandSabzora, category: "Indian vegetarian", logo: approvedBrandLogos.sabzora },
-  { id: "skorch-burgers", name: "Skorch Burgers", strapline: "Seared on steel.", tagline: "Smashed, seared, sensational.", image: brandSkorch, category: "Smash burgers", logo: approvedBrandLogos.skorch },
-  { id: "cafe1", name: "Café1", strapline: "Café Classics", tagline: "All-day comfort classics.", image: brandCafe1, category: "Café Classics", logo: logoCafe1 },
-  { id: "icova", name: "Icova", strapline: "Better over ice.", tagline: "Iced coffee, chai and desserts.", image: brandIcova, category: "Iced coffee · chai · desserts", logo: approvedBrandLogos.icova },
-  { id: "moktl", name: "Moktl", strapline: "Zero alcohol. Full vibe.", tagline: "Mocktails made to impress.", image: brandMoktl, category: "Zero-alcohol mocktails", logo: approvedBrandLogos.moktl },
-  { id: "forvello", name: "Forvello", strapline: "The art of great pizza.", tagline: "Artisan pizza, beautifully crafted.", image: brandForvello, category: "Artisan Pizza", logo: approvedBrandLogos.forvello },
-  { id: "pastarivo", name: "Pastarivo", strapline: "Fresh pasta, freshly tossed.", tagline: "Pasta plates worth twirling.", image: brandPastarivo, category: "Fresh pasta", logo: approvedBrandLogos.pastarivo },
-  { id: "nusara", name: "Nusara", strapline: "South East Asian fusion.", tagline: "Bold bowls, bright flavours.", image: brandNusara, category: "South East Asian fusion", logo: approvedBrandLogos.nusara },
-  { id: "rise-and-griddle", name: "Rise & Griddle", strapline: "Breakfast & brunch.", tagline: "Stacks, eggs and good mornings.", image: brandRise, category: "Breakfast & brunch", logo: approvedBrandLogos["rise-and-griddle"] },
-  { id: "souvano", name: "Souvano", strapline: "Eastern Mediterranean grill.", tagline: "Fire-grilled and generous.", image: brandSouvano, category: "Eastern Mediterranean grill", logo: approvedBrandLogos.souvano },
+  {
+    id: "tavo-chicken",
+    name: "Tavo Chicken",
+    strapline: "Turn up the flavour.",
+    tagline: "Big flavour. Bigger moments.",
+    image: brandTavo,
+    category: "All things chicken",
+    logo: approvedBrandLogos["tavo-chicken"],
+  },
+  {
+    id: "paratique",
+    name: "Paratique",
+    strapline: "Signature parathas.",
+    tagline: "Layered, loaded, lovely.",
+    image: brandParatique,
+    category: "Parathas",
+    logo: approvedBrandLogos.paratique,
+  },
+  {
+    id: "taconelle",
+    name: "Taconelle",
+    strapline: "Beautifully loaded.",
+    tagline: "French tacos with attitude.",
+    image: brandTaconelle,
+    category: "French tacos",
+    logo: approvedBrandLogos.taconelle,
+  },
+  {
+    id: "loadd",
+    name: "Load’d",
+    strapline: "Loaded fries and mac and cheese.",
+    tagline: "Fries, taken further.",
+    image: brandLoadd,
+    category: "Loaded fries · mac and cheese",
+    logo: approvedBrandLogos.loadd,
+  },
+  {
+    id: "vyta",
+    name: "Vyta",
+    strapline: "Fresh juices for a brighter you.",
+    tagline: "Good food. Brighter you.",
+    image: brandVyta,
+    category: "Fresh juices",
+    logo: approvedBrandLogos.vyta,
+  },
+  {
+    id: "tarka-box",
+    name: "Tarka Box",
+    strapline: "Big flavour. Boxed.",
+    tagline: "Desi classics, done right.",
+    image: brandTarka,
+    category: "Desi food",
+    logo: approvedBrandLogos["tarka-box"],
+  },
+  {
+    id: "sabzora",
+    name: "Sabzora",
+    strapline: "Indian veg delights.",
+    tagline: "Plants with personality.",
+    image: brandSabzora,
+    category: "Indian vegetarian",
+    logo: approvedBrandLogos.sabzora,
+  },
+  {
+    id: "skorch-burgers",
+    name: "Skorch Burgers",
+    strapline: "Seared on steel.",
+    tagline: "Smashed, seared, sensational.",
+    image: brandSkorch,
+    category: "Smash burgers",
+    logo: approvedBrandLogos.skorch,
+  },
+  {
+    id: "cafe1",
+    name: "Café1",
+    strapline: "Café Classics",
+    tagline: "All-day comfort classics.",
+    image: brandCafe1,
+    category: "Café Classics",
+    logo: logoCafe1,
+  },
+  {
+    id: "icova",
+    name: "Icova",
+    strapline: "Better over ice.",
+    tagline: "Iced coffee, chai and desserts.",
+    image: brandIcova,
+    category: "Iced coffee · chai · desserts",
+    logo: approvedBrandLogos.icova,
+  },
+  {
+    id: "moktl",
+    name: "Moktl",
+    strapline: "Zero alcohol. Full vibe.",
+    tagline: "Mocktails made to impress.",
+    image: brandMoktl,
+    category: "Zero-alcohol mocktails",
+    logo: approvedBrandLogos.moktl,
+  },
+  {
+    id: "forvello",
+    name: "Forvello",
+    strapline: "The art of great pizza.",
+    tagline: "Artisan pizza, beautifully crafted.",
+    image: brandForvello,
+    category: "Artisan Pizza",
+    logo: approvedBrandLogos.forvello,
+  },
+  {
+    id: "pastarivo",
+    name: "Pastarivo",
+    strapline: "Fresh pasta, freshly tossed.",
+    tagline: "Pasta plates worth twirling.",
+    image: brandPastarivo,
+    category: "Fresh pasta",
+    logo: approvedBrandLogos.pastarivo,
+  },
+  {
+    id: "nusara",
+    name: "Nusara",
+    strapline: "South East Asian fusion.",
+    tagline: "Bold bowls, bright flavours.",
+    image: brandNusara,
+    category: "South East Asian fusion",
+    logo: approvedBrandLogos.nusara,
+  },
+  {
+    id: "rise-and-griddle",
+    name: "Rise & Griddle",
+    strapline: "Breakfast & brunch.",
+    tagline: "Stacks, eggs and good mornings.",
+    image: brandRise,
+    category: "Breakfast & brunch",
+    logo: approvedBrandLogos["rise-and-griddle"],
+  },
+  {
+    id: "souvano",
+    name: "Souvano",
+    strapline: "Greek and Turkish food.",
+    tagline: "Fire-grilled and generous.",
+    image: brandSouvano,
+    category: "Greek and Turkish food",
+    logo: approvedBrandLogos.souvano,
+  },
 ];
 
-export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd", "vyta", "tarka-box", "sabzora", "skorch-burgers", "forvello", "pastarivo", "nusara", "rise-and-griddle", "souvano"];
+export const primaryBrandIds = [
+  "tavo-chicken",
+  "paratique",
+  "taconelle",
+  "loadd",
+  "vyta",
+  "tarka-box",
+  "sabzora",
+  "skorch-burgers",
+  "forvello",
+  "pastarivo",
+  "nusara",
+  "rise-and-griddle",
+  "souvano",
+];
 export const addonBrandIds = ["icova", "moktl"];
 
 export const locations: MealDeckLocation[] = [
-  { key: "luton", name: "MealDeck Luton", town: "Luton", hoursLabel: MEALDECK_LAUNCH_HOURS_LABEL, primaryBrandIds, addonBrandIds, allowedFulfilments: ["delivery", "pickup", "curbside"] },
-  { key: "stalbans", name: "MealDeck St Albans", town: "St Albans", hoursLabel: "Mon–Fri · 09:00–16:00", primaryBrandIds: ["cafe1", ...primaryBrandIds], addonBrandIds, allowedFulfilments: ["delivery"] },
+  {
+    key: "luton",
+    name: "MealDeck Luton",
+    town: "Luton",
+    hoursLabel: MEALDECK_LAUNCH_HOURS_LABEL,
+    primaryBrandIds,
+    addonBrandIds,
+    allowedFulfilments: ["delivery", "pickup", "curbside"],
+  },
+  {
+    key: "stalbans",
+    name: "MealDeck St Albans",
+    town: "St Albans",
+    hoursLabel: "Mon–Fri · 09:00–16:00",
+    primaryBrandIds: ["cafe1", ...primaryBrandIds],
+    addonBrandIds,
+    allowedFulfilments: ["delivery"],
+  },
 ];
 
 /** Customer launch choices; retain the full list above for future kitchens. */
-export const launchLocations = locations.filter((location) => isMealDeckLaunchLocation(location.key));
+export const launchLocations = locations.filter((location) =>
+  isMealDeckLaunchLocation(location.key),
+);
 
 export function brandById(id: string): Brand | undefined {
   return brands.find((brand) => brand.id === id);
@@ -147,8 +307,14 @@ export function resolveSampleServiceability(
   const normalized = postcode.toUpperCase().replace(/\s+/g, "");
   if (normalized.startsWith("LU")) {
     return isMealDeckLaunchFulfilment("luton", fulfilment)
-      ? { locationKey: "luton", message: "Browse the Luton preview. Availability will be checked when ordering opens." }
-      : { message: "Luton is preparing delivery, pickup and kerbside collection. Dine-in ordering is not available." };
+      ? {
+          locationKey: "luton",
+          message: "Browse the Luton preview. Availability will be checked when ordering opens.",
+        }
+      : {
+          message:
+            "Luton is preparing delivery, pickup and kerbside collection. Dine-in ordering is not available.",
+        };
   }
   if (normalized.startsWith("AL") || /^MK4[012]/.test(normalized)) {
     return { message: MEALDECK_LAUNCH_LOCATION_MESSAGE };
@@ -213,12 +379,21 @@ export function lineUnitPrice(line: Pick<CartLine, "pricePence" | "selectedModif
   return line.pricePence + line.selectedModifiers.reduce((sum, m) => sum + m.priceDeltaPence, 0);
 }
 
-export function addItem(lines: CartLine[], item: MenuItem, selectedModifiers: SelectedModifier[] = []): CartLine[] {
-  const signature = selectedModifiers.map((m) => `${m.groupId}:${m.id}`).sort().join("|");
+export function addItem(
+  lines: CartLine[],
+  item: MenuItem,
+  selectedModifiers: SelectedModifier[] = [],
+): CartLine[] {
+  const signature = selectedModifiers
+    .map((m) => `${m.groupId}:${m.id}`)
+    .sort()
+    .join("|");
   const lineId = `${item.id}:${signature}`;
   const existing = lines.find((line) => line.lineId === lineId);
   if (!existing) return [...lines, { ...item, lineId, quantity: 1, selectedModifiers }];
-  return lines.map((line) => (line.lineId === lineId ? { ...line, quantity: line.quantity + 1 } : line));
+  return lines.map((line) =>
+    line.lineId === lineId ? { ...line, quantity: line.quantity + 1 } : line,
+  );
 }
 
 export function setQuantity(lines: CartLine[], lineId: string, quantity: number): CartLine[] {

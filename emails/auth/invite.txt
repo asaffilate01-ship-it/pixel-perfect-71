@@ -1,0 +1,17 @@
+MealDeck
+
+You're invited to MealDeck
+
+An invitation has been created for this email address. Continue to review and accept it. Your account's access is set separately by MealDeck.
+
+Review invitation: https://mealdeck.co.uk/auth/confirm#confirmation_url={{ .ConfirmationURL | urlquery }}
+Choose Continue on the confirmation screen. If you started on another device, enter the code on the original screen instead.
+
+Your one-time code: {{ .Token }}
+Use the latest email you requested. Request a fresh email if it expires.
+
+Only continue if you requested this email. Never share this code or link. If you did not request it, you can ignore this email.
+
+MealDeck is a trading name of 313 Brands Ltd. Powered by Dishbee.
+
+https://mealdeck.co.uk

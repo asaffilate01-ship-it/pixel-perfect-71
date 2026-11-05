@@ -7,7 +7,7 @@ import {
 } from "../src/lib/mealdeck-launch-locations";
 import { readMealDeckRuntimeConfig } from "../src/lib/mealdeck-runtime-config";
 import { resolveDishbeeServiceability } from "../src/lib/mealdeck-dishbee-contract";
-import { lutonBusiness, stAlbansBusiness } from "../src/lib/seo";
+import { lutonBusiness, orgJsonLd, stAlbansPageJsonLd } from "../src/lib/seo";
 import { marketingBrands } from "../src/lib/marketing-brands";
 import { getLaunchMenuBrand } from "../src/lib/launch-menu-catalogue";
 
@@ -28,7 +28,7 @@ describe("the first MealDeck launch is Luton only", () => {
     }
   });
 
-  test("delivery, walk-in pickup and kerbside are scoped to Luton, with no dine-in route", () => {
+  test("legacy fulfilment identifiers remain scoped to Luton, with no dine-in route", () => {
     expect(MEALDECK_LAUNCH_FULFILMENTS).toEqual(["delivery", "pickup", "curbside"]);
     for (const fulfilment of MEALDECK_LAUNCH_FULFILMENTS) {
       expect(isMealDeckLaunchFulfilment("luton", fulfilment)).toBe(true);
@@ -69,19 +69,32 @@ describe("the first MealDeck launch is Luton only", () => {
     ).toMatchObject({ served: false });
   });
 
-  test("future structured data makes no order, coverage or opening-hours claim", () => {
-    expect(stAlbansBusiness.description).toContain("future deck");
-    expect(stAlbansBusiness).not.toHaveProperty("potentialAction");
-    expect(stAlbansBusiness).not.toHaveProperty("openingHoursSpecification");
-    expect(stAlbansBusiness).not.toHaveProperty("areaServed");
-    expect(stAlbansBusiness).not.toHaveProperty("hasMenu");
+  test("St Albans is a coming-soon page, without an active restaurant or service claims", () => {
+    expect(stAlbansPageJsonLd["@type"]).toBe("WebPage");
+    expect(stAlbansPageJsonLd.name).toContain("Coming soon");
+    expect(stAlbansPageJsonLd.description).toContain("confirmed separately");
+    expect(stAlbansPageJsonLd.url).toBe("https://mealdeck.co.uk/st-albans");
+    for (const claim of [
+      "potentialAction",
+      "openingHoursSpecification",
+      "specialOpeningHoursSpecification",
+      "areaServed",
+      "hasMenu",
+    ])
+      expect(stAlbansPageJsonLd).not.toHaveProperty(claim);
+    expect(
+      orgJsonLd["@graph"]
+        .filter((entry) => entry["@type"] === "Restaurant")
+        .map((entry) => entry.url),
+    ).toEqual(["https://mealdeck.co.uk/luton"]);
   });
 
-  test("Luton structured data describes only the five launch brands and keeps ordering closed", () => {
+  test("Luton describes launch cuisines and dated hours without asserting live ordering", () => {
     expect(lutonBusiness.servesCuisine).toEqual([
       "Smash burgers",
       "Chicken",
-      "Mediterranean grill",
+      "Greek",
+      "Turkish",
       "Loaded fries",
       "Mac and cheese",
       "Mocktails",
@@ -89,5 +102,17 @@ describe("the first MealDeck launch is Luton only", () => {
     expect(lutonBusiness.hasMenu).toBe("https://mealdeck.co.uk/menus");
     expect(lutonBusiness).not.toHaveProperty("potentialAction");
     expect(lutonBusiness).not.toHaveProperty("openingHoursSpecification");
+    expect(
+      lutonBusiness.specialOpeningHoursSpecification.map((hours) => [
+        hours.validFrom,
+        hours.validThrough,
+        hours.opens,
+        hours.closes,
+      ]),
+    ).toEqual([
+      ["2026-11-06", "2026-11-06", "15:00:00", "23:00:00"],
+      ["2026-11-07", "2026-11-07", "13:00:00", "23:00:00"],
+      ["2026-11-08", "2026-11-08", "13:00:00", "23:00:00"],
+    ]);
   });
 });

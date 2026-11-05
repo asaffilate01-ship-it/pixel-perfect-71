@@ -204,6 +204,25 @@ jobs:
           tests/mealdeck-order-payments-server.test.ts
           tests/mealdeck-payments-access.test.ts
 
+      - name: Install isolated PostgreSQL integration dependencies
+        run: npm ci --prefix tests/postgres
+
+      - name: Payment HTTP handlers against migrated PostgreSQL contracts
+        run: bun test tests/mealdeck-payment-http-postgres.test.ts
+
+      - name: Branded authentication email and public search metadata
+        run: bun test tests/mealdeck-auth-email.test.ts tests/mealdeck-seo.test.ts
+
+      - name: Authentication email and search metadata implementation lint
+        run: >-
+          bunx eslint src/lib/mealdeck-auth-email-links.ts
+          src/lib/mealdeck-auth-email-templates.ts src/lib/mealdeck-auth-email.server.ts
+          src/components/auth-email-confirmation.tsx src/routes/api.auth.email.ts
+          src/routes/auth.confirm.tsx scripts/build-auth-email-templates.ts
+          src/lib/mealdeck-sitemap.ts 'src/routes/sitemap[.]xml.tsx'
+          tests/mealdeck-auth-email.test.ts tests/mealdeck-seo.test.ts
+          --rule 'prettier/prettier: off'
+
       - name: Shared and Terminal server and payment UI lint
         run: >-
           bunx eslint src/lib/mealdeck-payment-server-core.ts
@@ -213,6 +232,7 @@ jobs:
           src/routes/api.terminal.ts src/routes/api.group-payments.ts src/routes/group-pay.tsx
           tests/mealdeck-shared-payments.test.ts tests/mealdeck-shared-payments-server.test.ts
           tests/mealdeck-order-payments-server.test.ts tests/mealdeck-payments-access.test.ts
+          tests/mealdeck-payment-http-postgres.test.ts
           deploy/mealdeck/shared-terminal-payments.mjs
           tests/postgres/shared-terminal-payments-fixture.mjs
           tests/postgres/shared-terminal-payments-behavior.mjs
@@ -627,6 +647,8 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install locked app dependencies
         run: npm ci
       - name: Native API, recovery and type checks
@@ -654,8 +676,10 @@ jobs:
 
   terminal-ios:
     name: Staff iPhone unsigned simulator compilation
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.1.app/Contents/Developer
     defaults:
       run:
         working-directory: apps/mealdeck-terminal
@@ -666,6 +690,10 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: apps/mealdeck-terminal/package-lock.json
+      - name: Verify the Expo 56 native toolchain
+        run: |
+          xcodebuild -version
+          swift --version
       - name: Install locked app dependencies and generate native projects
         env:
           CI: "1"

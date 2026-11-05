@@ -541,9 +541,10 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 .md-footer-apps-copy a { color: rgba(255,255,255,.85); text-decoration: underline; text-decoration-color: rgba(255,255,255,.3); text-underline-offset: 3px; }
 .md-footer-apps-copy a:hover { color: var(--md-yellow); }
 .md-footer-apps-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 14px; }
-.md-footer-social { display: flex; gap: 14px; color: rgba(255,255,255,.6); align-items: center; }
+.md-footer-social { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; color: rgba(255,255,255,.6); align-items: center; }
+.md-footer-social span { font-size: 14px; overflow-wrap: anywhere; }
 .md-footer-social svg { width: 20px; }
-.md-footer-social a { color: inherit; transition: color .2s ease; }
+.md-footer-social a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; color: inherit; transition: color .2s ease; }
 .md-footer-social a:hover { color: white; }
 .md-footer-apps-divider { width: 1px; height: 34px; background: rgba(255,255,255,.14); margin: 0 8px; }
 .md-footer-apps-logos { display: flex; align-items: center; justify-content: center; gap: 14px; }

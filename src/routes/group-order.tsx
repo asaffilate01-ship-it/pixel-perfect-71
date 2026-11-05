@@ -6,7 +6,7 @@ import groupCss from "../styles.mealdeck-group.css?url";
 export const Route = createFileRoute("/group-order")({
   head: () => {
     const metadata = seo({
-      title: "Group orders — everyone chooses, one person pays | MealDeck",
+      title: "Group orders — everyone chooses, one order together | MealDeck",
       description:
         "Invite your friends to choose from five MealDeck menus. Collect their replies, review separate numbered bags and take one group order to collection checkout.",
       path: "/group-order",

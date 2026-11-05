@@ -32,7 +32,7 @@ All direct npm dependencies are exact versions in `package.json`; `package-lock.
 | Android compile / target / minimum SDK | `36` / `36` / `33`                   |
 | iOS app deployment target              | `16.4`                               |
 
-Node 24 was used for local checks; the project requires Node 22.13 or later. Android uses Java 17, Android platform/build-tools 36 / 36.0.0, NDK 27.1.12297006 and CMake 3.22.1. Use a current supported macOS/Xcode with the iOS 18-or-later SDK and CocoaPods for iOS compilation.
+Node 24 was used for local checks; the project requires Node 22.13 or later. Android uses Java 17, Android platform/build-tools 36 / 36.0.0, NDK 27.1.12297006 and CMake 3.22.1. The pinned Expo 56 app requires **Xcode 26.4 or later** and CocoaPods on a supported macOS host for iOS compilation. CI selects Xcode 26.4.1 on macOS 26 and prints the selected Xcode and Swift versions before building.
 
 The prebuild wrapper packs the **lockfile-installed template** locally. Use `npm run prebuild`; an unqualified Expo prebuild can choose another template. The native plugin sets the Kotlin compiler dependency as well as its property, puts the Tap to Pay process guard before application/React initialization, and pins Stripe's iOS Swift package to exactly 6.0.0. Generated `android/` and `ios/` directories are disposable; custom native education code remains in `modules/`.
 

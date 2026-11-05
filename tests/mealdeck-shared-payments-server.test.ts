@@ -78,7 +78,14 @@ function rawRoom() {
 }
 function fixture() {
   const calls: { name: string; args: Record<string, unknown> }[] = [];
-  const state = { exists: false, verified: true, available: true, role: "organiser" };
+  const state = {
+    exists: false,
+    verified: true,
+    available: true,
+    role: "organiser",
+    failCollections: false,
+  };
+  const collections: Record<string, unknown>[] = [];
   const room = rawRoom();
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(
@@ -116,7 +123,10 @@ function fixture() {
         },
       });
     if (name === "account") return Response.json({ id: "acct_fixture", charges_enabled: true });
-    if (name === "mealdeck_group_payment_collections") return Response.json([]);
+    if (name === "mealdeck_group_payment_collections")
+      return state.failCollections
+        ? Response.json({ message: "temporary_database_failure", code: "P0001" }, { status: 503 })
+        : Response.json(collections);
     if (name === "mealdeck_create_group_payment_room") {
       state.exists = true;
       room.roomId = args.p_room;
@@ -155,7 +165,7 @@ function fixture() {
       fetcher,
     );
   const member = { Authorization: "Bearer " + "m".repeat(48) };
-  return { calls, state, room, fetcher, post, member };
+  return { calls, state, room, fetcher, post, member, collections };
 }
 
 describe("private group payment links and server projection", () => {
@@ -272,6 +282,77 @@ describe("private group payment links and server projection", () => {
 });
 
 describe("group creation admission and safe retry", () => {
+  test("resume descriptors expose only the current payer's unexpired attempt and never provider credentials", async () => {
+    const f = fixture();
+    f.state.exists = true;
+    const pending = {
+      collectionId: uid(11),
+      attemptId: uid(10),
+      orderId: uid(4),
+      quoteId: uid(5),
+      roomId: uid(3),
+      tenantId: uid(1),
+      locationId: uid(2),
+      method: "checkout",
+      amountPence: 500,
+      currency: "gbp",
+      requestHash: "a".repeat(64),
+      stripeAccount: "acct_fixture",
+      livemode: false,
+      status: "pending",
+      shareIds: [uid(6)],
+      sessionId: "cs_test_private",
+      sessionUrl: "https://checkout.stripe.com/c/pay/cs_test_private",
+      paymentIntentId: "pi_private",
+      expiresAt: new Date(Date.now() + 35 * 60_000).toISOString(),
+      email: "payer@example.invalid",
+      terminalLocationId: null,
+      cancelRequested: false,
+      coverRemaining: true,
+      requestShareId: null,
+      payerAccess: true,
+    };
+    f.collections.push(
+      pending,
+      { ...pending, collectionId: uid(12), attemptId: uid(13), payerAccess: false },
+      {
+        ...pending,
+        collectionId: uid(14),
+        attemptId: uid(15),
+        expiresAt: new Date(Date.now() - 1000).toISOString(),
+      },
+    );
+    const result = await (await f.post({ action: "room", roomId: uid(3) }, f.member)).json();
+    expect(result.resumePayments).toEqual([
+      { attemptId: uid(10), amountPence: 500, coverRemaining: true },
+    ]);
+    const text = JSON.stringify(result);
+    expect(text).not.toContain("pi_private");
+    expect(text).not.toContain("cs_test_private");
+    expect(text).not.toContain("payer@example.invalid");
+    f.state.role = "participant";
+    const token = groupShareToken(secret, uid(3), uid(7));
+    const anonymous = await (
+      await f.post(
+        { action: "room", roomId: uid(3) },
+        {
+          Cookie: groupAccessCookie(uid(3), uid(7), token).split(";")[0]!,
+        },
+      )
+    ).json();
+    expect(anonymous.resumePayments).toEqual([]);
+  });
+  test("asynchronous recovery-read failures remain private structured API failures", async () => {
+    const f = fixture();
+    f.state.exists = true;
+    f.state.failCollections = true;
+    const response = await f.post({ action: "room", roomId: uid(3) }, f.member);
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Cache-Control")).toContain("no-store");
+    const body = await response.text();
+    expect(body).toContain("payments_unavailable");
+    expect(body).not.toContain("temporary_database_failure");
+  });
   test("an unconfigured server exposes an unavailable state instead of a fake payment path", async () => {
     expect((await readSharedPaymentCapabilities({})).available).toBe(false);
     const response = await handleSharedPaymentsRequest(

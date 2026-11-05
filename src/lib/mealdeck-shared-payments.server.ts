@@ -376,7 +376,7 @@ export async function handleSharedPaymentsRequest(
             "This saved order uses a different payment split. Open the existing room.",
             409,
           );
-        return result(prior);
+        return await result(prior);
       } catch (error) {
         if (!(error instanceof CheckoutProblem) || error.code !== "payment_not_found") throw error;
       }
@@ -400,7 +400,7 @@ export async function handleSharedPaymentsRequest(
         p_stripe_account: stripe.accountId,
         p_livemode: stripe.livemode,
       });
-      return result(room);
+      return await result(room);
     }
     if (input.action === "join") {
       if (!secret || !validShareToken(secret, input.roomId, input.shareId, input.token))
@@ -410,11 +410,11 @@ export async function handleSharedPaymentsRequest(
           404,
         );
       const raw = await readRoom(clients, input.roomId, identity, hashToken(input.token));
-      return result(raw, {}, groupAccessCookie(input.roomId, input.shareId, input.token));
+      return await result(raw, {}, groupAccessCookie(input.roomId, input.shareId, input.token));
     }
     const access = readShareAccess(request, secret, input.roomId);
     let raw = await readRoom(clients, input.roomId, identity, access?.tokenHash ?? null);
-    if (input.action === "room") return result(raw);
+    if (input.action === "room") return await result(raw);
     if (!stripe)
       throw paymentUnavailable(
         "Payment status is temporarily unavailable. Your saved order has not been replaced.",
@@ -455,7 +455,7 @@ export async function handleSharedPaymentsRequest(
       if (!prepared.checkoutUrl)
         await observeOrderPayment(clients, stripe, prepared.collection, fetcher);
       raw = await readRoom(clients, input.roomId, identity, access?.tokenHash ?? null);
-      return result(raw, { checkoutUrl: prepared.checkoutUrl });
+      return await result(raw, { checkoutUrl: prepared.checkoutUrl });
     }
     await verifyStripeAccount(stripe, fetcher, false);
     if (input.action === "cancel") {
@@ -487,7 +487,7 @@ export async function handleSharedPaymentsRequest(
         else await observeOrderPayment(clients, stripe, collection, fetcher);
       }
     }
-    return result(await readRoom(clients, input.roomId, identity, access?.tokenHash ?? null));
+    return await result(await readRoom(clients, input.roomId, identity, access?.tokenHash ?? null));
   } catch (error) {
     return paymentErrorResponse(error);
   }
