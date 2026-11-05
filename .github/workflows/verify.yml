@@ -193,8 +193,8 @@ jobs:
           src/components/coming-soon.tsx
           --rule 'prettier/prettier: off'
 
-      - name: Dishbee canonical routing, checkout receipt and launch gate
-        run: bun test tests/mealdeck-dishbee-contract.test.ts
+      - name: Canonical routing, Luton-only launch scope and checkout receipt
+        run: bun test tests/mealdeck-dishbee-contract.test.ts tests/mealdeck-launch-locations.test.ts
 
       - name: Phase 32 checkout-attempt safety and replay tests
         run: bun test tests/mealdeck-checkout-attempt.test.ts
@@ -209,7 +209,16 @@ jobs:
         run: >-
           bunx eslint src/lib/mealdeck-dishbee-contract.ts
           src/lib/dishbee.functions.ts
+          src/lib/mealdeck-launch-locations.ts
           tests/mealdeck-dishbee-contract.test.ts
+          tests/mealdeck-launch-locations.test.ts
+          --rule 'prettier/prettier: off'
+
+      - name: Luton launch and future-location presentation lint
+        run: >-
+          bunx eslint src/lib/seo.ts src/lib/mealdeck.ts
+          src/components/location-page.tsx src/components/coming-soon.tsx
+          src/routes/luton.tsx src/routes/st-albans.tsx src/routes/bedford.tsx
           --rule 'prettier/prettier: off'
 
       - name: Synthetic paid-to-KDS integration rehearsal

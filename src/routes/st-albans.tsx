@@ -6,7 +6,7 @@ export const Route = createFileRoute("/st-albans")({
   head: () => ({
     ...seo({
       title: "MealDeck St Albans — Food Delivery Coming Soon",
-      description: "MealDeck delivery in St Albans is coming soon, with planned weekday hours Mon–Fri 09:00–16:00. Browse the brand collection and launch menus. Café1's direct services are separate.",
+      description: "MealDeck St Albans is coming in a future deck. Luton launches first with five brands; St Albans dates and menus will be confirmed separately. Café1's direct services are separate.",
       path: "/st-albans",
       keywords: "food delivery St Albans, lunch delivery St Albans, breakfast delivery St Albans, office lunch St Albans, takeaway St Albans, café St Albans delivery, dine in St Albans",
     }),
@@ -15,16 +15,16 @@ export const Route = createFileRoute("/st-albans")({
   component: () => (
     <LocationPage
       town="St Albans"
-      intro="MealDeck St Albans is planning a weekday breakfast and lunch delivery service. Browse the brand collection and launch menus while we prepare. Café1's direct counter and dine-in services remain separate."
-      hours="Mon–Fri · 09:00–16:00"
+      intro="St Albans is coming in a future deck. MealDeck is launching in Luton first; the St Albans opening date, menus and delivery areas will be confirmed separately. Café1's direct counter and dine-in services remain separate."
+      hours="To be confirmed before launch"
       fulfilment="Delivery only · Ordering coming soon"
       areas={["Selected areas in and around St Albans", "St Albans city centre", "Fleetville", "Marshalswick", "Verulam", "Clarence Park", "and nearby neighbourhoods"]}
       includeCafe1
       faqs={[
-        { q: "When does MealDeck deliver in St Albans?", a: "Ordering is not open yet. Planned hours are Monday to Friday, 09:00–16:00, with delivery areas confirmed before launch." },
+        { q: "When does MealDeck launch in St Albans?", a: "St Albans is coming later. Only Luton is in the first launch; the St Albans date, hours and delivery areas will be confirmed separately." },
         { q: "Can I dine in through MealDeck?", a: "The MealDeck St Albans channel is planned for delivery only. Café1's own dine-in and counter services are separate from MealDeck." },
-        { q: "Do you offer kerbside or pickup in St Albans?", a: "MealDeck St Albans is delivery only. Contact Café1 directly about its separate services." },
-        { q: "Can I order lunch for my office?", a: "Group ordering and split payments are planned. Ordering is coming soon; the menus are available to browse now." },
+        { q: "Do you offer kerbside or pickup in St Albans?", a: "No MealDeck orders are available in St Albans yet. Its future channel is planned for delivery only; launch pickup and kerbside are for Luton. Contact Café1 directly about its separate services." },
+        { q: "Can I order lunch for my office?", a: "St Albans ordering is coming soon. You can browse the first Luton deck now, but this does not confirm St Albans menu or delivery availability." },
       ]}
     />
   ),

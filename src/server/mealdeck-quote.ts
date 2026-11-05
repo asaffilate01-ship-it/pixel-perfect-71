@@ -8,6 +8,7 @@
  * Server-only: never import this module into a browser component.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { isMealDeckLaunchFulfilment } from "../lib/mealdeck-launch-locations";
 
 export type SignedQuoteLine = {
   itemId: string;
@@ -59,9 +60,7 @@ const normalisePostcode = (value: string): string =>
 
 function canonicalBinding(input: QuoteBinding): string | null {
   if (!UUID.test(input.tenantId) || !UUID.test(input.locationId) ||
-      !["luton", "stalbans"].includes(input.location) ||
-      !["delivery", "pickup", "curbside"].includes(input.fulfilment) ||
-      (input.location === "stalbans" && input.fulfilment !== "delivery") ||
+      !isMealDeckLaunchFulfilment(input.location, input.fulfilment) ||
       !Array.isArray(input.lines) || !input.lines.length ||
       input.lines.length > 60) return null;
 

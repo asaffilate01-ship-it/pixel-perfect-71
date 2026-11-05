@@ -13,11 +13,11 @@ import {sampleLineUnitPrice} from "@/lib/mealdeck-preview-basket";
 import {previewAllergenInformation,previewDietaryDisclosure} from "@/lib/mealdeck-preview-allergens";
 import {clearSampleBasket} from "@/lib/mealdeck-sample-basket-edit";
 import { SiteFooter } from "./site-footer";
-import { brands, locations, sampleMenu, modifierGroupsFor, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
+import { brands, launchLocations as locations, sampleMenu, modifierGroupsFor, formatPence, type LocationKey, type FulfilmentType } from "@/lib/mealdeck";
 
 export function ComingSoonBanner() {
   return <aside role="status" className="md-launch-banner">
-    <strong className="text-accent">Ordering coming soon</strong><span>Browse the five launch menus. More brands in the next deck.</span><Link to="/menus">View menus →</Link>
+    <strong className="text-accent">Luton launches first</strong><span>Five launch menus. Ordering is coming soon; St Albans and Bedford follow later.</span><Link to="/menus">View menus →</Link>
   </aside>;
 }
 
@@ -71,7 +71,7 @@ export function OrderingPreview() {
 
       <section aria-label="Location and fulfilment preview" className="mt-7 grid gap-4 rounded-3xl border border-[var(--md-line)] bg-[var(--md-paper)] p-5 text-[var(--md-black)] shadow-sm lg:grid-cols-[1fr_1fr_1.4fr]">
         <div>
-          <label className="block text-xs font-black uppercase tracking-wide text-[var(--md-muted)]" htmlFor="preview-location">Choose a kitchen to preview</label>
+          <label className="block text-xs font-black uppercase tracking-wide text-[var(--md-muted)]" htmlFor="preview-location">First launch kitchen</label>
           <select id="preview-location" value={location} onChange={e=>switchLocation(e.target.value as LocationKey)}
             className="mt-2 min-h-12 w-full rounded-xl border border-[var(--md-line)] bg-white px-3 font-semibold">
             {locations.map(place=><option key={place.key} value={place.key}>{place.town} · preview</option>)}
@@ -95,7 +95,7 @@ export function OrderingPreview() {
               {method==="curbside"?"Kerbside":method==="pickup"?"Pickup":"Delivery"}
             </button>)}
           </div>
-          <p className="mt-2 text-xs text-[var(--md-muted)]">{location==="stalbans"?"MealDeck St Albans preview is delivery only. Café1 has separate ordering rules.":"Luton fulfilment choices are illustrative until the kitchen approves them."}</p>
+          <p className="mt-2 text-xs text-[var(--md-muted)]">Luton launches first with delivery, pickup and kerbside collection. Ordering is not open yet. St Albans and Bedford are coming soon.</p>
         </div>
       </section>
 

@@ -83,6 +83,13 @@ describe("Phase 28: signed, short-lived Dishbee checkout price bound to basket",
     expect(make(pickup,amounts).ready).toBe(false);
     expect(make({...pickup,location:"stalbans"}).ready).toBe(false);
   });
+  test("future St Albans delivery cannot issue or verify a customer quote",()=>{
+    const future:QuoteBinding={...binding,location:"stalbans",postcode:"AL1 3JU"};
+    expect(make(future)).toEqual({ready:false,reason:"invalid_input"});
+    const current=make();
+    if(!current.ready)throw new Error("quote_creation_failed");
+    expect(verified(current.token,future)).toEqual({valid:false,reason:"invalid_quote"});
+  });
   test("rechecks the live Dishbee bill before creating pending order",()=>{
     expect(matchesCurrentDishbeeAmounts(amounts,amounts)).toBe(true);
     expect(matchesCurrentDishbeeAmounts(amounts,{...amounts,deliveryPence:399,totalPence:2979}))

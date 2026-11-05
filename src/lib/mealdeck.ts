@@ -17,6 +17,11 @@ import brandNusara from "@/assets/brand-nusara.jpg";
 import brandRise from "@/assets/brand-rise-griddle.jpg";
 import brandSouvano from "@/assets/brand-souvano.jpg";
 import { cafe1Menu, coreMenu } from "./sample-menus";
+import {
+  isMealDeckLaunchFulfilment,
+  isMealDeckLaunchLocation,
+  MEALDECK_LAUNCH_LOCATION_MESSAGE,
+} from "./mealdeck-launch-locations";
 
 export type LocationKey = "luton" | "stalbans";
 export type FulfilmentType = "delivery" | "pickup" | "curbside" | "dinein";
@@ -116,6 +121,9 @@ export const locations: MealDeckLocation[] = [
   { key: "stalbans", name: "MealDeck St Albans", town: "St Albans", hoursLabel: "Mon–Fri · 09:00–16:00", primaryBrandIds: ["cafe1", ...primaryBrandIds], addonBrandIds, allowedFulfilments: ["delivery"] },
 ];
 
+/** Customer launch choices; retain the full list above for future kitchens. */
+export const launchLocations = locations.filter((location) => isMealDeckLaunchLocation(location.key));
+
 export function brandById(id: string): Brand | undefined {
   return brands.find((brand) => brand.id === id);
 }
@@ -125,22 +133,20 @@ export function formatPence(pence: number): string {
 }
 
 export function sampleLocationOpen(location: LocationKey, now = new Date()): boolean {
+  if (!isMealDeckLaunchLocation(location)) return false;
   try {
     const parts = new Intl.DateTimeFormat("en-GB", {
       timeZone: "Europe/London",
-      weekday: "short",
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     }).formatToParts(now);
-    const weekday = parts.find((part) => part.type === "weekday")?.value ?? "";
     const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
     const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
     const minutes = hour * 60 + minute;
-    if (location === "luton") return minutes >= 1020 && minutes < 1380; // 5pm–11pm, Monday to Sunday
-    return ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(weekday) && minutes >= 540 && minutes < 960;
+    return minutes >= 1020 && minutes < 1380; // Luton preview: 5pm–11pm, Monday to Sunday
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -150,10 +156,12 @@ export function resolveSampleServiceability(
 ): { locationKey?: LocationKey; message: string; alternativeFulfilments?: FulfilmentType[] } {
   const normalized = postcode.toUpperCase().replace(/\s+/g, "");
   if (normalized.startsWith("LU")) {
-    return { locationKey: "luton", message: "Great news — MealDeck Luton serves your area." };
+    return isMealDeckLaunchFulfilment("luton", fulfilment)
+      ? { locationKey: "luton", message: "Browse the Luton preview. Availability will be checked when ordering opens." }
+      : { message: "Luton is preparing delivery, pickup and kerbside collection. Dine-in ordering is not available." };
   }
-  if (normalized.startsWith("AL")) {
-    return { locationKey: "stalbans", message: "Great news — MealDeck St Albans serves your area." };
+  if (normalized.startsWith("AL") || /^MK4[012]/.test(normalized)) {
+    return { message: MEALDECK_LAUNCH_LOCATION_MESSAGE };
   }
   const manchester =
     normalized.startsWith("M") || normalized.startsWith("OL") || normalized.startsWith("SK");

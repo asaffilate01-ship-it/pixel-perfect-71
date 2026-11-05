@@ -11,9 +11,11 @@
 
 ## Launch prices and Stripe — owner decision, 5 November 2026
 
+- **Luton is the only launch location.** St Albans and Bedford remain coming soon. Walk-in, pickup and kerbside payment work is for the authorised Luton kitchen; future location configuration must not accidentally enable ordering elsewhere.
+- The owner requested Stripe Tap to Pay for walk-in and kerbside customers. Direct phone acceptance requires a supported native Terminal integration; the existing PWA can alternatively control a supported reader through the backend. Follow `docs/mealdeck-in-person-payments.md`; preserve one order/payment and one shared KDS release, and never charge an already-paid collection again.
 - The owner approved **£20 for every standalone item in the five launch menus**, including drinks, and **£20 for each selected add-on, meal or upgrade**. Required flavour, portion and included base selections are part of the dish, not additional products. Use integer pence from the shared launch catalogue and charge a named cross-brand upgrade once, not again as a second full-priced product.
 - The owner requested backend and checkout activation and confirmed that MealDeck is on a **separate Lovable account**. The current connector cannot access that project. Finish authorized repository work, but do not claim that a source merge installs its database, publishes the site or activates Stripe.
-- The public Stripe test configuration records test provisioning only. Real checkout still requires the independent MealDeck schema, canonical prices and modifiers, authenticated provider confirmation, idempotent order reconciliation and verified kitchen release. Do not convert the existing pending-order response into a paid order or expose a payment button that cannot create a real provider session.
+- The public development/test and production/live-mode Stripe keys are configuration only; they do not establish account readiness or payment integration. Real checkout still requires the independent MealDeck schema, canonical prices and modifiers, authenticated provider confirmation, idempotent order reconciliation and verified kitchen release. Do not convert the existing pending-order response into a paid order or expose a payment button that cannot create a real provider session.
 
 ## Independent MealDeck backend — owner decision, 4 November 2026
 
