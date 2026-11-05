@@ -329,6 +329,14 @@ export function LaunchMenuBrowser({
           <p>Five menus. Every craving.</p>
           <span className="lm-launch-label">Browse now · Ordering coming soon</span>
         </div>
+        <div className="lm-group-entry">
+          <p>
+            <strong>Ordering together?</strong> Everyone chooses. One person pays.
+          </p>
+          <Link to="/group-order">
+            Start a group <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
         <OpeningWeekendOffer compact />
         <MenuInstallPrompt />
         <nav

@@ -15,6 +15,7 @@ import {
 import { MealDeckLogo } from "./mealdeck-logo";
 import { PwaInstallCard } from "./pwa-install-card";
 import { CustomerOrders } from "./customer-orders";
+import { customerReturnTarget, type CustomerReturnTarget } from "@/lib/mealdeck-customer-return";
 import {
   CustomerAccountError,
   EMPTY_CUSTOMER_PREFERENCES,
@@ -595,7 +596,8 @@ function CustomerSettings({
   );
 }
 
-export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: "/menus" | "/checkout" }) {
+export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerReturnTarget }) {
+  const returnTarget = customerReturnTarget(returnTo);
   const [account, setAccount] = useState<CustomerAccountState>({ status: "signed_out" });
   const [capabilities, setCapabilities] = useState<CustomerCapabilities | null>(null);
   const [pushPublicKey, setPushPublicKey] = useState<string | null>(null);
@@ -769,8 +771,8 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: "/menus" |
               <LogOut size={17} aria-hidden="true" /> Sign out
             </button>
           )}
-          {profile?.registered && returnTo === "/checkout" && (
-            <a className="md-account-primary md-account-return" href="/checkout">
+          {profile?.registered && returnTarget !== "/menus" && (
+            <a className="md-account-primary md-account-return" href={returnTarget}>
               Continue to checkout
               <ArrowRight size={18} aria-hidden="true" />
             </a>

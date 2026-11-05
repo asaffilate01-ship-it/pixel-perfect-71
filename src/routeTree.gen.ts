@@ -14,6 +14,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as BedfordRouteImport } from './routes/bedford'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as FranchiseRouteImport } from './routes/franchise'
+import { Route as GroupOrderRouteImport } from './routes/group-order'
 import { Route as KdsRouteImport } from './routes/kds'
 import { Route as LutonRouteImport } from './routes/luton'
 import { Route as MenuRouteImport } from './routes/menu'
@@ -59,6 +60,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
 const FranchiseRoute = FranchiseRouteImport.update({
   id: '/franchise',
   path: '/franchise',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupOrderRoute = GroupOrderRouteImport.update({
+  id: '/group-order',
+  path: '/group-order',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KdsRoute = KdsRouteImport.update({
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/bedford': typeof BedfordRoute
   '/checkout': typeof CheckoutRoute
   '/franchise': typeof FranchiseRoute
+  '/group-order': typeof GroupOrderRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/bedford': typeof BedfordRoute
   '/checkout': typeof CheckoutRoute
   '/franchise': typeof FranchiseRoute
+  '/group-order': typeof GroupOrderRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -230,6 +238,7 @@ export interface FileRoutesById {
   '/bedford': typeof BedfordRoute
   '/checkout': typeof CheckoutRoute
   '/franchise': typeof FranchiseRoute
+  '/group-order': typeof GroupOrderRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/bedford'
     | '/checkout'
     | '/franchise'
+    | '/group-order'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/bedford'
     | '/checkout'
     | '/franchise'
+    | '/group-order'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/bedford'
     | '/checkout'
     | '/franchise'
+    | '/group-order'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -345,6 +357,7 @@ export interface RootRouteChildren {
   BedfordRoute: typeof BedfordRoute
   CheckoutRoute: typeof CheckoutRoute
   FranchiseRoute: typeof FranchiseRoute
+  GroupOrderRoute: typeof GroupOrderRoute
   KdsRoute: typeof KdsRoute
   LutonRoute: typeof LutonRoute
   MenuRoute: typeof MenuRoute
@@ -403,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/franchise'
       fullPath: '/franchise'
       preLoaderRoute: typeof FranchiseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/group-order': {
+      id: '/group-order'
+      path: '/group-order'
+      fullPath: '/group-order'
+      preLoaderRoute: typeof GroupOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kds': {
@@ -561,6 +581,7 @@ const rootRouteChildren: RootRouteChildren = {
   BedfordRoute: BedfordRoute,
   CheckoutRoute: CheckoutRoute,
   FranchiseRoute: FranchiseRoute,
+  GroupOrderRoute: GroupOrderRoute,
   KdsRoute: KdsRoute,
   LutonRoute: LutonRoute,
   MenuRoute: MenuRoute,

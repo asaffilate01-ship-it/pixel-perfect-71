@@ -26,7 +26,7 @@ export const Route = createFileRoute("/luton")({
         { q: "Which brands are in the first launch?", a: "Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Mix the five launch brands in one basket when ordering opens. The other brands are planned for later decks." },
         { q: "Can I collect my order or use kerbside pickup?", a: "Yes. Collection and kerbside pickup are the two launch options. Delivery is unavailable. For kerbside, enter the car make, colour and last four registration characters. St Albans and Bedford remain coming soon." },
         { q: "Do I need to register?", a: "You can order as a guest during the opening hours on 6–8 November. Guests and members can use the 30% offer and Sunday's 99p milk cake offer. Register and spend £15 or more by and including Friday 13 November 2026 for double loyalty points. Guest orders earn no loyalty points. Verify your email for your member account; marketing emails and promotional app alerts remain separate, optional choices." },
-        { q: "Can my group split the bill?", a: "Group ordering and split payments are planned. They will become available once the payment and ordering service is ready; no payments are being accepted yet." },
+        { q: "Can we order as a group?", a: "Yes. Open Group order to send each person an invitation. They choose their food and send a reply link back; the organiser reviews the choices and pays once when checkout is available. The draft is saved in the organiser’s browser, with separate numbered bags. Split payments are not available." },
       ]}
     />
   ),

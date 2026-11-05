@@ -191,6 +191,24 @@ jobs:
           tests/mealdeck-fulfilment-status.test.ts
           tests/mealdeck-handoff.test.ts
 
+      - name: Host-pays group choices, packing and authentication return
+        run: >-
+          bun test tests/mealdeck-group-plan.test.ts
+          tests/mealdeck-group-handoff.test.ts
+          tests/mealdeck-customer-return.test.ts
+
+      - name: Group planner and checkout handoff lint
+        run: >-
+          bunx eslint src/lib/mealdeck-group-plan.ts
+          src/lib/mealdeck-group-storage.ts
+          src/lib/launch-basket-transfer.ts
+          src/lib/mealdeck-customer-return.ts
+          src/components/group-order-planner.tsx
+          src/routes/group-order.tsx
+          tests/mealdeck-group-plan.test.ts
+          tests/mealdeck-group-handoff.test.ts
+          tests/mealdeck-customer-return.test.ts
+
       - name: Fulfilment module lint
         run: >-
           bunx eslint src/lib/mealdeck-fulfilment-planner.ts

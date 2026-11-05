@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CustomerAccount } from "@/components/customer-account";
 import { seo } from "@/lib/seo";
+import { customerReturnTarget, type CustomerReturnTarget } from "@/lib/mealdeck-customer-return";
 import accountCss from "../styles.customer-account.css?url";
 
 export const Route = createFileRoute("/account")({
-  validateSearch: (search: Record<string, unknown>): { returnTo?: "/checkout" } =>
-    search["returnTo"] === "/checkout" ? { returnTo: "/checkout" } : {},
+  validateSearch: (search: Record<string, unknown>): { returnTo?: CustomerReturnTarget } => ({
+    returnTo: customerReturnTarget(search["returnTo"]),
+  }),
   head: () => {
     const metadata = seo({
       title: "Your account & preferences | MealDeck",

@@ -37,7 +37,7 @@ export const Route = createFileRoute("/")({
         "MealDeck Luton offers: 30% off the entire menu, 6–8 November 2026; milk cake 99p on Sunday 8 November; register and spend £15 or more by 13 November for double loyalty points.",
       path: "/",
       keywords:
-        "MealDeck, food delivery Luton, takeaway Luton, food delivery St Albans, group food ordering, split payment food delivery, multi brand food delivery",
+        "MealDeck, food delivery Luton, takeaway Luton, food delivery St Albans, group food ordering, multi brand food delivery",
     }),
     scripts: [ldScript(orgJsonLd)],
   }),
@@ -48,7 +48,7 @@ const directBenefits = [
   { icon: ShoppingBasket, title: "One basket", copy: "Mix dishes from different MealDeck brands." },
   { icon: Package, title: "One collection", copy: "Collect your favourites together from our Luton kitchen." },
   { icon: Users, title: "Packed your way", copy: "Choose numbered bags so everyone can find their own food." },
-  { icon: WalletCards, title: "Split payments", copy: "Let friends pay their own share." },
+  { icon: WalletCards, title: "Order together", copy: "Everyone chooses their food; the organiser reviews and pays once." },
   { icon: Star, title: "Double points offer", copy: "Register and spend £15 or more by Friday 13 November 2026." },
   { icon: MapPin, title: "Live tracking", copy: "Follow the complete MealDeck handoff." },
 ];
@@ -149,14 +149,15 @@ function LandingPage() {
           <article className="md-feature-panel md-feature-panel-red">
             <div className="md-feature-icon"><Users /></div>
             <p className="md-kicker md-kicker-light">Ordering with friends?</p>
-            <h2>Build one group order without chasing everyone.</h2>
+            <h2>Everyone picks. You bring it together.</h2>
             <ul>
-              <li><Share2 /> Share an invite</li>
-              <li><ShoppingBasket /> Everyone adds their own food</li>
-              <li><WalletCards /> Choose one payer or split payments</li>
-              <li><Clock3 /> Set a group cutoff time</li>
+              <li><Share2 /> Send each person their invitation link</li>
+              <li><ShoppingBasket /> They choose food and send their picks back</li>
+              <li><WalletCards /> Review the group and pay once</li>
+              <li><Package /> Separate numbered bags for collection</li>
             </ul>
-            <Link to="/order" className="md-btn md-btn-yellow">Group ordering · Coming soon <ArrowRight /></Link>
+            <p>Your draft stays in this browser. Reply links bring everyone’s choices together; split payments are not available.</p>
+            <Link to="/group-order" className="md-btn md-btn-yellow">Start a group order <ArrowRight /></Link>
           </article>
 
           <article className="md-feature-panel md-feature-panel-cream">
