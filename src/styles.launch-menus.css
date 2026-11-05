@@ -555,6 +555,21 @@
   padding: 19px 20px;
   border-bottom: 1px solid var(--lm-line);
 }
+h2.lm-basket-title-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.lm-basket-logo {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+.lm-basket-logo-dialog {
+  margin-inline: auto;
+}
 .lm-picks-title h2 {
   font-family: var(--md-display);
   font-size: 22px;

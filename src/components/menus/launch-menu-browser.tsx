@@ -13,6 +13,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { LaunchBasket, LaunchBasketDock } from "@/components/menus/launch-basket";
 import { LaunchMenuMobileNav } from "@/components/menus/launch-menu-mobile-nav";
 import { LaunchMenuAppNav } from "@/components/menus/launch-menu-app-nav";
@@ -551,7 +552,8 @@ export function LaunchMenuBrowser({
               <aside className="lm-sidebar" aria-label="Your basket and meal upgrades">
                 <section className="lm-picks-panel">
                   <div className="lm-picks-title">
-                    <h2>
+                    <h2 className="lm-basket-title-brand">
+                      <MealDeckLogo className="lm-basket-logo" decorative loading="lazy" />
                       <ShoppingBag size={20} aria-hidden="true" />
                       Your basket
                     </h2>
@@ -690,6 +692,7 @@ export function LaunchMenuBrowser({
           ) : (
             <>
               <div className="lm-dialog-heading">
+                <MealDeckLogo className="lm-basket-logo lm-basket-logo-dialog" decorative loading="lazy" />
                 <span className="lm-eyebrow">Your launch-day line-up</span>
                 <DialogTitle className="lm-dialog-title" ref={basketHeadingRef} tabIndex={-1}>
                   Your basket <span>({quantity})</span>

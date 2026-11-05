@@ -65,6 +65,7 @@ import {
   type SelectedModifier,
 } from "@/lib/mealdeck";
 import { SiteHeader } from "@/components/site-header";
+import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { marketplaceItemPhoto } from "@/lib/marketplace-photos";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { BrandDiscoveryGallery, FavouriteDishRail } from "@/components/order/premium-discovery";
@@ -669,6 +670,13 @@ function OrderPage() {
 
           {checkoutOpen && lines.length ? (
             <div className="card-elevated mt-5 space-y-3 p-5">
+              <div className="checkout-brand-header">
+                <MealDeckLogo className="checkout-brand-logo" decorative loading="eager" />
+                <div className="min-w-0">
+                  <h3 className="font-display text-lg font-extrabold leading-tight">Checkout</h3>
+                  <p className="text-xs text-muted-foreground">MealDeck · One order. Every craving.</p>
+                </div>
+              </div>
               <h3 className="font-display text-lg font-bold">{fulfilmentLabels[fulfilment]} details</h3>
               {!fulfilmentAllowed && currentLocation ? (
                 <p className="text-sm text-destructive">
