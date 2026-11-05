@@ -1,6 +1,6 @@
-# MealDeck group choices and host-pays checkout
+# MealDeck group choices and reviewed checkout
 
-Implemented 5 November 2026 in response to the owner's request to open group ordering. This release makes group selection and one-payer checkout preparation usable with the confirmed five-brand catalogue. It does not activate the currently unconfigured paid-ordering channel or implement split settlement.
+Implemented 5 November 2026 in response to the owner's request to open group ordering. The initial release made local group selection and one-payer checkout preparation usable with the confirmed five-brand catalogue. The later [shared-payment implementation](mealdeck-shared-payments.md) adds durable payment rooms, pay-by-bag/equal funding and organiser cover at reviewed checkout when configured. Neither source release activates an unconfigured paid-ordering channel.
 
 ## Customer flow
 
@@ -11,7 +11,7 @@ Implemented 5 November 2026 in response to the owner's request to open group ord
 5. Review the complete basket and each numbered bag. Only nonempty people become bags; attached extras follow their parent quantities. The organiser confirms the review and continues to one collection/kerbside checkout.
 6. Existing server pricing, member/guest eligibility, opening hours, kitchen availability and provider verification apply. A prepared basket is not a paid order, a kitchen ticket or a reserved collection slot.
 
-The page clearly explains that one person pays. Separate payments, a server-synchronised shared basket, timed group cutoffs and automatic invitation messages are not available in this release.
+The organiser reviews the final total and chooses the available payment option at checkout. A shared payment room is durable server state after that explicit review; the earlier food-choice planner remains a local invite/reply flow. There is no claim of background basket synchronisation or automatic invitation messages.
 
 ## Storage and link boundaries
 

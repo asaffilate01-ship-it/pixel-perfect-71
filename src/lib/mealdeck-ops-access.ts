@@ -11,6 +11,7 @@ export const OPS_PERMISSIONS = [
   "costs.write",
   "finance.read",
   "finance.manage",
+  "payments.collect",
   "analytics.read",
   "inventory.read",
   "inventory.write",

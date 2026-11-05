@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { reconcileOrderPaymentWebhook } from "./mealdeck-order-payments-stripe.server";
 import {
   kitchenAcceptsNewOrders,
   parseKitchenAvailability,
@@ -550,13 +551,19 @@ export async function handleMealDeckStripeWebhook(
     const clients = databaseClients(env, fetcher);
     if (!stripe || !clients?.service)
       throw new CheckoutProblem("webhook_unconfigured", "Webhook unavailable.", 503);
-    const event = await verifiedStripeEvent(
-      await readBoundedBody(request, 1_000_000),
-      request.headers.get("Stripe-Signature"),
+    const raw = await readBoundedBody(request, 1_000_000);
+    const signature = request.headers.get("Stripe-Signature");
+    const shared = await reconcileOrderPaymentWebhook(
+      raw,
+      signature,
+      { ...clients, service: clients.service },
       stripe,
       fetcher,
     );
-    if (event) await rpc(clients.service, "mealdeck_reconcile_stripe_event", event);
+    if (!shared) {
+      const event = await verifiedStripeEvent(raw, signature, stripe, fetcher);
+      if (event) await rpc(clients.service, "mealdeck_reconcile_stripe_event", event);
+    }
     // Webhooks stay active after checkout closes, so paid/refunded orders reconcile.
     return Response.json({ received: true }, { headers: NO_STORE });
   } catch (error) {
