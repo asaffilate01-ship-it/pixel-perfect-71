@@ -55,5 +55,16 @@
 ## Stripe checkout — 5 November 2026
 
 - [x] Enable built-in Stripe payments in test mode with the owner's confirmation; preserve all ordering and kitchen-release gates.
-- [ ] Create payment products from owner-approved canonical menu prices, not illustrative menus: waiting for approved menu/pricing and hosted catalogue installation.
-- [ ] Implement and verify embedded MealDeck checkout and signed payment reconciliation: waiting for approved products and canonical order/payment authority; no checkout form or webhook handler has been implemented.
+- [x] Owner approved £20 per launch-menu item and £20 per add-on, meal and upgrade, including named cross-brand replacements.
+- [ ] Create payment products from the approved canonical catalogue: prices are now approved; hosted installation, publication and provider mapping are still required.
+- [ ] Implement and verify MealDeck checkout and signed payment reconciliation using the actual test integration in the owning account; no checkout form or webhook handler has been implemented.
+
+## Prices and interface finishing — 5 November 2026
+
+- [x] Display the approved £20 prices on all 77 launch-menu items and each chargeable option, with quantity-aware basket/review subtotals and no duplicate cross-brand upgrade charges.
+- [x] Keep basket feedback visible, make saving failures recoverable, restore focus after row removal and distinguish repeated product names by menu section.
+- [x] Distinguish staff/kitchen loading, failed and empty states; make editing a menu product easy to reach on mobile.
+- [x] Finish the tracking form with solid brand-red controls, visible focus and readable mobile entry fields.
+- [x] Prepare an independent-database draft import for all 77 items and 66 option records, preserving later admin edits on reruns.
+- [x] Add protected, audited add-on and upgrade price editing, including shared-use counts and conflict recovery; provide the separate post-install SQL and managed-runner variant.
+- [ ] Activate the hosted backend, canonical menu and checkout in the separate owning Lovable account; the current connector cannot access that project. See `docs/mealdeck-launch-prices-and-polish-phase49.md`.

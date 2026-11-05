@@ -1,19 +1,18 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import {
-  ArrowRight,
-  Check,
-  ChevronRight,
-  Layers3,
-  Plus,
-  Search,
-  ShoppingBag,
-  X,
-} from "lucide-react";
+import { ArrowRight, ChevronRight, Layers3, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { LaunchBasket, LaunchBasketDock } from "@/components/menus/launch-basket";
+import {
+  LaunchBasket,
+  LaunchBasketDock,
+  type LaunchBasketStorageStatus,
+} from "@/components/menus/launch-basket";
+import {
+  LaunchBasketFeedback,
+  type LaunchBasketUpdate,
+} from "@/components/menus/launch-basket-feedback";
 import { LaunchMenuMobileNav } from "@/components/menus/launch-menu-mobile-nav";
 import { LaunchMenuAppNav } from "@/components/menus/launch-menu-app-nav";
 import {
@@ -25,6 +24,11 @@ import type { LaunchCrossSelection } from "@/lib/launch-menu-upsells";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
 import { getLaunchMenuBrand, type LaunchMenuUpsell } from "@/lib/launch-menu-catalogue";
+import {
+  formatLaunchMenuPrice,
+  launchMenuBasketDisplayPrice,
+} from "@/lib/launch-menu-display-prices";
+import "@/styles.launch-prices.css";
 import {
   LAUNCH_PICKS_STORAGE_KEY,
   addLaunchPick,
@@ -87,15 +91,18 @@ export function LaunchMenuBrowser({
   const [clearedPicks, setClearedPicks] = useState<LaunchMenuPick[] | null>(null);
   const [draft, setDraft] = useState<LaunchItemDraft | null>(null);
   const [picksOpen, setPicksOpen] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<LaunchBasketUpdate | null>(null);
+  const [storageStatus, setStorageStatus] = useState<LaunchBasketStorageStatus>("checking");
   const [saveError, setSaveError] = useState("");
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const basketHeadingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     try {
       setPicks(decodeLaunchPicks(window.localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY)));
+      setStorageStatus("saved");
     } catch {
       /* Browsing still works when storage is disabled. */
+      setStorageStatus("session");
     }
   }, []);
   useEffect(() => {
@@ -105,14 +112,33 @@ export function LaunchMenuBrowser({
     if (picksOpen) basketHeadingRef.current?.focus();
   }, [picksOpen]);
 
+  function persistPicks(next: LaunchMenuPick[]) {
+    try {
+      window.localStorage.setItem(LAUNCH_PICKS_STORAGE_KEY, encodeLaunchPicks(next));
+      setStorageStatus("saved");
+      return true;
+    } catch {
+      /* Keep this session's picks. */
+      setStorageStatus("session");
+      return false;
+    }
+  }
+
   function updatePicks(next: LaunchMenuPick[]) {
     setPicks(next);
     setClearedPicks(null);
-    try {
-      window.localStorage.setItem(LAUNCH_PICKS_STORAGE_KEY, encodeLaunchPicks(next));
-    } catch {
-      /* Keep this session's picks. */
-    }
+    persistPicks(next);
+  }
+
+  function retrySave() {
+    // Retry only the latest in-memory basket. Reloading browser storage here
+    // could replace choices made after a failed write with an older basket.
+    const saved = persistPicks(picks);
+    setNotice({
+      message: saved ? "Basket saved on this device." : "Your basket is still here for this visit.",
+      tone: saved ? "success" : "info",
+    });
+    return saved;
   }
 
   function emptyBasket() {
@@ -120,13 +146,13 @@ export function LaunchMenuBrowser({
     const previous = picks;
     updatePicks([]);
     setClearedPicks(previous);
-    setNotice("Basket emptied.");
+    setNotice({ message: "Basket emptied." });
   }
 
   function undoEmptyBasket() {
     if (!clearedPicks || picks.length) return;
     updatePicks(clearedPicks);
-    setNotice("Your basket has been restored.");
+    setNotice({ message: "Your basket has been restored." });
   }
 
   function browse(brandId: string, sectionId?: string, target: "brand" | "items" = "brand") {
@@ -170,9 +196,10 @@ export function LaunchMenuBrowser({
       return;
     }
     updatePicks(next);
-    setNotice(
-      draft.item.name + (draft.existing ? " updated in your basket." : " added to your basket."),
-    );
+    setNotice({
+      message:
+        draft.item.name + (draft.existing ? " updated in your basket." : " added to your basket."),
+    });
     setDraft(null);
     if (draft.existing) setPicksOpen(true);
   }
@@ -200,19 +227,22 @@ export function LaunchMenuBrowser({
     );
     if (section) {
       browse(brand.id, section.id);
-      setNotice(
-        "Choose a " +
+      setNotice({
+        message:
+          "Choose a " +
           (section.title.toLowerCase().includes("burger") || section.id === "beef-smash-deck"
             ? "burger"
             : "main") +
           " to explore " +
           upsell.label.toLowerCase() +
           ".",
-      );
+        tone: "info",
+      });
     }
   }
 
   const quantity = launchPickCount(picks);
+  const basketPrice = launchMenuBasketDisplayPrice(picks);
   const activeSection = brand?.sections.some((section) => section.id === requestedSectionId)
     ? requestedSectionId
     : undefined;
@@ -262,6 +292,8 @@ export function LaunchMenuBrowser({
     onClear: emptyBasket,
     onUndoClear: undoEmptyBasket,
     canUndoClear: !!clearedPicks && picks.length === 0,
+    storageStatus,
+    onRetrySave: retrySave,
     onQuantity: (key: string, value: number) =>
       updatePicks(setLaunchPickQuantity(picks, key, value)),
     onEdit: (pick: LaunchMenuPick) => {
@@ -271,7 +303,7 @@ export function LaunchMenuBrowser({
     onRemove: (pick: LaunchMenuPick) => {
       const entry = findLaunchMenuItem(pick.brandId, pick.itemId);
       updatePicks(setLaunchPickQuantity(picks, pick.key, 0));
-      setNotice((entry?.item.name ?? "Item") + " removed from your basket.");
+      setNotice({ message: (entry?.item.name ?? "Item") + " removed from your basket." });
     },
   };
   const menuStyle = { "--lm-accent": brand?.accent ?? "#951018" } as CSSProperties;
@@ -408,32 +440,6 @@ export function LaunchMenuBrowser({
               ))}
             </nav>
 
-            {notice && (
-              <div className="lm-notice">
-                <span role="status">
-                  <Check size={18} aria-hidden="true" />
-                  {notice}
-                </span>
-                {clearedPicks && picks.length === 0 && (
-                  <button
-                    type="button"
-                    className="lm-notice-undo"
-                    onClick={() => {
-                      undoEmptyBasket();
-                      requestAnimationFrame(() =>
-                        visibleBasketTrigger()?.focus({ preventScroll: true }),
-                      );
-                    }}
-                  >
-                    Undo
-                  </button>
-                )}
-                <button type="button" aria-label="Dismiss update" onClick={() => setNotice("")}>
-                  <X size={18} />
-                </button>
-              </div>
-            )}
-
             <div className="lm-layout">
               <div id="launch-menu-items" className="lm-menu-content">
                 {sections.length ? (
@@ -461,6 +467,7 @@ export function LaunchMenuBrowser({
                                 className="lm-dish"
                                 onClick={() => openItem({ brand, section, item })}
                                 aria-label={"Choose " + item.name + " from " + section.title}
+                                aria-describedby={"launch-price-" + item.id}
                               >
                                 <span>
                                   <strong>{item.name}</strong>
@@ -474,8 +481,14 @@ export function LaunchMenuBrowser({
                                     <small className="lm-choice-label">Choose your flavour</small>
                                   )}
                                 </span>
-                                <span className="lm-add-icon" aria-hidden="true">
-                                  <Plus size={20} />
+                                <span className="lm-dish-action">
+                                  <span className="lm-item-price" id={"launch-price-" + item.id}>
+                                    {formatLaunchMenuPrice(item.pricePence)}
+                                    <span className="sr-only"> per item</span>
+                                  </span>
+                                  <span className="lm-add-icon" aria-hidden="true">
+                                    <Plus size={20} />
+                                  </span>
                                 </span>
                               </button>
                             </li>
@@ -533,6 +546,7 @@ export function LaunchMenuBrowser({
                         key={entry.brand.id}
                         onClick={() => openItem(entry)}
                         aria-label={"Add " + entry.item.name + " from " + entry.brand.name}
+                        aria-describedby={"pairing-price-" + entry.item.id}
                       >
                         <img src={logoFor(entry.brand.id)} alt="" width="90" height="65" />
                         <span>
@@ -540,6 +554,10 @@ export function LaunchMenuBrowser({
                           <small>
                             {entry.brand.name} · {entry.section.title}
                           </small>
+                          <span className="lm-pairing-price" id={"pairing-price-" + entry.item.id}>
+                            {formatLaunchMenuPrice(entry.item.pricePence)}
+                            <span className="sr-only"> per item</span>
+                          </span>
                         </span>
                         <Plus size={20} aria-hidden="true" />
                       </button>
@@ -621,7 +639,8 @@ export function LaunchMenuBrowser({
             One order. <em>Every craving.</em>
           </strong>
           <p>
-            Launch menu preview · Prices and availability will be confirmed when ordering opens.
+            Launch menus · Item and upgrade prices shown. Any delivery charge is confirmed at
+            checkout.
           </p>
         </footer>
       </main>
@@ -649,6 +668,21 @@ export function LaunchMenuBrowser({
         }}
         onBrand={(id) => browse(id, undefined, "items")}
         onBasket={openBasket}
+      />
+      <LaunchBasketFeedback
+        update={notice}
+        dialogOpen={!!draft || picksOpen}
+        canUndo={!!clearedPicks && picks.length === 0}
+        canViewBasket={picks.length > 0}
+        onUndo={() => {
+          undoEmptyBasket();
+          requestAnimationFrame(() => visibleBasketTrigger()?.focus({ preventScroll: true }));
+        }}
+        onBasket={openBasket}
+        onDismiss={() => {
+          setNotice(null);
+          requestAnimationFrame(() => visibleBasketTrigger()?.focus({ preventScroll: true }));
+        }}
       />
 
       <Dialog
@@ -695,12 +729,23 @@ export function LaunchMenuBrowser({
                   Your basket <span>({quantity})</span>
                 </DialogTitle>
                 <DialogDescription className="lm-dialog-description">
-                  Mix brands and make it yours. Your choices are saved on this device. Prices and
-                  ordering are coming soon.
+                  Mix brands and make it yours.{" "}
+                  {storageStatus === "session"
+                    ? "Keep this page open: this browser couldn’t save your current basket."
+                    : storageStatus === "checking"
+                      ? "Checking your saved choices."
+                      : "Your choices are saved on this device."}{" "}
+                  Item prices are shown. Ordering is coming soon.
                 </DialogDescription>
               </div>
               <LaunchBasket {...pickProps} />
-              <div className="lm-dialog-bottom">
+              <div className="lm-dialog-bottom lm-basket-footer">
+                {quantity > 0 && (
+                  <div className="lm-basket-footer-total">
+                    <span>Items subtotal</span>
+                    <strong>{formatLaunchMenuPrice(basketPrice.itemsSubtotalPence)}</strong>
+                  </div>
+                )}
                 <button type="button" className="lm-primary" onClick={() => setPicksOpen(false)}>
                   Keep exploring
                   <ArrowRight size={18} />

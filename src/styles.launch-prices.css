@@ -1,0 +1,205 @@
+/* Prices use the same ink, paper and red treatment as the launch menus. */
+.lm-dish-action {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 9px;
+  max-width: 82px;
+}
+
+.lm-item-price,
+.lm-pairing-price {
+  color: var(--lm-ink, #151513);
+  font-family: var(--md-body, "DM Sans", sans-serif);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.lm-item-price {
+  text-align: right;
+}
+
+.lm-pairing-price {
+  display: block;
+  margin-top: 7px;
+  font-size: 13px;
+}
+
+.lmc-item-price {
+  margin: 6px 0;
+  color: var(--md-red-deep, #951018);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.lmc-item-price > span {
+  color: #655a4d;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.lmc-product .lmc-choice-price,
+.lmc-option .lmc-choice-price,
+.lmc-offer .lmc-choice-price,
+.lmc-review-addition .lmc-choice-price {
+  display: block;
+  margin-top: 6px;
+  color: var(--md-red-deep, #951018);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.lmb-item-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin-top: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lmb-item-price > span {
+  color: var(--lmb-muted, #655a4e);
+  font-size: 12px;
+}
+
+.lmb-item-price > strong {
+  color: var(--lmb-ink, #191713);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.lmb-child p.lmb-child-price {
+  color: var(--md-red-deep, #951018);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.lmb-option-prices,
+.lmc-review-prices {
+  display: grid;
+  gap: 9px;
+  margin: 14px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+.lmb-option-prices > div,
+.lmc-review-prices > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.lmb-option-prices dt,
+.lmc-review-prices dt {
+  min-width: 0;
+  color: #655a4d;
+  overflow-wrap: anywhere;
+}
+
+.lmb-option-prices dd,
+.lmc-review-prices dd {
+  flex-shrink: 0;
+  margin: 0;
+  color: #211b16;
+  font-weight: 750;
+}
+
+.lmc-review-prices .lmc-items-subtotal {
+  padding-top: 13px;
+  border-top: 1px solid #e0d4c3;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.lmc-items-subtotal dt,
+.lmc-items-subtotal dd {
+  color: #211b16;
+}
+
+.lmb-subtotal {
+  margin: 3px 0 20px;
+  padding: 15px;
+  border: 1px solid var(--lmb-line, #e4d9cc);
+  border-radius: 12px;
+  background: #f8f0e4;
+}
+
+.lmb-subtotal p {
+  margin: 6px 0 0;
+  color: var(--lmb-muted, #655a4e);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.lmb-subtotal .lmb-subtotal-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 0 0 8px;
+  color: var(--lmb-ink, #191713);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.lmb-subtotal-amount strong {
+  font-family: var(--md-display, "Outfit", sans-serif);
+  font-size: 23px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.lm-basket-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lm-basket-footer-total {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.lm-basket-footer-total > span {
+  color: #655a4e;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.lm-basket-footer-total > strong {
+  color: #211b16;
+  font-family: var(--md-display, "Outfit", sans-serif);
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.lm-basket-footer > button {
+  flex-shrink: 0;
+}
+
+@media (max-width: 359px) {
+  .lm-dish-action {
+    max-width: 68px;
+    gap: 7px;
+  }
+  .lm-item-price {
+    font-size: 14px;
+  }
+}

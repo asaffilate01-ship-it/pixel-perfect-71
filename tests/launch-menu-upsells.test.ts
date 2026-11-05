@@ -14,6 +14,7 @@ import {
   getLaunchCrossOffers,
   isMappedLaunchUpgradeOption,
   launchCrossSelectionSummaries,
+  priceForLaunchCrossChoice,
   setLaunchCrossChoice,
   type LaunchCrossSelection,
 } from "../src/lib/launch-menu-upsells";
@@ -65,7 +66,8 @@ describe("Owner-approved Load’d and Moktl planning choices", () => {
       for (const choice of offer.choices) {
         const found = findLaunchMenuItem(choice.brandId, choice.itemId)!;
         expect(found.item.name).toBe(choice.name);
-        expect(choice.pricePence).toBeNull();
+        expect(choice.pricePence).toBe(found.item.pricePence);
+        expect(choice.pricePence).toBe(2_000);
         expect(["loaded-fries", "loaded-mac-cheese", "mocktail-lounge"]).toContain(
           found.section.id,
         );
@@ -301,9 +303,9 @@ describe("Owner-approved Load’d and Moktl planning choices", () => {
     ];
     const clean = cleanLaunchCrossConfiguration(brand, item, meal(brand), input);
     expect(clean.crossSelections).toEqual([valid]);
-    expect(
-      launchCrossSelectionSummaries(brand, item, meal(brand), input)[0]?.pricePence,
-    ).toBeNull();
+    expect(launchCrossSelectionSummaries(brand, item, meal(brand), input)[0]?.pricePence).toBe(
+      2_000,
+    );
     expect(cleanLaunchCrossConfiguration(brand, item, {}, input).crossSelections).toEqual([
       { ...valid, mode: "extra" },
     ]);
@@ -311,5 +313,10 @@ describe("Owner-approved Load’d and Moktl planning choices", () => {
     expect(
       cleanLaunchCrossConfiguration(brand, item, meal(brand), { child: valid }).crossSelections,
     ).toEqual([]);
+  });
+
+  test("replacement surcharges stay independent from a target product’s standalone price", () => {
+    expect(priceForLaunchCrossChoice("extra", 3_500)).toBe(3_500);
+    expect(priceForLaunchCrossChoice("upgrade", 3_500)).toBe(2_000);
   });
 });

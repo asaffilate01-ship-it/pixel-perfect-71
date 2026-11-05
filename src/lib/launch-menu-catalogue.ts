@@ -1,10 +1,15 @@
 /**
  * Catalogue transcribed from the five menu sheets supplied by the owner.
  *
- * This is browse content, not Dishbee pricing, stock, allergen or order authority.
- * None of the supplied sheets contains prices. Null must never become zero/free.
+ * The owner approved an initial £20 for every standalone item on 5 November 2026.
+ * This browse catalogue supplies the reviewed draft import; the independent
+ * MealDeck backend remains the authority for live prices, stock and orders.
+ * The supplied sheets contain no prices. The owner's later instruction also
+ * approves £20 per selected optional add-on, meal deal or upgrade. Included
+ * flavour, portion and base choices remain part of their parent item's price.
  * Required single choices below describe the printed flavour/portion/base choices;
- * optional add-ons and upgrades have no inferred selection limits or surcharges.
+ * optional add-ons and upgrades use the later approved £20 price without
+ * inventing ingredient details or additional combination limits.
  */
 
 export type LaunchMenuBrandId = "tavo-chicken" | "moktl" | "loadd" | "skorch-burgers" | "souvano";
@@ -13,7 +18,7 @@ export type LaunchMenuOption = {
   id: string;
   label: string;
   description?: string;
-  pricePence: null;
+  pricePence: number;
   sourceRefs: string[];
 };
 
@@ -32,7 +37,7 @@ export type LaunchMenuItem = {
   id: string;
   name: string;
   description?: string;
-  pricePence: null;
+  pricePence: number;
   optionGroupIds: string[];
   sourceRefs: string[];
 };
@@ -207,6 +212,23 @@ export const launchMenuSources: LaunchMenuSource[] = [
 
 type MenuRow = readonly [name: string, description?: string];
 
+/** Owner-approved starting price for each standalone item, including cans/drinks. */
+export const LAUNCH_ITEM_PRICE_PENCE = 2_000;
+/** Owner-approved price for each selected optional add-on, meal deal or upgrade. */
+export const LAUNCH_UPGRADE_PRICE_PENCE = 2_000;
+/** A replacement surcharge is independent of the target item's standalone price. */
+export const LAUNCH_CROSS_UPGRADE_PRICE_PENCE = 2_000;
+
+// These are included dish choices, rather than optional paid upgrades. Explicit
+// IDs keep an unrelated future required modifier from silently becoming free.
+const includedChoiceGroupIds = new Set([
+  "tavo-chicken-portion",
+  "tavo-chicken-flavour",
+  "souvano-donner-flavour",
+  "souvano-heatwave-base",
+  "souvano-meal-side",
+]);
+
 function slug(value: string): string {
   return value
     .normalize("NFKD")
@@ -234,7 +256,7 @@ function section(
       id: brandId + "-" + id + "-" + slug(name),
       name,
       ...(itemDescription ? { description: itemDescription } : {}),
-      pricePence: null,
+      pricePence: LAUNCH_ITEM_PRICE_PENCE,
       optionGroupIds: [...optionGroupIds],
       sourceRefs: [...sourceRefs],
     })),
@@ -263,7 +285,7 @@ function group(
       id: id + "-" + slug(optionLabel),
       label: optionLabel,
       ...(optionDescription ? { description: optionDescription } : {}),
-      pricePence: null,
+      pricePence: includedChoiceGroupIds.has(id) ? 0 : LAUNCH_UPGRADE_PRICE_PENCE,
       sourceRefs: [...sourceRefs],
     })),
   };
@@ -826,12 +848,13 @@ export function getLaunchMenuBrand(id: string): LaunchMenuBrand | undefined {
 
 /** Editorial gaps to preserve when preparing a server-owned live catalogue. */
 export const launchMenuSourceNotes = [
-  "No item, portion, modifier, meal or upgrade prices are printed on the supplied sheets.",
+  "The owner approved an initial £20 per standalone item on 5 November 2026, including sides, cans and mocktails; the supplied sheets themselves print no prices.",
+  "The owner also approved £20 per selected optional add-on, meal deal and upgrade on 5 November 2026. Required included flavour, portion and base choices have no extra charge.",
   "No allergen declaration or ingredient-completeness assurance is supplied.",
   "No drink serving sizes, lamb-chop quantity, or meat species for the rashers are specified.",
   "Tavo's Onion Rings burger add-on has no stated quantity; Skorch explicitly lists 3 Onion Rings.",
   "Tavo prints Little Jacks Nugget Meal; Skorch prints Little Jack’s Nuggets Meal. Their names are retained separately.",
-  "Milkshake upgrades are listed but no milkshake flavours, sizes, brand or prices are supplied.",
+  "Milkshake upgrades are £20 under the owner's blanket upgrade instruction, but no milkshake flavours, sizes or fulfilment brand are supplied.",
   "The sheets do not state which listed cans or drinks qualify for a meal, or how upgrades substitute for its contents.",
   "Meal-upgrade groups are available to browse for meals; no per-option combination limits are supplied.",
   "Heatwave names an included rice/naan/fries base and separately repeats the meal offer. This does not establish a second base or an extra charge.",

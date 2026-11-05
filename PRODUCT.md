@@ -15,6 +15,10 @@ The current kitchen uses one display for all brands, with one complete master-or
 
 ## Launch and safety
 
+On 5 November 2026 the owner approved an initial **£20 per standalone launch-menu item**, including drinks, and **£20 per selected add-on, meal or upgrade**. Included flavour, portion and base choices carry no extra charge. These are approved starting prices, separate from the historical illustrative marketplace data. A cross-brand replacement is charged once as an upgrade; a separately added product is charged as an extra. The catalogue import preserves subsequent administrator price edits when rerun.
+
+The owner has requested checkout and backend activation, and confirmed that the project belongs to a separate Lovable account. Repository changes cannot establish hosted activation: the current connector does not expose the dedicated MealDeck database or payment configuration. Public launch-menu prices remain source-owned until the canonical public catalogue and its stable item mapping are installed and connected. Do not claim admin edits already update the public menu.
+
 Current source has `COMING_SOON = true`. Browse-only sample menus are not live availability. No registration, WhatsApp-order placement, customer payment or KDS release should be represented as operational. Do not remove this gate in a design or marketing PR.
 
 Normal paid MealDeck orders require an accepted server-priced ordering/payment pathway in the independent MealDeck backend. A chat, browser redirect, model response, or client-side state update must **never** be used to mark an order paid or create kitchen tickets. The St Albans MealDeck channel's declared launch scope is delivery-only; Cafe 1's direct ordering modes are separate. Existing payment contracts can be adapted to the independent backend, but need their own provider, refund, replay and group-payment acceptance checks before activation.

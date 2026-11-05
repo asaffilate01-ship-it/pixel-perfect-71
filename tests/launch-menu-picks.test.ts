@@ -42,7 +42,7 @@ function choose(
   return toggleLaunchOption(brand, item, selections, group.id, option.id);
 }
 
-describe("Launch menu planning with source-owned choices and unknown prices", () => {
+describe("Launch menu planning with source-owned choices and catalogue prices", () => {
   test("Tavo wings require a portion and flavour; distinct combinations stay separate", () => {
     const { brand, item } = dish("tavo-chicken", "fried-chicken-wings");
     expect(addLaunchPick([], brand.id, item.id, {})).toEqual([]);

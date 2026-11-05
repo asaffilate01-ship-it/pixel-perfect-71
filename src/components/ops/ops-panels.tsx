@@ -1,10 +1,11 @@
-import {useEffect,useState,type ReactNode} from "react";
+import {useEffect,useId,useRef,useState,type ReactNode} from "react";
 import {
   AlertCircle,BookOpen,ClipboardList,
   Plus,ShieldCheck,Trash2,
 } from "lucide-react";
 import {opsRpc} from "@/lib/mealdeck-ops-browser";
 import {MenuKitchenRoute} from "./menu-kitchen-route";
+import {ModifierPricesPanel} from "./modifier-prices-panel";
 import {reviewOrderExceptions} from "@/lib/mealdeck-ops-alerts";
 import {OPS_PERMISSIONS,type OpsPermission} from "@/lib/mealdeck-ops-access";
 import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cleanDailySeries} from "@/lib/mealdeck-ops-math";
@@ -65,6 +66,9 @@ export function OpsMenuPanel(props:Common&{
   const menuBusy=busy||routingBusy;
   const[query,setQuery]=useState("");
   const[editing,setEditing]=useState("");
+  const editorId=useId();
+  const editorHeading=useRef<HTMLHeadingElement>(null);
+  const[editFocus,setEditFocus]=useState(0);
   const[name,setName]=useState("");
   const[description,setDescription]=useState("");
   const[price,setPrice]=useState("");
@@ -79,12 +83,24 @@ export function OpsMenuPanel(props:Common&{
   const selection=taxonomy.find(x=>x.category_id===category);
   const globalWrite=canGlobal("menu.write");
   function choose(row:OpsMenuItem){
-    setEditing(row.item_id);
-    setName(row.item_name);
-    setDescription(row.description??"");
-    setPrice((row.price_pence/100).toFixed(2));
-    setActive(row.active);
+    if(editing!==row.item_id){
+      setEditing(row.item_id);
+      setName(row.item_name);
+      setDescription(row.description??"");
+      setPrice((row.price_pence/100).toFixed(2));
+      setActive(row.active);
+    }
+    setEditFocus(value=>value+1);
   }
+  useEffect(()=>{
+    if(!editFocus)return;
+    const heading=editorHeading.current;
+    if(!heading)return;
+    heading.focus({preventScroll:true});
+    const bounds=heading.getBoundingClientRect();
+    if(bounds.top<16||bounds.bottom>window.innerHeight-16)
+      heading.scrollIntoView({block:"start",behavior:"auto"});
+  },[editFocus]);
   return <div className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
     <section className={card}>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -97,15 +113,18 @@ export function OpsMenuPanel(props:Common&{
           placeholder="Burger, Skorch, drinks, tacos…"/>
       </Labelled>
       <div className="mt-4 max-h-[34rem] space-y-2 overflow-y-auto pr-1">
-        {filtered.map(row=><div key={row.item_id} className="flex items-start justify-between gap-3 rounded-xl border md-ops-border p-3">
+        {filtered.map(row=><div key={row.item_id} className={"flex items-start justify-between gap-3 rounded-xl border p-3 "+(editing===row.item_id?"md-ops-selection":"md-ops-border")}>
           <div className="min-w-0">
             <p className="text-xs font-black uppercase tracking-wide md-ops-accent">{row.brand_name??"Unassigned"} · {row.category_name}</p>
             <p className="mt-1 font-bold">{row.item_name}</p>
             <p className="text-sm md-ops-muted">{penceToPounds(row.location_price_pence)} · {row.visible&&row.active?"Visible":"Hidden or inactive"}</p>
           </div>
           <div className="flex shrink-0 flex-col gap-2">
-            <button type="button" className={secondary} disabled={menuBusy} onClick={()=>choose(row)}>Edit</button>
+            <button type="button" className={secondary} disabled={menuBusy} onClick={()=>choose(row)}
+              aria-label={`Edit ${row.item_name} from ${row.brand_name??"the menu"}`}
+              aria-controls={editorId} aria-current={editing===row.item_id?"true":undefined}>Edit</button>
             {can("menu.write")&&<button type="button" className={secondary} disabled={menuBusy}
+              aria-label={`${row.visible?"Hide":"Show"} ${row.item_name} from ${row.brand_name??"the menu"}`}
               onClick={()=>void commit(async()=>{
                 const ok=await opsRpc<boolean>("mealdeck_ops_set_menu_visibility",{
                   p_tenant:tenantId,p_location:locationId,p_item:row.item_id,p_visible:!row.visible,
@@ -120,8 +139,10 @@ export function OpsMenuPanel(props:Common&{
       </div>
     </section>
     <div className="space-y-5">
-      <section className={card}>
-        <h2 className="text-lg font-black">Edit master product</h2>
+      <section className={card} id={editorId} aria-labelledby={editorId+"-heading"}>
+        <h2 ref={editorHeading} id={editorId+"-heading"} tabIndex={-1} className="scroll-mt-6 break-words text-lg font-black">
+          {current?`Edit ${current.item_name}`:"Edit master product"}
+        </h2>
         <p className="mt-1 text-xs md-ops-muted">Price and name changes affect the MealDeck master product across its kitchens. A business-wide menu role is required. Channel-specific price overrides may still apply.</p>
         {!current?<p className="mt-4 text-sm md-ops-muted">Select a product from the list to edit it.</p>:<div className="mt-4 space-y-3">
           <Labelled label="Product name"><input value={name} disabled={!globalWrite||menuBusy}
@@ -179,6 +200,7 @@ export function OpsMenuPanel(props:Common&{
       </section>}
       <ErrorRow error={error}/>
     </div>
+    <ModifierPricesPanel key={tenantId} tenantId={tenantId} canRead={canGlobal("menu.read")} canWrite={globalWrite}/>
   </div>;
 }
 
@@ -214,7 +236,7 @@ export function OpsOrdersPanel({
         <h3 className="text-base font-black md-ops-ink">Orders needing review</h3>
         <span className="rounded-full md-ops-paper px-3 py-1 text-xs font-bold text-amber-900">{alerts.length} suggestions</span>
       </div>
-      <p className="mt-1 text-xs leading-5 md-ops-text">Read-only watchlist based on recorded order status and timestamps. This does not verify Adyen captures, KDS readiness, courier ETA or refunds.</p>
+      <p className="mt-1 text-xs leading-5 md-ops-text">Read-only watchlist based on recorded order status and timestamps. Payment, kitchen readiness, courier times and refunds need separate verified records.</p>
       {alerts.length?<ul className="mt-4 grid gap-2 sm:grid-cols-2">
         {alerts.map(alert=><li key={alert.orderId} className="rounded-xl border border-amber-200 md-ops-paper p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -596,7 +618,7 @@ export function OpsFinancePanel(props:Common&{
       </section>
       {can("finance.manage")&&<section className={card}>
         <h2 className="text-lg font-black">Record an expense</h2>
-        <p className="mt-1 text-xs md-ops-muted">Creates an append-only operations record; it does not post to the ledger, bank, HMRC or Adyen.</p>
+        <p className="mt-1 text-xs md-ops-muted">Creates an append-only operations record; it does not submit a payment, tax return or bank transaction.</p>
         <div className="mt-4 space-y-3">
           <Labelled label="Date"><input type="date" className={field} value={date}
             onChange={e=>setDate(e.target.value)}/></Labelled>

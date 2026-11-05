@@ -1,5 +1,6 @@
 import {
   getLaunchMenuBrand,
+  LAUNCH_CROSS_UPGRADE_PRICE_PENCE,
   type LaunchMenuBrand,
   type LaunchMenuItem,
 } from "./launch-menu-catalogue";
@@ -9,7 +10,7 @@ export type LaunchCrossSlot = "side" | "drink";
 export type LaunchCrossMode = "upgrade" | "extra";
 export type LaunchCrossBrandId = "loadd" | "moktl";
 
-/** One child per slot and per parent unit; never a separately priced order line. */
+/** One attached child per slot and per parent unit; prices come from the catalogue. */
 export type LaunchCrossSelection = {
   slot: LaunchCrossSlot;
   mode: LaunchCrossMode;
@@ -24,7 +25,8 @@ export type LaunchCrossChoice = {
   sectionId: string;
   sectionTitle: string;
   description?: string;
-  pricePence: null;
+  /** Standalone product price; a meal replacement uses the explicit upgrade surcharge. */
+  pricePence: number;
 };
 
 export type LaunchCrossOffer = {
@@ -43,13 +45,18 @@ export type LaunchCrossSummary = LaunchCrossSelection & {
   itemName: string;
   sectionTitle: string;
   label: string;
-  pricePence: null;
+  /** Amount per parent unit: standalone extra or the approved upgrade surcharge. */
+  pricePence: number;
 };
 
 export type LaunchCrossConfiguration = {
   selections: LaunchMenuSelections;
   crossSelections: LaunchCrossSelection[];
 };
+
+export function priceForLaunchCrossChoice(mode: LaunchCrossMode, standalonePricePence: number) {
+  return mode === "upgrade" ? LAUNCH_CROSS_UPGRADE_PRICE_PENCE : standalonePricePence;
+}
 
 const upgradeGroups = [
   ["tavo-chicken-meal-upgrades", "-upgrade"],
@@ -130,13 +137,13 @@ function targetChoices(brandId: LaunchCrossBrandId): LaunchCrossChoice[] {
           sectionId: section.id,
           sectionTitle: section.title,
           ...(item.description ? { description: item.description } : {}),
-          pricePence: null,
+          pricePence: item.pricePence,
         })),
       ) ?? []
   );
 }
 
-/** Owner-approved planning mappings; the menu-sheet transcription is unchanged. */
+/** Owner-approved menu mappings; item and upgrade prices remain catalogue-owned. */
 export function getLaunchCrossOffers(
   brand: LaunchMenuBrand,
   item: LaunchMenuItem,
@@ -318,7 +325,7 @@ export function launchCrossSelectionSummaries(
           selection.mode === "upgrade"
             ? `${component} replaced with ${target.name} · ${name}`
             : `Extra ${target.name} ${selection.slot} · ${name}`,
-        pricePence: null,
+        pricePence: priceForLaunchCrossChoice(selection.mode, choice.pricePence),
       },
     ];
   });

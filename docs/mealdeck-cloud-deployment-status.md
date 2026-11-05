@@ -42,12 +42,16 @@ After successful schema installation and account verification, use the documente
 - Confirm the owner account, perform the private bootstrap and configure actual tenant/kitchen bindings.
 - Authenticated `/ops` checks: menu editing, draft routing, recipes, stock and staff permissions using approved inputs/prices.
 - Authenticated `/kds` must report setup required until accepted independent payment-release authority exists; never fabricate paid orders for testing.
-- Catalogue prices/allergens/publication and real payments remain separately blocked pending approval and integration acceptance.
+- The owner has now approved the initial £20 item and upgrade prices. Allergen completion, catalogue publication and real payment integration remain pending.
 
 ## Payment provisioning — 5 November 2026
 
 - The owner confirmed enabling built-in Stripe payments in test mode. The enable tool reported successful test-account provisioning and registration of the test webhook endpoint.
 - Provisioning is not checkout acceptance: no payment products, checkout form or app webhook handler have been created in this request. Illustrative menu prices must not become payment products.
 - Food is ineligible for full merchant-of-record compliance handling. Planned checkout uses tax calculation and collection only (`automatic_tax`), with appropriate product-specific tax codes; the seller remains responsible for registration, filing and remittance.
-- Next requirements are approved canonical products/prices, hosted schema installation and verified order/payment reconciliation. Existing coming-soon, checkout-approval and KDS-release gates remain unchanged.
+- The owner subsequently approved £20 for every launch item and each chargeable add-on, meal or upgrade. The repository now includes the reviewed draft catalogue import and upgrade-price administration extension. Next requirements are hosted installation, canonical publication and verified order/payment reconciliation. Existing coming-soon, checkout-approval and KDS-release gates remain unchanged.
 - Live payments additionally require account claim/onboarding and the payment integration's readiness checks; completing those does not replace MealDeck's own launch acceptance.
+
+## Account access — 5 November 2026
+
+The owner confirmed that this MealDeck project is on a separate Lovable account. The currently available Lovable connection returns `404 project_not_found` for the recorded MealDeck project; the available Supabase connection exposes Dishbee only. No hosted installation, owner bootstrap, catalogue import or payment activation was performed through those connections. Repository changes and local verification do not establish that these changes are published or installed in the owning account. See [the launch-price phase record](mealdeck-launch-prices-and-polish-phase49.md) for the completed source work and remaining runtime contracts.

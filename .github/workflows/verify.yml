@@ -14,20 +14,23 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-      - name: Launch menu transcription, unpriced basket and cross-brand choices
-        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-navigation.test.ts
+      - name: Launch menu prices, basket arithmetic and cross-brand choices
+        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts
       - name: Launch menu and approved logo implementation lint
         run: >-
           bunx eslint src/lib/launch-menu-catalogue.ts src/lib/launch-menu-picks.ts
           src/lib/launch-menu-upsells.ts
+          src/lib/launch-menu-display-prices.ts
           src/lib/brand-logos.ts src/components/mealdeck-logo.tsx
           src/components/menus/launch-menu-browser.tsx src/routes/menus.tsx
           src/components/menus/launch-basket.tsx src/components/menus/launch-item-customiser.tsx
           src/components/menus/launch-menu-mobile-nav.tsx src/lib/launch-menu-navigation.ts src/routes/menu.tsx
           src/components/menus/launch-menu-app-nav.tsx
+          src/components/menus/launch-basket-feedback.tsx
           tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts
           tests/launch-menu-upsells.test.ts
           tests/launch-menu-navigation.test.ts
+          tests/launch-menu-display-prices.test.ts
           --rule 'prettier/prettier: off'
       - name: Installable app cache isolation and offline behavior
         run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
@@ -102,7 +105,9 @@ jobs:
           tests/mealdeck-kds*.test.ts
           src/components/ops/ops-panels.tsx
           src/components/ops/menu-kitchen-route.tsx
+          src/components/ops/modifier-prices-panel.tsx
           src/lib/mealdeck-ops-browser.ts src/lib/mealdeck-ops-access.ts
+          src/lib/mealdeck-ops-modifier-prices.ts
           src/lib/mealdeck-ops-math.ts src/lib/mealdeck-ops-types.ts
           tests/mealdeck-ops.test.ts
           --rule 'prettier/prettier: off'
@@ -428,3 +433,33 @@ jobs:
         env:
           MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_standalone
         run: npm run test:standalone:postgres --prefix tests/postgres
+
+  catalogue-postgres17:
+    name: Launch catalogue import and editable prices on PostgreSQL 17
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_catalogue
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_catalogue"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated PostgreSQL test dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Verify approved catalogue, reruns, staff price permissions and concurrent updates
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_catalogue
+        run: npm run test:catalogue:postgres --prefix tests/postgres

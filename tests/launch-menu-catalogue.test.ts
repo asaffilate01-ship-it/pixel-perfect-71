@@ -3,6 +3,9 @@ import {
   getLaunchMenuBrand,
   launchMenuBrands,
   launchMenuSources,
+  LAUNCH_ITEM_PRICE_PENCE,
+  LAUNCH_UPGRADE_PRICE_PENCE,
+  LAUNCH_CROSS_UPGRADE_PRICE_PENCE,
   type LaunchMenuBrand,
   type LaunchMenuOptionGroup,
 } from "../src/lib/launch-menu-catalogue";
@@ -37,13 +40,34 @@ describe("Supplied launch menu transcription", () => {
     expect(getLaunchMenuBrand("not-a-supplied-brand")).toBeUndefined();
   });
 
-  it("keeps every product and option unpriced instead of treating unknown as free", () => {
+  it("applies the owner's £20 starting price to every standalone product, including cans and sides", () => {
+    expect(LAUNCH_ITEM_PRICE_PENCE).toBe(2000);
     for (const entry of launchMenuBrands) {
       for (const section of entry.sections) {
-        for (const item of section.items) expect(item.pricePence).toBeNull();
+        for (const item of section.items) {
+          expect(Number.isSafeInteger(item.pricePence)).toBe(true);
+          expect(item.pricePence).toBe(2000);
+        }
       }
+    }
+  });
+
+  it("charges £20 for every optional add-on, meal or upgrade and retains included choices at no extra charge", () => {
+    expect(LAUNCH_UPGRADE_PRICE_PENCE).toBe(2000);
+    expect(LAUNCH_CROSS_UPGRADE_PRICE_PENCE).toBe(2000);
+    const included = new Set([
+      "tavo-chicken-portion",
+      "tavo-chicken-flavour",
+      "souvano-donner-flavour",
+      "souvano-heatwave-base",
+      "souvano-meal-side",
+    ]);
+    for (const entry of launchMenuBrands) {
       for (const optionGroup of entry.optionGroups) {
-        for (const option of optionGroup.options) expect(option.pricePence).toBeNull();
+        for (const option of optionGroup.options) {
+          expect(Number.isSafeInteger(option.pricePence)).toBe(true);
+          expect(option.pricePence).toBe(included.has(optionGroup.id) ? 0 : 2000);
+        }
       }
     }
   });

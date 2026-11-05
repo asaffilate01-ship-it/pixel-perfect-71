@@ -9,6 +9,12 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
+## Launch prices and Stripe — owner decision, 5 November 2026
+
+- The owner approved **£20 for every standalone item in the five launch menus**, including drinks, and **£20 for each selected add-on, meal or upgrade**. Required flavour, portion and included base selections are part of the dish, not additional products. Use integer pence from the shared launch catalogue and charge a named cross-brand upgrade once, not again as a second full-priced product.
+- The owner requested backend and checkout activation and confirmed that MealDeck is on a **separate Lovable account**. The current connector cannot access that project. Finish authorized repository work, but do not claim that a source merge installs its database, publishes the site or activates Stripe.
+- The public Stripe test configuration records test provisioning only. Real checkout still requires the independent MealDeck schema, canonical prices and modifiers, authenticated provider confirmation, idempotent order reconciliation and verified kitchen release. Do not convert the existing pending-order response into a paid order or expose a payment button that cannot create a real provider session.
+
 ## Independent MealDeck backend — owner decision, 4 November 2026
 
 - MealDeck is a trading name of **313 Brands Ltd**, with the technology credit **Powered by Dishbee**.
@@ -56,7 +62,7 @@
 - Keep customer checkout fail-closed unless both `COMING_SOON=false` and the
   separate server-only `MEALDECK_CHECKOUT_INTEGRATION_APPROVED=signed-off`
   release switch are intentionally changed after staging acceptance. The
-  environment switch is NOT a replacement for a real Adyen session adapter.
+  environment switch is NOT a replacement for a real payment session adapter.
 - Do not enable checkout until MealDeck's signed webhook, group payment,
   source-of-funds split, KDS, one-delivery orchestration, full refunds,
   replays and customer payment UI are functional and accepted.
@@ -88,7 +94,7 @@
 - Signed quotes are NOT a provider guarantee, fund capture, an order booking,
   a payment session, or a sufficient go-live signal. The current checkout RPC
   still lacks a proven idempotent pending-order creation and dedicated
-  MealDeck Adyen for Platforms session; production release gates stay off.
+  MealDeck payment-provider session; production release gates stay off.
 - The payment and privacy secrets must not go in public environment
   variables or public client modules. Never use unsigned browser status to
   publish kitchen tickets.

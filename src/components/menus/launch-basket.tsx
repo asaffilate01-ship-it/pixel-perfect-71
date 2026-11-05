@@ -10,6 +10,13 @@ import {
   type LaunchMenuPick,
 } from "@/lib/launch-menu-picks";
 import { launchCrossSelectionSummaries } from "@/lib/launch-menu-upsells";
+import {
+  formatLaunchMenuPrice,
+  launchMenuBasketDisplayPrice,
+  launchMenuPickDisplayPrice,
+} from "@/lib/launch-menu-display-prices";
+
+export type LaunchBasketStorageStatus = "checking" | "saved" | "session";
 
 function logoFor(id: string) {
   return approvedBrandLogos[(id === "skorch-burgers" ? "skorch" : id) as ApprovedBrandId];
@@ -57,6 +64,8 @@ export function LaunchBasket({
   onClear,
   onUndoClear,
   canUndoClear,
+  storageStatus,
+  onRetrySave,
 }: {
   picks: LaunchMenuPick[];
   onQuantity: (key: string, value: number) => void;
@@ -65,24 +74,45 @@ export function LaunchBasket({
   onClear: () => void;
   onUndoClear: () => void;
   canUndoClear: boolean;
+  storageStatus: LaunchBasketStorageStatus;
+  onRetrySave: () => boolean;
 }) {
   const total = launchPickCount(picks);
+  const basketPrice = launchMenuBasketDisplayPrice(picks);
   const clearButtonRef = useRef<HTMLButtonElement>(null);
   const undoButtonRef = useRef<HTMLButtonElement>(null);
-  const focusAfterAction = useRef<"clear" | "undo" | null>(null);
+  const emptyHeadingRef = useRef<HTMLHeadingElement>(null);
+  const storageHeadingRef = useRef<HTMLElement>(null);
+  const focusAfterSave = useRef(false);
+  const removeButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const focusAfterAction = useRef<
+    { type: "clear" | "undo" } | { type: "remove"; key: string | undefined } | null
+  >(null);
 
   useEffect(() => {
+    const action = focusAfterAction.current;
     const target =
-      focusAfterAction.current === "clear"
+      action?.type === "clear"
         ? undoButtonRef.current
-        : focusAfterAction.current === "undo"
+        : action?.type === "undo"
           ? clearButtonRef.current
-          : null;
+          : action?.type === "remove"
+            ? ((action.key ? removeButtonRefs.current.get(action.key) : null) ??
+              clearButtonRef.current ??
+              emptyHeadingRef.current)
+            : null;
     if (target) {
       focusAfterAction.current = null;
       target.focus({ preventScroll: true });
     }
   }, [picks.length, canUndoClear]);
+
+  useEffect(() => {
+    if (storageStatus === "saved" && focusAfterSave.current) {
+      focusAfterSave.current = false;
+      storageHeadingRef.current?.focus({ preventScroll: true });
+    }
+  }, [storageStatus]);
 
   return (
     <div className="lmb-basket">
@@ -92,7 +122,9 @@ export function LaunchBasket({
             <ShoppingBag size={30} strokeWidth={1.6} />
             <Plus size={14} className="lmb-empty-plus" />
           </span>
-          <h3>{canUndoClear ? "Basket emptied" : "Your basket is empty"}</h3>
+          <h3 ref={emptyHeadingRef} tabIndex={-1}>
+            {canUndoClear ? "Basket emptied" : "Your basket is empty"}
+          </h3>
           <p>
             {canUndoClear
               ? "Changed your mind? Bring back all your choices, upgrades and extras."
@@ -105,7 +137,7 @@ export function LaunchBasket({
               aria-label="Undo empty basket"
               ref={undoButtonRef}
               onClick={() => {
-                focusAfterAction.current = "undo";
+                focusAfterAction.current = { type: "undo" };
                 onUndoClear();
               }}
             >
@@ -125,7 +157,7 @@ export function LaunchBasket({
               className="lmb-clear"
               ref={clearButtonRef}
               onClick={() => {
-                focusAfterAction.current = "clear";
+                focusAfterAction.current = { type: "clear" };
                 onClear();
               }}
             >
@@ -134,9 +166,11 @@ export function LaunchBasket({
             </button>
           </div>
           <ul className="lmb-list" aria-label="Basket selections">
-            {picks.map((pick) => {
+            {picks.map((pick, index) => {
               const found = findLaunchMenuItem(pick.brandId, pick.itemId);
               if (!found) return null;
+              const controlName = found.item.name + " from " + found.section.title;
+              const price = launchMenuPickDisplayPrice(pick);
               const labels = launchSelectionLabels(
                 found.brand,
                 found.item,
@@ -167,9 +201,30 @@ export function LaunchBasket({
                     <div>
                       <span className="lmb-item-brand">{found.brand.name}</span>
                       <h3>{found.item.name}</h3>
+                      <span className="lmb-item-section">{found.section.title}</span>
                     </div>
                   </div>
+                  <div className="lmb-item-price">
+                    <span>
+                      {formatLaunchMenuPrice(price.baseUnitPence)} each × {pick.quantity}
+                    </span>
+                    <strong>{formatLaunchMenuPrice(price.baseLinePence)}</strong>
+                  </div>
                   {labels.length > 0 && <p className="lmb-choices">{labels.join(" · ")}</p>}
+                  {price.options.some((option) => option.unitPence !== 0) && (
+                    <dl className="lmb-option-prices" aria-label={"Options for " + controlName}>
+                      {price.options
+                        .filter((option) => option.unitPence !== 0)
+                        .map((option) => (
+                          <div key={option.optionId}>
+                            <dt>
+                              {option.label} × {pick.quantity}
+                            </dt>
+                            <dd>{formatLaunchMenuPrice(option.linePence)}</dd>
+                          </div>
+                        ))}
+                    </dl>
+                  )}
 
                   {(["upgrade", "extra"] as const).map((mode) => {
                     const additions = children.filter((child) => child.mode === mode);
@@ -179,28 +234,38 @@ export function LaunchBasket({
                       <div key={mode} className="lmb-additions" data-addition-mode={mode}>
                         <h4>{heading}</h4>
                         <ul aria-label={heading + " for " + found.item.name}>
-                          {additions.map((child) => (
-                            <li
-                              className="lmb-child"
-                              key={child.slot + ":" + child.brandId + ":" + child.itemId}
-                              data-brand={child.brandId}
-                            >
-                              <div className="lmb-child-heading">
-                                <img src={logoFor(child.brandId)} alt="" width="40" height="36" />
-                                <div>
-                                  <span className="lmb-child-brand">{child.brandName}</span>
-                                  <strong>{child.itemName}</strong>
+                          {additions.map((child) => {
+                            const additionPrice = price.additions.find(
+                              (entry) => entry.slot === child.slot && entry.itemId === child.itemId,
+                            );
+                            return (
+                              <li
+                                className="lmb-child"
+                                key={child.slot + ":" + child.brandId + ":" + child.itemId}
+                                data-brand={child.brandId}
+                              >
+                                <div className="lmb-child-heading">
+                                  <img src={logoFor(child.brandId)} alt="" width="40" height="36" />
+                                  <div>
+                                    <span className="lmb-child-brand">{child.brandName}</span>
+                                    <strong>{child.itemName}</strong>
+                                  </div>
+                                  <span
+                                    className="lmb-child-quantity"
+                                    aria-label={"Quantity " + pick.quantity}
+                                  >
+                                    ×{pick.quantity}
+                                  </span>
                                 </div>
-                                <span
-                                  className="lmb-child-quantity"
-                                  aria-label={"Quantity " + pick.quantity}
-                                >
-                                  ×{pick.quantity}
-                                </span>
-                              </div>
-                              <p>{child.label}</p>
-                            </li>
-                          ))}
+                                <p>{child.label}</p>
+                                <p className="lmb-child-price">
+                                  {formatLaunchMenuPrice(additionPrice?.unitPence ?? null)} each ·{" "}
+                                  {formatLaunchMenuPrice(additionPrice?.linePence ?? null)} for{" "}
+                                  {pick.quantity}
+                                </p>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
                     );
@@ -210,13 +275,13 @@ export function LaunchBasket({
                     <LaunchQuantityControl
                       quantity={pick.quantity}
                       onChange={(value) => onQuantity(pick.key, value)}
-                      name={found.item.name}
+                      name={controlName}
                       canIncrease={total < MAX_LAUNCH_PICKS}
                     />
                     <button
                       type="button"
                       className="lmb-edit"
-                      aria-label={"Edit " + found.item.name}
+                      aria-label={"Edit " + controlName}
                       onClick={() => onEdit(pick)}
                     >
                       Edit
@@ -224,8 +289,16 @@ export function LaunchBasket({
                     <button
                       type="button"
                       className="lmb-remove"
-                      aria-label={"Remove " + found.item.name}
-                      onClick={() => onRemove(pick)}
+                      aria-label={"Remove " + controlName}
+                      ref={(node) => {
+                        if (node) removeButtonRefs.current.set(pick.key, node);
+                        else removeButtonRefs.current.delete(pick.key);
+                      }}
+                      onClick={() => {
+                        const neighbour = picks[index + 1] ?? picks[index - 1];
+                        focusAfterAction.current = { type: "remove", key: neighbour?.key };
+                        onRemove(pick);
+                      }}
                     >
                       <Trash2 size={18} aria-hidden="true" />
                     </button>
@@ -234,13 +307,45 @@ export function LaunchBasket({
               );
             })}
           </ul>
+          <div className="lmb-subtotal">
+            <p className="lmb-subtotal-amount">
+              <span>Items subtotal</span>
+              <strong>{formatLaunchMenuPrice(basketPrice.itemsSubtotalPence)}</strong>
+            </p>
+            {basketPrice.hasPaidChoices && (
+              <p>Includes your selected upgrades, add-ons and extras.</p>
+            )}
+            <p>Any delivery charge is confirmed at checkout.</p>
+          </div>
         </>
       )}
-      <div className="lmb-note">
+      <div className="lmb-note" data-storage-status={storageStatus}>
         <Bookmark size={17} aria-hidden="true" />
         <div>
-          <strong>Saved on this device</strong>
-          <p>Plan your favourites. Prices and ordering are coming soon.</p>
+          <strong ref={storageHeadingRef} tabIndex={-1}>
+            {storageStatus === "session"
+              ? "Here for this visit"
+              : storageStatus === "checking"
+                ? "Checking your saved basket"
+                : "Saved on this device"}
+          </strong>
+          <p>
+            {storageStatus === "session"
+              ? "This browser couldn’t save your basket. Keep this page open so your choices stay with you."
+              : "Plan your favourites with the item prices shown. Ordering is coming soon."}
+          </p>
+          {storageStatus === "session" && (
+            <button
+              type="button"
+              className="lmb-retry-save"
+              onClick={() => {
+                focusAfterSave.current = onRetrySave();
+              }}
+            >
+              <RotateCcw size={16} aria-hidden="true" />
+              Try saving again
+            </button>
+          )}
         </div>
       </div>
     </div>

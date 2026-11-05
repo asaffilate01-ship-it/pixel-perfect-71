@@ -1,0 +1,142 @@
+/* A quiet, reachable confirmation above the menu's existing basket navigation. */
+.lm-basket-feedback {
+  position: fixed;
+  z-index: 85;
+  right: max(24px, env(safe-area-inset-right, 0px));
+  bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 44px;
+  align-items: start;
+  column-gap: 10px;
+  width: min(440px, calc(100vw - 48px));
+  padding: 10px 10px 10px 16px;
+  border: 1px solid var(--md-line, #e4d8c7);
+  border-radius: 16px;
+  background: var(--md-paper, #fffdf7);
+  color: var(--md-black, #111111);
+  box-shadow: 0 5px 24px #211a1126;
+  font-family: var(--md-body, "DM Sans", sans-serif);
+}
+
+.lm-basket-feedback-icon {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  color: var(--md-red-deep, #951018);
+}
+
+.lm-basket-feedback > p {
+  align-self: center;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.lm-basket-feedback button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--md-red-deep, #951018);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.lm-basket-feedback button:focus-visible,
+.lmb-retry-save:focus-visible {
+  outline: 3px solid var(--md-red, #d5141d);
+  outline-offset: 2px;
+}
+
+.lm-basket-feedback .lm-basket-feedback-dismiss {
+  color: #655a4e;
+}
+
+.lm-basket-feedback-actions {
+  grid-column: 2 / -1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lm-basket-feedback-actions button {
+  padding: 0 10px;
+  background: #fff0eb;
+}
+
+.lmb-item-section {
+  display: block;
+  margin-top: 5px;
+  color: var(--lmb-muted, #655a4e);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.lmb-empty h3:focus,
+.lmb-note strong:focus {
+  outline: none;
+}
+
+.lmb-note[data-storage-status="session"] {
+  color: #6b4b19;
+}
+
+.lmb-note[data-storage-status="session"] > svg {
+  color: #8c5b11;
+}
+
+.lmb-retry-save {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  border: 1px solid var(--lmb-line, #e4d9cc);
+  border-radius: 9px;
+  padding: 9px 12px;
+  background: #fffaf2;
+  color: var(--md-red-deep, #951018);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+@media (max-width: 1023px) {
+  .lm-basket-feedback {
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+    left: max(12px, env(safe-area-inset-left, 0px));
+    width: auto;
+  }
+}
+
+@media (max-width: 800px) {
+  .lm-basket-feedback {
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .lm-shell:has(.lm-search input:focus) .lm-basket-feedback,
+  .lm-shell:has(.md-mobile-menu-button[aria-expanded="true"]) .lm-basket-feedback {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@media (hover: hover) {
+  .lm-basket-feedback button:hover,
+  .lmb-retry-save:hover {
+    background: #f8e7dd;
+  }
+}
