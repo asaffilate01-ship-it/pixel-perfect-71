@@ -8,10 +8,11 @@ import { seo } from "@/lib/seo";
 export const Route = createFileRoute("/blog/")({
   head: () =>
     seo({
-      title: "The Deck Blog — Food Guides for Luton & St Albans | MealDeck",
-      description: "Food guides, group ordering tips and offers for Luton and St Albans. French tacos, smash burgers, desi food and more from the MealDeck table.",
+      title: "The Deck Blog — Food in Luton, Offers & Group Orders | MealDeck",
+      description:
+        "Explore food in Luton, MealDeck’s three November offers and group-order guides. Read about the five launch menus and future location plans.",
       path: "/blog",
-      keywords: "food blog Luton, food delivery St Albans, takeaway Luton, best food Luton",
+      keywords: "food in Luton, MealDeck blog, Luton food offers, group food order Luton",
     }),
   component: BlogIndex,
 });
@@ -21,13 +22,18 @@ function BlogIndex() {
     <div className="min-h-screen bg-background text-foreground">
       <SiteHeader />
       <main className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
-        <p className="font-display text-sm font-bold uppercase tracking-[0.3em] text-accent">♠ The Deck Blog ♥</p>
+        <p className="font-display text-sm font-bold uppercase tracking-[0.3em] text-accent">
+          ♠ The Deck Blog ♥
+        </p>
         <h1 className="mt-3 font-display text-4xl font-black sm:text-6xl">Cards on the table.</h1>
         <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-          Food guides, group-order tactics and the latest hands from MealDeck in Luton and St Albans.
+          Food in Luton, group-order guides and the latest MealDeck offers, plus news of future
+          locations.
         </p>
         <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((p) => <PostCard key={p.slug} post={p} />)}
+          {posts.map((p) => (
+            <PostCard key={p.slug} post={p} />
+          ))}
         </div>
       </main>
       <SiteFooter />

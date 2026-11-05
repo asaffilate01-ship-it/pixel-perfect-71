@@ -6,27 +6,55 @@ import { MEALDECK_LAUNCH_HOURS_LABEL } from "@/lib/mealdeck-launch-schedule";
 export const Route = createFileRoute("/luton")({
   head: () => ({
     ...seo({
-      title: "MealDeck Luton — Five Brands, One Launch Kitchen",
-      description: "MealDeck Luton opens 6–8 November 2026: Friday 3pm–11pm, Saturday and Sunday 1pm–11pm. Five brands, collection or kerbside, and 30% off with no minimum. Guests welcome; delivery is unavailable.",
+      title: "Food and burgers in Luton — Five launch menus | MealDeck",
+      description:
+        "Explore Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries, mac and cheese and Moktl mocktails. Luton opening: 6–8 November 2026.",
       path: "/luton",
-      keywords: "MealDeck Luton, food delivery Luton, smash burgers Luton, chicken Luton, Mediterranean grill Luton, loaded fries Luton, mocktails Luton",
+      keywords:
+        "MealDeck Luton, food in Luton, burgers in Luton, Skorch burgers Luton, Tavo chicken Luton, Moktl mocktail lounge Luton, Souvano Greek and Turkish food, Load’d loaded fries, mac and cheese",
     }),
     scripts: [ldScript({ "@context": "https://schema.org", ...lutonBusiness })],
   }),
   component: () => (
     <LocationPage
       town="Luton"
-      intro="Luton opens 6–8 November 2026 with Skorch smash burgers, Tavo Chicken, Souvano Mediterranean grill, Load’d loaded fries and mac ’n’ cheese, and Moktl mocktails. Five brands, one basket, collection or kerbside. Guests can order without registering during our first three days’ opening hours, with no loyalty points on guest orders."
+      intro="Food in Luton for every craving: Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails. Opening 6–8 November 2026, with one basket for collection or kerbside. Guests can order without registering during our first three days’ opening hours, with no loyalty points on guest orders."
       hours={MEALDECK_LAUNCH_HOURS_LABEL}
       fulfilment="Collection · Kerbside · Delivery unavailable"
-      areas={["Collection and kerbside from 314–318 Selbourne Road, Luton, LU4 8NU", "Delivery is not available for this launch"]}
+      areas={[
+        "Collection and kerbside from 314–318 Selbourne Road, Luton, LU4 8NU",
+        "Delivery is not available for this launch",
+      ]}
       includeCafe1={false}
       faqs={[
-        { q: "When is MealDeck opening in Luton?", a: "Our opening weekend is 6–8 November 2026: Friday 6 November, 3pm–11pm; Saturday 7 November and Sunday 8 November, 1pm–11pm. All times are UK local time. Online ordering remains coming soon while the service is prepared for launch." },
-        { q: "Which brands are in the first launch?", a: "Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Mix the five launch brands in one basket when ordering opens. The other brands are planned for later decks." },
-        { q: "Can I collect my order or use kerbside pickup?", a: "Yes. Collection and kerbside pickup are the two launch options. Delivery is unavailable. For kerbside, enter the car make, colour and last four registration characters. St Albans and Bedford remain coming soon." },
-        { q: "Do I need to register?", a: "You can order as a guest during the opening hours on 6–8 November. Guests and members can use the 30% offer and Sunday's 99p milk cake offer. Register and spend £15 or more by and including Friday 13 November 2026 for double loyalty points. Guest orders earn no loyalty points. Verify your email for your member account; marketing emails and promotional app alerts remain separate, optional choices." },
-        { q: "Can we order as a group?", a: "Yes. Open Group order to send each person an invitation. They choose their food and send a reply link back; the organiser reviews the choices and pays once when checkout is available. The draft is saved in the organiser’s browser, with separate numbered bags. Split payments are not available." },
+        {
+          q: "When is MealDeck opening in Luton?",
+          a: "Our opening weekend is 6–8 November 2026: Friday 6 November, 3pm–11pm; Saturday 7 November and Sunday 8 November, 1pm–11pm. All times are UK local time. Online ordering remains coming soon while the service is prepared for launch.",
+        },
+        {
+          q: "Which brands are in the first launch?",
+          a: "Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Mix the five launch brands in one basket when ordering opens. The other brands are planned for later decks.",
+        },
+        {
+          q: "Where can I find burgers in Luton?",
+          a: "Explore Skorch burgers in Luton for smash burgers, or browse Tavo chicken for chicken burgers, wings and tenders. Both are part of MealDeck’s first five menus, with the exact choices and current prices shown on the menu page.",
+        },
+        {
+          q: "What is on the Moktl mocktail lounge menu in Luton?",
+          a: "Moktl brings zero-alcohol mocktails to the same MealDeck basket as your food. Browse its named drinks and prices on the menu page. Launch fulfilment is collection or kerbside from the Luton kitchen.",
+        },
+        {
+          q: "Can I collect my order or use kerbside pickup?",
+          a: "Yes. Collection and kerbside pickup are the two launch options. Delivery is unavailable. For kerbside, enter the car make, colour and last four registration characters. St Albans and Bedford remain coming soon.",
+        },
+        {
+          q: "Do I need to register?",
+          a: "You can order as a guest during the opening hours on 6–8 November. Guests and members can use the 30% offer and Sunday's 99p milk cake offer. Register and spend £15 or more by and including Friday 13 November 2026 for double loyalty points. Guest orders earn no loyalty points. Verify your email for your member account; marketing emails and promotional app alerts remain separate, optional choices.",
+        },
+        {
+          q: "Can we order as a group?",
+          a: "Yes. Open Group order to send each person an invitation. They choose food and send a reply link back; the organiser reviews the choices and separate numbered bags. The food draft stays in the organiser’s browser. When checkout is open, it shows the payment options currently available: one organiser payment, or enabled shared options with separate private payment links. A shared order reaches the kitchen only after all required payments are confirmed.",
+        },
       ]}
     />
   ),

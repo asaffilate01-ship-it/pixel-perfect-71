@@ -7,9 +7,9 @@ export const Route = createFileRoute("/menus")({
   validateSearch: validateLaunchMenuSearch,
   head: () =>
     seo({
-      title: "The launch menus — Skorch, Tavo, Souvano, Load’d & Moktl | MealDeck",
+      title: "Luton food menus — Skorch, Tavo, Souvano, Load’d & Moktl | MealDeck",
       description:
-        "Explore MealDeck’s launch menus: smash burgers, chicken, Mediterranean grill, loaded fries and mocktails. Build your basket with meal upgrades and extras. Ordering coming soon.",
+        "Browse Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails in Luton. Ordering coming soon.",
       path: "/menus",
     }),
   component: MenusPage,

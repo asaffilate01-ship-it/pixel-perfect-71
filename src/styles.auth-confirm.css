@@ -1,0 +1,79 @@
+.md-auth-confirm {
+  color-scheme: light;
+  font-family: "DM Sans", Arial, sans-serif;
+  min-height: 75vh;
+  background: #fff6e8;
+  color: #111111;
+  padding: 40px 16px;
+  display: grid;
+  place-items: center;
+}
+.md-auth-confirm-card {
+  width: min(100%, 560px);
+  border: 1px solid #dacfc2;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fffdf7;
+}
+.md-auth-confirm-brand {
+  background: #111111;
+  padding: 22px 28px;
+}
+.md-auth-confirm-brand img {
+  width: 150px;
+  height: auto;
+}
+.md-auth-confirm-content {
+  padding: 28px;
+  display: grid;
+  gap: 20px;
+}
+.md-auth-confirm-eyebrow {
+  color: #951018;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.md-auth-confirm h1 {
+  font-family: Outfit, Arial, sans-serif;
+  font-size: clamp(26px, 5vw, 34px);
+  line-height: 1.15;
+  font-weight: 800;
+}
+.md-auth-confirm p {
+  line-height: 1.6;
+  margin: 0;
+}
+.md-auth-confirm-help {
+  color: #62594e;
+  font-size: 14px;
+}
+.md-auth-confirm button,
+.md-auth-confirm-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 9px;
+  font-weight: 700;
+  text-decoration: none;
+  background: #c9121d;
+  color: #ffffff;
+}
+.md-auth-confirm button:focus-visible,
+.md-auth-confirm-link:focus-visible {
+  outline: 3px solid #111111;
+  outline-offset: 4px;
+}
+.md-auth-confirm button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+@media (max-width: 380px) {
+  .md-auth-confirm-content {
+    padding: 24px 18px;
+  }
+}

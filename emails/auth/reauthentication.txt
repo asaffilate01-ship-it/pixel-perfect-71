@@ -1,0 +1,14 @@
+MealDeck
+
+Confirm it's you
+
+Enter this code on the MealDeck screen that requested it to continue the sensitive account action.
+
+Your security code: {{ .Token }}
+Use the latest email you requested. Request a fresh email if it expires.
+
+Only continue if you requested this email. Never share this code or link. If you did not request it, you can ignore this email.
+
+MealDeck is a trading name of 313 Brands Ltd. Powered by Dishbee.
+
+https://mealdeck.co.uk

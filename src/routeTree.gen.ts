@@ -15,6 +15,7 @@ import { Route as BedfordRouteImport } from './routes/bedford'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as GroupOrderRouteImport } from './routes/group-order'
+import { Route as GroupPayRouteImport } from './routes/group-pay'
 import { Route as KdsRouteImport } from './routes/kds'
 import { Route as LutonRouteImport } from './routes/luton'
 import { Route as MenuRouteImport } from './routes/menu'
@@ -32,9 +33,13 @@ import { Route as StAlbansRouteImport } from './routes/st-albans'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
 import { Route as ApiFranchiseRouteImport } from './routes/api.franchise'
+import { Route as ApiGroupPaymentsRouteImport } from './routes/api.group-payments'
+import { Route as ApiTerminalRouteImport } from './routes/api.terminal'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
+import { Route as ApiAuthEmailRouteImport } from './routes/api.auth.email'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -65,6 +70,11 @@ const FranchiseRoute = FranchiseRouteImport.update({
 const GroupOrderRoute = GroupOrderRouteImport.update({
   id: '/group-order',
   path: '/group-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupPayRoute = GroupPayRouteImport.update({
+  id: '/group-pay',
+  path: '/group-pay',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KdsRoute = KdsRouteImport.update({
@@ -152,6 +162,21 @@ const ApiFranchiseRoute = ApiFranchiseRouteImport.update({
   path: '/api/franchise',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGroupPaymentsRoute = ApiGroupPaymentsRouteImport.update({
+  id: '/api/group-payments',
+  path: '/api/group-payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTerminalRoute = ApiTerminalRouteImport.update({
+  id: '/api/terminal',
+  path: '/api/terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -167,6 +192,11 @@ const FranchiseBrandIdRoute = FranchiseBrandIdRouteImport.update({
   path: '/franchise/$brandId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthEmailRoute = ApiAuthEmailRouteImport.update({
+  id: '/api/auth/email',
+  path: '/api/auth/email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
@@ -180,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
+  '/group-pay': typeof GroupPayRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -197,9 +228,13 @@ export interface FileRoutesByFullPath {
   '/track': typeof TrackRoute
   '/api/checkout': typeof ApiCheckoutRoute
   '/api/franchise': typeof ApiFranchiseRoute
+  '/api/group-payments': typeof ApiGroupPaymentsRoute
+  '/api/terminal': typeof ApiTerminalRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/auth/email': typeof ApiAuthEmailRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -209,6 +244,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
+  '/group-pay': typeof GroupPayRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -226,9 +262,13 @@ export interface FileRoutesByTo {
   '/track': typeof TrackRoute
   '/api/checkout': typeof ApiCheckoutRoute
   '/api/franchise': typeof ApiFranchiseRoute
+  '/api/group-payments': typeof ApiGroupPaymentsRoute
+  '/api/terminal': typeof ApiTerminalRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog': typeof BlogIndexRoute
+  '/api/auth/email': typeof ApiAuthEmailRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesById {
@@ -239,6 +279,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
+  '/group-pay': typeof GroupPayRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -256,9 +297,13 @@ export interface FileRoutesById {
   '/track': typeof TrackRoute
   '/api/checkout': typeof ApiCheckoutRoute
   '/api/franchise': typeof ApiFranchiseRoute
+  '/api/group-payments': typeof ApiGroupPaymentsRoute
+  '/api/terminal': typeof ApiTerminalRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise_/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
+  '/api/auth/email': typeof ApiAuthEmailRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRouteTypes {
@@ -270,6 +315,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/franchise'
     | '/group-order'
+    | '/group-pay'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -287,9 +333,13 @@ export interface FileRouteTypes {
     | '/track'
     | '/api/checkout'
     | '/api/franchise'
+    | '/api/group-payments'
+    | '/api/terminal'
+    | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
     | '/blog/'
+    | '/api/auth/email'
     | '/api/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -299,6 +349,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/franchise'
     | '/group-order'
+    | '/group-pay'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -316,9 +367,13 @@ export interface FileRouteTypes {
     | '/track'
     | '/api/checkout'
     | '/api/franchise'
+    | '/api/group-payments'
+    | '/api/terminal'
+    | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
     | '/blog'
+    | '/api/auth/email'
     | '/api/stripe/webhook'
   id:
     | '__root__'
@@ -328,6 +383,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/franchise'
     | '/group-order'
+    | '/group-pay'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -345,9 +401,13 @@ export interface FileRouteTypes {
     | '/track'
     | '/api/checkout'
     | '/api/franchise'
+    | '/api/group-payments'
+    | '/api/terminal'
+    | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise_/$brandId'
     | '/blog/'
+    | '/api/auth/email'
     | '/api/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -358,6 +418,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   FranchiseRoute: typeof FranchiseRoute
   GroupOrderRoute: typeof GroupOrderRoute
+  GroupPayRoute: typeof GroupPayRoute
   KdsRoute: typeof KdsRoute
   LutonRoute: typeof LutonRoute
   MenuRoute: typeof MenuRoute
@@ -375,9 +436,13 @@ export interface RootRouteChildren {
   TrackRoute: typeof TrackRoute
   ApiCheckoutRoute: typeof ApiCheckoutRoute
   ApiFranchiseRoute: typeof ApiFranchiseRoute
+  ApiGroupPaymentsRoute: typeof ApiGroupPaymentsRoute
+  ApiTerminalRoute: typeof ApiTerminalRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   BlogSlugRoute: typeof BlogSlugRoute
   FranchiseBrandIdRoute: typeof FranchiseBrandIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  ApiAuthEmailRoute: typeof ApiAuthEmailRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
@@ -423,6 +488,13 @@ declare module '@tanstack/react-router' {
       path: '/group-order'
       fullPath: '/group-order'
       preLoaderRoute: typeof GroupOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/group-pay': {
+      id: '/group-pay'
+      path: '/group-pay'
+      fullPath: '/group-pay'
+      preLoaderRoute: typeof GroupPayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kds': {
@@ -544,6 +616,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFranchiseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/group-payments': {
+      id: '/api/group-payments'
+      path: '/api/group-payments'
+      fullPath: '/api/group-payments'
+      preLoaderRoute: typeof ApiGroupPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/terminal': {
+      id: '/api/terminal'
+      path: '/api/terminal'
+      fullPath: '/api/terminal'
+      preLoaderRoute: typeof ApiTerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog/': {
       id: '/blog/'
       path: '/blog'
@@ -565,6 +658,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FranchiseBrandIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/email': {
+      id: '/api/auth/email'
+      path: '/api/auth/email'
+      fullPath: '/api/auth/email'
+      preLoaderRoute: typeof ApiAuthEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
@@ -582,6 +682,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   FranchiseRoute: FranchiseRoute,
   GroupOrderRoute: GroupOrderRoute,
+  GroupPayRoute: GroupPayRoute,
   KdsRoute: KdsRoute,
   LutonRoute: LutonRoute,
   MenuRoute: MenuRoute,
@@ -599,9 +700,13 @@ const rootRouteChildren: RootRouteChildren = {
   TrackRoute: TrackRoute,
   ApiCheckoutRoute: ApiCheckoutRoute,
   ApiFranchiseRoute: ApiFranchiseRoute,
+  ApiGroupPaymentsRoute: ApiGroupPaymentsRoute,
+  ApiTerminalRoute: ApiTerminalRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   BlogSlugRoute: BlogSlugRoute,
   FranchiseBrandIdRoute: FranchiseBrandIdRoute,
   BlogIndexRoute: BlogIndexRoute,
+  ApiAuthEmailRoute: ApiAuthEmailRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport

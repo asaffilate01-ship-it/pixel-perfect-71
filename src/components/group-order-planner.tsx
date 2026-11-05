@@ -603,7 +603,7 @@ function ParticipantPlanner({ invite, origin }: { invite: GroupInvitation; origi
         <h1>Bring your craving to the group.</h1>
         <p>
           Choose your food, then send a reply link back to the person who invited you. They review
-          everyone’s picks and pay in one checkout.
+          everyone’s picks and choose the available payment option at checkout.
         </p>
         <p>
           <strong>Your choices are not sent automatically.</strong> This is a draft on this browser,
@@ -654,8 +654,9 @@ function ParticipantPlanner({ invite, origin }: { invite: GroupInvitation; origi
           />
         )}
         <p className="md-group-muted">
-          The organiser can tell you when the order has actually been paid for. A reply link is not
-          an order confirmation.
+          The organiser will review the order and its payment options. If shared payment is
+          available, they can send you a separate payment link. A food-choice reply is not an order
+          confirmation.
         </p>
       </section>
     </>
@@ -971,7 +972,7 @@ export function GroupOrderPlanner() {
               <h1 ref={pageHeading} tabIndex={-1}>
                 Everyone chooses.
                 <br />
-                One person pays.
+                One order together.
               </h1>
               <p>
                 Bring five menus into one group order. Share an invitation for each person, review
@@ -991,16 +992,17 @@ export function GroupOrderPlanner() {
               </li>
               <li>
                 <span>3</span>
-                <strong>Review &amp; pay once</strong>
-                <p>One numbered bag per person. One collection.</p>
+                <strong>Review, then choose how to pay</strong>
+                <p>Check the available payment options. One collection.</p>
               </li>
             </ol>
             <div className="md-group-truth">
               <Users size={22} aria-hidden="true" />
               <p>
                 <strong>Your draft lives in this browser.</strong> This is not a live synced room.
-                Friends must send their reply links back to you. Split payments are unavailable;
-                checkout follows the kitchen’s live availability and opening hours.
+                Friends must send their reply links back to you. At checkout, choose one payer or
+                the shared payment options currently available. Ordering follows the kitchen’s live
+                availability and opening hours.
               </p>
             </div>
             {stored.error && (
@@ -1232,8 +1234,8 @@ export function GroupOrderPlanner() {
                   <h2>Check the whole order.</h2>
                   <p>
                     {groupPlanCount(plan)} selections from {included.length}{" "}
-                    {included.length === 1 ? "person" : "people"}. You will pay for everyone in one
-                    checkout.
+                    {included.length === 1 ? "person" : "people"}. Review the available payment
+                    options together with the final total at checkout.
                   </p>
                   {included.map((person, index) => (
                     <details key={person.id}>
@@ -1283,7 +1285,7 @@ export function GroupOrderPlanner() {
                     />
                     <span>
                       I’ve checked everyone’s items, quantities, flavours, extras and bags. I will
-                      pay for this order.
+                      review the payment option at checkout.
                     </span>
                   </label>
                   <button
@@ -1295,8 +1297,9 @@ export function GroupOrderPlanner() {
                     Review group at checkout <ArrowRight size={19} aria-hidden="true" />
                   </button>
                   <p className="md-group-muted">
-                    Your personal menu basket will stay saved. Payment and collection are handled by
-                    the organiser. No split payments or group rewards are created.
+                    Your personal menu basket will stay saved. The organiser coordinates payment and
+                    collection. Sharing food-choice links does not create payment requests or group
+                    rewards.
                   </p>
                 </section>
                 <LinkPrivacy />

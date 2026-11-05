@@ -5,6 +5,7 @@ import { mealDeckArtwork, logoDimensionsBySrc } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
 import { chefTitles, heroFoodDeck } from "@/lib/hero-food-deck";
 import { suitArtwork } from "@/lib/food-suit-artwork";
+import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 const stepSeconds = 3;
 const introDuration = 4600;
 
@@ -34,14 +35,30 @@ export function RotatingBrandDeck() {
   // Random starting order each load — shuffled after mount so SSR and the
   // first client render stay identical (no hydration mismatch).
   const [brandOrder, setBrandOrder] = useState(marketingBrands);
-  const logoCard = { id: "mealdeck", name: "MealDeck", category: "One Order. Every Craving.", logo: mealDeckArtwork.src, rank: "M", suit: "burger" as const };
+  const logoCard = {
+    id: "mealdeck",
+    name: "MealDeck",
+    category: MEALDECK_BUSINESS.tagline,
+    logo: mealDeckArtwork.src,
+    rank: "M",
+    suit: "burger" as const,
+  };
   const brandCards = heroFoodDeck.map((foodCard, index) => {
     const brand = brandOrder[index % brandOrder.length];
-    return { ...brand, ...foodCard, name: brand?.name ?? "MealDeck", category: brand?.category ?? "", logo: brand?.logo ?? mealDeckArtwork.src };
+    return {
+      ...brand,
+      ...foodCard,
+      name: brand?.name ?? "MealDeck",
+      category: brand?.category ?? "",
+      logo: brand?.logo ?? mealDeckArtwork.src,
+    };
   });
   // Show every restaurant once in the opening fan; the full four-suit deck
   // follows, with the MealDeck artwork as a separate title card.
-  const cards = [logoCard, ...(introComplete ? brandCards : brandCards.slice(0, brandOrder.length))];
+  const cards = [
+    logoCard,
+    ...(introComplete ? brandCards : brandCards.slice(0, brandOrder.length)),
+  ];
 
   useEffect(() => {
     setBrandOrder(shuffleBrands(marketingBrands));
@@ -63,13 +80,15 @@ export function RotatingBrandDeck() {
           <div
             key={`${introComplete ? "cycle" : "intro"}-${card.id}`}
             className="md-deck-card"
-            style={{
-              "--card-delay": `${index * stepSeconds}s`,
-              "--fan-x": `${centeredIndex * 15}px`,
-              "--fan-y": `${Math.abs(centeredIndex) * 3.2}px`,
-              "--fan-rotate": `${centeredIndex * 4.2}deg`,
-              "--fan-z": `${cards.length - Math.abs(centeredIndex)}`,
-            } as React.CSSProperties}
+            style={
+              {
+                "--card-delay": `${index * stepSeconds}s`,
+                "--fan-x": `${centeredIndex * 15}px`,
+                "--fan-y": `${Math.abs(centeredIndex) * 3.2}px`,
+                "--fan-rotate": `${centeredIndex * 4.2}deg`,
+                "--fan-z": `${cards.length - Math.abs(centeredIndex)}`,
+              } as React.CSSProperties
+            }
           >
             <div
               className={`md-deck-card-inner${isMealDeck ? " is-mealdeck" : ""}`}

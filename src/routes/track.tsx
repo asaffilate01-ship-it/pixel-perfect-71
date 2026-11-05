@@ -21,6 +21,7 @@ import { SiteHeader } from "@/components/site-header";
 import { TrackingTimeline } from "@/components/order/tracking-timeline";
 import { presentMealDeckTracking } from "@/lib/mealdeck-tracking-presentation";
 import { getOrderTracking, type OrderTrackingResult } from "@/lib/dishbee.functions";
+import { seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/track")({
   // Collection launch orders and progress belong to the verified customer's
@@ -29,16 +30,13 @@ export const Route = createFileRoute("/track")({
     if (COMING_SOON)
       throw redirect({ to: "/account", hash: "customer-orders-title", replace: true });
   },
-  head: () => ({
-    meta: [
-      { title: "Your MealDeck order progress" },
-      {
-        name: "description",
-        content:
-          "Sign in to see your MealDeck orders, collection progress and full itemised receipts.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Your MealDeck order progress",
+      description:
+        "Sign in to see your MealDeck orders, collection progress and full itemised receipts.",
+      path: "/track",
+    }),
   component: TrackOrderPage,
 });
 

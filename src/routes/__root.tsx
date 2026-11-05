@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { PwaConnectionNotice, PwaProvider } from "@/components/pwa-provider";
 import { isLaunchMenuRoute } from "@/lib/launch-menu-navigation";
 import { isMealDeckStaffPath, mealDeckPwaSurface } from "@/lib/mealdeck-pwa-surface";
+import { MEALDECK_BUSINESS } from "@/lib/business-identity";
+import { seo, SITE_DESCRIPTION } from "@/lib/seo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -98,27 +100,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "MealDeck — One Order. Every Craving." },
-      {
-        name: "description",
-        content: "Multi-brand food ordering. One basket, one delivery fee, every craving.",
-      },
+      ...seo({
+        title: `${MEALDECK_BUSINESS.tradingName} — ${MEALDECK_BUSINESS.tagline}`,
+        description: SITE_DESCRIPTION,
+        path: "/",
+      }).meta,
       { name: "author", content: "MealDeck" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "MealDeck" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black" },
-      { property: "og:title", content: "MealDeck — One Order. Every Craving." },
-      {
-        property: "og:description",
-        content: "Multi-brand food ordering. One basket, one delivery fee, every craving.",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "MealDeck" },
-      { property: "og:locale", content: "en_GB" },
       { name: "theme-color", content: "#faf6ed", media: "(prefers-color-scheme: light)" },
       { name: "theme-color", content: "#120a0a", media: "(prefers-color-scheme: dark)" },
-      { name: "twitter:card", content: "summary" },
     ],
     links: [
       {

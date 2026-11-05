@@ -3,7 +3,7 @@ import { customerEmailReturnPath, customerReturnTarget } from "../src/lib/mealde
 
 describe("fixed customer authentication return destinations", () => {
   test("preserves the exact group checkout context through the email account return", () => {
-    for (const target of ["/checkout", "/checkout?group=1"] as const) {
+    for (const target of ["/checkout", "/checkout?group=1", "/group-pay"] as const) {
       expect(customerReturnTarget(target)).toBe(target);
       const redirect = new URL(customerEmailReturnPath(target), "https://mealdeck.co.uk");
       expect(redirect.origin).toBe("https://mealdeck.co.uk");
@@ -34,6 +34,9 @@ describe("fixed customer authentication return destinations", () => {
       "/checkout?group=1&group=0",
       "%2Fcheckout%3Fgroup%3D1",
       "/checkout?group=%31",
+      "/group-pay?room=00000000-0000-4000-8000-000000000001",
+      "/group-pay#share=secret",
+      "/group-pay?next=https://example.org",
       " /checkout",
       "/checkout\n",
       "/ops",

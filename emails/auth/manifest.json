@@ -1,0 +1,67 @@
+{
+  "signup": {
+    "subject": "Verify your email for MealDeck",
+    "html": "signup.html",
+    "text": "signup.txt"
+  },
+  "magiclink": {
+    "subject": "Your MealDeck sign-in link and code",
+    "html": "magiclink.html",
+    "text": "magiclink.txt"
+  },
+  "recovery": {
+    "subject": "Reset your MealDeck password",
+    "html": "recovery.html",
+    "text": "recovery.txt"
+  },
+  "invite": {
+    "subject": "Your invitation to MealDeck",
+    "html": "invite.html",
+    "text": "invite.txt"
+  },
+  "email_change": {
+    "subject": "Confirm your MealDeck email change",
+    "html": "email_change.html",
+    "text": "email_change.txt"
+  },
+  "reauthentication": {
+    "subject": "Your MealDeck security code",
+    "html": "reauthentication.html",
+    "text": "reauthentication.txt"
+  },
+  "password_changed_notification": {
+    "subject": "Your MealDeck password changed",
+    "html": "password_changed_notification.html",
+    "text": "password_changed_notification.txt"
+  },
+  "email_changed_notification": {
+    "subject": "Your MealDeck email address changed",
+    "html": "email_changed_notification.html",
+    "text": "email_changed_notification.txt"
+  },
+  "phone_changed_notification": {
+    "subject": "Your MealDeck phone number changed",
+    "html": "phone_changed_notification.html",
+    "text": "phone_changed_notification.txt"
+  },
+  "identity_linked_notification": {
+    "subject": "A sign-in method was added to MealDeck",
+    "html": "identity_linked_notification.html",
+    "text": "identity_linked_notification.txt"
+  },
+  "identity_unlinked_notification": {
+    "subject": "A sign-in method was removed from MealDeck",
+    "html": "identity_unlinked_notification.html",
+    "text": "identity_unlinked_notification.txt"
+  },
+  "mfa_factor_enrolled_notification": {
+    "subject": "A verification method was added to MealDeck",
+    "html": "mfa_factor_enrolled_notification.html",
+    "text": "mfa_factor_enrolled_notification.txt"
+  },
+  "mfa_factor_unenrolled_notification": {
+    "subject": "A verification method was removed from MealDeck",
+    "html": "mfa_factor_unenrolled_notification.html",
+    "text": "mfa_factor_unenrolled_notification.txt"
+  }
+}

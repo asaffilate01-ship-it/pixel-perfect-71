@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Facebook, Instagram, MessageCircle, Music2, Youtube } from "lucide-react";
+import { Instagram, MessageCircle, Music2 } from "lucide-react";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 import { MEALDECK_LAUNCH_DAYS } from "@/lib/mealdeck-launch-schedule";
@@ -14,7 +14,7 @@ export function SiteFooter() {
         <div className="md-footer-brand">
           <MealDeckLogo loading="lazy" />
           <p>Different cuisines. One basket. One collection.</p>
-          <strong>One Order. Every Craving.</strong>
+          <strong>{MEALDECK_BUSINESS.tagline}</strong>
         </div>
 
         <div className="md-footer-links">
@@ -72,37 +72,22 @@ export function SiteFooter() {
         </p>
         <div className="md-footer-apps-row" aria-label="Ordering channels and social links">
           <div className="md-footer-social" aria-label="Social links">
+            <span>{MEALDECK_BUSINESS.socialHandle}</span>
             <a
-              href="https://www.instagram.com/mealdeckofficial/"
+              href={`https://www.instagram.com/${MEALDECK_BUSINESS.socialHandle.slice(1)}/`}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="MealDeck on Instagram"
+              aria-label={`MealDeck ${MEALDECK_BUSINESS.socialHandle} on Instagram`}
             >
               <Instagram />
             </a>
             <a
-              href="https://www.facebook.com"
+              href={`https://www.tiktok.com/${MEALDECK_BUSINESS.socialHandle}`}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Facebook"
-            >
-              <Facebook />
-            </a>
-            <a
-              href="https://www.tiktok.com/@mealdeckofficial"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="MealDeck on TikTok"
+              aria-label={`MealDeck ${MEALDECK_BUSINESS.socialHandle} on TikTok`}
             >
               <Music2 />
-            </a>
-            <a
-              href="https://www.youtube.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="YouTube"
-            >
-              <Youtube />
             </a>
           </div>
           <span className="md-footer-apps-divider" aria-hidden="true" />

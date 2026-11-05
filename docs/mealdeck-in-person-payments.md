@@ -4,7 +4,7 @@
 
 The owner requested Stripe Tap to Pay for walk-in and kerbside customers on 5 November 2026, and confirmed that **Luton is the only launch location**. St Albans and Bedford remain coming soon. The five launch brands use one MealDeck basket, one master order and one shared kitchen screen. MealDeck is a trading name of 313 Brands Ltd; Powered by Dishbee remains the technology credit.
 
-This document records the implementation contract. It does not install a native application, register a reader, enable a payment endpoint or claim that contactless collection works today. The repository currently contains a web/PWA application, staff order history and KDS management, but no staff sale-entry or Terminal collection flow. The independent customer catalogue, pending-order and payment-release adapters also remain to be completed in the owning MealDeck account.
+The repository now includes the native Android/iPhone staff companion in `apps/mealdeck-terminal`, scoped staff sale entry and collection in `/api/terminal`, and the common frozen order/share payment ledger. See [shared payments and phone collection](mealdeck-shared-payments.md) for implementation, recovery, release switches and acceptance status. Source implementation does not install a staff app, register a reader, approve Apple entitlements or establish live merchant readiness. Hosted owner/catalogue/provider configuration and physical-device acceptance remain separate requirements.
 
 ## Supported integration routes
 
@@ -21,7 +21,7 @@ Recommended product direction: keep the staff checkout workflow shared, use a na
 | Situation | Required behavior |
 | --- | --- |
 | New walk-in | Staff opens a new Luton sale, adds products and cross-brand upgrades from the canonical menu, confirms the amount, and starts contactless collection. Verified payment produces one kitchen release. |
-| New kerbside order | Use the same flow with canonical fulfilment `curbside`. Record only the operational handoff details needed by the team. A vehicle or bay note is optional order data, not a payment identifier. |
+| New kerbside order | Use canonical fulfilment `curbside`; require car make, colour and the last four registration characters. These are handoff details, not a payment identifier. |
 | Existing unpaid collection/kerbside order | Load the original order through authorised staff lookup, show its verified outstanding balance, and collect against that order. Do not create a replacement order merely to take payment. |
 | Already paid order | Show **Paid — ready for handoff** only when the verified order/fulfilment state supports it. No collection action or second payment attempt is available. Existing KDS work is retained. |
 | Unknown or delayed payment result | Show **Checking payment**. Reconcile the existing attempt before offering another collection. A timeout must not become an invitation to charge again. |
@@ -30,9 +30,9 @@ The native collection screen should show the order reference, Luton kitchen, ful
 
 Walk-in orders do not require a fabricated customer delivery address or postcode. Location authority comes from the authenticated staff member's authorised Luton kitchen, not a browser-selected town. The current customer delivery serviceability route is not a substitute for a staff sale endpoint.
 
-## Contracts to implement
+## Implemented contracts and retained boundaries
 
-1. **Authenticated staff sale entry.** Add a deliberate payment-collection permission and Luton kitchen scope. The existing order-history screen is not a create-order API. All five brands resolve to current canonical product/modifier UUIDs. Reprice server-side, including quantities and the £20 starting prices, before recording the immutable amount for the attempt.
+1. **Authenticated staff sale entry.** Require the deliberate `payments.collect` permission and Luton kitchen scope. All five brands resolve to current canonical product/modifier UUIDs. Reprice server-side using the confirmed owner catalogue and current canonical modifier/variant prices before recording the immutable attempt amount. The old £20 placeholders are superseded.
 2. **One pending master order.** Preserve the canonical `orders.source = 'mealdeck'` boundary. Record walk-in/kerbside entry and payment channel separately; do not invent `source = 'walk_in'` or copy Café1 EPOS records. Canonical fulfilments are `pickup` and `curbside` and the current customer handoff code is four digits. Historical six-digit/`kerbside` helpers must be reconciled before reuse.
 3. **Server-owned payment attempt.** Bind the attempt to the exact order, price revision, unpaid balance, GBP currency, authorised kitchen, actual Stripe account and test/live mode. Prevent simultaneous online and in-person attempts from capturing the same balance. Browser/native inputs cannot select a merchant or dictate the payable amount.
 4. **Device authority.** Native Terminal connection tokens require staff authentication and approved scope. Smart-reader commands require an explicit allowed reader-to-kitchen mapping. Do not expose secret Stripe credentials in the web/PWA or native bundle. A public live-mode key alone supplies none of these server permissions.

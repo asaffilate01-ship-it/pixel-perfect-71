@@ -19,6 +19,17 @@ import {
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 import { MealDeckLogo } from "./mealdeck-logo";
+import { GroupPaymentChoice } from "./group-payments/payment-choice";
+import {
+  sharedPaymentRoomPath,
+  type SharedPaymentCapabilities,
+  type SharedPaymentChoice,
+} from "@/lib/mealdeck-shared-payments";
+import {
+  readSharedPaymentCapabilities,
+  rememberSharedPaymentRoom,
+  requestSharedPayment,
+} from "@/lib/mealdeck-shared-payments-browser";
 import {
   encodeLaunchPicks,
   findLaunchMenuItem,
@@ -415,10 +426,17 @@ export function LaunchCheckout({
   const [bagCount, setBagCount] = useState(1);
   const [bagQuantities, setBagQuantities] = useState<Record<string, number[]>>({});
   const [groupCheckout, setGroupCheckout] = useState<LaunchCheckoutGroup | null>(null);
+  const [paymentChoice, setPaymentChoice] = useState<SharedPaymentChoice>("host");
+  const [sharedCapabilities, setSharedCapabilities] = useState<SharedPaymentCapabilities | null>(
+    null,
+  );
+  const [sharedLoading, setSharedLoading] = useState(false);
+  const [sharedRefresh, setSharedRefresh] = useState(0);
   const [basketIssue, setBasketIssue] = useState<string | null>(null);
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const [receiptRefreshed, setReceiptRefreshed] = useState(false);
   const attempt = useRef<{ quoteId: string; attemptId: string } | null>(null);
+  const roomAttempt = useRef<{ key: string; attemptId: string } | null>(null);
   const alive = useRef(true);
   const receiptRequest = useRef(0);
   const receiptInFlight = useRef(false);
@@ -447,6 +465,34 @@ export function LaunchCheckout({
   const displayTotal = launchMenuBasketDisplayPrice(picks).itemsSubtotalPence;
   const accountReturnTo =
     !orderId && (groupExpected || groupCheckout) ? "/checkout?group=1" : "/checkout";
+  const sharedAvailable =
+    sharedCapabilities?.available === true &&
+    (checkoutMode !== "guest" || sharedCapabilities.guestEligible);
+  const sharedReady =
+    sharedAvailable && !sharedLoading && separateBags && bagCount >= 2 && bagCount <= 10;
+
+  useEffect(() => {
+    if (!groupCheckout?.groupId || orderId) return;
+    const controller = new AbortController();
+    setSharedLoading(true);
+    void readSharedPaymentCapabilities(controller.signal)
+      .then((value) => {
+        if (!controller.signal.aborted) setSharedCapabilities(value);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setSharedCapabilities({
+            available: false,
+            guestEligible: false,
+            message:
+              "Shared payment setup is unavailable. You can choose one payer when checkout is open.",
+          });
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setSharedLoading(false);
+      });
+    return () => controller.abort();
+  }, [groupCheckout?.groupId, orderId, orderingAvailable, sharedRefresh]);
 
   useEffect(() => {
     const transfer = readLaunchCheckoutTransfer(groupExpected);
@@ -459,6 +505,8 @@ export function LaunchCheckout({
     attempt.current = null;
     setBasketLoaded(true);
     setGroupCheckout(savedGroup);
+    setPaymentChoice("host");
+    roomAttempt.current = null;
     setSeparateBags(!!savedGroup);
     setBagCount(savedGroup?.packing.bagCount ?? 1);
     setBagQuantities(
@@ -896,6 +944,55 @@ export function LaunchCheckout({
     }
   }
 
+  async function createPaymentRoom(quoteId: string) {
+    if (
+      busy ||
+      !canCheckout ||
+      !groupCheckout ||
+      paymentChoice === "host" ||
+      !sharedReady ||
+      !reviewConfirmed
+    )
+      return;
+    const key = [quoteId, paymentChoice, bagCount, customerIdentity].join(":");
+    if (roomAttempt.current?.key !== key)
+      roomAttempt.current = { key, attemptId: crypto.randomUUID() };
+    const requestId = ++checkoutRequestId.current;
+    setBusy(true);
+    setIssue(null);
+    try {
+      const result = await requestSharedPayment(
+        checkoutMode,
+        {
+          action: "create",
+          quoteId,
+          attemptId: roomAttempt.current.attemptId,
+          bagCount,
+          splitMode: paymentChoice,
+          reviewConfirmed: true,
+        },
+        getMealDeckCustomerAccessToken,
+      );
+      if (!alive.current || requestId !== checkoutRequestId.current) return;
+      if (result.room.viewer.role !== "organiser" || result.room.splitMode !== paymentChoice)
+        throw new Error(
+          "The shared payment setup did not match your review. Please refresh and try again.",
+        );
+      rememberSharedPaymentRoom(result.room.roomId);
+      try {
+        sessionStorage.setItem(CHECKOUT_MODE_KEY, checkoutMode);
+      } catch {
+        /* The room link remains usable. */
+      }
+      window.location.assign(sharedPaymentRoomPath(result.room.roomId));
+    } catch (error) {
+      if (alive.current && requestId === checkoutRequestId.current) {
+        setIssue(error instanceof Error ? error.message : "The payment room could not be opened.");
+        setBusy(false);
+      }
+    }
+  }
+
   return (
     <div className="md-checkout-shell">
       <SiteHeader />
@@ -925,10 +1022,10 @@ export function LaunchCheckout({
         )}
         {!orderId && groupCheckout && (
           <section className="md-checkout-notice" aria-label="Group order review">
-            <h2>One group order. You pay for everyone.</h2>
+            <h2>One group order. Choose how to pay.</h2>
             <p>
               Each person’s choices start in a separate numbered bag. Your personal menu basket is
-              still saved. Split payments are not available.
+              still saved. Review one payment or the available shared payment options below.
             </p>
             <p>
               {groupCheckout.bags.map((bag) => "Bag " + bag.number + ": " + bag.label).join(" · ")}
@@ -1675,6 +1772,30 @@ export function LaunchCheckout({
                   <Link to="/menus" className="md-checkout-edit">
                     Edit basket
                   </Link>
+                  {groupCheckout && (
+                    <GroupPaymentChoice
+                      value={paymentChoice}
+                      onChange={(next) => {
+                        setPaymentChoice(next);
+                        setQuote(null);
+                        setReviewConfirmed(false);
+                        attempt.current = null;
+                        roomAttempt.current = null;
+                      }}
+                      available={sharedAvailable}
+                      loading={sharedLoading}
+                      message={
+                        sharedCapabilities?.available &&
+                        checkoutMode === "guest" &&
+                        !sharedCapabilities.guestEligible
+                          ? "Shared guest payment is unavailable right now. Choose member checkout to check member options."
+                          : (sharedCapabilities?.message ?? "")
+                      }
+                      bagCount={separateBags ? bagCount : 0}
+                      disabled={busy}
+                      onRefresh={() => setSharedRefresh((value) => value + 1)}
+                    />
+                  )}
                   {quote ? (
                     <PriceSummary total={quote} />
                   ) : (
@@ -1700,7 +1821,11 @@ export function LaunchCheckout({
                       <>
                         <p className="md-checkout-muted">
                           <Clock3 size={16} />
-                          Approx. {quote.collectionEstimateMinutes} minutes after payment.
+                          Approx. {quote.collectionEstimateMinutes} minutes after{" "}
+                          {paymentChoice === "host"
+                            ? "payment"
+                            : "all required payments are confirmed"}
+                          .
                         </p>
                         <label className="md-checkout-check md-checkout-review-ack">
                           <input
@@ -1720,9 +1845,14 @@ export function LaunchCheckout({
                         <button
                           type="button"
                           className="md-checkout-primary"
-                          disabled={busy || !reviewConfirmed}
+                          disabled={
+                            busy || !reviewConfirmed || (paymentChoice !== "host" && !sharedReady)
+                          }
                           onClick={() => {
-                            if (reviewConfirmed) void pay(quote.quoteId);
+                            if (reviewConfirmed) {
+                              if (paymentChoice === "host") void pay(quote.quoteId);
+                              else void createPaymentRoom(quote.quoteId);
+                            }
                           }}
                         >
                           {busy ? (
@@ -1730,7 +1860,9 @@ export function LaunchCheckout({
                           ) : (
                             <CreditCard size={18} />
                           )}
-                          Confirm & pay {formatLaunchMenuPrice(quote.totalPence)}
+                          {paymentChoice === "host"
+                            ? "Confirm & pay " + formatLaunchMenuPrice(quote.totalPence)
+                            : "Confirm & open payment room"}
                         </button>
                         <button
                           type="button"
