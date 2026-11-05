@@ -1,10 +1,10 @@
 # MealDeck opening checkout
 
-This extension adds registered-customer Stripe Checkout for Luton collection and kerbside orders. It uses the dedicated MealDeck database and the reviewed five-brand menu. It does not enable delivery or make a browser return URL evidence of payment.
+This extension adds Stripe Checkout for Luton collection and kerbside orders. Registered customers use verified Auth; the additive [opening guest extension](mealdeck-opening-guest-checkout.md) also permits account-free orders during the confirmed launch hours. It uses the dedicated MealDeck database and the reviewed five-brand menu. It does not enable delivery or make a browser return URL evidence of payment.
 
 ## Installation and launch state
 
-Apply the frozen independent foundation first, followed by the customer membership extension, `20261105082900_mealdeck_stripe_checkout.sql`, and the kitchen/printer extension. The checkout migration can be installed before the owner and Luton kitchen are bootstrapped. Its settings start closed, with no opening date or collection estimate.
+Apply the frozen independent foundation first, followed by the customer membership extension, `20261105082900_mealdeck_stripe_checkout.sql`, the kitchen/printer extension and `20261105143652_mealdeck_opening_guest_checkout.sql`. These migrations can be installed before the owner and Luton kitchen are bootstrapped. Settings start closed and without a collection estimate. The latest extension fixes the owner-confirmed opening date to 6 November 2026; it does not enable ordering.
 
 The standalone migration includes its own `begin`/`commit`. A migration runner that already owns one atomic transaction must use `buildManagedStripeCheckoutSql({ runnerOwnsTransaction: true, singleMigration: true })` from `deploy/mealdeck/stripe-checkout.mjs` and execute the entire returned migration once. Do not split a migration into separately committed statements.
 
@@ -44,23 +44,23 @@ New payments require the account to accept charges. Refund and dispute reconcili
 
 ## Offer and total authority
 
-The opening offer is 30% off the entire goods subtotal, with no order minimum, for verified registered customers choosing collection or kerbside at Luton. Optional marketing consent does not affect eligibility. The discount is rounded once on the whole basket to the nearest penny, with half-penny rounded up.
+The opening offer is 30% off the entire goods subtotal, with no order minimum, for guests and verified registered customers choosing collection or kerbside at Luton during the confirmed daily launch windows. Optional marketing consent does not affect eligibility. Guest orders earn no loyalty points. The discount is rounded once on the whole basket to the nearest penny, with half-penny rounded up.
 
-The owner must supply the actual opening date. The database calculates the start at midnight in `Europe/London` and the end at midnight three calendar dates later. This correctly handles daylight-saving weekends of 71 or 73 hours. Without an opening date the offer is explicitly unscheduled.
+The confirmed hours in `Europe/London` are Friday 6 November 2026, 15:00–23:00; Saturday 7 November, 13:00–23:00; and Sunday 8 November, 13:00–23:00. New checkout is closed between these windows. The offer and new guest ordering end on Sunday at 23:00 and do not recur. These exact windows supersede the original midnight-based campaign calculation.
 
-Quotes last ten minutes. Payment preparation rechecks the current published menu prices, availability, registration, fulfilment and offer. A changed price or expired offer requires a fresh review. A payment session started while the offer is active retains its agreed total until that Stripe session expires, up to 35 minutes after preparation. The terms page explains this completion window.
+Quotes last up to ten minutes, capped at the current launch day's closing time. Payment preparation rechecks the current published menu prices, availability, member or guest authority, fulfilment, opening hours and offer. A changed price or expired quote requires a fresh review. A payment session started while the offer is active retains its agreed total until that Stripe session expires, up to 35 minutes after preparation. The terms page explains this completion window.
 
 The browser submits item and choice identifiers, quantities, pickup method and packing requests. It cannot submit authoritative prices, discount rates, customer identity, location, payment status or an address. Current database prices and modifier amounts are snapshotted for the order. The Tavo flavour/portion price variant is derived by the server; the client cannot select a cheaper hidden variant. Named Load’d and Moktl upgrades retain their target item and purchased amount.
 
 ## Review, packing and customer data
 
-The customer chooses collection or kerbside, signs in with a verified email, reviews the final server total and explicitly acknowledges “Please check your order before confirming and paying.” The server requires that review acknowledgement to start payment.
+The customer chooses collection or kerbside, signs in with a verified email or starts an eligible opening-weekend guest session, reviews the final server total and explicitly acknowledges “Please check your order before confirming and paying.” The server requires that review acknowledgement to start payment.
 
 Registration requires name, email and phone. Collection asks for no address. Kerbside additionally requires make, colour and exactly the last four registration characters; a full registration is rejected by this input contract. Delivery is currently unavailable and rejected by the server.
 
 Cutlery is an optional unchecked request with no fee. Packing defaults to one bag. Separate numbered bags are validated as a sequential, nonempty set: every purchased quantity must be assigned exactly once, and a linked cross-brand extra follows its parent into the same bag. Quantities can be split across bags. All bag assignments, cutlery, dish quantities, flavours, named extras and prices are immutable purchase snapshots used by the receipt and kitchen/printer extension.
 
-Private receipt requests require a fresh authenticated customer lookup and order ownership. Responses use `Cache-Control: no-store, private`. Customer/car details and private receipts are not added to the public PWA cache. The checkout browser handoff stores only the basket and payment-attempt references; server secrets and customer/car details are never stored there.
+Private member receipt requests require a fresh authenticated customer lookup and order ownership. Guest receipts require the scoped, unexpired HttpOnly session capability; contact details or an order UUID alone grant no access. Responses use `Cache-Control: no-store, private`. Customer/car details and private receipts are not added to the public PWA cache. The checkout browser handoff stores only the basket and payment-attempt references; server secrets and customer/car details are never stored there.
 
 The authenticated, argument-free `mealdeck_customer_orders()` RPC returns `{ orders: [...] }` for the latest 20 orders belonging to `auth.uid()`. It rechecks the live verified registration and exposes only order ID, handoff number, fulfilment, total, payment/hold flags and progress timestamps. It enables the account page to recover order-progress links without caching private orders or granting table access.
 

@@ -1,0 +1,54 @@
+import { describe, expect, test } from "bun:test";
+import {
+  isMealDeckGuestCheckoutWindow,
+  mealDeckLaunchWindowAt,
+  MEALDECK_LAUNCH_DAYS,
+  MEALDECK_LAUNCH_TIME_ZONE,
+} from "../src/lib/mealdeck-launch-schedule";
+
+describe("MealDeck's confirmed Luton launch hours", () => {
+  test("opens at the confirmed instant and closes at 11pm on each day", () => {
+    for (const day of MEALDECK_LAUNCH_DAYS) {
+      const opening = Date.parse(day.opensAt);
+      const closing = Date.parse(day.closesAt);
+      expect(mealDeckLaunchWindowAt(opening - 1)).toBeNull();
+      expect(mealDeckLaunchWindowAt(opening)).toEqual(day);
+      expect(mealDeckLaunchWindowAt(closing - 1)).toEqual(day);
+      expect(mealDeckLaunchWindowAt(closing)).toBeNull();
+    }
+  });
+
+  test("uses Friday's later start and excludes the closed periods between opening days", () => {
+    expect(isMealDeckGuestCheckoutWindow("2026-11-06T13:00:00Z")).toBe(false);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-06T14:59:59.999Z")).toBe(false);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-06T15:00:00Z")).toBe(true);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-07T00:00:00Z")).toBe(false);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-07T12:59:59.999Z")).toBe(false);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-07T13:00:00Z")).toBe(true);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-08T00:00:00Z")).toBe(false);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-08T13:00:00Z")).toBe(true);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-09T13:00:00Z")).toBe(false);
+  });
+
+  test("is independent of visitor timezone and never creates a personal rolling window", () => {
+    expect(MEALDECK_LAUNCH_TIME_ZONE).toBe("Europe/London");
+    expect(mealDeckLaunchWindowAt("2026-11-06T16:00:00+01:00")?.date).toBe("2026-11-06");
+    expect(mealDeckLaunchWindowAt("2026-11-06T10:00:00-05:00")?.date).toBe("2026-11-06");
+    expect(mealDeckLaunchWindowAt(new Date("2026-11-07T13:00:00Z"))?.date).toBe("2026-11-07");
+    for (const date of ["2026-11-05T15:00:00Z", "2026-11-09T15:00:00Z", "2027-11-06T15:00:00Z"])
+      expect(isMealDeckGuestCheckoutWindow(date)).toBe(false);
+  });
+
+  test("rejects missing timezone, invalid dates and non-finite timestamps", () => {
+    for (const invalid of [
+      "",
+      "2026-11-06",
+      "2026-11-06T15:00:00",
+      "invalidZ",
+      Number.NaN,
+      Infinity,
+      new Date(Number.NaN),
+    ])
+      expect(isMealDeckGuestCheckoutWindow(invalid)).toBe(false);
+  });
+});

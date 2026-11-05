@@ -4,6 +4,13 @@ Owner instruction, 5 November 2026: collect name, email and phone, verify the
 email, make marketing optional, and support app notifications and future
 loyalty. Collection and kerbside registration do not ask for an address.
 
+The later confirmed opening instruction permits guest checkout during the
+6–8 November daily launch hours. Guest orders create no account, membership,
+loyalty balance or marketing preference, and cannot be claimed by signing up
+with the same email address. Member-only offers require verified registration;
+email and push promotions remain separate opt-ins. See the
+[opening guest checkout guide](mealdeck-opening-guest-checkout.md).
+
 ## Implemented customer flow
 
 `/account` provides registration and passwordless email sign-in against the

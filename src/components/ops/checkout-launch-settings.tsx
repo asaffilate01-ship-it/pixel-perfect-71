@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { CalendarDays, Clock3, RefreshCw, Save } from "lucide-react";
 import { opsRpc } from "@/lib/mealdeck-ops-browser";
+import { MEALDECK_LAUNCH_DAYS } from "@/lib/mealdeck-launch-schedule";
 
 type LaunchSettings = {
   enabled: boolean;
@@ -41,7 +42,6 @@ export function CheckoutLaunchSettings({
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [enabled, setEnabled] = useState(false);
-  const [openingDate, setOpeningDate] = useState("");
   const [estimate, setEstimate] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -50,7 +50,6 @@ export function CheckoutLaunchSettings({
 
   const populate = (value: LaunchSettings) => {
     setEnabled(value.enabled);
-    setOpeningDate(value.openingStartDate ?? "");
     setEstimate(
       value.collectionEstimateMinutes === null ? "" : String(value.collectionEstimateMinutes),
     );
@@ -106,7 +105,7 @@ export function CheckoutLaunchSettings({
         p_tenant: tenantId,
         p_location: locationId,
         p_enabled: enabled,
-        p_opening_start_date: openingDate || null,
+        p_opening_start_date: MEALDECK_LAUNCH_DAYS[0].date,
         p_collection_estimate_minutes: minutes,
       });
       if (request === generation.current) {
@@ -159,19 +158,21 @@ export function CheckoutLaunchSettings({
       ) : (
         <form onSubmit={save} className="space-y-4">
           <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm md-ops-text">
-              Opening offer starts
-              <input
-                type="date"
-                className="md-ops-field"
-                value={openingDate}
-                onChange={(event) => setOpeningDate(event.target.value)}
-              />
+            <div className="grid gap-2 text-sm md-ops-text">
+              <strong>Confirmed opening hours · UK time</strong>
+              <dl className="grid gap-2">
+                {MEALDECK_LAUNCH_DAYS.map((day) => (
+                  <div key={day.date} className="flex flex-wrap justify-between gap-2">
+                    <dt>{day.label}</dt>
+                    <dd>{day.hoursLabel}</dd>
+                  </div>
+                ))}
+              </dl>
               <span className="text-xs md-ops-muted">
-                30% off for three consecutive UK calendar days, from midnight on this date. Leave
-                empty to keep the offer unscheduled.
+                The 30% opening offer and guest checkout run during these hours. Guest orders earn
+                no loyalty points. The kitchen remains closed between each day's opening hours.
               </span>
-            </label>
+            </div>
             <label className="grid gap-2 text-sm md-ops-text">
               <span className="inline-flex items-center gap-2">
                 <Clock3 size={16} aria-hidden="true" />
@@ -206,7 +207,9 @@ export function CheckoutLaunchSettings({
                 <strong>Accept online orders when ready</strong>
                 <span className="block text-xs md-ops-muted mt-1">
                   Switch off to pause new checkout. Existing payments and orders continue to update.
-                  This cannot bypass menu publication or payment verification.
+                  This cannot bypass menu publication or payment verification. From 9 November,
+                  member ordering follows this switch; pause it outside service until regular
+                  opening hours are configured.
                 </span>
               </span>
             </label>

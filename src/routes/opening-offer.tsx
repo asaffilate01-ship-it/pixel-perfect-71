@@ -10,7 +10,7 @@ export const Route = createFileRoute("/opening-offer")({
     seo({
       title: "Luton opening weekend — 30% off | MealDeck",
       description:
-        "Three days only: 30% off everything, with no minimum order, for registered customers with a verified email. Luton collection or kerbside pickup only. Opening dates to be announced.",
+        "6–8 November 2026: 30% off everything, no minimum. Friday 3pm–11pm, Saturday and Sunday 1pm–11pm. Guests and members welcome. Luton collection or kerbside only.",
       path: "/opening-offer",
     }),
   component: OpeningOfferPage,
@@ -27,9 +27,14 @@ function OpeningOfferPage() {
           <OpeningWeekendOffer compact />
           <h2>Who gets the offer?</h2>
           <p>
-            Registered MealDeck customers with a verified email address. Create an account with your
-            name, email and mobile number, then follow the verification link in your email. Sign in
-            to that account when you order.
+            Guests and registered MealDeck members can use the opening offer during the hours shown
+            above. On 6–8 November, you can order without creating an account. We still ask for your
+            name, email and mobile number to prepare and fulfil your order.
+          </p>
+          <p>
+            Guest orders earn no loyalty points and do not sign you up for member offers,
+            promotional emails or app alerts. After the opening weekend, sign in to a verified
+            member account to place a new order.
           </p>
           <p>
             You do not need to agree to marketing emails, allow notifications or install the app to
@@ -43,9 +48,10 @@ function OpeningOfferPage() {
           </p>
           <h2>Where and when?</h2>
           <p>
-            The offer runs for three consecutive opening days at MealDeck Luton, using UK local
-            time. The confirmed dates will appear above before the offer starts. It does not begin
-            when you register and it does not restart for each visitor.
+            MealDeck Luton opens on Friday 6 November 2026 from 3pm to 11pm, Saturday 7 November
+            from 1pm to 11pm, and Sunday 8 November from 1pm to 11pm. All times are UK local time.
+            The opening offer and guest checkout apply during these hours; both pause when we close
+            each night. The offer does not restart when you visit or register.
           </p>
           <p>
             Start secure payment while the offer is active, then complete payment before that
@@ -60,7 +66,8 @@ function OpeningOfferPage() {
           <h2>How does it work?</h2>
           <ul>
             <li>
-              Choose your food from the available launch menus and sign in to your verified account.
+              Choose your food from the available launch menus. During opening weekend, continue as
+              a guest or sign in to your verified member account.
             </li>
             <li>
               Choose collection or kerbside pickup. For kerbside, enter your car make, colour and
@@ -81,10 +88,14 @@ function OpeningOfferPage() {
           </p>
           <h2>Your account, your choice</h2>
           <p>
-            Your account keeps your details and communication preferences together. Loyalty points
-            will be available when the rewards programme and its earning rules launch. Promotional
-            emails and app alerts are optional and can be switched off in{" "}
-            <Link to="/account">your account</Link>.
+            Register and verify your email to access member offers. To receive offer emails or
+            promotional app alerts, members must opt in to each channel separately. These choices
+            are optional and can be switched off in <Link to="/account">your account</Link>.
+          </p>
+          <p>
+            Loyalty points will be available to registered members when the rewards programme and
+            its earning rules launch. Guest orders earn no loyalty points. Choosing not to receive
+            marketing does not affect an eligible opening discount or loyalty membership.
           </p>
           <p>
             See the <Link to="/privacy">privacy notice</Link> for how MealDeck uses your details.

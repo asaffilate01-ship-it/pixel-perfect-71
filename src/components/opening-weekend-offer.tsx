@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, CarFront, ShoppingBag } from "lucide-react";
+import { MEALDECK_LAUNCH_DAYS } from "@/lib/mealdeck-launch-schedule";
 import "@/styles.launch-opening.css";
 
 type PublicOffer = {
@@ -37,14 +38,22 @@ function validOffer(value: unknown): value is PublicOffer {
   );
 }
 
-function offerDates(offer: PublicOffer) {
-  if (!offer.startsAt || !offer.endsAt) return "Opening dates announced soon";
-  const formatter = new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "short",
-    timeZone: "Europe/London",
-  });
-  return `${formatter.format(new Date(offer.startsAt))}–${formatter.format(new Date(Date.parse(offer.endsAt) - 1))} · UK time`;
+export function LaunchOpeningHours({ className = "" }: { className?: string }) {
+  return (
+    <dl
+      className={`md-launch-opening-hours ${className}`.trim()}
+      aria-label="Luton opening hours, UK time"
+    >
+      {MEALDECK_LAUNCH_DAYS.map((day) => (
+        <div key={day.date}>
+          <dt>
+            <time dateTime={day.date}>{day.label}</time>
+          </dt>
+          <dd>{day.hoursLabel}</dd>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) {
@@ -52,8 +61,8 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
   const headingId = useId();
   useEffect(() => {
     const abort = new AbortController();
-    // The server supplies the promotion's clock and schedule. Browser time
-    // cannot extend the offer or make an unscheduled campaign active.
+    // Confirmed opening hours are public information. Only the server can say
+    // whether the promotion has finished; browser time never grants a discount.
     const refresh = () => {
       if (document.visibilityState === "hidden") return;
       void fetch("/api/checkout", { signal: abort.signal, cache: "no-store" })
@@ -91,7 +100,8 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
           <p className="md-opening-kicker">Thanks for joining the first deck</p>
           <h2 id={headingId}>Opening weekend has finished.</h2>
           <p>
-            Keep your account ready for future offers. Marketing updates are always your choice.
+            Register for member offers and choose which offer alerts you receive. Guest orders earn
+            no loyalty points. Marketing updates are always your choice.
           </p>
         </div>
         <Link to="/account" className="md-opening-cta">
@@ -118,7 +128,7 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
           {compact ? "30% off everything." : "Opening weekend. 30% off everything."}
         </h2>
         <p className="md-opening-condition">
-          No minimum order. Registered customers with a verified email.
+          No minimum order. Guests and members welcome during opening hours.
         </p>
         <div className="md-opening-methods" aria-label="Collection or kerbside pickup only">
           <span>
@@ -128,17 +138,21 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
             <CarFront size={18} aria-hidden="true" /> Kerbside only
           </span>
         </div>
-        <p className="md-opening-dates">
-          {offer.status === "active" ? "Opening offer is on · " : ""}
-          {offerDates(offer)}
+        <p className="md-opening-dates">6–8 November 2026 · UK time</p>
+        <LaunchOpeningHours />
+        <p className="md-opening-guest-note">
+          Order without registering for these first three days. Guest orders earn no loyalty points.
         </p>
       </div>
       <div className="md-opening-actions">
-        <Link to="/account" className="md-opening-cta">
-          Register for launch <ArrowRight size={18} aria-hidden="true" />
+        <Link to="/menus" className="md-opening-cta">
+          Explore menus <ArrowRight size={18} aria-hidden="true" />
         </Link>
         <Link to="/opening-offer" className="md-opening-terms">
           Offer details
+        </Link>
+        <Link to="/account" className="md-opening-terms">
+          Join for member offers
         </Link>
       </div>
     </section>
