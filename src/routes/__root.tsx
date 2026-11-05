@@ -5,6 +5,7 @@ import { SkipToMainContent } from "@/components/skip-to-main-content";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PwaConnectionNotice, PwaProvider } from "@/components/pwa-provider";
 import { isLaunchMenuRoute } from "@/lib/launch-menu-navigation";
+import { isMealDeckStaffPath, mealDeckPwaSurface } from "@/lib/mealdeck-pwa-surface";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -136,7 +137,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: launchCustomiserCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -152,9 +152,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const app = mealDeckPwaSurface(pathname);
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="manifest" href={app.manifest} />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{localStorage.removeItem('mealdeck-theme')}catch(e){}document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark'})()`,
@@ -173,11 +176,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const internal =
-    pathname === "/ops" ||
-    pathname.startsWith("/ops/") ||
-    pathname === "/kds" ||
-    pathname.startsWith("/kds/");
+  const internal = isMealDeckStaffPath(pathname);
   const basketPage = isLaunchMenuRoute(pathname);
 
   return (

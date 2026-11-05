@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Facebook, Instagram, Music2, Youtube } from "lucide-react";
+import { Facebook, Instagram, MessageCircle, Music2, Youtube } from "lucide-react";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 import deliverooLogo from "@/assets/deliveroo-app.png.asset.json";
@@ -12,7 +12,7 @@ export function SiteFooter() {
       <div className="md-footer-main">
         <div className="md-footer-brand">
           <MealDeckLogo loading="lazy" />
-          <p>Different cuisines. One basket. One delivery fee.</p>
+          <p>Different cuisines. One basket. One collection.</p>
           <strong>One Order. Every Craving.</strong>
         </div>
 
@@ -21,6 +21,10 @@ export function SiteFooter() {
             <h3>MealDeck</h3>
             <Link to="/" hash="brands">Brands</Link>
             <Link to="/" hash="offers">Offers</Link>
+            <Link to="/account">My account &amp; preferences</Link>
+            <Link to="/opening-offer">Opening weekend offer</Link>
+            <Link to="/meta-ad">Your first order</Link>
+            <Link to="/privacy">Privacy</Link>
             <Link to="/" hash="how">How it works</Link>
             <Link to="/track">Track order</Link>
             <Link to="/play">Play &amp; Rewards</Link>
@@ -39,13 +43,14 @@ export function SiteFooter() {
             <p>314–318 Selbourne Road</p>
             <p>Luton · LU4 8NU</p>
             <p>MealDeck ordering coming soon.</p>
+            <p className="md-whatsapp-soon"><MessageCircle size={16} aria-hidden="true" /> WhatsApp ordering — coming soon</p>
           </div>
         </div>
       </div>
 
       <div className="md-footer-apps">
         <p className="md-footer-apps-copy">
-          <strong>MealDeck is coming soon.</strong> Registration, ordering, payments and purchase rewards are not open yet. Browse the brands and play our free games.
+          <strong>Luton launches first.</strong> Get your account ready for opening weekend. Ordering dates and loyalty earning rules will be confirmed before launch. Email offers and app alerts are optional.
         </p>
         <div className="md-footer-apps-row" aria-label="Ordering channels and social links">
           <div className="md-footer-social" aria-label="Social links">

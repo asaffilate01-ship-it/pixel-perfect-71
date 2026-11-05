@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { Script, createContext } from "node:vm";
 import { JsxEmit, ModuleKind, ScriptTarget, transpileModule } from "typescript";
 import type { MealDeckPwaState } from "../src/lib/mealdeck-pwa-context";
+import { mealDeckPwaSurface } from "../src/lib/mealdeck-pwa-surface";
 
 const providerSource = readFileSync(
   new URL("../src/components/pwa-provider.tsx", import.meta.url),
@@ -56,6 +57,7 @@ function provider(
     phase?: "idle" | "installing" | "waiting";
     deferRegistration?: boolean;
     legacyStandalone?: boolean;
+    pathname?: string;
   } = {},
 ) {
   const worker = new Worker();
@@ -72,7 +74,11 @@ function provider(
     : Promise.resolve(registration);
   const workers = Object.assign(new TrackedEvents(), {
     controller: {},
-    register: () => result,
+    registrations: [] as { url: string; scope: string }[],
+    register: (url: string, options: { scope: string }) => {
+      workers.registrations.push({ url, scope: options.scope });
+      return result;
+    },
   });
   const standalone = Object.assign(new TrackedEvents(), { matches: false });
   let reloads = 0;
@@ -105,6 +111,15 @@ function provider(
     window,
     navigator,
     require: (name: string) => {
+      if (name === "@tanstack/react-router")
+        return {
+          useRouterState: ({
+            select,
+          }: {
+            select: (state: { location: { pathname: string } }) => unknown;
+          }) => select({ location: { pathname: options.pathname ?? "/menus" } }),
+        };
+      if (name.includes("mealdeck-pwa-surface")) return { mealDeckPwaSurface };
       if (name === "react")
         return {
           useState: (initial: unknown) => {
@@ -162,6 +177,19 @@ function provider(
 }
 
 describe("MealDeck PWA provider lifecycle", () => {
+  test("registers distinct customer, kitchen and printer workers with bounded staff scopes", async () => {
+    for (const [pathname, url, scope] of [
+      ["/menus", "/sw.js", "/"],
+      ["/kds", "/kds-sw.js", "/kds"],
+      ["/printer", "/printer-sw.js", "/printer"],
+    ]) {
+      const p = provider({ pathname });
+      await Promise.resolve();
+      expect(p.workers.registrations).toEqual([{ url, scope }]);
+      p.unmount();
+      expect(p.workers.listenerCount).toBe(0);
+    }
+  });
   test("observes an update already installing when registration resolves", async () => {
     const p = provider({ phase: "installing" });
     await Promise.resolve();

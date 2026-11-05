@@ -49,55 +49,81 @@ describe("Launch menu displayed prices", () => {
     }
   });
 
-  test("every published standalone item starts at the owner-approved £20", () => {
+  test("every source item displays its actual price and variable items require an explicit complete selection", () => {
     let count = 0;
     for (const menuBrand of launchMenuBrands) {
       for (const section of menuBrand.sections) {
         for (const item of section.items) {
+          const firstVariant = item.priceVariants?.[0];
+          const selections = firstVariant
+            ? Object.fromEntries(
+                Object.entries(firstVariant.selections).map(([key, value]) => [key, [value]]),
+              )
+            : {};
           const price = launchMenuPickDisplayPrice({
             brandId: menuBrand.id,
             itemId: item.id,
             quantity: 1,
-            selections: {},
+            selections,
           });
-          expect(price.baseUnitPence).toBe(2_000);
-          expect(price.baseLinePence).toBe(2_000);
-          expect(price.itemsSubtotalPence).toBe(2_000);
+          expect(price.baseUnitPence).toBe(firstVariant?.pricePence ?? item.pricePence);
+          expect(price.itemsSubtotalPence).toBe(firstVariant?.pricePence ?? item.pricePence);
+          if (firstVariant)
+            expect(
+              launchMenuPickDisplayPrice({
+                brandId: menuBrand.id,
+                itemId: item.id,
+                quantity: 1,
+                selections: {},
+              }).itemsSubtotalPence,
+            ).toBeNull();
           count++;
         }
       }
     }
-    expect(count).toBe(77);
+    expect(count).toBe(79);
   });
 
   test("reads current catalogue prices instead of amounts attached to saved browser picks", () => {
     const forged = { ...burgerPick(3), pricePence: 1, totalPence: 3, discountPence: 5_999 };
     const price = launchMenuPickDisplayPrice(forged);
-    expect(price.baseUnitPence).toBe(2_000);
-    expect(price.itemsSubtotalPence).toBe(6_000);
+    expect(price.baseUnitPence).toBe(399);
+    expect(price.itemsSubtotalPence).toBe(1_197);
   });
 
   test("separate Load’d and Moktl extras are one full item per parent unit", () => {
     const price = launchMenuPickDisplayPrice({ ...burgerPick(2), ...bothChoices("extra") });
-    expect(price.baseLinePence).toBe(4_000);
+    expect(price.baseLinePence).toBe(798);
     expect(price.additions.map((entry) => [entry.mode, entry.unitPence, entry.linePence])).toEqual([
-      ["extra", 2_000, 4_000],
-      ["extra", 2_000, 4_000],
+      ["extra", 550, 1_100],
+      ["extra", 450, 900],
     ]);
-    expect(price.itemsSubtotalPence).toBe(12_000);
+    expect(price.itemsSubtotalPence).toBe(2_798);
   });
 
-  test("meal, side upgrade and drink upgrade each add £20 per parent unit", () => {
+  test("meal, side upgrade and drink upgrade use their specified surcharges per parent unit", () => {
     const price = launchMenuPickDisplayPrice({ ...burgerPick(2), ...bothChoices("upgrade") });
     expect(price.options.map((option) => [option.label, option.linePence])).toEqual([
-      ["Make it a meal", 4_000],
+      ["Make it a meal", 500],
     ]);
     expect(price.additions.map((entry) => [entry.mode, entry.unitPence, entry.linePence])).toEqual([
-      ["upgrade", 2_000, 4_000],
-      ["upgrade", 2_000, 4_000],
+      ["upgrade", 299, 598],
+      ["upgrade", 299, 598],
     ]);
-    expect(price.itemsSubtotalPence).toBe(16_000);
-    expect(launchMenuCrossChoicePrice("upgrade", "loadd", sideId)).toBe(2_000);
+    expect(price.itemsSubtotalPence).toBe(2_494);
+    expect(launchMenuCrossChoicePrice("upgrade", "loadd", sideId)).toBe(299);
+    expect(launchMenuCrossChoicePrice("upgrade", "loadd", "loadd-loaded-mac-cheese-ace-mac")).toBe(
+      399,
+    );
+    expect(launchMenuCrossChoicePrice("extra", "loadd", "loadd-loaded-mac-cheese-ace-mac")).toBe(
+      500,
+    );
+    expect(launchMenuCrossChoicePrice("upgrade", "moktl", "moktl-mocktail-lounge-rush-hour")).toBe(
+      299,
+    );
+    expect(launchMenuCrossChoicePrice("extra", "moktl", "moktl-mocktail-lounge-rush-hour")).toBe(
+      600,
+    );
   });
 
   test("named replacements remove generic upgrades before calculating, preventing double charges", () => {
@@ -112,7 +138,7 @@ describe("Launch menu displayed prices", () => {
     });
     expect(price.options.map((option) => option.optionId)).toEqual([`${mealGroup}-make-it-a-meal`]);
     expect(price.additions).toHaveLength(2);
-    expect(price.itemsSubtotalPence).toBe(16_000);
+    expect(price.itemsSubtotalPence).toBe(2_494);
   });
 
   test("each selected optional add-on is charged once for every parent unit", () => {
@@ -121,8 +147,8 @@ describe("Launch menu displayed prices", () => {
       ...burgerPick(3),
       selections: { [addOns]: [`${addOns}-2-rashers`, `${addOns}-cheese-slice`] },
     });
-    expect(price.options.map((option) => option.linePence)).toEqual([6_000, 6_000]);
-    expect(price.itemsSubtotalPence).toBe(18_000);
+    expect(price.options.map((option) => option.linePence)).toEqual([597, 150]);
+    expect(price.itemsSubtotalPence).toBe(1_944);
   });
 
   test("included portion and flavour choices do not add a second charge", () => {
@@ -136,10 +162,10 @@ describe("Launch menu displayed prices", () => {
       },
     });
     expect(price.options.map((option) => option.linePence)).toEqual([0, 0]);
-    expect(price.itemsSubtotalPence).toBe(4_000);
+    expect(price.itemsSubtotalPence).toBe(1_598);
   });
 
-  test("a Heatwave fries-base upgrade charges its surcharge, without charging the included base again", () => {
+  test("Souvano includes its chosen side and only adds a separately priced cross-brand extra", () => {
     const souvano = getLaunchMenuBrand("souvano")!;
     const heatwave = souvano.sections.find((section) => section.id === "heatwave")!.items[0]!;
     const config = setLaunchCrossChoice(
@@ -147,7 +173,7 @@ describe("Launch menu displayed prices", () => {
       heatwave,
       { "souvano-heatwave-base": ["souvano-heatwave-base-fries"] },
       [],
-      "loadd-side-upgrade",
+      "loadd-side-extra",
       sideId,
     );
     const price = launchMenuPickDisplayPrice({
@@ -157,8 +183,8 @@ describe("Launch menu displayed prices", () => {
       ...config,
     });
     expect(price.options.map((option) => option.linePence)).toEqual([0]);
-    expect(price.additions.map((addition) => addition.linePence)).toEqual([4_000]);
-    expect(price.itemsSubtotalPence).toBe(8_000);
+    expect(price.additions.map((addition) => addition.linePence)).toEqual([1100]);
+    expect(price.itemsSubtotalPence).toBe(2498);
   });
 
   test("legacy generic upgrades remain charged when there is no named replacement", () => {
@@ -168,7 +194,7 @@ describe("Launch menu displayed prices", () => {
     });
     expect(price.options).toHaveLength(2);
     expect(price.additions).toHaveLength(0);
-    expect(price.itemsSubtotalPence).toBe(6_000);
+    expect(price.itemsSubtotalPence).toBe(948);
   });
 
   test("removing the meal drops stale upgrades rather than charging hidden selections", () => {
@@ -180,7 +206,7 @@ describe("Launch menu displayed prices", () => {
     });
     expect(price.options).toHaveLength(0);
     expect(price.additions).toHaveLength(0);
-    expect(price.itemsSubtotalPence).toBe(2_000);
+    expect(price.itemsSubtotalPence).toBe(399);
   });
 
   test("basket subtotal combines quantities, modifiers and separate dishes without delivery assumptions", () => {
@@ -189,9 +215,20 @@ describe("Launch menu displayed prices", () => {
       { ...burgerPick(2), ...bothChoices("upgrade") },
       { brandId: "moktl", itemId: drinkId, quantity: 3, selections: {} },
     ]);
-    expect(basket.itemsSubtotalPence).toBe(26_000);
+    expect(basket.itemsSubtotalPence).toBe(4_642);
     expect(basket.hasPaidChoices).toBe(true);
     expect(launchMenuBasketDisplayPrice([]).itemsSubtotalPence).toBe(0);
+  });
+
+  test("Tavo dip is one £1.50 selection, with no additional flavour charge", () => {
+    const price = launchMenuPickDisplayPrice({
+      brandId: "tavo-chicken",
+      itemId: "tavo-chicken-burgers-cruncher",
+      quantity: 2,
+      selections: { "tavo-chicken-dipped-burger": ["tavo-chicken-dipped-burger-korean-bbq"] },
+    });
+    expect(price.options.map((option) => option.linePence)).toEqual([300]);
+    expect(price.itemsSubtotalPence).toBe(1198);
   });
 
   test("unknown items and invalid quantities never turn into a misleading partial subtotal", () => {

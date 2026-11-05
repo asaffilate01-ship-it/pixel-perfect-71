@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "serviceOrigin": "https://127.0.0.1:17443",
+  "allowedOrigins": ["https://mealdeck.co.uk"],
+  "stateDirectory": "./private-state",
+  "tls": { "keyFile": "./localhost-key.pem", "certFile": "./localhost.pem" },
+  "backend": {
+    "projectUrl": "https://srsxybepwujuawyutnbs.supabase.co",
+    "publishableKey": "REPLACE_WITH_MEALDECK_PUBLISHABLE_OR_ANON_KEY"
+  },
+  "printer": {
+    "host": "192.168.1.50",
+    "port": 9100,
+    "timeoutMs": 5000,
+    "columns": 42,
+    "feedLines": 3,
+    "cut": "none"
+  }
+}

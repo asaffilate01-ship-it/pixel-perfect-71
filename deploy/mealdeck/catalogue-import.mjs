@@ -4,9 +4,9 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   launchMenuBrands,
-  LAUNCH_ITEM_PRICE_PENCE,
-  LAUNCH_UPGRADE_PRICE_PENCE,
-  LAUNCH_CROSS_UPGRADE_PRICE_PENCE,
+  LAUNCH_MENU_PRICE_REVISION,
+  isLaunchBrandPriceApproved,
+  launchCrossReplacementPricePence,
 } from "../../src/lib/launch-menu-catalogue.ts";
 
 const expectedBrands = ["loadd", "moktl", "skorch-burgers", "souvano", "tavo-chicken"];
@@ -52,10 +52,12 @@ export function launchModifierDatabaseId(tenantId, kind, sourceId) {
 
 /** All names, item prices and source modifiers come from the website catalogue. */
 export function buildLaunchCatalogueData() {
-  const source = structuredClone(launchMenuBrands);
+  const source = structuredClone(
+    launchMenuBrands.filter((brand) => isLaunchBrandPriceApproved(brand.id)),
+  );
   requireValue(
     JSON.stringify(source.map((brand) => brand.id).sort()) === JSON.stringify(expectedBrands),
-    "exactly the five approved launch brands are required",
+    "exactly the five owner-priced launch brands are required",
   );
   const seen = new Set();
   const unique = (id) => {
@@ -72,15 +74,24 @@ export function buildLaunchCatalogueData() {
     for (const group of brand.optionGroups) {
       unique(group.id);
       requireValue(group.options.length > 0 && group.options.length <= 100, "invalid option count");
-      const name =
-        brand.name + " · " + group.label + (group.id.includes("-kids-") ? " (kids meals)" : "");
+      const suffix = group.id.includes("-kids-")
+        ? " (kids meals)"
+        : group.id === "tavo-grilled-chicken-flavour"
+          ? " (grilled wings)"
+          : group.id === "souvano-heatwave-base"
+            ? " (Heatwave)"
+            : group.id === "souvano-meal-side"
+              ? " (Doner / Lamb Chops)"
+              : "";
+      const name = brand.name + " · " + group.label + suffix;
       text(name, 140, "modifier group name too long");
       for (const option of group.options) {
         unique(option.id);
         text(option.label, 140, "invalid option label");
         requireValue(
           Number.isSafeInteger(option.pricePence) &&
-            [0, LAUNCH_UPGRADE_PRICE_PENCE].includes(option.pricePence),
+            option.pricePence >= 0 &&
+            option.pricePence <= 100_000,
           "unapproved modifier price",
         );
       }
@@ -97,7 +108,7 @@ export function buildLaunchCatalogueData() {
         name,
         brandId: brand.id,
         importKind: "source",
-        minSelect: group.required && !group.when ? 1 : 0,
+        minSelect: group.required && !group.when && !group.replacedBy ? 1 : 0,
         maxSelect: group.kind === "single" ? 1 : group.options.length,
       });
     }
@@ -113,17 +124,70 @@ export function buildLaunchCatalogueData() {
         unique(item.id);
         text(item.name, 140, "invalid item name");
         requireValue(
-          Number.isSafeInteger(item.pricePence) && item.pricePence === LAUNCH_ITEM_PRICE_PENCE,
+          Number.isSafeInteger(item.pricePence) &&
+            item.pricePence > 0 &&
+            item.pricePence <= 100_000,
           "unapproved initial item price",
         );
         requireValue(
           item.optionGroupIds.every((id) => groupIds.has(id)),
           "unresolved item modifier group",
         );
+        const canonicalOptionGroupIds = [...item.optionGroupIds];
+        if (item.priceVariants?.length) {
+          const id = `${item.id}-price-variant`;
+          unique(id);
+          requireValue(item.priceVariants.length === 12, "all flavour/portion prices are required");
+          const variants = new Set();
+          const options = item.priceVariants.map((variant) => {
+            requireValue(variant.groupId === id, "variant group mismatch");
+            unique(variant.optionId);
+            const key = JSON.stringify(Object.entries(variant.selections).sort());
+            requireValue(!variants.has(key), "duplicate price variant");
+            variants.add(key);
+            requireValue(
+              Object.entries(variant.selections).every(
+                ([groupId, optionId]) =>
+                  item.optionGroupIds.includes(groupId) &&
+                  brand.optionGroups
+                    .find((group) => group.id === groupId)
+                    ?.options.some((option) => option.id === optionId),
+              ),
+              "unresolved price-variant choice",
+            );
+            requireValue(
+              Number.isSafeInteger(variant.pricePence) && variant.pricePence >= item.pricePence,
+              "invalid full variant price",
+            );
+            return {
+              id: variant.optionId,
+              label: variant.label,
+              pricePence: variant.pricePence - item.pricePence,
+              sourceSelections: variant.selections,
+              sourceRefs: item.sourceRefs,
+            };
+          });
+          modifierGroups.push({
+            id,
+            name: `${brand.name} · ${item.name} · Portion and flavour price`,
+            label: "Portion and flavour price",
+            importKind: "price-variant",
+            brandId: brand.id,
+            itemId: item.id,
+            kind: "single",
+            required: true,
+            minSelect: 1,
+            maxSelect: 1,
+            options,
+            sourceRefs: item.sourceRefs,
+          });
+          canonicalOptionGroupIds.push(id);
+        }
         const description = [section.description, item.description].filter(Boolean).join("\n\n");
         requireValue(description.length <= 2000, "combined item description too long");
         return {
           ...item,
+          canonicalOptionGroupIds,
           importDescription: description,
           prepKind: brand.id === "moktl" || section.id === "cans-drinks" ? "drink" : "prep",
         };
@@ -160,7 +224,7 @@ export function buildLaunchCatalogueData() {
         section.items.map((item) => ({
           id: id + "-" + item.id,
           label: item.name + (target.slot === "side" ? " · " + section.title : ""),
-          pricePence: LAUNCH_CROSS_UPGRADE_PRICE_PENCE,
+          pricePence: launchCrossReplacementPricePence(section.id),
           targetBrandId: brand.id,
           targetItemId: item.id,
           sourceRefs: item.sourceRefs,
@@ -185,13 +249,13 @@ export function buildLaunchCatalogueData() {
     });
   }
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    priceRevision: LAUNCH_MENU_PRICE_REVISION,
     profile: "mealdeck-independent-v1",
     currency: "GBP",
     approvedOn: "2026-11-05",
-    initialItemPricePence: LAUNCH_ITEM_PRICE_PENCE,
-    optionalUpgradePricePence: LAUNCH_UPGRADE_PRICE_PENCE,
-    crossBrandReplacementPricePence: LAUNCH_CROSS_UPGRADE_PRICE_PENCE,
+    excludedPendingBrands: [],
+    pricing: "per-item and per-option integer GBP pence; explicit portion/flavour matrix",
     publication: "draft",
     conditionalRulesModule: "src/lib/launch-menu-upsells.ts",
     crossReplacementLinks: "not imported; requires the verified server substitution adapter",
@@ -216,7 +280,8 @@ export function launchCatalogueCounts(data = buildLaunchCatalogueData()) {
         count +
         brand.sections.reduce(
           (sum, section) =>
-            sum + section.items.reduce((total, item) => total + item.optionGroupIds.length, 0),
+            sum +
+            section.items.reduce((total, item) => total + item.canonicalOptionGroupIds.length, 0),
           0,
         ),
       0,
@@ -228,7 +293,7 @@ export function buildLaunchCatalogueJson() {
   return JSON.stringify(buildLaunchCatalogueData(), null, 2) + "\n";
 }
 
-function importBody(options) {
+function importBody(options, applyReviewedPrices = false) {
   requireValue(
     options && typeof options === "object" && !Array.isArray(options),
     "explicit existing tenant, kitchen and station UUIDs are required",
@@ -256,7 +321,20 @@ function importBody(options) {
     __SOURCE_SHA256_SQL_LITERAL__: sqlString(sourceHash),
     __BLOCK_TAG__: tag,
   };
-  return readFileSync(template, "utf8").replace(/__[A-Z0-9_]+__/g, (key) => {
+  let sqlTemplate = readFileSync(template, "utf8");
+  if (applyReviewedPrices) {
+    const baseline = JSON.parse(
+      readFileSync(new URL("./catalogue/placeholder-price-baseline.json", import.meta.url), "utf8"),
+    );
+    for (const group of baseline.modifierGroups) {
+      group.databaseId = launchModifierDatabaseId(options.tenantId, "group", group.id);
+    }
+    replacements.__BASELINE_JSON_SQL_LITERAL__ = sqlString(JSON.stringify(baseline));
+    sqlTemplate +=
+      "\n" +
+      readFileSync(new URL("./catalogue-price-revision.template.sql", import.meta.url), "utf8");
+  }
+  return sqlTemplate.replace(/__[A-Z0-9_]+__/g, (key) => {
     requireValue(Object.hasOwn(replacements, key), "unknown SQL template token " + key);
     return replacements[key];
   });
@@ -272,6 +350,42 @@ export function buildLaunchCatalogueImportSql(options) {
     "-- MealDeck approved launch catalogue; database owner only, draft insert-only import.\nbegin;\n" +
     importBody(options) +
     "commit;\n"
+  );
+}
+
+/** Explicit one-time replacement of known £20 placeholders, guarded by expected prices. */
+export function buildLaunchCataloguePriceRevisionSql(options) {
+  requireValue(
+    !options ||
+      Object.keys(options).every((key) => ["tenantId", "locationId", "stationId"].includes(key)),
+    "unsupported revision option",
+  );
+  return (
+    "-- Reviewed owner menu revision; expected-price conflicts abort every change.\nbegin;\n" +
+    importBody(options, true) +
+    "commit;\n"
+  );
+}
+
+export function buildManagedLaunchCataloguePriceRevisionSql(options) {
+  requireValue(
+    options &&
+      options.runnerOwnsTransaction === true &&
+      options.singleMigration === true &&
+      Object.keys(options).every((key) =>
+        [
+          "tenantId",
+          "locationId",
+          "stationId",
+          "runnerOwnsTransaction",
+          "singleMigration",
+        ].includes(key),
+      ),
+    "managed execution requires one runner-owned atomic transaction and one complete migration",
+  );
+  return (
+    "-- The runner must execute this complete reviewed revision in one atomic transaction.\n" +
+    importBody(options, true)
   );
 }
 
@@ -303,7 +417,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const flags = new Set();
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
-    if (["--json", "--check", "--managed-transaction"].includes(arg)) {
+    if (["--json", "--check", "--managed-transaction", "--apply-reviewed-prices"].includes(arg)) {
       requireValue(!flags.has(arg), "repeated CLI flag");
       flags.add(arg);
     } else {
@@ -321,7 +435,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   let output;
   if (flags.has("--json") || flags.has("--check")) {
     requireValue(
-      !flags.has("--managed-transaction") && [...values.keys()].every((key) => key === "--out"),
+      !flags.has("--managed-transaction") &&
+        !flags.has("--apply-reviewed-prices") &&
+        [...values.keys()].every((key) => key === "--out"),
       "JSON/check output does not take database bindings",
     );
     output = flags.has("--json")
@@ -329,8 +445,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       : JSON.stringify(
           {
             ...launchCatalogueCounts(),
-            initialItemPricePence: LAUNCH_ITEM_PRICE_PENCE,
-            optionalUpgradePricePence: LAUNCH_UPGRADE_PRICE_PENCE,
+            priceRevision: LAUNCH_MENU_PRICE_REVISION,
             publication: "draft",
             sourceSha256: sha256(JSON.stringify(buildLaunchCatalogueData())),
           },
@@ -343,13 +458,15 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       locationId: values.get("--kitchen"),
       stationId: values.get("--station"),
     };
+    const standaloneBuilder = flags.has("--apply-reviewed-prices")
+      ? buildLaunchCataloguePriceRevisionSql
+      : buildLaunchCatalogueImportSql;
+    const managedBuilder = flags.has("--apply-reviewed-prices")
+      ? buildManagedLaunchCataloguePriceRevisionSql
+      : buildManagedLaunchCatalogueImportSql;
     output = flags.has("--managed-transaction")
-      ? buildManagedLaunchCatalogueImportSql({
-          ...binding,
-          runnerOwnsTransaction: true,
-          singleMigration: true,
-        })
-      : buildLaunchCatalogueImportSql(binding);
+      ? managedBuilder({ ...binding, runnerOwnsTransaction: true, singleMigration: true })
+      : standaloneBuilder(binding);
   }
   const destination = values.get("--out");
   if (destination) {

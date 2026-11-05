@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { WifiOff } from "lucide-react";
+import { useRouterState } from "@tanstack/react-router";
+import { mealDeckPwaSurface } from "@/lib/mealdeck-pwa-surface";
 import { PwaContext, useMealDeckPwa } from "@/lib/mealdeck-pwa-context";
 import "@/styles.pwa.css";
 
@@ -9,6 +11,8 @@ type InstallEvent = Event & {
 };
 
 export function PwaProvider({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const { worker: workerUrl, scope } = mealDeckPwaSurface(pathname);
   const [installed, setInstalled] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
   const [offline, setOffline] = useState(false);
@@ -18,6 +22,9 @@ export function PwaProvider({ children }: { children: ReactNode }) {
   const reloadForUpdate = useRef(false);
 
   useEffect(() => {
+    deferred.current = null;
+    setCanInstall(false);
+    setUpdateReady(false);
     let active = true;
     let observedRegistration: ServiceWorkerRegistration | null = null;
     const workerListeners = new Map<ServiceWorker, () => void>();
@@ -79,7 +86,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     // The worker caches only the public offline screen and its static artwork.
     // It never stores HTML from the app, API responses, sessions or staff data.
     if (workers && window.isSecureContext) {
-      void workers.register("/sw.js", { scope: "/", updateViaCache: "none" }).then(
+      void workers.register(workerUrl, { scope, updateViaCache: "none" }).then(
         (next) => {
           if (!active) return;
           registration.current = next;
@@ -111,7 +118,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
       if (registration.current === observedRegistration) registration.current = null;
       reloadForUpdate.current = false;
     };
-  }, []);
+  }, [workerUrl, scope]);
 
   async function install(): Promise<"accepted" | "dismissed" | "unavailable"> {
     const event = deferred.current;

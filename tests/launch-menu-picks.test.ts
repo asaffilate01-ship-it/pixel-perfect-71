@@ -76,18 +76,72 @@ describe("Launch menu planning with source-owned choices and catalogue prices", 
     expect(launchSelectionLabels(brand, item, choices)).toEqual(["3 Onion Rings"]);
   });
 
-  test("Souvano requires a meal side only after make-it-a-meal is selected", () => {
+  test("Souvano requires its included side immediately, with no paid meal toggle", () => {
     const { brand, item } = dish("souvano", "lamb-chops");
-    expect(missingLaunchChoices(brand, item, {})).toEqual([]);
-    let choices = choose(brand, item, {}, "-make-it-a-meal", "Make it a meal");
-    expect(missingLaunchChoices(brand, item, choices).map((group) => group.id)).toEqual([
+    expect(missingLaunchChoices(brand, item, {}).map((group) => group.id)).toEqual([
       "souvano-meal-side",
     ]);
-    expect(addLaunchPick([], brand.id, item.id, choices)).toEqual([]);
-    choices = choose(brand, item, choices, "-meal-side", "Naan");
+    expect(addLaunchPick([], brand.id, item.id, {})).toEqual([]);
+    const choices = choose(brand, item, {}, "-meal-side", "Naan");
     expect(addLaunchPick([], brand.id, item.id, choices)).toHaveLength(1);
-    choices = choose(brand, item, choices, "-make-it-a-meal", "Make it a meal");
-    expect(choices).toEqual({});
+  });
+
+  test("meals require one included standard drink unless a drink upgrade replaces it, including kids meals", () => {
+    for (const [brandId, sectionId] of [
+      ["skorch", "beef-smash-deck"],
+      ["tavo-chicken", "burgers"],
+      ["skorch", "kids-meal"],
+      ["tavo-chicken", "kids-meals"],
+    ]) {
+      const { brand, item } = dish(brandId!, sectionId!);
+      const kids = sectionId!.startsWith("kids-");
+      const meal = kids ? {} : choose(brand, item, {}, "-make-it-a-meal", "Make it a meal");
+      expect(missingLaunchChoices(brand, item, meal).map((group) => group.label)).toEqual([
+        "Included meal drink",
+      ]);
+      expect(addLaunchPick([], brand.id, item.id, meal)).toEqual([]);
+      const drinkGroup = `${brand.id}-${kids ? "kids-included-drink" : "included-meal-drink"}`;
+      const drink = { ...meal, [drinkGroup]: [`${drinkGroup}-water-bottle`] };
+      expect(addLaunchPick([], brand.id, item.id, drink)).toHaveLength(1);
+      const config = setLaunchCrossChoice(
+        brand,
+        item,
+        drink,
+        [],
+        "moktl-drink-upgrade",
+        "moktl-mocktail-lounge-blue-wave",
+      );
+      expect(config.selections[drinkGroup]).toBeUndefined();
+      expect(missingLaunchChoices(brand, item, config.selections, config.crossSelections)).toEqual(
+        [],
+      );
+      expect(
+        addLaunchPick([], brand.id, item.id, config.selections, 1, config.crossSelections),
+      ).toHaveLength(1);
+      const removed = setLaunchCrossChoice(
+        brand,
+        item,
+        config.selections,
+        config.crossSelections,
+        "moktl-drink-upgrade",
+        null,
+      );
+      expect(
+        missingLaunchChoices(brand, item, removed.selections, removed.crossSelections),
+      ).toHaveLength(1);
+      const upgradeGroup = `${brand.id}-${kids ? "kids-meal-upgrades" : "meal-upgrades"}`;
+      const milkshake = `${upgradeGroup}-milkshake${brand.id === "tavo-chicken" ? "-upgrade" : ""}`;
+      const shake = cleanLaunchSelections(brand, item, { ...drink, [upgradeGroup]: [milkshake] });
+      expect(shake[drinkGroup]).toEqual(drink[drinkGroup]);
+      expect(shake[upgradeGroup]).toBeUndefined();
+      expect(missingLaunchChoices(brand, item, shake)).toEqual([]);
+      const staleMilkshake = cleanLaunchSelections(brand, item, {
+        ...meal,
+        [upgradeGroup]: [milkshake],
+      });
+      expect(missingLaunchChoices(brand, item, staleMilkshake)).toHaveLength(1);
+      expect(addLaunchPick([], brand.id, item.id, staleMilkshake)).toEqual([]);
+    }
   });
 
   test("rejects wrong-brand modifiers and inactive orphaned dependency groups", () => {
@@ -283,7 +337,7 @@ describe("Launch menu planning with source-owned choices and catalogue prices", 
     expect(clear[1]?.crossSelections).toEqual(mango.crossSelections);
   });
 
-  test("Heatwave keeps its required Fries choice internally while the basket describes its replacement once", () => {
+  test("Heatwave keeps its included side while a separately priced Load’d extra is added", () => {
     const { brand, item } = dish("souvano", "heatwave");
     const choices = choose(brand, item, {}, "-heatwave-base", "Fries");
     const config = setLaunchCrossChoice(
@@ -291,7 +345,7 @@ describe("Launch menu planning with source-owned choices and catalogue prices", 
       item,
       choices,
       [],
-      "loadd-side-upgrade",
+      "loadd-side-extra",
       "loadd-loaded-mac-cheese-ace-mac",
     );
     const picks = addLaunchPick(
@@ -303,12 +357,10 @@ describe("Launch menu planning with source-owned choices and catalogue prices", 
       config.crossSelections,
     );
     expect(picks).toHaveLength(1);
-    expect(missingLaunchChoices(brand, item, picks[0]!.selections)).toEqual([]);
-    expect(picks[0]?.selections["souvano-heatwave-base"]).toEqual(["souvano-heatwave-base-fries"]);
+    expect(picks[0]?.crossSelections?.[0]?.mode).toBe("extra");
     expect(
       launchSelectionLabels(brand, item, picks[0]!.selections, picks[0]!.crossSelections),
-    ).not.toContain("Fries");
-    expect(launchSelectionLabels(brand, item, picks[0]!.selections)).toContain("Fries");
+    ).toContain("Fries");
     expect(decodeLaunchPicks(encodeLaunchPicks(picks))).toEqual(picks);
   });
 
@@ -316,6 +368,7 @@ describe("Launch menu planning with source-owned choices and catalogue prices", 
     const { brand, item } = dish("skorch", "beef-smash-deck");
     let choices = choose(brand, item, {}, "-make-it-a-meal", "Make it a meal");
     choices = choose(brand, item, choices, "-meal-upgrades", "Loaded Fries");
+    choices = choose(brand, item, choices, "-included-meal-drink", "Water Bottle");
     const legacy = addLaunchPick([], brand.id, item.id, choices);
     expect(encodeLaunchPicks(legacy)).not.toContain("crossSelections");
     expect(decodeLaunchPicks(encodeLaunchPicks(legacy))).toEqual(legacy);

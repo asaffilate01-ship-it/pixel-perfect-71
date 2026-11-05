@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
+import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
+import { MenuInstallPrompt } from "@/components/menus/menu-install-prompt";
 import {
   LaunchBasket,
   LaunchBasketDock,
@@ -24,12 +26,17 @@ import {
 import type { LaunchCrossSelection } from "@/lib/launch-menu-upsells";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
-import { getLaunchMenuBrand, type LaunchMenuUpsell } from "@/lib/launch-menu-catalogue";
+import {
+  getLaunchMenuBrand,
+  isLaunchBrandPriceApproved,
+  type LaunchMenuUpsell,
+} from "@/lib/launch-menu-catalogue";
 import {
   formatLaunchMenuPrice,
   launchMenuBasketDisplayPrice,
 } from "@/lib/launch-menu-display-prices";
 import "@/styles.launch-prices.css";
+import { prepareLaunchCheckout } from "@/lib/launch-basket-transfer";
 import {
   LAUNCH_PICKS_STORAGE_KEY,
   addLaunchPick,
@@ -281,7 +288,7 @@ export function LaunchMenuBrowser({
   };
   const pairingOrder = ["loadd", "moktl", "skorch-burgers", "tavo-chicken", "souvano"];
   const pairings: LaunchMenuEntry[] = pairingOrder
-    .filter((id) => id !== brand?.id)
+    .filter((id) => id !== brand?.id && isLaunchBrandPriceApproved(id))
     .flatMap((id) => {
       const pairing = getLaunchMenuBrand(id);
       const section = pairing?.sections.find((entry) => entry.id === pairingSections[id]);
@@ -322,6 +329,8 @@ export function LaunchMenuBrowser({
           <p>Five menus. Every craving.</p>
           <span className="lm-launch-label">Browse now · Ordering coming soon</span>
         </div>
+        <OpeningWeekendOffer compact />
+        <MenuInstallPrompt />
         <nav
           id="launch-brand-selector"
           className="lm-brand-selector"
@@ -339,7 +348,13 @@ export function LaunchMenuBrowser({
               >
                 <img src={logoFor(id)} alt="" width="165" height="110" />
                 <span>{entry.name}</span>
-                <small>{brand?.id === id ? "On the menu" : "View menu"}</small>
+                <small>
+                  {!isLaunchBrandPriceApproved(id)
+                    ? "Prices coming soon"
+                    : brand?.id === id
+                      ? "On the menu"
+                      : "View menu"}
+                </small>
               </button>
             ) : null;
           })}
@@ -367,6 +382,13 @@ export function LaunchMenuBrowser({
                 </p>
               </div>
             </header>
+
+            {!isLaunchBrandPriceApproved(brand.id) && (
+              <p className="lm-price-pending">
+                <strong>Souvano’s next hand is on its way.</strong> Browse the menu while we prepare
+                the updated prices. These dishes cannot be ordered yet.
+              </p>
+            )}
 
             <LaunchMenuMobileNav
               brandId={brand.id}
@@ -484,6 +506,7 @@ export function LaunchMenuBrowser({
                                 </span>
                                 <span className="lm-dish-action">
                                   <span className="lm-item-price" id={"launch-price-" + item.id}>
+                                    {item.priceVariants?.length ? "From " : ""}
                                     {formatLaunchMenuPrice(item.pricePence)}
                                     <span className="sr-only"> per item</span>
                                   </span>
@@ -578,6 +601,21 @@ export function LaunchMenuBrowser({
                     <span>{quantity}</span>
                   </div>
                   <LaunchBasket {...pickProps} />
+                  {quantity > 0 && (
+                    <div className="lm-checkout-entry">
+                      <Link
+                        to="/checkout"
+                        className="lm-primary"
+                        onClick={() => prepareLaunchCheckout(picks)}
+                      >
+                        Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
+                      </Link>
+                      <p>
+                        Opening offer: 30% off during the confirmed three days. Verified account and
+                        Luton collection or kerbside required.
+                      </p>
+                    </div>
+                  )}
                 </section>
                 <section className="lm-upsells">
                   <span className="lm-eyebrow">{brand.name} extras</span>
@@ -641,8 +679,8 @@ export function LaunchMenuBrowser({
             One order. <em>Every craving.</em>
           </strong>
           <p>
-            Launch menus · Item and upgrade prices shown. Any delivery charge is confirmed at
-            checkout.
+            Five Luton launch menus · Item and upgrade prices shown. Collection and kerbside pickup;
+            delivery is not available yet.
           </p>
         </footer>
       </main>
@@ -753,9 +791,25 @@ export function LaunchMenuBrowser({
                     <strong>{formatLaunchMenuPrice(basketPrice.itemsSubtotalPence)}</strong>
                   </div>
                 )}
-                <button type="button" className="lm-primary" onClick={() => setPicksOpen(false)}>
+                {quantity > 0 && (
+                  <Link
+                    to="/checkout"
+                    className="lm-primary"
+                    onClick={() => {
+                      prepareLaunchCheckout(picks);
+                      setPicksOpen(false);
+                    }}
+                  >
+                    Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  className={quantity > 0 ? "lm-basket-continue" : "lm-primary"}
+                  onClick={() => setPicksOpen(false)}
+                >
                   Keep exploring
-                  <ArrowRight size={18} />
+                  <ArrowRight size={18} aria-hidden="true" />
                 </button>
               </div>
             </>

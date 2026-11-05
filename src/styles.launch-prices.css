@@ -194,6 +194,35 @@
   flex-shrink: 0;
 }
 
+.lm-basket-footer > a.lm-primary {
+  flex: 1;
+  min-width: 170px;
+  text-decoration: none;
+  justify-content: center;
+}
+
+.lm-basket-footer > .lm-basket-continue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-basis: 100%;
+  min-height: 40px;
+  padding: 4px 10px;
+  background: transparent;
+  color: #655a4e;
+  border: 0;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lm-basket-continue:focus-visible {
+  outline: 3px solid #951018;
+  outline-offset: 3px;
+  border-radius: 7px;
+}
+
 @media (max-width: 359px) {
   .lm-dish-action {
     max-width: 68px;

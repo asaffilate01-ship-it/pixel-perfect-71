@@ -49,6 +49,7 @@ function isExtrasGroup(group: LaunchMenuOptionGroup) {
   return (
     group.id.includes("make-it-a-meal") ||
     group.id.includes("meal-upgrades") ||
+    group.id.includes("included-meal-drink") ||
     group.id === "souvano-meal-side"
   );
 }
@@ -102,7 +103,7 @@ export function LaunchItemCustomiser({
   const offerButtons = useRef<Record<string, HTMLButtonElement | null>>({});
   const previousPicker = useRef<string | null>(null);
   const picker = offers.find((offer) => offer.id === pickerId);
-  const missing = missingLaunchChoices(brand, item, selections);
+  const missing = missingLaunchChoices(brand, item, selections, crossSelections);
   const currentMissing = missing.filter((group) =>
     step === "food" ? !isExtrasGroup(group) : true,
   );
@@ -165,7 +166,7 @@ export function LaunchItemCustomiser({
   }
 
   function renderGroup(group: LaunchMenuOptionGroup) {
-    if (!isLaunchGroupActive(group, selections, item)) return null;
+    if (!isLaunchGroupActive(group, selections, item, crossSelections)) return null;
     const visibleOptions = group.options.filter(
       (option) =>
         !isMappedLaunchUpgradeOption(option.id) || selections[group.id]?.includes(option.id),
@@ -196,21 +197,46 @@ export function LaunchItemCustomiser({
           )}
           {visibleOptions.map((option) => {
             const selected = selections[group.id]?.includes(option.id) ?? false;
+            const variants = item.priceVariants?.filter(
+              (variant) =>
+                variant.selections[group.id] === option.id &&
+                Object.entries(variant.selections).every(
+                  ([id, choice]) =>
+                    id === group.id || !selections[id]?.length || selections[id]?.includes(choice),
+                ),
+            );
+            const variantPrices = variants?.map((variant) => variant.pricePence) ?? [];
+            const variantPrice = variantPrices.length ? Math.min(...variantPrices) : null;
             return (
-              <label key={option.id} className={"lmc-option " + (selected ? "is-selected" : "")}>
+              <label
+                key={option.id}
+                className={
+                  "lmc-option " +
+                  (selected ? "is-selected " : "") +
+                  (option.available === false ? "is-unavailable" : "")
+                }
+              >
                 <input
                   type={group.kind === "single" ? "radio" : "checkbox"}
                   name={group.id}
                   checked={selected}
+                  disabled={option.available === false}
                   onChange={() => chooseSource(group.id, option.id)}
                 />
                 <span>
                   <strong>{option.label}</strong>
                   {option.description && <small>{option.description}</small>}
+                  {option.available === false && (
+                    <small>{option.unavailableReason ?? "Currently unavailable"}</small>
+                  )}
                   <small className="lmc-choice-price">
-                    {option.pricePence === 0
-                      ? "Included"
-                      : "+" + formatLaunchMenuPrice(option.pricePence)}
+                    {variantPrice !== null
+                      ? (Math.max(...variantPrices) > variantPrice ? "From " : "") +
+                        formatLaunchMenuPrice(variantPrice) +
+                        " dish"
+                      : option.pricePence === 0
+                        ? "Included"
+                        : "+" + formatLaunchMenuPrice(option.pricePence)}
                   </small>
                 </span>
               </label>
@@ -251,7 +277,8 @@ export function LaunchItemCustomiser({
           <span className="lmc-eyebrow">{section.title}</span>
           <DialogTitle className="lmc-title">{item.name}</DialogTitle>
           <p className="lmc-item-price">
-            {formatLaunchMenuPrice(price.baseUnitPence)} <span>per item</span>
+            {price.baseUnitPence === null && item.priceVariants?.length ? "From " : ""}
+            {formatLaunchMenuPrice(price.baseUnitPence ?? item.pricePence)} <span>per item</span>
           </p>
           <DialogDescription className="lmc-description">
             Build your basket · Ordering coming soon
@@ -443,16 +470,18 @@ export function LaunchItemCustomiser({
                 </dt>
                 <dd>{formatLaunchMenuPrice(price.baseLinePence)}</dd>
               </div>
-              {price.options
-                .filter((option) => option.unitPence !== 0)
-                .map((option) => (
-                  <div key={option.optionId}>
-                    <dt>
-                      {option.label} × {quantity}
-                    </dt>
-                    <dd>{formatLaunchMenuPrice(option.linePence)}</dd>
-                  </div>
-                ))}
+              {price.options.map((option) => (
+                <div key={option.optionId}>
+                  <dt>
+                    {option.label} × {quantity}
+                  </dt>
+                  <dd>
+                    {option.unitPence === 0
+                      ? "Included"
+                      : "+" + formatLaunchMenuPrice(option.linePence)}
+                  </dd>
+                </div>
+              ))}
               <div className="lmc-items-subtotal">
                 <dt>Items subtotal</dt>
                 <dd>{formatLaunchMenuPrice(price.itemsSubtotalPence)}</dd>

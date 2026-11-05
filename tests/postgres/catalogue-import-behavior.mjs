@@ -11,6 +11,7 @@ import {
 } from "../../deploy/mealdeck/catalogue-import.mjs";
 import { asActor, createDatabase, id } from "./harness.mjs";
 import { verifyModifierPrices } from "./modifier-price-behavior.mjs";
+import { verifyCataloguePriceRevision } from "./catalogue-price-revision-behavior.mjs";
 
 const db = await createDatabase(process.argv.includes("--native"));
 const owner = id(801);
@@ -88,16 +89,21 @@ try {
     assert.deepEqual(launchCatalogueCounts(data), {
       brands: 5,
       categories: 20,
-      items: 77,
-      modifierGroups: 17,
-      modifierOptions: 66,
-      itemGroupLinks: 49,
+      items: 79,
+      modifierGroups: 24,
+      modifierOptions: 133,
+      itemGroupLinks: 62,
     });
     const items = data.brands.flatMap((brand) =>
       brand.sections.flatMap((section) => section.items),
     );
-    assert.ok(items.every((item) => item.pricePence === 2000));
-    assert.equal(new Set(items.map((item) => item.id)).size, 77);
+    assert.ok(
+      items.every(
+        (item) =>
+          Number.isSafeInteger(item.pricePence) && item.pricePence > 0 && item.pricePence < 2000,
+      ),
+    );
+    assert.equal(new Set(items.map((item) => item.id)).size, 79);
     assert.equal(
       data.modifierGroups
         .filter((group) => group.importKind === "cross-replacement")
@@ -108,7 +114,7 @@ try {
       data.modifierGroups
         .filter((group) => group.importKind === "cross-replacement")
         .flatMap((group) => group.options)
-        .every((option) => option.pricePence === 2000),
+        .every((option) => [299, 399].includes(option.pricePence)),
     );
     assert.deepEqual(
       JSON.parse(
@@ -261,23 +267,29 @@ try {
     await runImport();
     const state = await snapshot();
     assert.equal(state.menu_categories.length, 25); // 20 source categories plus the five untouched bootstrap placeholders.
-    assert.equal(state.menu_items.length, 77);
+    assert.equal(state.menu_items.length, 79);
     assert.ok(
       state.menu_items.every(
-        (item) => item.price_pence === 2000 && item.active === false && item.sku,
+        (item) =>
+          item.price_pence ===
+            data.brands
+              .flatMap((brand) => brand.sections.flatMap((section) => section.items))
+              .find((source) => source.id === item.sku)?.pricePence &&
+          item.active === false &&
+          item.sku,
       ),
     );
-    assert.equal(state.modifier_groups.length, 17);
-    assert.equal(state.modifier_options.length, 66);
+    assert.equal(state.modifier_groups.length, 24);
+    assert.equal(state.modifier_options.length, 133);
     assert.ok(state.modifier_options.every((option) => option.active === false));
-    assert.equal(state.menu_item_modifier_groups.length, 49);
-    assert.equal(state.menu_item_station_routes.length, 77);
+    assert.equal(state.menu_item_modifier_groups.length, 62);
+    assert.equal(state.menu_item_station_routes.length, 79);
     assert.ok(
       state.menu_item_station_routes.every(
         (route) => route.station_id === binding.stationId && route.prep_seconds === null,
       ),
     );
-    assert.equal(state.menu_item_channel_rules.length, 77);
+    assert.equal(state.menu_item_channel_rules.length, 79);
     assert.ok(
       state.menu_item_channel_rules.every(
         (rule) => rule.visible === false && rule.price_override_pence === null,
@@ -297,7 +309,7 @@ try {
     assert.match(importedItem.description, /Single beef smash/);
   });
 
-  await test("included modifiers stay zero, all optional and replacement prices are £20, and conditional metadata is retained", async () => {
+  await test("actual modifier and replacement prices, complete variant matrices and conditional metadata match the reviewed source", async () => {
     for (const group of data.modifierGroups) {
       const groupId = launchModifierDatabaseId(binding.tenantId, "group", group.id);
       const options = (
@@ -314,8 +326,8 @@ try {
           ).price_delta_pence,
           option.pricePence,
         );
-      if (group.when) {
-        assert.ok(group.when.groupId && group.when.optionIds.length);
+      if (group.when || group.replacedBy) {
+        if (group.when) assert.ok(group.when.groupId && group.when.optionIds.length);
         assert.equal(
           (await db.query("select min_select from public.modifier_groups where id=$1", [groupId]))
             .rows[0].min_select,
@@ -336,6 +348,8 @@ try {
       }
     }
   });
+
+  await verifyCataloguePriceRevision(db, binding, data);
 
   await test("rerunning the import preserves all existing UUIDs and creates no duplicate catalogue rows or audit entry", async () => {
     const before = await snapshot();

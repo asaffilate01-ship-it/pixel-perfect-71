@@ -178,10 +178,10 @@ begin
         get diagnostics v_changed=row_count;
         v_rules_created:=v_rules_created+v_changed;
         v_link_sort:=0;
-        for v_group_source_id in select jsonb_array_elements_text(v_item->'optionGroupIds') loop
+        for v_group_source_id in select jsonb_array_elements_text(v_item->'canonicalOptionGroupIds') loop
           select (g.value->>'databaseId')::uuid into v_group_id
             from jsonb_array_elements(v_source->'modifierGroups') g
-            where g.value->>'id'=v_group_source_id and g.value->>'importKind'='source';
+            where g.value->>'id'=v_group_source_id and g.value->>'importKind' in ('source','price-variant');
           if not found then raise exception 'mealdeck_launch_import_modifier_link_missing'; end if;
           insert into public.menu_item_modifier_groups(tenant_id,item_id,group_id,sort_order)
             values(v_tenant,v_item_id,v_group_id,v_link_sort)
@@ -200,8 +200,8 @@ begin
       tenant_id,location_id,actor_id,action,entity_type,entity_id,next_value
     ) values(v_tenant,v_location,null,'catalogue.launch_import','catalogue',v_tenant,
       jsonb_build_object('operator','database_owner','sourceSha256',v_source_hash,
-        'approvedOn',v_source->>'approvedOn','initialItemPricePence',v_source->'initialItemPricePence',
-        'optionalUpgradePricePence',v_source->'optionalUpgradePricePence',
+        'approvedOn',v_source->>'approvedOn','priceRevision',v_source->>'priceRevision',
+        'excludedPendingBrands',v_source->'excludedPendingBrands',
         'categoriesCreated',v_categories_created,'itemsCreated',v_items_created,
         'groupsCreated',v_groups_created,'optionsCreated',v_options_created,
         'routesCreated',v_routes_created,'rulesCreated',v_rules_created,

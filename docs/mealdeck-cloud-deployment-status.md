@@ -1,6 +1,22 @@
 # Independent MealDeck Cloud deployment — 4 November 2026
 
-## Completed
+## Current verified position — 5 November 2026
+
+Access to the correct MealDeck Lovable project `2184585f-d92c-4d42-b25b-b7f87f98d0d8` is restored. Read-only inspection confirmed PostgreSQL 17.11, zero public application tables and zero Auth users before installation. The Supabase connector still lists Dishbee only; it was not used for MealDeck writes.
+
+The Lovable query connection was first checked with an explicit transaction creating a temporary probe table, rolling back, and verifying that the table did not exist. It confirmed explicit transaction rollback. The **unchanged standalone installer** (190403 UTF-8 bytes, SHA-256 `1f6f09e3057ca71bb60b646173d1ab48f7b0a0ef7bdbdbcd3bcf7abd724df8cf`) was then submitted as **one complete request with its own `begin;` / `commit;`**. This uses the authorised standalone execution contract; the managed/autocommit body was not used.
+
+The request succeeded. A separate read verified installation marker `mealdeck-independent-v1`, installation ID `1c2a5fca-bac5-4c51-b406-7bd81612f51a`, installed at `2026-11-05T08:27:55.786623+00:00`, 42 public tables, RLS enabled on every public table, and no direct public-table grants to `anon`, `authenticated` or `service_role`.
+
+No Auth users or businesses exist yet. `info@mealdeck.co.uk` must register and verify its email before the existing private owner bootstrap can assign ownership. No account was invited, automatically verified or granted access. No catalogue was published and no orders, payments or KDS tickets were created by this installation.
+
+The separate customer membership extension was also applied atomically and verified: five private customer tables all have RLS, the customer profile RPC is unavailable to `anon` and available to authenticated users, and no public owner-bootstrap RPC was introduced. Its public capability response confirms registration availability, with push sending and loyalty earning still disabled pending configuration. No customer account, email or order was created by the installation.
+
+The owner's latest detailed prices for **Skorch, Tavo, Load’d, Moktl and Souvano** supersede the £20 placeholders discussed in the historical records below. The current source catalogue contains 79 items; Souvano's three mains are £6.50, £6.99 and £9.99 including fries/rice/naan. The reviewed price revision checks old values and preserves unrelated administrator edits. Milkshake upgrades retain the supplied £2.99 price but remain unavailable until flavour choices are supplied. Opening-weekend dates are not supplied; the 30% campaign must remain unscheduled until confirmed.
+
+The following sections retain the earlier provisioning and investigation record. Their “installation pending” and “connector unavailable” observations are superseded by the verified position above.
+
+## Historical provisioning record — before the current installation
 
 These are the provisioning results recorded by Lovable. The managed-installer source update below does not apply SQL or independently recheck the hosted database.
 
@@ -13,7 +29,7 @@ These are the provisioning results recorded by Lovable. The managed-installer so
 - Public ordering remains coming soon; no checkout approval or payment-release authority was configured.
 - Existing `/ops` and `/kds` staff sign-in screens render without browser runtime errors. This is not an authenticated administration acceptance check.
 
-## Installation pending — managed transaction mode available
+## Historical installer investigation — managed transaction mode
 
 The available `lov_database.migration` interface requires SQL **without transaction-control statements** and owns its transaction and migration journal. The initial attempt stopped because the default standalone installer owns its outer `begin;` and `commit;`. **No installer SQL was submitted or applied.**
 
@@ -36,7 +52,7 @@ The owner confirmed `info@mealdeck.co.uk` as the intended admin account and `Mea
 
 After successful schema installation and account verification, use the documented private bootstrap once to create the five draft brands, one kitchen/station, one owner assignment and disabled ordering channel. Store its actual returned UUIDs in the deployment record; do not infer city-to-kitchen bindings.
 
-## Remaining acceptance
+## Historical acceptance checklist — superseded by the current position above
 
 - Submit the complete managed installer in one atomic migration, then verify database integrity and permissions.
 - Confirm the owner account, perform the private bootstrap and configure actual tenant/kitchen bindings.
@@ -44,7 +60,7 @@ After successful schema installation and account verification, use the documente
 - Authenticated `/kds` must report setup required until accepted independent payment-release authority exists; never fabricate paid orders for testing.
 - The owner has now approved the initial £20 item and upgrade prices. Allergen completion, catalogue publication and real payment integration remain pending.
 
-## Payment provisioning — 5 November 2026
+## Historical payment provisioning — 5 November 2026
 
 - The owner confirmed enabling built-in Stripe payments in test mode. The enable tool reported successful test-account provisioning and registration of the test webhook endpoint.
 - Provisioning is not checkout acceptance: no payment products, checkout form or app webhook handler have been created in this request. Illustrative menu prices must not become payment products.
@@ -52,11 +68,11 @@ After successful schema installation and account verification, use the documente
 - The owner subsequently approved £20 for every launch item and each chargeable add-on, meal or upgrade. The repository now includes the reviewed draft catalogue import and upgrade-price administration extension. Next requirements are hosted installation, canonical publication and verified order/payment reconciliation. Existing coming-soon, checkout-approval and KDS-release gates remain unchanged.
 - Live payments additionally require account claim/onboarding and the payment integration's readiness checks; completing those does not replace MealDeck's own launch acceptance.
 
-## Account access — 5 November 2026
+## Historical account-access interruption — 5 November 2026
 
 The owner confirmed that this MealDeck project is on a separate Lovable account. The currently available Lovable connection returns `404 project_not_found` for the recorded MealDeck project; the available Supabase connection exposes Dishbee only. No hosted installation, owner bootstrap, catalogue import or payment activation was performed through those connections. Repository changes and local verification do not establish that these changes are published or installed in the owning account. See [the launch-price phase record](mealdeck-launch-prices-and-polish-phase49.md) for the completed source work and remaining runtime contracts.
 
-## Latest repository and public-site recheck — 5 November 2026
+## Historical repository and public-site observation — before this release
 
 Connected-branch commits `9393bf9` and `a4a4aab` add a separate production **live-mode publishable** payment key and MealDeck logos to basket/checkout headings. The development key retains its test-mode prefix. Neither value is printed in this record. The application still has no consumer of `VITE_PAYMENTS_CLIENT_TOKEN`; these commits add no payment SDK, server session, webhook, database installation or release adapter. A key's prefix identifies its mode, not merchant readiness or successful payment processing.
 

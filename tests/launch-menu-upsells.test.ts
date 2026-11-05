@@ -67,7 +67,7 @@ describe("Owner-approved Load’d and Moktl planning choices", () => {
         const found = findLaunchMenuItem(choice.brandId, choice.itemId)!;
         expect(found.item.name).toBe(choice.name);
         expect(choice.pricePence).toBe(found.item.pricePence);
-        expect(choice.pricePence).toBe(2_000);
+        expect(choice.pricePence).toBeGreaterThan(0);
         expect(["loaded-fries", "loaded-mac-cheese", "mocktail-lounge"]).toContain(
           found.section.id,
         );
@@ -166,23 +166,13 @@ describe("Owner-approved Load’d and Moktl planning choices", () => {
     expect(config.crossSelections.map((choice) => choice.slot)).toEqual(["drink"]);
   });
 
-  test("Milkshake versus Moktl and Peri Salt versus Load’d are exclusive in either selection order", () => {
+  test("unavailable milkshakes cannot replace a valid Moktl choice, while Peri Salt and Load’d remain exclusive", () => {
     const { brand, item } = dish("skorch", "beef-smash-deck");
     const group = "skorch-burgers-meal-upgrades";
     let config = bothUpgrades(brand, item);
     let source = toggleLaunchOption(brand, item, config.selections, group, `${group}-milkshake`);
     config = cleanLaunchCrossConfiguration(brand, item, source, config.crossSelections);
-    expect(config.crossSelections.map((choice) => choice.slot)).toEqual(["side"]);
-    expect(config.selections[group]).toContain(`${group}-milkshake`);
-    config = setLaunchCrossChoice(
-      brand,
-      item,
-      config.selections,
-      config.crossSelections,
-      "moktl-drink-upgrade",
-      blueWave,
-    );
-    expect(config.crossSelections).toHaveLength(2);
+    expect(config.crossSelections.map((choice) => choice.slot)).toEqual(["side", "drink"]);
     expect(config.selections[group]).toBeUndefined();
     source = toggleLaunchOption(brand, item, config.selections, group, `${group}-peri-salt`);
     config = cleanLaunchCrossConfiguration(brand, item, source, config.crossSelections);
@@ -224,59 +214,26 @@ describe("Owner-approved Load’d and Moktl planning choices", () => {
     }
   });
 
-  test("Souvano meal-side upgrades require Fries and never replace Rice or Naan", () => {
-    for (const sectionId of ["stir-fry-donner", "lamb-chops"]) {
+  test("Souvano includes its side and offers only full-priced extras, without inventing a meal charge or replacement surcharge", () => {
+    for (const sectionId of ["stir-fry-donner", "lamb-chops", "heatwave"]) {
       const { brand, item } = dish("souvano", sectionId);
-      expect(getLaunchCrossOffers(brand, item, {}).map((offer) => offer.id)).toEqual([
-        "loadd-side-extra",
-        "moktl-drink-extra",
-      ]);
-      expect(getLaunchCrossOffers(brand, item, meal(brand)).map((offer) => offer.id)).toEqual([
-        "moktl-drink-upgrade",
-      ]);
-      const fries = { ...meal(brand), "souvano-meal-side": ["souvano-meal-side-fries"] };
-      const config = bothUpgrades(brand, item, fries);
-      expect(config.crossSelections).toHaveLength(2);
-      for (const side of ["rice", "naan"]) {
-        const source = { ...fries, "souvano-meal-side": [`souvano-meal-side-${side}`] };
-        const changed = cleanLaunchCrossConfiguration(brand, item, source, config.crossSelections);
-        expect(changed.selections["souvano-meal-side"]).toEqual([`souvano-meal-side-${side}`]);
-        expect(changed.crossSelections.map((choice) => choice.slot)).toEqual(["drink"]);
+      for (const side of ["fries", "rice", "naan"]) {
+        const choices =
+          sectionId === "heatwave"
+            ? {
+                "souvano-heatwave-base": [
+                  `souvano-heatwave-base-${side === "rice" ? "fragrant-spicy-rice" : side}`,
+                ],
+              }
+            : { "souvano-meal-side": [`souvano-meal-side-${side}`] };
+        expect(getLaunchCrossOffers(brand, item, choices).map((offer) => offer.id)).toEqual([
+          "loadd-side-extra",
+          "moktl-drink-extra",
+        ]);
+        const stale = bothUpgrades(brand, item, choices);
+        expect(stale.crossSelections).toEqual([]);
       }
     }
-  });
-
-  test("Heatwave keeps exactly one base: its Fries replacement survives meal-off but not Rice or Naan", () => {
-    const { brand, item } = dish("souvano", "heatwave");
-    const base = { "souvano-heatwave-base": ["souvano-heatwave-base-fries"] };
-    const config = bothUpgrades(brand, item, { ...base, ...meal(brand) });
-    const main = cleanLaunchCrossConfiguration(brand, item, base, config.crossSelections);
-    expect(main.selections).toEqual(base);
-    expect(main.crossSelections.map((choice) => [choice.slot, choice.mode])).toEqual([
-      ["side", "upgrade"],
-    ]);
-    expect(
-      launchCrossSelectionSummaries(brand, item, main.selections, main.crossSelections)[0]?.label,
-    ).toBe("Fries base replaced with Load’d · Loaded Fries: King of Hearts");
-    expect(item.optionGroupIds).not.toContain("souvano-meal-side");
-    for (const baseId of ["fragrant-spicy-rice", "naan"]) {
-      const source = { "souvano-heatwave-base": [`souvano-heatwave-base-${baseId}`] };
-      expect(
-        cleanLaunchCrossConfiguration(brand, item, source, main.crossSelections).crossSelections,
-      ).toEqual([]);
-      expect(getLaunchCrossOffers(brand, item, source).map((offer) => offer.id)).toEqual([
-        "moktl-drink-extra",
-      ]);
-    }
-    const ambiguous = {
-      "souvano-heatwave-base": [
-        "souvano-heatwave-base-fries",
-        "souvano-heatwave-base-fragrant-spicy-rice",
-      ],
-    };
-    expect(getLaunchCrossOffers(brand, item, ambiguous).map((offer) => offer.id)).toEqual([
-      "moktl-drink-extra",
-    ]);
   });
 
   test("rejects forged targets, brands and modes; duplicate slots and browser amounts cannot add children", () => {
@@ -303,9 +260,7 @@ describe("Owner-approved Load’d and Moktl planning choices", () => {
     ];
     const clean = cleanLaunchCrossConfiguration(brand, item, meal(brand), input);
     expect(clean.crossSelections).toEqual([valid]);
-    expect(launchCrossSelectionSummaries(brand, item, meal(brand), input)[0]?.pricePence).toBe(
-      2_000,
-    );
+    expect(launchCrossSelectionSummaries(brand, item, meal(brand), input)[0]?.pricePence).toBe(299);
     expect(cleanLaunchCrossConfiguration(brand, item, {}, input).crossSelections).toEqual([
       { ...valid, mode: "extra" },
     ]);
@@ -316,7 +271,10 @@ describe("Owner-approved Load’d and Moktl planning choices", () => {
   });
 
   test("replacement surcharges stay independent from a target product’s standalone price", () => {
-    expect(priceForLaunchCrossChoice("extra", 3_500)).toBe(3_500);
-    expect(priceForLaunchCrossChoice("upgrade", 3_500)).toBe(2_000);
+    expect(priceForLaunchCrossChoice("extra", 3_500, "loaded-fries")).toBe(3_500);
+    expect(priceForLaunchCrossChoice("upgrade", 3_500, "loaded-fries")).toBe(299);
+    expect(priceForLaunchCrossChoice("upgrade", 3_500, "loaded-mac-cheese")).toBe(399);
+    expect(priceForLaunchCrossChoice("upgrade", 3_500, "mocktail-lounge")).toBe(299);
+    expect(priceForLaunchCrossChoice("upgrade", 3_500, "full-house")).toBeNull();
   });
 });

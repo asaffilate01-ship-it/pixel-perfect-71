@@ -1,5 +1,5 @@
 /**
- * The staff KDS consumes a privacy-minimised projection of canonical Dishbee
+ * The staff KDS consumes a privacy-minimised projection of canonical MealDeck
  * records. These types/parsers are presentation checks, never payment, routing
  * or staff authority. The database rechecks all of those for every mutation.
  */
@@ -24,6 +24,17 @@ export type KdsOrderItem = {
   notes: string | null;
   participant_name: string | null;
   status: KdsTicketStatus;
+  checkout_line_id?: string | null;
+  parent_checkout_line_id?: string | null;
+  base_unit_pence?: number | null;
+  unit_pence?: number | null;
+  modifier_details?: {
+    name: string;
+    group_name: string;
+    price_delta_pence: number;
+    quantity_per_parent: number;
+  }[];
+  bags?: { number: number; quantity: number }[];
 };
 
 export type KdsItem = KdsOrderItem & { ticket_item_id: string };
@@ -62,6 +73,9 @@ export type KdsOrder = {
   items: KdsOrderItem[];
   tickets: KdsTicket[];
   pass: KdsPass | null;
+  accepted_at?: string | null;
+  cutlery_requested?: boolean;
+  vehicle?: { make: string; colour: string; registrationLast4: string } | null;
 };
 
 export type KdsBoard = {
@@ -80,7 +94,7 @@ export type KdsMutation = {
   ok: true;
   replayed: boolean;
   order_id: string;
-  status: "preparing" | "ready" | "packing" | "sealed";
+  status: "accepted" | "preparing" | "ready" | "packing" | "sealed" | "completed";
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -170,6 +184,38 @@ function parseOrderItem(value: unknown): KdsOrderItem {
     notes: nullableText(v["notes"], 20000),
     participant_name: nullableText(v["participant_name"], 1000),
     status: choice(v["status"], ticketStatuses),
+    checkout_line_id: v["checkout_line_id"] == null ? null : text(v["checkout_line_id"], 100),
+    parent_checkout_line_id:
+      v["parent_checkout_line_id"] == null ? null : text(v["parent_checkout_line_id"], 100),
+    base_unit_pence: v["base_unit_pence"] == null ? null : integer(v["base_unit_pence"]),
+    unit_pence: v["unit_pence"] == null ? null : integer(v["unit_pence"]),
+    modifier_details:
+      v["modifier_details"] === undefined
+        ? []
+        : list(
+            v["modifier_details"],
+            (input) => {
+              const m = record(input);
+              return {
+                name: text(m["name"], 1000),
+                group_name: text(m["group_name"], 1000),
+                price_delta_pence: integer(m["price_delta_pence"], -1000000),
+                quantity_per_parent: integer(m["quantity_per_parent"], 1),
+              };
+            },
+            100,
+          ),
+    bags:
+      v["bags"] === undefined
+        ? []
+        : list(
+            v["bags"],
+            (input) => {
+              const b = record(input);
+              return { number: integer(b["number"], 1), quantity: integer(b["quantity"], 1) };
+            },
+            10,
+          ),
   };
 }
 
@@ -242,7 +288,24 @@ function parseOrder(value: unknown): KdsOrder {
     routedItems.add(item.order_item_id);
   }
   if (routingComplete && items.some((item) => !routedItems.has(item.order_item_id))) invalid();
+  for (const item of items) {
+    if (item.checkout_line_id) {
+      if (!item.bags?.length || item.bags.reduce((n, b) => n + b.quantity, 0) !== item.quantity)
+        invalid();
+      if (new Set(item.bags.map((b) => b.number)).size !== item.bags.length) invalid();
+      if (
+        item.parent_checkout_line_id &&
+        !items.some(
+          (parent) =>
+            parent.checkout_line_id === item.parent_checkout_line_id &&
+            !parent.parent_checkout_line_id,
+        )
+      )
+        invalid();
+    }
+  }
   const preparationStatus = choice(v["preparation_status"], ticketStatuses);
+  if (v["accepted_at"] === null && preparationStatus !== "queued") invalid();
   const pass = v["pass"] === null ? null : parsePass(v["pass"]);
   const allReady =
     tickets.length > 0 &&
@@ -276,6 +339,19 @@ function parseOrder(value: unknown): KdsOrder {
     items,
     tickets,
     pass,
+    accepted_at: v["accepted_at"] == null ? null : timestamp(v["accepted_at"]),
+    cutlery_requested: v["cutlery_requested"] === undefined ? false : flag(v["cutlery_requested"]),
+    vehicle:
+      v["vehicle"] == null
+        ? null
+        : (() => {
+            const car = record(v["vehicle"]);
+            return {
+              make: text(car["make"], 100),
+              colour: text(car["colour"], 100),
+              registrationLast4: text(car["registrationLast4"], 4),
+            };
+          })(),
   };
 }
 
@@ -337,7 +413,14 @@ export function parseKdsMutation(
     ok: true,
     replayed: flag(v["replayed"]),
     order_id: id(v["order_id"]),
-    status: choice(v["status"], ["preparing", "ready", "packing", "sealed"] as const),
+    status: choice(v["status"], [
+      "accepted",
+      "preparing",
+      "ready",
+      "packing",
+      "sealed",
+      "completed",
+    ] as const),
   };
 }
 

@@ -46,6 +46,7 @@ function order(overrides: Partial<KdsOrder> = {}): KdsOrder {
     created_at: "2026-11-04T12:00:00Z",
     released_at: "2026-11-04T12:01:00Z",
     order_status: "accepted",
+    accepted_at: "2026-11-04T12:02:00Z",
     fulfilment: "delivery",
     notes: null,
     group_order: true,
@@ -125,16 +126,17 @@ describe("one shared-kitchen order card", () => {
     expect(nextKdsOrderAction(incomplete)).toBeNull();
   });
 
-  test("one order-level command advances preparation without a per-station fan-out", () => {
+  test("one command starts preparation, and item readiness cannot be bypassed", () => {
     expect(nextKdsOrderAction(order())).toEqual({
       target: "order",
       status: "preparing",
-      label: "Start order",
+      label: "Start preparing",
     });
-    expect(nextKdsOrderAction(order({ preparation_status: "preparing" }))).toEqual({
-      target: "order",
-      status: "ready",
-      label: "Ready to pack",
+    expect(nextKdsOrderAction(order({ preparation_status: "preparing" }))).toBeNull();
+    expect(nextKdsOrderAction(order({ accepted_at: null }))).toEqual({
+      target: "accept",
+      status: "accepted",
+      label: "Accept order",
     });
     expect(
       nextKdsOrderAction(order({ routing_complete: false, blocked_reason: "routing_incomplete" })),
