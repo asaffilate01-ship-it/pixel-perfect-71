@@ -17,6 +17,7 @@ import brandNusara from "@/assets/brand-nusara.jpg";
 import brandRise from "@/assets/brand-rise-griddle.jpg";
 import brandSouvano from "@/assets/brand-souvano.jpg";
 import { cafe1Menu, coreMenu } from "./sample-menus";
+import { MEALDECK_LAUNCH_HOURS_LABEL, mealDeckLaunchWindowAt } from "./mealdeck-launch-schedule";
 import {
   isMealDeckLaunchFulfilment,
   isMealDeckLaunchLocation,
@@ -117,7 +118,7 @@ export const primaryBrandIds = ["tavo-chicken", "paratique", "taconelle", "loadd
 export const addonBrandIds = ["icova", "moktl"];
 
 export const locations: MealDeckLocation[] = [
-  { key: "luton", name: "MealDeck Luton", town: "Luton", hoursLabel: "5pm–11pm · Monday to Sunday", primaryBrandIds, addonBrandIds, allowedFulfilments: ["delivery", "pickup", "curbside"] },
+  { key: "luton", name: "MealDeck Luton", town: "Luton", hoursLabel: MEALDECK_LAUNCH_HOURS_LABEL, primaryBrandIds, addonBrandIds, allowedFulfilments: ["delivery", "pickup", "curbside"] },
   { key: "stalbans", name: "MealDeck St Albans", town: "St Albans", hoursLabel: "Mon–Fri · 09:00–16:00", primaryBrandIds: ["cafe1", ...primaryBrandIds], addonBrandIds, allowedFulfilments: ["delivery"] },
 ];
 
@@ -134,20 +135,9 @@ export function formatPence(pence: number): string {
 
 export function sampleLocationOpen(location: LocationKey, now = new Date()): boolean {
   if (!isMealDeckLaunchLocation(location)) return false;
-  try {
-    const parts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Europe/London",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).formatToParts(now);
-    const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0");
-    const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
-    const minutes = hour * 60 + minute;
-    return minutes >= 1020 && minutes < 1380; // Luton preview: 5pm–11pm, Monday to Sunday
-  } catch {
-    return false;
-  }
+  // Preview only. Real orders still require the configured backend's channel,
+  // accepted payment integration and server-side opening-hours checks.
+  return mealDeckLaunchWindowAt(now) !== null;
 }
 
 export function resolveSampleServiceability(

@@ -71,6 +71,68 @@
   font-size: 12px;
   line-height: 1.45;
   margin: 12px 0 0;
+  font-weight: 800;
+}
+.md-launch-opening-hours {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 12px 0;
+  border-top: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.md-launch-opening-hours > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 14px;
+}
+.md-launch-opening-hours dt {
+  min-width: 0;
+}
+.md-launch-opening-hours dd {
+  margin: 0;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.md-opening-offer .md-launch-opening-hours {
+  border-color: #ffffff45;
+}
+.md-opening-guest-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.md-first-confirmed-launch {
+  max-width: 470px;
+  margin: 22px auto 24px;
+  border: 1px solid #dacbb5;
+  border-top: 4px solid #951018;
+  border-radius: 4px 4px 14px 14px;
+  padding: 18px 22px;
+  background: #fffdf7;
+  text-align: left;
+  color: #211b16;
+}
+.md-first-confirmed-launch > p:first-child {
+  margin: 0;
+  color: #951018;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 800;
+}
+.md-first-confirmed-launch .md-launch-opening-hours {
+  border-color: #dacbb5;
+  font-size: 14px;
+}
+.md-first-launch-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #655448;
 }
 .md-opening-actions {
   display: grid;
@@ -337,6 +399,10 @@
     justify-content: start;
     align-items: center;
   }
+  .md-opening-actions > a:last-child {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
   .md-opening-value {
     grid-row: span 2;
     padding-right: 15px;
@@ -397,11 +463,24 @@
   .md-opening-offer.is-compact .md-opening-methods {
     font-size: 11px;
   }
+  .md-launch-opening-hours {
+    gap: 7px;
+    font-size: 12px;
+  }
+  .md-first-confirmed-launch {
+    padding: 16px;
+  }
+  .md-first-confirmed-launch .md-launch-opening-hours {
+    font-size: 13px;
+  }
   .md-opening-actions {
     grid-column: 1;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 13px;
     justify-items: stretch;
+  }
+  .md-opening-actions > a:last-child {
+    justify-self: stretch;
   }
   .md-opening-cta {
     font-size: 12px;

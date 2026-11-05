@@ -1,6 +1,7 @@
 import { MEALDECK_BUSINESS } from "./business-identity";
 import { COMING_SOON } from "./launch-status";
 import { isMealDeckLaunchLocation } from "./mealdeck-launch-locations";
+import { MEALDECK_LAUNCH_DAYS } from "./mealdeck-launch-schedule";
 
 export const SITE_URL = "https://mealdeck.co.uk";
 export const OG_IMAGE = `${SITE_URL}/og-image.png`;
@@ -92,26 +93,23 @@ const business = (town: string, extra: Record<string, unknown> = {}) => {
 };
 
 export const lutonBusiness = business("Luton", {
-  ...(!COMING_SOON
-    ? {
-        openingHoursSpecification: [
-          {
-            "@type": "OpeningHoursSpecification",
-            dayOfWeek: [
-              "Monday",
-              "Tuesday",
-              "Wednesday",
-              "Thursday",
-              "Friday",
-              "Saturday",
-              "Sunday",
-            ],
-            opens: "17:00",
-            closes: "23:00",
-          },
-        ],
-      }
-    : {}),
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "314–318 Selbourne Road",
+    addressLocality: "Luton",
+    addressRegion: "Bedfordshire",
+    postalCode: "LU4 8NU",
+    addressCountry: "GB",
+  },
+  // These confirmed dates describe one opening weekend, not recurring daily
+  // hours or permission to place an order. The OrderAction keeps its own gate.
+  specialOpeningHoursSpecification: MEALDECK_LAUNCH_DAYS.map((day) => ({
+    "@type": "OpeningHoursSpecification",
+    validFrom: day.date,
+    validThrough: day.date,
+    opens: day.opensAt.slice(11, 19),
+    closes: day.closesAt.slice(11, 19),
+  })),
 });
 export const stAlbansBusiness = business("St Albans", {
   address: {

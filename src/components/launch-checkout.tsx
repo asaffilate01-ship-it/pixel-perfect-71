@@ -47,6 +47,22 @@ import {
 } from "@/lib/mealdeck-customer-browser";
 import { parseKerbsideVehicle, type MealDeckOpeningOffer } from "@/lib/mealdeck-opening-offer";
 import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timing";
+import {
+  CHECKOUT_MODE_KEY,
+  requestMealDeckCheckout,
+  type MealDeckCheckoutMode,
+} from "@/lib/mealdeck-checkout-browser";
+import {
+  GUEST_PRIVACY_VERSION,
+  normaliseGuestInput,
+  parseGuestCheckoutState,
+  type GuestCheckoutState,
+} from "@/lib/mealdeck-guest";
+import {
+  kitchenAcceptsNewOrders,
+  parseKitchenAvailability,
+  type KitchenAvailability,
+} from "@/lib/mealdeck-kitchen-availability";
 
 const FULFILMENT_KEY = "mealdeck-checkout-fulfilment-v1";
 const ATTEMPT_KEY = "mealdeck-checkout-attempt-v2";
@@ -106,7 +122,12 @@ type Receipt = {
   paymentSessionExpired: boolean;
   packingPlan: MealDeckPackingPlan;
 };
-type CheckoutStatus = { available: boolean; openingOffer: MealDeckOpeningOffer };
+type CheckoutStatus = {
+  available: boolean;
+  openingOffer: MealDeckOpeningOffer;
+  guestCheckout: GuestCheckoutState;
+  kitchen: KitchenAvailability | null;
+};
 type ApiResult = {
   quote?: Quote;
   receipt?: Receipt;
@@ -114,6 +135,7 @@ type ApiResult = {
   orderId?: string;
   message?: string;
   error?: string;
+  guestCheckout?: GuestCheckoutState;
 };
 
 function clock(value: string | null) {
@@ -126,22 +148,63 @@ function clock(value: string | null) {
     : "";
 }
 async function checkoutRequest(
+  mode: MealDeckCheckoutMode,
   input: Record<string, unknown>,
   signal?: AbortSignal,
 ): Promise<ApiResult> {
-  const token = await getMealDeckCustomerAccessToken();
-  if (!token) throw new Error("Sign in and verify your email to continue.");
-  const response = await fetch("/api/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-    body: JSON.stringify(input),
-    cache: "no-store",
-    ...(signal ? { signal } : {}),
-  });
-  const result = (await response.json()) as ApiResult;
-  if (!response.ok)
-    throw new Error(result.message ?? "We couldn't complete that request. Please try again.");
-  return result;
+  return requestMealDeckCheckout<ApiResult>(mode, input, getMealDeckCustomerAccessToken, signal);
+}
+
+function KitchenAvailabilityNotice({
+  status,
+  current,
+  available,
+}: {
+  status: CheckoutStatus | null;
+  current: boolean;
+  available: boolean;
+}) {
+  if (!status || (current && available && status.kitchen?.state !== "busy")) return null;
+  const kitchen = status.kitchen;
+  let tone = "unavailable";
+  let heading = "Ordering is currently unavailable";
+  let message = "You can still browse the menus and prepare your basket.";
+  if (!current) {
+    heading = "We can't confirm ordering availability";
+    message = "Check your connection to see the latest availability.";
+  } else if (kitchen?.state === "paused") {
+    tone = "paused";
+    heading = "Ordering is temporarily paused";
+    message =
+      "We're not accepting new orders right now. You can still browse and keep your basket for later.";
+  } else if (kitchen?.state === "closed") {
+    tone = "closed";
+    heading = "The Luton kitchen is closed";
+    message =
+      "We're not accepting new orders right now. You can still browse and keep your basket for later.";
+  } else if (available && kitchen?.state === "busy") {
+    tone = "busy";
+    heading = "We're busy";
+    message =
+      kitchen.collectionEstimateMinutes === null
+        ? "Your pickup estimate will be confirmed before payment."
+        : `Current pickup estimate for new orders: about ${kitchen.collectionEstimateMinutes} minutes after payment.`;
+  }
+  return (
+    <section
+      className={`md-checkout-kitchen-notice is-${tone}`}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <Clock3 size={23} aria-hidden="true" />
+      <div>
+        <p className="md-checkout-kitchen-label">Luton · New orders</p>
+        <h2>{heading}</h2>
+        <p>{message}</p>
+      </div>
+    </section>
+  );
 }
 
 function DetailedOrderLines({
@@ -334,6 +397,10 @@ export function LaunchCheckout({
   const [account, setAccount] = useState<CustomerAccountState | null>(null);
   const [accountIssue, setAccountIssue] = useState<string | null>(null);
   const [status, setStatus] = useState<CheckoutStatus | null>(null);
+  const [statusCurrent, setStatusCurrent] = useState(false);
+  const [checkoutMode, setCheckoutMode] = useState<MealDeckCheckoutMode>("member");
+  const [guestDetails, setGuestDetails] = useState({ name: "", email: "", phone: "" });
+  const [guestIssue, setGuestIssue] = useState<string | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [issue, setIssue] = useState<string | null>(null);
@@ -350,8 +417,23 @@ export function LaunchCheckout({
   const receiptRequest = useRef(0);
   const receiptInFlight = useRef(false);
   const checkoutRequestId = useRef(0);
+  const statusRequestId = useRef(0);
+  const guestStateVersion = useRef(0);
   const registered = account?.status === "signed_in" && account.profile.registered;
-  const customerIdentity = account?.status === "signed_in" ? account.profile.userId : null;
+  const guestSession = status?.guestCheckout.session ?? null;
+  const orderingAvailable =
+    status?.available === true &&
+    status.kitchen !== null &&
+    kitchenAcceptsNewOrders(status.kitchen.state) &&
+    status.kitchen.collectionEstimateMinutes !== null;
+  const guestEligible = orderingAvailable && status?.guestCheckout.eligible === true;
+  const canViewReceipt = checkoutMode === "guest" ? Boolean(guestSession) : registered;
+  const canCheckout =
+    orderingAvailable && canViewReceipt && (checkoutMode === "member" || guestEligible);
+  const customerIdentity =
+    checkoutMode === "guest"
+      ? "guest:" + (guestSession?.id ?? "new")
+      : "member:" + (account?.status === "signed_in" ? account.profile.userId : "signed-out");
   const displayTotal = launchMenuBasketDisplayPrice(picks).itemsSubtotalPence;
 
   useEffect(() => {
@@ -365,6 +447,7 @@ export function LaunchCheckout({
     try {
       const saved = sessionStorage.getItem(FULFILMENT_KEY);
       if (saved === "pickup" || saved === "curbside") setFulfilment(saved);
+      if (sessionStorage.getItem(CHECKOUT_MODE_KEY) === "guest") setCheckoutMode("guest");
     } catch {
       /* Optional restoration. */
     }
@@ -395,29 +478,73 @@ export function LaunchCheckout({
       }
     });
     const controller = new AbortController();
-    void fetch("/api/checkout", { cache: "no-store", signal: controller.signal })
-      .then((response) => response.json())
-      .then((data: CheckoutStatus) => {
-        if (alive.current) setStatus(data);
+    const refreshStatus = () => {
+      if (document.visibilityState === "hidden") return;
+      const requestId = ++statusRequestId.current;
+      const guestVersion = guestStateVersion.current;
+      void fetch("/api/checkout", {
+        cache: "no-store",
+        credentials: "same-origin",
+        signal: controller.signal,
       })
-      .catch(() => {
-        if (alive.current)
-          setStatus({
-            available: false,
-            openingOffer: {
-              status: "unscheduled",
-              startsAt: null,
-              endsAt: null,
-              timezone: "Europe/London",
-              serverNow: new Date().toISOString(),
-            },
-          });
-      });
+        .then(async (response) => {
+          if (!response.ok) throw new Error("Checkout status unavailable.");
+          return (await response.json()) as CheckoutStatus;
+        })
+        .then((data) => {
+          if (
+            alive.current &&
+            !controller.signal.aborted &&
+            requestId === statusRequestId.current &&
+            guestVersion === guestStateVersion.current
+          ) {
+            setStatus({
+              ...data,
+              available: data.available === true,
+              kitchen: parseKitchenAvailability(data.kitchen),
+              guestCheckout: parseGuestCheckoutState(data.guestCheckout) ?? {
+                eligible: false,
+                session: null,
+              },
+            });
+            setStatusCurrent(true);
+          }
+        })
+        .catch(() => {
+          if (
+            alive.current &&
+            !controller.signal.aborted &&
+            requestId === statusRequestId.current &&
+            guestVersion === guestStateVersion.current
+          ) {
+            setStatus((current) => ({
+              available: false,
+              kitchen: current?.kitchen ?? null,
+              guestCheckout: { eligible: false, session: current?.guestCheckout.session ?? null },
+              openingOffer: current?.openingOffer ?? {
+                status: "unscheduled",
+                startsAt: null,
+                endsAt: null,
+                timezone: "Europe/London",
+                serverNow: new Date().toISOString(),
+              },
+            }));
+            setStatusCurrent(false);
+          }
+        });
+    };
+    refreshStatus();
+    const statusTimer = setInterval(refreshStatus, 30_000);
+    document.addEventListener("visibilitychange", refreshStatus);
+    window.addEventListener("online", refreshStatus);
     return () => {
       alive.current = false;
       checkoutRequestId.current += 1;
       unsubscribe?.();
       controller.abort();
+      clearInterval(statusTimer);
+      document.removeEventListener("visibilitychange", refreshStatus);
+      window.removeEventListener("online", refreshStatus);
     };
   }, []);
 
@@ -432,6 +559,7 @@ export function LaunchCheckout({
     setReceiptRefreshed(false);
     setQuote(null);
     setReviewConfirmed(false);
+    setIssue(null);
     attempt.current = null;
   }, [customerIdentity, orderId]);
 
@@ -441,7 +569,7 @@ export function LaunchCheckout({
       receiptInFlight.current = true;
       const requestId = ++receiptRequest.current;
       try {
-        const result = await checkoutRequest({ action: "receipt", orderId }, signal);
+        const result = await checkoutRequest(checkoutMode, { action: "receipt", orderId }, signal);
         if (
           alive.current &&
           requestId === receiptRequest.current &&
@@ -461,11 +589,16 @@ export function LaunchCheckout({
         if (requestId === receiptRequest.current) receiptInFlight.current = false;
       }
     },
-    [orderId],
+    [orderId, checkoutMode],
   );
 
   useEffect(() => {
-    if (!orderId || !registered || receipt?.completedAt || receipt?.paymentStatus === "refunded")
+    if (
+      !orderId ||
+      !canViewReceipt ||
+      receipt?.completedAt ||
+      receipt?.paymentStatus === "refunded"
+    )
       return;
     const controller = new AbortController();
     const refresh = () => {
@@ -484,7 +617,7 @@ export function LaunchCheckout({
     };
   }, [
     orderId,
-    registered,
+    canViewReceipt,
     customerIdentity,
     receipt?.completedAt,
     receipt?.paymentStatus,
@@ -519,6 +652,91 @@ export function LaunchCheckout({
     }
   }, [receipt]);
 
+  function chooseCheckoutMode(next: MealDeckCheckoutMode) {
+    if (next === checkoutMode) return;
+    checkoutRequestId.current += 1;
+    receiptRequest.current += 1;
+    receiptInFlight.current = false;
+    setCheckoutMode(next);
+    setBusy(false);
+    setQuote(null);
+    setReceipt(null);
+    setReceiptRefreshed(false);
+    setReviewConfirmed(false);
+    attempt.current = null;
+    setIssue(null);
+    setGuestIssue(null);
+    try {
+      sessionStorage.setItem(CHECKOUT_MODE_KEY, next);
+    } catch {
+      /* The selection still applies to this screen. */
+    }
+  }
+  async function saveGuestDetails() {
+    if (busy || !guestEligible) return;
+    setGuestIssue(null);
+    let contact: ReturnType<typeof normaliseGuestInput>;
+    try {
+      contact = normaliseGuestInput({
+        action: "guest",
+        ...guestDetails,
+        privacyVersion: GUEST_PRIVACY_VERSION,
+      });
+    } catch (error) {
+      setGuestIssue(error instanceof Error ? error.message : "Please check your contact details.");
+      return;
+    }
+    const requestId = ++checkoutRequestId.current;
+    guestStateVersion.current += 1;
+    setBusy(true);
+    try {
+      const result = await checkoutRequest("guest", {
+        action: "guest",
+        ...contact,
+        privacyVersion: GUEST_PRIVACY_VERSION,
+      });
+      const next = parseGuestCheckoutState(result.guestCheckout);
+      if (!next?.session) throw new Error("We couldn't save your guest details. Please try again.");
+      if (alive.current && requestId === checkoutRequestId.current) {
+        setGuestDetails(contact);
+        setStatus((current) => (current ? { ...current, guestCheckout: next } : current));
+      }
+    } catch (error) {
+      if (alive.current && requestId === checkoutRequestId.current)
+        setGuestIssue(
+          error instanceof Error ? error.message : "We couldn't save your guest details.",
+        );
+    } finally {
+      guestStateVersion.current += 1;
+      if (alive.current && requestId === checkoutRequestId.current) setBusy(false);
+    }
+  }
+  async function endGuestSession() {
+    if (busy) return;
+    const requestId = ++checkoutRequestId.current;
+    guestStateVersion.current += 1;
+    setBusy(true);
+    setGuestIssue(null);
+    try {
+      await checkoutRequest("guest", { action: "end_guest" });
+      if (alive.current && requestId === checkoutRequestId.current) {
+        setStatus((current) =>
+          current
+            ? { ...current, guestCheckout: { ...current.guestCheckout, session: null } }
+            : current,
+        );
+        setGuestDetails({ name: "", email: "", phone: "" });
+      }
+    } catch (error) {
+      if (alive.current && requestId === checkoutRequestId.current)
+        setGuestIssue(
+          error instanceof Error ? error.message : "We couldn't end your guest session.",
+        );
+    } finally {
+      guestStateVersion.current += 1;
+      if (alive.current && requestId === checkoutRequestId.current) setBusy(false);
+    }
+  }
   function chooseFulfilment(next: Fulfilment) {
     setFulfilment(next);
     setQuote(null);
@@ -549,7 +767,7 @@ export function LaunchCheckout({
     );
   }
   async function reviewTotal() {
-    if (!fulfilment || busy) return;
+    if (!fulfilment || busy || !canCheckout) return;
     if (fulfilment === "curbside" && !parseKerbsideVehicle(vehicle)) {
       setIssue("Enter the car make, colour and last 4 registration characters.");
       return;
@@ -558,7 +776,7 @@ export function LaunchCheckout({
     setBusy(true);
     setIssue(null);
     try {
-      const result = await checkoutRequest({
+      const result = await checkoutRequest(checkoutMode, {
         action: "quote",
         fulfilment,
         picks: picks.map(({ brandId, itemId, quantity, selections, crossSelections }) => ({
@@ -595,7 +813,7 @@ export function LaunchCheckout({
     }
   }
   async function pay(quoteId: string) {
-    if (busy) return;
+    if (busy || !canCheckout) return;
     const requestId = ++checkoutRequestId.current;
     if (attempt.current?.quoteId !== quoteId)
       attempt.current = { quoteId, attemptId: crypto.randomUUID() };
@@ -603,7 +821,11 @@ export function LaunchCheckout({
     setBusy(true);
     setIssue(null);
     try {
-      const result = await checkoutRequest({ action: "pay", ...selected, reviewConfirmed: true });
+      const result = await checkoutRequest(checkoutMode, {
+        action: "pay",
+        ...selected,
+        reviewConfirmed: true,
+      });
       if (!alive.current || requestId !== checkoutRequestId.current) return;
       if (!result.checkoutUrl || !result.orderId)
         throw new Error("We couldn't open secure payment. Please try again.");
@@ -611,6 +833,7 @@ export function LaunchCheckout({
       if (url.origin !== "https://checkout.stripe.com" || !url.pathname.startsWith("/c/pay/"))
         throw new Error("The payment link could not be verified.");
       try {
+        sessionStorage.setItem(CHECKOUT_MODE_KEY, checkoutMode);
         sessionStorage.setItem(
           ATTEMPT_KEY,
           JSON.stringify({
@@ -651,19 +874,56 @@ export function LaunchCheckout({
           </div>
           <MealDeckLogo className="md-checkout-logo" />
         </header>
-        {orderId && !registered ? (
+        <KitchenAvailabilityNotice
+          status={status}
+          current={statusCurrent}
+          available={orderingAvailable}
+        />
+        {orderId && (guestSession || checkoutMode === "guest") && (
+          <div className="md-checkout-notice md-checkout-identity-note">
+            <span>
+              {checkoutMode === "guest"
+                ? !status
+                  ? "Checking this browser's guest session."
+                  : guestSession
+                    ? "Viewing your private guest order."
+                    : "No guest session is available in this browser."
+                : "Ordered as a guest on this browser?"}
+            </span>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => chooseCheckoutMode(checkoutMode === "guest" ? "member" : "guest")}
+            >
+              {checkoutMode === "guest" ? "Use member account" : "View guest order"}
+            </button>
+          </div>
+        )}
+        {orderId && !canViewReceipt ? (
           <section className="md-checkout-card">
-            <h2>Sign in to see your order</h2>
+            <h2>
+              {!status
+                ? "Checking private order access"
+                : checkoutMode === "guest"
+                  ? "Use the browser you ordered from"
+                  : "Sign in to see your order"}
+            </h2>
             <p>
-              Your order details are private. Sign in with the same verified email, then reopen this
-              order link.
+              {checkoutMode === "guest"
+                ? "Guest orders are private to the browser used at checkout. If its guest session has expired or cookies were cleared, contact MealDeck with your order reference."
+                : "Your order details are private. For a member order, sign in with the same verified email, then reopen this order link."}
             </p>
-            {accountIssue && <p role="status">{accountIssue}</p>}
-            <Link to="/account" search={{ returnTo: "/checkout" }} className="md-checkout-primary">
+            {checkoutMode === "member" && accountIssue && <p role="status">{accountIssue}</p>}
+            <Link
+              to="/account"
+              onClick={() => chooseCheckoutMode("member")}
+              search={{ returnTo: "/checkout" }}
+              className="md-checkout-primary"
+            >
               Sign in securely
             </Link>
           </section>
-        ) : orderId && registered ? (
+        ) : orderId && canViewReceipt ? (
           <>
             {issue && (
               <div className="md-checkout-notice" role="status">
@@ -738,7 +998,7 @@ export function LaunchCheckout({
                         </p>
                         <button
                           className="md-checkout-primary"
-                          disabled={busy}
+                          disabled={busy || !canCheckout}
                           type="button"
                           onClick={() => {
                             void pay(receipt.quoteId);
@@ -751,6 +1011,12 @@ export function LaunchCheckout({
                           )}
                           Continue payment
                         </button>
+                        {!canCheckout && (
+                          <p className="md-checkout-notice">
+                            Payment is currently unavailable. Your order details remain accessible
+                            here.
+                          </p>
+                        )}
                       </>
                     )}
                     {receipt.paymentSessionExpired && !receipt.verifiedPaid && (
@@ -769,6 +1035,27 @@ export function LaunchCheckout({
                       </p>
                     )}
                     <p className="md-checkout-reference">Reference: {receipt.orderId}</p>
+                    {checkoutMode === "guest" && (
+                      <div className="md-checkout-guest-receipt">
+                        <h3>Your guest order</h3>
+                        <p>
+                          Keep this order link and use this browser to check its progress. Clearing
+                          cookies or ending your guest session removes access.
+                        </p>
+                        <p>
+                          This guest order earns no loyalty points. Registration is optional for
+                          future member offers and does not move this order into an account.
+                        </p>
+                        <Link
+                          to="/account"
+                          search={{ returnTo: "/checkout" }}
+                          className="md-checkout-refresh"
+                          onClick={() => chooseCheckoutMode("member")}
+                        >
+                          Register for future orders
+                        </Link>
+                      </div>
+                    )}
                   </section>
                   {receipt.verifiedPaid && <ReceiptProgress receipt={receipt} />}
                 </div>
@@ -841,7 +1128,144 @@ export function LaunchCheckout({
                   <h2>
                     <span className="md-checkout-step">2</span>Your details
                   </h2>
-                  {registered && account?.status === "signed_in" ? (
+                  {(guestEligible || guestSession || checkoutMode === "guest") && (
+                    <div
+                      className="md-checkout-identity-options"
+                      role="group"
+                      aria-label="Checkout account choice"
+                    >
+                      <button
+                        type="button"
+                        disabled={busy}
+                        aria-pressed={checkoutMode === "member"}
+                        onClick={() => chooseCheckoutMode("member")}
+                      >
+                        Member checkout
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy || (!guestEligible && !guestSession)}
+                        aria-pressed={checkoutMode === "guest"}
+                        onClick={() => chooseCheckoutMode("guest")}
+                      >
+                        Continue as guest
+                      </button>
+                    </div>
+                  )}
+                  {checkoutMode === "guest" ? (
+                    <div className="md-checkout-guest">
+                      <p>
+                        Order without creating an account. Guest orders earn no loyalty points. The
+                        30% opening offer applies during launch hours; other member offers require
+                        registration.
+                      </p>
+                      {!guestEligible && (
+                        <p className="md-checkout-notice" role="status">
+                          Guest checkout is available only during launch opening hours. Existing
+                          guest orders remain accessible in this browser.
+                        </p>
+                      )}
+                      {guestSession ? (
+                        <>
+                          <div className="md-checkout-member">
+                            <ShoppingBag size={25} />
+                            <div>
+                              <strong>{guestSession.name}</strong>
+                              <span>{guestSession.email}</span>
+                              <span>{guestSession.phone}</span>
+                              <small>Guest contact details</small>
+                            </div>
+                          </div>
+                          <p className="md-checkout-muted">
+                            To use different contact details, end this guest session first. This
+                            removes access to earlier guest receipts in this browser.
+                          </p>
+                          <button
+                            type="button"
+                            className="md-checkout-refresh"
+                            disabled={busy}
+                            onClick={() => {
+                              void endGuestSession();
+                            }}
+                          >
+                            End guest session
+                          </button>
+                        </>
+                      ) : (
+                        <form
+                          className="md-checkout-guest-form"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void saveGuestDetails();
+                          }}
+                        >
+                          <fieldset disabled={busy || !guestEligible}>
+                            <legend className="sr-only">Guest contact details</legend>
+                            <label>
+                              Your name
+                              <input
+                                required
+                                autoComplete="name"
+                                maxLength={120}
+                                value={guestDetails.name}
+                                onChange={(event) =>
+                                  setGuestDetails({ ...guestDetails, name: event.target.value })
+                                }
+                              />
+                            </label>
+                            <label>
+                              Email
+                              <input
+                                required
+                                type="email"
+                                autoComplete="email"
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                maxLength={254}
+                                value={guestDetails.email}
+                                onChange={(event) =>
+                                  setGuestDetails({ ...guestDetails, email: event.target.value })
+                                }
+                              />
+                            </label>
+                            <label>
+                              Mobile number
+                              <input
+                                required
+                                type="tel"
+                                autoComplete="tel"
+                                maxLength={40}
+                                placeholder="e.g. 07700 900123"
+                                value={guestDetails.phone}
+                                onChange={(event) =>
+                                  setGuestDetails({ ...guestDetails, phone: event.target.value })
+                                }
+                              />
+                            </label>
+                            <p className="md-checkout-muted">
+                              We use these details to process your order and contact you about
+                              collection. Continuing acknowledges our{" "}
+                              <Link to="/privacy">Privacy Notice</Link>. This does not sign you up
+                              for marketing.
+                            </p>
+                            <button type="submit" className="md-checkout-primary">
+                              {busy ? (
+                                <Loader2 size={18} className="md-checkout-spin" />
+                              ) : (
+                                <Check size={18} />
+                              )}
+                              Save guest details
+                            </button>
+                          </fieldset>
+                        </form>
+                      )}
+                      {guestIssue && (
+                        <p className="md-checkout-notice" role="alert">
+                          {guestIssue}
+                        </p>
+                      )}
+                    </div>
+                  ) : registered && account?.status === "signed_in" ? (
                     <div className="md-checkout-member">
                       <MailCheck size={25} />
                       <div>
@@ -863,8 +1287,8 @@ export function LaunchCheckout({
                       <div className="md-checkout-benefit">
                         <ShieldCheck size={21} />
                         <p>
-                          A verified account qualifies for the 30% opening offer during the
-                          three-day launch weekend. Marketing is optional.
+                          Members and guests receive the 30% opening offer during launch hours.
+                          Register for future member offers; marketing is optional.
                         </p>
                       </div>
                       {accountIssue && (
@@ -888,7 +1312,7 @@ export function LaunchCheckout({
                   </p>
                 </section>
               )}
-              {fulfilment === "curbside" && registered && (
+              {fulfilment === "curbside" && canViewReceipt && (
                 <section className="md-checkout-card">
                   <h2>
                     <span className="md-checkout-step">3</span>Help us find your car
@@ -947,7 +1371,7 @@ export function LaunchCheckout({
                   </div>
                 </section>
               )}
-              {registered && fulfilment && picks.length > 0 && (
+              {canViewReceipt && fulfilment && picks.length > 0 && (
                 <section className="md-checkout-card md-checkout-packing">
                   <h2>
                     <span className="md-checkout-step">
@@ -1204,15 +1628,8 @@ export function LaunchCheckout({
                       Your 30% opening discount will be applied to the verified checkout total.
                     </p>
                   ) : null}
-                  {!status?.available && (
-                    <p className="md-checkout-notice" role="status">
-                      Ordering is being prepared for Luton. You can browse, build your basket and
-                      register now.
-                    </p>
-                  )}
-                  {registered &&
+                  {canCheckout &&
                     fulfilment &&
-                    status?.available &&
                     (quote ? (
                       <>
                         <p className="md-checkout-muted">

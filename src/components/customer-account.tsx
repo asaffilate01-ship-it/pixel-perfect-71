@@ -66,8 +66,9 @@ function Preferences({
         Make it your deck <span>Optional</span>
       </legend>
       <p>
-        Choose what you hear from MealDeck, a trading name of 313 Brands Ltd. You can change these
-        choices at any time.
+        As a registered member, choose what you hear from MealDeck, a trading name of 313 Brands
+        Ltd. Offer emails and app alerts need your separate opt-in. You can change these choices at
+        any time.
       </p>
       <label>
         <input
@@ -204,7 +205,7 @@ function CustomerEntry({
       </h2>
       <p>
         {mode === "register"
-          ? "Create your account, verify your email, and be ready for the Luton opening offer."
+          ? "Create your account and verify your email for member offers and optional offer alerts. Guest ordering is also available during our opening hours on 6–8 November."
           : "We’ll email you a secure sign-in link. No password to remember."}
       </p>
       <form
@@ -871,13 +872,13 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: "/menus" |
               <span className="md-account-eyebrow">OPENING WEEKEND</span>
               <h2>30% off everything.</h2>
               <p>
-                Three days only. No minimum order. Luton collection or kerbside pickup, for
-                registered customers with a verified email.
+                6–8 November 2026, during opening hours. No minimum order. Luton collection or
+                kerbside pickup, for guests and registered members.
               </p>
               <p className="md-account-fine">
                 Check <a href="/opening-offer">offer dates and details</a>. The discount applies
                 automatically when the offer is live and your order is eligible. Marketing choices
-                are optional.
+                are optional. Guest orders earn no loyalty points.
               </p>
               <a href="/menus">
                 Explore the menus
@@ -908,7 +909,10 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: "/menus" |
                   </p>
                 </>
               )}
-              <p className="md-account-fine">No marketing opt-in is needed to take part.</p>
+              <p className="md-account-fine">
+                Guest orders earn no loyalty points. No marketing opt-in is needed for loyalty
+                membership.
+              </p>
             </section>
             <section className="md-account-panel md-account-app">
               <div className="md-account-section-heading">

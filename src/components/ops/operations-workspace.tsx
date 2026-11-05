@@ -1025,6 +1025,20 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                   ))}
                 {selectedSection === "overview" && (
                   <div className="space-y-5">
+                    {!!location &&
+                      can("finance.manage") &&
+                      accesses.some(
+                        (access) =>
+                          access.tenant_id === tenant &&
+                          (access.location_id === null || access.location_id === location) &&
+                          (access.role === "owner" || access.role === "admin"),
+                      ) && (
+                        <CheckoutLaunchSettings
+                          key={tenant + ":" + location}
+                          tenantId={tenant}
+                          locationId={location}
+                        />
+                      )}
                     <PaidOrdersGoalPanel locations={data.paidGoalLocations} />
                     <OpsAnalyticsPanel analytics={data.analytics} brandSales={data.brandSales} />
                   </div>
@@ -1101,10 +1115,20 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 )}
                 {selectedSection === "finance" && (
                   <>
-                    {!!location && can("finance.manage") && accesses.some((access) =>
-                      access.tenant_id === tenant && (access.location_id === null || access.location_id === location) &&
-                      (access.role === "owner" || access.role === "admin")) &&
-                      <CheckoutLaunchSettings key={tenant + ":" + location} tenantId={tenant} locationId={location} />}
+                    {!!location &&
+                      can("finance.manage") &&
+                      accesses.some(
+                        (access) =>
+                          access.tenant_id === tenant &&
+                          (access.location_id === null || access.location_id === location) &&
+                          (access.role === "owner" || access.role === "admin"),
+                      ) && (
+                        <CheckoutLaunchSettings
+                          key={tenant + ":" + location}
+                          tenantId={tenant}
+                          locationId={location}
+                        />
+                      )}
                     <OpsFinancePanel {...common} finance={data.finance} expenses={data.expenses} />
                   </>
                 )}

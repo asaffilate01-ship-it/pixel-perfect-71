@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LocationPage } from "@/components/location-page";
 import { ldScript, lutonBusiness, seo } from "@/lib/seo";
+import { MEALDECK_LAUNCH_HOURS_LABEL } from "@/lib/mealdeck-launch-schedule";
 
 export const Route = createFileRoute("/luton")({
   head: () => ({
     ...seo({
       title: "MealDeck Luton — Five Brands, One Launch Kitchen",
-      description: "Luton launches first with Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Browse the five menus. Delivery, pickup and kerbside ordering are coming soon.",
+      description: "MealDeck Luton opens 6–8 November 2026: Friday 3pm–11pm, Saturday and Sunday 1pm–11pm. Five brands, collection or kerbside, and 30% off with no minimum. Guests welcome; delivery is unavailable.",
       path: "/luton",
       keywords: "MealDeck Luton, food delivery Luton, smash burgers Luton, chicken Luton, Mediterranean grill Luton, loaded fries Luton, mocktails Luton",
     }),
@@ -15,15 +16,16 @@ export const Route = createFileRoute("/luton")({
   component: () => (
     <LocationPage
       town="Luton"
-      intro="Our first launch is Luton: Skorch smash burgers, Tavo Chicken, Souvano Mediterranean grill, Load’d loaded fries and mac ’n’ cheese, and Moktl mocktails — five brands from one kitchen. Browse the menus while we prepare to open ordering. More brands, St Albans and Bedford are coming in future decks."
-      hours="5pm–11pm · Monday to Sunday"
-      fulfilment="Delivery · Pickup · Kerbside · Ordering soon"
-      areas={["Luton town centre", "Bury Park", "High Town", "Stopsley", "Leagrave", "Marsh Farm", "Wigmore", "Farley Hill", "Delivery coverage to be confirmed before launch"]}
+      intro="Luton opens 6–8 November 2026 with Skorch smash burgers, Tavo Chicken, Souvano Mediterranean grill, Load’d loaded fries and mac ’n’ cheese, and Moktl mocktails. Five brands, one basket, collection or kerbside. Guests can order without registering during our first three days’ opening hours, with no loyalty points on guest orders."
+      hours={MEALDECK_LAUNCH_HOURS_LABEL}
+      fulfilment="Collection · Kerbside · Delivery unavailable"
+      areas={["Collection and kerbside from 314–318 Selbourne Road, Luton, LU4 8NU", "Delivery is not available for this launch"]}
       includeCafe1={false}
       faqs={[
-        { q: "When is MealDeck opening in Luton?", a: "Luton is our first launch kitchen. Planned hours are 5pm to 11pm, Monday to Sunday. Ordering is not open yet; the opening date will be confirmed here." },
+        { q: "When is MealDeck opening in Luton?", a: "Our opening weekend is 6–8 November 2026: Friday 6 November, 3pm–11pm; Saturday 7 November and Sunday 8 November, 1pm–11pm. All times are UK local time. Online ordering remains coming soon while the service is prepared for launch." },
         { q: "Which brands are in the first launch?", a: "Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Mix the five launch brands in one basket when ordering opens. The other brands are planned for later decks." },
-        { q: "Will Luton offer walk-in pickup or kerbside collection?", a: "Yes, the Luton launch plan includes delivery, pickup and kerbside collection. Ordering and collection are not open yet. St Albans and Bedford remain coming soon." },
+        { q: "Can I collect my order or use kerbside pickup?", a: "Yes. Collection and kerbside pickup are the two launch options. Delivery is unavailable. For kerbside, enter the car make, colour and last four registration characters. St Albans and Bedford remain coming soon." },
+        { q: "Do I need to register?", a: "You can order as a guest during the opening hours on 6–8 November. Guest orders earn no loyalty points. Register and verify your email for member offers; offer emails and promotional app alerts also need your separate opt-in. The loyalty programme is coming soon." },
         { q: "Can my group split the bill?", a: "Group ordering and split payments are planned. They will become available once the payment and ordering service is ready; no payments are being accepted yet." },
       ]}
     />

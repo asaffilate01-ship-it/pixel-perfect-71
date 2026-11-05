@@ -12,7 +12,7 @@ No Auth users or businesses exist yet. `info@mealdeck.co.uk` must register and v
 
 The separate customer membership extension was also applied atomically and verified: five private customer tables all have RLS, the customer profile RPC is unavailable to `anon` and available to authenticated users, and no public owner-bootstrap RPC was introduced. Its public capability response confirms registration availability, with push sending and loyalty earning still disabled pending configuration. No customer account, email or order was created by the installation.
 
-The owner's latest detailed prices for **Skorch, Tavo, Load’d, Moktl and Souvano** supersede the £20 placeholders discussed in the historical records below. The current source catalogue contains 79 items; Souvano's three mains are £6.50, £6.99 and £9.99 including fries/rice/naan. The reviewed price revision checks old values and preserves unrelated administrator edits. Milkshake upgrades retain the supplied £2.99 price but remain unavailable until flavour choices are supplied. Opening-weekend dates are not supplied; the 30% campaign must remain unscheduled until confirmed.
+The owner's latest detailed prices for **Skorch, Tavo, Load’d, Moktl and Souvano** supersede the £20 placeholders discussed in the historical records below. The current source catalogue contains 79 items; Souvano's three mains are £6.50, £6.99 and £9.99 including fries/rice/naan. The reviewed price revision checks old values and preserves unrelated administrator edits. Milkshake upgrades retain the supplied £2.99 price but remain unavailable until flavour choices are supplied. The owner subsequently confirmed opening on 6 November, 15:00–23:00, and 7–8 November, 13:00–23:00, Europe/London, with guest ordering and no guest loyalty points. See the [confirmed opening guide](mealdeck-opening-guest-checkout.md); these dates supersede earlier unscheduled campaign notes.
 
 ### Checkout, kitchen and printer installation — 09:38 UTC
 
@@ -20,10 +20,10 @@ The complete release source is in [PR #70](https://github.com/asaffilate01-ship-
 
 Each unchanged additive migration below was submitted to the same MealDeck Lovable project as **one complete query with its own outer transaction**. Both returned success, followed by independent read-only verification. The historical foundation installer was not rerun or edited.
 
-| Migration | UTF-8 bytes | SHA-256 |
-| --- | ---: | --- |
-| `20261105082900_mealdeck_stripe_checkout.sql` | 44,646 | `d526795e1d691c4f14936191b4cf1b7a4c4c8c6fa2b8d695d54410fe65bd681e` |
-| `20261105090147_mealdeck_kitchen_printer.sql` | 39,573 | `3a6662a3361e9dbe45d71f93044a7a72f8a0c7e07deb1ed8b4b33dd94595c9fc` |
+| Migration                                     | UTF-8 bytes | SHA-256                                                            |
+| --------------------------------------------- | ----------: | ------------------------------------------------------------------ |
+| `20261105082900_mealdeck_stripe_checkout.sql` |      44,646 | `d526795e1d691c4f14936191b4cf1b7a4c4c8c6fa2b8d695d54410fe65bd681e` |
+| `20261105090147_mealdeck_kitchen_printer.sql` |      39,573 | `3a6662a3361e9dbe45d71f93044a7a72f8a0c7e07deb1ed8b4b33dd94595c9fc` |
 
 At `2026-11-05 09:38:16.468866+00`, hosted verification confirmed:
 
@@ -34,7 +34,27 @@ At `2026-11-05 09:38:16.468866+00`, hosted verification confirmed:
 - There are still **zero Auth users, businesses, orders and receipts**. Installation created no merchant/customer account, order, captured payment or physical print.
 - Registration is available. Push sending and loyalty earning remain disabled pending their configuration.
 
-The installed schema and merged/published source are distinct from live ordering activation. The next required input is the intended owner's verified account, `info@mealdeck.co.uk`, followed by private owner/kitchen bootstrap and reviewed catalogue publication. Server-only Stripe credentials, account/mode/webhook settings, release acceptance, opening dates and pickup estimates still need their real configuration. The printer requires a compatible device, local bridge/TLS setup and a physical paper check. See the [checkout guide](mealdeck-opening-checkout.md), [customer guide](mealdeck-customer-membership.md) and [kitchen/printer guide](mealdeck-kitchen-printer.md).
+The installed schema and merged/published source are distinct from live ordering activation. The next required input is the intended owner's verified account, `info@mealdeck.co.uk`, followed by private owner/kitchen bootstrap and reviewed catalogue publication. Server-only Stripe credentials, account/mode/webhook settings, release acceptance and pickup estimates still need their real configuration. The printer requires a compatible device, local bridge/TLS setup and a physical paper check. See the [checkout guide](mealdeck-opening-checkout.md), [customer guide](mealdeck-customer-membership.md) and [kitchen/printer guide](mealdeck-kitchen-printer.md).
+
+### Confirmed hours and guest checkout installation — 15:10 UTC
+
+The guest release source is in [PR #71](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/71), implementation commit `71ea6697b14766f1cd239c463f32ffbab2ff9297`. All eight jobs in [Verify MealDeck run 735](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42051399322) passed before installation, including the native PostgreSQL 17 guest suite and its concurrent service-connection case. Local validation passed 690 unit tests, 23 receipt-bridge tests, TypeScript, scoped lint and production build. Local responsive browser review was blocked by the preview host allowlist; no visual browser pass is claimed for that environment.
+
+The unchanged `20261105143652_mealdeck_opening_guest_checkout.sql` (36,303 UTF-8 bytes; SHA-256 `e243e1347ec8bea697eac34dffd79e4effffd517b186ad540bfc141cd1711675`) was submitted to the same verified independent MealDeck project as one complete request with its own `begin`/`commit`. It succeeded. Historical installers were not rerun.
+
+At `2026-11-05 15:10:28.725356+00`, a separate read-only query verified all security and window invariants: nineteen routine definitions and access policies, thirteen relevant table RLS/ACL checks, all 42 public tables protected, identity/scope constraints, fifteen exact opening-time boundaries, and the original server-clock wrapper using `now()`. Guest RPCs are available only to the service role; no direct API-role table grants were introduced. The configured campaign starts 6 November at 15:00 and ends 8 November at 23:00, Europe/London, with nightly closure. The fixed-date default is present.
+
+The same verification found zero Auth users, owner accounts, businesses, orders, receipts, guest sessions, quotes, Stripe records, customer profiles, consent entries, loyalty entries or push subscriptions. Checkout settings remain disabled/unbound; push and loyalty remain disabled. Installation did not create an owner, customer, payment or print. Owner verification and real checkout activation are still required. The later Online/Busy/Pause/Closed addition is tracked separately below when installed.
+
+### Online / Busy / Pause / Closed installation — 15:21 UTC
+
+The admin availability addition is implementation commit `7973feda911f1dd55dd700d0eb086f08b5a2daa5` in the same PR #71. All nine jobs in [Verify MealDeck run 737](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42053777999) passed before installation. Native PostgreSQL 17 passed all 16 availability groups, including concurrent audit changes, an ETA update waiting for payment preparation, and an estimate-only save waiting behind another admin's Pause. The completed application passed 693 local unit tests with 5,813 assertions, production build, TypeScript and scoped lint; the receipt bridge's 23 tests also passed.
+
+The unchanged `20261105150406_mealdeck_kitchen_availability.sql` (15,352 UTF-8 bytes; SHA-256 `dc9d88fe6f7abe7ebbdde3c69bfcc7c1ad00bc2da9c6eaa80d06d41ea1fbabc0`) was submitted as one complete query with its outer transaction to the same verified independent MealDeck project. The request succeeded.
+
+Independent verification at `2026-11-05 15:21:37.306427+00` confirmed the Closed default, state/enabled consistency constraints, hardened routine grants, RLS and two INSERT-only admission guards. Both new admin write RPCs are authenticated-only and enforce verified owner/admin kitchen authority; anonymous and service API roles cannot use them. The runtime still uses the original server clock and the confirmed launch windows. Unbound public status returns ordering closed, guest checkout ineligible and no invented kitchen estimate.
+
+A separate full guest/security verification at `2026-11-05 15:21:38.693227+00` passed again after the availability installation. All 42 public tables retain RLS and no direct grants to `anon`, `authenticated` or `service_role`. Auth users, businesses, orders, receipts, guest sessions, payment records and customer/consent/loyalty/push records remain at zero; no checkout was enabled. Push and loyalty remain disabled. The state controls are available in source on admin Overview and Finance; using them on the hosted project still requires the intended owner's verified account and real kitchen setup. See the [availability guide](mealdeck-kitchen-availability.md).
 
 The following sections retain the earlier provisioning and investigation record. Their “installation pending” and “connector unavailable” observations are superseded by the verified position above.
 

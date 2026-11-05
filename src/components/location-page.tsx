@@ -43,7 +43,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <h1>Different cuisines.<br /><span>One {town} order.</span></h1>
             <p>{intro}</p>
             <div className="md-location-meta">
-              <span><Clock3 /> Planned hours: {hours}</span>
+              <span><Clock3 /> {isLuton ? "Opening weekend:" : "Planned hours:"} {hours}</span>
               <span><Bike /> {fulfilment}</span>
             </div>
             <div className="md-hero-actions">
@@ -87,7 +87,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
         <section className="md-location-info-grid">
           <article className="md-location-info-panel md-location-info-panel-dark">
             <MapPin />
-            <p className="md-kicker">Planned service areas</p>
+            <p className="md-kicker">{isLuton ? "Collection location" : "Planned service areas"}</p>
             <h2>Local first.</h2>
             <p>{areas.join(" · ")}</p>
           </article>
@@ -96,7 +96,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <p className="md-kicker md-kicker-light">Coming soon</p>
             <h2>{fulfilment}</h2>
             <p>{isLuton
-              ? "Luton is the first launch kitchen. Ordering and registration are not open yet; browse the five launch menus now."
+              ? "Luton opens 6–8 November 2026. Browse the five launch menus while online ordering is prepared. Register for member offers and choose your optional offer alerts, or order as a guest during the first three days’ opening hours."
               : `${town} is coming in a future deck. MealDeck is launching in Luton first, with no orders accepted here yet.`}</p>
           </article>
         </section>
@@ -106,7 +106,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <div>
               <p className="md-kicker md-kicker-light">Luton · Walk-in pickup / kerbside collection</p>
               <h2>314–318 Selbourne Road, Luton, LU4 8NU</h2>
-              <p>Pickup and kerbside collection are part of the Luton launch plan. Ordering is not open yet; collection details will be confirmed before launch.</p>
+              <p>Collection and kerbside pickup are available during the confirmed opening hours on 6–8 November 2026, once online ordering opens. Delivery is unavailable. Check your order and choose any cutlery or numbered bags before payment.</p>
             </div>
             <div className="md-collection-icons">
               <span><Package /> Pickup</span>

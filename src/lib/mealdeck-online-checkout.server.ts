@@ -1,6 +1,25 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
+  kitchenAcceptsNewOrders,
+  parseKitchenAvailability,
+  type KitchenAvailability,
+} from "./mealdeck-kitchen-availability";
+import {
+  GuestInputError,
+  normaliseGuestInput,
+  parseGuestSession,
+  type GuestSession,
+  type GuestCheckoutState,
+} from "./mealdeck-guest";
+import {
+  expiredGuestCookie,
+  guestCookie,
+  guestTokenHash,
+  newGuestToken,
+  readGuestToken,
+} from "./mealdeck-guest-session.server";
+import {
   readMealDeckCheckoutServerKey,
   readMealDeckRuntimeConfig,
   type MealDeckRuntimeEnv,
@@ -31,7 +50,7 @@ const object = (value: unknown): Json =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as Json) : {};
 const NO_STORE = {
   "Cache-Control": "no-store, private",
-  Vary: "Authorization",
+  Vary: "Authorization, Cookie",
   "X-Content-Type-Options": "nosniff",
 };
 
@@ -53,6 +72,30 @@ function databaseClients(env: MealDeckRuntimeEnv, fetcher: typeof fetch) {
 function backendProblem(error: unknown): CheckoutProblem {
   const message = String(object(error)["message"] ?? "");
   const known: [RegExp, string, string, number][] = [
+    [
+      /guest_window_closed|guest_unavailable/,
+      "guest_window_closed",
+      "Guest ordering is available only during our opening hours on 6–8 November. Sign in to order after the opening weekend.",
+      403,
+    ],
+    [
+      /outside_opening_hours/,
+      "outside_opening_hours",
+      "The Luton kitchen is closed. Check the opening hours and try again when we open.",
+      403,
+    ],
+    [
+      /guest_session_unavailable|guest_session_invalid/,
+      "guest_session_expired",
+      "Your guest session is unavailable. Return to checkout to continue as a guest or sign in.",
+      401,
+    ],
+    [
+      /guest_invalid_contact|guest_details_invalid/,
+      "invalid_guest",
+      "Please check your name, email and phone number.",
+      400,
+    ],
     [
       /handoff_capacity/,
       "kitchen_at_capacity",
@@ -105,7 +148,7 @@ function backendProblem(error: unknown): CheckoutProblem {
     [
       /order_unavailable|quote_unavailable/,
       "order_unavailable",
-      "We couldn't find that order in your account.",
+      "We couldn't find that order in this checkout session.",
       404,
     ],
   ];
@@ -175,6 +218,8 @@ export type MealDeckOnlineCheckoutStatus = {
   available: boolean;
   fulfilments: ["pickup", "curbside"];
   openingOffer: MealDeckOpeningOffer;
+  guestCheckout: GuestCheckoutState;
+  kitchen: KitchenAvailability | null;
 };
 
 export async function readOnlineCheckoutStatus(
@@ -185,6 +230,8 @@ export async function readOnlineCheckoutStatus(
     available: false,
     fulfilments: ["pickup", "curbside"],
     openingOffer: unscheduledOpeningOffer(),
+    guestCheckout: { eligible: false, session: null },
+    kitchen: null,
   };
   const clients = databaseClients(env, fetcher);
   if (!clients) return base;
@@ -195,19 +242,91 @@ export async function readOnlineCheckoutStatus(
     });
     const openingOffer = parseOpeningOffer(state["openingOffer"]);
     if (!openingOffer) return base;
+    const kitchen = parseKitchenAvailability(state["kitchen"]);
+    const available =
+      state["channelOpen"] === true &&
+      kitchen !== null &&
+      kitchenAcceptsNewOrders(kitchen.state) &&
+      kitchen.collectionEstimateMinutes !== null &&
+      clients.service !== null &&
+      env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] === "true" &&
+      env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] === "signed-off" &&
+      readMealDeckStripeConfig(env) !== null;
     return {
       ...base,
       openingOffer,
-      available:
-        state["channelOpen"] === true &&
-        clients.service !== null &&
-        env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] === "true" &&
-        env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] === "signed-off" &&
-        readMealDeckStripeConfig(env) !== null,
+      available,
+      kitchen,
+      guestCheckout: {
+        eligible: available && state["guestCheckoutEligible"] === true,
+        session: null,
+      },
     };
   } catch {
     return base;
   }
+}
+
+function newOrderingUnavailable(status: MealDeckOnlineCheckoutStatus): CheckoutProblem {
+  if (status.kitchen?.state === "paused")
+    return new CheckoutProblem(
+      "kitchen_paused",
+      "The Luton kitchen has temporarily paused new orders. Existing orders continue to update.",
+      503,
+    );
+  if (status.kitchen?.state === "closed")
+    return new CheckoutProblem(
+      "kitchen_closed",
+      "The Luton kitchen is closed to new orders. Existing orders continue to update.",
+      503,
+    );
+  return backendProblem({});
+}
+
+type CheckoutClients = NonNullable<ReturnType<typeof databaseClients>>;
+
+function requireGuestOrigin(request: Request) {
+  const origin = new URL(request.url).origin;
+  if (
+    request.headers.get("Origin") !== origin ||
+    request.headers.get("Sec-Fetch-Site") === "cross-site"
+  )
+    throw new CheckoutProblem("invalid_origin", "Refresh MealDeck and try again.", 403);
+}
+
+function guestScope(clients: CheckoutClients, token: string) {
+  return {
+    p_tenant: clients.config.tenantId,
+    p_location: clients.config.locationId,
+    p_token_hash: guestTokenHash(token),
+  };
+}
+
+function parseDatabaseGuest(value: unknown): GuestSession | null {
+  const data = object(value);
+  if (
+    data["loyaltyEligible"] !== false ||
+    typeof data["expiresAt"] !== "string" ||
+    !Number.isFinite(Date.parse(data["expiresAt"]))
+  )
+    return null;
+  return parseGuestSession({ ...data, id: data["guestId"] });
+}
+
+async function resolveGuest(
+  clients: CheckoutClients,
+  token: string | null,
+): Promise<GuestSession | null> {
+  if (!clients.service || !token) return null;
+  const { data, error } = await clients.service.rpc(
+    "mealdeck_resolve_guest_session",
+    guestScope(clients, token),
+  );
+  if (error) throw backendProblem(error);
+  if (data === null) return null;
+  const session = parseDatabaseGuest(data);
+  if (!session) throw backendProblem({});
+  return session;
 }
 
 export async function handleOnlineCheckoutRequest(
@@ -216,8 +335,16 @@ export async function handleOnlineCheckoutRequest(
   fetcher: typeof fetch = fetch,
 ) {
   try {
-    if (request.method === "GET")
-      return Response.json(await readOnlineCheckoutStatus(env, fetcher), { headers: NO_STORE });
+    if (request.method === "GET") {
+      const status = await readOnlineCheckoutStatus(env, fetcher);
+      const clients = databaseClients(env, fetcher);
+      if (clients)
+        status.guestCheckout.session = await resolveGuest(
+          clients,
+          readGuestToken(request.headers.get("Cookie")),
+        );
+      return Response.json(status, { headers: NO_STORE });
+    }
     if (request.method !== "POST")
       return Response.json({ error: "method_not_allowed" }, { status: 405, headers: NO_STORE });
     const origin = request.headers.get("Origin");
@@ -234,17 +361,93 @@ export async function handleOnlineCheckoutRequest(
     }
     const clients = databaseClients(env, fetcher);
     if (!clients?.service) throw backendProblem({});
-    const customerId = await verifiedCustomer(request, clients.publicClient);
     const action = object(input)["action"];
+    const guestToken = readGuestToken(request.headers.get("Cookie"));
+    if (action === "end_guest") {
+      requireGuestOrigin(request);
+      if (Object.keys(object(input)).some((key) => key !== "action"))
+        throw new CheckoutProblem("invalid_request", "Please try ending your guest session again.");
+      if (guestToken) {
+        const { error } = await clients.service.rpc(
+          "mealdeck_end_guest_session",
+          guestScope(clients, guestToken),
+        );
+        if (error) throw backendProblem(error);
+      }
+      const status = await readOnlineCheckoutStatus(env, fetcher);
+      return Response.json(
+        { guestCheckout: status.guestCheckout },
+        { headers: { ...NO_STORE, "Set-Cookie": expiredGuestCookie() } },
+      );
+    }
+    if (action === "guest") {
+      requireGuestOrigin(request);
+      const details = normaliseGuestInput(input);
+      const status = await readOnlineCheckoutStatus(env, fetcher);
+      if (status.kitchen?.state === "paused" || status.kitchen?.state === "closed")
+        throw newOrderingUnavailable(status);
+      if (!status.guestCheckout.eligible)
+        throw new CheckoutProblem(
+          "guest_window_closed",
+          "Guest ordering is available during the confirmed opening hours on 6–8 November, once checkout is ready.",
+          403,
+        );
+      const existing = await resolveGuest(clients, guestToken);
+      if (existing) {
+        if (
+          existing.name !== details.name ||
+          existing.email !== details.email ||
+          existing.phone !== details.phone
+        )
+          throw new CheckoutProblem(
+            "guest_session_conflict",
+            "End your current guest session before changing its contact details. Save any order receipt first.",
+            409,
+          );
+        return Response.json(
+          { guestCheckout: { eligible: true, session: existing } },
+          { headers: NO_STORE },
+        );
+      }
+      const token = newGuestToken();
+      const created = await rpc(clients.service, "mealdeck_begin_guest_session", {
+        ...guestScope(clients, token),
+        p_name: details.name,
+        p_email: details.email,
+        p_phone: details.phone,
+      });
+      const session = parseDatabaseGuest(created);
+      if (!session) throw backendProblem({});
+      return Response.json(
+        { guestCheckout: { eligible: true, session } },
+        { headers: { ...NO_STORE, "Set-Cookie": guestCookie(token) } },
+      );
+    }
+    // A supplied member token never silently falls back to a guest cookie.
+    const customerId = request.headers.has("Authorization")
+      ? await verifiedCustomer(request, clients.publicClient)
+      : null;
+    if (!customerId) {
+      requireGuestOrigin(request);
+      if (!guestToken || !(await resolveGuest(clients, guestToken)))
+        throw new CheckoutProblem(
+          "guest_session_expired",
+          "Continue as a guest during opening weekend, or sign in with your verified email.",
+          401,
+        );
+    }
     // Receipt polling remains available if the operator closes ordering later.
     if (action === "receipt") {
       const parsed = checkoutReceiptInput.safeParse(input);
       if (!parsed.success)
         throw new CheckoutProblem("invalid_request", "Check your order reference.");
-      const receipt = await rpc(clients.service, "mealdeck_customer_order_receipt", {
-        p_order: parsed.data.orderId,
-        p_customer: customerId,
-      });
+      const receipt = await rpc(
+        clients.service,
+        customerId ? "mealdeck_customer_order_receipt" : "mealdeck_guest_order_receipt",
+        customerId
+          ? { p_order: parsed.data.orderId, p_customer: customerId }
+          : { ...guestScope(clients, guestToken!), p_order: parsed.data.orderId },
+      );
       return Response.json({ receipt }, { headers: NO_STORE });
     }
     const stripe = readMealDeckStripeConfig(env);
@@ -254,31 +457,43 @@ export async function handleOnlineCheckoutRequest(
       env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off"
     )
       throw backendProblem({});
+    const status = await readOnlineCheckoutStatus(env, fetcher);
+    if (!status.available) throw newOrderingUnavailable(status);
     if (action === "quote") {
       const selection = normaliseCheckoutSelection(input, clients.config.tenantId);
-      const quote = await rpc(clients.service, "mealdeck_create_checkout_quote", {
-        p_tenant: clients.config.tenantId,
-        p_location: clients.config.locationId,
-        p_customer: customerId,
-        p_fulfilment: selection.fulfilment,
-        p_vehicle: selection.vehicle,
-        p_selection: selection.lines,
-        p_request_hash: selection.requestHash,
-        p_packing: selection.packingPlan,
-      });
+      const quote = await rpc(
+        clients.service,
+        customerId ? "mealdeck_create_checkout_quote" : "mealdeck_create_guest_checkout_quote",
+        {
+          p_tenant: clients.config.tenantId,
+          p_location: clients.config.locationId,
+          ...(customerId
+            ? { p_customer: customerId }
+            : { p_token_hash: guestTokenHash(guestToken!) }),
+          p_fulfilment: selection.fulfilment,
+          p_vehicle: selection.vehicle,
+          p_selection: selection.lines,
+          p_request_hash: selection.requestHash,
+          p_packing: selection.packingPlan,
+        },
+      );
       return Response.json({ quote }, { headers: NO_STORE });
     }
     const parsed = checkoutPayInput.safeParse(input);
     if (!parsed.success)
       throw new CheckoutProblem("invalid_request", "Please review your order before paying.");
     await verifyStripeAccount(stripe, fetcher);
-    const prepared = await rpc(clients.service, "mealdeck_prepare_stripe_order", {
-      p_quote: parsed.data.quoteId,
-      p_customer: customerId,
-      p_attempt: parsed.data.attemptId,
-      p_stripe_account: stripe.accountId,
-      p_livemode: stripe.livemode,
-    });
+    const prepared = await rpc(
+      clients.service,
+      customerId ? "mealdeck_prepare_stripe_order" : "mealdeck_prepare_guest_stripe_order",
+      {
+        p_quote: parsed.data.quoteId,
+        ...(customerId ? { p_customer: customerId } : guestScope(clients, guestToken!)),
+        p_attempt: parsed.data.attemptId,
+        p_stripe_account: stripe.accountId,
+        p_livemode: stripe.livemode,
+      },
+    );
     if (!z.uuid().safeParse(prepared["orderId"]).success || !Array.isArray(prepared["lines"]))
       throw backendProblem({});
     const order = prepared as unknown as PreparedStripeOrder;
@@ -310,7 +525,12 @@ export async function handleOnlineCheckoutRequest(
     }
     return Response.json({ checkoutUrl: url, orderId: order.orderId }, { headers: NO_STORE });
   } catch (error) {
-    const problem = error instanceof CheckoutProblem ? error : backendProblem({});
+    const problem =
+      error instanceof CheckoutProblem
+        ? error
+        : error instanceof GuestInputError
+          ? new CheckoutProblem("invalid_guest", error.message)
+          : backendProblem({});
     return Response.json(
       { error: problem.code, message: problem.message },
       { status: problem.status, headers: NO_STORE },

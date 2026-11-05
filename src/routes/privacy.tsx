@@ -44,6 +44,19 @@ function PrivacyPage() {
             protecting customers and the service. We do not use an email verification message as
             permission to send marketing.
           </p>
+          <h2>Ordering as a guest</h2>
+          <p>
+            During our opening hours on 6–8 November 2026, you can order without registering. We use
+            your name, email and mobile number to fulfil that order and handle related queries. This
+            does not create a member account or give permission for marketing. Guest orders earn no
+            loyalty points.
+          </p>
+          <p>
+            A necessary guest session cookie keeps your receipt available to the browser you used to
+            order for up to 30 days. Keep your receipt page available on that device. If you clear
+            its cookies, the session expires or you use a different device, contact us with your
+            order details for help.
+          </p>
           <h2>Ordering, payment and collection</h2>
           <p>
             We use your basket, choices, order details, payment references and fulfilment details to
@@ -66,9 +79,10 @@ function PrivacyPage() {
           </p>
           <h2>Opening offers and loyalty</h2>
           <p>
-            We use your verified account status and the order’s fulfilment method and time to check
-            eligibility for registered-customer offers. Marketing consent is not required to receive
-            an eligible discount.
+            The 6–8 November opening offer is available to guests and members during our published
+            opening hours. We check your order’s fulfilment method and time to confirm eligibility.
+            Member-only offers require a registered, verified account. Marketing consent is not
+            required to receive an eligible discount.
           </p>
           <p>
             When the loyalty programme launches, your account may hold a points balance and a record
@@ -78,9 +92,10 @@ function PrivacyPage() {
           </p>
           <h2>Optional emails and notifications</h2>
           <p>
-            You choose separately whether to receive MealDeck promotional emails and promotional app
-            notifications. These choices are off by default. We record your choice, the notice
-            version and when it changed so we can respect and demonstrate your consent.
+            Promotional emails and promotional app notifications are available to registered members
+            who opt in. You choose each separately, and both are off by default. A guest order is
+            not an opt-in. We record your choice, the notice version and when it changed so we can
+            respect and demonstrate your consent.
           </p>
           <p>
             You can change these choices in <Link to="/account">your account</Link> or contact us.
@@ -103,7 +118,8 @@ function PrivacyPage() {
           <h2>Cookies, browser storage and the app</h2>
           <p>
             Necessary browser storage keeps you signed in, remembers the basket on your device and
-            remembers an app-install invitation dismissed during your visit. The app’s offline cache
+            remembers an app-install invitation dismissed during your visit. Guest checkout uses a
+            necessary session cookie to protect access to your order. The app’s offline cache
             contains its public offline screen and artwork; it does not cache account details,
             payments or live order progress.
           </p>

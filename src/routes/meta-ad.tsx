@@ -5,7 +5,7 @@ import {
   CarFront,
   Check,
   Clock3,
-  MailCheck,
+  UserRound,
   PackageCheck,
   ShieldCheck,
   ShoppingBag,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
+import { LaunchOpeningHours, OpeningWeekendOffer } from "@/components/opening-weekend-offer";
 import { PwaInstallCard } from "@/components/pwa-install-card";
 import { approvedBrandLogos } from "@/lib/brand-logos";
 import { seo } from "@/lib/seo";
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/meta-ad")({
     seo({
       title: "Your first MealDeck order — how it works",
       description:
-        "Browse five brands, choose Luton collection or kerbside, verify your email, pay securely and follow your order from the kitchen to pickup. Delivery is not available yet.",
+        "MealDeck Luton opens 6–8 November 2026: Friday 3pm–11pm, Saturday and Sunday 1pm–11pm. 30% off, no minimum. Guests welcome; collection or kerbside only.",
       path: "/meta-ad",
     }),
   component: FirstOrderExplainer,
@@ -71,6 +71,13 @@ function FirstOrderExplainer() {
             ))}
           </div>
           <p className="md-first-location">Launching in Luton · 314–318 Selbourne Road, LU4 8NU</p>
+          <div className="md-first-confirmed-launch">
+            <p>Opening weekend · 6–8 November 2026 · UK time</p>
+            <LaunchOpeningHours />
+            <p className="md-first-launch-note">
+              30% off everything. No minimum order. Guest checkout for our first three days.
+            </p>
+          </div>
           <Link to="/menus" className="md-btn md-btn-red">
             Start with the menus <ArrowRight size={19} aria-hidden="true" />
           </Link>
@@ -82,7 +89,7 @@ function FirstOrderExplainer() {
             <h2 id="first-order-title">Browse. Build. Pick up.</h2>
             <p>
               Use mealdeck.co.uk in your browser, or add the MealDeck app to your home screen. You
-              can explore before creating an account.
+              can order as a guest during our opening hours on 6–8 November, or sign in as a member.
             </p>
           </div>
           <div className="md-first-methods" aria-label="Choose which pickup guide to see">
@@ -169,12 +176,13 @@ function FirstOrderExplainer() {
                 03
               </span>
               <div className="md-first-step-icon">
-                <MailCheck aria-hidden="true" />
+                <UserRound aria-hidden="true" />
               </div>
-              <h3>Verify your email.</h3>
+              <h3>Guest or member? You choose.</h3>
               <p>
-                Enter your <strong>name, email and mobile number</strong>. Follow the verification
-                link we send, then return to your basket. Already registered? Simply sign in.
+                On 6–8 November, enter your <strong>name, email and mobile number</strong> to order
+                as a guest without registering. Guest orders earn no loyalty points. To become a
+                member, create an account and verify your email. Already a member? Sign in.
               </p>
             </li>
             <li>
@@ -202,7 +210,8 @@ function FirstOrderExplainer() {
               <p>
                 After payment is confirmed, you’ll see your <strong>order number</strong> and the
                 kitchen’s estimated pickup time. Follow progress as the team accepts, prepares and
-                finishes your food.
+                finishes your food. If ordering as a guest, keep your receipt page open on this
+                device so you can return to your order.
               </p>
             </li>
             <li>
@@ -260,9 +269,9 @@ function FirstOrderExplainer() {
             <p className="md-first-eyebrow">Make yourself at home</p>
             <h2>One account. More to look forward to.</h2>
             <p>
-              Get ready for loyalty points when the rewards programme launches. Choose whether you’d
-              like offer emails and app alerts — you stay in control, and saying no does not affect
-              the opening offer.
+              Register as a member for member offers and get ready for loyalty points when the
+              rewards programme launches. Offer emails and promotional app alerts are for members
+              who opt in. Choose each separately — saying no does not affect the opening offer.
             </p>
             <Link to="/account" className="md-btn md-btn-red">
               Create your account <ArrowRight size={18} aria-hidden="true" />

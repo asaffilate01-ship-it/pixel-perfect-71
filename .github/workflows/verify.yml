@@ -46,6 +46,8 @@ jobs:
       - name: Verified customer checkout, packing, receipt printing and distinct staff alerts
         run: >-
           bun test tests/mealdeck-customer.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
+          tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts
+          tests/mealdeck-checkout-browser.test.ts
           tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts
           tests/mealdeck-staff-alerts.test.ts
       - name: Receipt bridge one-copy delivery, pairing and canonical order verification
@@ -69,12 +71,23 @@ jobs:
           src/lib/mealdeck-checkout-selection.ts src/lib/mealdeck-stripe.server.ts
           src/lib/mealdeck-opening-offer.ts src/lib/mealdeck-opening-offer.functions.ts
           src/lib/mealdeck-customer-order-timing.ts
+          src/lib/mealdeck-guest.ts src/lib/mealdeck-guest-session.server.ts src/lib/mealdeck-launch-schedule.ts
+          src/lib/mealdeck-checkout-browser.ts
+          src/lib/mealdeck-kitchen-availability.ts
           src/routes/checkout.tsx src/routes/api.checkout.ts src/routes/api.stripe.webhook.ts
           src/components/opening-weekend-offer.tsx src/components/menus/menu-install-prompt.tsx
           src/lib/launch-basket-transfer.ts src/lib/mealdeck-pwa-surface.ts
           src/routes/meta-ad.tsx src/routes/opening-offer.tsx src/routes/privacy.tsx
+          src/routes/luton.tsx src/components/location-page.tsx src/components/site-footer.tsx
+          src/lib/mealdeck.ts src/lib/seo.ts
           src/components/ops/checkout-launch-settings.tsx
           tests/mealdeck-customer.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
+          tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts
+          tests/mealdeck-checkout-browser.test.ts
+          deploy/mealdeck/guest-checkout.mjs tests/postgres/guest-checkout-fixture.mjs
+          tests/postgres/guest-checkout-behavior.mjs
+          deploy/mealdeck/kitchen-availability.mjs
+          tests/postgres/kitchen-availability-behavior.mjs
           --rule 'prettier/prettier: off'
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
@@ -519,7 +532,7 @@ jobs:
       fail-fast: false
       matrix:
         # The catalogue job above executes the price-revision helper in its full fixture.
-        suite: [customer-membership, stripe-checkout, kitchen-printer]
+        suite: [customer-membership, stripe-checkout, kitchen-printer, guest-checkout, kitchen-availability]
     services:
       postgres:
         image: postgres:17.6
