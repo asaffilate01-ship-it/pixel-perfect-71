@@ -6,7 +6,7 @@ import { MealDeckLogo } from "@/components/mealdeck-logo";
 
 const navItems = [
   { label: "Brands", to: "/", hash: "brands" },
-  { label: "Offers", to: "/", hash: "offers" },
+  { label: "Offers", to: "/offers", hash: undefined },
   { label: "How it works", to: "/", hash: "how" },
   { label: "Locations", to: "/", hash: "locations" },
 ] as const;
@@ -48,7 +48,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
             <Link to="/" aria-current={current("/")?"page":undefined} className={active("/")}>Home</Link>
             <Link to="/menus" aria-current={current("/menus")?"page":undefined} className={active("/menus")}>Menus</Link>
             {navItems.map((item) => (
-              <Link key={item.label} to={item.to} hash={item.hash} aria-current={current(item.to,item.hash)?"location":undefined} className={active(item.to,item.hash)}>{item.label}</Link>
+              <Link key={item.label} to={item.to} {...(item.hash?{hash:item.hash}:{})} aria-current={current(item.to,item.hash)?(item.hash?"location":"page"):undefined} className={active(item.to,item.hash)}>{item.label}</Link>
             ))}
             <Link to="/play" aria-current={current("/play")?"page":undefined} className={active("/play")}>Play &amp; Rewards</Link>
             <Link to="/franchise" aria-current={current("/franchise")?"page":undefined} className={active("/franchise")}>Franchises</Link>
@@ -85,7 +85,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           <Link to="/" ref={firstLinkRef} onClick={() => setOpen(false)} aria-current={current("/")?"page":undefined} className={active("/")}>Home</Link>
           <Link to="/menus" onClick={() => setOpen(false)} aria-current={current("/menus")?"page":undefined} className={active("/menus")}>Menus</Link>
           {navItems.map((item) => (
-            <Link key={item.label} to={item.to} hash={item.hash} onClick={() => setOpen(false)} aria-current={current(item.to,item.hash)?"location":undefined} className={active(item.to,item.hash)}>{item.label}</Link>
+            <Link key={item.label} to={item.to} {...(item.hash?{hash:item.hash}:{})} onClick={() => setOpen(false)} aria-current={current(item.to,item.hash)?(item.hash?"location":"page"):undefined} className={active(item.to,item.hash)}>{item.label}</Link>
           ))}
           <Link to="/luton" onClick={() => setOpen(false)} aria-current={current("/luton")?"page":undefined} className={active("/luton")}>Luton</Link>
           <Link to="/st-albans" onClick={() => setOpen(false)} aria-current={current("/st-albans")?"page":undefined} className={active("/st-albans")}>St Albans · Coming soon</Link>

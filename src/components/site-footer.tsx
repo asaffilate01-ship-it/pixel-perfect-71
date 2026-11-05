@@ -23,9 +23,7 @@ export function SiteFooter() {
             <Link to="/" hash="brands">
               Brands
             </Link>
-            <Link to="/" hash="offers">
-              Offers
-            </Link>
+            <Link to="/offers">Offers</Link>
             <Link to="/account">My account &amp; preferences</Link>
             <Link to="/opening-offer">Opening weekend offer</Link>
             <Link to="/meta-ad">Your first order</Link>
@@ -67,8 +65,10 @@ export function SiteFooter() {
       <div className="md-footer-apps">
         <p className="md-footer-apps-copy">
           <strong>Luton launches first.</strong> Order as a guest during our opening hours on 6–8
-          November, with no loyalty points on guest orders. Register for member offers and choose
-          whether to receive offer emails and app alerts. Loyalty earning is coming soon.
+          November, with no loyalty points on guest orders. See our{" "}
+          <Link to="/offers">three November offers</Link>, including double points when you register
+          and spend £15 or more by Friday 13 November. Offer emails and app alerts are optional,
+          separate choices.
         </p>
         <div className="md-footer-apps-row" aria-label="Ordering channels and social links">
           <div className="md-footer-social" aria-label="Social links">

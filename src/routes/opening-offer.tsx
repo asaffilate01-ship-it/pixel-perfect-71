@@ -93,9 +93,14 @@ function OpeningOfferPage() {
             are optional and can be switched off in <Link to="/account">your account</Link>.
           </p>
           <p>
-            Loyalty points will be available to registered members when the rewards programme and
-            its earning rules launch. Guest orders earn no loyalty points. Choosing not to receive
-            marketing does not affect an eligible opening discount or loyalty membership.
+            Register and spend £15 or more by and including Friday 13 November 2026 for double
+            loyalty points. Guest orders earn no loyalty points. Choosing not to receive marketing
+            does not affect an eligible opening discount or member offer.
+          </p>
+          <h2>More on the table</h2>
+          <p>
+            Milk cake is 99p with every order on Sunday 8 November 2026. See
+            <Link to="/offers"> all three MealDeck offers</Link> for the dates and details.
           </p>
           <p>
             See the <Link to="/privacy">privacy notice</Link> for how MealDeck uses your details.

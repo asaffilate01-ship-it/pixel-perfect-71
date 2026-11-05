@@ -9,6 +9,13 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
+## Three November consumer offers — latest owner decision, 5 November 2026
+
+- Publish exactly these three consumer offers and remove the previous sample deals: **30% off the entire menu, Friday 6–Sunday 8 November 2026**; **milk cake 99p with every order on Sunday 8 November**; **register and spend £15 or more by and including Friday 13 November for double loyalty points**. Preserve the confirmed Luton opening hours and existing collection/kerbside scope.
+- The 30% offer retains no minimum and welcomes guests and members. The milk-cake offer does not require registration. Guest orders earn no loyalty points; the double-points offer requires membership. Marketing email/push opt-ins remain separate and optional.
+- Do not invent a cake flavour/size, additional minimum, quantity cap, stacking rule, loyalty base rate or spend calculation basis. The shared public catalogue is `src/lib/mealdeck-offers.ts`; the missing canonical cake product and points configuration are tracked in `docs/mealdeck-offers-20261105.md`.
+- Publishing confirmed terms is separate from activating automatic cake pricing or point awards. Keep both unconfigured paths inactive; preserve payment gates, canonical pricing, verified payment evidence and all historical paid-order amounts.
+
 ## Confirmed opening hours and guest ordering — latest owner decision, 5 November 2026
 
 - The owner requested easy **Online / Busy / Pause / Closed** controls on admin. Show the saved state on Overview and Finance, apply changes through verified owner/admin RPCs, and retain tenant/kitchen scope. Online and Busy may accept new orders only when every payment/menu/opening gate passes; Busy uses the explicitly configured pickup estimate, without an invented delay. Paused and Closed stop new checkout but preserve already-started payment reconciliation and existing order/receipt/KDS progress. They never resume automatically. Stopping orders must remain possible even if a pickup-estimate edit is unfinished.

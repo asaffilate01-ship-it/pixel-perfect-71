@@ -85,10 +85,11 @@ function PrivacyPage() {
             required to receive an eligible discount.
           </p>
           <p>
-            When the loyalty programme launches, your account may hold a points balance and a record
-            of qualifying purchases and adjustments. Earning and redemption rules will be shown
-            before the programme becomes available. Promotional updates about rewards remain
-            optional.
+            The double-points offer requires registration and a spend of £15 or more by and
+            including Friday 13 November 2026. When loyalty is available, your account may hold a
+            points balance and a record of qualifying purchases and adjustments. Earning and
+            redemption details will be shown before points are credited. Promotional updates about
+            rewards remain optional.
           </p>
           <h2>Optional emails and notifications</h2>
           <p>

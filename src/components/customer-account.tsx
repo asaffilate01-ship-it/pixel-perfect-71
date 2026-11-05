@@ -902,10 +902,11 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: "/menus" |
                 </>
               ) : (
                 <>
-                  <span className="md-account-soon">Coming soon</span>
+                  <span className="md-account-soon">Points balance coming soon</span>
                   <p>
-                    Registered customers will be able to collect loyalty points. We’ll publish how
-                    to earn and use them before the programme starts.
+                    Register and spend £15 or more by and including Friday 13 November 2026 for
+                    double loyalty points. <a href="/offers#double-points">See offer details</a>.
+                    Your points balance will appear here when loyalty is available.
                   </p>
                 </>
               )}

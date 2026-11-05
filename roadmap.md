@@ -1,77 +1,51 @@
-# Roadmap
+# MealDeck build and launch status
 
-- [x] Footer: "Prefer the big apps?" strip with Deliveroo, Uber Eats & Just Eat logos
-- [x] Reduce section gaps / inner gaps on homepage, keep polished mobile + desktop
-- [x] Card flip: MealDeck card uses new uploaded emblem, "M" corner ranks, crossed-cutlery suit marks in corners
+Last reviewed: **5 November 2026**. This is the current checklist; numbered phase documents retain their historical implementation notes. The hosted installation record is in [the deployment status](docs/mealdeck-cloud-deployment-status.md).
 
-- [x] Make homepage hero food-led while preserving current colours; add food background and fan-to-deck card sequence.
-- [x] Rework demo ordering into a browse-first restaurant marketplace on desktop and mobile.
+## Completed
 
-- [x] Add Forvello (Artisan Pizza) to homepage and every location; align brand cards/logos across desktop and mobile.
+- [x] Preserve the approved MealDeck identity, all marketing brand logos and cross-brand menu browsing.
+- [x] Publish the five owner-priced launch menus: **79 items in 20 sections**, including Tavo portion/flavour prices, brand-specific drinks and extras, and Souvano's three mains with an included side. The earlier £20 placeholders are superseded.
+- [x] Keep one saved basket across brands; itemise every flavour, upgrade, included drink and separately purchased extra.
+- [x] Provide mobile menu navigation, a basket sheet, search, undo and accessible customisers.
+- [x] Install and verify the independent MealDeck database foundation and incremental customer, checkout, kitchen/printer, guest and availability extensions. Preserve RLS, scoped RPCs and separation from Dishbee/Cafe 1.
+- [x] Publish customer registration and email-verification entry, optional marketing preferences and private order/receipt paths. Registration never grants staff ownership.
+- [x] Implement and test Stripe Checkout creation and signed, independently verified payment reconciliation. Browser returns cannot mark an order paid or release the kitchen.
+- [x] Implement Luton collection and kerbside checkout, final order review, optional cutlery and exact numbered-bag allocations. Delivery remains unavailable.
+- [x] Confirm opening hours: **Fri 6 Nov 15:00–23:00; Sat 7 and Sun 8 Nov 13:00–23:00**, Europe/London. Opening-window guest checkout earns no loyalty points.
+- [x] Implement the opening 30% discount, no minimum, for eligible guest and member orders during those daily hours.
+- [x] Build and install audited **Online / Busy / Pause / Closed** admin controls. Online/Busy retain every readiness gate; Pause/Closed preserve existing payment reconciliation and order progress.
+- [x] Build one shared kitchen board across brands, one receipt job on acceptance, protected printer pairing and recovery, and separate KDS/printer alerts.
+- [x] Publish the customer, staff and printer PWA identities and privacy-safe offline behaviour.
+- [x] Publish the opening guide/advert at `/meta-ad`, current opening hours and the approved Luton address.
+- [x] Merge and publish the eleven-game arcade refresh: searchable library, focus view, clearer controls, explicit starts, replay and reduced-motion support. PR #72 and main CI passed; live desktop gameplay was checked.
 
-## Open
-- [x] Replace flat Play food and ingredient icons with realistic isolated food artwork.
-- [x] Answered: ordering layout scales via brand filter + grouped sections; offered search/category chips when live menus go large
+## Current completion work
 
-- [x] Mobile ordering flow: sticky restaurant row, slide-up basket/checkout, scrollable dish options
-- [x] Add Pastarivo, Nusara, Rise & Griddle, Souvano to ordering
-- [x] Branded in-app success messages
-- [x] Play page: remove Fanzeno / fixture-based scheduling and "predictions for prizes" wording
-- [x] Play: make "Play as" brand skins meaningful (each brand deals its own dishes) + further table polish
+- [x] Build the dedicated Offers page with exactly the three owner-approved November promotions and remove retired sample offers. Native publication follows the reviewed main release.
+- [ ] Open the host-pays group flow: invite individual choices, review replies, combine one basket and carry each person's items into numbered bags. Keep split payment separate from this usable flow.
+- [x] Deliver a printable staff preparation/packing guide and individual PDFs for the five confirmed menu brands: 14-page combined guide plus Skorch (3), Tavo Chicken (4), Load’d (4), Moktl (2) and Souvano (2). All 79 items and 19 option groups are covered; all 29 pages were rendered and visually checked. These staff documents do not invent missing recipes or allergen declarations.
 
-- [x] Preserve Bedford as a coming-soon location in the site navigation and location pages.
-- [x] Franchise brand cards lead with approved brand logos on an ivory panel.
-- [x] Restore the published branch to the five launch menus at /menus; ordering stays coming soon. The previous order screen remains archived under src/_archive/current-ui/routes/order.tsx.
-- [x] Instagram and TikTok links use @mealdeckofficial.
-- [x] Mobile launch menus: canonical /menu link, all five brands visible, compact header and persistent brand/section/search controls.
-- [x] Empty the entire saved basket in one action, with Undo that restores quantities, upgrades and extras.
-- [ ] Complete the provisioned independent MealDeck database installation, connect the staff operations portal and verify authorised staff access in staging.
-- [ ] Review and publish canonical launch menu records so admin changes can feed the public menu.
-- [x] Build one shared kitchen board: one master-order card containing all brands, atomic preparation and inline packing/sealing; preserve location scoping for future kitchens.
-- [ ] Connect and accept the canonical paid-release evidence adapter, hosted operations migrations and live staff/kitchen workflow before production KDS activation.
+## Required before accepting paid orders
 
-## Independent database — 4 November 2026
+- [ ] **Verified owner:** `info@mealdeck.co.uk` must register and verify its email in the independent MealDeck Auth project. Read-only inspection on 5 November still found no Auth users.
+- [ ] **Business and kitchen:** use the existing private bootstrap for that verified owner and the confirmed MealDeck kitchen. Record actual tenant/kitchen/station UUIDs; configure only Luton.
+- [ ] **Published catalogue:** import the approved 79-item catalogue, apply the expected-old-price revision, review the recipes/allergens, route items to the shared station and publish the available records.
+- [ ] **Stripe configuration and acceptance:** configure the actual server-only account, mode, secret and webhook settings; verify captured payment, retry/idempotency, refund/dispute holds and exactly one kitchen release with the owning provider account. Automated fixtures are not live payment acceptance.
+- [ ] **Pickup estimate and opening:** set the kitchen's actual estimate, complete the release acceptance, then deliberately enable the server and scoped kitchen settings. Do not bypass missing readiness by changing a public coming-soon label.
+- [ ] **Devices:** pair the receipt terminal with a supported printer and confirm one complete physical receipt, paper stop/cut behaviour and distinct KDS/printer sounds. Confirm customer and staff app behaviour on actual iOS/Android devices.
 
-- [x] Record the owner decision: MealDeck will have its own database; Dishbee supplies the technology.
-- [x] Show “MealDeck is a trading name of 313 Brands Ltd.” and “Powered by Dishbee” in the site footer; align structured organisation data.
-- [x] Prepare the fresh-project database installation, independent connection settings and staff session isolation; verify the actual database installation and admin permissions in disposable tests.
-- [x] Let authorised menu staff assign a draft product to the shared kitchen before activating it, while retaining one kitchen display for all brands.
-- [ ] Apply the reviewed standalone profile to the owner-selected dedicated MealDeck Lovable Cloud database.
-- [x] Create a fresh dedicated MealDeck Lovable Cloud database and save the explicit server-owned public connection pair.
-- [x] Add an explicit managed-transaction installer for Lovable's atomic migration runner; retain the original standalone installer and canonical SQL unchanged.
-- [ ] Submit the complete managed installer in one atomic Cloud migration and verify its receipt, schema, RLS and grants; no hosted installer SQL has yet been applied from this workspace.
-- [ ] Verify the confirmed owner account info@mealdeck.co.uk and bootstrap the kitchen named MealDeck: waiting for schema installation and a verified Auth account; ownership has not been assigned.
-- [ ] Configure the first verified staff owner and kitchen, then review and publish real catalogue prices and modifiers.
-- [ ] Complete and accept MealDeck's own verified payment/release, refund, group-payment and delivery integrations before enabling real orders.
+## Remaining commercial and product setup
 
-## App experience — 4 November 2026
+- [ ] **Milk cake:** approve the exact Icova product, portion, ingredients/allergens and fulfilment details for the **99p offer with every order on Sun 8 Nov**. Add and verify its canonical promotion pricing; advertising the offer does not configure a product.
+- [ ] **Loyalty:** confirm the base earning rule, the meaning of the £15 qualifying spend and award/refund rules, then implement and accept **double points for registered customers spending £15 or more by Fri 13 Nov inclusive**. Do not infer a base rate or award points to guests.
+- [ ] **Split payments:** implement server-owned group sessions/invites and immutable per-person payment shares, verified provider events, expiry/refund recovery and full-funding kitchen release. Historical group tables and decision models do not provide a functioning settlement integration.
+- [ ] **Preparation specifications:** approve missing cooking methods, portion weights, allergen records, Moktl recipes/serving sizes, lamb-chop count and unspecified add-on details. Keep milkshake options unavailable until flavours are supplied.
+- [ ] **Additional brands:** supply confirmed operational menus and preparation specifications for the ten remaining marketing brands before publishing them for ordering.
+- [ ] **Push delivery:** configure the actual sender and delivery infrastructure, retaining separate optional marketing and order-progress preferences.
+- [ ] **In-person payments:** choose a supported staff phone/native Terminal route or reader, then verify staff-assisted payment and duplicate-charge protection. Website keys do not enable phone Tap to Pay.
+- [ ] **Future channels:** configure official WhatsApp and phone ordering, aggregator listings, delivery providers and additional kitchens only after their operational and provider setup. St Albans and Bedford remain coming soon.
 
-- [x] Align staff sign-in, operations, menu administration and the single shared kitchen board with MealDeck's approved site theme.
-- [x] Add Menus / Brands / Basket / More navigation and branded bottom sheets to the mobile launch menus; retain saved cross-brand choices and the desktop basket dock.
-- [x] Add the installable app manifest, approved icons, browser installation guidance, explicit app updates and a private-data-safe offline screen.
-- [x] Build the customer progress timeline, real placement/elapsed time and guarded status refresh; ordering remains coming soon and hosted integration acceptance is still required.
-- [ ] Publish the merged source through Lovable and verify installed-app behaviour on actual iOS/Android devices.
+## Release discipline
 
-## Stripe checkout — 5 November 2026
-
-- [x] Enable built-in Stripe payments in test mode with the owner's confirmation; preserve all ordering and kitchen-release gates.
-- [x] Owner approved £20 per launch-menu item and £20 per add-on, meal and upgrade, including named cross-brand replacements.
-- [ ] Create payment products from the approved canonical catalogue: prices are now approved; hosted installation, publication and provider mapping are still required.
-- [ ] Implement and verify MealDeck checkout and signed payment reconciliation using the actual test integration in the owning account; no checkout form or webhook handler has been implemented.
-
-## Prices and interface finishing — 5 November 2026
-
-- [x] Display the approved £20 prices on all 77 launch-menu items and each chargeable option, with quantity-aware basket/review subtotals and no duplicate cross-brand upgrade charges.
-- [x] Keep basket feedback visible, make saving failures recoverable, restore focus after row removal and distinguish repeated product names by menu section.
-- [x] Distinguish staff/kitchen loading, failed and empty states; make editing a menu product easy to reach on mobile.
-- [x] Finish the tracking form with solid brand-red controls, visible focus and readable mobile entry fields.
-- [x] Prepare an independent-database draft import for all 77 items and 66 option records, preserving later admin edits on reruns.
-- [x] Add protected, audited add-on and upgrade price editing, including shared-use counts and conflict recovery; provide the separate post-install SQL and managed-runner variant.
-- [ ] Activate the hosted backend, canonical menu and checkout in the separate owning Lovable account; the current connector cannot access that project. See `docs/mealdeck-launch-prices-and-polish-phase49.md`.
-
-## Luton in-person payments — owner scope, 5 November 2026
-
-- [x] Record Luton-only launch scope and the Stripe Terminal contract for staff-assisted walk-in and kerbside payments; St Albans and Bedford remain coming soon.
-- [ ] Select staff phone platform or smart reader and complete native Terminal/device setup in the owning Stripe account.
-- [ ] Add authenticated Luton staff sale entry, server-priced pending orders, idempotent Terminal collection and verified payment-to-KDS reconciliation.
-- [ ] Verify already-paid pickup cannot be charged again, and interrupted or concurrent attempts cannot duplicate a charge or kitchen release.
+Work through the GitHub repository and native publication; do not spend Lovable AI build credits. Preserve all published Git/Lovable history. Verify source, database installation, publication and actual payment/device acceptance as separate outcomes. The historical hosting branch currently tracked by Lovable is `feature/dishbee-play-food-cards`; keep it aligned with the reviewed main release without force pushes.

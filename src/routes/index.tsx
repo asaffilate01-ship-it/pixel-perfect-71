@@ -23,7 +23,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
-import { OfferDiscoveryPreview } from "@/components/marketing/offer-discovery-preview";
+import { OfferDiscovery } from "@/components/marketing/offer-discovery";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
 import { suitArtwork } from "@/lib/food-suit-artwork";
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/")({
     ...seo({
       title: "MealDeck — Coming soon | Brands, menus and free games",
       description:
-        "Luton launches first. Explore Skorch, Tavo, Souvano, Load’d and Moktl menus and get ready for opening weekend: 30% off, three days only, collection or kerbside for verified registered customers.",
+        "MealDeck Luton offers: 30% off the entire menu, 6–8 November 2026; milk cake 99p on Sunday 8 November; register and spend £15 or more by 13 November for double loyalty points.",
       path: "/",
       keywords:
         "MealDeck, food delivery Luton, takeaway Luton, food delivery St Albans, group food ordering, split payment food delivery, multi brand food delivery",
@@ -49,7 +49,7 @@ const directBenefits = [
   { icon: Package, title: "One collection", copy: "Collect your favourites together from our Luton kitchen." },
   { icon: Users, title: "Packed your way", copy: "Choose numbered bags so everyone can find their own food." },
   { icon: WalletCards, title: "Split payments", copy: "Let friends pay their own share." },
-  { icon: Star, title: "Loyalty rewards", copy: "Register for offers. Points and earning rules are coming soon." },
+  { icon: Star, title: "Double points offer", copy: "Register and spend £15 or more by Friday 13 November 2026." },
   { icon: MapPin, title: "Live tracking", copy: "Follow the complete MealDeck handoff." },
 ];
 
@@ -126,7 +126,7 @@ function LandingPage() {
           <BrandLogoGrid />
         </section>
 
-        <OfferDiscoveryPreview />
+        <OfferDiscovery />
 
         <section id="how" className="md-section md-section-cream">
           <div className="md-section-heading">
@@ -280,7 +280,7 @@ function LandingPage() {
           <Sparkles />
           <p className="md-kicker md-kicker-light">Different cuisines. One checkout.</p>
           <h2>Ready to play your cravings right?</h2>
-          <p>Get your account ready for our Luton opening weekend. Verify your email to qualify for 30% off during the three-day collection and kerbside offer. Marketing updates are optional.</p>
+          <p>Guests and members get 30% off the entire menu during our 6–8 November opening hours. Register and spend £15 or more by and including Friday 13 November for double loyalty points. Marketing updates are optional.</p>
           <div>
             <Link to="/account" className="md-btn md-btn-yellow">Get your account ready <Crown /></Link>
             <Link to="/play" className="md-btn md-btn-outline-light">Play free games</Link>

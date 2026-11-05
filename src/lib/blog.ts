@@ -1,3 +1,5 @@
+import { MEALDECK_OFFERS } from "./mealdeck-offers";
+
 export type Post = {
   slug: string;
   title: string;
@@ -14,39 +16,36 @@ export type Post = {
 export const posts: Post[] = [
   {
     slug: "cash-in-your-chips-loyalty-points",
-    title: "Cash In Your Chips: How MealDeck Loyalty Points Work",
-    excerpt: "Every order stacks your stack. Here's how MealDeck loyalty points build up across brands, group orders and monthly streaks.",
+    title: "Double Loyalty Points: Your November MealDeck Offer",
+    excerpt: "Register and spend £15 or more by and including Friday 13 November 2026 for double loyalty points. Marketing choices stay optional.",
     image: "/blog/loyalty-points.jpg",
-    date: "2026-10-01",
+    date: "2026-11-05",
     rank: "10",
     suit: "♦",
     tag: "Loyalty",
-    keywords: "food loyalty points Luton, takeaway rewards St Albans, food delivery rewards UK, MealDeck loyalty",
+    keywords: "MealDeck double loyalty points, Luton offers November 2026, MealDeck member offers",
     body: [
-      { p: "Most delivery apps let your rewards fold. At MealDeck, every order stacks your stack — points from every brand, sitting in one pot, ready to cash in on your next hand." },
-      { h: "One pot, every brand", p: "Order Skorch Burgers tonight and Tarka Box tomorrow — the points land in the same pot. Mix brands in one basket and they all count. That's the beauty of one deck." },
-      { h: "Group orders pay double dividends", p: "Deal the whole table in. Group orders with split payments still earn points for you as the host, and our Group Hand bonus adds extra points when you order together." },
-      { h: "Keep your streak on the table", p: "Order regularly and multipliers like 10× points on your fifth order of the month come into play. Check the Offers section for the current terms and limits." },
-      { h: "Ready to ante up?", p: "Order on the web, app, WhatsApp or phone — every channel earns. Your points, your pot, your play." },
+      { p: "The November member offer is double loyalty points when you register and spend £15 or more by and including Friday 13 November 2026." },
+      { h: "Use your member account", p: "Register with MealDeck, verify your email and use your account. Guest orders do not earn loyalty points." },
+      { h: "Your marketing choices are separate", p: "You do not need to sign up for promotional emails or app alerts to qualify. Each channel is an optional choice in your account." },
+      { h: "Your points balance", p: "Your account will show points when the loyalty service is available. The earning and redemption details will be published before points are credited; a promotional announcement is not a points balance." },
+      { h: "Games are just for fun", p: "MealDeck Play is free and separate from purchase offers. Playing or winning a game does not earn loyalty points, food, cash or discounts." },
     ],
   },
   {
     slug: "house-rules-every-offer-explained",
     title: "House Rules: Every MealDeck Offer, Explained",
-    excerpt: "Snap, Perfect Pair, The Burger Ace — the offers on the table right now, with the limits spelled out so you always play with a full deck.",
+    excerpt: "30% off the entire menu, Sunday milk cake for 99p, and double loyalty points. The three November offers, with their dates and details.",
     image: "/blog/offers-explained.jpg",
-    date: "2026-09-30",
+    date: "2026-11-05",
     rank: "9",
     suit: "♥",
     tag: "Offers",
-    keywords: "food offers Luton, takeaway deals St Albans, buy one get one half price food, free burger offer UK",
+    keywords: "MealDeck offers Luton, 30 percent off November 2026, 99p milk cake, double loyalty points",
     body: [
-      { p: "Card games run on house rules, and so do good offers. Here's every hand MealDeck is dealing right now — with the limits written plainly, so there's no small print ambush at checkout." },
-      { h: "The Burger Ace", p: "Spend £21 or more and a burger's on the house. It's our flagship hand: one basket, multiple brands, and a free burger when the total tips over 21." },
-      { h: "Snap!", p: "Buy one and get the second of the same item at half price. Two karak chai? Two smash burgers? When the cards match, you snap the second for half." },
-      { h: "The Perfect Pair", p: "Two of the same item, one price cut — our 2-for-1 on matching items. Ideal for a table that agrees for once." },
-      { h: "The Group Hand and the Three-Brand Trifecta", p: "Group orders earn bonus loyalty points, and baskets that stack three or more brands in one deal take £5 off. Splitting the bill never split the value." },
-      { h: "Play it straight", p: "Every offer has clear limits — one deal per order, minimum spends apply, and full terms live on the Offers section. Shuffle up and pick your hand on the order page." },
+      { p: "These are the three MealDeck offers for November 2026. Luton launches first, with collection and kerbside pickup." },
+      ...MEALDECK_OFFERS.map(offer => ({ h: `${offer.value} · ${offer.title}`, p: offer.terms.join(" ") })),
+      { h: "Opening hours", p: "Friday 6 November: 3pm–11pm. Saturday 7 and Sunday 8 November: 1pm–11pm. All times are UK local time. Check the Offers page for the full details and checkout for current ordering availability." },
     ],
   },
   {
@@ -63,7 +62,7 @@ export const posts: Post[] = [
       { p: "Every group has a wild card. One wants a smash burger, one wants a curry, someone's suddenly 'off carbs'. With most apps that means three orders, three delivery fees and three drivers. With MealDeck in Luton, you deal everyone into one hand." },
       { h: "Shuffle the brands, keep one basket", p: "Add Skorch Burgers, Tarka Box, Taconelle and Tavo Chicken to the same basket. It all goes through one checkout with one delivery fee — no juggling separate orders." },
       { h: "Split the pot, not the friendship", p: "Group ordering lets everyone pick their own items, and split payments mean each player covers their own share. No more 'I'll transfer you later'." },
-      { h: "Play your loyalty card", p: "Every group order earns loyalty points, and our Group Hand offer adds bonus points when you order together. Check the Offers section for current limits and terms." },
+      { h: "Check the current offers", p: "The November offers are 30% off the entire menu on 6–8 November, milk cake for 99p with every order on Sunday 8 November, and double loyalty points when you register and spend £15 or more by and including Friday 13 November. See the Offers page for details. Guest orders earn no points." },
       { h: "Ready to deal?", p: "Enter your LU postcode on the order page, pick delivery, pickup or kerbside, and build your hand." },
     ],
   },
@@ -81,7 +80,7 @@ export const posts: Post[] = [
       { p: "Not a street taco — a French taco is a big flour wrap, filled with meat, fries and creamy cheese sauce, then folded and pressed on the grill until golden. It's the ace you didn't know your hand was missing." },
       { h: "Two brands, two ways to play", p: "Taconelle brings French tacos with attitude. Load'd pairs them with proper mac n cheese for the full comfort combo." },
       { h: "Make it a full house", p: "Add a Tavo Chicken side, an Icova iced coffee or a Moktl zero-alcohol mocktail — all in one basket with one delivery fee." },
-      { h: "Order direct", p: "Ordering direct on MealDeck means you can use our own offers and loyalty points. Pop in your LU postcode to see what's live." },
+      { h: "Explore the November offers", p: "See the Offers page for 30% off the entire menu on 6–8 November, Sunday's 99p milk cake, and the registered-member double-points offer ending Friday 13 November 2026." },
     ],
   },
   {
@@ -103,8 +102,8 @@ export const posts: Post[] = [
   },
   {
     slug: "order-direct-pay-less-than-aggregators",
-    title: "Snap! Why Ordering Direct Beats the Delivery Apps",
-    excerpt: "Fewer fees, real loyalty points and full live tracking. Here's why ordering direct with MealDeck is the smarter play.",
+    title: "Ordering Direct with MealDeck: Food, Offers and One Basket",
+    excerpt: "Explore MealDeck's menus and the three November offers, with one basket for Luton collection or kerbside pickup.",
     image: "/blog/order-direct.jpg",
     date: "2026-09-07",
     rank: "J",
@@ -114,7 +113,7 @@ export const posts: Post[] = [
     body: [
       { p: "Aggregator apps add their own costs on top. When you order direct with MealDeck, you skip the middleman and keep more value in your hand." },
       { h: "One delivery fee, every brand", p: "Mix as many MealDeck brands as you like and still pay one delivery fee." },
-      { h: "Loyalty that's actually yours", p: "Points from every order, plus offers like The Burger Ace and Perfect Pair — each with clear limits and terms." },
+      { h: "Three November offers", p: "30% off the entire menu from 6–8 November; milk cake for 99p with every order on Sunday 8 November; register and spend £15 or more by and including Friday 13 November for double loyalty points. Marketing opt-ins are optional. See the Offers page for details." },
       { h: "Order your way, track every move", p: "Order on the web, app, WhatsApp or phone, then follow your order live from preparation to door." },
     ],
   },

@@ -151,8 +151,8 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
         <Link to="/opening-offer" className="md-opening-terms">
           Offer details
         </Link>
-        <Link to="/account" className="md-opening-terms">
-          Join for member offers
+        <Link to="/offers" className="md-opening-terms">
+          All three offers
         </Link>
       </div>
     </section>
