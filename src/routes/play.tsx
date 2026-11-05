@@ -1,30 +1,74 @@
-import { Feast2048, FourToFeast, OrderEcho, KitchenShuffle } from "@/components/play/arcade-games";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
-import { ArrowRight, CheckCircle2, Gamepad2, Gift, LockKeyhole, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
-import { KitchenChaos, BrandSnap, GoDish, FullHouse, KitchenStacks } from "@/components/play/premium-games";
-import { gameBrandArtwork } from "@/lib/game-brand-artwork";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import {
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Gamepad2,
+  Grid2X2,
+  Lightbulb,
+  Maximize2,
+  Minimize2,
+  RotateCcw,
+  Search,
+  X,
+} from "lucide-react";
+import { Feast2048, FourToFeast, OrderEcho, KitchenShuffle } from "@/components/play/arcade-games";
+import {
+  KitchenChaos,
+  BrandSnap,
+  GoDish,
+  FullHouse,
+  KitchenStacks,
+} from "@/components/play/premium-games";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import {
-  BRAND_THEMES, FOOD_SUITS, GAME_CATALOGUE, INGREDIENTS, RECIPES,
-  isBrandTheme, makePairs, recipeMatches, type BrandTheme, type PairCard, type SuitArt,
+  BRAND_THEMES,
+  INGREDIENTS,
+  RECIPES,
+  isBrandTheme,
+  makePairs,
+  recipeMatches,
+  type BrandTheme,
+  type PairCard,
 } from "@/lib/dishbee-play";
-import { gameFoodArtwork as foodArtwork, gameFoodArtwork as suitArtwork, gameFoodArtwork as tileArtwork } from "@/lib/game-food-artwork";
+import {
+  ARCADE_CATEGORIES,
+  ARCADE_GAMES,
+  findArcadeGames,
+  isArcadeGameId,
+  type ArcadeFilter,
+  type ArcadeGameId,
+} from "@/lib/mealdeck-arcade-library";
+import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import { seo } from "@/lib/seo";
 import cardBack from "@/assets/mealdeck-card-back.png";
-
-type Game = (typeof GAME_CATALOGUE)[number]["id"];
+import "@/styles.mealdeck-arcade-shell.css";
 
 export const Route = createFileRoute("/play")({
-  validateSearch: (search: Record<string, unknown>): { brand?: BrandTheme } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { brand?: BrandTheme; game?: ArcadeGameId } => ({
     ...(isBrandTheme(search["brand"]) ? { brand: search["brand"] } : {}),
+    ...(isArcadeGameId(search["game"]) ? { game: search["game"] } : {}),
   }),
-  head: () => seo({
-    title: "MealDeck Play — Free Food Card Games",
-    description: "Play free, entertainment-only food card games. No gambling, stakes, or redeemable gameplay prizes. MealDeck purchase rewards remain separate.",
-    path: "/play",
-  }),
+  head: () =>
+    seo({
+      title: "MealDeck Play — Free Food Games",
+      description:
+        "Pick from eleven free food-themed games. Play solo, challenge the chef or share a round with a friend. No sign-in needed. Games are just for fun.",
+      path: "/play",
+    }),
   component: PlayPage,
 });
 
@@ -34,21 +78,40 @@ function FoodPairs({ brand }: { brand: BrandTheme }) {
   const [matched, setMatched] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [round, setRound] = useState(0);
+  const [message, setMessage] = useState("Choose a card, then find its matching food.");
+  const firstCardRef = useRef<HTMLButtonElement>(null);
+  const replayRef = useRef<HTMLButtonElement>(null);
+  const complete = cards.length > 0 && matched.length === cards.length;
 
-  // Defer randomisation until mount to prevent mismatched server-rendered markup.
-  useEffect(() => { setCards(makePairs(brand)); setFlipped([]); setMatched([]); setMoves(0); }, [brand]);
+  useEffect(() => {
+    if (!complete) return;
+    const frame = requestAnimationFrame(() => replayRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [complete]);
+
+  useEffect(() => {
+    setCards(makePairs(brand));
+  }, [brand]);
 
   useEffect(() => {
     if (flipped.length !== 2) return;
     const [first, second] = flipped;
-    if (first === undefined || second === undefined) return;
     const a = cards.find((card) => card.id === first);
     const b = cards.find((card) => card.id === second);
-    const match = a && b && a.food === b.food;
-    const timer = setTimeout(() => {
-      if (match) setMatched((previous) => [...previous, first, second]);
-      setFlipped([]);
-    }, match ? 250 : 850);
+    if (!a || !b || first === undefined || second === undefined) return;
+    const match = a.food === b.food;
+    const timer = setTimeout(
+      () => {
+        if (match) {
+          setMatched((previous) => [...previous, first, second]);
+          setMessage(a.label + " pair found. Choose your next card.");
+        } else {
+          setMessage("No match this time. Remember those foods and try again.");
+        }
+        setFlipped([]);
+      },
+      match ? 350 : 1000,
+    );
     return () => clearTimeout(timer);
   }, [cards, flipped]);
 
@@ -58,41 +121,129 @@ function FoodPairs({ brand }: { brand: BrandTheme }) {
     setMatched([]);
     setMoves(0);
     setRound((value) => value + 1);
+    setMessage("A fresh deck. Choose your first card.");
+    requestAnimationFrame(() => firstCardRef.current?.focus());
   }
 
-  function flip(id: number) {
-    if (flipped.length === 2 || flipped.includes(id) || matched.includes(id)) return;
-    setFlipped((previous) => [...previous, id]);
-    if (flipped.length === 1) setMoves((previous) => previous + 1);
+  function flip(card: PairCard) {
+    if (complete || flipped.length === 2 || flipped.includes(card.id) || matched.includes(card.id))
+      return;
+    setFlipped((previous) => [...previous, card.id]);
+    if (flipped.length === 1) {
+      setMoves((previous) => previous + 1);
+      setMessage("Checking your two cards…");
+    } else {
+      setMessage(card.label + " revealed. Find its matching card.");
+    }
   }
 
-  const complete = cards.length > 0 && matched.length === cards.length;
   return (
-    <section className="dp-game-panel" aria-label="Food Pairs">
-      <div className="dp-game-head">
-        <div><h2>Food Pairs</h2><p>{BRAND_THEMES[brand].label} deck — turn over two cards and match all six pairs.</p></div>
-        <button className="dp-small-button" type="button" onClick={restart}><RotateCcw size={16} /> New game</button>
+    <section className="md-quick-game" aria-labelledby="pairs-title">
+      <div className="md-quick-head">
+        <div>
+          <p className="md-quick-kicker">MATCH & REMEMBER</p>
+          <h2 id="pairs-title">Food Pairs</h2>
+          <p>Turn over two cards at a time. Find all six pairs in as few moves as you can.</p>
+        </div>
+        <button className="md-play-button md-play-button--quiet" type="button" onClick={restart}>
+          <RotateCcw size={17} aria-hidden="true" /> New game
+        </button>
       </div>
-      <div className="dp-statline"><span>Pairs <b>{matched.length / 2} / 6</b></span><span>Moves <b>{moves}</b></span><span>Cost <b>Free</b></span></div>
-      <div className="dp-pairs-grid">
-        {cards.map((card, index) => {
-          const shown = flipped.includes(card.id) || matched.includes(card.id);
-          return (
-            <button type="button" key={`${round}-${card.id}`} className={`dp-pair-card ${shown ? "is-revealed" : ""} ${matched.includes(card.id) ? "is-matched" : ""}`}
-              style={{ "--i": index } as CSSProperties}
-              onClick={() => flip(card.id)} disabled={shown || flipped.length === 2 || complete}
-              aria-label={shown ? card.label + " matched or revealed" : "Reveal food card"}
-              aria-pressed={shown}>
-              <span className="dp-pair-flip" aria-hidden="true">
-                <span className="dp-pair-face dp-pair-cover"><img className="dp-cover-art" src={cardBack} alt="" loading="lazy" /></span>
-                <span className="dp-pair-face dp-pair-front"><img src={foodArtwork[card.art]} alt="" loading="lazy" /><small>{card.label}</small></span>
-              </span>
-            </button>
-          );
-        })}
+      <div className="md-quick-stats">
+        <div>
+          <span>Pairs found</span>
+          <strong>
+            {matched.length / 2}
+            <small> / 6</small>
+          </strong>
+        </div>
+        <div>
+          <span>Moves</span>
+          <strong>{moves}</strong>
+        </div>
+        <div>
+          <span>Your deck</span>
+          <strong className="md-quick-deck-name">{BRAND_THEMES[brand].label}</strong>
+        </div>
       </div>
-      {complete && <p role="status" className="dp-win-message"><CheckCircle2 size={20} /> All pairs found in {moves} moves! A great game — no monetary prizes.</p>}
-      <p className="dp-fineprint">Entertainment only. Game results do not award points, meals, cash or discounts.</p>
+      <progress
+        className="md-quick-progress"
+        max={6}
+        value={matched.length / 2}
+        aria-label="Pairs found"
+      />
+      <p className="md-quick-message" role="status" aria-atomic="true">
+        {complete ? "All six pairs found in " + moves + " moves. Nicely played!" : message}
+      </p>
+      {cards.length === 0 ? (
+        <p className="md-quick-loading" role="status">
+          Shuffling your deck…
+        </p>
+      ) : (
+        <div
+          className="md-pairs-board"
+          role="group"
+          aria-label="Twelve food cards"
+          aria-busy={flipped.length === 2}
+        >
+          {cards.map((card, index) => {
+            const isMatched = matched.includes(card.id);
+            const shown = isMatched || flipped.includes(card.id);
+            return (
+              <button
+                type="button"
+                key={round + "-" + card.id}
+                ref={index === 0 ? firstCardRef : undefined}
+                className={
+                  "md-pair-card" + (shown ? " is-revealed" : "") + (isMatched ? " is-matched" : "")
+                }
+                onClick={() => flip(card)}
+                aria-disabled={shown || flipped.length === 2 || complete}
+                tabIndex={isMatched ? -1 : 0}
+                aria-label={
+                  (isMatched
+                    ? "Matched " + card.label
+                    : shown
+                      ? card.label + " revealed"
+                      : "Reveal card " + (index + 1)) + (shown ? ", card " + (index + 1) : "")
+                }
+                aria-pressed={shown}
+              >
+                <span className="md-pair-flip" aria-hidden="true">
+                  <span className="md-pair-back">
+                    <img src={cardBack} alt="" />
+                    <small>{index + 1}</small>
+                  </span>
+                  <span className="md-pair-front">
+                    <img src={gameFoodArtwork[card.art]} alt="" />
+                    <strong>{card.label}</strong>
+                    {isMatched && (
+                      <span className="md-pair-check">
+                        <Check size={16} />
+                      </span>
+                    )}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {complete && (
+        <div className="md-quick-result">
+          <CheckCircle2 size={26} aria-hidden="true" />
+          <div>
+            <h3>Every pair, perfectly plated.</h3>
+            <p>You cleared the deck in {moves} moves. Ready to try for fewer?</p>
+          </div>
+          <button ref={replayRef} type="button" className="md-play-button" onClick={restart}>
+            Play again <RotateCcw size={17} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      <p className="md-quick-tip">
+        Tip: work across the deck in a pattern to remember where each food is hiding.
+      </p>
     </section>
   );
 }
@@ -101,169 +252,571 @@ function RecipeRush() {
   const [recipe, setRecipe] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [feedback, setFeedback] = useState("");
-  const [complete, setComplete] = useState(false);
+  const [stage, setStage] = useState<"choosing" | "correct" | "complete">("choosing");
+  const targetRef = useRef<HTMLHeadingElement>(null);
+  const nextActionRef = useRef<HTMLButtonElement>(null);
   const current = RECIPES[recipe] ?? RECIPES[0];
+  const completed = recipe + (stage === "choosing" ? 0 : 1);
+
+  useEffect(() => {
+    if (stage === "choosing") return;
+    const frame = requestAnimationFrame(() => nextActionRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [stage]);
 
   function selectIngredient(id: string) {
-    if (complete) return;
+    if (stage !== "choosing") return;
+    if (selected.length === 3 && !selected.includes(id)) {
+      setFeedback("Three ingredients selected. Deselect one if you want to swap it.");
+      return;
+    }
     setFeedback("");
     setSelected((previous) =>
-      previous.includes(id) ? previous.filter((item) => item !== id) : previous.length < 3 ? [...previous, id] : previous,
+      previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id],
     );
   }
 
   function check() {
-    if (selected.length !== 3 || complete) return;
+    if (selected.length !== 3 || stage !== "choosing") return;
     if (!recipeMatches(selected, current.ingredients)) {
-      setFeedback("Not quite! Check the recipe and try another combination.");
+      setFeedback("Not quite. Swap an ingredient, or open the recipe hint for a hand.");
       return;
     }
-    setFeedback("Perfect recipe! You got it.");
-    if (recipe === RECIPES.length - 1) setComplete(true);
-    else {
-      setRecipe((value) => value + 1);
-      setSelected([]);
-    }
+    setFeedback("That's the recipe! All three ingredients are correct.");
+    setStage(recipe === RECIPES.length - 1 ? "complete" : "correct");
+  }
+
+  function focusRecipe() {
+    requestAnimationFrame(() => {
+      targetRef.current?.focus({ preventScroll: true });
+      targetRef.current?.scrollIntoView({
+        block: "nearest",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+    });
+  }
+
+  function nextRecipe() {
+    setRecipe((value) => value + 1);
+    setSelected([]);
+    setFeedback("");
+    setStage("choosing");
+    focusRecipe();
   }
 
   function restart() {
-    setRecipe(0); setSelected([]); setFeedback(""); setComplete(false);
+    setRecipe(0);
+    setSelected([]);
+    setFeedback("");
+    setStage("choosing");
+    focusRecipe();
   }
 
   return (
-    <section className="dp-game-panel" aria-label="Recipe Rush">
-      <div className="dp-game-head">
-        <div><h2>Recipe Rush</h2><p>Choose exactly three ingredients for each signature dish.</p></div>
-        <button className="dp-small-button" type="button" onClick={restart}><RotateCcw size={16} /> Restart</button>
-      </div>
-      <div className="dp-recipe-target">
-        <img className="dp-recipe-art" src={suitArtwork[(complete ? "cake" : current.art) as SuitArt]} alt="" loading="lazy" />
+    <section className="md-quick-game" aria-labelledby="recipe-title">
+      <div className="md-quick-head">
         <div>
-          <small>{complete ? "Challenge complete" : `Recipe ${recipe + 1} of ${RECIPES.length}`}</small>
-          <h3>{complete ? "Master Chef!" : current.label}</h3>
-          <p>{complete ? `${RECIPES.length} recipes completed. Well played!` : "Select the ingredients that belong in this dish."}</p>
+          <p className="md-quick-kicker">PICK. MIX. PLATE.</p>
+          <h2 id="recipe-title">Recipe Rush</h2>
+          <p>Pick three ingredients for each game recipe. Need a hand? Open the hint.</p>
+        </div>
+        <button className="md-play-button md-play-button--quiet" type="button" onClick={restart}>
+          <RotateCcw size={17} aria-hidden="true" /> New game
+        </button>
+      </div>
+      <div className="md-quick-stats md-quick-stats--two">
+        <div>
+          <span>Recipes completed</span>
+          <strong>
+            {completed}
+            <small> / {RECIPES.length}</small>
+          </strong>
+        </div>
+        <div>
+          <span>Ingredients selected</span>
+          <strong>
+            {selected.length}
+            <small> / 3</small>
+          </strong>
         </div>
       </div>
-      <div className="dp-ingredient-grid">
-        {INGREDIENTS.map((item, index) => (
-          <button key={item.id} type="button" disabled={complete} aria-pressed={selected.includes(item.id)} onClick={() => selectIngredient(item.id)}
-            style={{ "--i": index } as CSSProperties}
-            className={`dp-ingredient ${selected.includes(item.id) ? "is-selected" : ""}`}>
-            <img className="dp-ingredient-art" src={tileArtwork[item.art]} alt="" loading="lazy" /><small>{item.label}</small>
+      <progress
+        className="md-quick-progress"
+        max={RECIPES.length}
+        value={completed}
+        aria-label="Recipes completed"
+      />
+      <div className="md-recipe-target">
+        <img src={gameFoodArtwork[current.art]} alt="" />
+        <div>
+          <span>
+            RECIPE {recipe + 1} OF {RECIPES.length}
+          </span>
+          <h3 ref={targetRef} tabIndex={-1}>
+            {current.label}
+          </h3>
+          <p>
+            {stage === "choosing"
+              ? "Select an ingredient again to remove it."
+              : "All the right ingredients. Great work."}
+          </p>
+        </div>
+      </div>
+      <details className="md-recipe-hint" key={recipe}>
+        <summary>
+          <Lightbulb size={17} aria-hidden="true" /> Recipe hint
+        </summary>
+        <p>
+          This game recipe uses{" "}
+          {current.ingredients
+            .map((id) => INGREDIENTS.find((item) => item.id === id)?.label.toLowerCase())
+            .join(", ")}
+          .
+        </p>
+      </details>
+      <div className="md-recipe-ingredients" role="group" aria-label="Choose three ingredients">
+        {INGREDIENTS.map((item) => {
+          const isSelected = selected.includes(item.id);
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={isSelected}
+              aria-disabled={stage !== "choosing" || (!isSelected && selected.length === 3)}
+              onClick={() => selectIngredient(item.id)}
+              className={"md-recipe-ingredient" + (isSelected ? " is-selected" : "")}
+            >
+              <img src={gameFoodArtwork[item.art]} alt="" />
+              <strong>{item.label}</strong>
+              {isSelected && (
+                <span className="md-recipe-selected">
+                  <Check size={15} aria-hidden="true" />
+                  <span className="sr-only">Selected</span>
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <p className="md-quick-message" role="status" aria-atomic="true">
+        {feedback ||
+          (selected.length === 3
+            ? "Your three ingredients are ready to check."
+            : "Choose " +
+              (3 - selected.length) +
+              " more ingredient" +
+              (selected.length === 2 ? "." : "s."))}
+      </p>
+      <div className="md-recipe-actions">
+        {stage === "choosing" && (
+          <button
+            type="button"
+            className="md-play-button"
+            disabled={selected.length !== 3}
+            onClick={check}
+          >
+            Check my recipe <ArrowRight size={18} aria-hidden="true" />
           </button>
-        ))}
+        )}
+        {stage === "correct" && (
+          <button ref={nextActionRef} type="button" className="md-play-button" onClick={nextRecipe}>
+            Next recipe <ArrowRight size={18} aria-hidden="true" />
+          </button>
+        )}
       </div>
-      <div className="dp-recipe-footer">
-        <span>{selected.length} / 3 ingredients</span>
-        <button type="button" className="dp-main-button" disabled={selected.length !== 3 || complete} onClick={check}>Check recipe <ArrowRight size={16}/></button>
-      </div>
-      {feedback && <p role="status" className="dp-game-feedback">{feedback}</p>}
-      {complete && <button type="button" className="dp-small-button" onClick={restart}>Play again</button>}
-      <p className="dp-fineprint">Entertainment only. No game play or results affect food rewards.</p>
+      {stage === "complete" && (
+        <div className="md-quick-result">
+          <CheckCircle2 size={26} aria-hidden="true" />
+          <div>
+            <h3>Three dishes. One happy chef.</h3>
+            <p>You completed every recipe in the deck.</p>
+          </div>
+          <button ref={nextActionRef} type="button" className="md-play-button" onClick={restart}>
+            Play again <RotateCcw size={17} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      <p className="md-quick-tip">
+        These are recipes for a game. See the menus for actual dishes and allergen information.
+      </p>
     </section>
   );
 }
 
-function PlayPage() {
-  const { brand = "mealdeck" } = Route.useSearch();
-  const theme = BRAND_THEMES[brand];
-  const [game, setGame] = useState<Game>("feast-2048");
-  const [filter, setFilter] = useState("All games");
-  const [depth, setDepth] = useState(true);
-  useEffect(() => { try { const preference = localStorage.getItem("mealdeck-play-depth"); setDepth(preference ? preference === "on" : !window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch { setDepth(false); } }, []);
-  function toggleDepth() { const next = !depth; setDepth(next); try { localStorage.setItem("mealdeck-play-depth", next ? "on" : "off"); } catch { /* Optional preference. */ } }
-  const categories: Record<Game, string> = { "feast-2048": "Strategy", "four-to-feast": "Strategy", "order-echo": "Memory", "kitchen-shuffle": "Puzzles", pairs: "Memory", recipe: "Puzzles", "kitchen-chaos": "Card games", snap: "Memory", "go-dish": "Card games", "full-house": "Puzzles", solitaire: "Puzzles" };
-  const collectionSuits: SuitArt[] = ["burger", "chicken", "french-taco", "cake"];
+type LibraryProps = {
+  game: ArcadeGameId;
+  query: string;
+  filter: ArcadeFilter;
+  setQuery: (query: string) => void;
+  setFilter: (filter: ArcadeFilter) => void;
+  onSelect: (game: ArcadeGameId) => void;
+  searchInputRef?: RefObject<HTMLInputElement | null>;
+};
 
-  const playPanels: Record<Game, ReactNode> = {
-    "feast-2048": <Feast2048 />, "four-to-feast": <FourToFeast />, "order-echo": <OrderEcho />, "kitchen-shuffle": <KitchenShuffle />,
+function GameLibrary({
+  game,
+  query,
+  filter,
+  setQuery,
+  setFilter,
+  onSelect,
+  searchInputRef,
+}: LibraryProps) {
+  const searchId = useId();
+  const games = findArcadeGames(query, filter);
+  function clear() {
+    setQuery("");
+    setFilter("All games");
+  }
+  return (
+    <div className="md-play-library-content">
+      <label className="md-play-search-label" htmlFor={searchId}>
+        Find a game
+      </label>
+      <div className="md-play-search">
+        <Search size={18} aria-hidden="true" />
+        <input
+          id={searchId}
+          ref={searchInputRef}
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Name, type or opponent"
+          autoComplete="off"
+        />
+        {query && (
+          <button
+            type="button"
+            aria-label="Clear game search"
+            onClick={() => {
+              setQuery("");
+              searchInputRef?.current?.focus();
+            }}
+          >
+            <X size={17} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+      <div className="md-play-filters" role="group" aria-label="Game categories">
+        {ARCADE_CATEGORIES.map((category) => (
+          <button
+            type="button"
+            key={category}
+            aria-pressed={filter === category}
+            onClick={() => setFilter(category)}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+      <p className="md-play-count" role="status">
+        {games.length} {games.length === 1 ? "game" : "games"}
+        {filter !== "All games" ? " · " + filter : ""}
+      </p>
+      {games.length ? (
+        <ul className="md-play-game-list">
+          {games.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                className={"md-play-game-card" + (game === item.id ? " is-current" : "")}
+                aria-label={(game === item.id ? "Return to " : "Play ") + item.name}
+                aria-pressed={game === item.id}
+                onClick={() => onSelect(item.id)}
+              >
+                <span className="md-play-game-art">
+                  <img src={gameFoodArtwork[item.art]} alt="" loading="lazy" />
+                </span>
+                <span className="md-play-game-copy">
+                  <strong>{item.name}</strong>
+                  <span>{item.description}</span>
+                  <small>
+                    {item.category} · {item.players}
+                  </small>
+                </span>
+                <span className="md-play-game-action" aria-hidden="true">
+                  {game === item.id ? <CheckCircle2 size={20} /> : <ArrowRight size={18} />}
+                </span>
+                {game === item.id && <span className="md-play-playing">At your table</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="md-play-empty">
+          <Search size={26} aria-hidden="true" />
+          <h3>No games found</h3>
+          <p>Try another name or choose a different category.</p>
+          <button type="button" className="md-play-button md-play-button--quiet" onClick={clear}>
+            Show all games
+          </button>
+        </div>
+      )}
+      <p className="md-play-library-note">
+        Browse without losing your current round. Switching to another game starts a fresh one.
+      </p>
+    </div>
+  );
+}
+
+function PlayPage() {
+  const { brand = "mealdeck", game = "feast-2048" } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<ArcadeFilter>("All games");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  const gamePanelRef = useRef<HTMLDivElement>(null);
+  const libraryRef = useRef<HTMLElement>(null);
+  const desktopSearchRef = useRef<HTMLInputElement>(null);
+  const pickerSearchRef = useRef<HTMLInputElement>(null);
+  const pickerTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const pendingFocus = useRef(false);
+  const selectedInPicker = useRef(false);
+  const activeGame = ARCADE_GAMES.find((item) => item.id === game) ?? ARCADE_GAMES[0]!;
+
+  const focusGame = useCallback(() => {
+    gamePanelRef.current?.focus({ preventScroll: true });
+    gamePanelRef.current?.scrollIntoView({
+      block: "start",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!pendingFocus.current) return;
+    const frame = requestAnimationFrame(() => {
+      focusGame();
+      pendingFocus.current = false;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [game, brand, focusGame]);
+
+  function selectGame(id: ArcadeGameId) {
+    selectedInPicker.current = pickerOpen;
+    setPickerOpen(false);
+    if (id === game) {
+      requestAnimationFrame(focusGame);
+      return;
+    }
+    pendingFocus.current = true;
+    void navigate({ search: { brand, game: id }, resetScroll: false });
+  }
+
+  function showLibrary() {
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      if (document.activeElement instanceof HTMLButtonElement)
+        pickerTriggerRef.current = document.activeElement;
+      setPickerOpen(true);
+      return;
+    }
+    setFocusMode(false);
+    requestAnimationFrame(() => {
+      desktopSearchRef.current?.focus({ preventScroll: true });
+      libraryRef.current?.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+    });
+  }
+
+  const panels: Record<ArcadeGameId, ReactNode> = {
+    "feast-2048": <Feast2048 />,
+    "four-to-feast": <FourToFeast />,
+    "order-echo": <OrderEcho suspended={pickerOpen} />,
+    "kitchen-shuffle": <KitchenShuffle />,
     pairs: <FoodPairs key={brand} brand={brand} />,
-    recipe: <RecipeRush key={brand} />,
+    recipe: <RecipeRush />,
     "kitchen-chaos": <KitchenChaos />,
     snap: <BrandSnap />,
     "go-dish": <GoDish />,
     "full-house": <FullHouse />,
     solitaire: <KitchenStacks />,
   };
-  const gameIcons: Record<Game, SuitArt> = {
-    "feast-2048": "burger", "four-to-feast": "cake", "order-echo": "chicken", "kitchen-shuffle": "french-taco",
-    pairs: "burger", recipe: "french-taco", "kitchen-chaos": "chicken",
-    snap: "cake", "go-dish": "french-taco", "full-house": "cake", solitaire: "burger",
-  };
+  const libraryProps = { game, query, filter, setQuery, setFilter, onSelect: selectGame };
+
   return (
-    <div className="md-marketing-shell dp-shell" data-depth={depth ? "on" : "off"} style={{ "--dp-accent": theme.accent } as CSSProperties}>
+    <div
+      className="md-marketing-shell dp-shell md-arcade-shell"
+      data-focus={focusMode ? "on" : "off"}
+    >
       <SiteHeader />
-      <main className="dp-main">
-        <div className="dp-container">
-          <div className="dp-eyebrow"><Gamepad2 size={18} /> DISHBEE PLAY · {theme.label.toUpperCase()}</div>
-          <div className="dp-intro">
+      <main className="dp-main md-play-main">
+        <div className="md-play-layout">
+          <header className="md-play-intro">
             <div>
-              <p className="dp3-eyebrow">THE MEALDECK ARCADE</p><h1>Your table.<br /><em>Your next challenge.</em></h1>
-              <p>{theme.subtitle} Coming soon: ordering and registration. Try eleven free, account-free food-themed games, with the approved MealDeck symbols and official brand artwork.</p>
-              <div className="dp-claims"><span><ShieldCheck size={16}/> No gambling</span><span><CheckCircle2 size={16}/> Always free</span><span><Sparkles size={16}/> Purely for fun</span></div>
+              <p className="md-play-eyebrow">
+                <Gamepad2 size={20} aria-hidden="true" /> MEALDECK PLAY
+              </p>
+              <h1>
+                Your next game,
+                <br />
+                <em>served up.</em>
+              </h1>
+              <p>
+                Eleven food-themed games. Play solo, challenge the chef or share a round with a
+                friend.
+              </p>
+              <div className="md-play-hero-actions">
+                <button type="button" className="md-play-button" onClick={showLibrary}>
+                  <Grid2X2 size={18} aria-hidden="true" /> Choose a game
+                </button>
+                <span>Always free. No sign-in needed.</span>
+              </div>
             </div>
-            <div className="dp3-stage" aria-hidden="true"><div className="dp3-stage-orbit" />
-              <div className="dp3-stage-card dp3-stage-back"><img src={suitArtwork["french-taco"]} alt="" /><b>PLAY</b></div>
-              <div className="dp3-stage-card dp3-stage-front"><img src={suitArtwork.burger} alt="" /><b>11 GAMES</b><span>ONE ARCADE</span></div>
-              <div className="dp3-stage-chip"><Gamepad2 size={25} /><span>FREE TO PLAY</span></div>
+            <div className="md-play-hero-art" aria-hidden="true">
+              <img className="md-play-hero-back" src={cardBack} alt="" />
+              <div className="md-play-hero-front">
+                <span>11</span>
+                <img src={gameFoodArtwork.burger} alt="" />
+                <strong>ONE MORE ROUND</strong>
+              </div>
             </div>
-          </div>
-          <div className="dp-brands"><span>Play as</span>
-            {Object.entries(BRAND_THEMES).map(([id, item]) =>
-              <Link key={id} to="/play" search={{ brand: id as BrandTheme }}
-                className={`dp-brand-pill ${brand === id ? "is-active" : ""}`} aria-current={brand === id ? "page" : undefined}>
-                <img className="dp-pill-art" src={gameBrandArtwork[id as BrandTheme]} alt="" loading="lazy" /> {item.label}
-              </Link>,
-            )}
-          </div>
-          <p className="dp-brands-note">MealDeck Food Pairs uses the selected brand's food collection. Brand Snap always displays the original logos from across the MealDeck family.</p>
-          <div className="dp-suits" aria-label="The four official food suits">
-            {FOOD_SUITS.map(suit =>
-              <div key={suit.id}><img src={suitArtwork[suit.art]} alt="" loading="lazy" /><b>{suit.label}</b><small>{suit.brand}</small></div>
-            )}
-          </div>
-          <div className="dp-section-title"><div><small>ELEVEN GAMES · ONE ARCADE</small><h2>Choose your game</h2></div><p>Play alone or against the house chef. No monetary prizes.</p></div>
-          <div className="arcade-filters" role="group" aria-label="Filter games">{["All games", "Strategy", "Memory", "Puzzles", "Card games"].map(category => <button type="button" key={category} aria-pressed={filter === category} onClick={() => setFilter(category)}>{category}</button>)}</div>
-          <div className="dp-game-select dp2-game-select" role="group" aria-label="Choose a MealDeck game">
-            {GAME_CATALOGUE.filter(item => filter === "All games" || categories[item.id] === filter).map(item =>
-              <button key={item.id} type="button" onClick={() => { setGame(item.id); requestAnimationFrame(() => { const panel = document.getElementById("arcade-active-game"); panel?.focus({ preventScroll: true }); panel?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); }); }}
-                aria-pressed={game === item.id} className={game === item.id ? "is-active" : ""}>
-                <img className="dp-tab-art" src={suitArtwork[gameIcons[item.id]]} alt="" loading="lazy"/>
-                <span>{item.name}</span>{["feast-2048", "four-to-feast", "order-echo", "kitchen-shuffle"].includes(item.id) && <b className="arcade-new">New game</b>}<small>{item.description}</small>
-              </button>
-            )}
-          </div>
-          <div className="dp3-table-toolbar"><div><span>AT YOUR TABLE</span><strong>{GAME_CATALOGUE.find(item => item.id === game)?.name}</strong></div><button type="button" aria-pressed={depth} onClick={toggleDepth}>{depth ? "3D depth on" : "Flat view"}</button></div>
-          <div id="arcade-active-game" className="arcade-panel" tabIndex={-1} role="region" aria-label="Selected game">{playPanels[game]}</div>
-          <section className="dp-collection">
-            <div className="dp-section-title"><div><small>SHOPPING REWARDS ARE SEPARATE</small><h2>Full House Rewards</h2></div><Gift size={27}/></div>
-            <p>Customers will collect guaranteed food rewards from verified, eligible purchases once loyalty and redemption controls are activated. Games never give points, food, cash or vouchers.</p>
-            <div className="dp-collection-cards">
-              {collectionSuits.map((art, index) =>
-                <div key={art}><img src={suitArtwork[art]} alt="" loading="lazy"/><LockKeyhole size={15}/><small>{FOOD_SUITS[index]?.label}</small></div>
+          </header>
+          <div
+            className="md-play-workspace"
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && focusMode) {
+                setFocusMode(false);
+                event.stopPropagation();
+              }
+            }}
+          >
+            <aside
+              className="md-play-library"
+              ref={libraryRef}
+              aria-labelledby="arcade-library-title"
+            >
+              <div className="md-play-library-heading">
+                <div>
+                  <p>FIND YOUR FAVOURITE</p>
+                  <h2 id="arcade-library-title">Game library</h2>
+                </div>
+                <span>{ARCADE_GAMES.length}</span>
+              </div>
+              <GameLibrary {...libraryProps} searchInputRef={desktopSearchRef} />
+            </aside>
+            <div className="md-play-player">
+              <div className="md-play-toolbar">
+                <p>
+                  <Gamepad2 size={18} aria-hidden="true" />
+                  <span>
+                    {activeGame.category}
+                    <small>{activeGame.players}</small>
+                  </span>
+                </p>
+                <div>
+                  <button
+                    type="button"
+                    className="md-play-button md-play-button--quiet md-play-picker-button"
+                    onClick={showLibrary}
+                  >
+                    <Grid2X2 size={17} aria-hidden="true" /> Games
+                  </button>
+                  <button
+                    type="button"
+                    className="md-play-button md-play-button--quiet"
+                    aria-pressed={focusMode}
+                    onClick={() => setFocusMode((value) => !value)}
+                  >
+                    {focusMode ? (
+                      <Minimize2 size={17} aria-hidden="true" />
+                    ) : (
+                      <Maximize2 size={17} aria-hidden="true" />
+                    )}
+                    <span>{focusMode ? "Exit focus view" : "Focus view"}</span>
+                  </button>
+                </div>
+              </div>
+              {game === "pairs" && (
+                <div className="md-play-deck">
+                  <label htmlFor="pairs-deck">Food Pairs deck</label>
+                  <select
+                    id="pairs-deck"
+                    value={brand}
+                    onChange={(event) => {
+                      const nextBrand = event.target.value;
+                      if (!isBrandTheme(nextBrand)) return;
+                      pendingFocus.current = true;
+                      void navigate({ search: { game, brand: nextBrand }, resetScroll: false });
+                    }}
+                  >
+                    {Object.entries(BRAND_THEMES).map(([id, item]) => (
+                      <option key={id} value={id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span>Changing the deck deals a new round.</span>
+                </div>
+              )}
+              <div
+                id="arcade-active-game"
+                className="md-play-game-region"
+                ref={gamePanelRef}
+                tabIndex={-1}
+                role="region"
+                aria-label={activeGame.name}
+              >
+                {panels[game]}
+              </div>
+              {focusMode && (
+                <p className="md-play-focus-note">
+                  More room to play. Use “Exit focus view” or press Escape to return to the full
+                  arcade.
+                </p>
               )}
             </div>
-            <p className="dp-pending"><LockKeyhole size={16}/> Real purchase rewards are not active in this games preview. No simulated points or vouchers are issued.</p>
-            <Link to="/order" className="dp-order-link">Browse MealDeck food <ArrowRight size={17}/></Link>
-          </section>
-          <section className="dp-events">
-            <div>
-              <small>MATCHDAY &amp; FIGHT-NIGHT FOOD</small>
-              <h2>More flavour for the big moments.</h2>
-              <p>Seasonal football and fight-night bundles can be offered to all eligible customers under published prices and conditions. No game outcome or sports prediction can trigger a valuable prize.</p>
-            </div>
-            <Link to="/order">Explore food brands <ArrowRight size={17}/></Link>
-          </section>
-          <div className="dp2-legal">
-            <ShieldCheck size={22}/>
-            <div><strong>Enjoy the games. Keep the rewards separate.</strong>
-              <p>All eleven games are free entertainment. There is no entry fee, cash-out, wagering, paid advantage, random food prize, purchased turn, or gameplay-linked loyalty reward.</p>
-            </div>
           </div>
+          <section className="md-play-footnote" aria-label="About MealDeck games">
+            <Gamepad2 size={24} aria-hidden="true" />
+            <div>
+              <h2>A good round. Just for fun.</h2>
+              <p>
+                Games are free and don’t award food, cash, discounts or loyalty points. Any saved
+                best scores stay on this device. Purchase rewards are separate and aren’t active
+                yet.
+              </p>
+            </div>
+            <Link to="/menus">
+              Explore the menus <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          </section>
         </div>
       </main>
       <SiteFooter />
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent
+          className="md-play-picker"
+          overlayClassName="md-play-picker-overlay"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            pickerSearchRef.current?.focus();
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (selectedInPicker.current) {
+              selectedInPicker.current = false;
+            } else {
+              (pickerTriggerRef.current ?? gamePanelRef.current)?.focus({ preventScroll: true });
+            }
+          }}
+        >
+          <div className="md-play-picker-heading">
+            <DialogTitle>Choose your game</DialogTitle>
+            <DialogDescription>
+              Find a new challenge or return to your current round.
+            </DialogDescription>
+          </div>
+          <GameLibrary {...libraryProps} searchInputRef={pickerSearchRef} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
