@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { handleOnlineCheckoutRequest } from "../src/lib/mealdeck-online-checkout.server";
+import {
+  handleOnlineCheckoutRequest,
+  readOnlineCheckoutStatus,
+} from "../src/lib/mealdeck-online-checkout.server";
 import {
   GUEST_PRIVACY_VERSION,
   normaliseGuestInput,
@@ -60,7 +63,12 @@ const prepared = {
 function fixture() {
   const calls: { name: string; args: Record<string, unknown> }[] = [];
   const sessions = new Map<string, Record<string, unknown>>();
-  const state = { eligible: true, channel: true, verifiedMember: true };
+  const state = {
+    eligible: true,
+    channel: true,
+    verifiedMember: true,
+    kitchen: { state: "online", collectionEstimateMinutes: 25 } as unknown,
+  };
   let receiptHash: string | null = null;
   const error = (message: string) => Response.json({ message, code: "P0001" }, { status: 400 });
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -84,6 +92,7 @@ function fixture() {
       return Response.json({
         channelOpen: state.channel,
         guestCheckoutEligible: state.eligible,
+        kitchen: state.kitchen,
         openingOffer: {
           status: "active",
           startsAt: "2026-11-06T15:00:00Z",
@@ -287,7 +296,7 @@ describe("guest checkout private browser capability", () => {
     const otherCookie = await f.start();
     f.state.eligible = false;
     f.state.channel = false;
-    expect((await f.post(selection(), cookie)).status).toBe(403);
+    expect((await f.post(selection(), cookie)).status).toBe(503);
     const runtime = { ...env, MEALDECK_ONLINE_CHECKOUT_ENABLED: "false" };
     const receipt = await f.post({ action: "receipt", orderId }, cookie, {}, runtime);
     expect(receipt.status).toBe(200);
@@ -316,5 +325,75 @@ describe("guest checkout private browser capability", () => {
     f.state.verifiedMember = false;
     expect((await f.post(selection(), cookie, auth)).status).toBe(401);
     expect(f.calls.some((c) => c.name === "mealdeck_create_guest_checkout_quote")).toBe(false);
+  });
+  test("online and busy retain actual pickup estimates and all other opening/readiness gates", async () => {
+    const f = fixture();
+    for (const state of ["online", "busy"] as const) {
+      f.state.kitchen = { state, collectionEstimateMinutes: 45 };
+      const status = await readOnlineCheckoutStatus(env, f.fetcher);
+      expect(status.available).toBe(true);
+      expect(status.guestCheckout.eligible).toBe(true);
+      expect(status.kitchen).toEqual({ state, collectionEstimateMinutes: 45 });
+      f.state.channel = false;
+      expect((await readOnlineCheckoutStatus(env, f.fetcher)).available).toBe(false);
+      f.state.channel = true;
+      expect(
+        (
+          await readOnlineCheckoutStatus(
+            { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" },
+            f.fetcher,
+          )
+        ).available,
+      ).toBe(false);
+    }
+  });
+  test("pause and close refuse fresh member/guest checkout while keeping an existing receipt accessible", async () => {
+    const f = fixture();
+    const cookie = await f.start();
+    expect((await f.post(pay, cookie)).status).toBe(200);
+    const preparedCalls = f.calls.filter((call) => /prepare.*stripe_order/.test(call.name)).length;
+    for (const state of ["paused", "closed"] as const) {
+      // Fail closed even if an upstream response inconsistently says channelOpen.
+      f.state.kitchen = { state, collectionEstimateMinutes: 45 };
+      const status = await readOnlineCheckoutStatus(env, f.fetcher);
+      expect(status.available).toBe(false);
+      expect(status.guestCheckout.eligible).toBe(false);
+      for (const body of [contact, selection(), pay]) {
+        const response = await f.post(body, cookie);
+        expect(response.status).toBe(503);
+        expect((await response.json()).error).toBe("kitchen_" + state);
+      }
+      expect(
+        (
+          await f.post(selection(), cookie, {
+            Authorization: "Bearer fixture_member_token_that_is_long_enough",
+          })
+        ).status,
+      ).toBe(503);
+      expect((await f.post({ action: "receipt", orderId }, cookie)).status).toBe(200);
+    }
+    expect(f.calls.filter((call) => /prepare.*stripe_order/.test(call.name))).toHaveLength(
+      preparedCalls,
+    );
+    expect(f.calls.some((call) => /create_.*checkout_quote/.test(call.name))).toBe(false);
+    expect((await f.post({ action: "end_guest" }, cookie)).status).toBe(200);
+  });
+  test("missing or malformed kitchen states never enable checkout or invent an estimate", async () => {
+    const f = fixture();
+    for (const kitchen of [
+      null,
+      undefined,
+      {},
+      { state: "accepting", collectionEstimateMinutes: 25 },
+      { state: "online", collectionEstimateMinutes: "25" },
+      { state: "busy", collectionEstimateMinutes: null },
+      { state: "busy", collectionEstimateMinutes: 4 },
+      { state: "busy", collectionEstimateMinutes: 181 },
+    ]) {
+      f.state.kitchen = kitchen;
+      const status = await readOnlineCheckoutStatus(env, f.fetcher);
+      expect(status.available).toBe(false);
+      expect(status.guestCheckout.eligible).toBe(false);
+    }
   });
 });

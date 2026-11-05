@@ -1,6 +1,11 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
+  kitchenAcceptsNewOrders,
+  parseKitchenAvailability,
+  type KitchenAvailability,
+} from "./mealdeck-kitchen-availability";
+import {
   GuestInputError,
   normaliseGuestInput,
   parseGuestSession,
@@ -214,6 +219,7 @@ export type MealDeckOnlineCheckoutStatus = {
   fulfilments: ["pickup", "curbside"];
   openingOffer: MealDeckOpeningOffer;
   guestCheckout: GuestCheckoutState;
+  kitchen: KitchenAvailability | null;
 };
 
 export async function readOnlineCheckoutStatus(
@@ -225,6 +231,7 @@ export async function readOnlineCheckoutStatus(
     fulfilments: ["pickup", "curbside"],
     openingOffer: unscheduledOpeningOffer(),
     guestCheckout: { eligible: false, session: null },
+    kitchen: null,
   };
   const clients = databaseClients(env, fetcher);
   if (!clients) return base;
@@ -235,8 +242,12 @@ export async function readOnlineCheckoutStatus(
     });
     const openingOffer = parseOpeningOffer(state["openingOffer"]);
     if (!openingOffer) return base;
+    const kitchen = parseKitchenAvailability(state["kitchen"]);
     const available =
       state["channelOpen"] === true &&
+      kitchen !== null &&
+      kitchenAcceptsNewOrders(kitchen.state) &&
+      kitchen.collectionEstimateMinutes !== null &&
       clients.service !== null &&
       env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] === "true" &&
       env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] === "signed-off" &&
@@ -245,6 +256,7 @@ export async function readOnlineCheckoutStatus(
       ...base,
       openingOffer,
       available,
+      kitchen,
       guestCheckout: {
         eligible: available && state["guestCheckoutEligible"] === true,
         session: null,
@@ -253,6 +265,22 @@ export async function readOnlineCheckoutStatus(
   } catch {
     return base;
   }
+}
+
+function newOrderingUnavailable(status: MealDeckOnlineCheckoutStatus): CheckoutProblem {
+  if (status.kitchen?.state === "paused")
+    return new CheckoutProblem(
+      "kitchen_paused",
+      "The Luton kitchen has temporarily paused new orders. Existing orders continue to update.",
+      503,
+    );
+  if (status.kitchen?.state === "closed")
+    return new CheckoutProblem(
+      "kitchen_closed",
+      "The Luton kitchen is closed to new orders. Existing orders continue to update.",
+      503,
+    );
+  return backendProblem({});
 }
 
 type CheckoutClients = NonNullable<ReturnType<typeof databaseClients>>;
@@ -356,6 +384,8 @@ export async function handleOnlineCheckoutRequest(
       requireGuestOrigin(request);
       const details = normaliseGuestInput(input);
       const status = await readOnlineCheckoutStatus(env, fetcher);
+      if (status.kitchen?.state === "paused" || status.kitchen?.state === "closed")
+        throw newOrderingUnavailable(status);
       if (!status.guestCheckout.eligible)
         throw new CheckoutProblem(
           "guest_window_closed",
@@ -427,6 +457,8 @@ export async function handleOnlineCheckoutRequest(
       env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off"
     )
       throw backendProblem({});
+    const status = await readOnlineCheckoutStatus(env, fetcher);
+    if (!status.available) throw newOrderingUnavailable(status);
     if (action === "quote") {
       const selection = normaliseCheckoutSelection(input, clients.config.tenantId);
       const quote = await rpc(

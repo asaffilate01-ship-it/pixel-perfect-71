@@ -20,10 +20,10 @@ The complete release source is in [PR #70](https://github.com/asaffilate01-ship-
 
 Each unchanged additive migration below was submitted to the same MealDeck Lovable project as **one complete query with its own outer transaction**. Both returned success, followed by independent read-only verification. The historical foundation installer was not rerun or edited.
 
-| Migration | UTF-8 bytes | SHA-256 |
-| --- | ---: | --- |
-| `20261105082900_mealdeck_stripe_checkout.sql` | 44,646 | `d526795e1d691c4f14936191b4cf1b7a4c4c8c6fa2b8d695d54410fe65bd681e` |
-| `20261105090147_mealdeck_kitchen_printer.sql` | 39,573 | `3a6662a3361e9dbe45d71f93044a7a72f8a0c7e07deb1ed8b4b33dd94595c9fc` |
+| Migration                                     | UTF-8 bytes | SHA-256                                                            |
+| --------------------------------------------- | ----------: | ------------------------------------------------------------------ |
+| `20261105082900_mealdeck_stripe_checkout.sql` |      44,646 | `d526795e1d691c4f14936191b4cf1b7a4c4c8c6fa2b8d695d54410fe65bd681e` |
+| `20261105090147_mealdeck_kitchen_printer.sql` |      39,573 | `3a6662a3361e9dbe45d71f93044a7a72f8a0c7e07deb1ed8b4b33dd94595c9fc` |
 
 At `2026-11-05 09:38:16.468866+00`, hosted verification confirmed:
 
@@ -35,6 +35,16 @@ At `2026-11-05 09:38:16.468866+00`, hosted verification confirmed:
 - Registration is available. Push sending and loyalty earning remain disabled pending their configuration.
 
 The installed schema and merged/published source are distinct from live ordering activation. The next required input is the intended owner's verified account, `info@mealdeck.co.uk`, followed by private owner/kitchen bootstrap and reviewed catalogue publication. Server-only Stripe credentials, account/mode/webhook settings, release acceptance and pickup estimates still need their real configuration. The printer requires a compatible device, local bridge/TLS setup and a physical paper check. See the [checkout guide](mealdeck-opening-checkout.md), [customer guide](mealdeck-customer-membership.md) and [kitchen/printer guide](mealdeck-kitchen-printer.md).
+
+### Confirmed hours and guest checkout installation — 15:10 UTC
+
+The guest release source is in [PR #71](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/71), implementation commit `71ea6697b14766f1cd239c463f32ffbab2ff9297`. All eight jobs in [Verify MealDeck run 735](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42051399322) passed before installation, including the native PostgreSQL 17 guest suite and its concurrent service-connection case. Local validation passed 690 unit tests, 23 receipt-bridge tests, TypeScript, scoped lint and production build. Local responsive browser review was blocked by the preview host allowlist; no visual browser pass is claimed for that environment.
+
+The unchanged `20261105143652_mealdeck_opening_guest_checkout.sql` (36,303 UTF-8 bytes; SHA-256 `e243e1347ec8bea697eac34dffd79e4effffd517b186ad540bfc141cd1711675`) was submitted to the same verified independent MealDeck project as one complete request with its own `begin`/`commit`. It succeeded. Historical installers were not rerun.
+
+At `2026-11-05 15:10:28.725356+00`, a separate read-only query verified all security and window invariants: nineteen routine definitions and access policies, thirteen relevant table RLS/ACL checks, all 42 public tables protected, identity/scope constraints, fifteen exact opening-time boundaries, and the original server-clock wrapper using `now()`. Guest RPCs are available only to the service role; no direct API-role table grants were introduced. The configured campaign starts 6 November at 15:00 and ends 8 November at 23:00, Europe/London, with nightly closure. The fixed-date default is present.
+
+The same verification found zero Auth users, owner accounts, businesses, orders, receipts, guest sessions, quotes, Stripe records, customer profiles, consent entries, loyalty entries or push subscriptions. Checkout settings remain disabled/unbound; push and loyalty remain disabled. Installation did not create an owner, customer, payment or print. Owner verification and real checkout activation are still required. The later Online/Busy/Pause/Closed addition is tracked separately below when installed.
 
 The following sections retain the earlier provisioning and investigation record. Their “installation pending” and “connector unavailable” observations are superseded by the verified position above.
 

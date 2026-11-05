@@ -11,6 +11,7 @@
 
 ## Confirmed opening hours and guest ordering — latest owner decision, 5 November 2026
 
+- The owner requested easy **Online / Busy / Pause / Closed** controls on admin. Show the saved state on Overview and Finance, apply changes through verified owner/admin RPCs, and retain tenant/kitchen scope. Online and Busy may accept new orders only when every payment/menu/opening gate passes; Busy uses the explicitly configured pickup estimate, without an invented delay. Paused and Closed stop new checkout but preserve already-started payment reconciliation and existing order/receipt/KDS progress. They never resume automatically. Stopping orders must remain possible even if a pickup-estimate edit is unfinished.
 - Confirmed Luton opening: **Friday 6 November 2026, 15:00–23:00; Saturday 7 and Sunday 8 November, 13:00–23:00**, Europe/London. These dates supersede earlier unscheduled-date notes below and in historical documents.
 - During those exact daily windows, customers may order **without registering**. The 30% opening offer has no minimum and includes eligible guest and member collection/kerbside orders. The kitchen closes between the daily windows; this is not a rolling three-day window from signup.
 - Guest orders earn **no loyalty points**, create no Auth/member account and never opt the customer into marketing. Registered, verified membership is required for member-only offers; promotional email and push preferences remain separate and optional. Do not invent loyalty earning rules or enable notification delivery before configured.

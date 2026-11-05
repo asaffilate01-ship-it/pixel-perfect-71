@@ -58,6 +58,11 @@ import {
   parseGuestCheckoutState,
   type GuestCheckoutState,
 } from "@/lib/mealdeck-guest";
+import {
+  kitchenAcceptsNewOrders,
+  parseKitchenAvailability,
+  type KitchenAvailability,
+} from "@/lib/mealdeck-kitchen-availability";
 
 const FULFILMENT_KEY = "mealdeck-checkout-fulfilment-v1";
 const ATTEMPT_KEY = "mealdeck-checkout-attempt-v2";
@@ -121,6 +126,7 @@ type CheckoutStatus = {
   available: boolean;
   openingOffer: MealDeckOpeningOffer;
   guestCheckout: GuestCheckoutState;
+  kitchen: KitchenAvailability | null;
 };
 type ApiResult = {
   quote?: Quote;
@@ -147,6 +153,58 @@ async function checkoutRequest(
   signal?: AbortSignal,
 ): Promise<ApiResult> {
   return requestMealDeckCheckout<ApiResult>(mode, input, getMealDeckCustomerAccessToken, signal);
+}
+
+function KitchenAvailabilityNotice({
+  status,
+  current,
+  available,
+}: {
+  status: CheckoutStatus | null;
+  current: boolean;
+  available: boolean;
+}) {
+  if (!status || (current && available && status.kitchen?.state !== "busy")) return null;
+  const kitchen = status.kitchen;
+  let tone = "unavailable";
+  let heading = "Ordering is currently unavailable";
+  let message = "You can still browse the menus and prepare your basket.";
+  if (!current) {
+    heading = "We can't confirm ordering availability";
+    message = "Check your connection to see the latest availability.";
+  } else if (kitchen?.state === "paused") {
+    tone = "paused";
+    heading = "Ordering is temporarily paused";
+    message =
+      "We're not accepting new orders right now. You can still browse and keep your basket for later.";
+  } else if (kitchen?.state === "closed") {
+    tone = "closed";
+    heading = "The Luton kitchen is closed";
+    message =
+      "We're not accepting new orders right now. You can still browse and keep your basket for later.";
+  } else if (available && kitchen?.state === "busy") {
+    tone = "busy";
+    heading = "We're busy";
+    message =
+      kitchen.collectionEstimateMinutes === null
+        ? "Your pickup estimate will be confirmed before payment."
+        : `Current pickup estimate for new orders: about ${kitchen.collectionEstimateMinutes} minutes after payment.`;
+  }
+  return (
+    <section
+      className={`md-checkout-kitchen-notice is-${tone}`}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <Clock3 size={23} aria-hidden="true" />
+      <div>
+        <p className="md-checkout-kitchen-label">Luton · New orders</p>
+        <h2>{heading}</h2>
+        <p>{message}</p>
+      </div>
+    </section>
+  );
 }
 
 function DetailedOrderLines({
@@ -339,6 +397,7 @@ export function LaunchCheckout({
   const [account, setAccount] = useState<CustomerAccountState | null>(null);
   const [accountIssue, setAccountIssue] = useState<string | null>(null);
   const [status, setStatus] = useState<CheckoutStatus | null>(null);
+  const [statusCurrent, setStatusCurrent] = useState(false);
   const [checkoutMode, setCheckoutMode] = useState<MealDeckCheckoutMode>("member");
   const [guestDetails, setGuestDetails] = useState({ name: "", email: "", phone: "" });
   const [guestIssue, setGuestIssue] = useState<string | null>(null);
@@ -362,9 +421,15 @@ export function LaunchCheckout({
   const guestStateVersion = useRef(0);
   const registered = account?.status === "signed_in" && account.profile.registered;
   const guestSession = status?.guestCheckout.session ?? null;
-  const guestEligible = status?.available === true && status.guestCheckout.eligible;
+  const orderingAvailable =
+    status?.available === true &&
+    status.kitchen !== null &&
+    kitchenAcceptsNewOrders(status.kitchen.state) &&
+    status.kitchen.collectionEstimateMinutes !== null;
+  const guestEligible = orderingAvailable && status?.guestCheckout.eligible === true;
   const canViewReceipt = checkoutMode === "guest" ? Boolean(guestSession) : registered;
-  const canCheckout = canViewReceipt && (checkoutMode === "member" || guestEligible);
+  const canCheckout =
+    orderingAvailable && canViewReceipt && (checkoutMode === "member" || guestEligible);
   const customerIdentity =
     checkoutMode === "guest"
       ? "guest:" + (guestSession?.id ?? "new")
@@ -432,14 +497,18 @@ export function LaunchCheckout({
             !controller.signal.aborted &&
             requestId === statusRequestId.current &&
             guestVersion === guestStateVersion.current
-          )
+          ) {
             setStatus({
               ...data,
+              available: data.available === true,
+              kitchen: parseKitchenAvailability(data.kitchen),
               guestCheckout: parseGuestCheckoutState(data.guestCheckout) ?? {
                 eligible: false,
                 session: null,
               },
             });
+            setStatusCurrent(true);
+          }
         })
         .catch(() => {
           if (
@@ -447,9 +516,10 @@ export function LaunchCheckout({
             !controller.signal.aborted &&
             requestId === statusRequestId.current &&
             guestVersion === guestStateVersion.current
-          )
+          ) {
             setStatus((current) => ({
               available: false,
+              kitchen: current?.kitchen ?? null,
               guestCheckout: { eligible: false, session: current?.guestCheckout.session ?? null },
               openingOffer: current?.openingOffer ?? {
                 status: "unscheduled",
@@ -459,6 +529,8 @@ export function LaunchCheckout({
                 serverNow: new Date().toISOString(),
               },
             }));
+            setStatusCurrent(false);
+          }
         });
     };
     refreshStatus();
@@ -695,7 +767,7 @@ export function LaunchCheckout({
     );
   }
   async function reviewTotal() {
-    if (!fulfilment || busy || !canCheckout || !status?.available) return;
+    if (!fulfilment || busy || !canCheckout) return;
     if (fulfilment === "curbside" && !parseKerbsideVehicle(vehicle)) {
       setIssue("Enter the car make, colour and last 4 registration characters.");
       return;
@@ -741,7 +813,7 @@ export function LaunchCheckout({
     }
   }
   async function pay(quoteId: string) {
-    if (busy || !canCheckout || !status?.available) return;
+    if (busy || !canCheckout) return;
     const requestId = ++checkoutRequestId.current;
     if (attempt.current?.quoteId !== quoteId)
       attempt.current = { quoteId, attemptId: crypto.randomUUID() };
@@ -802,6 +874,11 @@ export function LaunchCheckout({
           </div>
           <MealDeckLogo className="md-checkout-logo" />
         </header>
+        <KitchenAvailabilityNotice
+          status={status}
+          current={statusCurrent}
+          available={orderingAvailable}
+        />
         {orderId && (guestSession || checkoutMode === "guest") && (
           <div className="md-checkout-notice md-checkout-identity-note">
             <span>
@@ -921,7 +998,7 @@ export function LaunchCheckout({
                         </p>
                         <button
                           className="md-checkout-primary"
-                          disabled={busy || !canCheckout || !status?.available}
+                          disabled={busy || !canCheckout}
                           type="button"
                           onClick={() => {
                             void pay(receipt.quoteId);
@@ -934,7 +1011,7 @@ export function LaunchCheckout({
                           )}
                           Continue payment
                         </button>
-                        {(!status?.available || !canCheckout) && (
+                        {!canCheckout && (
                           <p className="md-checkout-notice">
                             Payment is currently unavailable. Your order details remain accessible
                             here.
@@ -1551,15 +1628,8 @@ export function LaunchCheckout({
                       Your 30% opening discount will be applied to the verified checkout total.
                     </p>
                   ) : null}
-                  {!status?.available && (
-                    <p className="md-checkout-notice" role="status">
-                      Ordering is being prepared for Luton. You can browse, build your basket and
-                      register now.
-                    </p>
-                  )}
                   {canCheckout &&
                     fulfilment &&
-                    status?.available &&
                     (quote ? (
                       <>
                         <p className="md-checkout-muted">
