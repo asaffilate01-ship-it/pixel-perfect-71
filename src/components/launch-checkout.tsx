@@ -60,6 +60,7 @@ import {
 } from "@/lib/mealdeck-customer-browser";
 import { parseKerbsideVehicle, type MealDeckOpeningOffer } from "@/lib/mealdeck-opening-offer";
 import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timing";
+import { safeMealDeckCheckoutRedirect } from "@/lib/mealdeck-checkout-url";
 import {
   CHECKOUT_MODE_KEY,
   requestMealDeckCheckout,
@@ -918,9 +919,8 @@ export function LaunchCheckout({
       if (!alive.current || requestId !== checkoutRequestId.current) return;
       if (!result.checkoutUrl || !result.orderId)
         throw new Error("We couldn't open secure payment. Please try again.");
-      const url = new URL(result.checkoutUrl);
-      if (url.origin !== "https://checkout.stripe.com" || !url.pathname.startsWith("/c/pay/"))
-        throw new Error("The payment link could not be verified.");
+      const url = safeMealDeckCheckoutRedirect(result.checkoutUrl);
+      if (!url) throw new Error("The payment link could not be verified.");
       try {
         sessionStorage.setItem(CHECKOUT_MODE_KEY, checkoutMode);
         sessionStorage.setItem(
@@ -935,7 +935,7 @@ export function LaunchCheckout({
       } catch {
         /* Server still enforces idempotency. */
       }
-      window.location.assign(url.href);
+      window.location.assign(url);
     } catch (error) {
       if (alive.current && requestId === checkoutRequestId.current) {
         setIssue(error instanceof Error ? error.message : "We couldn't open secure payment.");

@@ -52,6 +52,8 @@ Keep the existing dedicated MealDeck URL/public key/server key and tenant/Luton 
 
 Shared funding additionally requires `MEALDECK_SHARED_PAYMENTS_ENABLED=true` and `MEALDECK_GROUP_LINK_SECRET`, a separately generated high-entropy base64url secret of at least 43 characters. Rotating that key invalidates existing participant access links/cookies; it does not rewrite payment records. Retain the key while pending rooms need access.
 
+Shared contributions use the same optional `MEALDECK_STRIPE_CHECKOUT_HOST=pay.mealdeck.co.uk` setting as single-payer Checkout. Their original Stripe Session and claim are preserved on return/retry, including when the provider returns the earlier Stripe hostname. The exact new hostname needs the [custom-domain additive migration and activation checks](mealdeck-stripe-custom-domain.md); setting it is not evidence of an active domain or accepted payment.
+
 Native collection additionally requires `MEALDECK_TERMINAL_ENABLED=true`, `MEALDECK_TERMINAL_INTEGRATION_APPROVED=signed-off`, and `MEALDECK_STRIPE_TERMINAL_LOCATION_ID`. `MEALDECK_TERMINAL_SIMULATED=true` is permitted only in test mode. Common checkout integration approval and actual canonical kitchen readiness still apply. All defaults remain unavailable until configured.
 
 Subscribe the configured Stripe webhook to Checkout completed/async-payment-succeeded/expired; PaymentIntent succeeded/canceled/processing/payment-failed; charge refunded; and dispute created/closed. Unknown provider activity is not made into a MealDeck order. Unbound callbacks before the initial HTTP response can bind only through the verified server reconciliation path.

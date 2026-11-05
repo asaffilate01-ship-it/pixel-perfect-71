@@ -420,6 +420,7 @@ export async function handleSharedPaymentsRequest(
         "Payment status is temporarily unavailable. Your saved order has not been replaced.",
       );
     if (input.action === "pay") {
+      if (stripe.checkoutDomain?.status === "invalid") throw paymentUnavailable();
       const existing = (
         await paymentRpcList(
           clients.service,

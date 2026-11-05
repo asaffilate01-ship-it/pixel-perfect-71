@@ -33,10 +33,13 @@ Use the existing dedicated MealDeck public backend configuration and the exact b
 | `MEALDECK_STRIPE_WEBHOOK_SECRET`         | Signing secret for this environment's webhook endpoint.             |
 | `MEALDECK_STRIPE_ACCOUNT_ID`             | Expected Stripe merchant account ID.                                |
 | `MEALDECK_STRIPE_MODE`                   | Exactly `test` or `live`.                                           |
+| `MEALDECK_STRIPE_CHECKOUT_HOST`          | Optional exact `pay.mealdeck.co.uk` after custom-domain setup; blank keeps Stripe's default. |
 | `MEALDECK_ONLINE_CHECKOUT_ENABLED`       | Exactly `true` after setup is ready.                                |
 | `MEALDECK_CHECKOUT_INTEGRATION_APPROVED` | Exactly `signed-off` after end-to-end acceptance.                   |
 
 Do not substitute Dishbee credentials or infer authority from a publishable Stripe key. Conflicting legacy backend configuration fails closed.
+
+The approved Stripe custom hostname is `pay.mealdeck.co.uk`. Single and shared Checkout validate the actual provider-issued URL, including during recovery, against the exact configured host; they never construct a replacement URL. Install the additive database URL guard before setting the server value. DNS entry alone is not confirmation that Stripe has activated the domain. See [custom Checkout domain setup and acceptance](mealdeck-stripe-custom-domain.md).
 
 The signed webhook is `https://mealdeck.co.uk/api/stripe/webhook`. Subscribe to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `charge.refunded`, `charge.dispute.created`, and `charge.dispute.closed`. The handler verifies the signature over the raw body, checks the Stripe account and mode, then independently retrieves the provider event, complete Checkout session, succeeded PaymentIntent and captured charge before calling the narrow database reconciliation function. Event replay and order/session binding are enforced inside a transaction.
 

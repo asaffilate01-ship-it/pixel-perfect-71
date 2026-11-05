@@ -1,5 +1,10 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { CheckoutProblem } from "./mealdeck-checkout-selection";
+import { safeHostedCheckoutUrl } from "./mealdeck-checkout-url";
+import {
+  readMealDeckStripeCheckoutDomain,
+  type MealDeckStripeCheckoutDomain,
+} from "./mealdeck-stripe-checkout-domain.server";
 import type { MealDeckRuntimeEnv } from "./mealdeck-runtime-config";
 
 /** Pinned to the current stable API verified in Stripe's official reference. */
@@ -9,6 +14,7 @@ export type MealDeckStripeConfig = {
   webhookSecret: string;
   accountId: string;
   livemode: boolean;
+  checkoutDomain?: MealDeckStripeCheckoutDomain;
 };
 type Json = Record<string, unknown>;
 
@@ -28,24 +34,23 @@ export function readMealDeckStripeConfig(env: MealDeckRuntimeEnv): MealDeckStrip
     !secretKey.startsWith("sk_" + mode + "_")
   )
     return null;
-  return { secretKey, webhookSecret, accountId, livemode: mode === "live" };
+  // A broken URL setting must not disable reconciliation of existing payments.
+  // New Checkout requests check the domain separately before creating a Session.
+  return {
+    secretKey,
+    webhookSecret,
+    accountId,
+    livemode: mode === "live",
+    checkoutDomain: readMealDeckStripeCheckoutDomain(env),
+  };
 }
 
-export function safeStripeCheckoutUrl(value: unknown): string | null {
-  if (typeof value !== "string" || value.length > 5000) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" &&
-      url.hostname === "checkout.stripe.com" &&
-      !url.port &&
-      !url.username &&
-      !url.password &&
-      url.pathname.startsWith("/c/pay/")
-      ? url.href
-      : null;
-  } catch {
-    return null;
-  }
+export function safeStripeCheckoutUrl(
+  value: unknown,
+  domain?: MealDeckStripeCheckoutDomain,
+): string | null {
+  if (domain?.status === "invalid") return null;
+  return safeHostedCheckoutUrl(value, domain?.status === "configured" ? domain.hostname : null);
 }
 
 export async function stripeRequest(
@@ -166,6 +171,84 @@ export function stripeSessionParameters(order: PreparedStripeOrder) {
     body.set("payment_intent_data[metadata][" + key + "]", value);
   }
   return body;
+}
+
+/** Recover the original Session by ID; never replace it to change its hostname. */
+export async function resolveStripeCheckoutSession(
+  config: MealDeckStripeConfig,
+  order: PreparedStripeOrder,
+  fetcher: typeof fetch,
+): Promise<{ sessionId: string; url: string }> {
+  const invalid = () =>
+    new CheckoutProblem(
+      "invalid_payment_session",
+      "The saved payment could not be verified. Please check your order before trying again.",
+      503,
+    );
+  if (config.checkoutDomain?.status === "invalid" || !Number.isFinite(Date.parse(order.expiresAt)))
+    throw invalid();
+  const validId = (value: unknown): value is string =>
+    typeof value === "string" && /^cs_[A-Za-z0-9_]{1,250}$/.test(value);
+  const checkBinding = (session: Json, expectedId?: string) => {
+    const metadata = session["metadata"] as Json | undefined;
+    if (
+      !validId(session["id"]) ||
+      (expectedId && session["id"] !== expectedId) ||
+      session["livemode"] !== config.livemode ||
+      session["mode"] !== "payment" ||
+      session["client_reference_id"] !== order.orderId ||
+      session["amount_total"] !== order.totalPence ||
+      session["currency"] !== "gbp" ||
+      metadata?.["source"] !== "mealdeck" ||
+      metadata?.["mealdeck_order_id"] !== order.orderId ||
+      metadata?.["mealdeck_quote_id"] !== order.quoteId ||
+      metadata?.["mealdeck_request_hash"] !== order.requestHash
+    )
+      throw invalid();
+  };
+  let sessionId = order.sessionId;
+  if (sessionId !== null && !validId(sessionId)) throw invalid();
+  if (!sessionId) {
+    // A lost create response may be retried only during the original short
+    // order lifetime, never after Stripe's finite idempotency retention.
+    if (Date.parse(order.expiresAt) <= Date.now())
+      throw new CheckoutProblem(
+        "session_expired",
+        "This payment request expired. Please check your order before starting again.",
+        409,
+      );
+    const created = await stripeRequest(config, "checkout/sessions", fetcher, {
+      body: stripeSessionParameters(order),
+      idempotencyKey: "mealdeck-order-" + order.orderId,
+    });
+    checkBinding(created);
+    sessionId = created["id"] as string;
+  }
+  // An idempotent POST can return its old 'open' response after payment. Always
+  // read the current Session, including when recovering from a lost response.
+  const session = await stripeRequest(config, "checkout/sessions/" + sessionId, fetcher);
+  checkBinding(session, sessionId);
+  if (session["status"] === "expired" || Date.parse(order.expiresAt) <= Date.now())
+    throw new CheckoutProblem(
+      "session_expired",
+      "This payment session expired. Please check your order before starting again.",
+      409,
+    );
+  if (session["status"] === "complete" || session["payment_status"] === "paid")
+    throw new CheckoutProblem(
+      "payment_confirmation_pending",
+      "This payment has already been submitted. Check your order confirmation before paying again.",
+      409,
+    );
+  const url = safeStripeCheckoutUrl(session["url"], config.checkoutDomain);
+  if (
+    !url ||
+    new URL(url).pathname !== "/c/pay/" + sessionId ||
+    session["status"] !== "open" ||
+    session["payment_status"] !== "unpaid"
+  )
+    throw invalid();
+  return { sessionId, url };
 }
 
 export function verifyStripeSignature(

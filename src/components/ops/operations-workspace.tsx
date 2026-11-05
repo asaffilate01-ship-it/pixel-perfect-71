@@ -74,6 +74,7 @@ import type { OpsSupplier, OpsPurchase, OpsBatch } from "@/lib/mealdeck-ops-proc
 
 import { OpsKdsPanel } from "@/components/ops/kds-panel";
 import { CheckoutLaunchSettings } from "@/components/ops/checkout-launch-settings";
+import { IntegrationStatusPanel } from "@/components/ops/integration-status-panel";
 const field = "md-ops-field";
 const btn = "md-ops-button md-ops-primary";
 const columns = "md-ops-card p-5";
@@ -1033,11 +1034,10 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                           (access.location_id === null || access.location_id === location) &&
                           (access.role === "owner" || access.role === "admin"),
                       ) && (
-                        <CheckoutLaunchSettings
-                          key={tenant + ":" + location}
-                          tenantId={tenant}
-                          locationId={location}
-                        />
+                        <div className="space-y-5" key={tenant + ":" + location + ":" + user.id}>
+                          <CheckoutLaunchSettings tenantId={tenant} locationId={location} />
+                          <IntegrationStatusPanel tenantId={tenant} locationId={location} />
+                        </div>
                       )}
                     <PaidOrdersGoalPanel locations={data.paidGoalLocations} />
                     <OpsAnalyticsPanel analytics={data.analytics} brandSales={data.brandSales} />
@@ -1123,11 +1123,10 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                           (access.location_id === null || access.location_id === location) &&
                           (access.role === "owner" || access.role === "admin"),
                       ) && (
-                        <CheckoutLaunchSettings
-                          key={tenant + ":" + location}
-                          tenantId={tenant}
-                          locationId={location}
-                        />
+                        <div className="space-y-5" key={tenant + ":" + location + ":" + user.id}>
+                          <CheckoutLaunchSettings tenantId={tenant} locationId={location} />
+                          <IntegrationStatusPanel tenantId={tenant} locationId={location} />
+                        </div>
                       )}
                     <OpsFinancePanel {...common} finance={data.finance} expenses={data.expenses} />
                   </>

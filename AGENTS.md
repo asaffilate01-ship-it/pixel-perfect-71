@@ -11,6 +11,12 @@
 
 <!-- LOVABLE:END -->
 
+## Branded checkout and connection diagnostics — 5 November 2026
+
+- The owner chose `pay.mealdeck.co.uk` as the Stripe-hosted custom domain and reported adding DNS. DNS and an application allowlist are not evidence of Stripe's Active status. Permit the exact approved host only through the reviewed server setting and additive database validation; preserve provider-returned URLs. Payment Links and Customer Portal are Stripe account settings, not substitutes for the canonical MealDeck order session.
+- A saved Checkout session must be recovered from Stripe using its original ID and verified binding. A changed, missing or rejected URL must never silently create a replacement payment attempt. Keep webhook reconciliation available when new checkout configuration is disabled or invalid.
+- `/api/ops/integrations` is a read-only owner/admin diagnostic for the trusted Luton mapping. Verify current Auth identity, MFA, role and SQL finance permission before inspecting configuration. Return fixed setting names and safe status text only. It must never send mail, create payment/provider objects or change kitchen settings. Configuration is separate from provider acceptance, native signing/device acceptance and inbox delivery.
+
 ## Shared payments, native phone collection and latest branding — 5 November 2026
 
 - The owner requested separate group payments, shared payments, and Stripe Tap to Pay on both Android and iPhone. The repository now implements a frozen server-priced group order with **pay by numbered bag**, **equal split**, and organiser **cover unclaimed balance** alongside the existing one-payer checkout. The local choice/invitation planner remains local until its reviewed checkout creates a server payment room. See `docs/mealdeck-shared-payments.md` and the database contract.
