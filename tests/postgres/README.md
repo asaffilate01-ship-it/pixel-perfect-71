@@ -197,3 +197,27 @@ it does not attest live payment capture, webhook authentication, Supabase sessio
 verification, group financial release, provider dispatch, or production launch
 readiness. The production release authority is intentionally absent until a
 reviewed MealDeck payment integration supplies verified evidence.
+
+## Approved launch catalogue import
+
+`catalogue-import-behavior.mjs` reuses the same guarded harness and installs the
+actual independent profile before importing the owner-approved £20 catalogue.
+Run `npm run test:catalogue --prefix tests/postgres`, or
+`npm run test:catalogue:postgres --prefix tests/postgres` with a separate fresh
+localhost database and PostgreSQL service fixture. The native suite adds a real
+two-session lock check; the embedded run explicitly reports that limitation.
+
+The tests check all 77 draft items, 20 real source categories, 17 modifier groups,
+66 options and one shared kitchen; the committed JSON matches the single source
+catalogue. Included selectors remain £0, optional/replacement upgrades £20.
+They exercise wrong-project/business/kitchen/station and API-role rejection,
+closed-channel requirements, duplicate/collision handling, atomic late rollback,
+idempotent reruns, preserved admin price changes and unchanged RLS/release gates.
+Unattached draft replacement options are not a conditional checkout adapter.
+After the import checks, the same disposable database runs the separate
+modifier-price administration extension's permissions, managed transaction,
+conflict and audit tests. Native PostgreSQL also checks competing edits and
+permission revocation while waiting on the price row; the base profile is not
+rewritten to install this extension.
+See `docs/mealdeck-launch-catalogue-import.md` for execution and exact pending
+activation contracts. No hosted project, real account or payment provider is used.

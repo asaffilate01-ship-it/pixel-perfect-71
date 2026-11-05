@@ -42,4 +42,22 @@ After successful schema installation and account verification, use the documente
 - Confirm the owner account, perform the private bootstrap and configure actual tenant/kitchen bindings.
 - Authenticated `/ops` checks: menu editing, draft routing, recipes, stock and staff permissions using approved inputs/prices.
 - Authenticated `/kds` must report setup required until accepted independent payment-release authority exists; never fabricate paid orders for testing.
-- Catalogue prices/allergens/publication and real payments remain separately blocked pending approval and integration acceptance.
+- The owner has now approved the initial £20 item and upgrade prices. Allergen completion, catalogue publication and real payment integration remain pending.
+
+## Payment provisioning — 5 November 2026
+
+- The owner confirmed enabling built-in Stripe payments in test mode. The enable tool reported successful test-account provisioning and registration of the test webhook endpoint.
+- Provisioning is not checkout acceptance: no payment products, checkout form or app webhook handler have been created in this request. Illustrative menu prices must not become payment products.
+- Food is ineligible for full merchant-of-record compliance handling. Planned checkout uses tax calculation and collection only (`automatic_tax`), with appropriate product-specific tax codes; the seller remains responsible for registration, filing and remittance.
+- The owner subsequently approved £20 for every launch item and each chargeable add-on, meal or upgrade. The repository now includes the reviewed draft catalogue import and upgrade-price administration extension. Next requirements are hosted installation, canonical publication and verified order/payment reconciliation. Existing coming-soon, checkout-approval and KDS-release gates remain unchanged.
+- Live payments additionally require account claim/onboarding and the payment integration's readiness checks; completing those does not replace MealDeck's own launch acceptance.
+
+## Account access — 5 November 2026
+
+The owner confirmed that this MealDeck project is on a separate Lovable account. The currently available Lovable connection returns `404 project_not_found` for the recorded MealDeck project; the available Supabase connection exposes Dishbee only. No hosted installation, owner bootstrap, catalogue import or payment activation was performed through those connections. Repository changes and local verification do not establish that these changes are published or installed in the owning account. See [the launch-price phase record](mealdeck-launch-prices-and-polish-phase49.md) for the completed source work and remaining runtime contracts.
+
+## Latest repository and public-site recheck — 5 November 2026
+
+Connected-branch commits `9393bf9` and `a4a4aab` add a separate production **live-mode publishable** payment key and MealDeck logos to basket/checkout headings. The development key retains its test-mode prefix. Neither value is printed in this record. The application still has no consumer of `VITE_PAYMENTS_CLIENT_TOKEN`; these commits add no payment SDK, server session, webhook, database installation or release adapter. A key's prefix identifies its mode, not merchant readiness or successful payment processing.
+
+The live `/menus` and `/order` pages were reloaded and still rendered the coming-soon launch menu, with prices not yet displayed at that observation. `/luton` also retained the global ordering-coming-soon status, while `/st-albans` and `/bedford` explicitly remained coming soon. Repository merge and Lovable publication remain distinct. The owner confirmed Luton-only launch scope and requested walk-in/kerbside Tap to Pay; [the in-person payment contract](mealdeck-in-person-payments.md) records the native/reader distinction and required order integration.

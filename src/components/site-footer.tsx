@@ -30,8 +30,8 @@ export function SiteFooter() {
           <div>
             <h3>Locations</h3>
             <Link to="/luton">Luton</Link>
-            <Link to="/st-albans">St Albans</Link>
-            <Link to="/bedford">Bedford</Link>
+            <Link to="/st-albans">St Albans · Coming soon</Link>
+            <Link to="/bedford">Bedford · Coming soon</Link>
             <Link to="/menus">Browse menus</Link>
           </div>
           <div>

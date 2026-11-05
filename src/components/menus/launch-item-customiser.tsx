@@ -27,6 +27,11 @@ import {
   type LaunchCrossOffer,
   type LaunchCrossSelection,
 } from "@/lib/launch-menu-upsells";
+import {
+  formatLaunchMenuPrice,
+  launchMenuCrossChoicePrice,
+  launchMenuPickDisplayPrice,
+} from "@/lib/launch-menu-display-prices";
 
 export type LaunchMenuEntry = {
   brand: LaunchMenuBrand;
@@ -104,6 +109,13 @@ export function LaunchItemCustomiser({
   const stepIndex = steps.indexOf(step);
   const labels = launchSelectionLabels(brand, item, selections, crossSelections);
   const summaries = launchCrossSelectionSummaries(brand, item, selections, crossSelections);
+  const price = launchMenuPickDisplayPrice({
+    brandId: brand.id,
+    itemId: item.id,
+    selections,
+    crossSelections,
+    quantity,
+  });
   const stepLabels: Record<Step, string> = { food: "Food", extras: "Extras", review: "Review" };
 
   useEffect(() => {
@@ -195,6 +207,11 @@ export function LaunchItemCustomiser({
                 <span>
                   <strong>{option.label}</strong>
                   {option.description && <small>{option.description}</small>}
+                  <small className="lmc-choice-price">
+                    {option.pricePence === 0
+                      ? "Included"
+                      : "+" + formatLaunchMenuPrice(option.pricePence)}
+                  </small>
                 </span>
               </label>
             );
@@ -233,6 +250,9 @@ export function LaunchItemCustomiser({
         <div>
           <span className="lmc-eyebrow">{section.title}</span>
           <DialogTitle className="lmc-title">{item.name}</DialogTitle>
+          <p className="lmc-item-price">
+            {formatLaunchMenuPrice(price.baseUnitPence)} <span>per item</span>
+          </p>
           <DialogDescription className="lmc-description">
             Build your basket · Ordering coming soon
           </DialogDescription>
@@ -299,6 +319,12 @@ export function LaunchItemCustomiser({
                 >
                   <strong>{choice.name}</strong>
                   {choice.description && <small>{choice.description}</small>}
+                  <span className="lmc-choice-price">
+                    +
+                    {formatLaunchMenuPrice(
+                      launchMenuCrossChoicePrice(picker.mode, choice.brandId, choice.itemId),
+                    )}
+                  </span>
                   {pickerSelection?.itemId === choice.itemId && (
                     <Check size={17} aria-hidden="true" />
                   )}
@@ -352,6 +378,19 @@ export function LaunchItemCustomiser({
                               choice.name
                             : offer.description}
                         </small>
+                        <small className="lmc-choice-price">
+                          {choice
+                            ? "+" +
+                              formatLaunchMenuPrice(
+                                launchMenuCrossChoicePrice(
+                                  offer.mode,
+                                  choice.brandId,
+                                  choice.itemId,
+                                ),
+                              ) +
+                              " per item"
+                            : "View choices and prices"}
+                        </small>
                       </span>
                       {choice ? (
                         <Check size={20} aria-label="Selected" />
@@ -371,23 +410,54 @@ export function LaunchItemCustomiser({
             ) : (
               item.description && <p className="lmc-review-options">{item.description}</p>
             )}
-            {summaries.map((summary) => (
-              <div className="lmc-review-addition" key={summary.slot}>
-                <img src={logoFor(summary.brandId)} alt="" width="50" height="42" />
-                <span>
-                  <small>
-                    {summary.mode === "upgrade" ? "Upgrade" : "Extra"} · {summary.brandName}
-                  </small>
-                  <strong>{summary.itemName}</strong>
-                  <small>{summary.label}</small>
-                </span>
-                <b>×{quantity}</b>
-              </div>
-            ))}
+            {summaries.map((summary) => {
+              const additionPrice = price.additions.find(
+                (entry) => entry.slot === summary.slot && entry.itemId === summary.itemId,
+              );
+              return (
+                <div className="lmc-review-addition" key={summary.slot}>
+                  <img src={logoFor(summary.brandId)} alt="" width="50" height="42" />
+                  <span>
+                    <small>
+                      {summary.mode === "upgrade" ? "Upgrade" : "Extra"} · {summary.brandName}
+                    </small>
+                    <strong>{summary.itemName}</strong>
+                    <small>{summary.label}</small>
+                    <small className="lmc-choice-price">
+                      {formatLaunchMenuPrice(additionPrice?.unitPence ?? null)} each ·{" "}
+                      {formatLaunchMenuPrice(additionPrice?.linePence ?? null)} for {quantity}
+                    </small>
+                  </span>
+                  <b>×{quantity}</b>
+                </div>
+              );
+            })}
             <div className="lmc-review-quantity">
               <span>Quantity</span>
               <LaunchQuantityControl quantity={quantity} onChange={setQuantity} name={item.name} />
             </div>
+            <dl className="lmc-review-prices">
+              <div>
+                <dt>
+                  {formatLaunchMenuPrice(price.baseUnitPence)} × {quantity}
+                </dt>
+                <dd>{formatLaunchMenuPrice(price.baseLinePence)}</dd>
+              </div>
+              {price.options
+                .filter((option) => option.unitPence !== 0)
+                .map((option) => (
+                  <div key={option.optionId}>
+                    <dt>
+                      {option.label} × {quantity}
+                    </dt>
+                    <dd>{formatLaunchMenuPrice(option.linePence)}</dd>
+                  </div>
+                ))}
+              <div className="lmc-items-subtotal">
+                <dt>Items subtotal</dt>
+                <dd>{formatLaunchMenuPrice(price.itemsSubtotalPence)}</dd>
+              </div>
+            </dl>
             {summaries.length > 0 && <p className="lmc-help">Your choices apply to each item.</p>}
             <p className="lmc-allergy">
               For allergies or dietary needs, check with the team before ordering when we launch.
@@ -448,7 +518,7 @@ export function LaunchItemCustomiser({
             </button>
           )}
         </div>
-        <p className="lmc-price-note">Prices to follow · Ordering coming soon</p>
+        <p className="lmc-price-note">Item prices shown · Ordering coming soon</p>
       </footer>
     </>
   );

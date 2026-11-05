@@ -1,4 +1,9 @@
 import type { LocationKey } from "./mealdeck";
+import {
+  isMealDeckLaunchFulfilment,
+  isMealDeckLaunchLocation,
+  MEALDECK_LAUNCH_LOCATION_MESSAGE,
+} from "./mealdeck-launch-locations";
 
 /**
  * The Dishbee serviceability RPC returns canonical tenant/location IDs.
@@ -52,6 +57,9 @@ export function resolveDishbeeServiceability(
   // reason to silently reroute a customer to a different restaurant.
   if (matches.length !== 1) return { served: false, message: unknownKitchen };
   const location = matches[0]!.location;
+  if (!isMealDeckLaunchLocation(location)) {
+    return { served: false, message: MEALDECK_LAUNCH_LOCATION_MESSAGE };
+  }
   return {
     served: true,
     location,
@@ -115,14 +123,17 @@ export function parseDishbeeCheckoutAttemptReceipt(value: unknown): DishbeeAttem
 
 /**
  * A second intentional fail-closed switch after COMING_SOON. Setting the env
- * flag never connects Adyen or certifies compliance by itself. Operations may
- * set it only when the full Dishbee/Adyen path is independently signed off.
+ * flag never connects a payment provider by itself. Operations may set it
+ * only when the independent MealDeck payment and order path is signed off.
  */
 export function mayCreateCustomerOrder(input: {
+  location: string;
+  fulfilment: string;
   comingSoon: boolean;
   kitchenConfigured: boolean;
   checkoutApproval: string | undefined;
 }): boolean {
-  return !input.comingSoon && input.kitchenConfigured &&
+  return isMealDeckLaunchFulfilment(input.location, input.fulfilment) &&
+    !input.comingSoon && input.kitchenConfigured &&
     input.checkoutApproval === "signed-off";
 }

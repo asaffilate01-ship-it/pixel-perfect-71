@@ -1,5 +1,11 @@
 import { COMING_SOON, COMING_SOON_MESSAGE } from "./launch-status";
 import {
+  isMealDeckLaunchFulfilment,
+  isMealDeckLaunchLocation,
+  MEALDECK_LAUNCH_LOCATIONS,
+  MEALDECK_LAUNCH_LOCATION_MESSAGE,
+} from "./mealdeck-launch-locations";
+import {
   readMealDeckBackendConfig,
   readMealDeckCheckoutServerKey,
   readMealDeckRuntimeConfig,
@@ -43,6 +49,7 @@ function readBase() {
 }
 
 function readConfig(location: LocationKey): DishbeeConfig | null {
+  if (!isMealDeckLaunchLocation(location)) return null;
   // One canonical MealDeck tenant with distinct location IDs. Conflicts
   // disable checkout, catalogue and paid-order routing instead of selecting
   // an arbitrary location's tenant.
@@ -145,7 +152,7 @@ export const checkServiceability = createServerFn({ method: "POST" })
       );
       if (error) throw new Error(error.message);
 
-      const approved = (["luton", "stalbans"] as const).flatMap((key) => {
+      const approved = MEALDECK_LAUNCH_LOCATIONS.flatMap((key) => {
         const kitchen = readConfig(key);
         return kitchen
           ? [
@@ -159,7 +166,10 @@ export const checkServiceability = createServerFn({ method: "POST" })
       });
       // Dishbee tenant and location UUIDs determine the kitchen. Never infer
       // a payment destination from a city name or postcode prefix.
-      return resolveDishbeeServiceability(rows, approved);
+      const result = resolveDishbeeServiceability(rows, approved);
+      return result.served && !isMealDeckLaunchFulfilment(result.location, data.fulfilment)
+        ? { served: false, message: "This MealDeck fulfilment is not available." }
+        : result;
     } catch (error) {
       console.error("Dishbee serviceability connection failed", error);
       // An unavailable canonical service is NOT evidence of postcode coverage.
@@ -182,6 +192,14 @@ export const getCatalogue = createServerFn({ method: "GET" })
     z.object({ location: locationSchema }).parse(input),
   )
   .handler(async ({ data }): Promise<CatalogueResult> => {
+    if (!isMealDeckLaunchLocation(data.location)) {
+      return {
+        source: "sample",
+        channelOpen: false,
+        items: [],
+        notice: MEALDECK_LAUNCH_LOCATION_MESSAGE,
+      };
+    }
     const config = readConfig(data.location);
 
     if (!config) {
@@ -316,6 +334,9 @@ async function readCurrentDishbeeQuote(
   config: DishbeeConfig,
   request: QuoteRequest,
 ): Promise<CurrentDishbeeQuote> {
+  if (!isMealDeckLaunchFulfilment(request.location, request.fulfilment)) {
+    return { ready: false, reason: "unavailable" };
+  }
   const sb = dishbeeClient(config);
   try {
     const service = await sb.rpc("public_mealdeck_serviceability", {
@@ -444,10 +465,12 @@ const orderSchema = z
     }),
   })
   .superRefine((value, ctx) => {
-    if (value.location === "stalbans" && value.fulfilment !== "delivery") {
+    if (!isMealDeckLaunchFulfilment(value.location, value.fulfilment)) {
       ctx.addIssue({
         code: "custom",
-        message: "St Albans is delivery only",
+        message: isMealDeckLaunchLocation(value.location)
+          ? "This MealDeck fulfilment is not available."
+          : MEALDECK_LAUNCH_LOCATION_MESSAGE,
       });
     }
 
@@ -488,6 +511,8 @@ export const placeOrder = createServerFn({ method: "POST" })
     const config = readConfig(data.location);
     if (
       !mayCreateCustomerOrder({
+        location: data.location,
+        fulfilment: data.fulfilment,
         comingSoon: COMING_SOON,
         kitchenConfigured: config !== null,
         checkoutApproval: process.env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"],

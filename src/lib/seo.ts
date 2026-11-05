@@ -1,4 +1,6 @@
 import { MEALDECK_BUSINESS } from "./business-identity";
+import { COMING_SOON } from "./launch-status";
+import { isMealDeckLaunchLocation } from "./mealdeck-launch-locations";
 
 export const SITE_URL = "https://mealdeck.co.uk";
 export const OG_IMAGE = `${SITE_URL}/og-image.png`;
@@ -12,7 +14,14 @@ type SeoInput = {
   keywords?: string;
 };
 
-export function seo({ title, description, path, image = OG_IMAGE, type = "website", keywords }: SeoInput) {
+export function seo({
+  title,
+  description,
+  path,
+  image = OG_IMAGE,
+  type = "website",
+  keywords,
+}: SeoInput) {
   const url = `${SITE_URL}${path}`;
   const usesMasterArtwork = image === OG_IMAGE;
   return {
@@ -25,10 +34,12 @@ export function seo({ title, description, path, image = OG_IMAGE, type = "websit
       { property: "og:type", content: type },
       { property: "og:url", content: url },
       { property: "og:image", content: image },
-      ...(usesMasterArtwork ? [
-        { property: "og:image:width", content: "1106" },
-        { property: "og:image:height", content: "1116" },
-      ] : []),
+      ...(usesMasterArtwork
+        ? [
+            { property: "og:image:width", content: "1106" },
+            { property: "og:image:height", content: "1116" },
+          ]
+        : []),
       { name: "twitter:card", content: usesMasterArtwork ? "summary" : "summary_large_image" },
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: description },
@@ -38,38 +49,99 @@ export function seo({ title, description, path, image = OG_IMAGE, type = "websit
   };
 }
 
-const business = (town: string, extra: Record<string, unknown> = {}) => ({
-  "@type": "Restaurant",
-  name: `MealDeck ${town}`,
-  url: `${SITE_URL}/${town.toLowerCase().replace(" ", "-")}`,
-  image: OG_IMAGE,
-  servesCuisine: ["French tacos", "Smash burgers", "Chicken", "Desi", "Indian vegetarian", "Parathas", "Fresh juices", "Iced coffee", "Mocktails"],
-  address: { "@type": "PostalAddress", addressLocality: town, addressRegion: town === "Luton" ? "Bedfordshire" : "Hertfordshire", addressCountry: "GB" },
-  areaServed: { "@type": "City", name: town },
-  hasMenu: `${SITE_URL}/order`,
-  acceptsReservations: false,
-  priceRange: "££",
-  potentialAction: { "@type": "OrderAction", target: `${SITE_URL}/order` },
-  description: `Multi-brand food delivery in ${town}. One basket, one delivery fee.`,
-  ...extra,
-});
+const business = (town: string, extra: Record<string, unknown> = {}) => {
+  const launchLocation = isMealDeckLaunchLocation(town.toLowerCase().replace(/\s+/g, ""));
+  const orderingOpen = launchLocation && !COMING_SOON;
+  return {
+    "@type": "Restaurant",
+    name: `MealDeck ${town}`,
+    url: `${SITE_URL}/${town.toLowerCase().replace(" ", "-")}`,
+    image: OG_IMAGE,
+    ...(launchLocation
+      ? {
+          servesCuisine: [
+            "Smash burgers",
+            "Chicken",
+            "Mediterranean grill",
+            "Loaded fries",
+            "Mac and cheese",
+            "Mocktails",
+          ],
+          hasMenu: `${SITE_URL}/menus`,
+        }
+      : {}),
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: town,
+      addressRegion: town === "Luton" ? "Bedfordshire" : "Hertfordshire",
+      addressCountry: "GB",
+    },
+    acceptsReservations: false,
+    priceRange: "££",
+    ...(orderingOpen
+      ? {
+          areaServed: { "@type": "City", name: town },
+          potentialAction: { "@type": "OrderAction", target: `${SITE_URL}/order` },
+        }
+      : {}),
+    description: launchLocation
+      ? `MealDeck's first launch kitchen: Skorch, Tavo Chicken, Souvano, Load’d and Moktl in Luton.${COMING_SOON ? " Ordering is coming soon." : ""}`
+      : `MealDeck ${town} is coming in a future deck. Luton launches first; this location's date and menu will be confirmed separately.`,
+    ...extra,
+  };
+};
 
 export const lutonBusiness = business("Luton", {
-  openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], opens: "17:00", closes: "23:00" }],
+  ...(!COMING_SOON
+    ? {
+        openingHoursSpecification: [
+          {
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday",
+            ],
+            opens: "17:00",
+            closes: "23:00",
+          },
+        ],
+      }
+    : {}),
 });
 export const stAlbansBusiness = business("St Albans", {
-  address: { "@type": "PostalAddress", streetAddress: "Café 1, St Albans Crown Court, 6 Bricket Road", addressLocality: "St Albans", addressRegion: "Hertfordshire", postalCode: "AL1 3JU", addressCountry: "GB" },
-  openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "09:00", closes: "16:00" }],
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Café 1, St Albans Crown Court, 6 Bricket Road",
+    addressLocality: "St Albans",
+    addressRegion: "Hertfordshire",
+    postalCode: "AL1 3JU",
+    addressCountry: "GB",
+  },
 });
 
 export const orgJsonLd = {
   "@context": "https://schema.org",
   "@graph": [
-    { "@type": "Organization", name: MEALDECK_BUSINESS.tradingName, legalName: MEALDECK_BUSINESS.legalName, url: SITE_URL, logo: `${SITE_URL}/favicon.png`, slogan: "One Order. Every Craving." },
+    {
+      "@type": "Organization",
+      name: MEALDECK_BUSINESS.tradingName,
+      legalName: MEALDECK_BUSINESS.legalName,
+      url: SITE_URL,
+      logo: `${SITE_URL}/favicon.png`,
+      slogan: "One Order. Every Craving.",
+    },
     { "@type": "WebSite", name: "MealDeck", url: SITE_URL },
     lutonBusiness,
     stAlbansBusiness,
   ],
 };
 
-export const ldScript = (data: unknown) => ({ type: "application/ld+json", children: JSON.stringify(data) });
+export const ldScript = (data: unknown) => ({
+  type: "application/ld+json",
+  children: JSON.stringify(data),
+});

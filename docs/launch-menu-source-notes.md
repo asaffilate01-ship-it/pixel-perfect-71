@@ -1,6 +1,6 @@
 # Supplied launch menu sources
 
-`src/lib/launch-menu-catalogue.ts` transcribes the five menu sheets supplied by the owner. It contains **77 products in 20 sections**. Flavours and portions are choices on their parent products, not extra products. The catalogue is for menu browsing; Dishbee remains the authority for live availability, prices, modifiers and orders.
+`src/lib/launch-menu-catalogue.ts` transcribes the five menu sheets supplied by the owner. It contains **77 products in 20 sections**. Flavours and portions are choices on their parent products, not extra products. The later owner pricing decision below sets the initial display/import prices. MealDeck's independent backend remains the authority for live availability, canonical prices, modifiers and orders.
 
 | Operational brand ID | Display name | Sections | Products |
 | -------------------- | ------------ | -------: | -------: |
@@ -36,11 +36,19 @@ Each catalogue record has `sourceRefs`. A reference such as `tavo-menu#fried-chi
 
 Portion, flavour and included-base groups use required single selection as a browsing interface convention. Add-ons and upgrades are optional. A group’s `when` dependency hides meal-only choices until its meal option is selected. Tavo and Skorch kids meals already include fries and a drink, so their optional upgrade groups need no meal toggle. The sheets do not establish multi-upgrade combination limits.
 
-## Deliberately unspecified
+## Owner-approved starting prices — 5 November 2026
 
-Every item and option has **`pricePence: null`** because the sheets print no prices. Null does not mean zero, free, or an estimated surcharge. No old sample prices are inherited.
+The owner instructed that every standalone menu item should start at **£20**, with all optional add-ons, meal deals and upgrades also **£20 each**, so prices can be edited later. This approval supersedes the earlier unpriced catalogue. It includes sides, cans, bottled water, Moktl drinks and kids meals. No historical sample price was inherited.
 
-The sources supply no allergen declaration, drink serving sizes, lamb-chop quantity, rashers’ meat species, or milkshake flavours/sizes. Listed cans are standalone products; the sheets do not establish which qualify for a meal. Generic Loaded Fries, Loaded Mac ’n Cheese and Mocktail upgrades do not name a fulfilment brand. The later owner instruction below supplies cross-brand planning and substitution rules separately from that unchanged sheet transcription. It supplies no prices, serving sizes, allergen assurances or live availability.
+Every standalone item has `pricePence: 2000`. Each optional source option has `pricePence: 2000`. Included portion, flavour and base choices have `pricePence: 0`: Tavo's portion/flavour selectors and Souvano's Donner flavour, Heatwave base and conditional meal-side selector. Those choices describe the food already included in the parent price. The optional Make It a Meal selection itself is £20.
+
+An attached **extra** uses the target item's standalone price; a named cross-brand **replacement upgrade** uses the separate `LAUNCH_CROSS_UPGRADE_PRICE_PENCE` surcharge of £20. A replacement does not add the target's full standalone price on top of that surcharge. Each selected add-on/upgrade is charged once per parent quantity, after the existing choice rules remove conflicting generic and named upgrades.
+
+These initial source prices are not a Stripe payment product, signed server quote or evidence of live ordering. [The draft catalogue importer](mealdeck-launch-catalogue-import.md) derives the complete JSON/SQL from this catalogue and preserves subsequent backend price edits on rerun.
+
+## Content still requiring review
+
+The sources supply no allergen declaration, drink serving sizes, lamb-chop quantity, rashers’ meat species, or milkshake flavours/sizes. Listed cans are standalone products; the sheets do not establish which qualify for a meal. Generic Loaded Fries, Loaded Mac ’n Cheese and Mocktail upgrades do not name a fulfilment brand. The later owner instruction below supplies cross-brand planning and substitution rules separately from the sheet transcription. The pricing instruction supplies no serving sizes, allergen assurances or live availability.
 
 ## Owner-approved cross-brand planning — 4 November 2026
 
@@ -63,10 +71,10 @@ Selections remain attached to the parent dish. Each parent unit has at most one 
 
 A specific Load’d choice clears generic Loaded Fries/Loaded Mac choices and Peri Salt. A specific Moktl choice clears generic Mocktail and Milkshake. Selecting Peri Salt later removes the Load’d replacement; selecting Milkshake later removes Moktl. This prevents conflicting replacements of the same included component. Existing saved generic choices remain readable and removable; they do not acquire an invented named target.
 
-Saved picks keep the existing version-1 format and optionally add `crossSelections` containing only slot, mode, brand ID and item ID. Restoration rechecks those fields against the current parent configuration and catalogue. Browser-supplied names, prices, child quantities, unknown brands, wrong-section targets and stale modes cannot define a choice. Edits validate atomically before replacing a saved line. All target and summary prices remain **`null`**; these are unpriced local meal plans, not Dishbee orders.
+Saved picks keep the existing version-1 format and optionally add `crossSelections` containing only slot, mode, brand ID and item ID. Restoration rechecks those fields against the current parent configuration and catalogue. Browser-supplied names, prices, child quantities, unknown brands, wrong-section targets and stale modes cannot define a choice. Edits validate atomically before replacing a saved line. Displayed item amounts use the current source prices above; saved browser picks do not set live backend prices or create orders.
 
 ## Focused validation
 
-Run `bun test tests/launch-menu-catalogue.test.ts` to check the transcribed portions/flavours, distinct ring quantities, meal dependencies, Heatwave’s single base, unknown prices, unique identifiers and resolvable source references.
+Run `bun test tests/launch-menu-catalogue.test.ts` to check the transcribed portions/flavours, distinct ring quantities, meal dependencies, Heatwave’s single base, approved item/upgrade prices, included choices, unique identifiers and resolvable source references.
 
 Run `bun test tests/launch-menu-upsells.test.ts tests/launch-menu-picks.test.ts` to check actual cross-brand targets, replacement versus extra transitions, kids meals, Heatwave’s single base, conflicting upgrades, quantity/edit rules, forged storage and backwards-compatible restoration.

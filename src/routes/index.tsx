@@ -211,19 +211,19 @@ function LandingPage() {
             <Link to="/luton" className="md-location-card">
               <span>Luton</span>
               <h3>Evening cravings, dealt together.</h3>
-              <p>Coming soon · Delivery · Pickup · Kerbside</p>
+              <p>First launch kitchen · Ordering coming soon</p>
               <strong>Explore Luton <ArrowRight /></strong>
             </Link>
             <Link to="/st-albans" className="md-location-card">
               <span>St Albans</span>
               <h3>Weekday breakfast and lunch, one hand.</h3>
-              <p>Coming soon · MealDeck ordering</p>
+              <p>Coming in a future deck · Luton launches first</p>
               <strong>Explore St Albans <ArrowRight /></strong>
             </Link>
             <Link to="/bedford" className="md-location-card">
               <span>Bedford</span>
               <h3>Coming soon to a table near you.</h3>
-              <p>Launch details confirmed soon</p>
+              <p>Coming in a future deck · Launch date to follow</p>
               <strong>Explore Bedford <ArrowRight /></strong>
             </Link>
           </div>

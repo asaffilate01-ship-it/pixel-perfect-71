@@ -28,7 +28,7 @@ describe("Phase 22 canonical Dishbee kitchen routing", () => {
       served: true, location: "luton", channelOpen: true,
     });
     expect(resolveDishbeeServiceability(response({ location_id: places.stalbans, town: "Luton" }), approved))
-      .toMatchObject({ served: true, location: "stalbans" });
+      .toMatchObject({ served: false });
   });
   test("does not trust a valid location ID from a different tenant", () => {
     expect(resolveDishbeeServiceability(response({ tenant_id: tenants.other }), approved).served).toBe(false);
@@ -68,20 +68,37 @@ describe("Phase 23 payment-pending receipt and launch gate", () => {
   });
   test("COMING_SOON and absent approvals always prevent customer order writes", () => {
     expect(mayCreateCustomerOrder({
+      location: "luton", fulfilment: "delivery",
       comingSoon: true, kitchenConfigured: true, checkoutApproval: "signed-off",
     })).toBe(false);
     expect(mayCreateCustomerOrder({
+      location: "luton", fulfilment: "delivery",
       comingSoon: false, kitchenConfigured: false, checkoutApproval: "signed-off",
     })).toBe(false);
     expect(mayCreateCustomerOrder({
+      location: "luton", fulfilment: "delivery",
       comingSoon: false, kitchenConfigured: true, checkoutApproval: undefined,
     })).toBe(false);
     expect(mayCreateCustomerOrder({
+      location: "luton", fulfilment: "delivery",
       comingSoon: false, kitchenConfigured: true, checkoutApproval: "true",
     })).toBe(false);
     expect(mayCreateCustomerOrder({
+      location: "luton", fulfilment: "delivery",
       comingSoon: false, kitchenConfigured: true, checkoutApproval: "signed-off",
     })).toBe(true);
+  });
+  test("an open global gate and configured kitchen never activate a future location", () => {
+    for (const location of ["stalbans", "bedford", "unknown"])
+      for (const fulfilment of ["delivery", "pickup", "curbside", "dinein"])
+        expect(mayCreateCustomerOrder({
+          location, fulfilment,
+          comingSoon: false, kitchenConfigured: true, checkoutApproval: "signed-off",
+        })).toBe(false);
+    expect(mayCreateCustomerOrder({
+      location: "luton", fulfilment: "dinein",
+      comingSoon: false, kitchenConfigured: true, checkoutApproval: "signed-off",
+    })).toBe(false);
   });
 });
 

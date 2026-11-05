@@ -51,3 +51,27 @@
 - [x] Add the installable app manifest, approved icons, browser installation guidance, explicit app updates and a private-data-safe offline screen.
 - [x] Build the customer progress timeline, real placement/elapsed time and guarded status refresh; ordering remains coming soon and hosted integration acceptance is still required.
 - [ ] Publish the merged source through Lovable and verify installed-app behaviour on actual iOS/Android devices.
+
+## Stripe checkout — 5 November 2026
+
+- [x] Enable built-in Stripe payments in test mode with the owner's confirmation; preserve all ordering and kitchen-release gates.
+- [x] Owner approved £20 per launch-menu item and £20 per add-on, meal and upgrade, including named cross-brand replacements.
+- [ ] Create payment products from the approved canonical catalogue: prices are now approved; hosted installation, publication and provider mapping are still required.
+- [ ] Implement and verify MealDeck checkout and signed payment reconciliation using the actual test integration in the owning account; no checkout form or webhook handler has been implemented.
+
+## Prices and interface finishing — 5 November 2026
+
+- [x] Display the approved £20 prices on all 77 launch-menu items and each chargeable option, with quantity-aware basket/review subtotals and no duplicate cross-brand upgrade charges.
+- [x] Keep basket feedback visible, make saving failures recoverable, restore focus after row removal and distinguish repeated product names by menu section.
+- [x] Distinguish staff/kitchen loading, failed and empty states; make editing a menu product easy to reach on mobile.
+- [x] Finish the tracking form with solid brand-red controls, visible focus and readable mobile entry fields.
+- [x] Prepare an independent-database draft import for all 77 items and 66 option records, preserving later admin edits on reruns.
+- [x] Add protected, audited add-on and upgrade price editing, including shared-use counts and conflict recovery; provide the separate post-install SQL and managed-runner variant.
+- [ ] Activate the hosted backend, canonical menu and checkout in the separate owning Lovable account; the current connector cannot access that project. See `docs/mealdeck-launch-prices-and-polish-phase49.md`.
+
+## Luton in-person payments — owner scope, 5 November 2026
+
+- [x] Record Luton-only launch scope and the Stripe Terminal contract for staff-assisted walk-in and kerbside payments; St Albans and Bedford remain coming soon.
+- [ ] Select staff phone platform or smart reader and complete native Terminal/device setup in the owning Stripe account.
+- [ ] Add authenticated Luton staff sale entry, server-priced pending orders, idempotent Terminal collection and verified payment-to-KDS reconciliation.
+- [ ] Verify already-paid pickup cannot be charged again, and interrupted or concurrent attempts cannot duplicate a charge or kitchen release.

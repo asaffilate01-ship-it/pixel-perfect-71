@@ -6,7 +6,9 @@
     "test": "node kds-behavior.mjs",
     "test:postgres": "node kds-behavior.mjs --native",
     "test:standalone": "node standalone-behavior.mjs",
-    "test:standalone:postgres": "node standalone-behavior.mjs --native"
+    "test:standalone:postgres": "node standalone-behavior.mjs --native",
+    "test:catalogue": "node catalogue-import-behavior.mjs",
+    "test:catalogue:postgres": "node catalogue-import-behavior.mjs --native"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.15",

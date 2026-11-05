@@ -260,13 +260,15 @@ export function TrackOrderPage() {
                 id="order-id"
                 value={orderId}
                 autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 onChange={(event) => {
                   invalidate();
                   setOrderId(event.target.value.slice(0, 36));
                 }}
                 placeholder="Your order reference"
                 aria-describedby="tracking-privacy"
-                className="min-h-11 font-mono text-sm"
+                className="min-h-12 font-mono text-base md:text-base"
               />
             </div>
             <div className="min-w-0 space-y-2">
@@ -283,22 +285,22 @@ export function TrackOrderPage() {
                   setHandoffCode(event.target.value.replace(/\D/g, "").slice(0, 4));
                 }}
                 placeholder="••••"
-                className="min-h-11 font-mono tracking-[.18em]"
+                className="min-h-12 font-mono text-base tracking-[.18em] md:text-base"
               />
             </div>
             <Button
               type="submit"
-              variant="hero"
               size="lg"
-              className="min-h-11 rounded-xl"
+              className="md-tracking-submit min-h-12 rounded-xl font-display font-bold"
               disabled={loading || !eligible}
+              aria-busy={loading}
             >
               {loading ? (
                 <Loader2 aria-hidden="true" className="size-5 animate-spin" />
               ) : (
                 <Search aria-hidden="true" className="size-5" />
               )}
-              {loading ? "Checking…" : "Track"}
+              {loading ? "Checking…" : "Track order"}
             </Button>
           </form>
           <p id="tracking-privacy" className="mt-3 text-xs leading-5 text-muted-foreground">

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { COMING_SOON } from "./launch-status";
+import { isMealDeckLaunchLocation } from "./mealdeck-launch-locations";
 import { normaliseBusinessWhatsAppNumber } from "./whatsapp-assistance";
 
 const contactSchema = z.object({
@@ -24,7 +25,8 @@ type WhatsAppContact =
 export const getWhatsAppHandoffContact = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => contactSchema.parse(input))
   .handler(async ({ data }): Promise<WhatsAppContact> => {
-    if (COMING_SOON || process.env["MEALDECK_WHATSAPP_ASSISTANCE_ENABLED"] !== "true") {
+    if (!isMealDeckLaunchLocation(data.location) || COMING_SOON ||
+        process.env["MEALDECK_WHATSAPP_ASSISTANCE_ENABLED"] !== "true") {
       return { available: false };
     }
 

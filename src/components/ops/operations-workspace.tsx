@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
+  AlertCircle,
   ArrowLeft,
   BarChart3,
   ClipboardList,
@@ -140,9 +141,15 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
   const [password, setPassword] = useState("");
   const [accesses, setAccesses] = useState<OpsAccess[]>([]);
   const [accessBusy, setAccessBusy] = useState(false);
+  const [accessError, setAccessError] = useState("");
   const [tenant, setTenant] = useState("");
   const [locations, setLocations] = useState<OpsLocation[]>([]);
   const [location, setLocation] = useState("");
+  const [locationState, setLocationState] = useState<"idle" | "loading" | "ready" | "error">(
+    "idle",
+  );
+  const [locationError, setLocationError] = useState("");
+  const [locationCycle, setLocationCycle] = useState(0);
   const [section, setSection] = useState<OpsSection>(kitchenMode ? "kitchen" : "overview");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -152,6 +159,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
   const [data, setData] = useState<WorkspaceData>(blank);
   const reqRef = useRef(0);
   const accessRequest = useRef(0);
+  const locationRequest = useRef(0);
   const authRequest = useRef(0);
   const activeUserId = useRef<string | null>(null);
   const signingOut = useRef(false);
@@ -159,13 +167,17 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
   const clearStaffState = useCallback(() => {
     reqRef.current++;
     accessRequest.current++;
+    locationRequest.current++;
     authRequest.current++;
     activeUserId.current = null;
     setUser(null);
     setAccesses([]);
+    setAccessError("");
     setTenant("");
     setLocation("");
     setLocations([]);
+    setLocationState("idle");
+    setLocationError("");
     setData(blank());
     setNotice("");
     setError("");
@@ -177,6 +189,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
   const fetchAccess = useCallback(async () => {
     const request = ++accessRequest.current;
     setAccessBusy(true);
+    setAccessError("");
     try {
       const rows = opsRows<OpsAccess>(await opsRpc<unknown>("mealdeck_ops_my_access"));
       if (request !== accessRequest.current) return;
@@ -186,8 +199,15 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
       );
     } catch (reason) {
       if (request !== accessRequest.current) return;
+      reqRef.current++;
+      locationRequest.current++;
       setAccesses([]);
-      setAuthError(
+      setTenant("");
+      setLocations([]);
+      setLocation("");
+      setLocationState("idle");
+      setData(blank());
+      setAccessError(
         reason instanceof Error ? reason.message : "Staff access could not be verified.",
       );
     } finally {
@@ -246,29 +266,62 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
 
   useEffect(() => {
     let current = true;
+    const request = ++locationRequest.current;
     if (!tenant || !user) {
       setLocations([]);
       setLocation("");
+      setLocationState("idle");
+      setLocationError("");
       return undefined; // No active tenant subscription to clean up.
     }
+    const isCurrent = () =>
+      current && request === locationRequest.current && activeUserId.current === user.id;
+    reqRef.current++;
     setLocations([]);
     setLocation("");
+    setLocationState("loading");
+    setLocationError("");
     setData(blank());
+    setLoading(false);
     void opsRpc<unknown>("mealdeck_ops_locations", { p_tenant: tenant })
       .then((raw) => {
-        if (!current) return;
+        if (!isCurrent()) return;
         const places = opsRows<OpsLocation>(raw);
         setLocations(places);
         setLocation(places[0]?.location_id ?? "");
+        setLocationState("ready");
       })
       .catch((reason) => {
-        if (current)
-          setError(reason instanceof Error ? reason.message : "Locations could not be loaded.");
+        if (!isCurrent()) return;
+        setLocationState("error");
+        setLocationError(
+          reason instanceof Error ? reason.message : "Your kitchens could not be loaded.",
+        );
       });
     return () => {
       current = false;
     };
-  }, [tenant, user]);
+  }, [tenant, user, locationCycle]);
+
+  function changeTenant(nextTenant: string) {
+    if (nextTenant === tenant) return;
+    reqRef.current++;
+    locationRequest.current++;
+    setLocations([]);
+    setLocation("");
+    setLocationState("loading");
+    setLocationError("");
+    setData(blank());
+    setTenant(nextTenant);
+    setNotice("");
+    setError("");
+  }
+
+  function retryLocations() {
+    setLocationState("loading");
+    setLocationError("");
+    setLocationCycle((cycle) => cycle + 1);
+  }
 
   const tenants = useMemo(
     () => [
@@ -529,6 +582,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
     notice: setNotice,
   };
   const activeLocation = locations.find((x) => x.location_id === location);
+  const locationPending = !!tenant && (locationState === "idle" || locationState === "loading");
 
   return (
     <div className="md-ops">
@@ -596,7 +650,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
         className={"mx-auto max-w-7xl px-4 sm:px-6 " + (kitchenMode ? "py-4" : "py-7 sm:py-10")}
       >
         {checkingAuth ? (
-          <div className={columns}>
+          <div role="status" className={columns}>
             <p>Checking secure staff authentication…</p>
           </div>
         ) : !user ? (
@@ -649,27 +703,43 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 Email me a sign-in link instead
               </button>
               <p className="text-xs md-ops-muted">
-                No public staff sign-up. Staff roles and all operational data are checked by
-                Supabase RLS and authorised database functions; this screen alone grants no access.
+                Use your assigned staff account. An administrator controls which kitchens and tools
+                you can access.
               </p>
             </form>
           </div>
         ) : accessBusy ? (
-          <div className={columns}>Checking your tenant roles…</div>
+          <div role="status" className={columns}>
+            Checking your staff access…
+          </div>
         ) : accesses.length === 0 ? (
           <div className="mx-auto max-w-xl rounded-2xl border border-amber-200 md-ops-paper p-7 text-center">
-            <ShieldCheck className="mx-auto size-10 md-ops-accent" />
-            <h2 className="mt-4 text-2xl font-black">No operational access assigned</h2>
+            {accessError ? (
+              <AlertCircle className="mx-auto size-10 md-ops-accent" aria-hidden="true" />
+            ) : (
+              <ShieldCheck className="mx-auto size-10 md-ops-accent" aria-hidden="true" />
+            )}
+            <h2 className="mt-4 text-2xl font-black">
+              {accessError ? "Staff access could not be checked" : "No operational access assigned"}
+            </h2>
             <p className="mt-2 text-sm md-ops-muted">
-              Your login is valid, but no active MealDeck tenant or kitchen role has been assigned.
-              Ask an authorised administrator to grant a scoped role. Signing in alone does not
-              expose private orders, recipes or financial records.
+              {accessError
+                ? "Your workspace will open after we can verify your staff access. Try the check again."
+                : "You’re signed in, but no MealDeck business or kitchen role is assigned to this account. Ask an administrator to assign your access, then check again."}
             </p>
-            {authError && (
+            {accessError && (
               <p role="alert" className="mt-3 text-sm text-red-700">
-                {authError}
+                {accessError}
               </p>
             )}
+            <button
+              type="button"
+              className="md-ops-button md-ops-primary mt-5"
+              onClick={() => void fetchAccess()}
+            >
+              <RefreshCcw className="size-4" aria-hidden="true" />
+              {accessError ? "Retry access check" : "Check access again"}
+            </button>
           </div>
         ) : (
           <div className="space-y-5">
@@ -684,12 +754,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                     <select
                       aria-label="Business"
                       value={tenant}
-                      onChange={(e) => {
-                        reqRef.current++;
-                        setData(blank());
-                        setTenant(e.target.value);
-                        setNotice("");
-                      }}
+                      onChange={(e) => changeTenant(e.target.value)}
                       className={"mt-1 " + field}
                     >
                       {tenants.map((x) => (
@@ -726,7 +791,12 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 ) : (
                   <div className="min-w-0 flex-1">
                     <h2 className="font-display text-lg font-bold">
-                      {activeLocation?.location_name ?? "Loading kitchen…"}
+                      {activeLocation?.location_name ??
+                        (locationPending
+                          ? "Loading kitchen…"
+                          : locationError
+                            ? "Kitchen unavailable"
+                            : "No kitchen assigned")}
                     </h2>
                     <p className="mt-0.5 text-xs md-ops-muted">
                       All brands · one shared kitchen board
@@ -747,11 +817,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                     <select
                       aria-label="Business"
                       value={tenant}
-                      onChange={(e) => {
-                        reqRef.current++;
-                        setTenant(e.target.value);
-                        setNotice("");
-                      }}
+                      onChange={(e) => changeTenant(e.target.value)}
                       className={"mt-2 " + field}
                     >
                       {tenants.map((x) => (
@@ -774,6 +840,11 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                       }}
                       className={"mt-2 " + field}
                     >
+                      {!locations.length && (
+                        <option value="">
+                          {locationPending ? "Loading kitchens…" : "No accessible kitchens"}
+                        </option>
+                      )}
                       {locations.map((x) => (
                         <option key={x.location_id} value={x.location_id}>
                           {x.location_name}
@@ -903,9 +974,34 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
             )}
             {!location ? (
               <div className={columns}>
-                <p className="font-semibold">
-                  No accessible kitchen locations. Contact your tenant administrator.
-                </p>
+                {locationPending ? (
+                  <p role="status" className="flex items-center gap-2 text-sm font-semibold">
+                    <RefreshCcw className="size-4 motion-safe:animate-spin" aria-hidden="true" />
+                    Loading your kitchens…
+                  </p>
+                ) : (
+                  <>
+                    <h2 className="font-display text-lg font-bold">
+                      {locationError ? "Kitchen list unavailable" : "No kitchen assigned"}
+                    </h2>
+                    <p
+                      role={locationError ? "alert" : "status"}
+                      className="mt-2 text-sm md-ops-muted"
+                    >
+                      {locationError ||
+                        "There are no accessible kitchens for this business. Ask an administrator to check your kitchen assignment."}
+                    </p>
+                    <button
+                      type="button"
+                      className="md-ops-button md-ops-primary mt-4"
+                      disabled={!tenant}
+                      onClick={retryLocations}
+                    >
+                      <RefreshCcw className="size-4" aria-hidden="true" />
+                      {locationError ? "Retry kitchen lookup" : "Check kitchens again"}
+                    </button>
+                  </>
+                )}
               </div>
             ) : loading && !kitchenSelected ? (
               <div role="status" className={columns}>

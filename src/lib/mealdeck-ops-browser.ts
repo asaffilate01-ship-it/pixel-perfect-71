@@ -118,6 +118,32 @@ export async function opsRpc<T>(
         "Your staff role is not permitted to access this area.",
       );
     }
+    if (name.startsWith("mealdeck_ops_modifier_")) {
+      if (error.code === "PGRST202") {
+        throw new OpsRequestError(
+          "unconfigured",
+          "Shared option price editing is not installed yet. Ask your administrator to finish the menu setup.",
+        );
+      }
+      if (/mealdeck_ops_modifier_price_conflict/.test(error.message)) {
+        throw new OpsRequestError(
+          "conflict",
+          "This option price changed on another screen. Review the latest saved price before trying again.",
+        );
+      }
+      if (/mealdeck_ops_modifier_invalid_price/.test(error.message)) {
+        throw new OpsRequestError(
+          "unavailable",
+          "Enter a price from £0.00 to £10,000.00 with no more than two decimals.",
+        );
+      }
+      if (/mealdeck_ops_modifier_not_found/.test(error.message)) {
+        throw new OpsRequestError(
+          "unavailable",
+          "This option is no longer available. Reload the option prices and choose another option.",
+        );
+      }
+    }
     if (name.startsWith("mealdeck_ops_kds_")) {
       if (/mealdeck_kds_instructions_unavailable/i.test(error.message)) {
         throw new OpsRequestError(

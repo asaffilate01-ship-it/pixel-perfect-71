@@ -5,26 +5,26 @@ import { ldScript, lutonBusiness, seo } from "@/lib/seo";
 export const Route = createFileRoute("/luton")({
   head: () => ({
     ...seo({
-      title: "Food Delivery Luton — French Tacos, Burgers, Desi & More | MealDeck",
-      description: "Order takeaway in Luton from French tacos, smash burgers, chicken, desi, parathas, juices and mocktails — one basket, one delivery fee. Open 5pm–11pm, Monday to Sunday.",
+      title: "MealDeck Luton — Five Brands, One Launch Kitchen",
+      description: "Luton launches first with Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Browse the five menus. Delivery, pickup and kerbside ordering are coming soon.",
       path: "/luton",
-      keywords: "food delivery Luton, takeaway Luton, French tacos Luton, smash burgers Luton, chicken Luton, desi food Luton, halal food Luton, late night food Luton, mocktails Luton",
+      keywords: "MealDeck Luton, food delivery Luton, smash burgers Luton, chicken Luton, Mediterranean grill Luton, loaded fries Luton, mocktails Luton",
     }),
     scripts: [ldScript({ "@context": "https://schema.org", ...lutonBusiness })],
   }),
   component: () => (
     <LocationPage
       town="Luton"
-      intro="MealDeck Luton brings every brand in the deck to your door: artisan pizza, French tacos, smash burgers, all things chicken, desi boxes, parathas, vegetarian Indian, fresh juices, iced coffee and zero-alcohol mocktails — mixed in one order."
+      intro="Our first launch is Luton: Skorch smash burgers, Tavo Chicken, Souvano Mediterranean grill, Load’d loaded fries and mac ’n’ cheese, and Moktl mocktails — five brands from one kitchen. Browse the menus while we prepare to open ordering. More brands, St Albans and Bedford are coming in future decks."
       hours="5pm–11pm · Monday to Sunday"
-      fulfilment="Delivery · Pickup · Kerbside"
-      areas={["All areas across Luton", "Luton town centre", "Bury Park", "High Town", "Stopsley", "Leagrave", "Marsh Farm", "Wigmore", "Farley Hill", "and everywhere in between"]}
+      fulfilment="Delivery · Pickup · Kerbside · Ordering soon"
+      areas={["Luton town centre", "Bury Park", "High Town", "Stopsley", "Leagrave", "Marsh Farm", "Wigmore", "Farley Hill", "Delivery coverage to be confirmed before launch"]}
       includeCafe1={false}
       faqs={[
-        { q: "When is MealDeck open in Luton?", a: "Every day, Monday to Sunday, 5pm to 11pm." },
-        { q: "Can I order from more than one brand in Luton?", a: "Yes — mix any brands in one basket and pay one delivery fee." },
-        { q: "Do you offer pickup or kerbside in Luton?", a: "Yes. Luton supports delivery, pickup and kerbside collection." },
-        { q: "Can my group split the bill?", a: "Yes. Group ordering and split payments are built in." },
+        { q: "When is MealDeck opening in Luton?", a: "Luton is our first launch kitchen. Planned hours are 5pm to 11pm, Monday to Sunday. Ordering is not open yet; the opening date will be confirmed here." },
+        { q: "Which brands are in the first launch?", a: "Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Mix the five launch brands in one basket when ordering opens. The other brands are planned for later decks." },
+        { q: "Will Luton offer walk-in pickup or kerbside collection?", a: "Yes, the Luton launch plan includes delivery, pickup and kerbside collection. Ordering and collection are not open yet. St Albans and Bedford remain coming soon." },
+        { q: "Can my group split the bill?", a: "Group ordering and split payments are planned. They will become available once the payment and ordering service is ready; no payments are being accepted yet." },
       ]}
     />
   ),
