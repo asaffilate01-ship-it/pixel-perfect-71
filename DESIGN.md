@@ -48,3 +48,11 @@ Inspect existing pages and CSS before changes. Run build, tests, lint and a keyb
 - The installable app uses the approved artwork. Show installation only after a browser request or clear platform instructions; an accepted prompt is not proof of installation. App updates require a user action and preserve the locally saved basket.
 - The offline screen must explain the connection state without showing stale live availability, payment confirmation or order progress. Only static offline artwork and the offline screen belong in the service-worker cache; staff, tracking, API and authentication traffic remain on the network.
 - Customer progress follows verified order, kitchen, packing and fulfilment evidence. Payment alone does not mean cooking has started. Show the real placement time and elapsed time only when valid server timestamps exist; do not fabricate ETAs or milestone timestamps.
+
+## Arcade experience — 5 November 2026
+
+- `/play` uses a compact introduction, a searchable game library and one focused playing area. On narrow screens, a modal game picker keeps the board close to the top of the page. Search and category changes preserve the current round; choosing another game starts a fresh round. The optional `game` URL value accepts only catalogue IDs.
+- Arcade, card-game and quick-game surfaces use cream/paper, ink text and restrained red/yellow actions. Keep the approved food symbols and card-back artwork. Decorative perspective must not reduce board readability or touch accuracy.
+- Each game explains its goal, legal moves, current progress and next action. Timed games start explicitly. Order Echo offers slower and user-paced playback, pauses when the page is hidden or the game picker is open, and resumes only through the player's control.
+- Keep controls at least 44px where practical, scope keyboard shortcuts to the game board, and move focus to a useful next action when a card or control disappears. The mobile picker restores focus on dismissal; selecting a game focuses its playing region. Respect reduced-motion preferences.
+- Gameplay stays free, account-free and independent of checkout and loyalty. Explain local scores and round resets plainly. Purchase rewards remain separate and inactive; game completion cannot create points, vouchers, food or monetary value.
