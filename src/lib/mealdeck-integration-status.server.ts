@@ -17,7 +17,11 @@ import {
   requirePaymentOrigin,
   verifiedPaymentUser,
 } from "./mealdeck-payment-server-core";
-import { readMealDeckStripeConfig, stripeRequest } from "./mealdeck-stripe.server";
+import {
+  readMealDeckStripeConfig,
+  readMealDeckStripeSettingIssues,
+  stripeRequest,
+} from "./mealdeck-stripe.server";
 import { readMealDeckStripeCheckoutDomain } from "./mealdeck-stripe-checkout-domain.server";
 import {
   integrationStatusSchema,
@@ -115,6 +119,7 @@ export async function handleIntegrationStatusRequest(
     };
     const serviceKey = readMealDeckCheckoutServerKey(env, config);
     const stripe = readMealDeckStripeConfig(env);
+    const stripeIssues = readMealDeckStripeSettingIssues(env);
     const domain = readMealDeckStripeCheckoutDomain(env);
     const terminalId = env["MEALDECK_STRIPE_TERMINAL_LOCATION_ID"]?.trim();
     const validTerminalId = !!terminalId && /^tml_[A-Za-z0-9]+$/.test(terminalId);
@@ -139,12 +144,30 @@ export async function handleIntegrationStatusRequest(
         // Raw provider errors, credentials and identifiers never enter the report.
       }
     }
-    const checkoutConfigured =
+    const publicApprovalPending = env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off";
+    const checkoutSetupReady =
       !!serviceKey &&
       !!stripe &&
       domain.status !== "invalid" &&
-      env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] === "true" &&
-      env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] === "signed-off";
+      env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] === "true";
+    const checkoutConfigured = checkoutSetupReady && !publicApprovalPending;
+    const checkoutIssues: { setting: string; status: string }[] = [];
+    if (!serviceKey)
+      checkoutIssues.push({
+        setting: "MEALDECK_CHECKOUT_SERVER_KEY",
+        status: "missing or invalid",
+      });
+    if (env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] !== "true")
+      checkoutIssues.push({
+        setting: "MEALDECK_ONLINE_CHECKOUT_ENABLED",
+        status: !env["MEALDECK_ONLINE_CHECKOUT_ENABLED"]?.trim()
+          ? "missing"
+          : env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] === "false"
+            ? "disabled"
+            : "invalid",
+      });
+    if (domain.status === "invalid")
+      checkoutIssues.push({ setting: "MEALDECK_STRIPE_CHECKOUT_HOST", status: "invalid" });
     const sharedConfigured =
       checkoutConfigured &&
       env["MEALDECK_SHARED_PAYMENTS_ENABLED"] === "true" &&
@@ -173,30 +196,30 @@ export async function handleIntegrationStatusRequest(
         ? "Stripe returned the configured merchant account with charges enabled. A completed payment and webhook acceptance still need separate verification."
         : stripe
           ? "The configured merchant account or its ability to accept charges could not be confirmed with Stripe. Check the account connection and retry."
-          : "The matching server payment key, merchant account, mode and webhook signing secret are not fully configured.",
-      stripe
-        ? []
-        : [
-            "MEALDECK_STRIPE_SECRET_KEY",
-            "MEALDECK_STRIPE_WEBHOOK_SECRET",
-            "MEALDECK_STRIPE_ACCOUNT_ID",
-            "MEALDECK_STRIPE_MODE",
-          ],
+          : stripeIssues
+              .map(
+                (issue) =>
+                  `${issue.setting}: ${issue.status === "mode_mismatch" ? "invalid (key/mode mismatch)" : issue.status}.`,
+              )
+              .join(" "),
+      stripeIssues.map((issue) => issue.setting),
     );
     add(
       "checkout",
       "Website checkout",
-      checkoutConfigured ? "configured" : "needs_setup",
+      checkoutConfigured ? "configured" : checkoutSetupReady ? "unverified" : "needs_setup",
       checkoutConfigured
         ? "Server checkout settings are present. New orders also require the current kitchen, catalogue, opening hours and Stripe account checks."
-        : "Complete the server checkout configuration and payment acceptance before enabling website orders.",
-      checkoutConfigured
-        ? []
         : [
-            "MEALDECK_CHECKOUT_SERVER_KEY",
-            "MEALDECK_ONLINE_CHECKOUT_ENABLED",
-            "MEALDECK_CHECKOUT_INTEGRATION_APPROVED",
-          ],
+            ...checkoutIssues.map((issue) => `${issue.setting}: ${issue.status}.`),
+            ...(!stripe ? ["Stripe configuration needs setup; see the Stripe account check."] : []),
+            ...(publicApprovalPending
+              ? [
+                  "Public checkout approval is pending. Keep it pending until the private live payment and kitchen verification are complete.",
+                ]
+              : []),
+          ].join(" "),
+      checkoutIssues.map((issue) => issue.setting),
     );
     add(
       "domain",

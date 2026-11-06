@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, CircleHelp, RefreshCw, Settings2 } from "lucide-react";
+import { CheckCircle2, CircleHelp, Copy, RefreshCw, Settings2 } from "lucide-react";
 import { getMealDeckOpsClient } from "@/lib/mealdeck-ops-browser";
 import {
   INTEGRATION_STATE_LABELS,
@@ -17,12 +17,14 @@ export function IntegrationStatusPanel({
   const [report, setReport] = useState<MealDeckIntegrationStatus | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState("");
   const generation = useRef(0);
   const refresh = useCallback(async () => {
     const request = ++generation.current;
     setBusy(true);
     setReport(null);
     setError("");
+    setCopyFeedback("");
     try {
       const client = getMealDeckOpsClient();
       // Session supplies transport only. The endpoint re-verifies Auth and SQL permissions.
@@ -78,6 +80,15 @@ export function IntegrationStatusPanel({
   }, [refresh]);
   const currentReport =
     report?.tenantId === tenantId && report.locationId === locationId ? report : null;
+  const copySettingName = async (name: string) => {
+    setCopyFeedback("");
+    try {
+      await navigator.clipboard.writeText(name);
+      setCopyFeedback("Setting name copied. Paste it into the Name field in Lovable.");
+    } catch {
+      setCopyFeedback("Your browser could not copy it. Select the setting name and copy it.");
+    }
+  };
   return (
     <section className="md-ops-card p-5 space-y-4" aria-labelledby="integration-status-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -145,16 +156,30 @@ export function IntegrationStatusPanel({
                     {INTEGRATION_STATE_LABELS[check.state]}
                   </span>
                 </div>
-                <p className="mt-1 text-sm leading-6 md-ops-muted">{check.detail}</p>
+                <p className="mt-1 text-sm leading-6 md-ops-muted [overflow-wrap:anywhere]">
+                  {check.detail}
+                </p>
                 {check.settings.length > 0 && (
-                  <details className="mt-2 text-xs md-ops-muted">
+                  <details
+                    open={check.state === "needs_setup"}
+                    className="mt-2 text-xs md-ops-muted"
+                  >
                     <summary className="min-h-11 cursor-pointer flex items-center">
-                      Setup fields for your administrator
+                      Setting names to check in Lovable
                     </summary>
-                    <ul className="space-y-1 break-all">
+                    <ul className="space-y-2">
                       {check.settings.map((name) => (
-                        <li key={name}>
-                          <code>{name}</code>
+                        <li key={name} className="flex flex-wrap items-center gap-2">
+                          <code className="min-w-0 flex-1 break-all">{name}</code>
+                          <button
+                            type="button"
+                            className="md-ops-button min-h-11 shrink-0 text-xs"
+                            aria-label={`Copy ${name} setting name`}
+                            onClick={() => void copySettingName(name)}
+                          >
+                            <Copy size={14} aria-hidden="true" />
+                            Copy name
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -163,6 +188,11 @@ export function IntegrationStatusPanel({
               </li>
             ))}
           </ul>
+          {copyFeedback && (
+            <p className="text-sm md-ops-muted" role="status">
+              {copyFeedback}
+            </p>
+          )}
           <p className="text-xs md-ops-muted">
             Checked{" "}
             {new Date(currentReport.checkedAt).toLocaleString("en-GB", {
