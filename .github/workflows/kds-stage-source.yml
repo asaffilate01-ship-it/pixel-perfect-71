@@ -1,0 +1,49 @@
+name: Publish KDS source files
+on:
+  push:
+    branches: [feature/mealdeck-six-stage-kds-20261106]
+    paths: [.github/workflows/kds-stage-source.yml]
+permissions:
+  contents: write
+jobs:
+  source:
+    if: github.repository == 'asaffilate01-ship-it/pixel-perfect-71'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+      - name: Apply tested application patch without workflow changes
+        shell: python
+        run: |
+          import ast,base64,gzip,hashlib,pathlib,re,subprocess
+          text=pathlib.Path('.github/workflows/kds-stage-implementation.yml').read_text()
+          payload=re.search("payload = '''([^']+)'''",text).group(1)
+          patch=gzip.decompress(base64.b64decode(payload,validate=True))
+          assert hashlib.sha256(patch).hexdigest()=='e3ac28e20f2143d8e5f3d017d4420be984d71fa7832e1c8c1900e4d0c0d08661'
+          expected=ast.literal_eval(re.search(r'expected = (\{.*?\})',text,re.S).group(1))
+          for path,sha in expected.items():
+            assert subprocess.check_output(['git','hash-object',path],text=True).strip()==sha,path+' changed'
+          subprocess.run(['git','apply','--unidiff-zero','--index','--whitespace=error-all','--exclude=.github/workflows/*','-'],input=patch,check=True)
+      - name: Install locked dependencies and format source
+        run: |
+          bun install --frozen-lockfile
+          bunx --no-install prettier --write src/components/ops/kds-panel.tsx src/lib/mealdeck-kds-presentation.ts src/lib/mealdeck-kds.ts tests/mealdeck-kds-presentation.test.ts tests/mealdeck-kds.test.ts deploy/mealdeck/kds-six-stages.mjs tests/postgres/kds-six-stages-behavior.mjs docs/mealdeck-kds-six-stages.md
+          git add src/components/ops/kds-panel.tsx src/lib/mealdeck-kds-presentation.ts src/lib/mealdeck-kds.ts tests/mealdeck-kds-presentation.test.ts tests/mealdeck-kds.test.ts deploy/mealdeck/kds-six-stages.mjs tests/postgres/kds-six-stages-behavior.mjs docs/mealdeck-kds-six-stages.md
+          git diff --cached --check
+      - name: Publish application files only, without force
+        env:
+          TARGET_BRANCH: feature/mealdeck-six-stage-kds-20261106
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$TARGET_BRANCH"
+          test "$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | cut -f1)" = "$GITHUB_SHA"
+          if git diff --cached --name-only | grep -q '^.github/'; then exit 1; fi
+          git config user.name 'MealDeck Build'
+          git config user.email 'build@mealdeck.invalid'
+          git commit -m 'Implement six-stage KDS and authenticated read-only Done history'
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
