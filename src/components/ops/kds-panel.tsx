@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { PwaInstallCard } from "@/components/pwa-install-card";
 import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
+import { StaffMobileNav, StaffMobileSheet } from "./staff-mobile-navigation";
 import type { OpsPermission } from "@/lib/mealdeck-ops-access";
 import { OpsRequestError, opsRpc } from "@/lib/mealdeck-ops-browser";
 import { parseKdsMutation, type KdsOrder } from "@/lib/mealdeck-kds";
@@ -66,6 +67,7 @@ type Props = {
   tenantId: string;
   locationId: string;
   can: (permission: OpsPermission) => boolean;
+  mobileNavigation?: boolean;
 };
 type FeedState = "loading" | "connected" | "stale" | "access_blocked" | "setup_required";
 
@@ -130,7 +132,7 @@ export function OpsKdsPanel(props: Props) {
   return <ScopedKitchenBoard key={`${props.tenantId}:${props.locationId}`} {...props} />;
 }
 
-function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
+function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = false }: Props) {
   const alerts = useStaffAlerts("kds", `${tenantId}:${locationId}`);
   const { observe: observeAlerts } = alerts;
   const [board, setBoard] = useState<KdsBoard | null>(null);
@@ -393,7 +395,8 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
   return (
     <section
       aria-labelledby="mealdeck-kitchen-title"
-      className="md-kds-workspace min-w-0 space-y-4"
+      className={`md-kds-workspace min-w-0 space-y-4${mobileNavigation ? " md-staff-has-mobile-nav" : ""}`}
+      data-mobile-navigation={mobileNavigation}
       data-testid="mealdeck-kds-board"
     >
       <header className="md-kds-heading">
@@ -445,6 +448,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
 
       {board?.readiness === "ready" && (
         <KdsWorkspaceControls
+          mobileNavigation={mobileNavigation}
           activeCount={board.orders.length}
           counts={counts}
           filter={filter}
@@ -736,12 +740,30 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
           )}
         </StateCard>
       )}
+      {mobileNavigation && board?.readiness !== "ready" && (
+        <StaffMobileNav
+          label="Kitchen navigation"
+          items={[
+            { id: "tickets", label: "Tickets", icon: LayoutGrid, disabled: true },
+            { id: "board", label: "Board", icon: Columns3, disabled: true },
+            { id: "tools", label: "Tools", icon: SlidersHorizontal, disabled: true },
+            {
+              id: "refresh",
+              label: "Refresh",
+              icon: RefreshCw,
+              disabled: refreshing || !!pendingOrder,
+              onClick: () => void refresh(),
+            },
+          ]}
+        />
+      )}
     </section>
   );
 }
 
 /** Presentation-only controls; filtering never changes an order or its contents. */
 export function KdsWorkspaceControls({
+  mobileNavigation = false,
   activeCount,
   counts,
   filter,
@@ -764,6 +786,7 @@ export function KdsWorkspaceControls({
   onRefresh,
   onClear,
 }: {
+  mobileNavigation?: boolean;
   activeCount: number;
   counts: Record<Stage, number>;
   filter: StageFilter;
@@ -787,16 +810,43 @@ export function KdsWorkspaceControls({
   onClear: () => void;
 }) {
   const toolsId = useId();
+  const mobileToolsId = useId();
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
+  const allStagesControl = useRef<HTMLButtonElement>(null);
+  const mobileToolsControl = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     setToolsOpen(readKdsToolsPreference(preferencesScope));
   }, [preferencesScope]);
   const hasFilters = filter !== "all" || !!query.trim() || fulfilment !== "all";
   const history = filter === "done";
   const totalCount = history ? counts.done : activeCount;
+  const toolProps = {
+    filter,
+    query,
+    onQueryChange,
+    fulfilment,
+    onFulfilmentChange,
+    sort,
+    onSortChange,
+    view,
+    onViewChange,
+    extraTools,
+  };
+
+  function selectMobileView(next: KdsView) {
+    onViewChange(next);
+    window.requestAnimationFrame(() =>
+      allStagesControl.current?.scrollIntoView({
+        block: "start",
+        inline: "nearest",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      }),
+    );
+  }
 
   return (
-    <div className="md-kds-controls">
+    <div className="md-kds-controls" data-mobile-navigation={mobileNavigation}>
       <div className="md-kds-tools-bar">
         <div className="md-kds-tools-summary">
           <p className="md-kds-summary-count" role="status">
@@ -841,7 +891,6 @@ export function KdsWorkspaceControls({
             <span>Refresh</span>
           </button>
           <button
-            ref={toolbarControl}
             type="button"
             className={`${button} md-ops-secondary md-kds-tools-toggle`}
             aria-expanded={toolsOpen}
@@ -860,6 +909,10 @@ export function KdsWorkspaceControls({
       </div>
       <div className="md-kds-stage-rail" role="group" aria-label="Filter kitchen orders by stage">
         <button
+          ref={(element) => {
+            allStagesControl.current = element;
+            toolbarControl?.(element);
+          }}
           type="button"
           className="md-kds-stage-chip"
           data-stage="all"
@@ -902,9 +955,116 @@ export function KdsWorkspaceControls({
         </div>
       )}
       <div className="md-kds-tools-panel" id={toolsId} hidden={!toolsOpen}>
-        <div className="md-kds-toolbar">
-          <label className="md-kds-search relative min-w-0">
-            <span className="sr-only">Find an order, dish, brand, bag name, note or vehicle</span>
+        <KdsWorkspaceTools {...toolProps} />
+      </div>
+      {mobileNavigation && (
+        <>
+          <StaffMobileNav
+            label="Kitchen navigation"
+            hidden={mobileToolsOpen}
+            items={[
+              {
+                id: "tickets",
+                label: "Tickets",
+                icon: LayoutGrid,
+                active: history || view === "tickets",
+                badge: totalCount,
+                onClick: () => selectMobileView("tickets"),
+              },
+              {
+                id: "board",
+                label: "Board",
+                icon: Columns3,
+                active: !history && view === "stages",
+                disabled: history,
+                onClick: () => selectMobileView("stages"),
+              },
+              {
+                id: "tools",
+                label: "Tools",
+                icon: SlidersHorizontal,
+                badge: Number(!!query.trim()) + Number(fulfilment !== "all"),
+                expanded: mobileToolsOpen,
+                controls: mobileToolsId,
+                buttonRef: (element) => {
+                  mobileToolsControl.current = element;
+                },
+                onClick: () => setMobileToolsOpen(true),
+              },
+              {
+                id: "refresh",
+                label: "Refresh",
+                icon: RefreshCw,
+                disabled: refreshDisabled,
+                onClick: onRefresh,
+              },
+            ]}
+          />
+          <StaffMobileSheet
+            id={mobileToolsId}
+            open={mobileToolsOpen}
+            onOpenChange={setMobileToolsOpen}
+            title="Kitchen tools"
+            description="Search orders, adjust your view and manage kitchen alerts."
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              const trigger = mobileToolsControl.current;
+              const target = trigger?.getClientRects().length ? trigger : allStagesControl.current;
+              target?.focus({ preventScroll: target === trigger });
+            }}
+          >
+            <div className="md-kds-workspace md-kds-mobile-tools">
+              <KdsWorkspaceTools {...toolProps} mobile />
+              <button
+                type="button"
+                className={`${button} md-ops-primary md-kds-mobile-tools-done`}
+                onClick={() => setMobileToolsOpen(false)}
+              >
+                Show {visibleCount} {history ? "handovers" : "orders"}
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+          </StaffMobileSheet>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Shared controlled fields keep mobile and desktop on the same current filters. */
+export function KdsWorkspaceTools({
+  mobile = false,
+  filter,
+  query,
+  onQueryChange,
+  fulfilment,
+  onFulfilmentChange,
+  sort,
+  onSortChange,
+  view,
+  onViewChange,
+  extraTools,
+}: {
+  mobile?: boolean;
+  filter: StageFilter;
+  query: string;
+  onQueryChange: (value: string) => void;
+  fulfilment: KdsFulfilmentFilter;
+  onFulfilmentChange: (value: KdsFulfilmentFilter) => void;
+  sort: KdsSort;
+  onSortChange: (value: KdsSort) => void;
+  view: KdsView;
+  onViewChange: (value: KdsView) => void;
+  extraTools?: ReactNode;
+}) {
+  return (
+    <>
+      <div className="md-kds-toolbar">
+        <label className="md-kds-search min-w-0">
+          <span className={mobile ? "md-kds-field-label" : "sr-only"}>
+            Find an order, dish, brand, bag name, note or vehicle
+          </span>
+          <span className="relative block">
             <Search
               className="pointer-events-none absolute left-3 top-3.5 size-4 md-ops-muted"
               aria-hidden="true"
@@ -916,61 +1076,59 @@ export function KdsWorkspaceControls({
               placeholder="Order, dish, name or note"
               className={`${control} md-ops-field-search w-full`}
             />
-          </label>
-          <label className="min-w-0">
-            <span className="sr-only">Filter by fulfilment</span>
-            <select
-              value={fulfilment}
-              onChange={(event) => onFulfilmentChange(event.target.value as KdsFulfilmentFilter)}
-              className={`${control} w-full`}
-            >
-              <option value="all">All fulfilment</option>
-              {(Object.keys(fulfilmentLabels) as KdsOrder["fulfilment"][]).map((key) => (
-                <option key={key} value={key}>
-                  {fulfilmentLabels[key]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="min-w-0">
-            <span className="sr-only">Sort kitchen orders</span>
-            <select
-              value={sort}
-              onChange={(event) => onSortChange(event.target.value as KdsSort)}
-              className={`${control} w-full`}
-            >
-              <option value="oldest">
-                {filter === "done" ? "Earliest handover" : "Oldest first"}
+          </span>
+        </label>
+        <label className="min-w-0">
+          <span className={mobile ? "md-kds-field-label" : "sr-only"}>Filter by fulfilment</span>
+          <select
+            value={fulfilment}
+            onChange={(event) => onFulfilmentChange(event.target.value as KdsFulfilmentFilter)}
+            className={`${control} w-full`}
+          >
+            <option value="all">All fulfilment</option>
+            {(Object.keys(fulfilmentLabels) as KdsOrder["fulfilment"][]).map((key) => (
+              <option key={key} value={key}>
+                {fulfilmentLabels[key]}
               </option>
-              <option value="newest">
-                {filter === "done" ? "Latest handover" : "Newest first"}
-              </option>
-            </select>
-          </label>
-        </div>
-        <div className="md-kds-viewbar">
-          {filter !== "done" && (
-            <div className="md-kds-view-switch" role="group" aria-label="Kitchen board layout">
-              <button
-                type="button"
-                aria-pressed={view === "tickets"}
-                onClick={() => onViewChange("tickets")}
-              >
-                <LayoutGrid className="size-4" aria-hidden="true" /> Tickets
-              </button>
-              <button
-                type="button"
-                aria-pressed={view === "stages"}
-                onClick={() => onViewChange("stages")}
-              >
-                <Columns3 className="size-4" aria-hidden="true" /> Stage lanes
-              </button>
-            </div>
-          )}
-        </div>
-        {extraTools && <div className="md-kds-extra-tools">{extraTools}</div>}
+            ))}
+          </select>
+        </label>
+        <label className="min-w-0">
+          <span className={mobile ? "md-kds-field-label" : "sr-only"}>Sort kitchen orders</span>
+          <select
+            value={sort}
+            onChange={(event) => onSortChange(event.target.value as KdsSort)}
+            className={`${control} w-full`}
+          >
+            <option value="oldest">
+              {filter === "done" ? "Earliest handover" : "Oldest first"}
+            </option>
+            <option value="newest">{filter === "done" ? "Latest handover" : "Newest first"}</option>
+          </select>
+        </label>
       </div>
-    </div>
+      {!mobile && filter !== "done" && (
+        <div className="md-kds-viewbar">
+          <div className="md-kds-view-switch" role="group" aria-label="Kitchen board layout">
+            <button
+              type="button"
+              aria-pressed={view === "tickets"}
+              onClick={() => onViewChange("tickets")}
+            >
+              <LayoutGrid className="size-4" aria-hidden="true" /> Tickets
+            </button>
+            <button
+              type="button"
+              aria-pressed={view === "stages"}
+              onClick={() => onViewChange("stages")}
+            >
+              <Columns3 className="size-4" aria-hidden="true" /> Stage lanes
+            </button>
+          </div>
+        </div>
+      )}
+      {extraTools && <div className="md-kds-extra-tools">{extraTools}</div>}
+    </>
   );
 }
 
@@ -995,39 +1153,46 @@ export function KdsOrderCollection({
   }
   const stages = KDS_ACTIVE_STAGES.filter((stage) => filter === "all" || filter === stage);
   return (
-    <div
-      className={`md-kds-lanes ${stages.length === 1 ? "md-kds-lanes-single" : ""}`}
-      role="region"
-      aria-label="Kitchen stage lanes. Scroll horizontally to see each stage."
-      tabIndex={0}
-    >
-      {stages.map((stage) => {
-        const laneOrders = orders.filter((order) => kdsOrderStage(order) === stage);
-        return (
-          <section
-            key={stage}
-            className="md-kds-lane"
-            data-stage={stage}
-            aria-labelledby={`kds-lane-${stage}`}
-          >
-            <header className="md-kds-lane-heading">
-              <h3 id={`kds-lane-${stage}`}>
-                <span className="md-kds-stage-dot" aria-hidden="true" />
-                {stageLabels[stage]}
-              </h3>
-              <span>{laneOrders.length}</span>
-            </header>
-            <div className="md-kds-lane-orders">
-              {laneOrders.length ? (
-                laneOrders.map(renderOrder)
-              ) : (
-                <p className="md-kds-lane-empty">No orders in this view</p>
-              )}
-            </div>
-          </section>
-        );
-      })}
-    </div>
+    <>
+      {stages.length > 1 && (
+        <p className="md-kds-mobile-board-hint" aria-hidden="true">
+          Swipe to move between stages <ArrowRight className="size-3.5" />
+        </p>
+      )}
+      <div
+        className={`md-kds-lanes ${stages.length === 1 ? "md-kds-lanes-single" : ""}`}
+        role="region"
+        aria-label="Kitchen stage lanes. Scroll horizontally to see each stage."
+        tabIndex={0}
+      >
+        {stages.map((stage) => {
+          const laneOrders = orders.filter((order) => kdsOrderStage(order) === stage);
+          return (
+            <section
+              key={stage}
+              className="md-kds-lane"
+              data-stage={stage}
+              aria-labelledby={`kds-lane-${stage}`}
+            >
+              <header className="md-kds-lane-heading">
+                <h3 id={`kds-lane-${stage}`}>
+                  <span className="md-kds-stage-dot" aria-hidden="true" />
+                  {stageLabels[stage]}
+                </h3>
+                <span>{laneOrders.length}</span>
+              </header>
+              <div className="md-kds-lane-orders">
+                {laneOrders.length ? (
+                  laneOrders.map(renderOrder)
+                ) : (
+                  <p className="md-kds-lane-empty">No orders in this view</p>
+                )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -1202,7 +1367,7 @@ export function KitchenOrderCard({
                   className={`md-kds-line min-w-0 ${item.parent_checkout_line_id ? "md-kds-attached-line" : ""}`}
                   data-ready={item.status === "ready"}
                 >
-                  <div className="flex items-start gap-2.5">
+                  <div className="md-kds-line-layout">
                     <label className="md-kds-ready-toggle">
                       <input
                         type="checkbox"
@@ -1220,7 +1385,7 @@ export function KitchenOrderCard({
                         onChange={(event) => onItemReady(item.order_item_id, event.target.checked)}
                       />
                     </label>
-                    <div className="min-w-0 flex-1">
+                    <div className="md-kds-line-content">
                       <div className="md-kds-line-title">
                         <span
                           className="md-ops-ticket-quantity md-kds-quantity"
@@ -1230,76 +1395,81 @@ export function KitchenOrderCard({
                         </span>
                         <p>{item.item_name}</p>
                       </div>
-                      {item.parent_checkout_line_id && (
-                        <p className="text-xs font-semibold md-ops-muted">
-                          Extra from {item.brand_name} · with the item above
-                        </p>
-                      )}
-                      {!!item.bags?.length && (
-                        <ul
-                          className="md-kds-bag-labels"
-                          aria-label={`Packing for ${item.item_name}`}
-                        >
-                          {item.bags.map((bag) => (
-                            <li key={bag.number}>
-                              <ShoppingBag className="size-3 shrink-0" aria-hidden="true" />
-                              <span>{formatPackingBagName(bag)}</span>
-                              <strong>{bag.quantity}×</strong>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {item.unit_pence != null && (
-                        <p className="mt-1 text-xs md-ops-muted">
-                          £{(item.unit_pence / 100).toFixed(2)} each · £
-                          {((item.quantity * item.unit_pence) / 100).toFixed(2)} total
-                        </p>
-                      )}
-                      {order.group_order &&
-                        item.participant_name &&
-                        !item.bags?.some((bag) => bag.name === item.participant_name) && (
-                          <p className="mt-0.5 break-words text-xs font-semibold md-ops-muted">
-                            For {item.participant_name}
+                      <div className="md-kds-line-details">
+                        {item.parent_checkout_line_id && (
+                          <p className="md-kds-extra-label">
+                            Extra from {item.brand_name} · with the item above
                           </p>
                         )}
-                      {item.modifiers.length > 0 && (
-                        <ul className="md-kds-choices" aria-label={`Choices for ${item.item_name}`}>
-                          {item.modifiers.map((modifier, index) => {
-                            const detail = item.modifier_details?.[index];
-                            return (
-                              <li key={`${index}:${modifier}`}>
-                                <span className="md-kds-choice-mark" aria-hidden="true" />
-                                <span className="min-w-0 break-words">
-                                  {detail?.group_name &&
-                                    !modifier
-                                      .toLocaleLowerCase("en-GB")
-                                      .startsWith(
-                                        `${detail.group_name.toLocaleLowerCase("en-GB")}:`,
-                                      ) && (
-                                      <span className="md-kds-choice-group">
-                                        {detail.group_name}:{" "}
+                        {!!item.bags?.length && (
+                          <ul
+                            className="md-kds-bag-labels"
+                            aria-label={`Packing for ${item.item_name}`}
+                          >
+                            {item.bags.map((bag) => (
+                              <li key={bag.number}>
+                                <ShoppingBag className="size-3 shrink-0" aria-hidden="true" />
+                                <span>{formatPackingBagName(bag)}</span>
+                                <strong>{bag.quantity}×</strong>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {item.unit_pence != null && (
+                          <p className="mt-1 text-xs md-ops-muted">
+                            £{(item.unit_pence / 100).toFixed(2)} each · £
+                            {((item.quantity * item.unit_pence) / 100).toFixed(2)} total
+                          </p>
+                        )}
+                        {order.group_order &&
+                          item.participant_name &&
+                          !item.bags?.some((bag) => bag.name === item.participant_name) && (
+                            <p className="mt-0.5 break-words text-xs font-semibold md-ops-muted">
+                              For {item.participant_name}
+                            </p>
+                          )}
+                        {item.modifiers.length > 0 && (
+                          <ul
+                            className="md-kds-choices"
+                            aria-label={`Choices for ${item.item_name}`}
+                          >
+                            {item.modifiers.map((modifier, index) => {
+                              const detail = item.modifier_details?.[index];
+                              return (
+                                <li key={`${index}:${modifier}`}>
+                                  <span className="md-kds-choice-mark" aria-hidden="true" />
+                                  <span className="min-w-0 break-words">
+                                    {detail?.group_name &&
+                                      !modifier
+                                        .toLocaleLowerCase("en-GB")
+                                        .startsWith(
+                                          `${detail.group_name.toLocaleLowerCase("en-GB")}:`,
+                                        ) && (
+                                        <span className="md-kds-choice-group">
+                                          {detail.group_name}:{" "}
+                                        </span>
+                                      )}
+                                    {modifier}
+                                    {detail && (
+                                      <span className="md-kds-choice-detail">
+                                        {detail.quantity_per_parent}× each
+                                        {detail.price_delta_pence
+                                          ? ` · ${detail.price_delta_pence < 0 ? "−" : "+"}£${(Math.abs(detail.price_delta_pence) / 100).toFixed(2)}`
+                                          : " · included"}
                                       </span>
                                     )}
-                                  {modifier}
-                                  {detail && (
-                                    <span className="md-kds-choice-detail">
-                                      {detail.quantity_per_parent}× each
-                                      {detail.price_delta_pence
-                                        ? ` · ${detail.price_delta_pence < 0 ? "−" : "+"}£${(Math.abs(detail.price_delta_pence) / 100).toFixed(2)}`
-                                        : " · included"}
-                                    </span>
-                                  )}
-                                </span>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                      {item.notes && (
-                        <div className="mt-2">
-                          <Note label="Item note" text={item.notes} />
-                        </div>
-                      )}
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                        {item.notes && (
+                          <div className="mt-2">
+                            <Note label="Item note" text={item.notes} />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </li>
@@ -1324,7 +1494,7 @@ export function KitchenOrderCard({
         )}
         {order.pass?.status === "ready_for_handoff" ? (
           <form
-            className="space-y-2"
+            className="md-kds-handoff-form space-y-2"
             onSubmit={(event) => {
               event.preventDefault();
               if (/^\d{4}$/.test(handoffCode) && !disabled) onHandoff(handoffCode);
@@ -1365,7 +1535,7 @@ export function KitchenOrderCard({
               Check every item, drink, sauce and requested cutlery. Confirm the named bags are
               packed correctly before marking ready for handover.
             </p>
-            <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">
+            <div className="md-kds-seal-actions">
               <button type="button" onClick={onCancelSeal} className={`${button} md-ops-secondary`}>
                 Back
               </button>

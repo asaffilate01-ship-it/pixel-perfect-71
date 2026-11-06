@@ -4,13 +4,26 @@ import {
   AlertCircle,
   ArrowLeft,
   BarChart3,
+  BookOpen,
+  Boxes,
+  ChefHat,
+  ChevronRight,
   ClipboardList,
+  House,
   LockKeyhole,
   LogOut,
+  Menu,
+  PackageSearch,
+  PoundSterling,
+  ReceiptText,
   RefreshCcw,
+  Settings2,
   ShieldCheck,
   Store,
-  UserRoundCog,
+  Truck,
+  Users,
+  UtensilsCrossed,
+  type LucideIcon,
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import {
@@ -76,9 +89,36 @@ import { OpsKdsPanel } from "@/components/ops/kds-panel";
 import { CheckoutLaunchSettings } from "@/components/ops/checkout-launch-settings";
 import { IntegrationStatusPanel } from "@/components/ops/integration-status-panel";
 import { StaffPasswordPanel } from "@/components/ops/staff-password-panel";
+import {
+  StaffMobileNav,
+  StaffMobileSheet,
+  type StaffMobileNavItem,
+} from "./staff-mobile-navigation";
+import "./operations-mobile.css";
 const field = "md-ops-field";
 const btn = "md-ops-button md-ops-primary";
 const columns = "md-ops-card p-5";
+const sectionIcons: Record<OpsSection, LucideIcon> = {
+  overview: House,
+  kitchen: ChefHat,
+  menu: UtensilsCrossed,
+  orders: ClipboardList,
+  recipes: BookOpen,
+  ingredients: Boxes,
+  purchasing: Truck,
+  batches: PackageSearch,
+  costs: PoundSterling,
+  finance: BarChart3,
+  invoices: ReceiptText,
+  team: Users,
+};
+const mobilePrimarySections: readonly OpsSection[] = ["overview", "kitchen", "orders", "menu"];
+const mobileLabels: Partial<Record<OpsSection, string>> = {
+  overview: "Home",
+  kitchen: "Kitchen",
+  orders: "Orders",
+  menu: "Menu",
+};
 type WorkspaceData = {
   menu: OpsMenuItem[];
   taxonomy: OpsTaxonomy[];
@@ -154,6 +194,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
   const [locationError, setLocationError] = useState("");
   const [locationCycle, setLocationCycle] = useState(0);
   const [section, setSection] = useState<OpsSection>(kitchenMode ? "kitchen" : "overview");
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -166,6 +207,11 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
   const authRequest = useRef(0);
   const activeUserId = useRef<string | null>(null);
   const signingOut = useRef(false);
+  const mobileMoreButton = useRef<HTMLButtonElement | null>(null);
+  const mobileSheetOpener = useRef<HTMLButtonElement | null>(null);
+  const workspaceMain = useRef<HTMLElement | null>(null);
+  const mobileSectionHeading = useRef<HTMLHeadingElement | null>(null);
+  const focusNewSection = useRef(false);
 
   const clearStaffState = useCallback(() => {
     reqRef.current++;
@@ -187,6 +233,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
     setPassword("");
     setAccessBusy(false);
     setLoading(false);
+    setMobileMoreOpen(false);
   }, []);
 
   const fetchAccess = useCallback(async () => {
@@ -586,9 +633,63 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
   };
   const activeLocation = locations.find((x) => x.location_id === location);
   const locationPending = !!tenant && (locationState === "idle" || locationState === "loading");
+  const mobileNavigationAvailable = !kitchenMode && !!user && accesses.length > 0;
+  const activeSectionLabel =
+    accessibleSections.find((entry) => entry.id === selectedSection)?.label ?? "Operations";
+  function selectArea(next: OpsSection, mobile = false) {
+    if (!accessibleSections.some((entry) => entry.id === next)) return;
+    if (selectedSection !== next) {
+      reqRef.current++;
+      setData(blank());
+      setSection(next);
+      setNotice("");
+      setError("");
+    }
+    focusNewSection.current = mobile;
+    setMobileMoreOpen(false);
+    if (mobile && !mobileMoreOpen) {
+      window.requestAnimationFrame(() => {
+        mobileSectionHeading.current?.focus({ preventScroll: true });
+        workspaceMain.current?.scrollIntoView({ block: "start" });
+      });
+    }
+  }
+  const mobileNavigation: StaffMobileNavItem[] = [
+    ...mobilePrimarySections
+      .filter((id) => accessibleSections.some((entry) => entry.id === id))
+      .map((id) => ({
+        id,
+        label: mobileLabels[id]!,
+        icon: sectionIcons[id],
+        active: selectedSection === id,
+        onClick: () => selectArea(id, true),
+      })),
+    {
+      id: "more",
+      label: "More",
+      icon: Menu,
+      active: !mobilePrimarySections.includes(selectedSection),
+      expanded: mobileMoreOpen,
+      controls: "mealdeck-operations-more",
+      buttonRef: (element) => {
+        mobileMoreButton.current = element;
+      },
+      onClick: () => {
+        mobileSheetOpener.current = mobileMoreButton.current;
+        focusNewSection.current = false;
+        setMobileMoreOpen(true);
+      },
+    },
+  ];
 
   return (
-    <div className="md-ops">
+    <div
+      className={
+        "md-ops md-ops-workspace " +
+        (kitchenMode ? "md-ops-kitchen-shell " : "") +
+        (mobileNavigationAvailable ? "md-staff-has-mobile-nav" : "")
+      }
+    >
       <header className="md-ops-masthead">
         <div
           className={
@@ -607,11 +708,18 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
               </p>
               <h1
                 className={
-                  "font-display font-black tracking-tight " +
+                  "md-ops-workspace-title font-display font-black tracking-tight " +
                   (kitchenMode ? "text-lg sm:text-2xl" : "text-xl sm:text-2xl")
                 }
               >
-                {kitchenMode ? "Kitchen display" : "Operations & intelligence"}
+                {kitchenMode ? (
+                  "Kitchen display"
+                ) : (
+                  <>
+                    <span className="md-ops-title-desktop">Operations & intelligence</span>
+                    <span className="md-ops-title-mobile">Operations</span>
+                  </>
+                )}
               </h1>
             </div>
           </div>
@@ -622,7 +730,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
               title={kitchenMode ? "Operations" : "Public website"}
               className={
                 "md-ops-button md-ops-header-action min-w-11 " +
-                (kitchenMode ? "px-3 sm:px-4" : "px-4")
+                (kitchenMode ? "px-3 sm:px-4" : "md-ops-desktop-action px-4")
               }
             >
               <ArrowLeft className="size-4" aria-hidden="true" />{" "}
@@ -638,7 +746,9 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 title="Sign out"
                 className={
                   "md-ops-button md-ops-header-action min-w-11 " +
-                  (kitchenMode ? "px-3 sm:px-4" : "px-4")
+                  (kitchenMode
+                    ? "px-3 sm:px-4"
+                    : (mobileNavigationAvailable ? "md-ops-desktop-action " : "") + "px-4")
                 }
               >
                 <LogOut className="size-4" aria-hidden="true" />{" "}
@@ -650,7 +760,11 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
       </header>
 
       <main
-        className={"mx-auto max-w-7xl px-4 sm:px-6 " + (kitchenMode ? "py-4" : "py-7 sm:py-10")}
+        ref={workspaceMain}
+        tabIndex={-1}
+        className={
+          "md-ops-main mx-auto max-w-7xl px-4 sm:px-6 " + (kitchenMode ? "py-4" : "py-7 sm:py-10")
+        }
       >
         {checkingAuth ? (
           <div role="status" className={columns}>
@@ -746,10 +860,40 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
           </div>
         ) : (
           <div className="space-y-5">
+            {!kitchenMode && (
+              <div className="md-ops-mobile-context">
+                <div className="min-w-0">
+                  <p className="md-ops-mobile-location">
+                    <Store aria-hidden="true" />
+                    {activeLocation?.location_name ??
+                      (locationPending ? "Loading kitchen…" : "Choose kitchen")}
+                  </p>
+                  <h2 ref={mobileSectionHeading} tabIndex={-1}>
+                    {activeSectionLabel}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  className="md-ops-context-button"
+                  aria-label="Kitchen and account settings"
+                  aria-haspopup="dialog"
+                  onClick={(event) => {
+                    mobileSheetOpener.current = event.currentTarget;
+                    focusNewSection.current = false;
+                    setMobileMoreOpen(true);
+                  }}
+                >
+                  <Settings2 aria-hidden="true" />
+                </button>
+              </div>
+            )}
             {kitchenSelected ? (
               <section
                 aria-label="Kitchen workspace"
-                className="md-ops-scopebar flex flex-wrap items-end gap-3 p-3"
+                className={
+                  "md-ops-scopebar flex flex-wrap items-end gap-3 p-3 " +
+                  (!kitchenMode ? "md-ops-desktop-scope" : "")
+                }
               >
                 {tenants.length > 1 && (
                   <label className="min-w-0 flex-1 text-xs font-bold md-ops-muted">
@@ -814,7 +958,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
               </section>
             ) : (
               <>
-                <section className="md-ops-scopebar grid gap-4 p-5 lg:grid-cols-[1fr_1fr_1.2fr]">
+                <section className="md-ops-scopebar md-ops-desktop-scope grid gap-4 p-5 lg:grid-cols-[1fr_1fr_1.2fr]">
                   <label className="text-xs font-bold uppercase tracking-wide md-ops-muted">
                     Business
                     <select
@@ -881,38 +1025,16 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
             )}
             {!kitchenMode && (
               <>
-                <label className="block text-xs font-bold md-ops-muted md:hidden">
-                  Operations area
-                  <select
-                    className={"mt-1 " + field}
-                    value={selectedSection}
-                    onChange={(e) => {
-                      reqRef.current++;
-                      setSection(e.target.value as OpsSection);
-                      setNotice("");
-                    }}
-                  >
-                    {accessibleSections.map((x) => (
-                      <option key={x.id} value={x.id}>
-                        {x.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
                 <nav
                   aria-label="Operations areas"
-                  className="md-ops-nav hidden flex-wrap gap-2 md:flex"
+                  className="md-ops-nav md-ops-desktop-navigation flex flex-wrap gap-2"
                 >
                   {accessibleSections.map((x) => (
                     <button
                       key={x.id}
                       type="button"
                       aria-current={x.id === selectedSection ? "page" : undefined}
-                      onClick={() => {
-                        reqRef.current++;
-                        setSection(x.id);
-                        setNotice("");
-                      }}
+                      onClick={() => selectArea(x.id)}
                       className={
                         x.id === selectedSection
                           ? "md-ops-button md-ops-primary"
@@ -1019,6 +1141,7 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                       tenantId={tenant}
                       locationId={location}
                       can={can}
+                      mobileNavigation={kitchenMode}
                     />
                   ) : (
                     <p role="alert" className={columns}>
@@ -1134,9 +1257,11 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 )}
                 {selectedSection === "team" && (
                   <div className="space-y-5">
-                    {canGlobal("staff.manage") && accesses.some((a) => a.tenant_id === tenant && a.location_id === null && a.role === "owner") && (
-                      <StaffPasswordPanel key={tenant + ":" + user.id} />
-                    )}
+                    {canGlobal("staff.manage") &&
+                      accesses.some(
+                        (a) =>
+                          a.tenant_id === tenant && a.location_id === null && a.role === "owner",
+                      ) && <StaffPasswordPanel key={tenant + ":" + user.id} />}
                     <OpsTeamPanel
                       {...common}
                       staff={data.staff}
@@ -1148,19 +1273,137 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
               </div>
             )}
             {!kitchenSelected && (
-              <p className="flex flex-wrap items-center gap-2 text-xs md-ops-muted">
-                <Store className="size-4" /> Records belong to MealDeck’s independent database.{" "}
-                {MEALDECK_BUSINESS.technologyCredit}. Owner approval is required for tenant-wide
-                editing.
-                <UserRoundCog className="ml-2 size-4" /> No automatic staff invitations or checkout
-                activation.
-                <ClipboardList className="ml-2 size-4" /> Customer ordering follows kitchen, menu
-                and payment readiness.
+              <p className="md-ops-workspace-footnote flex flex-wrap items-center gap-2 text-xs md-ops-muted">
+                MealDeck back of house · {MEALDECK_BUSINESS.technologyCredit}
               </p>
             )}
           </div>
         )}
       </main>
+      {mobileNavigationAvailable && (
+        <>
+          <StaffMobileNav
+            label="Operations navigation"
+            items={mobileNavigation}
+            hidden={mobileMoreOpen}
+          />
+          <StaffMobileSheet
+            id="mealdeck-operations-more"
+            open={mobileMoreOpen}
+            onOpenChange={setMobileMoreOpen}
+            title="Your workspace"
+            description="Kitchen settings, account and the areas available to your role."
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              window.requestAnimationFrame(() => {
+                if (!window.matchMedia("(max-width: 800px)").matches) {
+                  workspaceMain.current?.focus({ preventScroll: true });
+                } else if (focusNewSection.current) {
+                  mobileSectionHeading.current?.focus({ preventScroll: true });
+                  workspaceMain.current?.scrollIntoView({ block: "start" });
+                } else {
+                  const opener = mobileSheetOpener.current ?? mobileMoreButton.current;
+                  if (opener?.isConnected && opener.getClientRects().length) {
+                    opener.focus({ preventScroll: true });
+                  } else workspaceMain.current?.focus({ preventScroll: true });
+                }
+                focusNewSection.current = false;
+              });
+            }}
+          >
+            <div className="md-ops-mobile-settings">
+              <div className="md-ops-mobile-account">
+                <ShieldCheck aria-hidden="true" />
+                <div>
+                  <strong>Signed in</strong>
+                  <p>{user?.email ?? "Authenticated staff"}</p>
+                </div>
+              </div>
+              <div className="md-ops-mobile-scope">
+                <label>
+                  Business
+                  <select
+                    aria-label="Mobile business"
+                    value={tenant}
+                    onChange={(event) => changeTenant(event.target.value)}
+                    className={field}
+                  >
+                    {tenants.map((entry) => (
+                      <option key={entry.id} value={entry.id}>
+                        {entry.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Kitchen
+                  <select
+                    aria-label="Mobile kitchen"
+                    value={location}
+                    disabled={!locations.length}
+                    onChange={(event) => {
+                      reqRef.current++;
+                      setData(blank());
+                      setLocation(event.target.value);
+                      setNotice("");
+                    }}
+                    className={field}
+                  >
+                    {!locations.length && (
+                      <option value="">
+                        {locationPending ? "Loading kitchens…" : "No accessible kitchens"}
+                      </option>
+                    )}
+                    {locations.map((entry) => (
+                      <option key={entry.location_id} value={entry.location_id}>
+                        {entry.location_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <nav className="md-ops-mobile-areas" aria-label="All authorised operations areas">
+                {accessibleSections.map((entry) => {
+                  const Icon = sectionIcons[entry.id];
+                  return (
+                    <button
+                      key={entry.id}
+                      type="button"
+                      aria-current={entry.id === selectedSection ? "page" : undefined}
+                      onClick={() => selectArea(entry.id, true)}
+                    >
+                      <Icon aria-hidden="true" />
+                      <span>{entry.label}</span>
+                      <ChevronRight aria-hidden="true" />
+                    </button>
+                  );
+                })}
+              </nav>
+              <div className="md-ops-mobile-account-actions">
+                <button
+                  type="button"
+                  className="md-ops-button md-ops-secondary"
+                  disabled={!location || loading}
+                  onClick={() => void reload()}
+                >
+                  <RefreshCcw aria-hidden="true" className="size-4" />
+                  {loading ? "Refreshing…" : "Refresh workspace"}
+                </button>
+                <Link to="/" className="md-ops-button md-ops-secondary">
+                  <Store aria-hidden="true" className="size-4" /> Public website
+                </Link>
+                <button
+                  type="button"
+                  className="md-ops-button md-ops-secondary"
+                  onClick={() => void signOut()}
+                >
+                  <LogOut aria-hidden="true" className="size-4" /> Sign out
+                </button>
+              </div>
+            </div>
+          </StaffMobileSheet>
+        </>
+      )}
     </div>
   );
 }

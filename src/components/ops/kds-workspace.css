@@ -316,6 +316,10 @@
   overflow: visible;
 }
 
+.md-kds-mobile-board-hint {
+  display: none;
+}
+
 .md-kds-workspace .md-kds-lane {
   min-width: 0;
   border: 1px solid var(--ops-line);
@@ -368,6 +372,7 @@
 }
 
 .md-kds-workspace .md-kds-ticket {
+  container: kds-ticket / inline-size;
   border-top-color: var(--kds-stage);
   border-radius: 11px;
   box-shadow: 0 3px 10px #38210b08;
@@ -582,6 +587,42 @@
   border-top: 1px dashed var(--ops-divider);
   padding-top: 11px;
 }
+.md-kds-workspace .md-kds-line-layout {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: start;
+  gap: 4px 10px;
+}
+.md-kds-workspace .md-kds-line-content {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 7px;
+  min-width: 0;
+}
+.md-kds-workspace .md-kds-line-layout .md-kds-line-title {
+  display: contents;
+}
+.md-kds-workspace .md-kds-line-layout .md-kds-quantity {
+  grid-column: 1;
+  margin-block: 8px;
+}
+.md-kds-workspace .md-kds-line-layout .md-kds-line-title > p {
+  grid-column: 2;
+  padding-top: 11px;
+}
+.md-kds-workspace .md-kds-line-details {
+  grid-column: 2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.md-kds-workspace .md-kds-extra-label {
+  margin-top: 3px;
+  color: var(--ops-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
 .md-kds-workspace .md-kds-attached-line {
   border-left: 2px solid var(--ops-line);
   margin-left: 10px;
@@ -653,8 +694,10 @@
 }
 
 .md-kds-workspace .md-kds-bag-labels li {
-  display: inline-flex;
+  display: inline-grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
   min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: 5px;
   border: 1px solid var(--ops-line);
@@ -662,12 +705,13 @@
   background: var(--ops-canvas);
   padding: 3px 6px;
   color: var(--ops-text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.5;
 }
 
 .md-kds-workspace .md-kds-bag-labels li > span {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 .md-kds-workspace .md-kds-bag-labels strong {
@@ -686,6 +730,7 @@
 
 .md-kds-workspace .md-kds-choices > li {
   display: flex;
+  min-width: 0;
   align-items: start;
   gap: 7px;
   overflow-wrap: anywhere;
@@ -716,6 +761,9 @@
   padding: 9px;
   color: #62420b;
 }
+.md-kds-workspace .md-kds-note p {
+  overflow-wrap: anywhere;
+}
 
 .md-kds-workspace .md-kds-action-hint {
   margin-bottom: 8px;
@@ -725,6 +773,24 @@
 }
 .md-kds-workspace .md-ops-ticket-footer .md-ops-button {
   min-height: 48px;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.md-kds-workspace .md-ops-ticket-footer .md-ops-button > svg {
+  flex-shrink: 0;
+}
+.md-kds-workspace .md-kds-handoff-form .md-ops-field {
+  min-height: 52px;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.25em;
+}
+.md-kds-workspace .md-kds-seal-actions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
 }
 
 @media (min-width: 700px) {
@@ -789,5 +855,140 @@
   }
   .md-kds-workspace .md-kds-view-switch button {
     flex: 1;
+  }
+}
+
+/* The standalone kitchen has one mobile navigation bar. Embedded /ops keeps
+   its existing controls and gets navigation from its parent workspace. */
+@media (max-width: 800px) {
+  .md-kds-controls[data-mobile-navigation="true"] .md-kds-tools-actions,
+  .md-kds-controls[data-mobile-navigation="true"] > .md-kds-tools-panel {
+    display: none;
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-heading {
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-heading h2 {
+    font-size: 24px;
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-connection {
+    min-height: 24px;
+    line-height: 1.4;
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-stage-rail {
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 4px;
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-stage-chip {
+    scroll-snap-align: start;
+    scroll-margin-top: 12px;
+    touch-action: manipulation;
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-ticket-grid,
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-lanes-single .md-kds-lane-orders {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-lanes:not(.md-kds-lanes-single) {
+    grid-auto-columns: min(340px, calc(100% - 20px));
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 4px;
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-lane {
+    scroll-snap-align: start;
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"] .md-kds-mobile-board-hint {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 8px;
+    color: var(--ops-muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .md-kds-workspace[data-mobile-navigation="true"]
+    :is(.md-kds-ticket, .md-ops-ticket-footer button, .md-ops-ticket-footer input) {
+    scroll-margin-block: 16px calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.md-kds-workspace.md-kds-mobile-tools .md-kds-toolbar {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.md-kds-workspace.md-kds-mobile-tools .md-kds-toolbar > label {
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+
+.md-kds-mobile-tools .md-kds-field-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ops-text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.md-kds-workspace.md-kds-mobile-tools .md-ops-field {
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.md-kds-mobile-tools .md-kds-search svg {
+  top: 16px;
+}
+
+.md-kds-workspace.md-kds-mobile-tools .md-kds-extra-tools {
+  gap: 16px;
+  margin-top: 20px;
+  border-top: 1px solid var(--ops-line);
+  padding-top: 20px;
+}
+
+.md-kds-mobile-tools .md-kds-mobile-tools-done {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 20px;
+}
+
+/* Narrow board lanes need the same readable detail width as phone tickets.
+   Use the card width rather than assuming every desktop card is wide. */
+@container kds-ticket (max-width: 360px) {
+  .md-kds-workspace .md-kds-line-content {
+    display: contents;
+  }
+
+  .md-kds-workspace .md-kds-line-layout .md-kds-line-title {
+    display: grid;
+    grid-column: 2;
+    min-height: 44px;
+  }
+
+  .md-kds-workspace .md-kds-line-details {
+    grid-column: 1 / -1;
+  }
+
+  .md-kds-workspace .md-kds-seal-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .md-kds-workspace .md-kds-order-number {
+    font-size: 28px;
+  }
+
+  .md-kds-workspace .md-kds-ticket-timer > strong {
+    font-size: 23px;
   }
 }

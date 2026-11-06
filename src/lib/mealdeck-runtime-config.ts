@@ -215,14 +215,22 @@ export function readMealDeckRuntimeConfig(
   const tenantIds = [sharedTenant, lutonTenant, stAlbansTenant].filter((id): id is string =>
     Boolean(id),
   );
-  if (new Set(tenantIds).size > 1) return null;
-  const tenantId = tenantIds[0];
   const lutonLocation = configured(env, "MEALDECK_LUTON_LOCATION_ID");
   const stAlbansLocation = configured(env, "MEALDECK_STALBANS_LOCATION_ID");
-  if (lutonLocation && stAlbansLocation && lutonLocation === stAlbansLocation) return null;
-  const locationId = location === "luton" ? lutonLocation : stAlbansLocation;
-  if (!tenantId || !locationId || !uuidPattern.test(tenantId) || !uuidPattern.test(locationId))
-    return null;
+  const configuredIds = [...tenantIds, lutonLocation, stAlbansLocation].filter((id): id is string =>
+    Boolean(id),
+  );
+  if (configuredIds.some((id) => !uuidPattern.test(id))) return null;
+  // UUID casing does not change database identity. Compare and return one
+  // canonical form so aliases cannot conflict or conceal duplicate kitchens.
+  const canonicalTenants = tenantIds.map((id) => id.toLowerCase());
+  if (new Set(canonicalTenants).size > 1) return null;
+  const tenantId = canonicalTenants[0];
+  const canonicalLuton = lutonLocation?.toLowerCase();
+  const canonicalStAlbans = stAlbansLocation?.toLowerCase();
+  if (canonicalLuton && canonicalStAlbans && canonicalLuton === canonicalStAlbans) return null;
+  const locationId = location === "luton" ? canonicalLuton : canonicalStAlbans;
+  if (!tenantId || !locationId) return null;
   return {
     url: selected.backend.url,
     anonKey: selected.backend.publishableKey,

@@ -1,0 +1,215 @@
+.md-ops .md-ops-title-mobile,
+.md-ops .md-ops-mobile-context {
+  display: none;
+}
+
+.md-ops .md-ops-mobile-settings {
+  display: grid;
+  gap: 20px;
+}
+
+.md-ops .md-ops-mobile-account {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--ops-line);
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--ops-canvas);
+}
+
+.md-ops .md-ops-mobile-account > svg {
+  flex: 0 0 auto;
+  color: var(--md-red-deep);
+}
+
+.md-ops .md-ops-mobile-account strong {
+  font-size: 13px;
+}
+
+.md-ops .md-ops-mobile-account p {
+  margin-top: 3px;
+  color: var(--ops-muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.md-ops .md-ops-mobile-scope {
+  display: grid;
+  gap: 14px;
+}
+
+.md-ops .md-ops-mobile-scope label {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.md-ops .md-ops-mobile-areas {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--ops-line);
+  border-radius: 16px;
+}
+
+.md-ops .md-ops-mobile-areas button {
+  display: grid;
+  min-width: 0;
+  min-height: 52px;
+  grid-template-columns: 22px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--ops-paper);
+  color: var(--ops-ink);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 650;
+  touch-action: manipulation;
+}
+
+.md-ops .md-ops-mobile-areas button + button {
+  border-top: 1px solid var(--ops-line);
+}
+
+.md-ops .md-ops-mobile-areas button[aria-current="page"] {
+  background: #fff0ed;
+  color: var(--md-red-deep);
+}
+
+.md-ops .md-ops-mobile-areas svg {
+  width: 20px;
+  height: 20px;
+}
+
+.md-ops .md-ops-mobile-areas svg:last-child {
+  width: 16px;
+  opacity: 0.6;
+}
+
+.md-ops .md-ops-mobile-account-actions {
+  display: grid;
+  gap: 10px;
+}
+
+@media (max-width: 800px) {
+  .md-ops-workspace > .md-ops-masthead > div {
+    min-height: 70px;
+    flex-wrap: nowrap;
+    padding: max(8px, env(safe-area-inset-top, 0px)) 16px 8px;
+  }
+
+  .md-ops-workspace .md-ops-logo {
+    width: 46px;
+    height: 46px;
+  }
+
+  .md-ops .md-ops-title-desktop,
+  .md-ops .md-ops-desktop-action,
+  .md-ops .md-ops-desktop-scope,
+  .md-ops .md-ops-desktop-navigation {
+    display: none;
+  }
+
+  .md-ops .md-ops-title-mobile {
+    display: inline;
+  }
+
+  .md-ops-workspace .md-ops-workspace-title {
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  .md-ops-workspace .md-ops-kicker {
+    font-size: 10px;
+  }
+
+  .md-ops .md-ops-main {
+    padding: 18px 14px 24px;
+    scroll-margin-top: 12px;
+  }
+
+  .md-ops .md-ops-mobile-context {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .md-ops .md-ops-mobile-context h2 {
+    margin-top: 5px;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+  }
+
+  .md-ops .md-ops-mobile-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ops-muted);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .md-ops .md-ops-mobile-location svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+  }
+
+  .md-ops .md-ops-context-button {
+    display: grid;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid var(--ops-line);
+    border-radius: 14px;
+    background: var(--ops-paper);
+    color: var(--ops-ink);
+  }
+
+  .md-ops .md-ops-context-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .md-ops .md-ops-reporting {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .md-ops .md-ops-reporting > div,
+  .md-ops .md-ops-reporting > p {
+    grid-column: 1 / -1;
+  }
+
+  .md-ops .md-ops-reporting label {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .md-ops .md-ops-reporting .md-ops-date {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    padding-inline: 8px;
+    font-size: 14px;
+  }
+
+  .md-ops .md-ops-workspace-footnote {
+    border-top: 1px solid var(--ops-line);
+    padding-top: 14px;
+    line-height: 1.6;
+  }
+}

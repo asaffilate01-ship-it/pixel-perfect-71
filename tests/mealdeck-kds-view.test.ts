@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { createElement } from "react";
+import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { KdsCompletedCard } from "../src/components/ops/kds-completed-card";
+import { KitchenOrderCard } from "../src/components/ops/kds-panel";
+import { kdsOrderStage, nextKdsOrderAction } from "../src/lib/mealdeck-kds-presentation";
 import type { KdsOrder, KdsOrderItem } from "../src/lib/mealdeck-kds";
 import type { KdsCompletedOrder } from "../src/lib/mealdeck-kds-workflow";
 import {
@@ -68,6 +70,31 @@ function completed(overrides: Partial<KdsCompletedOrder> = {}): KdsCompletedOrde
 }
 
 const filters = { query: "", fulfilment: "all", sort: "oldest", stage: "all" } as const;
+
+function ticketMarkup(
+  candidate: KdsOrder,
+  overrides: Partial<ComponentProps<typeof KitchenOrderCard>> = {},
+) {
+  return renderToStaticMarkup(
+    createElement(KitchenOrderCard, {
+      order: candidate,
+      stage: kdsOrderStage(candidate),
+      now: Date.parse("2026-11-06T15:12:00Z"),
+      action: nextKdsOrderAction(candidate),
+      disabled: false,
+      saving: false,
+      confirmingSeal: false,
+      actionRef: () => {},
+      cardRef: () => {},
+      onAction: () => {},
+      onConfirmSeal: () => {},
+      onCancelSeal: () => {},
+      onItemReady: () => {},
+      onHandoff: () => {},
+      ...overrides,
+    }),
+  );
+}
 
 describe("kitchen view keeps complete canonical tickets", () => {
   test("search finds named bags, exact modifiers and notes across a whole order", () => {
@@ -201,4 +228,120 @@ test("Done tickets retain instructions but expose no mutation or print control",
     expect(html).toContain(text);
   }
   expect(html).not.toMatch(/<(button|input|form)\b/);
+});
+
+describe("ticket alignment retains every kitchen instruction", () => {
+  test("long dish, modifier, extra and bag names stay complete in their detail rows", () => {
+    const mainName = "Double smash burger with mature cheddar and caramelised onions";
+    const extraName = "Passion fruit and mango mocktail with a fresh mint garnish";
+    const bags = [
+      { number: 1, name: "Alexandria-Josephine", quantity: 2 },
+      { number: 2, name: "Christopher-Louise", quantity: 1 },
+    ];
+    const candidate = order({
+      preparation_status: "preparing",
+      accepted_at: "2026-11-06T15:02:00Z",
+      fulfilment: "curbside",
+      cutlery_requested: true,
+      vehicle: { make: "Volkswagen", colour: "Dark blue", registrationLast4: "12AB" },
+      items: [
+        item({
+          checkout_line_id: "main",
+          item_name: mainName,
+          quantity: 3,
+          status: "preparing",
+          bags,
+          unit_pence: 650,
+          modifiers: ["Sauce: Algerian", "ExtraCheeseWithCaramelisedOnionsAndChilliSauce"],
+          modifier_details: [
+            { name: "Algerian", group_name: "Sauce", price_delta_pence: 0, quantity_per_parent: 1 },
+            {
+              name: "ExtraCheeseWithCaramelisedOnionsAndChilliSauce",
+              group_name: "Burger extras",
+              price_delta_pence: 150,
+              quantity_per_parent: 2,
+            },
+          ],
+        }),
+        item({
+          order_item_id: "extra",
+          checkout_line_id: "extra",
+          parent_checkout_line_id: "main",
+          brand_id: "moktl",
+          brand_name: "Moktl",
+          item_name: extraName,
+          quantity: 3,
+          status: "preparing",
+          bags,
+          modifiers: ["Less ice", "KeepFreshMintAndGarnishSeparate"],
+          notes: "Keep drinks with the matching named bags",
+        }),
+      ],
+    });
+    const html = ticketMarkup(candidate);
+    for (const text of [
+      mainName,
+      extraName,
+      "Extra from Moktl · with the item above",
+      "Alexandria-Josephine · Bag 1",
+      "Christopher-Louise · Bag 2",
+      "ExtraCheeseWithCaramelisedOnionsAndChilliSauce",
+      "KeepFreshMintAndGarnishSeparate",
+      "Keep drinks with the matching named bags",
+      "No gherkins",
+      "Pack sauces separately",
+      "Include cutlery",
+      "Dark blue",
+      "Volkswagen",
+      "12AB",
+      "2× each · +£1.50",
+    ]) {
+      expect(html).toContain(text);
+    }
+    expect(html.match(/class="md-kds-line-details"/g)).toHaveLength(2);
+    expect(html.match(/aria-label="Quantity 3"/g)).toHaveLength(2);
+    const checklist = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+    expect(checklist).toHaveLength(2);
+    expect(checklist.every((input) => !input.includes("disabled"))).toBe(true);
+  });
+
+  test("the responsive sealing action keeps its explicit confirmation and locked checklist", () => {
+    const html = ticketMarkup(
+      order({
+        accepted_at: "2026-11-06T15:02:00Z",
+        preparation_status: "ready",
+        items: [item({ status: "ready" })],
+        pass: { status: "packing", version: "b".repeat(32), updated_at: "2026-11-06T15:10:00Z" },
+      }),
+      { confirmingSeal: true },
+    );
+    expect(html).toContain('class="md-kds-seal-actions"');
+    expect(html).toContain("Check every item, drink, sauce and requested cutlery.");
+    expect(html).toContain("Confirm ready for handover");
+    expect(html).toContain(">Back</button>");
+    expect(html.match(/<input[^>]*type="checkbox"[^>]*>/)?.[0]).toContain('disabled=""');
+    expect(html).not.toContain('class="md-kds-handoff-form');
+  });
+
+  test("the larger handover field still requires a four-digit code before confirmation", () => {
+    const html = ticketMarkup(
+      order({
+        accepted_at: "2026-11-06T15:02:00Z",
+        preparation_status: "ready",
+        items: [item({ status: "ready" })],
+        pass: {
+          status: "ready_for_handoff",
+          version: "b".repeat(32),
+          updated_at: "2026-11-06T15:10:00Z",
+        },
+      }),
+    );
+    expect(html).toContain('class="md-kds-handoff-form space-y-2"');
+    expect(html).toContain('aria-label="Collection code for MD1234"');
+    expect(html).toContain('inputMode="numeric"');
+    expect(html).toContain('pattern="[0-9]{4}"');
+    expect(html).toContain('maxLength="4"');
+    expect(html.match(/<button[^>]*type="submit"[^>]*>/)?.[0]).toContain('disabled=""');
+    expect(html).toContain("Confirm handover · Mark done");
+  });
 });

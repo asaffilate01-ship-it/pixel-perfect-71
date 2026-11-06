@@ -1,5 +1,47 @@
 # Independent MealDeck Cloud deployment
 
+## Live-payment commissioning — 6 November 2026, 14:26 UTC
+
+The owner prioritised one real `test@mealdeck.co.uk` payment reaching KDS before
+public trading. At **14:20:46 UTC**, a read-only database check confirmed the
+account exists, is active and email-confirmed. Its service-only availability
+returned `channelOpen:true`, guest access false and the Luton kitchen
+**Online / 30 minutes**. Anonymous availability remained closed with the public
+opening scheduled for 15:00. The existing private test window still ends at
+15:00 exclusively; this work does not extend it or sign off public trading.
+
+The hosted `/api/checkout` response at **14:07:49 UTC** still returned
+`available:false`, `kitchen:null`, and an unscheduled offer. The actual hosted
+scope/provider settings have not been observed or changed by this review. The
+normalisation correction in `mealdeck-runtime-config.ts` fixes a reproduced
+mixed-case UUID comparison defect, but is not evidence of the hosted cause.
+
+The live Stripe account `acct_1UYKdSI5iYrq2Lo6` has charges and payouts enabled,
+active card payments, and no due verification requirements. The complete webhook
+list initially had two generic Lovable destinations and no canonical MealDeck
+destination. At **14:26:45 UTC**, the authorised integration registered:
+
+- Endpoint `we_1UYo6LI5iYrq2Lo6pCgqXwmM`, enabled in live mode.
+- URL `https://mealdeck.co.uk/api/stripe/webhook`.
+- Own-account events only: Checkout completed, asynchronous payment succeeded
+  and expired; PaymentIntent succeeded, canceled, processing and payment failed;
+  charge refunded and dispute created/closed.
+- The endpoint uses the account's default event version. The app's outgoing
+  Stripe requests remain pinned to `2026-10-28.endive`.
+
+Its endpoint-specific signing secret must be installed privately as
+`MEALDECK_STRIPE_WEBHOOK_SECRET` in the actual host before successful delivery can
+be claimed. No secret value is recorded here. Existing generic webhooks were
+left untouched. No payment, event delivery, KDS release or physical receipt was
+created or fabricated by registration of this endpoint.
+
+The owner was given the verified Luton tenant/location bindings and asked to
+check hosted Secrets, enable the online runtime switch, and keep
+`MEALDECK_CHECKOUT_INTEGRATION_APPROVED=pending` until acceptance. The current
+Lovable connector has no Secrets read/write operation. Ordinary solo checkout
+receipt polling reads the saved database state; it does not independently fetch
+Stripe, so the correct authenticated webhook is necessary for this test path.
+
 ## Latest published verification — 6 November 2026
 
 This section records the live review after the following releases were merged and

@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { createPortal, flushSync } from "react-dom";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AlertTriangle,
   Check,
+  ClipboardList,
   LockKeyhole,
   LogOut,
   Printer,
   RefreshCw,
+  Settings2,
   ShieldCheck,
+  UserRound,
 } from "lucide-react";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { PwaInstallCard } from "@/components/pwa-install-card";
@@ -40,6 +43,7 @@ import {
 import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
 import { ReceiptPreview } from "./receipt-preview";
 import { PrinterConnectionStatus, PrinterPendingOrderCard } from "./printer-pending-orders";
+import { StaffMobileNav } from "./staff-mobile-navigation";
 import "./ops-theme.css";
 import "./printer.css";
 const errorMessage = (reason: unknown, fallback: string) =>
@@ -230,10 +234,10 @@ export function PrinterWorkspace() {
   const scope = scopes.find((s) => s.locationId === scopeId);
   return (
     <div className="md-ops md-printer min-h-screen">
-      <header className="md-ops-inverse px-4 py-4 sm:px-6">
+      <header className="md-ops-inverse md-printer-header px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <MealDeckLogo className="h-14 w-16 object-contain" />
+            <MealDeckLogo className="md-printer-header-logo h-14 w-16 object-contain" />
             <div>
               <p className="text-xs font-bold uppercase tracking-[.18em] opacity-75">
                 MealDeck staff
@@ -243,7 +247,7 @@ export function PrinterWorkspace() {
           </div>
           {signedIn && (
             <button
-              className="md-ops-button md-ops-secondary"
+              className={`md-ops-button md-ops-secondary ${scope ? "md-printer-desktop-only" : ""}`}
               onClick={() => void signOut()}
               disabled={busy}
               type="button"
@@ -254,7 +258,9 @@ export function PrinterWorkspace() {
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6">
+      <main
+        className={`md-printer-main mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6 ${signedIn && scope ? "md-staff-has-mobile-nav" : ""}`}
+      >
         {error && (
           <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-950">
             {error}
@@ -357,7 +363,7 @@ export function PrinterWorkspace() {
         ) : (
           <>
             {scopes.length > 1 && (
-              <label className="block text-sm font-bold">
+              <label className="md-printer-desktop-only block text-sm font-bold">
                 Kitchen
                 <select
                   className="md-ops-field ml-3"
@@ -375,16 +381,77 @@ export function PrinterWorkspace() {
             <ReceiptTerminal
               key={`${authId}:${scope.tenantId}:${scope.locationId}`}
               scope={scope}
+              accountControls={
+                <div className="md-printer-mobile-only md-ops-card space-y-4 p-4">
+                  <div>
+                    <p className="text-sm font-bold">Signed in for {scope.locationName}</p>
+                    <p className="mt-1 text-sm leading-6 md-ops-muted">
+                      This account can accept paid orders and manage this kitchen’s receipt queue.
+                    </p>
+                  </div>
+                  {scopes.length > 1 && (
+                    <label className="block text-sm font-bold">
+                      Kitchen
+                      <select
+                        className="md-ops-field mt-2"
+                        value={scopeId}
+                        onChange={(event) => setScopeId(event.target.value)}
+                      >
+                        {scopes.map((entry) => (
+                          <option key={entry.locationId} value={entry.locationId}>
+                            {entry.locationName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  <button
+                    type="button"
+                    className="md-ops-button md-ops-secondary w-full"
+                    disabled={checkingAccess || busy}
+                    onClick={() => void loadAccess()}
+                  >
+                    <RefreshCw className="size-4" aria-hidden="true" />
+                    {checkingAccess ? "Checking access…" : "Check account access"}
+                  </button>
+                  <button
+                    type="button"
+                    className="md-ops-button md-ops-secondary w-full"
+                    disabled={busy}
+                    onClick={() => void signOut()}
+                  >
+                    <LogOut className="size-4" aria-hidden="true" />
+                    Sign out of this terminal
+                  </button>
+                </div>
+              }
             />
           </>
         )}
-        <PwaInstallCard appName="MealDeck Printer" />
+        {(!signedIn || !scope) && <PwaInstallCard appName="MealDeck Printer" />}
       </main>
     </div>
   );
 }
 
-function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
+type PrinterMobileView = "orders" | "queue" | "setup" | "account";
+
+function ReceiptTerminal({
+  scope,
+  accountControls,
+}: {
+  scope: PrinterScope;
+  accountControls: ReactNode;
+}) {
+  // Panels stay mounted: navigating never restarts polling, claims, or automatic printing.
+  const [mobileView, setMobileView] = useState<PrinterMobileView>("orders");
+  function showMobileView(view: PrinterMobileView) {
+    setMobileView(view);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`printer-${view}-heading`)?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
+  }
   const [feedError, setFeedError] = useState("");
   const [pendingOrders, setPendingOrders] = useState<PrinterPendingOrder[]>([]),
     [acceptanceError, setAcceptanceError] = useState(""),
@@ -582,7 +649,7 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
       setNotice(
         result.replayed
           ? `${order.displayCode} was already accepted. Its existing receipt is unchanged; no extra copy was requested.`
-          : `${order.displayCode} accepted. One receipt is queued.${paired && automatic ? " Automatic printing will send it when the live queue refreshes; check the paper afterwards." : " Enable automatic printing on a paired device, or print it from the receipt queue below."}`,
+          : `${order.displayCode} accepted. One receipt is queued.${paired && automatic ? " Automatic printing will send it when the live queue refreshes; check the paper afterwards." : " Enable automatic printing on a paired device, or print it from Receipt queue."}`,
       );
     } catch (reason) {
       if (mounted.current)
@@ -852,15 +919,29 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
       await refresh();
     }
   }
+  const queueActionCount = new Set([
+    ...jobs
+      .filter((job) => job.status !== "printed" && job.status !== "failed")
+      .map((job) => job.jobId),
+    ...localHolds.map((hold) => hold.jobId),
+  ]).size;
+  const paperCheckCount = new Set([
+    ...jobs
+      .filter((job) => ["sending", "sent_unconfirmed", "held"].includes(job.status))
+      .map((job) => job.jobId),
+    ...localHolds.map((hold) => hold.jobId),
+  ]).size;
   return (
     <section className="space-y-4" aria-label="Receipt terminal">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="md-printer-overview flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[.14em] md-ops-muted">
             {scope.locationName}
           </p>
-          <h2 className="mt-1 text-2xl font-black">One order. One receipt.</h2>
-          <p className="mt-2 text-sm md-ops-muted">
+          <h2 className="md-printer-desktop-only mt-1 text-2xl font-black">
+            One order. One receipt.
+          </h2>
+          <p className="md-printer-desktop-only mt-2 text-sm md-ops-muted">
             Accept paid orders here or on the KDS. Both use the same receipt queue.
           </p>
         </div>
@@ -874,122 +955,155 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
           Refresh
         </button>
       </div>
-      <PrinterConnectionStatus
-        fresh={fresh}
-        paired={paired}
-        automatic={automatic}
-        busy={busy}
-        onAutomaticChange={setAutomatic}
-      />
-      <StaffAlertControls
-        alerts={alerts}
-        kind="printer"
-        noticeLabels={{ singular: "order or receipt", plural: "orders or receipts" }}
-      />
-      <details className="md-ops-card p-4" open={!paired}>
-        <summary className="cursor-pointer text-sm font-bold">
-          {paired ? "Local printer bridge paired" : "Connect the receipt printer"}
-        </summary>
-        <div className="mt-4 space-y-3">
-          <p className="text-sm leading-6 md-ops-muted">
-            The MealDeck local bridge connects a supported network receipt printer to a Linux or
-            macOS computer. Pair it from this app on that same computer. It sends one receipt and
-            stops; paper cutting depends on the configured printer.
-          </p>
-          <details className="rounded-lg border p-3">
-            <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold">
-              Using a Senraise Android terminal?
-            </summary>
-            <p className="mt-2 text-sm leading-6 md-ops-muted">
-              Install MealDeck Printer from this page in Chrome. The PWA gives you this queue and
-              its order controls; installation alone does not connect the built-in printer.
-            </p>
-            <p className="mt-2 text-sm leading-6 md-ops-muted">
-              For manual printing, use Browser print dialog if Android lists your receipt printer.
-              Select one copy and check the paper. Automatic printing on Senraise still needs a
-              supported connection for your exact model.
-            </p>
-          </details>
-          {!paired && (
-            <form
-              className="flex flex-wrap items-end gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void pair();
-              }}
-            >
-              <label className="min-w-0 flex-1 text-sm font-bold">
-                Local bridge pairing code
-                <input
-                  className="md-ops-field mt-2 w-full"
-                  autoComplete="off"
-                  value={pairCode}
-                  onChange={(e) => setPairCode(e.target.value)}
-                  placeholder="Code from the local bridge"
-                  required
-                />
-              </label>
-              <button
-                className="md-ops-button md-ops-primary"
-                type="submit"
-                disabled={busy || !pairCode.trim()}
-              >
-                Pair local bridge
-              </button>
-            </form>
-          )}
-          {paired && (
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void reviewLocalHolds()}
-                className="md-ops-button md-ops-secondary"
-              >
-                Review interrupted local receipts
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  token.current = null;
-                  setPaired(false);
-                  setAutomatic(false);
-                  setLocalHolds([]);
-                }}
-                className="md-ops-button md-ops-secondary"
-              >
-                Disconnect bridge
-              </button>
-            </div>
-          )}
-          <p className="text-xs leading-5 md-ops-muted">
-            Keep this staff app open and the device awake. If a send is interrupted, the receipt is
-            held for inspection. Browser printing is available below and always opens a dialog; set
-            its copy count to 1.
-          </p>
-        </div>
-      </details>
-      {localHolds.length > 0 && (
-        <section
-          className="md-ops-card space-y-3 border-amber-300 p-4"
-          aria-label="Interrupted local receipt recovery"
+      <div className="md-printer-mobile-only md-printer-live-strip">
+        <p>
+          <span
+            className={`md-printer-live-dot ${fresh ? "is-ready" : "is-waiting"}`}
+            aria-hidden="true"
+          />
+          {fresh ? "Queue live" : "Queue paused"}
+          <span className="md-ops-muted">
+            {automatic
+              ? fresh && paired
+                ? " · Auto print on"
+                : " · Auto paused"
+              : " · Auto print off"}
+          </span>
+        </p>
+        <button
+          type="button"
+          className="md-printer-status-action"
+          onClick={() => showMobileView("setup")}
+          aria-controls="printer-setup"
         >
-          <h3 className="text-lg font-black">Inspect interrupted receipts</h3>
-          <p className="text-sm md-ops-muted">
-            These local holds can block the printer even if an older server receipt has left the
-            queue. Check the actual paper before resolving each record. These actions do not print.
-          </p>
-          {localHolds.map((hold) => (
-            <LocalReceiptRecovery
-              key={hold.jobId}
-              job={hold}
-              disabled={busy}
-              onResolve={(outcome) => void resolveLocalHold(hold.jobId, outcome)}
-            />
-          ))}
-        </section>
+          <Settings2 className="size-4" aria-hidden="true" />
+          Setup
+        </button>
+      </div>
+      {paperCheckCount > 0 && mobileView !== "queue" && (
+        <button
+          type="button"
+          className="md-printer-mobile-only md-printer-paper-reminder"
+          onClick={() => showMobileView("queue")}
+          aria-controls="printer-queue"
+        >
+          <AlertTriangle className="size-5 shrink-0" aria-hidden="true" />
+          <span>
+            {paperCheckCount} {paperCheckCount === 1 ? "receipt needs" : "receipts need"} a paper
+            check
+          </span>
+          <span className="ml-auto font-black">View</span>
+        </button>
       )}
+      <section
+        id="printer-setup"
+        className="md-printer-view space-y-4"
+        data-mobile-active={mobileView === "setup"}
+        aria-label="Printer setup"
+      >
+        <div className="md-printer-mobile-only">
+          <h2 id="printer-setup-heading" tabIndex={-1} className="md-printer-view-heading">
+            Printer setup
+          </h2>
+          <p className="mt-1 text-sm md-ops-muted">Connection, sound and receipt delivery.</p>
+        </div>
+        <PrinterConnectionStatus
+          fresh={fresh}
+          paired={paired}
+          automatic={automatic}
+          busy={busy}
+          onAutomaticChange={setAutomatic}
+        />
+        <StaffAlertControls
+          alerts={alerts}
+          kind="printer"
+          noticeLabels={{ singular: "order or receipt", plural: "orders or receipts" }}
+        />
+        <details className="md-ops-card md-printer-setup-details p-4" open={!paired}>
+          <summary className="cursor-pointer text-sm font-bold">
+            {paired ? "Local printer bridge paired" : "Connect the receipt printer"}
+          </summary>
+          <div className="mt-4 space-y-3">
+            <p className="text-sm leading-6 md-ops-muted">
+              The MealDeck local bridge connects a supported network receipt printer to a Linux or
+              macOS computer. Pair it from this app on that same computer. It sends one receipt and
+              stops; paper cutting depends on the configured printer.
+            </p>
+            <details className="rounded-lg border p-3">
+              <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold">
+                Using a Senraise Android terminal?
+              </summary>
+              <p className="mt-2 text-sm leading-6 md-ops-muted">
+                Install MealDeck Printer from this page in Chrome. The PWA gives you this queue and
+                its order controls; installation alone does not connect the built-in printer.
+              </p>
+              <p className="mt-2 text-sm leading-6 md-ops-muted">
+                For manual printing, use Browser print dialog if Android lists your receipt printer.
+                Select one copy and check the paper. Automatic printing on Senraise still needs a
+                supported connection for your exact model.
+              </p>
+            </details>
+            {!paired && (
+              <form
+                className="flex flex-wrap items-end gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void pair();
+                }}
+              >
+                <label className="min-w-0 flex-1 text-sm font-bold">
+                  Local bridge pairing code
+                  <input
+                    className="md-ops-field mt-2 w-full"
+                    autoComplete="off"
+                    value={pairCode}
+                    onChange={(e) => setPairCode(e.target.value)}
+                    placeholder="Code from the local bridge"
+                    required
+                  />
+                </label>
+                <button
+                  className="md-ops-button md-ops-primary"
+                  type="submit"
+                  disabled={busy || !pairCode.trim()}
+                >
+                  Pair local bridge
+                </button>
+              </form>
+            )}
+            {paired && (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void reviewLocalHolds()}
+                  className="md-ops-button md-ops-secondary"
+                >
+                  Review interrupted local receipts
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    token.current = null;
+                    setPaired(false);
+                    setAutomatic(false);
+                    setLocalHolds([]);
+                  }}
+                  className="md-ops-button md-ops-secondary"
+                >
+                  Disconnect bridge
+                </button>
+              </div>
+            )}
+            <p className="text-xs leading-5 md-ops-muted">
+              Keep this staff app open and the device awake. If a send is interrupted, the receipt
+              is held for inspection. On supported browsers, use Browser print dialog in Queue,
+              select one copy and check the actual paper.
+            </p>
+          </div>
+        </details>
+      </section>
       {!fresh && (
         <p
           role="status"
@@ -1023,10 +1137,21 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
           {notice}
         </p>
       )}
-      <section className="space-y-3" aria-label="Paid orders awaiting acceptance">
+      <section
+        id="printer-orders"
+        className="md-printer-view space-y-3"
+        data-mobile-active={mobileView === "orders"}
+        aria-label="Paid orders awaiting acceptance"
+      >
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 className="text-xl font-black">Paid orders to accept</h3>
+            <h2
+              id="printer-orders-heading"
+              tabIndex={-1}
+              className="md-printer-view-heading text-xl font-black"
+            >
+              Paid orders to accept
+            </h2>
             <p className="mt-1 text-sm md-ops-muted">
               Review the order, then accept it. Orders are never accepted automatically.
             </p>
@@ -1070,34 +1195,129 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
           </p>
         )}
       </section>
-      <h3 className="text-xl font-black">Receipt queue</h3>
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        {jobs.map((job) => (
-          <ReceiptJobCard
-            key={job.jobId}
-            job={job}
-            disabled={busy || !fresh}
-            paired={paired}
-            showing={preview === job.jobId}
-            onPreview={() => setPreview(preview === job.jobId ? null : job.jobId)}
-            onPrint={(mode) => void send(job, mode)}
-            onInspect={() => void inspectBridge(job)}
-            onSyncLocal={() => void syncLocal(job)}
-            onConfirm={(outcome, reason) => void confirm(job, outcome, reason)}
-            onReprint={(reason) => void reprint(job, reason)}
-          />
-        ))}
-      </div>
-      {fresh && !jobs.length && (
-        <div className="md-ops-card p-8 text-center">
-          <Printer className="mx-auto size-8 md-ops-muted" />
-          <h3 className="mt-3 text-xl font-black">Receipt queue clear</h3>
-          <p className="mt-2 text-sm md-ops-muted">
-            The next accepted, paid order will appear here.
+      <section
+        id="printer-queue"
+        className="md-printer-view space-y-3"
+        data-mobile-active={mobileView === "queue"}
+        aria-label="Receipt queue"
+      >
+        <div>
+          <h2
+            id="printer-queue-heading"
+            tabIndex={-1}
+            className="md-printer-view-heading text-xl font-black"
+          >
+            Receipt queue
+          </h2>
+          <p className="md-printer-mobile-only mt-1 text-sm md-ops-muted">
+            Accepted orders, paper checks and interrupted receipts.
           </p>
         </div>
-      )}
-      {scope.canManage && <PrinterAccessManager scope={scope} />}
+        {localHolds.length > 0 && (
+          <section
+            className="md-ops-card space-y-3 border-amber-300 p-4"
+            aria-label="Interrupted local receipt recovery"
+          >
+            <h3 className="text-lg font-black">Inspect interrupted receipts</h3>
+            <p className="text-sm md-ops-muted">
+              These local holds can block the printer even if an older server receipt has left the
+              queue. Check the actual paper before resolving each record. These actions do not
+              print.
+            </p>
+            {localHolds.map((hold) => (
+              <LocalReceiptRecovery
+                key={hold.jobId}
+                job={hold}
+                disabled={busy}
+                onResolve={(outcome) => void resolveLocalHold(hold.jobId, outcome)}
+              />
+            ))}
+          </section>
+        )}
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          {jobs.map((job) => (
+            <ReceiptJobCard
+              key={job.jobId}
+              job={job}
+              disabled={busy || !fresh}
+              paired={paired}
+              showing={preview === job.jobId}
+              onPreview={() => setPreview(preview === job.jobId ? null : job.jobId)}
+              onPrint={(mode) => void send(job, mode)}
+              onInspect={() => void inspectBridge(job)}
+              onSyncLocal={() => void syncLocal(job)}
+              onConfirm={(outcome, reason) => void confirm(job, outcome, reason)}
+              onReprint={(reason) => void reprint(job, reason)}
+            />
+          ))}
+        </div>
+        {fresh && !jobs.length && !localHolds.length && (
+          <div className="md-ops-card p-8 text-center">
+            <Printer className="mx-auto size-8 md-ops-muted" />
+            <h3 className="mt-3 text-xl font-black">Receipt queue clear</h3>
+            <p className="mt-2 text-sm md-ops-muted">
+              The next accepted, paid order will appear here.
+            </p>
+          </div>
+        )}
+      </section>
+      <section
+        id="printer-account"
+        className={`md-printer-view space-y-4 ${scope.canManage ? "" : "md-printer-mobile-only"}`}
+        data-mobile-active={mobileView === "account"}
+        aria-label="Printer account"
+      >
+        <div className="md-printer-mobile-only">
+          <h2 id="printer-account-heading" tabIndex={-1} className="md-printer-view-heading">
+            Account
+          </h2>
+          <p className="mt-1 text-sm md-ops-muted">Your kitchen access on this terminal.</p>
+        </div>
+        {accountControls}
+        {scope.canManage && <PrinterAccessManager scope={scope} />}
+      </section>
+      <div className="md-printer-view" data-mobile-active={mobileView === "setup"}>
+        <PwaInstallCard appName="MealDeck Printer" />
+      </div>
+      <StaffMobileNav
+        label="Printer navigation"
+        items={[
+          {
+            id: "orders",
+            label: "Orders",
+            icon: ClipboardList,
+            active: mobileView === "orders",
+            badge: acceptanceFresh ? pendingOrders.length + remainingOrderCount : 0,
+            controls: "printer-orders",
+            onClick: () => showMobileView("orders"),
+          },
+          {
+            id: "queue",
+            label: "Queue",
+            icon: Printer,
+            active: mobileView === "queue",
+            badge: fresh ? queueActionCount : 0,
+            controls: "printer-queue",
+            onClick: () => showMobileView("queue"),
+          },
+          {
+            id: "setup",
+            label: "Setup",
+            icon: Settings2,
+            active: mobileView === "setup",
+            controls: "printer-setup",
+            onClick: () => showMobileView("setup"),
+          },
+          {
+            id: "account",
+            label: "Account",
+            icon: UserRound,
+            active: mobileView === "account",
+            controls: "printer-account",
+            onClick: () => showMobileView("account"),
+          },
+        ]}
+      />
       {printJob &&
         createPortal(
           <div className="md-printer-print-only">
@@ -1400,7 +1620,8 @@ function PrinterAccessManager({ scope }: { scope: PrinterScope }) {
       <div className="mt-4 space-y-4">
         <p className="text-sm leading-6 md-ops-muted">
           Assign an existing, email-verified account to {scope.locationName}. Printer access permits
-          accepted receipts only. It does not grant kitchen, menu or financial administration.
+          accepting paid orders and managing their receipts. It does not grant preparation, packing,
+          handover, menu or financial administration.
         </p>
         <form
           className="flex flex-wrap items-end gap-2"
