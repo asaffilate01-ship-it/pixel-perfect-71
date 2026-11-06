@@ -137,6 +137,20 @@ jobs:
           tests/mealdeck-menu-choice-editor.test.ts tests/mealdeck-menu-structure.test.ts
       - name: Private payment and email connection diagnostics
         run: bun test tests/mealdeck-integration-status.test.ts tests/mealdeck-checkout-domain.test.ts
+      - name: Staff cash order authority and interrupted-attempt recovery
+        run: bun test tests/mealdeck-cash-orders.test.ts tests/mealdeck-cash-recovery.test.ts
+      - name: Staff cash ordering and canonical meal projection implementation checks
+        run: >-
+          bunx eslint src/components/ops/cash-order-panel.tsx
+          src/lib/mealdeck-cash-orders.ts src/lib/mealdeck-cash-orders.server.ts
+          src/lib/mealdeck-cash-recovery.ts src/routes/api.ops.cash.ts
+          tests/mealdeck-cash-orders.test.ts tests/mealdeck-cash-recovery.test.ts
+          deploy/mealdeck/staff-cash-orders.mjs deploy/mealdeck/meal-components.mjs
+          tests/postgres/staff-cash-orders-fixture.mjs
+          tests/postgres/staff-cash-orders-behavior.mjs
+          tests/postgres/staff-cash-orders-concurrency.mjs
+          tests/postgres/meal-components-behavior.mjs
+          --rule 'prettier/prettier: off'
       - name: Payment and email diagnostics implementation checks
         run: >-
           bunx eslint src/lib/mealdeck-integration-status.ts src/lib/mealdeck-integration-status.server.ts
@@ -281,6 +295,12 @@ jobs:
 
       - name: Completed receipt retirement preserves payment and print history
         run: node tests/postgres/receipt-archive-behavior.mjs
+
+      - name: Staff cash collection, immutable tender and safe attempt closure
+        run: node tests/postgres/staff-cash-orders-behavior.mjs
+
+      - name: Frozen meal inclusions, replacements and cash receipt composition
+        run: node tests/postgres/meal-components-behavior.mjs
 
       - name: Bounded live verification and public ordering isolation
         run: node tests/postgres/live-verification-behavior.mjs
@@ -710,6 +730,8 @@ jobs:
             included-drink-stock,
             order-notes,
             receipt-archive,
+            staff-cash-orders,
+            meal-components,
             live-verification,
           ]
     services:
