@@ -1,0 +1,111 @@
+name: Assemble verified staff activation
+on:
+  push:
+    branches: [feature/mealdeck-staff-live-20261106]
+    paths: [.github/workflows/staff-activation-build.yml]
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/mealdeck-staff-live-20261106
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+      - name: Apply reviewed connection and printer edits without replacing owner changes
+        shell: python
+        run: |
+          from pathlib import Path
+          def replace(path, old, new):
+              p=Path(path); s=p.read_text()
+              assert s.count(old)==1, (path, 'unexpected source; refusing to overwrite')
+              p.write_text(s.replace(old,new,1))
+          Path('src/lib/mealdeck-backend.functions.ts').write_text('''import { createServerFn } from "@tanstack/react-start";
+          import { setResponseHeader } from "@tanstack/react-start/server";
+          import { readMealDeckBackendConfig } from "./mealdeck-runtime-config";
+
+          /** Publishable connection only; signed-in Auth and scoped SQL still control staff access. */
+          export const getMealDeckPublicBackend = createServerFn({ method: "GET" }).handler(async () => {
+            setResponseHeader("Cache-Control", "no-store, private");
+            const { mealDeckDeploymentEnv } = await import("./mealdeck-deployment.server");
+            return readMealDeckBackendConfig(mealDeckDeploymentEnv());
+          });
+          ''')
+          for name in ['api.checkout.ts','api.group-orders.ts','api.group-payments.ts','api.ops.integrations.ts','api.stripe.webhook.ts','api.terminal.ts','api.auth.email.ts']:
+              p=Path('src/routes')/name
+              replace(str(p),'request, process.env','request, mealDeckDeploymentEnv()')
+              p.write_text('import { mealDeckDeploymentEnv } from "@/lib/mealdeck-deployment.server";\n'+p.read_text())
+          p=Path('src/lib/mealdeck-opening-offer.functions.ts')
+          replace(str(p),'readOnlineCheckoutStatus(process.env)','readOnlineCheckoutStatus(mealDeckDeploymentEnv())')
+          p.write_text('import { mealDeckDeploymentEnv } from "./mealdeck-deployment.server";\n'+p.read_text())
+          p=Path('src/lib/dishbee.functions.ts')
+          for old,new in [('readMealDeckBackendConfig(process.env)','readMealDeckBackendConfig(mealDeckDeploymentEnv())'),('readMealDeckRuntimeConfig(process.env, location)','readMealDeckRuntimeConfig(mealDeckDeploymentEnv(), location)'),('readMealDeckCheckoutServerKey(process.env, config)','readMealDeckCheckoutServerKey(mealDeckDeploymentEnv(), config)')]:
+              replace(str(p),old,new)
+          p.write_text('import { mealDeckDeploymentEnv } from "./mealdeck-deployment.server";\n'+p.read_text())
+          p=Path('src/lib/mealdeck-staff-passwords.functions.ts')
+          replace(str(p),'updateStaffPassword(getRequest(), data, process.env)','updateStaffPassword(getRequest(), data, mealDeckDeploymentEnv())')
+          p.write_text('import { mealDeckDeploymentEnv } from "./mealdeck-deployment.server";\n'+p.read_text())
+          replace('src/components/group-order-room.tsx','          <Link2 size={16} aria-hidden="true" /> One room for choices, payment and progress. No\n          replies to collect.','          <Link2 size={16} aria-hidden="true" /> Choose together. One order, packed by name.')
+          replace('src/lib/mealdeck-printer-browser.ts','export async function initializePrinterClient() {','export async function initializePrinterClient(refresh = false) {')
+          replace('src/lib/mealdeck-printer-browser.ts','return clients.initialise();','return clients.initialise(refresh);')
+          printer='src/components/ops/printer-workspace.tsx'
+          for old,new in [
+              ('  const [authId, setAuthId] = useState("");','  const [authId, setAuthId] = useState("");\n  const [connectionAttempt, setConnectionAttempt] = useState(0);'),
+              ('    live.current = true;\n    let unsubscribe:','    live.current = true;\n    let current = true;\n    setLoading(true);\n    setError("");\n    let unsubscribe:'),
+              ('const db = await initializePrinterClient();\n        if (!live.current) return;','const db = await initializePrinterClient(connectionAttempt > 0);\n        if (!current || !live.current) return;'),
+              ('          if (!live.current) return;\n          const changed','          if (!current || !live.current) return;\n          const changed'),
+              ('                if (live.current)\n                  void loadAccess()','                if (current && live.current)\n                  void loadAccess()'),
+              ('if (data.user && !issue) {','if (!current || !live.current) return;\n        if (data.user && !issue) {'),
+              ('        if (live.current)\n          setError(','        if (current && live.current)\n          setError('),
+              ('if (live.current) setLoading(false);','if (current && live.current) setLoading(false);'),
+              ('      live.current = false;\n      accessRequest.current++;','      current = false;\n      live.current = false;\n      accessRequest.current++;'),
+              ('  }, [loadAccess]);','  }, [loadAccess, connectionAttempt]);'),
+              ('    } finally {\n      setBusy(false);\n    }\n  }\n  async function emailLink()','    } finally {\n      setPassword("");\n      setBusy(false);\n    }\n  }\n  async function emailLink()'),
+              ('disabled={busy} type="submit">','disabled={busy || !client.current} type="submit">'),
+              ('disabled={busy || !email.trim()}','disabled={busy || !client.current || !email.trim()}'),
+              ('            <p className="text-xs leading-5 md-ops-muted">\n              An owner','''            {!client.current && (
+                        <button type="button" disabled={loading || busy}
+                          className="md-ops-button md-ops-secondary w-full"
+                          onClick={() => setConnectionAttempt((attempt) => attempt + 1)}>
+                          <RefreshCw className="size-4" aria-hidden="true" /> Reconnect printer service
+                        </button>
+                      )}
+                      <p className="text-xs leading-5 md-ops-muted">
+                        An owner''')
+          ]: replace(printer,old,new)
+          replace('.github/workflows/verify.yml','      - name: Launch menu prices, basket arithmetic and cross-brand choices\n','''      - name: Approved Cloud connection and staff activation regressions
+                  run: >-
+                    bun test tests/mealdeck-cloud-connection.test.ts
+                    tests/mealdeck-runtime-config.test.ts tests/mealdeck-backend-client-cache.test.ts
+                    tests/mealdeck-staff-passwords.test.ts tests/mealdeck-staff-passwords-server.test.ts
+                - name: Staff connection implementation lint
+                  run: >-
+                    bunx eslint src/lib/mealdeck-cloud-connection.ts src/lib/mealdeck-deployment.server.ts
+                    src/lib/mealdeck-backend.functions.ts tests/mealdeck-cloud-connection.test.ts
+                    --rule 'prettier/prettier: off'
+                - name: Launch menu prices, basket arithmetic and cross-brand choices
+          ''')
+          Path('.github/workflows/staff-activation-build.yml').unlink()
+      - name: Verify assembled source
+        run: |
+          git diff --check
+          bun install --frozen-lockfile
+          bun test tests
+          bunx tsc --noEmit
+          bunx eslint src/lib/mealdeck-cloud-connection.ts src/lib/mealdeck-deployment.server.ts src/lib/mealdeck-backend.functions.ts tests/mealdeck-cloud-connection.test.ts --rule 'prettier/prettier: off'
+          bun run build
+          npm ci --prefix tests/postgres --ignore-scripts
+          node tests/postgres/kitchen-printer-behavior.mjs
+          node --test tools/receipt-bridge/test/*.test.mjs
+      - name: Commit verified source to its review branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src tests docs .github/workflows
+          git commit -m 'Connect approved MealDeck Cloud backend and repair staff printer reconnect'
+          git push origin HEAD:feature/mealdeck-staff-live-20261106
