@@ -23,7 +23,7 @@ function PrivacyPage() {
         <article className="md-info-inner">
           <p className="lm-eyebrow">Your details. Your choices.</p>
           <h1>MealDeck privacy notice</h1>
-          <p>Updated 5 November 2026</p>
+          <p>Updated 6 November 2026</p>
           <h2>Who is responsible?</h2>
           <p>
             MealDeck is a trading name of 313 Brands Ltd, the controller responsible for the
@@ -47,9 +47,10 @@ function PrivacyPage() {
           <h2>Ordering as a guest</h2>
           <p>
             During our opening hours on 6–8 November 2026, you can order without registering. We use
-            your name, email and mobile number to fulfil that order and handle related queries. This
-            does not create a member account or give permission for marketing. Guest orders earn no
-            loyalty points.
+            your name and WhatsApp number to fulfil that order and handle related queries. Email is
+            not required for opening-weekend guest checkout; an email supplied on an earlier order
+            is retained with that order. This does not create a member account or give permission
+            for marketing. Guest orders earn no loyalty points.
           </p>
           <p>
             A necessary guest session cookie keeps your receipt available to the browser you used to

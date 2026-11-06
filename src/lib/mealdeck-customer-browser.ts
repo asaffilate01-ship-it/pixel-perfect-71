@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { getMealDeckPublicBackend } from "./mealdeck-backend.functions";
+import { getMealDeckCustomerEntryPolicy } from "./mealdeck-customer.functions";
 import { createMealDeckBackendClientCache } from "./mealdeck-backend-client-cache";
 import { customerEmailReturnPath, type CustomerReturnTarget } from "./mealdeck-customer-return";
 import {
@@ -70,6 +71,11 @@ export function customerRequestError(error: unknown): CustomerAccountError {
     return new CustomerAccountError(
       "rate_limited",
       "Please wait a minute before requesting another email.",
+    );
+  if (/registration_deferred/.test(message))
+    return new CustomerAccountError(
+      "unavailable",
+      "Email registration opens on Monday 9 November. Order with your name and WhatsApp number for now.",
     );
   if (/email_verification_required/.test(message))
     return new CustomerAccountError("unverified", "Verify your email to finish your registration.");
@@ -209,6 +215,11 @@ export async function requestCustomerEmail(
   if (details && details.email !== email)
     throw new CustomerAccountError("invalid", "Review your email address before continuing.");
   await readCustomerCapabilities();
+  if (details && (await getMealDeckCustomerEntryPolicy()).emailRegistrationDeferred)
+    throw new CustomerAccountError(
+      "unavailable",
+      "Email registration opens on Monday 9 November. Order with your name and WhatsApp number this weekend.",
+    );
   const { error } = await currentClient().auth.signInWithOtp({
     email,
     options: {
@@ -269,6 +280,11 @@ export async function registerMealDeckCustomer(
   details: CustomerRegistration,
 ): Promise<MealDeckCustomerProfile> {
   const clean = validateCustomerRegistration(details);
+  if ((await getMealDeckCustomerEntryPolicy()).emailRegistrationDeferred)
+    throw new CustomerAccountError(
+      "unavailable",
+      "Email registration opens on Monday 9 November. Continue as a guest for now.",
+    );
   return acceptedProfile(
     await customerRpc("mealdeck_customer_register", {
       p_name: clean.name,
