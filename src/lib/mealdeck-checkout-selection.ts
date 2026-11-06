@@ -4,6 +4,7 @@ import { getLaunchMenuPriceVariant, isLaunchBrandPriceApproved } from "./launch-
 import { findLaunchMenuItem, launchItemGroups, missingLaunchChoices } from "./launch-menu-picks";
 import { cleanLaunchCrossConfiguration } from "./launch-menu-upsells";
 import { parseKerbsideVehicle } from "./mealdeck-opening-offer";
+import { normaliseOrderNotes, ORDER_NOTES_ERROR_MESSAGE } from "./mealdeck-order-notes";
 
 const sourceId = z
   .string()
@@ -37,6 +38,7 @@ export const checkoutQuoteInput = z
     fulfilment: z.enum(["pickup", "curbside"]),
     picks: z.array(pickSchema).min(1).max(60),
     vehicle: z.unknown().optional(),
+    notes: z.string().optional(),
     packing: z
       .object({
         cutleryRequested: z.boolean(),
@@ -128,6 +130,12 @@ export function normaliseCheckoutSelection(input: unknown, tenantId: string) {
       "Please review your basket and collection details.",
     );
   const data = parsed.data;
+  let notes: string | null;
+  try {
+    notes = normaliseOrderNotes(data.notes);
+  } catch {
+    throw new CheckoutProblem("invalid_notes", ORDER_NOTES_ERROR_MESSAGE);
+  }
   if (data.picks.reduce((count, pick) => count + pick.quantity, 0) > 60)
     throw new CheckoutProblem("basket_limit", "Please keep this order to 60 items or fewer.");
   const vehicle = data.fulfilment === "curbside" ? parseKerbsideVehicle(data.vehicle) : null;
@@ -300,7 +308,15 @@ export function normaliseCheckoutSelection(input: unknown, tenantId: string) {
     cutleryRequested: packing.cutleryRequested,
     bags,
   };
-  const payload = { fulfilment: data.fulfilment, vehicle, lines, packingPlan };
+  // Keep existing blank/omitted quote hashes stable. Nonblank instructions are
+  // part of the reviewed selection, so a changed request needs a fresh quote.
+  const payload = {
+    fulfilment: data.fulfilment,
+    vehicle,
+    lines,
+    packingPlan,
+    ...(notes === null ? {} : { notes }),
+  };
   return {
     ...payload,
     requestHash: createHash("sha256").update(JSON.stringify(payload)).digest("hex"),

@@ -67,6 +67,8 @@ function fixture() {
     eligible: true,
     channel: true,
     verifiedMember: true,
+    notesAvailable: true,
+    notesEcho: "echo" as "echo" | "missing" | "different",
     kitchen: { state: "online", collectionEstimateMinutes: 25 } as unknown,
   };
   let receiptHash: string | null = null;
@@ -125,6 +127,25 @@ function fixture() {
         : error("mealdeck_checkout_guest_window_closed");
     if (name === "mealdeck_create_checkout_quote")
       return Response.json({ quoteId, totalPence: 279 });
+    if (
+      [
+        "mealdeck_create_checkout_quote_with_notes",
+        "mealdeck_create_guest_checkout_quote_with_notes",
+      ].includes(name)
+    ) {
+      if (!state.notesAvailable) return error("function unavailable");
+      if (name.includes("guest") && !state.eligible)
+        return error("mealdeck_checkout_guest_window_closed");
+      return Response.json({
+        quoteId,
+        totalPence: 279,
+        ...(state.notesEcho === "missing"
+          ? {}
+          : {
+              notes: state.notesEcho === "echo" ? args.p_notes : "Different saved instructions",
+            }),
+      });
+    }
     if (name === "mealdeck_prepare_guest_stripe_order") {
       if (!state.eligible) return error("mealdeck_checkout_guest_window_closed");
       receiptHash = String(args.p_token_hash);
@@ -296,6 +317,46 @@ describe("guest checkout private browser capability", () => {
       orderId,
     });
     expect(f.calls.some((c) => /reconcile|release|mark_paid/.test(c.name))).toBe(false);
+  });
+  test("member and guest special requests use the same trusted scope and must be echoed before payment", async () => {
+    for (const member of [false, true]) {
+      const f = fixture();
+      const cookie = await f.start();
+      const headers = member
+        ? { Authorization: "Bearer fixture_member_token_that_is_long_enough" }
+        : {};
+      const response = await f.post(
+        { ...selection(), notes: "  No onions\r\nSauce aside 🍋 " },
+        cookie,
+        headers,
+      );
+      expect(response.status).toBe(200);
+      expect((await response.json()).quote.notes).toBe("No onions\nSauce aside 🍋");
+      const name = member
+        ? "mealdeck_create_checkout_quote_with_notes"
+        : "mealdeck_create_guest_checkout_quote_with_notes";
+      const args = f.calls.find((call) => call.name === name)!.args;
+      expect(args.p_notes).toBe("No onions\nSauce aside 🍋");
+      expect(args.p_tenant).toBe(tenant);
+      expect(args.p_location).toBe(location);
+      expect(args.p_customer).toBe(member ? memberId : undefined);
+      expect(args.p_token_hash).toBe(member ? undefined : guestTokenHash(readGuestToken(cookie)!));
+      expect(args.p_request_hash).toMatch(/^[a-f0-9]{64}$/);
+      for (const echo of ["missing", "different"] as const) {
+        f.state.notesEcho = echo;
+        const rejected = await f.post({ ...selection(), notes: "No onions" }, cookie, headers);
+        expect(rejected.status).toBe(503);
+        expect((await rejected.json()).error).toBe("notes_not_saved");
+      }
+      f.state.notesAvailable = false;
+      expect((await f.post({ ...selection(), notes: "No onions" }, cookie, headers)).status).toBe(
+        503,
+      );
+      expect((await f.post({ ...selection(), notes: " \n\t " }, cookie, headers)).status).toBe(200);
+      expect(
+        f.calls.some((call) => /prepare_.*order|reconcile|release|mark_paid/.test(call.name)),
+      ).toBe(false);
+    }
   });
   test("existing guest receipts survive closing time while fresh checkout is refused and another guest is denied", async () => {
     const f = fixture();

@@ -41,6 +41,7 @@ jobs:
           tests/launch-basket-feedback.test.ts
           deploy/mealdeck/public-menu-read.mjs tests/postgres/public-menu-read-behavior.mjs
           deploy/mealdeck/milkcake-desserts.mjs tests/postgres/milkcake-desserts-behavior.mjs
+          deploy/mealdeck/included-drink-stock.mjs tests/postgres/included-drink-stock-behavior.mjs
           --rule 'prettier/prettier: off'
       - name: Installable app cache isolation and offline behavior
         run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
@@ -52,7 +53,7 @@ jobs:
           bunx eslint src/components/pwa-provider.tsx src/components/pwa-install-card.tsx src/lib/mealdeck-pwa-context.ts tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
       - name: Verified customer checkout, packing, receipt printing and distinct staff alerts
         run: >-
-          bun test tests/mealdeck-order-number.test.ts tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
+          bun test tests/mealdeck-order-number.test.ts tests/mealdeck-order-notes.test.ts tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
           tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts
           tests/mealdeck-checkout-browser.test.ts
           tests/mealdeck-checkout-feedback.test.ts
@@ -81,6 +82,9 @@ jobs:
           bunx eslint src/lib/mealdeck-order-number.ts tests/mealdeck-order-number.test.ts
           deploy/mealdeck/paid-order-numbers.mjs tests/postgres/paid-order-numbers-behavior.mjs
           tests/postgres/paid-order-numbers-fixture.mjs tests/postgres/paid-order-numbers-concurrency.mjs
+          src/lib/mealdeck-order-notes.ts tests/mealdeck-order-notes.test.ts
+          deploy/mealdeck/order-notes.mjs tests/postgres/order-notes-behavior.mjs
+          tests/postgres/order-notes-fixture.mjs
           src/components/customer-account.tsx src/components/customer-orders.tsx
           src/lib/mealdeck-customer.ts src/lib/mealdeck-account-entry.ts src/lib/mealdeck-customer-orders.ts
           src/lib/mealdeck-customer-browser.ts src/lib/mealdeck-customer.functions.ts
@@ -254,6 +258,12 @@ jobs:
 
       - name: Safe anonymous menu read and private authority isolation
         run: node tests/postgres/public-menu-read-behavior.mjs
+
+      - name: Included drinks follow current product stock at quote and payment preparation
+        run: node tests/postgres/included-drink-stock-behavior.mjs
+
+      - name: Special requests stay frozen through checkout, payment, kitchen and receipt
+        run: node tests/postgres/order-notes-behavior.mjs
 
       - name: Additive milkcake publication and canonical dessert pricing
         run: node tests/postgres/milkcake-desserts-behavior.mjs
@@ -689,6 +699,8 @@ jobs:
             milkcake-desserts,
             kerbside-contact,
             paid-order-numbers,
+            included-drink-stock,
+            order-notes,
             live-verification,
           ]
     services:

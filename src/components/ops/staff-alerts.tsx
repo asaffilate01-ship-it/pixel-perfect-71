@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Volume2, VolumeX } from "lucide-react";
 import {
   createStaffAlertLedger,
-  staffAlertTones,
   staffAlertAudio,
   staffAlertDurationMs,
+  playStaffAlert,
   type StaffAlertKind,
 } from "@/lib/mealdeck-staff-alerts";
 const ledgers = new Map<string, ReturnType<typeof createStaffAlertLedger>>();
@@ -19,6 +19,7 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
     return next;
   }, [key]);
   const context = useRef<AudioContext | null>(null);
+  const activeSound = useRef<ReturnType<typeof playStaffAlert>>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [volume, setVolumeState] = useState<number>(staffAlertAudio[kind].defaultVolume);
@@ -64,35 +65,23 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
     return () => {
       c.close();
       channel.current = null;
+      activeSound.current?.stop();
+      activeSound.current = null;
       void context.current?.close().catch(() => {});
       context.current = null;
     };
   }, [key, preferencesKey, ledger]);
 
   const play = useCallback(async () => {
-    if (!context.current || context.current.state !== "running") return false;
-    const ctx = context.current;
-    for (const note of staffAlertTones[kind]) {
-      const oscillator = ctx.createOscillator(),
-        gain = ctx.createGain();
-      const at = ctx.currentTime + note.at;
-      oscillator.type = "sine";
-      oscillator.frequency.value = note.frequency;
-      gain.gain.setValueAtTime(0, at);
-      const peak = prefs.current.volume * staffAlertAudio[kind].peakGain;
-      gain.gain.linearRampToValueAtTime(peak, at + 0.012);
-      if (staffAlertAudio[kind].sustainSeconds)
-        gain.gain.setValueAtTime(peak, at + staffAlertAudio[kind].sustainSeconds);
-      gain.gain.exponentialRampToValueAtTime(0.001, at + note.duration);
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-      oscillator.start(at);
-      oscillator.stop(at + note.duration + 0.02);
-      oscillator.onended = () => {
-        oscillator.disconnect();
-        gain.disconnect();
-      };
-    }
+    if (!context.current) return false;
+    const next = playStaffAlert(
+      context.current,
+      kind,
+      prefs.current.volume,
+      activeSound.current?.endsAt ?? 0,
+    );
+    if (next === null) return false;
+    activeSound.current = next;
     return true;
   }, [kind]);
   const persist = useCallback(() => {
@@ -104,6 +93,8 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
   }, [preferencesKey]);
   const toggle = useCallback(async () => {
     if (enabled) {
+      activeSound.current?.stop();
+      activeSound.current = null;
       setEnabled(false);
       prefs.current.enabled = false;
       persist();
@@ -125,6 +116,10 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
   const setVolume = useCallback(
     (value: number) => {
       const next = Math.min(1, Math.max(0, value));
+      if (next === 0) {
+        activeSound.current?.stop();
+        activeSound.current = null;
+      }
       setVolumeState(next);
       prefs.current.volume = next;
       persist();
@@ -212,7 +207,7 @@ export function StaffAlertControls({
           className="w-24 accent-red-600"
         />
       </label>
-      {kind === "kds" && alerts.volume < 1 && (
+      {alerts.volume < 1 && (
         <button
           type="button"
           className="md-ops-button md-ops-secondary"
@@ -230,11 +225,12 @@ export function StaffAlertControls({
           Test {kind === "kds" ? "kitchen" : "printer"} sound
         </button>
       )}
-      {kind === "kds" && (
-        <span className="text-xs md-ops-muted">
-          Two strong chimes for each new paid order. Turn up the device volume too.
-        </span>
-      )}
+      <span className="text-xs md-ops-muted">
+        {kind === "kds"
+          ? "Two strong chimes when new paid orders arrive."
+          : "Two rising chimes when new orders or receipts arrive."}{" "}
+        Turn up the device volume too.
+      </span>
       {alerts.notice > 0 && (
         <button
           type="button"

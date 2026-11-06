@@ -121,6 +121,41 @@ describe("actual menu selection and optional numbered packing", () => {
     expect(cutlery.lines).toEqual(one.lines);
     expect(cutlery.requestHash).not.toBe(one.requestHash);
   });
+  test("special requests bind the reviewed quote without changing money choices or legacy blank hashes", () => {
+    const original = normaliseCheckoutSelection(base(), tenant);
+    for (const notes of [undefined, "", " \r\n\t\u3000"])
+      expect(normaliseCheckoutSelection({ ...base(), notes }, tenant)).toEqual(original);
+    const saved = normaliseCheckoutSelection(
+      { ...base(), notes: "  No onions\r\nSauce on the side 🍋  " },
+      tenant,
+    );
+    expect(saved.notes).toBe("No onions\nSauce on the side 🍋");
+    expect(saved.lines).toEqual(original.lines);
+    expect(saved.packingPlan).toEqual(original.packingPlan);
+    expect(saved.requestHash).not.toBe(original.requestHash);
+    expect(normaliseCheckoutSelection({ ...base(), notes: saved.notes }, tenant).requestHash).toBe(
+      saved.requestHash,
+    );
+    expect(
+      normaliseCheckoutSelection({ ...base(), notes: "Keep the onions" }, tenant).requestHash,
+    ).not.toBe(saved.requestHash);
+    for (const notes of ["x".repeat(1001), "No\u001b onions", "Hide\u202e words", "\uD800"])
+      expect(() => normaliseCheckoutSelection({ ...base(), notes }, tenant)).toThrow(
+        /1,000 characters of plain text/,
+      );
+    expect(() =>
+      normaliseCheckoutSelection({ ...base(), notes: { totalPence: 1 } }, tenant),
+    ).toThrow(CheckoutProblem);
+    expect(
+      checkoutPayInput.safeParse({
+        action: "pay",
+        quoteId,
+        attemptId: tenant,
+        reviewConfirmed: true,
+        notes: "Changed after review",
+      }).success,
+    ).toBe(false);
+  });
   test("ordinary checkout cannot inject room participant names or named packing snapshots", () => {
     for (const extra of [
       { name: "Amer" },

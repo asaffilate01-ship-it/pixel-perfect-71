@@ -58,6 +58,14 @@ const room = (): SharedPaymentRoom => ({
   cutleryRequested: false,
   fulfilment: "pickup",
 });
+
+test("optional organiser special requests preserve old room responses and reject unsafe text", () => {
+  expect(parseSharedPaymentRoom(room())).toEqual(room());
+  for (const notes of [null, "No onions\nSauce aside 🍋", "🍋".repeat(1000)])
+    expect(parseSharedPaymentRoom({ ...room(), notes })?.notes).toBe(notes);
+  for (const notes of ["x".repeat(1001), "Hidden\u202e words", "\u001bcommand", "  unnormalised  "])
+    expect(parseSharedPaymentRoom({ ...room(), notes })).toBeNull();
+});
 const json = (value: unknown, status = 200) =>
   new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json" } });
 const payment: SharedPaymentRequest = {

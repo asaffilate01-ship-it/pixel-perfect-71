@@ -228,6 +228,7 @@ export function sharedRoomForBrowser(
     roomId: data["roomId"],
     orderId: data["orderId"],
     ...(data["orderNumber"] === undefined ? {} : { orderNumber: data["orderNumber"] }),
+    ...(owner && data["notes"] !== undefined ? { notes: data["notes"] } : {}),
     handoffCode: data["handoffCode"] ?? null,
     splitMode: data["splitMode"],
     status,

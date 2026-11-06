@@ -1,7 +1,7 @@
 import { usePublicMenu } from "@/components/menus/use-public-menu";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { KERBSIDE_PARKING_INSTRUCTION } from "@/lib/mealdeck-customer-entry";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -65,6 +65,12 @@ import {
 import { parseKerbsideVehicle, type MealDeckOpeningOffer } from "@/lib/mealdeck-opening-offer";
 import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timing";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
+import {
+  MAX_ORDER_NOTES_LENGTH,
+  ORDER_NOTES_ERROR_MESSAGE,
+  normaliseOrderNotes,
+  orderNotesMatch,
+} from "@/lib/mealdeck-order-notes";
 import { safeMealDeckCheckoutRedirect } from "@/lib/mealdeck-checkout-url";
 import {
   CHECKOUT_MODE_KEY,
@@ -116,6 +122,7 @@ type Quote = {
   lines: PricedLine[];
   openingOffer: MealDeckOpeningOffer;
   packingPlan: MealDeckPackingPlan;
+  notes?: string | null;
 };
 type Receipt = {
   orderId: string;
@@ -143,6 +150,7 @@ type Receipt = {
   held: boolean;
   paymentSessionExpired: boolean;
   packingPlan: MealDeckPackingPlan;
+  notes?: string | null;
 };
 type CheckoutStatus = {
   available: boolean;
@@ -448,6 +456,66 @@ export function CheckoutActionFeedback({
   return null;
 }
 
+export function CheckoutSpecialRequests({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  let invalid = false;
+  try {
+    normaliseOrderNotes(value);
+  } catch {
+    invalid = true;
+  }
+  const characters = [...value.replace(/\r\n?/g, "\n").trim()].length;
+  return (
+    <div className="md-checkout-special-requests">
+      <label htmlFor={id}>
+        Special requests <span>(optional)</span>
+      </label>
+      <textarea
+        id={id}
+        value={value}
+        rows={3}
+        maxLength={MAX_ORDER_NOTES_LENGTH * 2}
+        disabled={disabled}
+        placeholder="No onions; sauce separately"
+        aria-invalid={invalid}
+        aria-describedby={`${id}-help ${id}-count${invalid ? ` ${id}-error` : ""}`}
+        onChange={(event) => onChange(event.currentTarget.value)}
+      />
+      <div className="md-checkout-request-help">
+        <p id={`${id}-help`}>Choose extra items and paid add-ons from the menu.</p>
+        <p id={`${id}-count`} className="md-checkout-request-count">
+          {characters} / {MAX_ORDER_NOTES_LENGTH}
+          <span className="sr-only"> characters</span>
+        </p>
+      </div>
+      {invalid && (
+        <p id={`${id}-error`} className="md-checkout-request-error" role="alert">
+          {ORDER_NOTES_ERROR_MESSAGE}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Review only saved server instructions, never an unsaved local draft. */
+export function CheckoutSpecialRequestsReview({ notes }: { notes?: string | null }) {
+  if (!notes) return null;
+  return (
+    <section className="md-checkout-saved-requests" aria-label="Special requests">
+      <h3>Special requests</h3>
+      <p>{notes}</p>
+    </section>
+  );
+}
+
 export function LaunchCheckout({
   orderId,
   cancelled = false,
@@ -493,6 +561,7 @@ export function LaunchCheckout({
   const [paymentPending, setPaymentPending] = useState(false);
   const [deliveryNotice, setDeliveryNotice] = useState(false);
   const [cutleryRequested, setCutleryRequested] = useState(false);
+  const [specialRequests, setSpecialRequests] = useState("");
   const [separateBags, setSeparateBags] = useState(false);
   const [bagCount, setBagCount] = useState(1);
   const [bagQuantities, setBagQuantities] = useState<Record<string, number[]>>({});
@@ -595,6 +664,7 @@ export function LaunchCheckout({
     setBasketIssue(transfer.issue);
     setQuote(null);
     setReviewConfirmed(false);
+    setSpecialRequests("");
     attempt.current = null;
     setBasketLoaded(true);
     setGroupCheckout(savedGroup);
@@ -740,6 +810,7 @@ export function LaunchCheckout({
     setReceiptRefreshed(false);
     setQuote(null);
     setReviewConfirmed(false);
+    setSpecialRequests("");
     setIssue(null);
     attempt.current = null;
   }, [customerIdentity, orderId]);
@@ -849,6 +920,7 @@ export function LaunchCheckout({
     setReceipt(null);
     setReceiptRefreshed(false);
     setReviewConfirmed(false);
+    setSpecialRequests("");
     attempt.current = null;
     setIssue(null);
     setGuestIssue(null);
@@ -952,10 +1024,25 @@ export function LaunchCheckout({
       ),
     );
   }
+  function updateSpecialRequests(value: string) {
+    setSpecialRequests(value);
+    setQuote(null);
+    setReviewConfirmed(false);
+    setIssue(null);
+    attempt.current = null;
+    roomAttempt.current = null;
+  }
   async function reviewTotal() {
     if (!fulfilment || busy || !canCheckout) return;
     if (fulfilment === "curbside" && !parseKerbsideVehicle(vehicle)) {
       setIssue("Enter the car make, colour and last 4 registration characters.");
+      return;
+    }
+    let notes: string | null;
+    try {
+      notes = normaliseOrderNotes(specialRequests);
+    } catch {
+      setIssue(ORDER_NOTES_ERROR_MESSAGE);
       return;
     }
     const requestId = ++checkoutRequestId.current;
@@ -973,6 +1060,7 @@ export function LaunchCheckout({
           ...(crossSelections?.length ? { crossSelections } : {}),
         })),
         ...(fulfilment === "curbside" ? { vehicle } : {}),
+        ...(notes ? { notes } : {}),
         packing: {
           cutleryRequested,
           separateBags,
@@ -987,6 +1075,10 @@ export function LaunchCheckout({
         },
       });
       if (alive.current && requestId === checkoutRequestId.current && result.quote) {
+        if (!orderNotesMatch(notes, result.quote.notes))
+          throw new Error(
+            "Your special requests could not be confirmed. Review them and try the final total again.",
+          );
         setQuote(result.quote);
         setReviewConfirmed(false);
         attempt.current = { quoteId: result.quote.quoteId, attemptId: crypto.randomUUID() };
@@ -1340,6 +1432,7 @@ export function LaunchCheckout({
                     Luton · {receipt.fulfilment === "curbside" ? "Kerbside pickup" : "Collection"}
                   </p>
                   <DetailedOrderLines lines={receipt.lines} packingPlan={receipt.packingPlan} />
+                  <CheckoutSpecialRequestsReview notes={receipt.notes ?? null} />
                   <PriceSummary total={receipt} />
                 </aside>
               </div>
@@ -1812,6 +1905,11 @@ export function LaunchCheckout({
                       })}
                     </div>
                   )}
+                  <CheckoutSpecialRequests
+                    value={specialRequests}
+                    disabled={busy}
+                    onChange={updateSpecialRequests}
+                  />
                   <p className="md-checkout-review-prompt">
                     Please check your order before confirming and paying.
                   </p>
@@ -1843,6 +1941,7 @@ export function LaunchCheckout({
                         Current kitchen prices confirmed
                       </p>
                       <DetailedOrderLines lines={quote.lines} packingPlan={quote.packingPlan} />
+                      <CheckoutSpecialRequestsReview notes={quote.notes ?? null} />
                       {fulfilment === "curbside" && pickupContact && (
                         <section
                           className="md-checkout-pickup-review"
@@ -1985,8 +2084,8 @@ export function LaunchCheckout({
                           <span>
                             <strong>I've checked my order</strong>
                             <small>
-                              Items, quantities, flavours, extras, numbered bags and cutlery are
-                              correct.
+                              Items, quantities, flavours, extras, numbered bags, cutlery and
+                              special requests are correct.
                               {fulfilment === "curbside" &&
                                 " My name, WhatsApp number and car details are also correct."}
                             </small>

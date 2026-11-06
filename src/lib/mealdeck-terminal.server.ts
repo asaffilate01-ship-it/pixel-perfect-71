@@ -55,7 +55,9 @@ const inputSchema = z.union([
     action: z.literal("lookup"),
     reference: z.union([z.uuid(), z.string().regex(/^\d{4}$/)]),
   }),
-  checkoutQuoteInput,
+  // Staff-native quotation has no special-requests input yet. Preserve its
+  // previous strict contract instead of accepting and silently dropping notes.
+  checkoutQuoteInput.omit({ notes: true }),
   attemptRequest("prepare"),
   attemptRequest("reconcile"),
   attemptRequest("cancel"),

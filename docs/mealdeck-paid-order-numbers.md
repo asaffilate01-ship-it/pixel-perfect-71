@@ -26,7 +26,15 @@ Existing receipt snapshots are not automatically regenerated. Their original col
 
 The owner-only `mealdeck_private.add_order_number_to_unsent_receipt(job, order, expected_payload_md5)` helper can add this field to a single original receipt only if the job is still queued and has never been claimed, attempted, sent, confirmed, resolved or copied. It locks the order and job, checks the exact original payload digest, changes only `orderNumber` and the job update timestamp, verifies the rest of the JSON is unchanged, and writes an audit event. A changed or attempted job is rejected. It does not print or enqueue a replacement.
 
-The live test order is `15e1228c-2669-4ac7-acef-7993de543efe`, paid £3.49 at 18:22 UK on 6 November. Its existing collection code is **4601**. The intended sequential number is **0001**; deployment verification must read the actual mapping rather than assume it. Its original acceptance receipt was queued, and physical printer output remains unconfirmed.
+The live test order is `15e1228c-2669-4ac7-acef-7993de543efe`, paid £3.49 at 18:22 UK on 6 November. Its existing collection code is **4601**. The production mapping was read after installation and confirms sequential number **0001**. Its original acceptance receipt remains queued, and physical printer output remains unconfirmed.
+
+## Observed production release
+
+PR #107 merged normally as `4b3279b60106c271076612481aae401a39924400`. All 22 verification jobs passed, including PostgreSQL 17 numbering concurrency and both native app compilations. Deployment `b3a6ec00-e4ab-47fa-b2d8-05b95b5a009e` was verified on the canonical site's pages and linked checkout/KDS assets at 19:24 UK on 6 November; anonymous checkout remained available with eligible guests.
+
+The exact migration, SHA256 `dba330d9037c6c040773ea4e240db17aff3181d7365ef460c277a9657bd2d3fc`, was installed atomically after that compatible application publication. The seven paid orders then present mapped chronologically to **0001–0007**, with scope counter **7** and three unpaid attempts unnumbered. Collection code **7628** is order **0005**; the codes themselves were not changed.
+
+A fresh preflight found all seven original receipt jobs untouched and queued. The owner-only helper added only their respective `orderNumber` fields. A subsequent read confirmed each original payload digest excluding that field was unchanged, with one copy and zero delivery events per order. This was an additive snapshot correction, not a print or a reprint. Later paid orders use the installed transactional allocator; the seven-order count is an observation at release time, not a fixed production total.
 
 ## Installation
 

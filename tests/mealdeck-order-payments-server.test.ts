@@ -637,6 +637,25 @@ describe("signed common payment webhook", () => {
 });
 
 describe("authorised native payment API", () => {
+  test("native quotes reject unsupported notes instead of silently dropping customer instructions", async () => {
+    const f = fixture();
+    const response = await f.terminal({
+      action: "quote",
+      fulfilment: "pickup",
+      picks: [
+        {
+          brandId: "skorch-burgers",
+          itemId: "skorch-burgers-the-ace",
+          quantity: 1,
+          selections: {},
+        },
+      ],
+      packing: { cutleryRequested: false, separateBags: false, bagCount: 1, allocations: [] },
+      notes: "Do not discard this request",
+    });
+    expect(response.status).toBe(400);
+    expect(f.calls).toHaveLength(0);
+  });
   test("bootstrap returns public auth configuration only", async () => {
     const response = await handleTerminalRequest(
       new Request("https://mealdeck.co.uk/api/terminal", {
