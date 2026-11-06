@@ -53,7 +53,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
             <Link to="/play" aria-current={current("/play")?"page":undefined} className={active("/play")}>Play &amp; Rewards</Link>
             <Link to="/franchise" aria-current={current("/franchise")?"page":undefined} className={active("/franchise")}>Franchises</Link>
             <Link to="/blog" aria-current={current("/blog")?"page":undefined} className={active("/blog")}>Blog</Link>
-            <Link to="/track" aria-current={current("/track")?"page":undefined} className={active("/track")}>Track</Link>
+            <Link to="/track" aria-current={current("/track")?"page":undefined} className={active("/track")}>Track <small className="md-nav-coming-soon">Coming soon</small></Link>
           </nav>
         ) : null}
 
@@ -93,7 +93,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           <Link to="/play" onClick={() => setOpen(false)} aria-current={current("/play")?"page":undefined} className={active("/play")}>Play &amp; Rewards</Link>
           <Link to="/franchise" onClick={() => setOpen(false)} aria-current={current("/franchise")?"page":undefined} className={active("/franchise")}>Franchises</Link>
           <Link to="/blog" onClick={() => setOpen(false)} aria-current={current("/blog")?"page":undefined} className={active("/blog")}>Blog</Link>
-          <Link to="/track" onClick={() => setOpen(false)} aria-current={current("/track")?"page":undefined} className={active("/track")}>Track order</Link>
+          <Link to="/track" onClick={() => setOpen(false)} aria-current={current("/track")?"page":undefined} className={active("/track")}>Track order <small className="md-nav-coming-soon">Coming soon</small></Link>
           <Link to="/account" onClick={() => setOpen(false)} aria-current={current("/account")?"page":undefined} className={active("/account")}>My account &amp; preferences</Link>
           <Link to="/menus" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Browse menus <ArrowRight /></Link>
         </nav>

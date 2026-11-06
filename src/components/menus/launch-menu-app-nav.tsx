@@ -242,7 +242,7 @@ export function LaunchMenuAppNav({
               <Link to="/offers" onClick={followLink} className="lma-more-note">
                 Offers · 30% off, 99p milk cake &amp; double points
               </Link>
-              <p className="lma-more-note">Browse the launch menus now. Ordering is coming soon.</p>
+              <p className="lma-more-note">Order for Luton collection or kerbside during kitchen opening hours.</p>
               <p className="lma-more-note">WhatsApp ordering — coming soon</p>
             </div>
           )}

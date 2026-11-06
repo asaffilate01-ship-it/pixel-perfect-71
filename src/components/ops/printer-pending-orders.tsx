@@ -1,6 +1,7 @@
 import { Check, Printer, ShieldCheck } from "lucide-react";
 import { formatReceiptMoney } from "@/lib/mealdeck-printer";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
+import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
   printerAcceptanceAction,
   type PrinterPendingOrder,
@@ -91,17 +92,19 @@ export function PrinterPendingOrderCard({
       ...order.items.filter((item) => item.parentLineId === parent.lineId),
     ]);
   const action = printerAcceptanceAction({ fresh, paired, automatic });
+  const number = orderDisplayNumber(order.orderNumber, "");
   return (
     <article
       className="md-ops-card md-printer-pending-card"
-      aria-label={`Paid order ${order.displayCode} awaiting acceptance`}
+      aria-label={`Paid ${number ? `order ${number}` : `collection ${order.displayCode}`} awaiting acceptance`}
     >
       <header className="md-printer-pending-header">
         <div>
           <p className="md-printer-new-label">
             <ShieldCheck className="size-4" aria-hidden="true" /> Paid · awaiting acceptance
           </p>
-          <h4 className="md-printer-order-number">{order.displayCode}</h4>
+          <h4 className="md-printer-order-number">{number ? `Order ${number}` : "Paid order"}</h4>
+          <p className="mt-1 text-sm md-ops-muted">Collection code <strong className="tabular-nums">{order.displayCode}</strong></p>
           <p className="text-sm font-bold">
             {order.fulfilment === "curbside" ? "Kerbside" : "Collection"} · paid{" "}
             {new Date(order.paidAt).toLocaleTimeString("en-GB", {

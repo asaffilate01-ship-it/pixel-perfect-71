@@ -17,7 +17,7 @@ import { brands, launchLocations as locations, sampleMenu, modifierGroupsFor, fo
 
 export function ComingSoonBanner() {
   return <aside role="status" className="md-launch-banner">
-    <strong className="text-accent">Luton launches first</strong><span>Five launch menus. Ordering is coming soon; St Albans and Bedford follow later.</span><Link to="/menus">View menus →</Link>
+    <strong className="text-accent">Luton collection &amp; kerbside</strong><span>Order online during kitchen opening hours. Delivery, St Albans and Bedford are coming soon.</span><Link to="/menus">Order from our menus →</Link>
   </aside>;
 }
 

@@ -3,6 +3,41 @@ import assert from "node:assert/strict";
 import { validateReceipt, encodeReceipt, RECEIPT_LIMITS } from "../receipt.mjs";
 import { fixture, JOB } from "./fixtures.mjs";
 
+test("canonical order number prints separately from the unchanged collection credential", () => {
+  const legacy = fixture();
+  assert.equal(Object.hasOwn(validateReceipt(legacy), "orderNumber"), false);
+  assert.match(encodeReceipt(legacy).text, /ORDER 0427/);
+  for (const orderNumber of ["0001", "0002", "10000", "9223372036854775807"]) {
+    const value = { ...legacy, orderNumber };
+    const normalized = validateReceipt(value);
+    assert.equal(normalized.orderNumber, orderNumber);
+    assert.equal(normalized.displayCode, "0427");
+    assert.deepEqual(normalized.items, validateReceipt(legacy).items);
+    assert.deepEqual(normalized.packingPlan, validateReceipt(legacy).packingPlan);
+    assert.equal(normalized.totalPence, legacy.totalPence);
+    const printed = encodeReceipt(value).text;
+    assert.ok(printed.includes("ORDER " + orderNumber));
+    assert.match(printed, /Collection code: 0427/);
+    assert.equal(printed.match(/END OF RECEIPT/g)?.length, 1);
+  }
+  assert.equal(validateReceipt({ ...legacy, orderNumber: null }).orderNumber, null);
+  for (const orderNumber of [
+    undefined,
+    "",
+    "0000",
+    "1",
+    "00001",
+    "0001\n",
+    "0001\x1b@",
+    "0001\u202e",
+    "9".repeat(20),
+    1,
+  ])
+    assert.throws(() => encodeReceipt({ ...legacy, orderNumber }), {
+      code: "invalid_receipt_order_number",
+    });
+});
+
 test("same-named meals with different flavours print their own bag allocation beside the full choices", () => {
   const r = fixture();
   const first = { ...r.items[0], quantity: 1, linePence: 849 };

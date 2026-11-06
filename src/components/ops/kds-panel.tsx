@@ -33,7 +33,9 @@ import {
   type KdsWorkflowBoard as KdsBoard,
 } from "@/lib/mealdeck-kds-workflow";
 import { KdsCompletedCard } from "./kds-completed-card";
+import { KdsPickupDetails } from "./kds-pickup-details";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
+import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
   KDS_STAGE_LABELS,
   groupKdsItems,
@@ -311,6 +313,8 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
     }
     const expectedVersion = action.target === "pass" ? order.pass?.version : order.version;
     if (!expectedVersion) return;
+    const orderNumber = orderDisplayNumber(order.order_number, order.display_code);
+    const reference = `${isOrderNumber(order.order_number) ? "Order" : "Collection code"} ${orderNumber}`;
     mutating.current = true;
     invalidateRead();
     reading.current = false;
@@ -343,7 +347,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
       saved = true;
       if (!mounted.current) return;
       setNotice(
-        `${order.display_code} · ${action.status === "accepted" ? "Accepted · receipt queued" : action.status === "completed" ? "Done · handover confirmed" : action.target === "item" ? "Item checklist updated" : action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Ready for handover"}.`,
+        `${reference} · ${action.status === "accepted" ? "Accepted · receipt queued" : action.status === "completed" ? "Done · handover confirmed" : action.target === "item" ? "Item checklist updated" : action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Ready for handover"}.`,
       );
     } catch (reason) {
       if (!mounted.current) return;
@@ -376,7 +380,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
         if (mounted.current) {
           setPendingOrder(null);
           if (saved && !synced && !accessBlocked.current)
-            setNotice(`${order.display_code} was updated. Reconnect to see its latest stage.`);
+            setNotice(`${reference} was updated. Reconnect to see its latest stage.`);
           window.requestAnimationFrame(() => {
             const focusTarget =
               actionButtons.current.get(order.order_id) ??
@@ -1257,6 +1261,10 @@ export function KitchenOrderCard({
   }, [confirmingSeal]);
   const groups = groupKdsItems(order);
   const progress = kdsTicketProgress(order);
+  const orderNumber = orderDisplayNumber(order.order_number, order.display_code);
+  const hasOrderNumber = isOrderNumber(order.order_number);
+  const referenceLabel = hasOrderNumber ? "Order" : "Collection code";
+  const collection = order.fulfilment === "pickup" || order.fulfilment === "curbside";
   return (
     <article
       ref={cardRef}
@@ -1279,9 +1287,9 @@ export function KitchenOrderCard({
         </div>
         <div className="md-kds-ticket-identity">
           <div className="min-w-0">
-            <p className="md-kds-ticket-eyebrow">Order</p>
+            <p className="md-kds-ticket-eyebrow">{referenceLabel}</p>
             <h3 id={`kds-order-${order.order_id}`} className="md-kds-order-number">
-              {order.display_code}
+              {orderNumber}
             </h3>
           </div>
           <div className="md-kds-ticket-timer" title="Elapsed time since verified kitchen release">
@@ -1291,6 +1299,12 @@ export function KitchenOrderCard({
             </strong>
           </div>
         </div>
+        {hasOrderNumber && (collection || order.pass?.status === "ready_for_handoff") && (
+          <p className="md-kds-collection-code">
+            <span>Collection code</span>
+            <strong>{order.display_code}</strong>
+          </p>
+        )}
         <div className="md-kds-ticket-meta">
           <span className="inline-flex items-center gap-1">
             <Clock3 className="size-3.5" aria-hidden="true" />
@@ -1314,6 +1328,11 @@ export function KitchenOrderCard({
         </div>
       </header>
       <div className="md-kds-ticket-body">
+        <KdsPickupDetails
+          fulfilment={order.fulfilment}
+          pickupContact={order.pickupContact ?? null}
+          vehicle={order.vehicle ?? null}
+        />
         <div className="md-kds-packing-flags">
           <span
             className={order.cutlery_requested ? "md-kds-cutlery-requested" : "md-kds-cutlery-none"}
@@ -1321,25 +1340,6 @@ export function KitchenOrderCard({
             <Utensils className="size-3.5 shrink-0" aria-hidden="true" />
             {order.cutlery_requested ? "Include cutlery" : "No cutlery requested"}
           </span>
-          {order.vehicle && (
-            <span className="md-kds-vehicle">
-              {order.vehicle.colour} {order.vehicle.make} · Reg ends{" "}
-              <strong>{order.vehicle.registrationLast4}</strong>
-            </span>
-          )}
-          {order.fulfilment === "curbside" && order.pickupContact && (
-            <dl
-              className="grid w-full min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-1"
-              aria-label="Kerbside pickup contact"
-            >
-              <dt className="font-medium md-ops-muted">Name</dt>
-              <dd className="m-0 min-w-0 break-words font-bold">{order.pickupContact.name}</dd>
-              <dt className="font-medium md-ops-muted">WhatsApp number</dt>
-              <dd className="m-0 min-w-0 break-words font-bold tabular-nums">
-                {order.pickupContact.phone}
-              </dd>
-            </dl>
-          )}
         </div>
         {order.accepted_at && (
           <div className="md-kds-progress">
@@ -1352,7 +1352,7 @@ export function KitchenOrderCard({
             <progress
               value={progress.readyLines}
               max={progress.totalLines}
-              aria-label={`Preparation checklist for ${order.display_code}: ${progress.readyLines} of ${progress.totalLines} lines ready`}
+              aria-label={`Preparation checklist for ${referenceLabel.toLowerCase()} ${orderNumber}: ${progress.readyLines} of ${progress.totalLines} lines ready`}
             />
             <p>Check every dish, drink and extra.</p>
           </div>
@@ -1429,9 +1429,15 @@ export function KitchenOrderCard({
                           </ul>
                         )}
                         {item.unit_pence != null && (
-                          <p className="mt-1 text-xs md-ops-muted">
-                            £{(item.unit_pence / 100).toFixed(2)} each · £
-                            {((item.quantity * item.unit_pence) / 100).toFixed(2)} total
+                          <p className="md-kds-line-price">
+                            <strong>£{(item.unit_pence / 100).toFixed(2)} each</strong>
+                            <span> · selected choices included</span>
+                            {item.quantity > 1 && (
+                              <span>
+                                {" "}
+                                · £{((item.quantity * item.unit_pence) / 100).toFixed(2)} line total
+                              </span>
+                            )}
                           </p>
                         )}
                         {order.group_order &&
@@ -1448,22 +1454,22 @@ export function KitchenOrderCard({
                           >
                             {item.modifiers.map((modifier, index) => {
                               const detail = item.modifier_details?.[index];
+                              const priceVariant = detail?.kind === "variant";
+                              const groupName = priceVariant
+                                ? "Portion & flavour"
+                                : detail?.group_name;
                               return (
                                 <li key={`${index}:${modifier}`}>
                                   <span className="md-kds-choice-mark" aria-hidden="true" />
                                   <span className="min-w-0 break-words">
-                                    {detail?.group_name &&
+                                    {groupName &&
                                       !modifier
                                         .toLocaleLowerCase("en-GB")
-                                        .startsWith(
-                                          `${detail.group_name.toLocaleLowerCase("en-GB")}:`,
-                                        ) && (
-                                        <span className="md-kds-choice-group">
-                                          {detail.group_name}:{" "}
-                                        </span>
+                                        .startsWith(`${groupName.toLocaleLowerCase("en-GB")}:`) && (
+                                        <span className="md-kds-choice-group">{groupName}: </span>
                                       )}
                                     {modifier}
-                                    {detail && (
+                                    {detail && !priceVariant && (
                                       <span className="md-kds-choice-detail">
                                         {detail.quantity_per_parent}× each
                                         {detail.price_delta_pence
@@ -1514,10 +1520,12 @@ export function KitchenOrderCard({
             }}
           >
             <label className="block text-sm font-semibold md-ops-text">
-              Confirm the customer’s four-digit order number
+              Enter the customer’s four-digit collection code
               <input
                 className="md-ops-field mt-2 w-full text-center text-xl tracking-[.3em]"
-                aria-label={`Collection code for ${order.display_code}`}
+                aria-label={
+                  hasOrderNumber ? `Collection code for order ${orderNumber}` : "Collection code"
+                }
                 inputMode="numeric"
                 autoComplete="off"
                 pattern="[0-9]{4}"
@@ -1539,7 +1547,7 @@ export function KitchenOrderCard({
           <div
             className="space-y-3"
             role="group"
-            aria-label={`Confirm sealing order ${order.display_code}`}
+            aria-label={`Confirm sealing · ${referenceLabel} ${orderNumber}`}
             onKeyDown={(event) => {
               if (event.key === "Escape") onCancelSeal();
             }}
@@ -1571,7 +1579,7 @@ export function KitchenOrderCard({
             disabled={disabled || !order.routing_complete}
             onClick={onAction}
             className={`${button} md-ops-primary w-full`}
-            aria-label={`${action.label} · ${order.display_code}`}
+            aria-label={`${action.label} · ${referenceLabel} ${orderNumber}`}
           >
             {saving ? (
               <RefreshCw className="size-4 motion-safe:animate-spin" aria-hidden="true" />

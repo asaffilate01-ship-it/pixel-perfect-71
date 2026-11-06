@@ -102,6 +102,28 @@ const job = () => ({
   receipt: receipt(),
 });
 describe("canonical receipt presentation", () => {
+  test("browser and hardware validators retain exactly the same optional order number", () => {
+    const legacy = receipt();
+    expect(receiptSchema.parse(legacy)).not.toHaveProperty("orderNumber");
+    expect(validateReceipt(legacy)).not.toHaveProperty("orderNumber");
+    for (const orderNumber of ["0001", "10000", "9223372036854775807", null]) {
+      const value = { ...legacy, orderNumber };
+      const browser = receiptSchema.parse(value);
+      const hardware = validateReceipt(value);
+      expect(browser.orderNumber).toBe(orderNumber);
+      expect(hardware.orderNumber).toBe(orderNumber);
+      expect(browser.displayCode).toBe("0427");
+      expect(validateReceipt(browser)).toEqual(hardware);
+      expect(browser.items).toEqual(legacy.items);
+      expect(browser.packingPlan).toEqual(legacy.packingPlan);
+      expect(browser.totalPence).toBe(legacy.totalPence);
+    }
+    for (const orderNumber of ["0000", "1", "00001", "0001\n", "0001\u202e", 1]) {
+      const value = { ...legacy, orderNumber };
+      expect(() => receiptSchema.parse(value)).toThrow();
+      expect(() => validateReceipt(value)).toThrow();
+    }
+  });
   test("retains each person's name on parent and attached-extra allocations across both receipt parsers", () => {
     const value = receipt();
     value.packingPlan.bags[0]!.name = "Amer";

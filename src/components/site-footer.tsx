@@ -31,7 +31,7 @@ export function SiteFooter() {
             <Link to="/" hash="how">
               How it works
             </Link>
-            <Link to="/track">Track order</Link>
+            <Link to="/track">Track order · Coming soon</Link>
             <Link to="/play">Play &amp; Rewards</Link>
             <Link to="/franchise">Franchises</Link>
             <Link to="/ops">Staff sign-in</Link>
@@ -54,7 +54,8 @@ export function SiteFooter() {
               </p>
             ))}
             <p>All times are UK local time.</p>
-            <p>MealDeck ordering coming soon.</p>
+            <p>Order online for collection or kerbside during opening hours.</p>
+            <p>Delivery · Coming soon</p>
             <p className="md-whatsapp-soon">
               <MessageCircle size={16} aria-hidden="true" /> WhatsApp ordering — coming soon
             </p>

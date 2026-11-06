@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import {opsRpc} from "@/lib/mealdeck-ops-browser";
 import {reviewOrderExceptions} from "@/lib/mealdeck-ops-alerts";
+import {orderDisplayNumber} from "@/lib/mealdeck-order-number";
 import {OPS_PERMISSIONS,type OpsPermission} from "@/lib/mealdeck-ops-access";
 import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cleanDailySeries} from "@/lib/mealdeck-ops-math";
 import type {
@@ -65,6 +66,7 @@ export function OpsOrdersPanel({
   const[loading,setLoading]=useState(false);
   const[error,setError]=useState("");
   const alerts=reviewOrderExceptions(orders,new Date().toISOString(),{limit:8});
+  const orderLabel=(id:string)=>orderDisplayNumber(orders.find(row=>row.order_id===id)?.order_number,id.slice(0,8).toUpperCase());
   async function showLines(id:string){
     if(selected===id){setSelected("");setLines([]);return;}
     setLoading(true);setError("");setSelected(id);setLines([]);
@@ -96,7 +98,7 @@ export function OpsOrdersPanel({
             <p className="font-bold md-ops-ink">{alert.title}</p>
             <span className="rounded md-ops-soft px-2 py-1 text-[11px] font-bold uppercase md-ops-text">{alert.priority}</span>
           </div>
-          <p className="mt-1 text-xs md-ops-muted">Order {alert.orderId.slice(0,8).toUpperCase()} · {alert.ageMinutes} min since reference time</p>
+          <p className="mt-1 text-xs md-ops-muted">Order {orderLabel(alert.orderId)} · {alert.ageMinutes} min since reference time</p>
           <p className="mt-2 text-xs leading-5 md-ops-text">{alert.detail}</p>
         </li>)}
       </ul>:<p className="mt-3 text-sm md-ops-muted">No potential exceptions found in these order rows. This is not a payment or fulfilment health certification.</p>}
@@ -107,7 +109,7 @@ export function OpsOrdersPanel({
           {["Order","Channel","Fulfilment","Received","Items","Amount","Status","Paid","Details"].map(x=><th key={x} className="whitespace-nowrap px-3 py-3">{x}</th>)}
         </tr></thead>
         <tbody>{orders.map(row=><tr key={row.order_id} className="border-b md-ops-divider">
-          <td className="whitespace-nowrap px-3 py-4 font-bold">{row.order_id.slice(0,8).toUpperCase()}</td>
+          <td className="whitespace-nowrap px-3 py-4 font-bold tabular-nums">{orderLabel(row.order_id)}</td>
           <td className="px-3 py-4">{row.source??"—"}</td>
           <td className="px-3 py-4">{row.fulfilment}</td>
           <td className="whitespace-nowrap px-3 py-4">{new Date(row.created_at).toLocaleString("en-GB")}</td>
@@ -123,7 +125,7 @@ export function OpsOrdersPanel({
     </div>
     {orders.length===0&&<div className={empty}>No orders are available for this period and kitchen. Sample baskets are not included.</div>}
     {selected&&<aside className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5" aria-label="Selected order lines">
-      <h3 className="font-black">Order {selected.slice(0,8).toUpperCase()} · kitchen items</h3>
+      <h3 className="font-black">Order {orderLabel(selected)} · kitchen items</h3>
       <p className="mt-1 text-xs md-ops-muted">Item names, quantities, modifiers and order-item notes are from the canonical ledger. This view cannot change payment or KDS state.</p>
       {loading?<p className="mt-3 text-sm">Loading order items…</p>
       :error?<ErrorRow error={error}/>:lines.length?<div className="mt-3 space-y-2">

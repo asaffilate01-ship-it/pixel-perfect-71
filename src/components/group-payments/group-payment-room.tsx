@@ -817,6 +817,9 @@ export function GroupPaymentRoom({ routeRoomId }: { routeRoomId?: string }) {
                     Payment is confirmed for the full order. The organiser handles{" "}
                     {room.fulfilment === "curbside" ? "kerbside pickup" : "collection"}.
                   </p>
+                  {room.orderNumber && (
+                    <p>Order <strong className="md-shared-handoff">{room.orderNumber}</strong></p>
+                  )}
                   {room.handoffCode && (
                     <p>
                       Collection code{" "}

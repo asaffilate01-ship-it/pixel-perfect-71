@@ -2,11 +2,16 @@ import { Check, LockKeyhole, ShoppingBag, StickyNote, Users, Utensils } from "lu
 import type { KdsCompletedOrder } from "@/lib/mealdeck-kds-workflow";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { KDS_FULFILMENT_LABELS, kdsClockTime } from "@/lib/mealdeck-kds-view";
+import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
+import { KdsPickupDetails } from "./kds-pickup-details";
 
 /** Read-only durable history. No checklist, mutation, payment or print action. */
 export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
   const quantity = order.items.reduce((total, item) => total + item.quantity, 0);
   const bags = new Set(order.items.flatMap((item) => item.bags?.map((bag) => bag.number) ?? []));
+  const orderNumber = orderDisplayNumber(order.order_number, order.display_code);
+  const hasOrderNumber = isOrderNumber(order.order_number);
+  const referenceLabel = hasOrderNumber ? "Order" : "Collection code";
   return (
     <article
       className="md-ops-ticket md-kds-ticket min-w-0 overflow-hidden border md-ops-border border-t-4 md-ops-stage-ready md-ops-paper"
@@ -16,7 +21,7 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
       aria-labelledby={`kds-completed-${order.order_id}`}
     >
       <header className="md-ops-ticket-heading md-kds-ticket-heading border-b md-ops-divider">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="md-kds-fulfilment">{KDS_FULFILMENT_LABELS[order.fulfilment]}</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900">
             <Check size={16} aria-hidden="true" />
@@ -25,9 +30,9 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
         </div>
         <div className="md-kds-ticket-identity">
           <div className="min-w-0">
-            <p className="md-kds-ticket-eyebrow">Order</p>
+            <p className="md-kds-ticket-eyebrow">{referenceLabel}</p>
             <h3 id={`kds-completed-${order.order_id}`} className="md-kds-order-number">
-              {order.display_code}
+              {orderNumber}
             </h3>
           </div>
           <div className="md-kds-ticket-timer">
@@ -37,6 +42,12 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
             </strong>
           </div>
         </div>
+        {hasOrderNumber && (order.fulfilment === "pickup" || order.fulfilment === "curbside") && (
+          <p className="md-kds-collection-code">
+            <span>Collection code</span>
+            <strong>{order.display_code}</strong>
+          </p>
+        )}
         <div className="md-kds-ticket-meta">
           <span>
             {quantity} {quantity === 1 ? "item" : "items"}
@@ -65,6 +76,10 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
         </p>
       </header>
       <div className="md-kds-ticket-body">
+        <KdsPickupDetails
+          fulfilment={order.fulfilment}
+          pickupContact={order.pickupContact ?? null}
+        />
         <div className="md-kds-packing-flags">
           <span
             className={order.cutlery_requested ? "md-kds-cutlery-requested" : "md-kds-cutlery-none"}
@@ -82,7 +97,10 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
             </p>
           </div>
         )}
-        <ul className="md-kds-lines" aria-label={`Completed items for ${order.display_code}`}>
+        <ul
+          className="md-kds-lines"
+          aria-label={`Completed items for ${referenceLabel.toLowerCase()} ${orderNumber}`}
+        >
           {order.items.map((item) => (
             <li
               key={item.order_item_id}

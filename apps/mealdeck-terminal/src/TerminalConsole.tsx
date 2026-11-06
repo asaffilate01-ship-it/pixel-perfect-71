@@ -388,8 +388,11 @@ export function TerminalConsole({
           {!!payment.order && (
             <>
               <Text style={styles.body}>
-                Order {payment.order.handoffCode ?? payment.order.orderId}
+                {payment.order.orderNumber ? `Order ${payment.order.orderNumber}` : `Reference ${payment.order.orderId}`}
               </Text>
+              {!!payment.order.handoffCode && (
+                <Text style={styles.small}>Collection code {payment.order.handoffCode}</Text>
+              )}
               <Text style={styles.small}>
                 {payment.order.kitchenName} ·{" "}
                 {payment.order.fulfilment === "curbside" ? "Kerbside" : "Pickup / walk-in"}

@@ -69,6 +69,55 @@ function board(): KdsBoard {
 }
 
 describe("MealDeck canonical KDS response boundaries", () => {
+  test("retains explicit modifier kinds without changing full canonical item prices", () => {
+    for (const kind of ["source", "cross", "variant", undefined] as const) {
+      const value = board();
+      const line = value.orders[0]!.items[0]!;
+      line.unit_pence = 350;
+      line.modifier_details = [
+        {
+          name: "Plain · 3 pieces",
+          group_name: "Portion & flavour",
+          price_delta_pence: 51,
+          quantity_per_parent: 1,
+          ...(kind ? { kind } : {}),
+        },
+      ];
+      const parsed = parseKdsBoard(value, scope).orders[0]!.items[0]!;
+      expect(parsed.modifier_details?.[0]?.kind).toBe(kind);
+      expect(parsed.modifier_details?.[0]?.price_delta_pence).toBe(51);
+      expect(parsed.unit_pence).toBe(350);
+    }
+    const value = board();
+    Object.assign(value.orders[0]!.items[0]!, {
+      modifier_details: [
+        {
+          name: "Plain",
+          group_name: "Portion",
+          price_delta_pence: 51,
+          quantity_per_parent: 1,
+          kind: "guessed",
+        },
+      ],
+    });
+    expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+  });
+  test("keeps canonical order numbers distinct from legacy codes without changing readiness", () => {
+    for (const order_number of ["0001", "10000", null]) {
+      const value = board();
+      value.orders[0]!.order_number = order_number;
+      const result = parseKdsBoard(value, scope).orders[0]!;
+      expect(result.order_number).toBe(order_number);
+      expect(result.display_code).toBe("0438");
+      expect(result.preparation_status).toBe("queued");
+      expect(result.items[0]!.modifiers).toEqual(item().modifiers);
+    }
+    for (const order_number of ["0000", "1", "00001", "0001\n", 1]) {
+      const value = board();
+      Object.assign(value.orders[0]!, { order_number });
+      expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+    }
+  });
   test("retains exact food instructions in one purchased master line", () => {
     const result = parseKdsBoard(board(), scope);
     expect(result.orders).toHaveLength(1);
@@ -225,21 +274,23 @@ describe("MealDeck canonical KDS response boundaries", () => {
     expect(parseKdsBoard(value, scope).orders[0]!.pickupContact).toBeNull();
   });
 
-  test("copies only validated kerbside name and canonical contact number", () => {
-    const value = board();
-    Object.assign(value.orders[0]!, {
-      fulfilment: "curbside",
-      pickupContact: {
-        name: "\u00a0آمنہ O’Neill\u00a0",
-        phone: "+447700900123",
-        email: "not-for-the-kitchen@example.invalid",
-        deliveryAddress: "not-for-the-kitchen",
-      },
-    });
-    const result = parseKdsBoard(value, scope).orders[0]!;
-    expect(result.pickupContact).toEqual({ name: "آمنہ O’Neill", phone: "+447700900123" });
-    expect(JSON.stringify(result)).not.toContain("not-for-the-kitchen");
-    expect(result.items[0]!.participant_name).toBe("Alex");
+  test("copies only validated pickup or kerbside name and canonical contact number", () => {
+    for (const fulfilment of ["pickup", "curbside"] as const) {
+      const value = board();
+      Object.assign(value.orders[0]!, {
+        fulfilment,
+        pickupContact: {
+          name: "\u00a0آمنہ O’Neill\u00a0",
+          phone: "+447700900123",
+          email: "not-for-the-kitchen@example.invalid",
+          deliveryAddress: "not-for-the-kitchen",
+        },
+      });
+      const result = parseKdsBoard(value, scope).orders[0]!;
+      expect(result.pickupContact).toEqual({ name: "آمنہ O’Neill", phone: "+447700900123" });
+      expect(JSON.stringify(result)).not.toContain("not-for-the-kitchen");
+      expect(result.items[0]!.participant_name).toBe("Alex");
+    }
   });
 
   test("rejects malformed contacts, unsafe names and noncanonical phone numbers", () => {
@@ -263,14 +314,16 @@ describe("MealDeck canonical KDS response boundaries", () => {
       { ...contact, phone: "+4477009001234567" },
       { ...contact, phone: "https://wa.me/447700900123" },
     ]) {
-      const value = board();
-      Object.assign(value.orders[0]!, { fulfilment: "curbside", pickupContact: invalidContact });
-      expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+      for (const fulfilment of ["pickup", "curbside"] as const) {
+        const value = board();
+        Object.assign(value.orders[0]!, { fulfilment, pickupContact: invalidContact });
+        expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+      }
     }
   });
 
   test("discards contact projections from every other fulfilment", () => {
-    for (const fulfilment of ["pickup", "delivery", "dine_in"] as const) {
+    for (const fulfilment of ["delivery", "dine_in"] as const) {
       const value = board();
       Object.assign(value.orders[0]!, {
         fulfilment,

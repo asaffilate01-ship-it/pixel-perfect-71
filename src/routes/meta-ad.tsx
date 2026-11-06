@@ -224,8 +224,8 @@ function FirstOrderExplainer() {
               <h3>{kerbside ? "Stay comfy. We’ll bring it." : "Pick up. Tuck in."}</h3>
               <p>
                 {kerbside
-                  ? "When your order is ready, arrive at the pickup location in the car you registered. Confirm your order number with the team at handoff."
-                  : "Come to the collection point when your order is ready. Give the team your order number to collect your food."}{" "}
+                  ? "When your order is ready, arrive at the pickup location in the car you registered. Confirm your collection code with the team at handoff."
+                  : "Come to the collection point when your order is ready. Give the team your collection code to collect your food."}{" "}
                 Your receipt comes with your order.
               </p>
             </li>

@@ -59,15 +59,15 @@ const directBenefits = [
   },
   {
     icon: WalletCards,
-    title: "Order together",
-    copy: "Join one room. Pay for your own food, or let the organiser pay for everyone.",
+    title: "Group ordering · 9 November",
+    copy: "Starting 9 November. Pay for your own food, or let the organiser pay for everyone.",
   },
   {
     icon: Star,
     title: "Double points offer",
     copy: "Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive.",
   },
-  { icon: MapPin, title: "Live tracking", copy: "Follow the complete MealDeck handoff." },
+  { icon: MapPin, title: "Delivery tracking · Coming soon", copy: "Collection progress is on your order confirmation page." },
 ];
 
 const steps = [
@@ -85,7 +85,7 @@ const steps = [
   {
     n: "04",
     title: "Follow your order",
-    copy: "See when it is accepted, preparing and ready. Show your order number at collection.",
+    copy: "See when it is accepted, preparing and ready. Give your collection code to the team at handover.",
   },
 ];
 
@@ -120,19 +120,19 @@ function LandingPage() {
               <p className="md-hero-tagline">{MEALDECK_BUSINESS.tagline}</p>
               <div className="md-hero-actions">
                 <Link to="/menus" className="md-btn md-btn-yellow">
-                  Explore the launch menus <ArrowRight />
+                  Order from our menus <ArrowRight />
                 </Link>
                 <Link to="/" hash="brands" className="md-btn md-btn-outline-light">
                   See all brands
                 </Link>
               </div>
-              <p className="md-hero-soon">Coming soon to a table near you.</p>
+              <p className="md-hero-soon">Luton collection and kerbside, from our kitchen to you.</p>
               <div className="md-hero-proof">
                 <span>
                   <Check /> Mix brands
                 </span>
                 <span>
-                  <Clock3 /> Ordering coming soon
+                  <Clock3 /> Order during opening hours
                 </span>
                 <span>
                   <Gamepad2 /> Free games open
@@ -149,8 +149,8 @@ function LandingPage() {
 
         <section className="md-direct-strip" aria-label="Why order direct">
           <div className="md-direct-strip-title">
-            <span>COMING SOON.</span>
-            <strong>Explore the food. Try the games. Ordering opens later.</strong>
+            <span>ORDER DIRECT.</span>
+            <strong>Five menus. One order. Luton collection and kerbside.</strong>
           </div>
           <div className="md-direct-grid">
             {directBenefits.map(({ icon: Icon, title, copy }) => (
@@ -172,7 +172,7 @@ function LandingPage() {
               <h2>Your first five menus are here.</h2>
               <p>
                 Discover burgers in Luton and every side of your craving: five launch brands, with
-                more menus in the next deck. Build your picks now — ordering is coming soon.
+                more menus in the next deck. Mix your picks and order for collection or kerbside.
               </p>
             </div>
             <Link to="/menus" className="md-btn md-btn-red">
@@ -267,7 +267,7 @@ function LandingPage() {
 
         <section className="md-section md-section-black md-fulfilment-section">
           <div className="md-section-heading md-section-heading-light">
-            <p className="md-kicker">MealDeck ordering · Coming soon</p>
+            <p className="md-kicker">MealDeck ordering · Collection &amp; kerbside</p>
             <h2>Collection or kerbside. Your choice.</h2>
           </div>
           <div className="md-fulfilment-grid">
@@ -312,8 +312,8 @@ function LandingPage() {
               <article>
                 <span className="md-channels-suit">♠</span>
                 <Smartphone />
-                <h4>Mobile app</h4>
-                <p>Mobile ordering coming soon.</p>
+                <h4>On your phone</h4>
+                <p>Order on mobile. Add MealDeck to your home screen.</p>
               </article>
             </div>
           </div>
@@ -321,10 +321,10 @@ function LandingPage() {
             <div>
               <p className="md-kicker md-kicker-light">Luton pickup / kerbside</p>
               <h3>314–318 Selbourne Road, Luton, LU4 8NU</h3>
-              <p>MealDeck collection is coming soon. No orders are being accepted.</p>
+              <p>Order online for collection or kerbside during our kitchen opening hours.</p>
             </div>
-            <Link to="/order" className="md-btn md-btn-yellow">
-              Collection · Coming soon <ArrowRight />
+            <Link to="/menus" className="md-btn md-btn-yellow">
+              Order for collection <ArrowRight />
             </Link>
           </div>
         </section>
@@ -338,7 +338,7 @@ function LandingPage() {
             <Link to="/luton" className="md-location-card">
               <span>Luton</span>
               <h3>Evening cravings, dealt together.</h3>
-              <p>First launch kitchen · Ordering coming soon</p>
+              <p>Order online · Collection and kerbside</p>
               <strong>
                 Explore Luton <ArrowRight />
               </strong>

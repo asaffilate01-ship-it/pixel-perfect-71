@@ -4,6 +4,12 @@ const pence = z.number().int().min(0).max(100_000_000);
 export const terminalOrderSchema = z
   .object({
     orderId: z.uuid(),
+    // Display only; the four-digit collection credential remains separate.
+    orderNumber: z
+      .string()
+      .regex(/^(?!0000$)(?:[0-9]{4}|[1-9][0-9]{4,18})$/)
+      .nullable()
+      .optional(),
     handoffCode: z
       .string()
       .regex(/^\d{4}$/)

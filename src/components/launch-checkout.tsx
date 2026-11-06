@@ -64,6 +64,7 @@ import {
 } from "@/lib/mealdeck-customer-browser";
 import { parseKerbsideVehicle, type MealDeckOpeningOffer } from "@/lib/mealdeck-opening-offer";
 import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timing";
+import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { safeMealDeckCheckoutRedirect } from "@/lib/mealdeck-checkout-url";
 import {
   CHECKOUT_MODE_KEY,
@@ -122,6 +123,7 @@ type Receipt = {
   status: string;
   paymentStatus: string;
   verifiedPaid: boolean;
+  orderNumber?: string | null;
   handoffCode: string | null;
   fulfilment: Fulfilment;
   createdAt: string;
@@ -368,7 +370,7 @@ function ReceiptProgress({ receipt }: { receipt: Receipt }) {
         {receipt.completedAt
           ? "Thanks for ordering with MealDeck. Enjoy your food."
           : receipt.readyForCollectionAt
-            ? "Your complete order is packed and ready. Show your order number when collecting."
+            ? "Your complete order is packed and ready. Give your collection code to the team at handover."
             : receipt.preparingAt
               ? "The kitchen is preparing your brands together for one collection."
               : receipt.acceptedAt
@@ -1232,11 +1234,18 @@ export function LaunchCheckout({
                           ? "Your basket is waiting for you."
                           : "We're checking your payment."}
                     </h2>
-                    {receipt.handoffCode && (
+                    {receipt.verifiedPaid && orderDisplayNumber(receipt.orderNumber, "") && (
                       <div className="md-checkout-order-code">
                         <span>Your order number</span>
+                        <strong>{orderDisplayNumber(receipt.orderNumber, "")}</strong>
+                        <small>Use this number when speaking to our team.</small>
+                      </div>
+                    )}
+                    {receipt.verifiedPaid && receipt.handoffCode && (
+                      <div className="md-checkout-collection-code">
+                        <span>Collection code</span>
                         <strong>{receipt.handoffCode}</strong>
-                        <small>Show this number when collecting.</small>
+                        <small>Give this code to the team when your food is handed over.</small>
                       </div>
                     )}
                     {receipt.verifiedPaid && !receipt.completedAt && (
@@ -1252,7 +1261,7 @@ export function LaunchCheckout({
                     {receipt.verifiedPaid && receipt.fulfilment === "curbside" && (
                       <p>
                         {KERBSIDE_PARKING_INSTRUCTION} For kerbside pickup, we’ll use your car
-                        details and confirm your order number at handoff.
+                        details and confirm your collection code at handoff.
                       </p>
                     )}
                     {!receipt.verifiedPaid && !receipt.held && !receipt.paymentSessionExpired && (

@@ -4,19 +4,24 @@ import {
   type MealDeckReceipt,
 } from "@/lib/mealdeck-printer";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
+import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
+  const number = orderDisplayNumber(r.orderNumber, "");
   const ordered = r.items
     .filter((i) => !i.parentLineId)
     .flatMap((parent) => [parent, ...r.items.filter((i) => i.parentLineId === parent.lineId)]);
   return (
     <section
       className="md-receipt-preview space-y-3 bg-white p-5 text-black"
-      aria-label={`Receipt for order ${r.displayCode}`}
+      aria-label={number ? `Receipt for order ${number}` : `Receipt with collection code ${r.displayCode}`}
     >
       <header className="border-b border-dashed border-black pb-3 text-center">
         <h3 className="text-2xl font-black">MEALDECK</h3>
         <p className="text-sm">{r.locationName}</p>
-        <p className="my-2 text-3xl font-black">{r.displayCode}</p>
+        {number && <p className="my-2 break-words text-3xl font-black tabular-nums">ORDER {number}</p>}
+        <p className="my-2 text-sm font-bold">
+          Collection code <strong className="tabular-nums">{r.displayCode}</strong>
+        </p>
         <p className="font-bold">
           {r.fulfilment === "curbside" ? "KERBSIDE" : "COLLECTION"} · PAID
         </p>

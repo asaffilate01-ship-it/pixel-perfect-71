@@ -292,6 +292,24 @@ describe("private group payment links and server projection", () => {
     expect(held.paidPence).toBe(1500);
     expect(held.canPay).toBe(false);
   });
+  test("projects only a valid canonical display number without inferring group funding", () => {
+    for (const orderNumber of ["0001", "10000", null]) {
+      const room = sharedRoomForBrowser(
+        { ...rawRoom(), orderNumber },
+        { available: true, hasIdentity: true },
+      );
+      expect(room.orderNumber).toBe(orderNumber);
+      expect(room.handoffCode).toBeNull();
+      expect(room.status).toBe("awaiting_payment");
+      expect(room.paidPence).toBe(0);
+    }
+    expect(() =>
+      sharedRoomForBrowser(
+        { ...rawRoom(), orderNumber: "0000" },
+        { available: true, hasIdentity: true },
+      ),
+    ).toThrow();
+  });
 });
 
 describe("group creation admission and safe retry", () => {

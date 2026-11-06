@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, RefreshCw, ShoppingBag } from "lucide-react";
 import { customerRpc } from "@/lib/mealdeck-customer-browser";
+import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
   customerOrderStatus,
   parseCustomerOrders,
@@ -89,8 +90,10 @@ export function CustomerOrders() {
               <Link to="/checkout" search={{ order: order.orderId }}>
                 <div>
                   <strong>
-                    {order.verifiedPaid && order.handoffCode
-                      ? "Order " + order.handoffCode
+                    {order.verifiedPaid
+                      ? orderDisplayNumber(order.orderNumber, "")
+                        ? "Order " + orderDisplayNumber(order.orderNumber, "")
+                        : "MealDeck order"
                       : "MealDeck checkout"}
                   </strong>
                   <span>

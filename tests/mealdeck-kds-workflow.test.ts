@@ -44,6 +44,50 @@ function fixture() {
   };
 }
 describe("durable Done history", () => {
+  test("keeps sanitized pickup and kerbside contacts on completed tickets only", () => {
+    for (const fulfilment of ["pickup", "curbside"]) {
+      const value = fixture();
+      Object.assign(value.completed_orders[0], {
+        fulfilment,
+        pickupContact: {
+          name: "  آمنہ O’Neill  ",
+          phone: "+447700900123",
+          email: "private@example.invalid",
+        },
+      });
+      const order = parseKdsWorkflowBoard(value, scope).completed_orders[0]!;
+      expect(order.pickupContact).toEqual({ name: "آمنہ O’Neill", phone: "+447700900123" });
+      expect(JSON.stringify(order)).not.toContain("private@example.invalid");
+      for (const pickupContact of [
+        { name: "Sam\n", phone: "+447700900123" },
+        { name: "Sam", phone: "07700900123" },
+        { name: "Sam\u202e", phone: "+447700900123" },
+      ]) {
+        Object.assign(value.completed_orders[0], { pickupContact });
+        expect(() => parseKdsWorkflowBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+      }
+    }
+    for (const fulfilment of ["delivery", "dine_in"]) {
+      const value = fixture();
+      Object.assign(value.completed_orders[0], {
+        fulfilment,
+        pickupContact: { name: "Private", phone: "+447700900123" },
+      });
+      expect(parseKdsWorkflowBoard(value, scope).completed_orders[0]!.pickupContact).toBeNull();
+    }
+  });
+  test("retains the same canonical number after handover without replacing the collection code", () => {
+    for (const order_number of ["0001", "10000", null]) {
+      const value = fixture();
+      Object.assign(value.completed_orders[0], { order_number });
+      const order = parseKdsWorkflowBoard(value, scope).completed_orders[0]!;
+      expect(order.order_number).toBe(order_number);
+      expect(order.display_code).toBe("1234");
+    }
+    const value = fixture();
+    Object.assign(value.completed_orders[0], { order_number: "0000" });
+    expect(() => parseKdsWorkflowBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+  });
   test("retains named bags, exact choices and handover time", () => {
     const result = parseKdsWorkflowBoard(fixture(), scope);
     expect(result.completed_orders[0].items[0].bags?.[0].name).toBe("Amer");

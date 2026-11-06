@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
+import { orderNumberSchema } from "./mealdeck-order-number";
 
 /** Browser-safe transport only. Payment and allocation authority stays on the server. */
 export type SharedPaymentChoice = "host" | "by_bag" | "equal";
@@ -37,6 +38,7 @@ export const sharedPaymentRoomSchema = z
     schemaVersion: z.literal(1),
     roomId: uuid,
     orderId: uuid,
+    orderNumber: orderNumberSchema.nullable().optional(),
     handoffCode: z
       .string()
       .regex(/^\d{4}$/)

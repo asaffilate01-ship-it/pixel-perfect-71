@@ -52,7 +52,7 @@ jobs:
           bunx eslint src/components/pwa-provider.tsx src/components/pwa-install-card.tsx src/lib/mealdeck-pwa-context.ts tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
       - name: Verified customer checkout, packing, receipt printing and distinct staff alerts
         run: >-
-          bun test tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
+          bun test tests/mealdeck-order-number.test.ts tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
           tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts
           tests/mealdeck-checkout-browser.test.ts
           tests/mealdeck-checkout-feedback.test.ts
@@ -78,7 +78,10 @@ jobs:
           --rule 'prettier/prettier: off'
       - name: Customer launch implementation lint
         run: >-
-          bunx eslint src/components/customer-account.tsx src/components/customer-orders.tsx
+          bunx eslint src/lib/mealdeck-order-number.ts tests/mealdeck-order-number.test.ts
+          deploy/mealdeck/paid-order-numbers.mjs tests/postgres/paid-order-numbers-behavior.mjs
+          tests/postgres/paid-order-numbers-fixture.mjs tests/postgres/paid-order-numbers-concurrency.mjs
+          src/components/customer-account.tsx src/components/customer-orders.tsx
           src/lib/mealdeck-customer.ts src/lib/mealdeck-account-entry.ts src/lib/mealdeck-customer-orders.ts
           src/lib/mealdeck-customer-browser.ts src/lib/mealdeck-customer.functions.ts
           src/lib/mealdeck-customer-notifications.ts src/routes/account.tsx
@@ -183,6 +186,7 @@ jobs:
         run: >
           bunx eslint src/routes/ops.tsx src/routes/kds.tsx
           src/components/ops/operations-workspace.tsx src/components/ops/kds-panel.tsx
+          src/components/ops/kds-completed-card.tsx src/components/ops/kds-pickup-details.tsx
           src/lib/mealdeck-kds.ts src/lib/mealdeck-kds-presentation.ts
           tests/mealdeck-kds*.test.ts
           src/components/ops/ops-panels.tsx src/components/ops/menu-manager.tsx
@@ -684,6 +688,7 @@ jobs:
             public-menu-read,
             milkcake-desserts,
             kerbside-contact,
+            paid-order-numbers,
             live-verification,
           ]
     services:

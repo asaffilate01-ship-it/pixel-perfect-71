@@ -76,6 +76,9 @@ export function GroupRoomBilling({
               The kitchen confirms acceptance and preparation separately. The organiser handles{" "}
               {room.fulfilment === "curbside" ? "kerbside collection" : "collection"}.
             </p>
+            {payment.orderNumber && (
+              <p className="md-room-handoff">Order <strong>{payment.orderNumber}</strong></p>
+            )}
             {payment.handoffCode && (
               <p className="md-room-handoff">
                 Collection code <strong>{payment.handoffCode}</strong>

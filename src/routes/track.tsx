@@ -1,5 +1,5 @@
 import { COMING_SOON } from "@/lib/launch-status";
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -24,26 +24,43 @@ import { getOrderTracking, type OrderTrackingResult } from "@/lib/dishbee.functi
 import { seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/track")({
-  // Collection launch orders and progress belong to the verified customer's
-  // account. Keep the legacy reference lookup behind its existing release gate.
-  beforeLoad: () => {
-    if (COMING_SOON)
-      throw redirect({
-        to: "/account",
-        search: { signin: 1 },
-        hash: "customer-orders-title",
-        replace: true,
-      });
-  },
   head: () =>
     seo({
-      title: "Your MealDeck order progress",
+      title: "Delivery tracking — coming soon",
       description:
-        "Sign in to see your MealDeck orders, collection progress and full itemised receipts.",
+        "MealDeck delivery tracking is coming soon. Follow a paid Luton collection or kerbside order from its private confirmation page.",
       path: "/track",
     }),
-  component: TrackOrderPage,
+  // The public delivery lookup stays closed. Paid collection receipts keep their
+  // existing private progress view at /checkout; no customer sign-in redirect.
+  component: () => COMING_SOON ? <TrackingComingSoonPage /> : <TrackOrderPage />,
 });
+
+export function TrackingComingSoonPage() {
+  return (
+    <div className="md-marketing-shell">
+      <SiteHeader />
+      <main className="mx-auto max-w-2xl px-6 py-16 text-center sm:py-24">
+        <Bike className="mx-auto mb-5 size-12 text-[var(--md-red-deep)]" aria-hidden="true" />
+        <p className="text-sm font-bold uppercase tracking-widest text-[var(--md-red-deep)]">Track your order</p>
+        <h1 className="my-5 font-display text-4xl font-black sm:text-5xl">Delivery tracking<br />coming soon.</h1>
+        <p className="text-lg leading-8 text-[var(--md-muted)]">
+          Luton collection and kerbside ordering are available during kitchen opening hours.
+          Delivery and live courier tracking are coming soon.
+        </p>
+        <section className="mt-8 rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] p-6 text-left" aria-labelledby="collection-progress-heading">
+          <h2 id="collection-progress-heading" className="font-display text-xl font-bold">Already placed a collection order?</h2>
+          <p className="mt-2 leading-7 text-[var(--md-muted)]">
+            Keep your payment confirmation page open. It shows your kitchen progress,
+            order number and collection code, including when your food is ready.
+          </p>
+        </section>
+        <Link to="/menus" className="md-btn md-btn-red mt-8">Browse menus</Link>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NETWORK_MESSAGE = "We couldn't refresh your order. Please try again.";

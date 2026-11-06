@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { orderNumberSchema } from "./mealdeck-order-number";
 import { launchMenuBrands, LAUNCH_MENU_PRICE_REVISION } from "./launch-menu-catalogue";
 import {
   CheckoutProblem,
@@ -64,6 +65,7 @@ const pence = z.number().int().nonnegative().max(100_000_000);
 const publicOrderSchema = z
   .object({
     orderId: z.uuid(),
+    orderNumber: orderNumberSchema.nullable().optional(),
     handoffCode: z
       .string()
       .regex(/^\d{4}$/)
@@ -222,6 +224,7 @@ export function terminalOrderForApp(data: PaymentJson, ready: boolean): Terminal
   };
   const parsed = publicOrderSchema.safeParse({
     orderId: data["orderId"],
+    ...(data["orderNumber"] === undefined ? {} : { orderNumber: data["orderNumber"] }),
     handoffCode: data["displayCode"] ?? null,
     fulfilment: data["fulfilment"],
     kitchenName: "MealDeck Luton",

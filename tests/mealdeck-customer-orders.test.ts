@@ -16,6 +16,21 @@ const order = {
   completedAt: null,
 };
 describe("private customer order summaries", () => {
+  test("retains a validated display number separately from the collection credential", () => {
+    for (const orderNumber of ["0001", "10000", null]) {
+      const result = parseCustomerOrders({ orders: [{ ...order, orderNumber }] });
+      expect(result?.[0]?.orderNumber).toBe(orderNumber);
+      expect(result?.[0]?.handoffCode).toBe("4827");
+    }
+    for (const orderNumber of ["0000", "1", "00001", "0001\n", 1])
+      expect(parseCustomerOrders({ orders: [{ ...order, orderNumber }] })).toBeNull();
+    const pending = parseCustomerOrders({
+      orders: [
+        { ...order, orderNumber: "0001", verifiedPaid: false, paidAt: null, handoffCode: null },
+      ],
+    })![0]!;
+    expect(customerOrderStatus(pending)).toBe("Awaiting payment");
+  });
   test("keeps an explicit receipt whitelist and rejects invalid/duplicated order destinations", () => {
     const result = parseCustomerOrders({
       orders: [{ ...order, email: "private@example.test", vehicle: { make: "private" } }],

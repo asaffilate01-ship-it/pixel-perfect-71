@@ -1,5 +1,8 @@
+import { isOrderNumber } from "./mealdeck-order-number";
+
 export type CustomerOrderSummary = {
   orderId: string;
+  orderNumber?: string | null;
   handoffCode: string | null;
   verifiedPaid: boolean;
   held: boolean;
@@ -33,6 +36,7 @@ export function parseCustomerOrders(value: unknown): CustomerOrderSummary[] | nu
       typeof entry["orderId"] !== "string" ||
       !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(entry["orderId"]) ||
       seen.has(entry["orderId"]) ||
+      (entry["orderNumber"] != null && !isOrderNumber(entry["orderNumber"])) ||
       !(
         entry["handoffCode"] === null ||
         (typeof entry["handoffCode"] === "string" && /^[0-9]{4}$/.test(entry["handoffCode"]))
@@ -60,6 +64,9 @@ export function parseCustomerOrders(value: unknown): CustomerOrderSummary[] | nu
     seen.add(entry["orderId"]);
     result.push({
       orderId: entry["orderId"],
+      ...(entry["orderNumber"] === undefined
+        ? {}
+        : { orderNumber: entry["orderNumber"] as string | null }),
       handoffCode: entry["handoffCode"] as string | null,
       verifiedPaid: entry["verifiedPaid"],
       held: entry["held"],
