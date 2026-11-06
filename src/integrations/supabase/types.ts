@@ -2589,6 +2589,15 @@ export type Database = {
         Args: { p_room: string }
         Returns: boolean
       }
+      mealdeck_accept_ordering_invitation: {
+        Args: {
+          p_actor_hash: string
+          p_invite_hash: string
+          p_name: string
+          p_room: string
+        }
+        Returns: Json
+      }
       mealdeck_begin_guest_session: {
         Args: {
           p_email: string
@@ -2597,6 +2606,17 @@ export type Database = {
           p_phone: string
           p_tenant: string
           p_token_hash: string
+        }
+        Returns: Json
+      }
+      mealdeck_bind_order_payment: {
+        Args: {
+          p_account: string
+          p_collection: string
+          p_intent: string
+          p_livemode: boolean
+          p_session: string
+          p_url: string
         }
         Returns: Json
       }
@@ -2609,6 +2629,32 @@ export type Database = {
           p_url: string
         }
         Returns: boolean
+      }
+      mealdeck_cancel_group_payment_room: {
+        Args: { p_customer: string; p_guest_token_hash: string; p_room: string }
+        Returns: Json
+      }
+      mealdeck_cancel_ordering_room: {
+        Args: {
+          p_actor_hash: string
+          p_customer: string
+          p_guest_token_hash: string
+          p_room: string
+        }
+        Returns: Json
+      }
+      mealdeck_cancel_terminal_payment: {
+        Args: {
+          p_actor: string
+          p_collection: string
+          p_location: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_close_ordering_invitations: {
+        Args: { p_actor_hash: string; p_room: string }
+        Returns: Json
       }
       mealdeck_create_checkout_quote: {
         Args: {
@@ -2623,6 +2669,20 @@ export type Database = {
         }
         Returns: Json
       }
+      mealdeck_create_group_payment_room: {
+        Args: {
+          p_attempt: string
+          p_customer: string
+          p_guest_token_hash: string
+          p_livemode: boolean
+          p_quote: string
+          p_room: string
+          p_share_tokens: Json
+          p_split_mode: string
+          p_stripe_account: string
+        }
+        Returns: Json
+      }
       mealdeck_create_guest_checkout_quote: {
         Args: {
           p_fulfilment: string
@@ -2632,6 +2692,37 @@ export type Database = {
           p_selection: Json
           p_tenant: string
           p_token_hash: string
+          p_vehicle: Json
+        }
+        Returns: Json
+      }
+      mealdeck_create_ordering_room: {
+        Args: {
+          p_actor_hash: string
+          p_attempt: string
+          p_customer: string
+          p_cutlery: boolean
+          p_fulfilment: string
+          p_guest_token_hash: string
+          p_invites: Json
+          p_location: string
+          p_name: string
+          p_payment_mode: string
+          p_room: string
+          p_tenant: string
+          p_vehicle: Json
+        }
+        Returns: Json
+      }
+      mealdeck_create_terminal_quote: {
+        Args: {
+          p_actor: string
+          p_fulfilment: string
+          p_location: string
+          p_packing: Json
+          p_request_hash: string
+          p_selection: Json
+          p_tenant: string
           p_vehicle: Json
         }
         Returns: Json
@@ -2684,6 +2775,41 @@ export type Database = {
         Args: { p_location: string; p_tenant: string; p_token_hash: string }
         Returns: boolean
       }
+      mealdeck_finalize_ordering_room: {
+        Args: {
+          p_actor_hash: string
+          p_attempt: string
+          p_customer: string
+          p_expected_revision: number
+          p_guest_token_hash: string
+          p_livemode: boolean
+          p_packing: Json
+          p_request_hash: string
+          p_room: string
+          p_selection: Json
+          p_share_tokens: Json
+          p_stripe_account: string
+        }
+        Returns: Json
+      }
+      mealdeck_group_payment_collections: {
+        Args: {
+          p_customer: string
+          p_guest_token_hash: string
+          p_room: string
+          p_share_token_hash: string
+        }
+        Returns: Json
+      }
+      mealdeck_group_payment_status: {
+        Args: {
+          p_customer: string
+          p_guest_token_hash: string
+          p_room: string
+          p_share_token_hash: string
+        }
+        Returns: Json
+      }
       mealdeck_guest_order_receipt: {
         Args: {
           p_location: string
@@ -2691,6 +2817,10 @@ export type Database = {
           p_tenant: string
           p_token_hash: string
         }
+        Returns: Json
+      }
+      mealdeck_leave_ordering_room: {
+        Args: { p_actor_hash: string; p_room: string }
         Returns: Json
       }
       mealdeck_online_checkout_status: {
@@ -3361,6 +3491,54 @@ export type Database = {
         }
         Returns: string
       }
+      mealdeck_order_payment_collection: {
+        Args: { p_account: string; p_collection: string; p_livemode: boolean }
+        Returns: Json
+      }
+      mealdeck_ordering_invitation: {
+        Args: { p_invite_hash: string; p_room: string }
+        Returns: Json
+      }
+      mealdeck_ordering_payment_access: {
+        Args: {
+          p_actor_hash: string
+          p_cover_remaining: boolean
+          p_customer: string
+          p_guest_token_hash: string
+          p_room: string
+        }
+        Returns: Json
+      }
+      mealdeck_ordering_payment_collections: {
+        Args: {
+          p_actor_hash: string
+          p_customer: string
+          p_guest_token_hash: string
+          p_room: string
+        }
+        Returns: Json
+      }
+      mealdeck_ordering_payment_status: {
+        Args: { p_actor_hash: string; p_room: string }
+        Returns: Json
+      }
+      mealdeck_ordering_room_status: {
+        Args: { p_actor_hash: string; p_room: string }
+        Returns: Json
+      }
+      mealdeck_prepare_group_payment: {
+        Args: {
+          p_attempt: string
+          p_cover_remaining: boolean
+          p_customer: string
+          p_guest_token_hash: string
+          p_livemode: boolean
+          p_room: string
+          p_share_token_hash: string
+          p_stripe_account: string
+        }
+        Returns: Json
+      }
       mealdeck_prepare_guest_stripe_order: {
         Args: {
           p_attempt: string
@@ -3380,6 +3558,20 @@ export type Database = {
           p_livemode: boolean
           p_quote: string
           p_stripe_account: string
+        }
+        Returns: Json
+      }
+      mealdeck_prepare_terminal_payment: {
+        Args: {
+          p_actor: string
+          p_attempt: string
+          p_livemode: boolean
+          p_location: string
+          p_order: string
+          p_quote: string
+          p_stripe_account: string
+          p_tenant: string
+          p_terminal_location: string
         }
         Returns: Json
       }
@@ -3453,6 +3645,24 @@ export type Database = {
         }
         Returns: Json
       }
+      mealdeck_reconcile_order_payment: {
+        Args: {
+          p_account: string
+          p_captured: number
+          p_collection: string
+          p_currency: string
+          p_disputed: boolean
+          p_event: string
+          p_hash: string
+          p_intent: string
+          p_livemode: boolean
+          p_order: string
+          p_refunded: number
+          p_session: string
+          p_type: string
+        }
+        Returns: Json
+      }
       mealdeck_reconcile_stripe_event: {
         Args: {
           p_account: string
@@ -3470,8 +3680,52 @@ export type Database = {
         }
         Returns: Json
       }
+      mealdeck_remove_ordering_invitation: {
+        Args: { p_actor_hash: string; p_participant: string; p_room: string }
+        Returns: Json
+      }
       mealdeck_resolve_guest_session: {
         Args: { p_location: string; p_tenant: string; p_token_hash: string }
+        Returns: Json
+      }
+      mealdeck_set_ordering_ready: {
+        Args: {
+          p_actor_hash: string
+          p_expected_version: number
+          p_ready: boolean
+          p_room: string
+        }
+        Returns: Json
+      }
+      mealdeck_terminal_authorize: {
+        Args: { p_actor: string; p_location: string; p_tenant: string }
+        Returns: Json
+      }
+      mealdeck_terminal_order_status: {
+        Args: {
+          p_actor: string
+          p_location: string
+          p_reference: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_terminal_payment_attempt: {
+        Args: {
+          p_actor: string
+          p_attempt: string
+          p_location: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_update_ordering_choices: {
+        Args: {
+          p_actor_hash: string
+          p_expected_version: number
+          p_picks: Json
+          p_room: string
+        }
         Returns: Json
       }
     }
