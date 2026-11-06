@@ -31,6 +31,7 @@ import {
   readCustomerCapabilities,
   readMealDeckCustomerAccount,
   registerMealDeckCustomer,
+  signInMealDeckCustomerWithPassword,
   requestCustomerEmail,
   signOutMealDeckCustomer,
   subscribeMealDeckCustomerAuth,
@@ -169,12 +170,16 @@ function ContactFields({
 
 function CustomerEntry({
   onRequest,
+  onPassword,
   busy,
 }: {
   onRequest: (email: string, registration?: CustomerRegistration) => Promise<void>;
+  onPassword: (email: string, password: string) => Promise<void>;
   busy: boolean;
 }) {
   const [mode, setMode] = useState<"register" | "signin">("register");
+  const [usePassword, setUsePassword] = useState(false);
+  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -207,11 +212,17 @@ function CustomerEntry({
       <p>
         {mode === "register"
           ? "Create your account and verify your email for member offers and optional offer alerts. Guest ordering is also available during our opening hours on 6–8 November."
-          : "We’ll email you a secure sign-in link. No password to remember."}
+          : usePassword
+            ? "Sign in with your email and password."
+            : "We’ll email you a secure sign-in link. No password to remember."}
       </p>
       <form
         onSubmit={(event) => {
           event.preventDefault();
+          if (mode === "signin" && usePassword) {
+            void onPassword(email, password);
+            return;
+          }
           void onRequest(
             email,
             mode === "register" ? { name, email, phone, preferences } : undefined,
@@ -240,8 +251,38 @@ function CustomerEntry({
             maxLength={254}
             disabled={busy}
           />
-          <small>We’ll send a verification link to this address.</small>
+          {!(mode === "signin" && usePassword) && (
+            <small>We’ll send a verification link to this address.</small>
+          )}
         </label>
+        {mode === "signin" && usePassword && (
+          <label className="md-account-field">
+            Password
+            <input
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              maxLength={128}
+              disabled={busy}
+            />
+          </label>
+        )}
+        {mode === "signin" && (
+          <button
+            type="button"
+            className="md-account-text"
+            disabled={busy}
+            onClick={() => {
+              setUsePassword((value) => !value);
+              setPassword("");
+            }}
+          >
+            {usePassword ? "Email me a sign-in link instead" : "Sign in with a password instead"}
+          </button>
+        )}
         {mode === "register" && (
           <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
         )}
@@ -251,7 +292,15 @@ function CustomerEntry({
         </p>
         <button className="md-account-primary" type="submit" disabled={busy}>
           <Mail size={18} aria-hidden="true" />{" "}
-          {busy ? "Sending…" : mode === "register" ? "Verify my email" : "Email me a sign-in link"}
+          {busy
+            ? mode === "signin" && usePassword
+              ? "Signing in…"
+              : "Sending…"
+            : mode === "register"
+              ? "Verify my email"
+              : usePassword
+                ? "Sign in"
+                : "Email me a sign-in link"}
         </button>
       </form>
     </section>
@@ -596,6 +645,9 @@ function CustomerSettings({
   );
 }
 
+const LINK_FAILED =
+  "That sign-in link didn’t work here. Links only work once, in the same browser that requested them. Use Sign in to request a new link, enter the code from your email, or sign in with a password.";
+
 export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerReturnTarget }) {
   const returnTarget = customerReturnTarget(returnTo);
   const [account, setAccount] = useState<CustomerAccountState>({ status: "signed_out" });
@@ -625,6 +677,7 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
   useEffect(() => {
     let active = true;
     let unsubscribe = () => {};
+    let linkFailed = false;
     async function refresh() {
       try {
         const next = await readMealDeckCustomerAccount();
@@ -632,10 +685,16 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
           setAccount(next);
           if (next.status === "signed_in") setEmailPending(null);
         }
+        return next.status;
       } catch (reason) {
-        if (active) showError(reason);
+        if (active) showError(linkFailed ? new CustomerAccountError("invalid", LINK_FAILED) : reason);
+        return null;
       }
     }
+    const linkParams = new URLSearchParams(window.location.search + "&" + window.location.hash.slice(1));
+    const arrivedFromEmailLink =
+      attempt === 0 &&
+      (linkParams.has("code") || linkParams.has("error") || linkParams.has("error_code"));
     void (async () => {
       setLoading(true);
       setConnectionError("");
@@ -648,7 +707,15 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
         if (!active) return;
         setCapabilities(ready);
         setPushPublicKey(push.publicKey);
-        await refresh();
+        const status = await refresh();
+        // An email link that couldn't sign in (opened in another browser or app,
+        // already used, or expired) used to land silently on Register.
+        if (active && arrivedFromEmailLink) {
+          if (status !== "signed_in")
+            linkFailed = true;
+          if (linkFailed) showError(new CustomerAccountError("invalid", LINK_FAILED));
+          window.history.replaceState(null, "", window.location.pathname + (returnTarget !== "/menus" ? `?returnTo=${encodeURIComponent(returnTarget)}` : ""));
+        }
         if (active)
           unsubscribe = subscribeMealDeckCustomerAuth(() => {
             if (!acting.current) void refresh();
@@ -692,6 +759,13 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
       setEmailPending(email.trim().toLowerCase());
       setDraft(clean);
       setResendAt(Date.now() + 60000);
+    });
+  }
+
+  async function passwordSignIn(email: string, password: string) {
+    await run(async () => {
+      await signInMealDeckCustomerWithPassword(email, password);
+      setAccount(await readMealDeckCustomerAccount());
     });
   }
 
@@ -864,7 +938,7 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
                 </button>
               </section>
             ) : (
-              <CustomerEntry busy={busy} onRequest={request} />
+              <CustomerEntry busy={busy} onRequest={request} onPassword={passwordSignIn} />
             )}
           </div>
           <aside className="md-account-aside" aria-label="Your orders and member benefits">

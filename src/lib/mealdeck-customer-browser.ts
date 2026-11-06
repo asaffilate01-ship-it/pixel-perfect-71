@@ -220,6 +220,23 @@ export async function requestCustomerEmail(
   if (error) throw customerRequestError(error);
 }
 
+/** Password sign-in for accounts that already have one (e.g. owner-provisioned test customers). */
+export async function signInMealDeckCustomerWithPassword(
+  emailInput: string,
+  password: string,
+): Promise<void> {
+  const email = normalizeCustomerEmail(emailInput);
+  if (!email || !password)
+    throw new CustomerAccountError("invalid", "Enter your email address and password.");
+  await readCustomerCapabilities();
+  const { error } = await currentClient().auth.signInWithPassword({ email, password });
+  if (error)
+    throw new CustomerAccountError(
+      "invalid",
+      "That email and password didn’t match. Try again or use an email sign-in link.",
+    );
+}
+
 export async function verifyCustomerEmailCode(emailInput: string, token: string): Promise<User> {
   const email = normalizeCustomerEmail(emailInput);
   if (!email || !/^\d{6,8}$/.test(token.trim()))
