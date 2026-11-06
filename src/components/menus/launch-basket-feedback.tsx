@@ -41,6 +41,7 @@ function BasketNotice({ update, canUndo, onUndo, onDismiss, onExpire }: BasketNo
   return (
     <div
       className="lm-basket-feedback"
+      data-feedback-kind={canUndo || update.tone === "info" ? "persistent" : "routine"}
       role="group"
       aria-label="Basket update"
       onPointerEnter={(event) => {

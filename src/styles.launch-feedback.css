@@ -113,6 +113,14 @@
   cursor: pointer;
 }
 
+/* Routine desktop feedback belongs inside the existing dock. Keep this mounted
+   for its expiry timer; the sibling live region still announces the full message. */
+@media (min-width: 801px) {
+  .lm-basket-feedback[data-feedback-kind="routine"] {
+    display: none;
+  }
+}
+
 @media (max-width: 1023px) {
   .lm-basket-feedback {
     right: max(12px, env(safe-area-inset-right, 0px));

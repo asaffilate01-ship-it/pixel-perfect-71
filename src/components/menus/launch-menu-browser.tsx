@@ -721,7 +721,16 @@ export function LaunchMenuBrowser({
         </footer>
       </main>
       <SiteFooter />
-      <LaunchBasketDock count={quantity} dialogOpen={!!draft || picksOpen} onOpen={openBasket} />
+      <LaunchBasketDock
+        count={quantity}
+        dialogOpen={!!draft || picksOpen}
+        feedbackMessage={
+          notice?.tone !== "info" && !(clearedPicks && picks.length === 0)
+            ? (notice?.message ?? null)
+            : null
+        }
+        onOpen={openBasket}
+      />
       <LaunchMenuAppNav
         brands={brandOrder.flatMap((id) => {
           const entry = getLaunchMenuBrand(id, catalogue);

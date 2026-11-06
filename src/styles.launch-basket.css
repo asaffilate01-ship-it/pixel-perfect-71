@@ -414,6 +414,13 @@
   line-height: 1.3;
 }
 
+.lmb-dock-copy small[data-basket-update="true"] {
+  overflow: hidden;
+  color: var(--lmb-paper);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .lmb-dock-count {
   display: grid;
   place-items: center;
