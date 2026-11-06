@@ -14,6 +14,7 @@ import {
   PrinterPendingOrderCard,
 } from "../src/components/ops/printer-pending-orders";
 import { StaffAlertControls } from "../src/components/ops/staff-alerts";
+import { createStaffAlertLedger } from "../src/lib/mealdeck-staff-alerts";
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const scope = { tenantId: id(10), locationId: id(11) };
@@ -298,6 +299,15 @@ describe("printer acceptance presentation and arrivals", () => {
       }),
     );
     expect(printer).toContain("1 new order or receipt");
+    expect(printer).toContain("Enable sound");
+    expect(printer).toContain("Set to loudest");
+    expect(printer).toContain("Two rising chimes when new orders or receipts arrive.");
+    expect(printer).not.toContain("Test printer sound");
+    const enabledPrinter = renderToStaticMarkup(
+      createElement(StaffAlertControls, { alerts: { ...alerts, enabled: true }, kind: "printer" }),
+    );
+    expect(enabledPrinter).toContain("Test printer sound");
+    expect(enabledPrinter).toContain("Mute sound");
     const kitchen = renderToStaticMarkup(
       createElement(StaffAlertControls, { alerts, kind: "kds" }),
     );
@@ -324,6 +334,41 @@ describe("printer acceptance presentation and arrivals", () => {
     expect(
       printerArrivalKeys([], [original, { ...original, jobId: id(3), copyNumber: 2 }]),
     ).toEqual([`order:${id(1)}`, `copy:${id(3)}`]);
+  });
+
+  test("printer alerts observe paid arrivals and receipt-only arrivals without an acceptance replay", () => {
+    const ledger = createStaffAlertLedger();
+    expect(ledger.observe(printerArrivalKeys([], []), true)).toEqual([]);
+    expect(ledger.observe(printerArrivalKeys([pending()], []), true)).toEqual([`order:${id(1)}`]);
+    const original = { orderId: id(1), jobId: id(2), copyNumber: 1 };
+    expect(ledger.observe(printerArrivalKeys([], [original]), true)).toEqual([]);
+    const other = { orderId: id(4), jobId: id(5), copyNumber: 1 };
+    expect(ledger.observe(printerArrivalKeys([], [original, other]), false)).toEqual([]);
+    expect(ledger.observe(printerArrivalKeys([], [original, other]), true)).toEqual([
+      `order:${id(4)}`,
+    ]);
+    const copy = { ...original, jobId: id(6), copyNumber: 2 };
+    expect(ledger.observe(printerArrivalKeys([], [original, other, copy]), true)).toEqual([
+      `copy:${id(6)}`,
+    ]);
+    expect(ledger.observe(printerArrivalKeys([], [original, other, copy]), true)).toEqual([]);
+  });
+
+  test("an unpaired built-in printer has an honest connection explanation and cannot enable Auto", () => {
+    const status = renderToStaticMarkup(
+      createElement(PrinterConnectionStatus, {
+        fresh: true,
+        paired: false,
+        automatic: false,
+        busy: false,
+        onAutomaticChange: () => {},
+      }),
+    );
+    expect(status).toContain("Automatic printing needs a connection");
+    expect(status).toContain("Built-in Android printers need a compatible device connection");
+    expect(status).toContain("installing this PWA does not connect the printer");
+    expect(status).toContain('disabled=""');
+    expect(status).not.toContain("Automatic printing is on");
   });
 
   test("shows paid details and escaped instructions with truthful queued status", () => {

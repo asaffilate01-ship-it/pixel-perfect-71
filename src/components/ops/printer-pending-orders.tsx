@@ -30,15 +30,17 @@ export function PrinterConnectionStatus({
         <h3 className="mt-1 text-lg font-black">
           {ready
             ? "Automatic printing is on"
-            : automatic
-              ? "Automatic printing is paused"
-              : "Automatic printing is off"}
+            : !paired
+              ? "Automatic printing needs a connection"
+              : automatic
+                ? "Automatic printing is paused"
+                : "Automatic printing is off"}
         </h3>
         <p className="mt-2 text-sm leading-6 md-ops-muted">
           {ready
             ? "Accept here or on the KDS. This terminal sends each waiting receipt once; check the paper after it is sent."
             : !paired
-              ? "Accept orders to queue their receipts. Pair this device and turn on automatic printing, or use the browser print dialog."
+              ? "Accept orders to queue their receipts. Connect a supported printer to enable automatic receipts. Built-in Android printers need a compatible device connection; installing this PWA does not connect the printer."
               : !fresh
                 ? "Waiting for a verified live queue. Acceptance and printing resume when the connection is restored."
                 : "Accepted orders keep their place in the receipt queue. Turn on automatic printing or print a waiting receipt manually."}
@@ -104,7 +106,9 @@ export function PrinterPendingOrderCard({
             <ShieldCheck className="size-4" aria-hidden="true" /> Paid · awaiting acceptance
           </p>
           <h4 className="md-printer-order-number">{number ? `Order ${number}` : "Paid order"}</h4>
-          <p className="mt-1 text-sm md-ops-muted">Collection code <strong className="tabular-nums">{order.displayCode}</strong></p>
+          <p className="mt-1 text-sm md-ops-muted">
+            Collection code <strong className="tabular-nums">{order.displayCode}</strong>
+          </p>
           <p className="text-sm font-bold">
             {order.fulfilment === "curbside" ? "Kerbside" : "Collection"} · paid{" "}
             {new Date(order.paidAt).toLocaleTimeString("en-GB", {

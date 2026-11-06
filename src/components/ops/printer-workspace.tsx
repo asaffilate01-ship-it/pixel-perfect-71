@@ -978,7 +978,7 @@ function ReceiptTerminal({
           aria-controls="printer-setup"
         >
           <Settings2 className="size-4" aria-hidden="true" />
-          Setup
+          {paired ? "Setup" : "Connect printer"}
         </button>
       </div>
       {paperCheckCount > 0 && mobileView !== "queue" && (
@@ -1022,7 +1022,7 @@ function ReceiptTerminal({
         />
         <details className="md-ops-card md-printer-setup-details p-4" open={!paired}>
           <summary className="cursor-pointer text-sm font-bold">
-            {paired ? "Local printer bridge paired" : "Connect the receipt printer"}
+            {paired ? "Local printer bridge paired" : "Network printer via local bridge"}
           </summary>
           <div className="mt-4 space-y-3">
             <p className="text-sm leading-6 md-ops-muted">
@@ -1030,20 +1030,22 @@ function ReceiptTerminal({
               macOS computer. Pair it from this app on that same computer. It sends one receipt and
               stops; paper cutting depends on the configured printer.
             </p>
-            <details className="rounded-lg border p-3">
-              <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold">
-                Using a Senraise Android terminal?
-              </summary>
+            <section
+              className="rounded-lg border p-3"
+              aria-label="Built-in Android printer connection"
+            >
+              <h3 className="text-sm font-bold">Using a Senraise Android terminal?</h3>
               <p className="mt-2 text-sm leading-6 md-ops-muted">
                 Install MealDeck Printer from this page in Chrome. The PWA gives you this queue and
                 its order controls; installation alone does not connect the built-in printer.
               </p>
               <p className="mt-2 text-sm leading-6 md-ops-muted">
-                For manual printing, use Browser print dialog if Android lists your receipt printer.
-                Select one copy and check the paper. Automatic printing on Senraise still needs a
-                supported connection for your exact model.
+                A built-in printer needs a compatible connection for your exact model. If its
+                Android print service is already configured, Browser print dialog can send one
+                manual copy; check the paper afterwards. Automatic printing needs that supported
+                device connection before it can be switched on.
               </p>
-            </details>
+            </section>
             {!paired && (
               <form
                 className="flex flex-wrap items-end gap-2"
@@ -1361,8 +1363,13 @@ function ReceiptJobCard({
     <article className="md-ops-card overflow-hidden" data-testid="printer-job">
       <header className="md-ops-ticket-heading flex flex-wrap items-center justify-between gap-3 border-b md-ops-border p-4">
         <div>
-          <h3 className="break-words text-2xl font-black tabular-nums">Order {orderDisplayNumber(job.receipt.orderNumber, job.orderId.slice(0, 8).toUpperCase())}</h3>
-          <p className="mt-1 text-sm md-ops-muted">Collection code <strong className="tabular-nums">{job.receipt.displayCode}</strong></p>
+          <h3 className="break-words text-2xl font-black tabular-nums">
+            Order{" "}
+            {orderDisplayNumber(job.receipt.orderNumber, job.orderId.slice(0, 8).toUpperCase())}
+          </h3>
+          <p className="mt-1 text-sm md-ops-muted">
+            Collection code <strong className="tabular-nums">{job.receipt.displayCode}</strong>
+          </p>
           <p className="mt-1 text-xs font-bold md-ops-muted">
             {job.receipt.fulfilment === "curbside" ? "Kerbside" : "Collection"} ·{" "}
             {job.copyNumber === 1 ? "Original" : `COPY ${job.copyNumber}`}

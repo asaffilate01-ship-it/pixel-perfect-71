@@ -44,6 +44,7 @@ import {
   type PreparedStripeOrder,
 } from "./mealdeck-stripe.server";
 import { readMealDeckStripeCheckoutDomain } from "./mealdeck-stripe-checkout-domain.server";
+import { ORDER_NOTES_ERROR_MESSAGE, orderNotesMatch } from "./mealdeck-order-notes";
 
 type Json = Record<string, unknown>;
 const object = (value: unknown): Json =>
@@ -72,6 +73,7 @@ function databaseClients(env: MealDeckRuntimeEnv, fetcher: typeof fetch) {
 function backendProblem(error: unknown): CheckoutProblem {
   const message = String(object(error)["message"] ?? "");
   const known: [RegExp, string, string, number][] = [
+    [/checkout_notes_invalid/, "invalid_notes", ORDER_NOTES_ERROR_MESSAGE, 400],
     [
       /prelaunch_test_account_required/,
       "prelaunch_test_account_required",
@@ -531,9 +533,12 @@ export async function handleOnlineCheckoutRequest(
     if (!status.available) throw newOrderingUnavailable(status);
     if (action === "quote") {
       const selection = normaliseCheckoutSelection(input, clients.config.tenantId);
+      const quoteRpc = customerId
+        ? "mealdeck_create_checkout_quote"
+        : "mealdeck_create_guest_checkout_quote";
       const quote = await rpc(
         clients.service,
-        customerId ? "mealdeck_create_checkout_quote" : "mealdeck_create_guest_checkout_quote",
+        selection.notes ? quoteRpc + "_with_notes" : quoteRpc,
         {
           p_tenant: clients.config.tenantId,
           p_location: clients.config.locationId,
@@ -545,8 +550,15 @@ export async function handleOnlineCheckoutRequest(
           p_selection: selection.lines,
           p_request_hash: selection.requestHash,
           p_packing: selection.packingPlan,
+          ...(selection.notes ? { p_notes: selection.notes } : {}),
         },
       );
+      if (!orderNotesMatch(selection.notes, quote["notes"]))
+        throw new CheckoutProblem(
+          "notes_not_saved",
+          "We couldn't save your special requests. Please review your order again before paying.",
+          503,
+        );
       return Response.json({ quote }, { headers: NO_STORE });
     }
     const parsed = checkoutPayInput.safeParse(input);
