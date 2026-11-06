@@ -102,6 +102,8 @@ jobs:
           tests/postgres/guest-checkout-behavior.mjs
           deploy/mealdeck/kitchen-availability.mjs
           tests/postgres/kitchen-availability-behavior.mjs
+          deploy/mealdeck/kerbside-contact.mjs
+          tests/postgres/kerbside-contact-behavior.mjs
           --rule 'prettier/prettier: off'
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
@@ -248,6 +250,9 @@ jobs:
 
       - name: Additive milkcake publication and canonical dessert pricing
         run: node tests/postgres/milkcake-desserts-behavior.mjs
+
+      - name: Private kerbside contact projection and staff scope
+        run: node tests/postgres/kerbside-contact-behavior.mjs
 
       - name: Shared KDS and printer acceptance with one canonical receipt
         run: node tests/postgres/printer-acceptance-behavior.mjs
@@ -675,6 +680,7 @@ jobs:
             menu-structure,
             public-menu-read,
             milkcake-desserts,
+            kerbside-contact,
             live-verification,
           ]
     services:

@@ -78,6 +78,7 @@ export type KdsOrder = {
   accepted_at?: string | null;
   cutlery_requested?: boolean;
   vehicle?: { make: string; colour: string; registrationLast4: string } | null;
+  pickupContact?: { name: string; phone: string } | null;
 };
 
 export type KdsBoard = {
@@ -126,6 +127,22 @@ function text(value: unknown, max = 500): string {
 
 function nullableText(value: unknown, max = 500): string | null {
   return value === null ? null : text(value, max);
+}
+
+function parsePickupContact(value: unknown): { name: string; phone: string } | null {
+  if (value == null) return null;
+  const contact = record(value);
+  const rawName = text(contact["name"], 240);
+  const name = rawName.trim();
+  const phone = text(contact["phone"], 16);
+  if (
+    !name ||
+    [...name].length > 120 ||
+    /[\p{Cc}\u061c\u200e\u200f\u2028-\u202e\u2066-\u2069]/u.test(rawName) ||
+    !/^\+[1-9]\d{7,14}$/.test(phone)
+  )
+    invalid();
+  return { name, phone };
 }
 
 function id(value: unknown): string {
@@ -278,6 +295,12 @@ function parsePass(value: unknown): KdsPass {
 
 function parseOrder(value: unknown): KdsOrder {
   const v = record(value);
+  const fulfilment = choice(v["fulfilment"], [
+    "delivery",
+    "pickup",
+    "curbside",
+    "dine_in",
+  ] as const);
   const tickets = list(v["tickets"], parseTicket, 100);
   const items = list(v["items"], parseOrderItem, 500);
   unique(items.map((item) => item.order_item_id));
@@ -351,7 +374,7 @@ function parseOrder(value: unknown): KdsOrder {
     created_at: timestamp(v["created_at"]),
     released_at: timestamp(v["released_at"]),
     order_status: choice(v["order_status"], ["accepted", "preparing", "ready"] as const),
-    fulfilment: choice(v["fulfilment"], ["delivery", "pickup", "curbside", "dine_in"] as const),
+    fulfilment,
     notes: nullableText(v["notes"], 20000),
     group_order: flag(v["group_order"]),
     routing_complete: routingComplete,
@@ -372,6 +395,7 @@ function parseOrder(value: unknown): KdsOrder {
               registrationLast4: text(car["registrationLast4"], 4),
             };
           })(),
+    pickupContact: fulfilment === "curbside" ? parsePickupContact(v["pickupContact"]) : null,
   };
 }
 
