@@ -5,7 +5,15 @@ import {
   type KdsOrder,
 } from "./mealdeck-kds";
 
-export type KdsOrderStage = "queued" | "preparing" | "ready" | "packing" | "sealed";
+export const KDS_STAGE_LABELS = {
+  queued: "New",
+  accepted: "Accepted",
+  preparing: "Preparing",
+  ready: "Ready to pack",
+  sealed: "Ready for handover",
+  done: "Done",
+} as const;
+export type KdsOrderStage = keyof typeof KDS_STAGE_LABELS;
 export type KdsOrderAction = {
   target: "accept" | "order" | "pass" | "item" | "handoff";
   itemId?: string;
@@ -20,7 +28,9 @@ export type KdsBrandItems = { key: string; name: string; items: KdsOrderItem[] }
 export function kdsOrderStage(order: KdsOrder): KdsOrderStage {
   if (order.pass?.status === "sealed" || order.pass?.status === "ready_for_handoff")
     return "sealed";
-  if (order.pass?.status === "packing") return "packing";
+  // Packing is an activity within Ready to pack, not a seventh queue.
+  if (order.pass?.status === "packing") return "ready";
+  if (order.preparation_status === "queued" && order.accepted_at) return "accepted";
   return order.preparation_status;
 }
 
@@ -35,7 +45,7 @@ export function nextKdsOrderAction(order: KdsOrder): KdsOrderAction | null {
     return {
       target: "pass",
       status: packing,
-      label: packing === "packing" ? "Start packing" : "Seal order",
+      label: packing === "packing" ? "Start packing" : "Ready for handover",
     };
   }
   // Readiness comes only from the individual item checklist. There is no

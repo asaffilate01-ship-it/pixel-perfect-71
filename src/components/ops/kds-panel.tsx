@@ -18,9 +18,15 @@ import { PwaInstallCard } from "@/components/pwa-install-card";
 import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
 import type { OpsPermission } from "@/lib/mealdeck-ops-access";
 import { OpsRequestError, opsRpc } from "@/lib/mealdeck-ops-browser";
-import { parseKdsBoard, parseKdsMutation, type KdsBoard, type KdsOrder } from "@/lib/mealdeck-kds";
+import { parseKdsMutation, type KdsOrder } from "@/lib/mealdeck-kds";
+import {
+  parseKdsWorkflowBoard,
+  type KdsWorkflowBoard as KdsBoard,
+} from "@/lib/mealdeck-kds-workflow";
+import { KdsCompletedCard } from "./kds-completed-card";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import {
+  KDS_STAGE_LABELS,
   groupKdsItems,
   kdsOrderStage,
   nextKdsOrderAction,
@@ -42,19 +48,14 @@ type Props = {
 type FeedState = "loading" | "connected" | "stale" | "access_blocked" | "setup_required";
 type StageFilter = "all" | Stage;
 
-const stageLabels: Record<Stage, string> = {
-  queued: "New",
-  preparing: "Preparing",
-  ready: "Ready to pack",
-  packing: "Packing",
-  sealed: "Sealed",
-};
+const stageLabels = KDS_STAGE_LABELS;
 const stageStyles: Record<Stage, { badge: string; border: string }> = {
   queued: { badge: "md-ops-soft md-ops-text", border: "md-ops-stage-new" },
+  accepted: { badge: "bg-violet-100 text-violet-900", border: "md-ops-stage-new" },
   preparing: { badge: "bg-amber-100 text-amber-900", border: "md-ops-stage-preparing" },
   ready: { badge: "bg-emerald-100 text-emerald-900", border: "md-ops-stage-ready" },
-  packing: { badge: "bg-sky-100 text-sky-900", border: "md-ops-stage-packing" },
   sealed: { badge: "md-ops-inverse", border: "md-ops-stage-sealed" },
+  done: { badge: "md-ops-soft md-ops-text", border: "md-ops-stage-ready" },
 };
 const fulfilmentLabels: Record<KdsOrder["fulfilment"], string> = {
   delivery: "Delivery",
@@ -63,7 +64,12 @@ const fulfilmentLabels: Record<KdsOrder["fulfilment"], string> = {
   dine_in: "Dine in",
 };
 
-function matchesSearch(order: KdsOrder, query: string): boolean {
+function matchesSearch(
+  order:
+    | Pick<KdsOrder, "display_code" | "items">
+    | import("@/lib/mealdeck-kds-workflow").KdsCompletedOrder,
+  query: string,
+): boolean {
   const term = query.trim().toLocaleLowerCase("en-GB");
   if (!term) return true;
   return [
@@ -96,7 +102,10 @@ async function readBoard(tenantId: string, locationId: string): Promise<KdsBoard
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const raw = await Promise.race([
-      opsRpc<unknown>("mealdeck_ops_kds_board", { p_tenant: tenantId, p_location: locationId }),
+      opsRpc<unknown>("mealdeck_ops_kds_workflow_board", {
+        p_tenant: tenantId,
+        p_location: locationId,
+      }),
       new Promise<never>((_, reject) => {
         timer = setTimeout(
           () =>
@@ -110,7 +119,7 @@ async function readBoard(tenantId: string, locationId: string): Promise<KdsBoard
         );
       }),
     ]);
-    return parseKdsBoard(raw, { tenantId, locationId });
+    return parseKdsWorkflowBoard(raw, { tenantId, locationId });
   } finally {
     if (timer) clearTimeout(timer);
   }
@@ -123,6 +132,7 @@ export function OpsKdsPanel(props: Props) {
 
 function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
   const alerts = useStaffAlerts("kds", `${tenantId}:${locationId}`);
+  const { observe: observeAlerts } = alerts;
   const [board, setBoard] = useState<KdsBoard | null>(null);
   const [feedState, setFeedState] = useState<FeedState>("loading");
   const [feedError, setFeedError] = useState("");
@@ -249,19 +259,20 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
   const fresh =
     online && feedState === "connected" && lastSync !== null && now - lastSync < STALE_AFTER_MS;
   useEffect(() => {
-    alerts.observe(
+    observeAlerts(
       board?.orders.map((order) => order.order_id) ?? [],
       fresh && board?.readiness === "ready",
     );
-  }, [board, fresh, alerts.observe]);
+  }, [board, fresh, observeAlerts]);
   const canChange = can("orders.status") && fresh && board?.readiness === "ready" && !pendingOrder;
   const counts = useMemo(() => {
     const result: Record<Stage, number> = {
       queued: 0,
+      accepted: 0,
       preparing: 0,
       ready: 0,
-      packing: 0,
       sealed: 0,
+      done: board?.completed_orders.length ?? 0,
     };
     for (const order of board?.orders ?? []) result[kdsOrderStage(order)]++;
     return result;
@@ -273,6 +284,11 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
           (filter === "all" || kdsOrderStage(order) === filter) && matchesSearch(order, query),
       ),
     [board, filter, query],
+  );
+
+  const completedOrders = useMemo(
+    () => (board?.completed_orders ?? []).filter((order) => matchesSearch(order, query)),
+    [board, query],
   );
 
   async function updateOrder(order: KdsOrder, action: Action) {
@@ -319,7 +335,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
       saved = true;
       if (!mounted.current) return;
       setNotice(
-        `${order.display_code} · ${action.status === "accepted" ? "Accepted · receipt queued" : action.status === "completed" ? "Collection completed" : action.target === "item" ? "Item checklist updated" : action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Order sealed"}.`,
+        `${order.display_code} · ${action.status === "accepted" ? "Accepted · receipt queued" : action.status === "completed" ? "Done · handover confirmed" : action.target === "item" ? "Item checklist updated" : action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Ready for handover"}.`,
       );
     } catch (reason) {
       if (!mounted.current) return;
@@ -378,14 +394,19 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
           Kitchen orders
         </h2>
         {board?.readiness === "ready" ? (
-          <div className="flex flex-wrap items-center gap-1.5" aria-label="Kitchen order counts">
-            <Count label="New" value={counts.queued} tone="md-ops-paper md-ops-ink" />
-            <Count label="Preparing" value={counts.preparing} tone="bg-amber-50 text-amber-950" />
-            <Count
-              label="To pack"
-              value={counts.ready + counts.packing}
-              tone="bg-emerald-50 text-emerald-950"
-            />
+          <div className="flex flex-wrap items-center gap-1.5" aria-label="Kitchen stages">
+            {(Object.keys(stageLabels) as Stage[]).map((stage) => (
+              <button
+                key={stage}
+                type="button"
+                aria-pressed={filter === stage}
+                onClick={() => setFilter(filter === stage ? "all" : stage)}
+                className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${filter === stage ? "md-ops-inverse" : "md-ops-border md-ops-paper md-ops-ink"}`}
+              >
+                {stageLabels[stage]}
+                <strong className="tabular-nums">{counts[stage]}</strong>
+              </button>
+            ))}
           </div>
         ) : (
           <p className="text-sm font-semibold md-ops-muted">
@@ -453,7 +474,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
                 onChange={(event) => setFilter(event.target.value as StageFilter)}
                 className={`${control} w-full`}
               >
-                <option value="all">All orders ({board.orders.length})</option>
+                <option value="all">All active orders ({board.orders.length})</option>
                 {(Object.keys(stageLabels) as Stage[]).map((stage) => (
                   <option key={stage} value={stage}>
                     {stageLabels[stage]} ({counts[stage]})
@@ -516,7 +537,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
           waiting to be released to the kitchen.
         </p>
       )}
-      {board?.readiness === "ready" && board.remaining_order_count > 0 && (
+      {board?.readiness === "ready" && filter !== "done" && board.remaining_order_count > 0 && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
           Showing the oldest {board.orders.length} orders. {board.remaining_order_count} more will
           appear as orders leave the kitchen.
@@ -586,6 +607,36 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
             </button>
           )}
         </StateCard>
+      ) : filter === "done" ? (
+        <div className="space-y-3">
+          <p className="text-sm md-ops-muted">
+            Confirmed handovers from the last 12 hours. Completed orders are read-only and are not
+            printed again.
+            {board.completed_remaining_order_count > 0 &&
+              ` Showing the latest ${board.completed_orders.length}; ${board.completed_remaining_order_count} more are available in order history.`}
+          </p>
+          {completedOrders.length ? (
+            <div
+              className="grid min-w-0 items-start gap-4 md:grid-cols-2 xl:grid-cols-3"
+              aria-label="Completed kitchen orders"
+            >
+              {completedOrders.map((order) => (
+                <KdsCompletedCard key={order.order_id} order={order} />
+              ))}
+            </div>
+          ) : (
+            <StateCard
+              icon={<PackageCheck className="size-8" />}
+              title={query ? "No completed orders match" : "No completed handovers yet"}
+            >
+              <p>
+                {query
+                  ? "Try another order number, dish or brand."
+                  : "Orders appear here only after the handover has been confirmed."}
+              </p>
+            </StateCard>
+          )}
+        </div>
       ) : visibleOrders.length ? (
         <div
           className="grid min-w-0 items-start gap-4 md:grid-cols-2 xl:grid-cols-3"
@@ -632,7 +683,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
                     target: "handoff",
                     code,
                     status: "completed",
-                    label: "Complete collection",
+                    label: "Mark done",
                   })
                 }
                 onAction={() => {
@@ -688,17 +739,6 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
       )}
       <PwaInstallCard appName="MealDeck Kitchen" />
     </section>
-  );
-}
-
-function Count({ label, value, tone }: { label: string; value: number; tone: string }) {
-  return (
-    <div
-      className={`inline-flex min-h-9 min-w-0 items-center gap-2 rounded-full border md-ops-border px-2.5 py-1 ${tone}`}
-    >
-      <span className="text-xs font-semibold">{label}</span>
-      <strong className="font-display text-lg font-black leading-none tabular-nums">{value}</strong>
-    </div>
   );
 }
 
@@ -787,7 +827,7 @@ function KitchenOrderCard({
           <span
             className={`rounded-full px-2.5 py-1 text-xs font-bold ${stageStyles[stage].badge}`}
           >
-            {order.pass?.status === "ready_for_handoff" ? "Ready for handoff" : stageLabels[stage]}
+            {stageLabels[stage]}
           </span>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold md-ops-muted">
@@ -852,7 +892,7 @@ function KitchenOrderCard({
                           disabled ||
                           !order.accepted_at ||
                           order.preparation_status === "queued" ||
-                          stage === "packing" ||
+                          order.pass?.status === "packing" ||
                           stage === "sealed" ||
                           !order.routing_complete
                         }
@@ -940,6 +980,11 @@ function KitchenOrderCard({
         )}
       </div>
       <footer className="md-ops-ticket-footer border-t md-ops-divider px-4 py-3">
+        {order.pass?.status === "packing" && (
+          <p className="mb-2 text-sm font-semibold md-ops-muted">
+            Packing in progress · check all named bags before handover.
+          </p>
+        )}
         {order.pass?.status === "ready_for_handoff" ? (
           <form
             className="space-y-2"
@@ -967,7 +1012,7 @@ function KitchenOrderCard({
               className={`${button} md-ops-primary w-full`}
               disabled={disabled || !/^\d{4}$/.test(handoffCode)}
             >
-              {saving ? "Confirming…" : "Confirm collection"}
+              {saving ? "Confirming…" : "Confirm handover · Mark done"}
             </button>
           </form>
         ) : confirmingSeal ? (
@@ -980,7 +1025,8 @@ function KitchenOrderCard({
             }}
           >
             <p className="text-sm font-semibold leading-5 md-ops-text">
-              Check every item and drink is packed before sealing this order.
+              Check every item, drink, sauce and requested cutlery. Confirm the named bags are
+              packed correctly before marking ready for handover.
             </p>
             <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2">
               <button type="button" onClick={onCancelSeal} className={`${button} md-ops-secondary`}>
@@ -994,7 +1040,7 @@ function KitchenOrderCard({
                 className={`${button} md-ops-primary`}
               >
                 <PackageCheck className="size-4 shrink-0" aria-hidden="true" />
-                Confirm sealed
+                Confirm ready for handover
               </button>
             </div>
           </div>
@@ -1021,7 +1067,7 @@ function KitchenOrderCard({
             {stage === "sealed" ? (
               <>
                 <PackageCheck className="size-5 shrink-0" aria-hidden="true" />
-                Sealed · awaiting handoff
+                Ready for handover
               </>
             ) : order.routing_complete ? (
               order.preparation_status === "preparing" ? (
