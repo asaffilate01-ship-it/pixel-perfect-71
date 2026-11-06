@@ -12,10 +12,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Archive tracked source only
-        run: git archive --format=tar.gz --output=mealdeck-source.tar.gz HEAD
+      - uses: oven-sh/setup-bun@v2
+      - name: Install locked verification dependencies
+        run: |
+          bun install --frozen-lockfile
+          npm ci --prefix tests/postgres --ignore-scripts
+          mkdir -p .validation-tools
+          cp "$(command -v bun)" .validation-tools/bun
+          npx --yes supabase@latest --version
+          cp "$(find "$HOME/.npm/_npx" -type f -path '*/supabase/bin/supabase' | head -1)" .validation-tools/supabase
+      - name: Archive isolated verification environment without credentials
+        run: tar -czf mealdeck-validation.tar.gz node_modules tests/postgres/node_modules .validation-tools
       - uses: actions/upload-artifact@v4
         with:
-          name: mealdeck-source-review
-          path: mealdeck-source.tar.gz
+          name: mealdeck-validation
+          path: mealdeck-validation.tar.gz
           retention-days: 1
