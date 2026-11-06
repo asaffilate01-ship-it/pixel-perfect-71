@@ -524,7 +524,8 @@
   overflow: hidden;
 }
 
-.lm-basket-sheet-content > .lmb-basket {
+.lm-basket-sheet-content > .lm-basket-scroll {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -599,7 +600,7 @@
     font-size: 12px;
   }
 
-  .lm-basket-sheet-content > .lmb-basket {
+  .lm-basket-scroll > .lmb-basket {
     padding-inline: max(16px, env(safe-area-inset-left, 0px))
       max(16px, env(safe-area-inset-right, 0px));
   }
@@ -642,7 +643,7 @@
     scroll-padding-block: 16px;
   }
 
-  .lm-basket-sheet-content > .lmb-basket {
+  .lm-basket-sheet-content > .lm-basket-scroll {
     overflow: visible;
   }
 

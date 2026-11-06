@@ -207,9 +207,9 @@ Run `npm run test:catalogue --prefix tests/postgres`, or
 localhost database and PostgreSQL service fixture. The native suite adds a real
 two-session lock check; the embedded run explicitly reports that limitation.
 
-The tests check all 79 draft items, 20 real source categories, 24 modifier groups,
+The tests check all 89 draft items, 25 real source categories, 24 modifier groups,
 133 options and one shared kitchen; the committed JSON matches the single source
-catalogue. Included selectors remain £0. Paid options use the supplied prices; hidden variant options encode the exact Tavo flavour/portion matrix. A guarded, one-time revision replaces expected £20 placeholders and preserves later administrator edits.
+catalogue, including Biscoff and Oreo milkcakes at £3.99 each on every menu. Desserts have no inherited meal modifiers. Included selectors remain £0. Paid options use the supplied prices; hidden variant options encode the exact Tavo flavour/portion matrix. A guarded, one-time revision replaces expected £20 placeholders and preserves later administrator edits.
 They exercise wrong-project/business/kitchen/station and API-role rejection,
 closed-channel requirements, duplicate/collision handling, atomic late rollback,
 idempotent reruns, preserved admin price changes and unchanged RLS/release gates.

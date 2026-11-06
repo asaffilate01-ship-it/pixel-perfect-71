@@ -22,12 +22,12 @@ The 30% campaign already has its shared server/database quotation path. This upd
 
 ## Manager setup needed: Sunday milk cake
 
-1. Supply the canonical MealDeck milk-cake product and approve its menu/catalogue mapping. It is absent from both `src/lib/launch-menu-catalogue.ts` and `deploy/mealdeck/catalogue/launch-catalogue.json` in this source snapshot. Do not invent a flavour, serving size or brand assignment.
+1. The owner supplied **Biscoff Milkcake £3.99** and **Oreo Milkcake £3.99** for every launch menu on 6 November. Their standalone catalogue mapping is now defined in `src/lib/launch-menu-catalogue.ts` and `deploy/mealdeck/catalogue/launch-catalogue.json`, with the additive live import described in `docs/mealdeck-milkcake-desserts.md`. The Sunday promotion must explicitly bind its eligible product identities; adding the standard products alone does not establish the promotional price. No serving size or recipe/allergen declarations were supplied.
 2. Confirm how the stated 99p price interacts with the simultaneous 30% entire-menu offer. No stacking rule, exclusion or quantity cap has been assumed in source or public terms.
 3. Implement server-priced, date- and kitchen-scoped eligibility for the product through the existing quotation/Stripe/packing/KDS flow. Browser prices and a generic promotional card cannot establish a charge.
 4. Verify the price shown in order review, immutable payment snapshot, customer receipt, KDS and printer receipt. Test guest and member orders, outside-Sunday requests, retries, and existing paid-order preservation before enabling the rule.
 
-`MILK_CAKE_CAMPAIGN.canonicalItemId` remains null and `automaticPricingEnabled` remains false. No purchasable placeholder product was added.
+`MILK_CAKE_CAMPAIGN.canonicalItemId` remains null and `automaticPricingEnabled` remains false. The standalone £3.99 products are distinct from activation of this Sunday price rule.
 
 ## Manager setup needed: double points
 

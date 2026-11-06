@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { buildLaunchCatalogueData } from "./catalogue-import.mjs";
 
 export const publicMenuReadMigration = new URL(
-  "./post-install-migrations/20261106115120_mealdeck_public_menu_read.sql",
+  "./post-install-migrations/20261106170330_mealdeck_public_menu_milkcakes.sql",
   import.meta.url,
 );
 const template = new URL("./public-menu-read.template.sql", import.meta.url);
@@ -49,7 +49,7 @@ export function renderPublicMenuReadSql() {
   return readFileSync(template, "utf8")
     .replace(
       /^-- Template only[^\n]*/,
-      "-- Generated with Supabase CLI: mealdeck_public_menu_read.",
+      "-- Generated with Supabase CLI: mealdeck_public_menu_milkcakes.",
     )
     .replace(/__SOURCE_[A-Z0-9_]+__/g, (key) => {
       if (!(key in replacements)) throw new Error("Unexpected public menu template placeholder");

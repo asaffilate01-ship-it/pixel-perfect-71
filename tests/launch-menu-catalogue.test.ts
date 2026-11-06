@@ -5,6 +5,7 @@ import {
   launchMenuSources,
   isLaunchBrandPriceApproved,
   launchMenuPriceApproval,
+  launchMenuDessertApproval,
   getLaunchMenuPriceVariant,
   launchMenuConfiguredItemPrice,
   type LaunchMenuBrand,
@@ -24,7 +25,7 @@ function group(brandId: string, groupId: string): LaunchMenuOptionGroup {
 }
 
 describe("Supplied launch menu transcription", () => {
-  it("retains the five approved brands and all 79 products in 20 sections", () => {
+  it("retains the five approved brands with 89 products in 25 sections", () => {
     expect(
       launchMenuBrands.map((entry) => ({
         id: entry.id,
@@ -32,11 +33,11 @@ describe("Supplied launch menu transcription", () => {
         items: entry.sections.reduce((total, section) => total + section.items.length, 0),
       })),
     ).toEqual([
-      { id: "tavo-chicken", sections: 7, items: 22 },
-      { id: "moktl", sections: 1, items: 8 },
-      { id: "loadd", sections: 5, items: 27 },
-      { id: "skorch-burgers", sections: 4, items: 19 },
-      { id: "souvano", sections: 3, items: 3 },
+      { id: "tavo-chicken", sections: 8, items: 24 },
+      { id: "moktl", sections: 2, items: 10 },
+      { id: "loadd", sections: 6, items: 29 },
+      { id: "skorch-burgers", sections: 5, items: 21 },
+      { id: "souvano", sections: 4, items: 5 },
     ]);
     expect(getLaunchMenuBrand("not-a-supplied-brand")).toBeUndefined();
   });
@@ -145,7 +146,24 @@ describe("Supplied launch menu transcription", () => {
             section.items.map((item) => [item.name, item.pricePence]),
           ]),
         ),
-      ).toEqual(expected[entry.id]);
+      ).toEqual({
+        ...expected[entry.id],
+        desserts: [
+          ["Biscoff Milkcake", 399],
+          ["Oreo Milkcake", 399],
+        ],
+      });
+      const desserts = entry.sections.find((section) => section.id === "desserts")!;
+      expect(desserts.title).toBe("Desserts");
+      expect(desserts.items.map((item) => item.id)).toEqual([
+        `${entry.id}-desserts-biscoff-milkcake`,
+        `${entry.id}-desserts-oreo-milkcake`,
+      ]);
+      for (const dessert of desserts.items) {
+        expect(dessert.optionGroupIds).toEqual([]);
+        expect(dessert.priceVariants).toBeUndefined();
+        expect(dessert.sourceRefs).toContain(`${launchMenuDessertApproval.id}#${entry.id}`);
+      }
     }
     expect(isLaunchBrandPriceApproved("paratique")).toBe(false);
     expect(brand("skorch").sections[0]?.description).toContain(
@@ -325,7 +343,9 @@ describe("Supplied launch menu transcription", () => {
       "Korean BBQ",
     ]);
     expect(flavours.required).toBe(true);
-    for (const item of souvano.sections.flatMap((section) => section.items)) {
+    for (const item of souvano.sections
+      .filter((section) => section.id !== "desserts")
+      .flatMap((section) => section.items)) {
       const side = group(
         "souvano",
         item.id.includes("heatwave") ? "souvano-heatwave-base" : "souvano-meal-side",
@@ -361,6 +381,7 @@ describe("Supplied launch menu transcription", () => {
         ...source.regions.map((region) => source.id + "#" + region.id),
       ]),
       ...launchMenuPriceApproval.brandIds.map((id) => `${launchMenuPriceApproval.id}#${id}`),
+      ...launchMenuDessertApproval.brandIds.map((id) => `${launchMenuDessertApproval.id}#${id}`),
     ]);
     const ids = new Set<string>();
     for (const source of launchMenuSources) {

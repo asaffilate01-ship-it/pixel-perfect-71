@@ -18,11 +18,12 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - name: Launch menu prices, basket arithmetic and cross-brand choices
-        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/launch-basket-feedback.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
+        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-desserts.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/launch-basket-feedback.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
       - name: Launch menu and approved logo implementation lint
         run: >-
           bunx eslint src/lib/launch-menu-catalogue.ts src/lib/launch-menu-picks.ts
           src/lib/launch-menu-upsells.ts
+          src/lib/launch-menu-desserts.ts
           src/lib/launch-menu-display-prices.ts
           src/lib/mealdeck-public-menu.ts src/lib/mealdeck-public-menu.server.ts
           src/components/menus/use-public-menu.ts src/components/menus/public-menu-status.tsx
@@ -34,10 +35,12 @@ jobs:
           src/components/menus/launch-basket-feedback.tsx
           tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts
           tests/launch-menu-upsells.test.ts
+          tests/launch-menu-desserts.test.ts
           tests/launch-menu-navigation.test.ts
           tests/launch-menu-display-prices.test.ts
           tests/launch-basket-feedback.test.ts
           deploy/mealdeck/public-menu-read.mjs tests/postgres/public-menu-read-behavior.mjs
+          deploy/mealdeck/milkcake-desserts.mjs tests/postgres/milkcake-desserts-behavior.mjs
           --rule 'prettier/prettier: off'
       - name: Installable app cache isolation and offline behavior
         run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
@@ -242,6 +245,9 @@ jobs:
 
       - name: Safe anonymous menu read and private authority isolation
         run: node tests/postgres/public-menu-read-behavior.mjs
+
+      - name: Additive milkcake publication and canonical dessert pricing
+        run: node tests/postgres/milkcake-desserts-behavior.mjs
 
       - name: Shared KDS and printer acceptance with one canonical receipt
         run: node tests/postgres/printer-acceptance-behavior.mjs
@@ -668,6 +674,7 @@ jobs:
             public-menu,
             menu-structure,
             public-menu-read,
+            milkcake-desserts,
             live-verification,
           ]
     services:
