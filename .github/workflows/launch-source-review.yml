@@ -19,8 +19,9 @@ jobs:
           npm ci --prefix tests/postgres --ignore-scripts
           mkdir -p .validation-tools
           cp "$(command -v bun)" .validation-tools/bun
-          npx --yes supabase@latest --version
-          cp "$(find "$HOME/.npm/_npx" -type f -path '*/supabase/bin/supabase' | head -1)" .validation-tools/supabase
+          npx --yes supabase@3.0.0 migration --help
+          npx --yes supabase@3.0.0 migration new mealdeck_launch_test_access
+          find supabase/migrations -name '*_mealdeck_launch_test_access.sql' -printf '%f\n' > .validation-tools/migration-name.txt
       - name: Archive isolated verification environment without credentials
         run: tar -czf mealdeck-validation.tar.gz node_modules tests/postgres/node_modules .validation-tools
       - uses: actions/upload-artifact@v4
