@@ -73,6 +73,12 @@ function backendProblem(error: unknown): CheckoutProblem {
   const message = String(object(error)["message"] ?? "");
   const known: [RegExp, string, string, number][] = [
     [
+      /prelaunch_test_account_required/,
+      "prelaunch_test_account_required",
+      "Public ordering opens at 3pm UK time on 6 November. Before then, use the approved test account.",
+      403,
+    ],
+    [
       /guest_window_closed|guest_unavailable/,
       "guest_window_closed",
       "Guest ordering is available only during our opening hours on 6–8 November. Sign in to order after the opening weekend.",
@@ -225,6 +231,7 @@ export type MealDeckOnlineCheckoutStatus = {
 export async function readOnlineCheckoutStatus(
   env: MealDeckRuntimeEnv,
   fetcher: typeof fetch = fetch,
+  verifiedCustomerId: string | null = null,
 ): Promise<MealDeckOnlineCheckoutStatus> {
   const base: MealDeckOnlineCheckoutStatus = {
     available: false,
@@ -236,10 +243,29 @@ export async function readOnlineCheckoutStatus(
   const clients = databaseClients(env, fetcher);
   if (!clients) return base;
   try {
-    const state = await rpc(clients.publicClient, "mealdeck_online_checkout_status", {
-      p_tenant: clients.config.tenantId,
-      p_location: clients.config.locationId,
-    });
+    const scope = { p_tenant: clients.config.tenantId, p_location: clients.config.locationId };
+    let state = await rpc(clients.publicClient, "mealdeck_online_checkout_status", scope);
+    const publicKitchen = parseKitchenAvailability(state["kitchen"]);
+    // The public status must stay closed before launch. A currently verified Auth
+    // identity can ask the service-only RPC for its own time-limited access. The
+    // database owns the account allowlist and clock; no client email/flag opens it.
+    // Operator Pause/Closed and every provider-readiness check remain authoritative.
+    if (
+      state["channelOpen"] !== true &&
+      clients.service &&
+      verifiedCustomerId &&
+      z.uuid().safeParse(verifiedCustomerId).success &&
+      publicKitchen &&
+      kitchenAcceptsNewOrders(publicKitchen.state)
+    ) {
+      const { data, error } = await clients.service.rpc("mealdeck_checkout_status_for_customer", {
+        ...scope,
+        p_customer: verifiedCustomerId,
+      });
+      // A missing extension or failed check never enables ordering. Keep the
+      // accurate public kitchen state, rather than replacing it with an empty one.
+      if (!error && data && typeof data === "object" && !Array.isArray(data)) state = data as Json;
+    }
     const openingOffer = parseOpeningOffer(state["openingOffer"]);
     if (!openingOffer) return base;
     const kitchen = parseKitchenAvailability(state["kitchen"]);
@@ -266,6 +292,20 @@ export async function readOnlineCheckoutStatus(
   } catch {
     return base;
   }
+}
+
+/** Resolve a bearer with Auth before using a private availability RPC. */
+export async function readRequestOnlineCheckoutStatus(
+  request: Request,
+  env: MealDeckRuntimeEnv,
+  fetcher: typeof fetch = fetch,
+): Promise<MealDeckOnlineCheckoutStatus> {
+  const clients = databaseClients(env, fetcher);
+  const customerId =
+    request.headers.has("Authorization") && clients
+      ? await verifiedCustomer(request, clients.publicClient)
+      : null;
+  return readOnlineCheckoutStatus(env, fetcher, customerId);
 }
 
 function newOrderingUnavailable(status: MealDeckOnlineCheckoutStatus): CheckoutProblem {
@@ -337,7 +377,7 @@ export async function handleOnlineCheckoutRequest(
 ) {
   try {
     if (request.method === "GET") {
-      const status = await readOnlineCheckoutStatus(env, fetcher);
+      const status = await readRequestOnlineCheckoutStatus(request, env, fetcher);
       const clients = databaseClients(env, fetcher);
       if (clients)
         status.guestCheckout.session = await resolveGuest(
@@ -458,7 +498,7 @@ export async function handleOnlineCheckoutRequest(
       env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off"
     )
       throw backendProblem({});
-    const status = await readOnlineCheckoutStatus(env, fetcher);
+    const status = await readOnlineCheckoutStatus(env, fetcher, customerId);
     if (!status.available) throw newOrderingUnavailable(status);
     if (action === "quote") {
       const selection = normaliseCheckoutSelection(input, clients.config.tenantId);

@@ -2,6 +2,26 @@ export type MealDeckCheckoutMode = "member" | "guest";
 
 export const CHECKOUT_MODE_KEY = "mealdeck-checkout-mode-v1";
 
+/** Availability may be account-specific; bearer state is transport, never authority. */
+export async function requestMealDeckAvailability(
+  path: "/api/checkout" | "/api/group-orders" | "/api/group-payments",
+  getAccessToken: () => Promise<string | null>,
+  signal?: AbortSignal,
+  request: typeof fetch = fetch,
+): Promise<Response> {
+  if (!["/api/checkout", "/api/group-orders", "/api/group-payments"].includes(path))
+    throw new Error("Unsupported availability endpoint.");
+  const token = await getAccessToken().catch(() => null);
+  if (signal?.aborted) throw new DOMException("Request aborted", "AbortError");
+  return request(path, {
+    method: "GET",
+    headers: token ? { Authorization: "Bearer " + token } : {},
+    credentials: "same-origin",
+    cache: "no-store",
+    ...(signal ? { signal } : {}),
+  });
+}
+
 /** Guest requests use the private browser cookie, even when a member is signed in. */
 export async function requestMealDeckCheckout<T>(
   mode: MealDeckCheckoutMode,

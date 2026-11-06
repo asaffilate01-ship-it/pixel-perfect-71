@@ -416,6 +416,12 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
     };
   }, [refreshCapabilities]);
 
+  const availabilityAccountId =
+    identity.account?.status === "signed_in" ? identity.account.profile.userId : null;
+  useEffect(() => {
+    if (!identity.loading) void refreshCapabilities();
+  }, [availabilityAccountId, identity.loading, refreshCapabilities]);
+
   useEffect(() => {
     // A confirmed create/join/recovery has already installed this room. Navigation
     // may commit before the old invitation fragment disappears from location.

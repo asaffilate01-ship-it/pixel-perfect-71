@@ -1,4 +1,8 @@
-import type { MealDeckCheckoutMode } from "./mealdeck-checkout-browser";
+import { getMealDeckCustomerAccessToken } from "./mealdeck-customer-browser";
+import {
+  requestMealDeckAvailability,
+  type MealDeckCheckoutMode,
+} from "./mealdeck-checkout-browser";
 import { safeMealDeckCheckoutRedirect } from "./mealdeck-checkout-url";
 import {
   isSharedPaymentRoomId,
@@ -36,14 +40,10 @@ async function readResponse(response: Response): Promise<unknown> {
 export async function readSharedPaymentCapabilities(
   signal?: AbortSignal,
   request: typeof fetch = fetch,
+  getToken: () => Promise<string | null> = getMealDeckCustomerAccessToken,
 ): Promise<SharedPaymentCapabilities> {
   const value = await readResponse(
-    await request("/api/group-payments", {
-      method: "GET",
-      credentials: "same-origin",
-      cache: "no-store",
-      ...(signal ? { signal } : {}),
-    }),
+    await requestMealDeckAvailability("/api/group-payments", getToken, signal, request),
   );
   const parsed = parseSharedPaymentCapabilities(value);
   if (!parsed) throw new Error("Shared payment setup could not be verified. Please try again.");

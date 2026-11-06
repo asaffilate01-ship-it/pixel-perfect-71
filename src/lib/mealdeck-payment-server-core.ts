@@ -44,6 +44,12 @@ export function paymentDatabaseError(error: unknown): CheckoutProblem {
   const message = String(paymentObject(error)["message"] ?? "");
   const cases: [RegExp, string, string, number][] = [
     [
+      /prelaunch_test_account_required/,
+      "prelaunch_test_account_required",
+      "Public ordering opens at 3pm UK time on 6 November. Before then, use the approved test account.",
+      403,
+    ],
+    [
       /permission|unauthori|forbidden|access_denied/,
       "not_permitted",
       "This account cannot collect payments for this kitchen.",
