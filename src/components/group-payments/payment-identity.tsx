@@ -7,20 +7,30 @@ export function PaymentIdentity({
   roomId,
   disabled,
   onGuestSaved,
+  returnTo = "/group-pay",
+  onRememberRoom,
+  purpose = "payment",
 }: {
   identity: PaymentIdentityState;
   roomId: string;
   disabled: boolean;
   onGuestSaved: () => void;
+  returnTo?: "/group-pay" | "/group-order";
+  onRememberRoom?: () => void;
+  purpose?: "payment" | "organiser";
 }) {
-  const accountHref = "/account?returnTo=" + encodeURIComponent("/group-pay");
+  const accountHref = "/account?returnTo=" + encodeURIComponent(returnTo);
   return (
     <section
       className="md-shared-card md-shared-identity"
       aria-labelledby="shared-payment-identity"
     >
-      <span className="md-shared-kicker">Your payment</span>
-      <h2 id="shared-payment-identity">Choose how to continue.</h2>
+      <span className="md-shared-kicker">
+        {purpose === "organiser" ? "Organiser details" : "Your payment"}
+      </span>
+      <h2 id="shared-payment-identity">
+        {purpose === "organiser" ? "Who’s organising the collection?" : "Choose how to continue."}
+      </h2>
       <div className="md-shared-identity-options" role="group" aria-label="Payment identity">
         <button
           type="button"
@@ -55,8 +65,12 @@ export function PaymentIdentity({
           <>
             <p>
               {identity.account?.status === "unverified"
-                ? "Verify your email before making a member payment."
-                : "Sign in or register with a verified email to make a member payment."}
+                ? purpose === "organiser"
+                  ? "Verify your email to organise this room as a member."
+                  : "Verify your email before making a member payment."
+                : purpose === "organiser"
+                  ? "Sign in or register with a verified email to organise the collection."
+                  : "Sign in or register with a verified email to make a member payment."}
             </p>
             {identity.accountIssue && (
               <p className="md-shared-notice" role="status">
@@ -66,20 +80,27 @@ export function PaymentIdentity({
             <a
               className="md-shared-button"
               href={accountHref}
-              onClick={() => rememberSharedPaymentRoom(roomId)}
+              onClick={() => {
+                if (onRememberRoom) onRememberRoom();
+                else rememberSharedPaymentRoom(roomId);
+              }}
             >
               Sign in or register
             </a>
             <p className="md-shared-muted">
-              You’ll return to this payment room. Marketing choices stay optional.
+              You’ll return to{" "}
+              {returnTo === "/group-order" ? "group ordering" : "this payment room"}. Marketing
+              choices stay optional.
             </p>
           </>
         )
       ) : (
         <>
           <p>
-            Pay without creating an account. Guest payments earn no loyalty points and do not sign
-            you up for marketing.
+            {purpose === "organiser"
+              ? "Organise the collection with guest contact details."
+              : "Pay without creating an account."}{" "}
+            Guest payments earn no loyalty points and do not sign you up for marketing.
           </p>
           {identity.guest?.session ? (
             <div className="md-shared-identity-summary">

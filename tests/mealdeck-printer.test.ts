@@ -1,4 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ReceiptPreview } from "../src/components/ops/receipt-preview";
+import { validateReceipt } from "../tools/receipt-bridge/receipt.mjs";
 import {
   receiptSchema,
   parsePrinterBoard,
@@ -98,6 +102,54 @@ const job = () => ({
   receipt: receipt(),
 });
 describe("canonical receipt presentation", () => {
+  test("retains each person's name on parent and attached-extra allocations across both receipt parsers", () => {
+    const value = receipt();
+    value.packingPlan.bags[0]!.name = "Amer";
+    value.packingPlan.bags[1]!.name = "Jay";
+    const parsed = receiptSchema.parse(validateReceipt(value));
+    for (const line of parsed.items)
+      expect(receiptItemBags(parsed, line.lineId)).toEqual([
+        { number: 1, name: "Amer", quantity: 1 },
+        { number: 2, name: "Jay", quantity: 1 },
+      ]);
+    expect(parsed.items).toEqual(value.items);
+    expect(parsed.totalPence).toBe(value.totalPence);
+  });
+  test("renders escaped packing names beside quantities while flavours and extras remain visible", () => {
+    const value = receipt();
+    value.packingPlan.bags[0]!.name = "<Amer & Jay>";
+    value.packingPlan.bags[1]!.name = "Alex";
+    const html = renderToStaticMarkup(createElement(ReceiptPreview, { receipt: value }));
+    expect(html).toContain("&lt;Amer &amp; Jay&gt; · Bag 1: 1×");
+    expect(html).not.toContain("<Amer & Jay>");
+    expect(html).toContain("Alex · Bag 2: 1×");
+    expect(html).toContain("3 Onion rings");
+    expect(html).toContain("Mango Mirage");
+    expect(html).toContain("extra with item above");
+  });
+  test("both receipt parsers reject changed or unsafe stored packing names", () => {
+    for (const name of [
+      "",
+      "Amer ",
+      "Amer  Khan",
+      "Amer\u00a0Khan",
+      "Amer\u3000Khan",
+      "A".repeat(33),
+      "Amer\n",
+      "Amer\u202e",
+      null,
+    ]) {
+      const value = receipt();
+      Object.assign(value.packingPlan.bags[0]!, { name });
+      expect(() => receiptSchema.parse(value)).toThrow();
+      expect(() => validateReceipt(value)).toThrow();
+    }
+    const value = receipt();
+    value.packingPlan.bags[0]!.name = "🧑".repeat(32);
+    expect(receiptSchema.parse(validateReceipt(value)).packingPlan.bags[0]!.name).toBe(
+      value.packingPlan.bags[0]!.name,
+    );
+  });
   test("keeps paid extras under the parent, all money and quantity splits", () => {
     const r = receiptSchema.parse(receipt());
     expect(r.items[0]?.modifiers[0]?.priceDeltaPence).toBe(199);

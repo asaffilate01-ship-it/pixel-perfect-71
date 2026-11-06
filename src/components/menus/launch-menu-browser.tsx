@@ -331,7 +331,7 @@ export function LaunchMenuBrowser({
         </div>
         <div className="lm-group-entry">
           <p>
-            <strong>Ordering together?</strong> Everyone chooses. One person pays.
+            <strong>Ordering together?</strong> Join one room. Choose how you pay.
           </p>
           <Link to="/group-order">
             Start a group <ArrowRight size={18} aria-hidden="true" />

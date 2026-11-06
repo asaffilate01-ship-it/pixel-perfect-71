@@ -25,6 +25,14 @@ test("same-named meals with different flavours print their own bag allocation be
   assert.doesNotMatch(result[1], /Dynamite/);
   assert.match(result[2], /Packing: Bag 2 x1/);
   assert.match(result[2], /Dynamite/);
+  r.packingPlan.bags[0].name = "Amer";
+  r.packingPlan.bags[1].name = "Jay";
+  const named = encodeReceipt(r).text.split("1 x Cruncher");
+  assert.match(named[1], /Packing: Amer - Bag 1 x1/);
+  assert.match(named[1], /Korean BBQ/);
+  assert.doesNotMatch(named[1], /Dynamite/);
+  assert.match(named[2], /Packing: Jay - Bag 2 x1/);
+  assert.match(named[2], /Dynamite/);
 });
 
 test("one receipt prints exact paid time, flavours, extras, amounts, bags and cutlery", () => {
@@ -72,6 +80,74 @@ test("one receipt prints exact paid time, flavours, extras, amounts, bags and cu
   assert.deepEqual([...result.bytes.slice(-4)], [10, 10, 10, 10]);
   assert.ok(result.text.split("\n").every((line) => line.length <= 42));
   assert.ok(result.bytes.length < RECEIPT_LIMITS.bytes);
+});
+
+test("names survive canonical validation and print beside food choices and each packing bag", () => {
+  const r = fixture();
+  r.packingPlan.bags[0].name = "Amer";
+  r.packingPlan.bags[1].name = "Jay";
+  assert.deepEqual(validateReceipt(r).packingPlan.bags, r.packingPlan.bags);
+  const result = encodeReceipt(r, { columns: 32 });
+  const text = result.text.replace(/\n\s*/g, " ");
+  assert.match(text, /Packing: Amer - Bag 1 x1, Jay - Bag 2 x1/);
+  assert.match(text, /BAG 1 OF 2 For: Amer/);
+  assert.match(text, /BAG 2 OF 2 For: Jay/);
+  for (const expected of [
+    "Fiery Sweet Chilli",
+    "King of Hearts loaded fries",
+    "Mocktail flavour",
+    "Mango Mirage",
+    "GBP 20.26",
+  ])
+    assert.ok(text.includes(expected), expected);
+  assert.ok(result.text.split("\n").every((line) => line.length <= 32));
+  assert.equal([...result.bytes].filter((byte) => byte === 27).length, 1);
+  assert.equal([...result.bytes].filter((byte) => byte === 29).length, 0);
+});
+
+test("packing names reject all C0/C1, bidi, noncanonical and unknown fields before any print", () => {
+  const controls = [
+    ...Array.from({ length: 32 }, (_, index) => index),
+    ...Array.from({ length: 33 }, (_, index) => 127 + index),
+    0x061c,
+    0x200e,
+    0x200f,
+    0x2028,
+    0x2029,
+    0x202a,
+    0x202e,
+    0x2066,
+    0x2069,
+  ];
+  for (const name of [
+    "",
+    "Amer ",
+    "Amer  Khan",
+    "Amer\u00a0Khan",
+    "Amer\u3000Khan",
+    "A".repeat(33),
+    null,
+    ...controls.map((code) => "Amer" + String.fromCodePoint(code)),
+  ]) {
+    const r = fixture();
+    r.packingPlan.bags[0].name = name;
+    assert.throws(() => encodeReceipt(r), { code: "invalid_packing_name" });
+  }
+  const r = fixture();
+  r.packingPlan.bags[0].name = "Amer";
+  r.packingPlan.bags[0].rawBytes = "anything";
+  assert.throws(() => encodeReceipt(r), { code: "unexpected_receipt_fields" });
+});
+
+test("Unicode packing names stay in the snapshot with an explicit printer fallback and a numbered label", () => {
+  const r = fixture();
+  r.packingPlan.bags[0].name = "أمير 👩‍🍳";
+  assert.equal(validateReceipt(r).packingPlan.bags[0].name, r.packingPlan.bags[0].name);
+  const result = encodeReceipt(r);
+  assert.deepEqual(result.warnings, ["ascii_replacement_characters"]);
+  assert.match(result.text, /BAG 1 OF 2/);
+  assert.match(result.text, /For: \?/);
+  assert.match(result.text, /Some characters shown as \?/);
 });
 
 test("configured cutter is exactly one final command, with bounded feed and no repeat command", () => {

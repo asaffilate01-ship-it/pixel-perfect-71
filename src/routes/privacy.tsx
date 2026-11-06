@@ -118,18 +118,23 @@ function PrivacyPage() {
           </p>
           <h2>Cookies, browser storage and the app</h2>
           <p>
-            Group planning saves the organiser’s draft, nicknames and food choices in that browser.
-            It is not a live synced room. Individual invitation links contain planning identifiers;
-            reply links also contain the chosen items, quantities, flavours and extras. They do not
-            contain contact details, account information or payment details. Anyone with a link can
-            read it or prepare a reply, so share these links privately. The kitchen receives
-            numbered bags at checkout, not your locally saved nicknames.
+            Group order rooms store participants’ chosen names, saved food choices, readiness and
+            payment progress on MealDeck’s servers. Joined participants can see the names and
+            progress of people in the room; the organiser can review everyone’s food choices and
+            itemised bills. The kitchen receives each person’s chosen name beside their food so
+            orders can be packed correctly. Other participants do not receive your contact details,
+            account credentials or payment card details.
           </p>
           <p>
-            Starting a new group replaces the organiser’s draft on that browser. Clearing MealDeck’s
-            site storage removes saved group and participant drafts, as well as other local choices.
-            A link already copied or sent remains readable by its recipients; changing a draft does
-            not update those links.
+            A private invitation contains a secret allowing its recipient to accept a place in the
+            room. Share each invitation only with its intended recipient. Unaccepted invitations
+            expire after the joining window. A necessary secure cookie protects access after you
+            join; a room identifier may be remembered in browser session storage so you can return.
+            Unsaved food edits remain in memory until saved or discarded. Clearing browser storage
+            removes local access and preferences, but does not delete an order or its server
+            records. Older group-planning drafts may remain on a device, and older reply links
+            already shared may still contain readable food choices; those links do not update a live
+            room.
           </p>
           <p>
             Necessary browser storage keeps you signed in, remembers the basket on your device and

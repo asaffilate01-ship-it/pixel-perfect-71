@@ -117,6 +117,20 @@ describe("actual menu selection and optional numbered packing", () => {
     expect(cutlery.lines).toEqual(one.lines);
     expect(cutlery.requestHash).not.toBe(one.requestHash);
   });
+  test("ordinary checkout cannot inject room participant names or named packing snapshots", () => {
+    for (const extra of [
+      { name: "Amer" },
+      { participantName: "Amer" },
+      { bags: [{ number: 1, name: "Amer", allocations: [{ lineId: "line-1", quantity: 1 }] }] },
+      { allocations: [{ lineId: "line-1", bag: 1, quantity: 1, name: "Amer" }] },
+    ])
+      expect(() =>
+        normaliseCheckoutSelection({ ...base(), packing: { ...base().packing, ...extra } }, tenant),
+      ).toThrow();
+    expect(() =>
+      normaliseCheckoutSelection({ ...base(), participantName: "Amer" }, tenant),
+    ).toThrow();
+  });
   test("split quantities are exact and a linked cross-brand extra follows its parent in each bag", () => {
     const input = {
       ...base(),

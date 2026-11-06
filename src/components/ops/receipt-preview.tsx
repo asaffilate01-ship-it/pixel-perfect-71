@@ -3,6 +3,7 @@ import {
   receiptItemBags,
   type MealDeckReceipt,
 } from "@/lib/mealdeck-printer";
+import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
   const ordered = r.items
     .filter((i) => !i.parentLineId)
@@ -55,7 +56,7 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
             </p>
             <p className="mt-1 text-xs font-bold">
               {receiptItemBags(r, item.lineId)
-                .map((b) => `Bag ${b.number}: ${b.quantity}×`)
+                .map((b) => `${formatPackingBagName(b)}: ${b.quantity}×`)
                 .join(" · ")}
             </p>
             {item.modifiers.length > 0 && (

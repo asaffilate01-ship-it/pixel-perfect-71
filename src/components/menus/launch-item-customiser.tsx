@@ -64,6 +64,7 @@ export function LaunchItemCustomiser({
   onSave,
   onBack,
   error,
+  context = "preview",
 }: {
   draft: LaunchItemDraft;
   onSave: (
@@ -73,6 +74,7 @@ export function LaunchItemCustomiser({
   ) => void;
   onBack: () => void;
   error: string;
+  context?: "preview" | "group-order";
 }) {
   const { brand, section, item, existing } = draft;
   const [configuration, setConfiguration] = useState(() =>
@@ -281,7 +283,9 @@ export function LaunchItemCustomiser({
             {formatLaunchMenuPrice(price.baseUnitPence ?? item.pricePence)} <span>per item</span>
           </p>
           <DialogDescription className="lmc-description">
-            Build your basket · Ordering coming soon
+            {context === "group-order"
+              ? "Choose your food for this group"
+              : "Build your basket · Ordering coming soon"}
           </DialogDescription>
         </div>
       </header>
@@ -312,7 +316,9 @@ export function LaunchItemCustomiser({
               ? "Make it yours"
               : step === "extras"
                 ? "Complete your meal"
-                : "Ready for your basket"}
+                : context === "group-order"
+                  ? "Ready for your order"
+                  : "Ready for your basket"}
         </h2>
 
         {picker ? (
@@ -489,7 +495,8 @@ export function LaunchItemCustomiser({
             </dl>
             {summaries.length > 0 && <p className="lmc-help">Your choices apply to each item.</p>}
             <p className="lmc-allergy">
-              For allergies or dietary needs, check with the team before ordering when we launch.
+              For allergies or dietary needs, check with the team before ordering
+              {context === "preview" ? " when we launch" : ""}.
             </p>
           </div>
         )}
@@ -517,7 +524,15 @@ export function LaunchItemCustomiser({
             }}
           >
             <ArrowLeft size={18} />
-            {picker ? "Back to extras" : stepIndex > 0 ? "Back" : existing ? "Basket" : "Menu"}
+            {picker
+              ? "Back to extras"
+              : stepIndex > 0
+                ? "Back"
+                : existing
+                  ? context === "group-order"
+                    ? "My choices"
+                    : "Basket"
+                  : "Menu"}
           </button>
           {picker && (
             <button type="button" className="lmc-none" onClick={() => chooseCross(picker, null)}>
@@ -534,7 +549,13 @@ export function LaunchItemCustomiser({
                 else setStep(steps[stepIndex + 1]!);
               }}
             >
-              {step === "review" ? (existing ? "Save changes" : "Add to basket") : "Next"}
+              {step === "review"
+                ? existing
+                  ? "Save changes"
+                  : context === "group-order"
+                    ? "Add to my order"
+                    : "Add to basket"
+                : "Next"}
               {step === "review" ? (
                 existing ? (
                   <Check size={18} />
@@ -547,7 +568,11 @@ export function LaunchItemCustomiser({
             </button>
           )}
         </div>
-        <p className="lmc-price-note">Item prices shown · Ordering coming soon</p>
+        <p className="lmc-price-note">
+          {context === "group-order"
+            ? "Current menu prices · Final total checked before payment"
+            : "Item prices shown · Ordering coming soon"}
+        </p>
       </footer>
     </>
   );

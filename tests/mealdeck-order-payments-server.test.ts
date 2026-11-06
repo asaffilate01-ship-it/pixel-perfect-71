@@ -320,6 +320,14 @@ describe("immutable shared and Terminal provider collection", () => {
     expect(session.get("success_url")).toBe(
       "https://mealdeck.co.uk/group-pay?room=" + group.roomId,
     );
+    const ordering = groupSessionParameters({ ...group, orderingRoomId: group.roomId });
+    expect(ordering.get("success_url")).toBe(
+      "https://mealdeck.co.uk/group-order?room=" + group.roomId,
+    );
+    expect(ordering.get("cancel_url")).toBe(ordering.get("success_url"));
+    expect(() =>
+      groupSessionParameters({ ...group, orderingRoomId: "00000000-0000-4000-8000-999999999999" }),
+    ).toThrow();
     expect(session.toString()).not.toContain("key=");
     expect(session.get("metadata[mealdeck_collection_id]")).toBe(group.collectionId);
     expect(session.get("payment_intent_data[metadata][mealdeck_collection_id]")).toBe(

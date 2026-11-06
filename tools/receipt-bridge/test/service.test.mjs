@@ -86,6 +86,26 @@ test("browser-edited receipt and a rejected claim never reach the writer", async
   assert.equal(h.journal.get(JOB), null);
 });
 
+test("dropping or changing a person's canonical packing name cannot print a different receipt", async (t) => {
+  const h = await harness(t);
+  h.canonical.packingPlan.bags[0].name = "Amer";
+  for (const name of ["Jay", undefined]) {
+    const changed = structuredClone(h.canonical);
+    if (name === undefined) delete changed.packingPlan.bags[0].name;
+    else changed.packingPlan.bags[0].name = name;
+    await assert.rejects(h.bridge.submit(job(changed), "pair-hash", "token"), {
+      code: "canonical_receipt_mismatch",
+    });
+  }
+  assert.equal(h.writes.length, 0);
+  assert.equal(h.journal.get(JOB), null);
+  await h.bridge.submit(job(h.canonical), "pair-hash", "token");
+  assert.equal(h.writes.length, 1);
+  assert.match(h.writes[0].toString("ascii"), /For: Amer/);
+  const persisted = await readFile(join(h.directory, "state.json"), "utf8");
+  assert.equal(persisted.includes("Amer"), false);
+});
+
 test("uncertain send is held and blocks further work until an explicit audited resolution", async (t) => {
   let attempts = 0;
   const h = await harness(t, {

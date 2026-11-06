@@ -169,6 +169,17 @@ function fixture() {
 }
 
 describe("private group payment links and server projection", () => {
+  test("server projection keeps person names, canonical choices and exact share totals without contact data", () => {
+    const value = rawRoom();
+    Object.assign(value.packingPlan.bags[0]!, { name: "Amer" });
+    Object.assign(value.packingPlan.bags[1]!, { name: "Jay" });
+    const result = sharedRoomForBrowser(value, { available: true, hasIdentity: true });
+    expect(result.bags).toEqual(value.packingPlan.bags);
+    expect(result.lines[0]!.description).toContain("Cheese");
+    expect(result.shares.map((share) => share.amountPence)).toEqual([500, 501]);
+    expect(JSON.stringify(result)).not.toContain("private@example.invalid");
+    expect(JSON.stringify(result)).not.toContain("private-contact");
+  });
   test("stable identifiers recover the same request while keys and purposes remain separated", () => {
     const first = groupPaymentUuid(secret, "room", [uid(1), uid(5)]);
     expect(first).toMatch(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);

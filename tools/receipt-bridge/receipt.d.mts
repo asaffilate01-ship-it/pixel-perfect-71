@@ -20,7 +20,7 @@ export type ReceiptPackingPlan = {
   version: 1;
   separateBags: boolean;
   cutleryRequested: boolean;
-  bags: { number: number; allocations: { lineId: string; quantity: number }[] }[];
+  bags: { number: number; name?: string; allocations: { lineId: string; quantity: number }[] }[];
 };
 export type MealDeckReceipt = {
   schemaVersion: 1;

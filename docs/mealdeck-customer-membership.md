@@ -40,6 +40,12 @@ verification link and shows a prominent **Continue to checkout** action once
 registration is complete. No arbitrary redirect URL is accepted. Addresses
 are not part of the profile schema; delivery details belong to the order.
 
+Server group rooms use the fixed `/account?returnTo=%2Fgroup-order` account
+return; historical shared-payment sessions retain `/group-pay`. Room IDs,
+invitation capabilities and payment data are restored by the room flow, not
+included in Auth email redirects. Joining a room or choosing a packing name
+does not register a member, verify an email or grant payment authority.
+
 ## Deployable database extension
 
 The frozen independent foundation remains untouched. Apply
@@ -150,7 +156,10 @@ approved programme and payment/refund reconciliation are installed.
 Use only the dedicated MealDeck project. Enable email confirmation and
 configure production SMTP, approved sender/domain, rate limits and anti-abuse
 controls. Allow the production account redirect URLs, including the fixed
-checkout return query. The default magic-link template works; including both
+checkout return query and exact
+`https://mealdeck.co.uk/account?returnTo=%2Fgroup-order` room return. Keep
+arbitrary room identifiers, invitation fragments and wildcard returns out of
+the application allowlist. The default magic-link template works; including both
 `{{ .ConfirmationURL }}` and `{{ .Token }}` adds the optional code route.
 Verification and sign-in templates should contain service information rather
 than promotional copy.

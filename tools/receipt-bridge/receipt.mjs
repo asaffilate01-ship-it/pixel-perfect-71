@@ -19,10 +19,11 @@ export class ReceiptError extends Error {
 function requireValue(condition, code = "invalid_receipt") {
   if (!condition) throw new ReceiptError(code);
 }
-function object(value, keys) {
+function object(value, keys, optionalKeys = []) {
   requireValue(value !== null && typeof value === "object" && !Array.isArray(value));
   requireValue(
-    Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key)),
+    keys.every((key) => Object.hasOwn(value, key)) &&
+      Object.keys(value).every((key) => keys.includes(key) || optionalKeys.includes(key)),
     "unexpected_receipt_fields",
   );
   return value;
@@ -39,6 +40,23 @@ function text(value, maximum = 140, allowEmpty = false) {
 }
 function nullableText(value, max = 20000) {
   return value === null ? null : text(value, max, true);
+}
+function packingPersonName(value) {
+  // Mirrors mealdeck-packing-name.ts without making the standalone bridge depend
+  // on the app runtime. Preserve the canonical nickname, including Unicode.
+  requireValue(
+    typeof value === "string" &&
+      value.length > 0 &&
+      [...value].length <= 32 &&
+      value ===
+        value.replace(/[ \u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+/gu, " ").trim() &&
+      !/[\p{Cc}\u061c\u200e\u200f\u2028-\u202e\u2066-\u2069]/u.test(value),
+    "invalid_packing_name",
+  );
+  return value;
+}
+function packingBagName(bag) {
+  return bag.name === undefined ? `Bag ${bag.number}` : `${bag.name} · Bag ${bag.number}`;
 }
 function identifier(value, pattern = uuid) {
   requireValue(typeof value === "string" && pattern.test(value), "invalid_receipt_identifier");
@@ -189,7 +207,8 @@ export function validateReceipt(input) {
   requireValue(bool(plan.cutleryRequested) === cutleryRequested, "cutlery_mismatch");
   const allocated = new Map();
   const bags = list(plan.bags, 1, RECEIPT_LIMITS.bags).map((inputBag, index) => {
-    const bag = object(inputBag, ["number", "allocations"]);
+    const bag = object(inputBag, ["number", "allocations"], ["name"]);
+    const name = Object.hasOwn(bag, "name") ? packingPersonName(bag.name) : undefined;
     requireValue(integer(bag.number, 1, 10) === index + 1, "invalid_bag_number");
     const perBag = new Map();
     const allocations = list(bag.allocations, 1, RECEIPT_LIMITS.items).map((inputAllocation) => {
@@ -207,7 +226,7 @@ export function validateReceipt(input) {
           (perBag.get(item.lineId) ?? 0) === (perBag.get(item.parentLineId) ?? 0),
           "extra_bag_mismatch",
         );
-    return { number: index + 1, allocations };
+    return { number: index + 1, ...(name === undefined ? {} : { name }), allocations };
   });
   for (const item of items)
     requireValue(allocated.get(item.lineId) === item.quantity, "packing_quantity_mismatch");
@@ -375,7 +394,10 @@ export function encodeReceipt(input, profile = {}) {
     const itemBags = receipt.packingPlan.bags.flatMap((bag) =>
       bag.allocations
         .filter((allocation) => allocation.lineId === item.lineId)
-        .map((allocation) => "Bag " + bag.number + " x" + allocation.quantity),
+        // Names have already passed their dedicated control/bidi checks. Apply
+        // the explicit printer fallback before the generic text writer so a
+        // valid Unicode joiner cannot fail an otherwise printable receipt.
+        .map((allocation) => printable(packingBagName(bag)) + " x" + allocation.quantity),
     );
     write("Packing: " + itemBags.join(", "), "  ");
     if (item.parentLineId)
@@ -418,6 +440,7 @@ export function encodeReceipt(input, profile = {}) {
   );
   for (const bag of receipt.packingPlan.bags) {
     write("BAG " + bag.number + " OF " + receipt.packingPlan.bags.length);
+    if (bag.name !== undefined) write("For: " + printable(bag.name));
     for (const allocation of bag.allocations) {
       const item = receipt.items.find((line) => line.lineId === allocation.lineId);
       write(allocation.quantity + " x " + item.brandName + " - " + item.name, "  ");

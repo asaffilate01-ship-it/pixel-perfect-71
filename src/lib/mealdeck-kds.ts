@@ -1,3 +1,5 @@
+import { packingPersonNameSchema } from "./mealdeck-packing-name";
+
 /**
  * The staff KDS consumes a privacy-minimised projection of canonical MealDeck
  * records. These types/parsers are presentation checks, never payment, routing
@@ -34,7 +36,7 @@ export type KdsOrderItem = {
     price_delta_pence: number;
     quantity_per_parent: number;
   }[];
-  bags?: { number: number; quantity: number }[];
+  bags?: { number: number; name?: string; quantity: number }[];
 };
 
 export type KdsItem = KdsOrderItem & { ticket_item_id: string };
@@ -212,7 +214,16 @@ function parseOrderItem(value: unknown): KdsOrderItem {
             v["bags"],
             (input) => {
               const b = record(input);
-              return { number: integer(b["number"], 1), quantity: integer(b["quantity"], 1) };
+              const number = integer(b["number"], 1);
+              if (number > 10) invalid();
+              const name =
+                b["name"] === undefined ? undefined : packingPersonNameSchema.safeParse(b["name"]);
+              if (name && !name.success) invalid();
+              return {
+                number,
+                ...(name?.success ? { name: name.data } : {}),
+                quantity: integer(b["quantity"], 1),
+              };
             },
             10,
           ),
@@ -233,6 +244,9 @@ function instructions(item: KdsOrderItem): string {
     item.modifiers,
     item.notes,
     item.participant_name,
+    // Legacy tickets predate bag projections. Named room orders require the
+    // same immutable person/bag allocation on every routed copy.
+    item.bags?.some((bag) => bag.name !== undefined) ? item.bags : undefined,
   ]);
 }
 
@@ -288,7 +302,13 @@ function parseOrder(value: unknown): KdsOrder {
     routedItems.add(item.order_item_id);
   }
   if (routingComplete && items.some((item) => !routedItems.has(item.order_item_id))) invalid();
+  const bagNames = new Map<number, string | undefined>();
   for (const item of items) {
+    for (const bag of item.bags ?? []) {
+      if (bag.name !== undefined && item.participant_name !== bag.name) invalid();
+      if (bagNames.has(bag.number) && bagNames.get(bag.number) !== bag.name) invalid();
+      bagNames.set(bag.number, bag.name);
+    }
     if (item.checkout_line_id) {
       if (!item.bags?.length || item.bags.reduce((n, b) => n + b.quantity, 0) !== item.quantity)
         invalid();

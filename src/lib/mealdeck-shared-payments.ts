@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { packingPersonNameSchema } from "./mealdeck-packing-name";
 
 /** Browser-safe transport only. Payment and allocation authority stays on the server. */
 export type SharedPaymentChoice = "host" | "by_bag" | "equal";
@@ -77,6 +78,7 @@ export const sharedPaymentRoomSchema = z
       .array(
         z.strictObject({
           number: bagNumber,
+          name: packingPersonNameSchema.optional(),
           allocations: z
             .array(z.strictObject({ lineId, quantity: z.number().int().min(1).max(60) }))
             .min(1)

@@ -30,6 +30,7 @@ const collectionSchema = z.object({
   orderId: z.uuid(),
   quoteId: z.uuid(),
   roomId: z.uuid().nullable(),
+  orderingRoomId: z.uuid().nullable().optional(),
   tenantId: z.uuid(),
   locationId: z.uuid(),
   method: z.enum(["checkout", "terminal"]),
@@ -139,13 +140,19 @@ function checkMetadata(resource: PaymentJson, collection: PaymentCollection) {
 /** All monetary values originate in the frozen server-priced claim. */
 export function groupSessionParameters(collection: PaymentCollection) {
   if (collection.method !== "checkout" || !collection.roomId) mismatch();
+  if (collection.orderingRoomId && collection.orderingRoomId !== collection.roomId) mismatch();
+  // Persisted by the ledger so an idempotent retry uses the original return URL.
+  const returnUrl =
+    "https://mealdeck.co.uk" +
+    (collection.orderingRoomId ? "/group-order?room=" : "/group-pay?room=") +
+    collection.roomId;
   const body = new URLSearchParams({
     mode: "payment",
     "payment_method_types[0]": "card",
     "payment_method_options[card][request_three_d_secure]": "automatic",
     client_reference_id: collection.orderId,
-    success_url: "https://mealdeck.co.uk/group-pay?room=" + collection.roomId,
-    cancel_url: "https://mealdeck.co.uk/group-pay?room=" + collection.roomId,
+    success_url: returnUrl,
+    cancel_url: returnUrl,
     expires_at: String(Math.floor(Date.parse(collection.expiresAt) / 1000)),
     "line_items[0][price_data][currency]": "gbp",
     "line_items[0][price_data][unit_amount]": String(collection.amountPence),

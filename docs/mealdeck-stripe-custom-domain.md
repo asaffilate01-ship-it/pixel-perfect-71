@@ -2,6 +2,11 @@
 
 The owner chose **`pay.mealdeck.co.uk`** for Stripe's hosted Checkout, Payment Links and Customer Portal and reported adding the DNS records. This release adds application support for the Checkout Sessions used by ordinary orders and individual group contributions. It does not create a new Payment Link or Customer Portal product, configure Stripe/DNS, or activate ordering.
 
+On **6 November 2026**, the owner reported that the Stripe DNS/domain setup was
+live. A public HTTPS request to the hostname returned 204. Provider activation
+and the URL on a real merchant Checkout Session still require the authenticated
+account check; public reachability does not establish that server configuration.
+
 ## Application behavior
 
 Set the server-only `MEALDECK_STRIPE_CHECKOUT_HOST` to exactly `pay.mealdeck.co.uk` after Stripe has activated that hostname. Leave it empty for `checkout.stripe.com`. Schemes, ports, paths, wildcards, alternate hostnames and comma-separated lists are invalid. `VITE_`/public environment variables are not read.
