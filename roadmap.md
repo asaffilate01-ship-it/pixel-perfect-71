@@ -23,7 +23,7 @@ Last reviewed: **5 November 2026**. This is the current checklist; numbered phas
 ## Current completion work
 
 - [x] Add secure owner-only password setup for the five requested internal accounts, preserving existing roles and requiring separate email-ownership approval.
-- [ ] Set the five actual passwords and verify signed-in setup: blocked by the only owner account having no password and an unverified email; an existing verified owner session is required.
+- [ ] Set the five actual passwords: `superadmin@mealdeck.co.uk` is now verified with owner access, and the owner-only form no longer needs a backend key Lovable Cloud never hands out, so the owner can enter them in Staff access → Account passwords.
 
 - [x] Publish the dedicated Offers page with exactly the three owner-approved November promotions and remove retired sample offers. PR #73 is merged; the live `/offers` page was visually checked after native publication.
 - [x] Build the host-pays group flow: invite individual choices, review replies, combine one basket and carry each person's items into numbered bags. Strict restoration, replay protection, stale-tab checks and a fixed authentication return preserve the reviewed group. Split payments remain separate and unavailable. See [the group guide](docs/mealdeck-group-ordering.md).
