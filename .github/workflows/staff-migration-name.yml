@@ -1,0 +1,26 @@
+name: Allocate staff migration
+on:
+  push:
+    branches: [feature/mealdeck-staff-stations-20261106]
+    paths: [.github/workflows/staff-migration-name.yml]
+permissions:
+  contents: read
+jobs:
+  allocate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          mkdir -p allocation
+          cd allocation
+          npx --yes supabase@3.0.0 --help
+          npx --yes supabase@3.0.0 migration new --help
+          npx --yes supabase@3.0.0 migration new mealdeck_staff_active_identity
+          find supabase/migrations -name '*.sql' -printf '%f\n' > migration-name.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-staff-migration
+          path: allocation/migration-name.txt
+          retention-days: 1
