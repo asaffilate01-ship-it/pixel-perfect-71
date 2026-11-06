@@ -4,6 +4,11 @@
   display: none;
 }
 
+/* A sheet owns the viewport until it closes; do not leave its trigger beneath it. */
+.lm-shell .lma-app-nav[hidden] {
+  display: none;
+}
+
 .lma-app-nav,
 .lma-sheet {
   --lma-ink: var(--md-black, #111111);

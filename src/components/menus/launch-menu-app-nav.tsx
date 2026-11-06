@@ -80,7 +80,7 @@ export function LaunchMenuAppNav({
   return (
     <>
       <div className="lma-nav-clearance" aria-hidden="true" />
-      <nav className="lma-app-nav" aria-label="Menu navigation">
+      <nav className="lma-app-nav" aria-label="Menu navigation" hidden={dialogOpen || sheetOpen}>
         <button
           type="button"
           className="lma-tab"

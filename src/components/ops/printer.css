@@ -121,7 +121,9 @@
   }
   body > .md-printer-print-only {
     display: block !important;
-    width: 72mm;
+    /* Fit the selected paper width, including narrower Android receipt printers. */
+    width: 100%;
+    max-width: 72mm;
     margin: 0;
     padding: 0;
   }

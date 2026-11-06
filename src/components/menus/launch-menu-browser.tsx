@@ -82,7 +82,6 @@ function visibleBasketTrigger(): HTMLElement | undefined {
     [
       document.querySelector<HTMLButtonElement>('[data-launch-basket-trigger="mobile"]'),
       document.querySelector<HTMLButtonElement>(".lmb-dock-button"),
-      document.querySelector<HTMLButtonElement>('[data-launch-basket-trigger="toolbar"]'),
     ].find(isVisibleFocusTarget) ?? undefined
   );
 }
@@ -194,6 +193,7 @@ export function LaunchMenuBrowser({
       returnFocusRef.current =
         document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSaveError("");
+    setNotice(null);
     setDraft({ ...entry, ...(existing ? { existing } : {}) });
     setPicksOpen(false);
   }
@@ -231,6 +231,7 @@ export function LaunchMenuBrowser({
     returnFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setDraft(null);
+    setNotice(null);
     setPicksOpen(true);
   }
 
@@ -346,8 +347,14 @@ export function LaunchMenuBrowser({
           <span className="lm-eyebrow">The Luton launch deck</span>
           <p>Five menus. Every craving.</p>
           <span className="lm-launch-label">
-            Browse now · Ordering coming soon
-            <small className="mt-1 block text-xs font-normal">All food is halal</small>
+            <span>Browse now · Ordering coming soon</span>
+            <img
+              className="lm-halal-mark"
+              src="/halal-mark.svg"
+              alt="All food is halal"
+              width="40"
+              height="40"
+            />
           </span>
         </div>
         <div className="lm-group-entry">
@@ -461,18 +468,6 @@ export function LaunchMenuBrowser({
               <span className="lm-result-count" role="status">
                 {visibleCount} {visibleCount === 1 ? "item" : "items"}
               </span>
-              <button
-                type="button"
-                className="lm-your-picks-button"
-                data-launch-basket-trigger="toolbar"
-                onClick={openBasket}
-                aria-label={
-                  "View basket, " + quantity + (quantity === 1 ? " selection" : " selections")
-                }
-              >
-                <ShoppingBag size={18} />
-                View basket<span>{quantity}</span>
-              </button>
             </div>
             <nav className="lm-category-nav" aria-label={brand.name + " menu sections"}>
               <button
@@ -726,7 +721,16 @@ export function LaunchMenuBrowser({
         </footer>
       </main>
       <SiteFooter />
-      <LaunchBasketDock count={quantity} onOpen={openBasket} />
+      <LaunchBasketDock
+        count={quantity}
+        dialogOpen={!!draft || picksOpen}
+        feedbackMessage={
+          notice?.tone !== "info" && !(clearedPicks && picks.length === 0)
+            ? (notice?.message ?? null)
+            : null
+        }
+        onOpen={openBasket}
+      />
       <LaunchMenuAppNav
         brands={brandOrder.flatMap((id) => {
           const entry = getLaunchMenuBrand(id, catalogue);
@@ -754,12 +758,11 @@ export function LaunchMenuBrowser({
         update={notice}
         dialogOpen={!!draft || picksOpen}
         canUndo={!!clearedPicks && picks.length === 0}
-        canViewBasket={picks.length > 0}
         onUndo={() => {
           undoEmptyBasket();
           requestAnimationFrame(() => visibleBasketTrigger()?.focus({ preventScroll: true }));
         }}
-        onBasket={openBasket}
+        onExpire={(expired) => setNotice((current) => (current === expired ? null : current))}
         onDismiss={() => {
           setNotice(null);
           requestAnimationFrame(() => visibleBasketTrigger()?.focus({ preventScroll: true }));
@@ -772,6 +775,7 @@ export function LaunchMenuBrowser({
           if (!open) {
             setDraft(null);
             setPicksOpen(false);
+            setNotice(null);
           }
         }}
       >
@@ -803,7 +807,7 @@ export function LaunchMenuBrowser({
               error={saveError}
             />
           ) : (
-            <>
+            <div className="lm-basket-sheet-content">
               <div className="lm-dialog-heading">
                 <MealDeckLogo
                   className="lm-basket-logo lm-basket-logo-dialog"
@@ -851,13 +855,16 @@ export function LaunchMenuBrowser({
                 <button
                   type="button"
                   className={quantity > 0 ? "lm-basket-continue" : "lm-primary"}
-                  onClick={() => setPicksOpen(false)}
+                  onClick={() => {
+                    setPicksOpen(false);
+                    setNotice(null);
+                  }}
                 >
                   Keep exploring
                   <ArrowRight size={18} aria-hidden="true" />
                 </button>
               </div>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>

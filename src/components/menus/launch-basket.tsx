@@ -1,5 +1,5 @@
 import { usePublicMenu } from "./use-public-menu";
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useId, useRef, type CSSProperties } from "react";
 import { Bookmark, ChevronUp, Minus, Plus, RotateCcw, ShoppingBag, Trash2 } from "lucide-react";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import {
@@ -360,18 +360,31 @@ export function LaunchBasket({
   );
 }
 
-export function LaunchBasketDock({ count, onOpen }: { count: number; onOpen: () => void }) {
+export function LaunchBasketDock({
+  count,
+  dialogOpen,
+  feedbackMessage,
+  onOpen,
+}: {
+  count: number;
+  dialogOpen: boolean;
+  feedbackMessage?: string | null;
+  onOpen: () => void;
+}) {
   const countLabel = count + (count === 1 ? " selection" : " selections");
+  const feedbackId = useId();
 
   return (
     <>
       <div className="lmb-dock-clearance" aria-hidden="true" />
-      <div className="lmb-dock">
+      <div className="lmb-dock" hidden={dialogOpen}>
         <button
           className="lmb-dock-button"
           type="button"
           aria-label={"View basket, " + countLabel}
+          aria-describedby={feedbackMessage ? feedbackId : undefined}
           aria-haspopup="dialog"
+          aria-expanded={dialogOpen}
           onClick={onOpen}
         >
           <span className="lmb-dock-icon" aria-hidden="true">
@@ -379,7 +392,13 @@ export function LaunchBasketDock({ count, onOpen }: { count: number; onOpen: () 
           </span>
           <span className="lmb-dock-copy">
             <strong>View basket</strong>
-            <small>Ordering coming soon</small>
+            <small
+              id={feedbackId}
+              data-basket-update={!!feedbackMessage}
+              title={feedbackMessage ?? undefined}
+            >
+              {feedbackMessage || "Ordering coming soon"}
+            </small>
           </span>
           <span className="lmb-dock-count" aria-hidden="true">
             {count}

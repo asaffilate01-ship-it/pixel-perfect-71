@@ -57,7 +57,21 @@ No private receipts or orders are cached by service workers. Supabase's authenti
 
 ## Connecting actual hardware
 
-The repository contains the local bridge in `tools/receipt-bridge/`. Its setup instructions cover the locally configured TLS listener, trusted MealDeck origin, fixed printer address, verified backend and supported ESC/POS settings. A receipt printer model, connection and operator device must still be configured and tested before claiming physical automatic printing works.
+### SENRAISE Android commissioning — 6 November 2026
+
+The owner confirmed a **SENRAISE Android device** and chose to install the dedicated **MealDeck Printer PWA from `https://mealdeck.co.uk/printer`** as its working screen. Its exact model, Android/firmware version and paper width have not yet been supplied. PWA installation alone does not install a printer driver or enable automatic integrated printing. This work has not performed device installation, an integrated-printer connection or physical-paper acceptance.
+
+First record the model and Android version from **Settings → About device**, and identify the installed printing service or vendor printer-test app. The manufacturer's specifications differ: [H10S](https://www.senraise.com/products/senraise-h10s-handheld-pos-terminal.html) has Android 13 and a 58 mm printer; [H10P](https://www.senraise.com/products/senraise-h10p-handheld-pos-terminal.html) has Android 14 and a 58 mm printer; [X1](https://www.senraise.com/products/senraise-x1-android14-desktop-pos.html) can have an 80 mm printing base with a cutter or a base without a printer. Do not infer the installed configuration from the SENRAISE name or substitute Sunmi/iMin interfaces.
+
+The existing **Browser print dialog** is a conditional manual path: use it only if this device's Android print chooser actually exposes the built-in printer, select one copy, then inspect the paper and confirm the outcome. A proprietary vendor printer service does not by itself establish print-chooser compatibility. No official installable browser/system print-service package has been verified for this device.
+
+[SENRAISE's official FAQ](https://www.senraise.com/faq.html) confirms SDK/API integration support. On 6 November its [official download page](https://www.senraise.com/download.html) presented email verification; no matching official SDK/API contract or browser/PWA printing integration was verified. Obtain the model/firmware-specific vendor service documentation and any required official SDK before implementing automatic integrated printing.
+
+Keep the PWA as the operator screen. Automatic output needs a manufacturer-supported Android print service or companion bridge with a verified connection from that PWA; the available integration is still to be established for this model. Any companion must use the existing authenticated queue, claims, `begin_send` and canonical `mealdeck_printer_claim_receipt` snapshot. Preserve immutable purchased details, a durable job/order-copy journal before hardware dispatch, one bounded send, uncertain-send holds and explicit physical-paper confirmation. Reprints remain audited numbered copies. Printer access remains independent of payment permissions. No automatic or background printing support is claimed before device commissioning.
+
+### Existing POSIX/TCP bridge
+
+The repository contains the local bridge in `tools/receipt-bridge/`. It runs with Node 22 or later on a POSIX computer and sends to one fixed TCP ESC/POS printer; it is not an adapter for the SENRAISE integrated Android printer. Its setup instructions cover the locally configured TLS listener, trusted MealDeck origin, fixed printer address, verified backend and supported ESC/POS settings. The actual model and connection must be commissioned before claiming physical automatic printing works.
 
 The printer app connects only to `https://127.0.0.1:17443`. Pairing uses a code displayed by the local bridge. The browser cannot supply a printer destination, arbitrary URL, raw print bytes, feed length or copy count.
 
