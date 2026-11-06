@@ -44,7 +44,23 @@ export async function printerRpc(name: string, args: Record<string, unknown> = {
     if (error.code === "PGRST202")
       throw new OpsRequestError(
         "unconfigured",
-        "The receipt service needs its database setup. Ask your administrator to finish the printer installation.",
+        name === "mealdeck_printer_acceptance_board" || name === "mealdeck_printer_accept_order"
+          ? "Accepting orders from this printer needs its database update. Existing receipt printing remains available; ask your administrator to finish the update."
+          : "The receipt service needs its database setup. Ask your administrator to finish the printer installation.",
+      );
+    if (/mealdeck_kds_conflict/.test(error.message))
+      throw new OpsRequestError(
+        "conflict",
+        "This order changed on another screen. Refresh the paid orders and receipt queue before accepting it.",
+      );
+    if (
+      /mealdeck_kds_(invalid_transition|order_unavailable|payment_required|release_required|not_released|routing_incomplete|instructions_unavailable)/.test(
+        error.message,
+      )
+    )
+      throw new OpsRequestError(
+        "invalid_transition",
+        "This order is no longer cleared for acceptance. Refresh the queue and ask the kitchen to review its current status.",
       );
     if (/verified_account_required/.test(error.message))
       throw new OpsRequestError(

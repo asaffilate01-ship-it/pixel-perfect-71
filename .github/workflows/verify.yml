@@ -53,6 +53,7 @@ jobs:
           tests/mealdeck-checkout-browser.test.ts
           tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts
           tests/mealdeck-printer-auth.test.ts
+          tests/mealdeck-printer-acceptance.test.ts
           tests/mealdeck-kds-toolbar.test.ts
           tests/mealdeck-staff-alerts.test.ts
       - name: Receipt bridge one-copy delivery, pairing and canonical order verification
@@ -64,6 +65,9 @@ jobs:
           src/components/ops/staff-alerts.tsx src/lib/mealdeck-printer.ts
           src/lib/mealdeck-printer-browser.ts src/lib/mealdeck-printer-recovery.ts
           src/lib/mealdeck-printer-auth.ts tests/mealdeck-printer-auth.test.ts
+          src/components/ops/printer-pending-orders.tsx src/lib/mealdeck-printer-acceptance.ts
+          tests/mealdeck-printer-acceptance.test.ts
+          deploy/mealdeck/printer-acceptance.mjs tests/postgres/printer-acceptance-behavior.mjs
           src/lib/mealdeck-staff-alerts.ts tests/mealdeck-printer.test.ts
           tests/mealdeck-staff-alerts.test.ts
           --rule 'prettier/prettier: off'
@@ -237,6 +241,9 @@ jobs:
 
       - name: Safe anonymous menu read and private authority isolation
         run: node tests/postgres/public-menu-read-behavior.mjs
+
+      - name: Shared KDS and printer acceptance with one canonical receipt
+        run: node tests/postgres/printer-acceptance-behavior.mjs
 
       - name: Payment HTTP handlers against migrated PostgreSQL contracts
         run: bun test tests/mealdeck-payment-http-postgres.test.ts
@@ -648,6 +655,7 @@ jobs:
             customer-membership,
             stripe-checkout,
             kitchen-printer,
+            printer-acceptance,
             guest-checkout,
             kitchen-availability,
             shared-terminal-payments,

@@ -21,6 +21,13 @@ import {
 import { confirmReceiptPaper } from "@/lib/mealdeck-printer-recovery";
 import { MealDeckBackendSetupError } from "@/lib/mealdeck-backend-client-cache";
 import { PrinterSignInError, signInPrinterWithPassword } from "@/lib/mealdeck-printer-auth";
+import {
+  acceptPrinterPendingOrder,
+  parsePrinterAcceptanceBoard,
+  PrinterAcceptanceError,
+  printerArrivalKeys,
+  type PrinterPendingOrder,
+} from "@/lib/mealdeck-printer-acceptance";
 import { OpsRequestError } from "@/lib/mealdeck-ops-browser";
 import {
   parsePrinterBoard,
@@ -32,11 +39,13 @@ import {
 } from "@/lib/mealdeck-printer";
 import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
 import { ReceiptPreview } from "./receipt-preview";
+import { PrinterConnectionStatus, PrinterPendingOrderCard } from "./printer-pending-orders";
 import "./ops-theme.css";
 import "./printer.css";
 const errorMessage = (reason: unknown, fallback: string) =>
   reason instanceof OpsRequestError ||
   reason instanceof PrinterSignInError ||
+  reason instanceof PrinterAcceptanceError ||
   reason instanceof MealDeckBackendSetupError
     ? reason.message
     : fallback;
@@ -377,6 +386,11 @@ export function PrinterWorkspace() {
 
 function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
   const [feedError, setFeedError] = useState("");
+  const [pendingOrders, setPendingOrders] = useState<PrinterPendingOrder[]>([]),
+    [acceptanceError, setAcceptanceError] = useState(""),
+    [acceptanceSyncAt, setAcceptanceSyncAt] = useState<number | null>(null),
+    [remainingOrderCount, setRemainingOrderCount] = useState(0),
+    [acceptingOrder, setAcceptingOrder] = useState<string | null>(null);
   const [jobs, setJobs] = useState<PrinterJob[]>([]),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
@@ -395,7 +409,12 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
     reading = useRef(false);
   const token = useRef<string | null>(null),
     terminal = useRef<string>(""),
-    currentJobs = useRef<PrinterJob[]>([]);
+    currentJobs = useRef<PrinterJob[]>([]),
+    currentPendingOrders = useRef<PrinterPendingOrder[]>([]),
+    receiptFreshAt = useRef<number | null>(null),
+    acceptanceFreshAt = useRef<number | null>(null),
+    refreshRequested = useRef(false),
+    refreshRef = useRef<(() => Promise<void>) | null>(null);
   const alerts = useStaffAlerts("printer", `${scope.tenantId}:${scope.locationId}`);
   const params = { p_tenant: scope.tenantId, p_location: scope.locationId };
   const call = useCallback(
@@ -408,48 +427,90 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
     [scope.tenantId, scope.locationId],
   );
   const refresh = useCallback(async () => {
-    if (mutating.current || reading.current) return;
+    if (mutating.current) return;
+    if (reading.current) {
+      refreshRequested.current = true;
+      return;
+    }
     const g = ++generation.current;
     reading.current = true;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
-      const raw = await Promise.race([
-        call("board"),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000)),
-      ]);
-      const board = parsePrinterBoard(raw, {
-        tenantId: scope.tenantId,
-        locationId: scope.locationId,
+      const deadline = new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error("timeout")), 12000);
       });
-      if (!mounted.current || g !== generation.current) return;
-      setJobs(board.jobs);
-      currentJobs.current = board.jobs;
-      setSyncAt(Date.now());
-      setNow(Date.now());
-      setFeedError("");
-    } catch (e) {
-      if (!mounted.current || g !== generation.current) return;
-      setSyncAt(null);
-      setFeedError(
-        errorMessage(
-          e,
-          "Receipt connection interrupted. Printing is paused until the queue is verified again.",
+      const identity = { tenantId: scope.tenantId, locationId: scope.locationId };
+      const results = await Promise.allSettled([
+        Promise.race([call("board"), deadline]).then((raw) => parsePrinterBoard(raw, identity)),
+        Promise.race([call("acceptance_board"), deadline]).then((raw) =>
+          parsePrinterAcceptanceBoard(raw, identity),
         ),
-      );
-      if (accessError(e)) {
+      ]);
+      if (!mounted.current || g !== generation.current) return;
+      const [receipts, acceptance] = results;
+      const checkedAt = Date.now();
+      if (receipts.status === "fulfilled") {
+        setJobs(receipts.value.jobs);
+        currentJobs.current = receipts.value.jobs;
+        receiptFreshAt.current = checkedAt;
+        setSyncAt(checkedAt);
+        setFeedError("");
+      } else {
+        receiptFreshAt.current = null;
+        setSyncAt(null);
+        setFeedError(
+          errorMessage(
+            receipts.reason,
+            "Receipt connection interrupted. Printing is paused until the queue is verified again.",
+          ),
+        );
+      }
+      if (acceptance.status === "fulfilled") {
+        setPendingOrders(acceptance.value.orders);
+        currentPendingOrders.current = acceptance.value.orders;
+        setRemainingOrderCount(acceptance.value.remainingOrderCount);
+        acceptanceFreshAt.current = checkedAt;
+        setAcceptanceSyncAt(checkedAt);
+        setAcceptanceError("");
+      } else {
+        acceptanceFreshAt.current = null;
+        setAcceptanceSyncAt(null);
+        setAcceptanceError(
+          errorMessage(
+            acceptance.reason,
+            "Paid orders awaiting acceptance could not be checked. Refresh before accepting an order; the existing receipt queue remains separate.",
+          ),
+        );
+      }
+      setNow(checkedAt);
+      if (results.some((result) => result.status === "rejected" && accessError(result.reason))) {
+        receiptFreshAt.current = null;
+        acceptanceFreshAt.current = null;
+        setSyncAt(null);
+        setAcceptanceSyncAt(null);
         setJobs([]);
+        setPendingOrders([]);
+        setRemainingOrderCount(0);
         setPrintJob(null);
         setPreview(null);
         setLocalHolds([]);
         setNotice("");
         currentJobs.current = [];
+        currentPendingOrders.current = [];
         token.current = null;
         setPaired(false);
         setAutomatic(false);
       }
     } finally {
+      clearTimeout(timeout);
       reading.current = false;
+      if (refreshRequested.current && mounted.current && !mutating.current) {
+        refreshRequested.current = false;
+        void refreshRef.current?.();
+      }
     }
   }, [call, scope.tenantId, scope.locationId]);
+  refreshRef.current = refresh;
   useEffect(() => {
     mounted.current = true;
     terminal.current = crypto.randomUUID();
@@ -466,6 +527,10 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
       generation.current++;
       token.current = null;
       currentJobs.current = [];
+      currentPendingOrders.current = [];
+      receiptFreshAt.current = null;
+      acceptanceFreshAt.current = null;
+      refreshRequested.current = false;
       clearInterval(poll);
       clearInterval(tick);
       window.removeEventListener("online", resume);
@@ -474,12 +539,67 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
   }, [refresh]);
   const fresh =
     syncAt !== null && now - syncAt < 45000 && typeof navigator !== "undefined" && navigator.onLine;
+  const acceptanceFresh = fresh && acceptanceSyncAt !== null && now - acceptanceSyncAt < 45000;
+  const observeArrivals = alerts.observe;
   useEffect(() => {
-    alerts.observe(
-      jobs.map((j) => j.jobId),
-      fresh,
-    );
-  }, [jobs, fresh, alerts.observe]);
+    observeArrivals(printerArrivalKeys(pendingOrders, jobs), fresh);
+  }, [jobs, pendingOrders, fresh, observeArrivals]);
+  async function accept(order: PrinterPendingOrder) {
+    if (mutating.current || busy) return;
+    try {
+      const result = await acceptPrinterPendingOrder({
+        order,
+        scope,
+        mutation: mutating,
+        readCurrent: () => ({
+          fresh:
+            mounted.current &&
+            navigator.onLine &&
+            receiptFreshAt.current !== null &&
+            Date.now() - receiptFreshAt.current < 45000 &&
+            acceptanceFreshAt.current !== null &&
+            Date.now() - acceptanceFreshAt.current < 45000,
+          orders: currentPendingOrders.current,
+        }),
+        request: printerRpc,
+        onStart: () => {
+          generation.current++;
+          receiptFreshAt.current = null;
+          acceptanceFreshAt.current = null;
+          setSyncAt(null);
+          setAcceptanceSyncAt(null);
+          setBusy(true);
+          setAcceptingOrder(order.orderId);
+          setError("");
+          setNotice("");
+        },
+      });
+      if (!mounted.current) return;
+      currentPendingOrders.current = currentPendingOrders.current.filter(
+        (entry) => entry.orderId !== order.orderId,
+      );
+      setPendingOrders(currentPendingOrders.current);
+      setNotice(
+        result.replayed
+          ? `${order.displayCode} was already accepted. Its existing receipt is unchanged; no extra copy was requested.`
+          : `${order.displayCode} accepted. One receipt is queued.${paired && automatic ? " Automatic printing will send it when the live queue refreshes; check the paper afterwards." : " Enable automatic printing on a paired device, or print it from the receipt queue below."}`,
+      );
+    } catch (reason) {
+      if (mounted.current)
+        setError(
+          errorMessage(
+            reason,
+            "Acceptance was not confirmed. Refresh the orders and receipt queue before trying again.",
+          ),
+        );
+    } finally {
+      if (mounted.current) {
+        setBusy(false);
+        setAcceptingOrder(null);
+        await refresh();
+      }
+    }
+  }
   async function pair() {
     if (busy) return;
     setBusy(true);
@@ -639,6 +759,7 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
           Number.isInteger(j.copyNumber),
       );
       setLocalHolds(held);
+      if (held.length) setAutomatic(false);
       if (!held.length) setNotice("No interrupted receipts are held by this local printer.");
     } catch {
       setError("The local recovery queue could not be read. Nothing was resent.");
@@ -740,7 +861,7 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
           </p>
           <h2 className="mt-1 text-2xl font-black">One order. One receipt.</h2>
           <p className="mt-2 text-sm md-ops-muted">
-            Paid orders enter this queue when the kitchen accepts them.
+            Accept paid orders here or on the KDS. Both use the same receipt queue.
           </p>
         </div>
         <button
@@ -753,10 +874,21 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
           Refresh
         </button>
       </div>
-      <StaffAlertControls alerts={alerts} kind="printer" />
+      <PrinterConnectionStatus
+        fresh={fresh}
+        paired={paired}
+        automatic={automatic}
+        busy={busy}
+        onAutomaticChange={setAutomatic}
+      />
+      <StaffAlertControls
+        alerts={alerts}
+        kind="printer"
+        noticeLabels={{ singular: "order or receipt", plural: "orders or receipts" }}
+      />
       <details className="md-ops-card p-4" open={!paired}>
         <summary className="cursor-pointer text-sm font-bold">
-          {paired ? "Printer connected on this device" : "Connect the receipt printer"}
+          {paired ? "Local printer bridge paired" : "Connect the receipt printer"}
         </summary>
         <div className="mt-4 space-y-3">
           <p className="text-sm leading-6 md-ops-muted">
@@ -791,18 +923,6 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
                 Pair this device
               </button>
             </form>
-          )}
-          {paired && (
-            <label className="flex min-h-11 items-center gap-3 text-sm font-bold">
-              <input
-                type="checkbox"
-                className="size-5"
-                checked={automatic}
-                disabled={busy}
-                onChange={(e) => setAutomatic(e.target.checked)}
-              />
-              Print waiting and new receipts automatically
-            </label>
           )}
           {paired && (
             <div className="flex flex-wrap gap-2">
@@ -862,7 +982,7 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
           className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
         >
           <AlertTriangle className="mr-2 inline size-4" />
-          Printing is paused until the live queue is verified.
+          Acceptance and printing are paused until the live queue is verified.
         </p>
       )}
       {feedError && (
@@ -889,6 +1009,54 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
           {notice}
         </p>
       )}
+      <section className="space-y-3" aria-label="Paid orders awaiting acceptance">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-black">Paid orders to accept</h3>
+            <p className="mt-1 text-sm md-ops-muted">
+              Review the order, then accept it. Orders are never accepted automatically.
+            </p>
+          </div>
+          {acceptanceFresh && (
+            <p className="text-sm font-bold">
+              {pendingOrders.length} waiting
+              {remainingOrderCount > 0 ? ` · ${remainingOrderCount} more after these` : ""}
+            </p>
+          )}
+        </div>
+        {acceptanceError ? (
+          <p
+            role="alert"
+            className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
+          >
+            {acceptanceError}
+          </p>
+        ) : acceptanceSyncAt === null ? (
+          <p role="status" className="md-ops-card p-4 text-sm md-ops-muted">
+            Checking paid orders awaiting acceptance…
+          </p>
+        ) : null}
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          {pendingOrders.map((order) => (
+            <PrinterPendingOrderCard
+              key={order.orderId}
+              order={order}
+              fresh={acceptanceFresh}
+              paired={paired}
+              automatic={automatic}
+              busy={busy}
+              accepting={acceptingOrder === order.orderId}
+              onAccept={() => void accept(order)}
+            />
+          ))}
+        </div>
+        {acceptanceFresh && !pendingOrders.length && (
+          <p className="md-ops-card p-5 text-sm md-ops-muted">
+            No paid orders are awaiting acceptance. New paid orders will appear here.
+          </p>
+        )}
+      </section>
+      <h3 className="text-xl font-black">Receipt queue</h3>
       <div className="grid items-start gap-4 lg:grid-cols-2">
         {jobs.map((job) => (
           <ReceiptJobCard

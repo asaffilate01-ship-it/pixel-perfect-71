@@ -177,10 +177,17 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
 export function StaffAlertControls({
   alerts,
   kind,
+  noticeLabels,
 }: {
   alerts: ReturnType<typeof useStaffAlerts>;
   kind: StaffAlertKind;
+  noticeLabels?: { singular: string; plural: string };
 }) {
+  const labels =
+    noticeLabels ??
+    (kind === "kds"
+      ? { singular: "order", plural: "orders" }
+      : { singular: "receipt", plural: "receipts" });
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border md-ops-border md-ops-paper p-3">
       <button
@@ -236,8 +243,7 @@ export function StaffAlertControls({
           className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-lg bg-amber-100 px-3 text-sm font-bold text-amber-950"
         >
           <Bell className="size-4" />
-          {alerts.notice} new {kind === "kds" ? "order" : "receipt"}
-          {alerts.notice === 1 ? "" : "s"} · dismiss
+          {alerts.notice} new {alerts.notice === 1 ? labels.singular : labels.plural} · dismiss
         </button>
       )}
       {alerts.audioError && (

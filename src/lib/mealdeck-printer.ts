@@ -3,7 +3,7 @@ import { packingPersonNameSchema } from "./mealdeck-packing-name";
 const uuid = z.string().uuid(),
   stamp = z.string().datetime({ offset: true });
 const money = z.number().int().min(0).max(10000000);
-const packingSchema = z.object({
+export const printerPackingSchema = z.object({
   version: z.literal(1),
   separateBags: z.boolean(),
   cutleryRequested: z.boolean(),
@@ -50,7 +50,7 @@ export const receiptSchema = z
       })
       .nullable(),
     cutleryRequested: z.boolean(),
-    packingPlan: packingSchema,
+    packingPlan: printerPackingSchema,
     items: z
       .array(
         z.object({

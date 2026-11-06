@@ -11,6 +11,7 @@ Apply these independent extensions in this order:
 1. Customer membership: `20261105082728_mealdeck_customer_membership.sql`.
 2. Stripe checkout: `20261105082900_mealdeck_stripe_checkout.sql`.
 3. Kitchen and printer: `20261105090147_mealdeck_kitchen_printer.sql`.
+4. Printer-side paid-order acceptance: `20261106124655_mealdeck_printer_accept_order.sql`.
 
 `deploy/mealdeck/kitchen-printer.mjs` returns the complete migration. Its managed runner wrapper requires one complete migration in one runner-owned atomic transaction; it removes only the known outer `begin`/`commit` statements. It makes no hosted request and activates no payment or printer hardware setting.
 
@@ -19,7 +20,7 @@ Apply these independent extensions in this order:
 | Step       | Staff action                                                        | Canonical behaviour                                                                                                                                                           |
 | ---------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Placed     | None                                                                | A server-verified Stripe capture, for the exact order total and currency, releases the order. A checkout redirect, client flag, or `paid_at` alone cannot do this.            |
-| Accepted   | **Accept order**                                                    | Writes `orders.accepted_at` and queues one original receipt in the same transaction. Repeating acceptance creates no extra receipt.                                           |
+| Accepted   | **Accept order** on KDS, or **Accept & print** / **Accept & queue receipt** on the printer | Both call the same private acceptance operation. It writes `orders.accepted_at` and queues one original receipt in the same transaction. Repeating or simultaneous acceptance creates no extra receipt. |
 | Preparing  | **Start preparing**                                                 | Starts all routes on the one shared order card. Starting before acceptance is rejected in the database, including through the historical RPC.                                 |
 | Item ready | Tick the purchased line                                             | Marks that line's routed copies ready. Other lines stay unchanged. Drinks, linked extras and every brand must be accounted for. Unticking is permitted until packing starts.  |
 | Packing    | **Start packing**                                                   | Requires every canonical item and routed copy to be ready, and complete valid routing. The old bulk-ready call cannot bypass the checklist.                                   |
@@ -48,7 +49,9 @@ Kerbside details are the car make, colour and last four registration characters 
 4. The terminal operator signs into `/printer` with that account. The owner can remove the assignment through the same screen.
 5. Install **MealDeck Printer** using its own PWA install card. Install **MealDeck Kitchen** separately on `/kds` if needed.
 
-Printer assignments are stored in a separate private `printer_access` table. They do not create an operations staff row and do not grant kitchen, menu, customer lookup, finance, staff-management or payment authority. Every queue call verifies the user and exact tenant/location again. Public and service API roles have no direct access to the queue or access table. Private helpers have no API execute grants. The PWA or URL itself is not the security boundary.
+Printer assignments are stored in a separate private `printer_access` table. They do not create an operations staff row. With the printer acceptance extension, assigned operators can review and explicitly accept verified paid orders for that kitchen, then consume the resulting receipts. They gain no preparation, packing, handover, general KDS, menu, customer lookup, finance, staff-management or payment authority. Every acceptance and queue call verifies the user and exact tenant/location again. Public and service API roles have no direct access to the queue or access table. Private helpers have no API execute grants. The PWA or URL itself is not the security boundary.
+
+The printer screen lists **Paid orders to accept** separately from the receipt queue. A purchased-order summary is not a printable receipt. **Accept & print** is shown only with fresh feeds, a paired bridge and automatic printing enabled; otherwise **Accept & queue receipt** clearly leaves delivery pending. Orders are never accepted automatically. Both screens use the same locked payment/routing evidence, expected version, immutable receipt snapshot and unique original job. Accepting the same order again returns the existing job without rebuilding its receipt or requesting a copy.
 
 No private receipts or orders are cached by service workers. Supabase's authenticated printer session has its own storage key. The local bridge pairing token stays in memory and must be paired again after the app reloads. Sound preferences contain only a boolean and volume.
 
@@ -58,7 +61,7 @@ The repository contains the local bridge in `tools/receipt-bridge/`. Its setup i
 
 The printer app connects only to `https://127.0.0.1:17443`. Pairing uses a code displayed by the local bridge. The browser cannot supply a printer destination, arbitrary URL, raw print bytes, feed length or copy count.
 
-After pairing, enable **Print waiting and new receipts automatically**. Keep the PWA open and the device awake. A PWA is not a background operating-system print daemon. The terminal processes each queued job once, with a database claim preventing competing terminals from acquiring the same receipt.
+After pairing, enable **Print waiting receipts automatically** in the receipt-delivery status strip. It handles waiting receipts created by acceptance on either KDS or printer. Keep the PWA open and the device awake. A PWA is not a background operating-system print daemon. Acceptance only queues a job; the existing consumer claims and sends it. The terminal processes each queued job once, with a database claim preventing competing terminals from acquiring the same receipt.
 
 Before writing to the printer, the bridge calls `mealdeck_printer_claim_receipt(p_job,p_claim)` using the current printer user's access token. That endpoint returns the canonical snapshot only for the authenticated claimant, an unexpired sending claim, a currently permitted kitchen and a still verified paid/accepted order. The bridge prints that snapshot, not a browser-edited payload. It uses the configured public backend key and never receives or stores a service-role key. The user's access token is transient and must not be logged or saved.
 
@@ -84,7 +87,7 @@ The browser fallback is labelled **Browser print dialog**. The operator must set
 
 ## Sounds and visual alerts
 
-The kitchen plays a two-note chime; the printer plays three shorter, higher notes. Each staff app has Enable sound, Mute, Volume and Test controls, plus a visual new-order/receipt badge. Enabling needs a user gesture because browsers can suspend audio.
+The kitchen plays the louder four-note repeated chime; the printer plays three shorter, higher notes. Each staff app has Enable sound, Mute, Volume and Test controls, plus a visual new-order/receipt badge. Enabling needs a user gesture because browsers can suspend audio. Printer arrival alerts follow an order from pending acceptance into its original receipt without a second chime; deliberate copies remain separate arrivals.
 
 A first load seeds the existing queue without sounding every historical order. In-memory ledgers deduplicate repeated polls and reconnects. BroadcastChannel plus the Web Locks API coordinates overlapping windows; the fallback limits sound to the focused window. Switching kitchens clears notices and requires a fresh audio gesture. No private order IDs are persisted in browser storage.
 
@@ -92,6 +95,7 @@ A first load seeds the existing queue without sounding every historical order. I
 
 - `node tests/postgres/kitchen-printer-behavior.mjs`: the real standalone foundation, membership and checkout fixture, with no payment-authority test double. Covers scope denial, original receipt idempotency, canonical bridge claims, per-line readiness, packing lock, handoff, refund exclusion, expired claims, account revocation, RLS and function/table ACLs.
 - `node tests/postgres/kitchen-printer-behavior.mjs --native`: the same suite on an explicitly configured empty disposable local PostgreSQL database. Includes two independent terminal connections contending for one receipt.
+- `node tests/postgres/printer-acceptance-behavior.mjs`: the additive acceptance migration with real payment reconciliation, strict scope, stale versions, immutable replay, and subsequent KDS preparation through handover. `--native` additionally verifies simultaneous KDS/printer acceptance in both directions, refunds while waiting, and assignment revocation while waiting for locks.
 - `bun test tests/mealdeck-kds.test.ts tests/mealdeck-kds-presentation.test.ts tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts tests/mealdeck-staff-alerts.test.ts`: response boundaries, safe presentation, parent/bag relationships, totals, sound deduplication and exact receipt claims.
 - The bridge has its own real loopback transport, crash/replay, authentication, canonical-backend and one-copy encoding tests. These use local test sockets, not physical printers.
 
