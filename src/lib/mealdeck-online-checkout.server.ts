@@ -226,6 +226,7 @@ export type MealDeckOnlineCheckoutStatus = {
   openingOffer: MealDeckOpeningOffer;
   guestCheckout: GuestCheckoutState;
   kitchen: KitchenAvailability | null;
+  prelaunchVerification: boolean;
 };
 
 export async function readOnlineCheckoutStatus(
@@ -239,12 +240,15 @@ export async function readOnlineCheckoutStatus(
     openingOffer: unscheduledOpeningOffer(),
     guestCheckout: { eligible: false, session: null },
     kitchen: null,
+    prelaunchVerification: false,
   };
   const clients = databaseClients(env, fetcher);
   if (!clients) return base;
   try {
     const scope = { p_tenant: clients.config.tenantId, p_location: clients.config.locationId };
     let state = await rpc(clients.publicClient, "mealdeck_online_checkout_status", scope);
+    const publicChannelOpen = state["channelOpen"] === true;
+    let privateAdmission = false;
     const publicKitchen = parseKitchenAvailability(state["kitchen"]);
     // The public status must stay closed before launch. A currently verified Auth
     // identity can ask the service-only RPC for its own time-limited access. The
@@ -264,11 +268,25 @@ export async function readOnlineCheckoutStatus(
       });
       // A missing extension or failed check never enables ordering. Keep the
       // accurate public kitchen state, rather than replacing it with an empty one.
-      if (!error && data && typeof data === "object" && !Array.isArray(data)) state = data as Json;
+      if (!error && data && typeof data === "object" && !Array.isArray(data)) {
+        state = data as Json;
+        privateAdmission = state["channelOpen"] === true;
+      }
     }
     const openingOffer = parseOpeningOffer(state["openingOffer"]);
     if (!openingOffer) return base;
     const kitchen = parseKitchenAvailability(state["kitchen"]);
+    const serverNow = Date.parse(openingOffer.serverNow);
+    // The already deployed private allowlist is the sole admission authority.
+    // Bound the readiness exception to its exact window, including a two-read
+    // boundary race at 15:00. It never signs off or opens the public channel.
+    const prelaunchVerification =
+      !publicChannelOpen &&
+      privateAdmission &&
+      state["guestCheckoutEligible"] === false &&
+      serverNow >= Date.parse("2026-11-06T08:00:00Z") &&
+      serverNow < Date.parse("2026-11-06T15:00:00Z");
+    const stripe = readMealDeckStripeConfig(env);
     const available =
       state["channelOpen"] === true &&
       kitchen !== null &&
@@ -276,14 +294,15 @@ export async function readOnlineCheckoutStatus(
       kitchen.collectionEstimateMinutes !== null &&
       clients.service !== null &&
       env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] === "true" &&
-      env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] === "signed-off" &&
-      readMealDeckStripeConfig(env) !== null &&
+      (env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] === "signed-off" || prelaunchVerification) &&
+      stripe?.livemode === true &&
       readMealDeckStripeCheckoutDomain(env).status !== "invalid";
     return {
       ...base,
       openingOffer,
       available,
       kitchen,
+      prelaunchVerification,
       guestCheckout: {
         eligible: available && state["guestCheckoutEligible"] === true,
         session: null,
@@ -492,11 +511,7 @@ export async function handleOnlineCheckoutRequest(
       return Response.json({ receipt }, { headers: NO_STORE });
     }
     const stripe = readMealDeckStripeConfig(env);
-    if (
-      !stripe ||
-      env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] !== "true" ||
-      env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off"
-    )
+    if (!stripe?.livemode || env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] !== "true")
       throw backendProblem({});
     const status = await readOnlineCheckoutStatus(env, fetcher, customerId);
     if (!status.available) throw newOrderingUnavailable(status);
@@ -524,6 +539,13 @@ export async function handleOnlineCheckoutRequest(
     if (!parsed.success)
       throw new CheckoutProblem("invalid_request", "Please review your order before paying.");
     await verifyStripeAccount(stripe, fetcher);
+    // Provider verification may take time. Recheck the scoped clock/readiness
+    // immediately before preparing a real payment when public signoff is absent.
+    if (env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off") {
+      const current = await readOnlineCheckoutStatus(env, fetcher, customerId);
+      if (!current.available || !current.prelaunchVerification)
+        throw newOrderingUnavailable(current);
+    }
     const prepared = await rpc(
       clients.service,
       customerId ? "mealdeck_prepare_stripe_order" : "mealdeck_prepare_guest_stripe_order",

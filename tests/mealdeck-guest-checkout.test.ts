@@ -31,10 +31,10 @@ const env = {
   MEALDECK_LUTON_LOCATION_ID: location,
   MEALDECK_ONLINE_CHECKOUT_ENABLED: "true",
   MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "signed-off",
-  MEALDECK_STRIPE_SECRET_KEY: "sk_test_" + "a".repeat(32),
+  MEALDECK_STRIPE_SECRET_KEY: "sk_live_" + "a".repeat(32),
   MEALDECK_STRIPE_WEBHOOK_SECRET: "whsec_" + "b".repeat(32),
   MEALDECK_STRIPE_ACCOUNT_ID: "acct_fixture",
-  MEALDECK_STRIPE_MODE: "test",
+  MEALDECK_STRIPE_MODE: "live",
 };
 const contact = {
   action: "guest",
@@ -140,7 +140,7 @@ function fixture() {
       return Response.json({
         id: "cs_test_guest",
         url: "https://checkout.stripe.com/c/pay/cs_test_guest",
-        livemode: false,
+        livemode: true,
         client_reference_id: orderId,
         amount_total: 279,
         currency: "gbp",

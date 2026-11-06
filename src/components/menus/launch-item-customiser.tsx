@@ -1,3 +1,5 @@
+import { usePublicMenu } from "./use-public-menu";
+import { findLaunchMenuItem } from "@/lib/launch-menu-picks";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronRight, ShoppingBag } from "lucide-react";
 import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -76,7 +78,11 @@ export function LaunchItemCustomiser({
   error: string;
   context?: "preview" | "group-order";
 }) {
-  const { brand, section, item, existing } = draft;
+  const publicMenu = usePublicMenu();
+  const { catalogue } = publicMenu;
+  const current = findLaunchMenuItem(draft.brand.id, draft.item.id, catalogue);
+  const { brand, section, item } = current ?? draft;
+  const { existing } = draft;
   const [configuration, setConfiguration] = useState(() =>
     cleanLaunchCrossConfiguration(
       brand,
@@ -88,10 +94,33 @@ export function LaunchItemCustomiser({
   const { selections, crossSelections } = configuration;
   const [quantity, setQuantity] = useState(existing?.quantity ?? 1);
   const [changeNotice, setChangeNotice] = useState("");
-  const groups = launchItemGroups(brand, item);
+  const groups = launchItemGroups(brand, item).map((group) => ({
+    ...group,
+    options: group.options.map((option) => ({
+      ...option,
+      available:
+        option.available !== false &&
+        (!item.availableOptionIds || item.availableOptionIds.includes(option.id)),
+    })),
+  }));
   const foodGroups = groups.filter((group) => !isExtrasGroup(group));
   const extrasGroups = groups.filter(isExtrasGroup);
-  const offers = getLaunchCrossOffers(brand, item, selections);
+  const offers = getLaunchCrossOffers(brand, item, selections)
+    .map((offer) => ({
+      ...offer,
+      choices: offer.choices
+        .filter(
+          (choice) =>
+            launchMenuCrossChoicePrice(offer.mode, choice.brandId, choice.itemId, catalogue) !==
+            null,
+        )
+        .map((choice) => ({
+          ...choice,
+          name:
+            findLaunchMenuItem(choice.brandId, choice.itemId, catalogue)?.item.name ?? choice.name,
+        })),
+    }))
+    .filter((offer) => offer.choices.length > 0);
   const steps: Step[] = [
     ...(foodGroups.length ? ["food" as const] : []),
     ...(extrasGroups.length || offers.length ? ["extras" as const] : []),
@@ -112,13 +141,16 @@ export function LaunchItemCustomiser({
   const stepIndex = steps.indexOf(step);
   const labels = launchSelectionLabels(brand, item, selections, crossSelections);
   const summaries = launchCrossSelectionSummaries(brand, item, selections, crossSelections);
-  const price = launchMenuPickDisplayPrice({
-    brandId: brand.id,
-    itemId: item.id,
-    selections,
-    crossSelections,
-    quantity,
-  });
+  const price = launchMenuPickDisplayPrice(
+    {
+      brandId: brand.id,
+      itemId: item.id,
+      selections,
+      crossSelections,
+      quantity,
+    },
+    catalogue,
+  );
   const stepLabels: Record<Step, string> = { food: "Food", extras: "Extras", review: "Review" };
 
   useEffect(() => {
@@ -201,6 +233,7 @@ export function LaunchItemCustomiser({
             const selected = selections[group.id]?.includes(option.id) ?? false;
             const variants = item.priceVariants?.filter(
               (variant) =>
+                variant.available !== false &&
                 variant.selections[group.id] === option.id &&
                 Object.entries(variant.selections).every(
                   ([id, choice]) =>
@@ -355,7 +388,12 @@ export function LaunchItemCustomiser({
                   <span className="lmc-choice-price">
                     +
                     {formatLaunchMenuPrice(
-                      launchMenuCrossChoicePrice(picker.mode, choice.brandId, choice.itemId),
+                      launchMenuCrossChoicePrice(
+                        picker.mode,
+                        choice.brandId,
+                        choice.itemId,
+                        catalogue,
+                      ),
                     )}
                   </span>
                   {pickerSelection?.itemId === choice.itemId && (
@@ -419,6 +457,7 @@ export function LaunchItemCustomiser({
                                   offer.mode,
                                   choice.brandId,
                                   choice.itemId,
+                                  catalogue,
                                 ),
                               ) +
                               " per item"
@@ -502,6 +541,15 @@ export function LaunchItemCustomiser({
         )}
       </div>
       <footer className="lmc-footer">
+        {(!publicMenu.ready ||
+          item.available === false ||
+          (step === "review" && price.itemsSubtotalPence === null)) && (
+          <p className="lmc-required" role="status">
+            {!publicMenu.ready
+              ? publicMenu.message
+              : "One of your choices is unavailable. Please update your selection."}
+          </p>
+        )}
         {!picker && currentMissing.length > 0 && (
           <p className="lmc-required" role="status">
             Choose {currentMissing.map((group) => group.label.toLowerCase()).join(" and ")} to
@@ -543,7 +591,12 @@ export function LaunchItemCustomiser({
             <button
               type="button"
               className="lm-primary lmc-next"
-              disabled={currentMissing.length > 0}
+              disabled={
+                currentMissing.length > 0 ||
+                !publicMenu.ready ||
+                item.available === false ||
+                (step === "review" && price.itemsSubtotalPence === null)
+              }
               onClick={() => {
                 if (step === "review") onSave(selections, quantity, crossSelections);
                 else setStep(steps[stepIndex + 1]!);
@@ -571,7 +624,7 @@ export function LaunchItemCustomiser({
         <p className="lmc-price-note">
           {context === "group-order"
             ? "Current menu prices · Final total checked before payment"
-            : "Item prices shown · Ordering coming soon"}
+            : "Current menu prices · Final total checked before payment"}
         </p>
       </footer>
     </>

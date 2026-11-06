@@ -3,6 +3,8 @@ import { Bell, Volume2, VolumeX } from "lucide-react";
 import {
   createStaffAlertLedger,
   staffAlertTones,
+  staffAlertAudio,
+  staffAlertDurationMs,
   type StaffAlertKind,
 } from "@/lib/mealdeck-staff-alerts";
 const ledgers = new Map<string, ReturnType<typeof createStaffAlertLedger>>();
@@ -19,11 +21,11 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
   const context = useRef<AudioContext | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const [enabled, setEnabled] = useState(false);
-  const [volume, setVolumeState] = useState(0.55);
+  const [volume, setVolumeState] = useState<number>(staffAlertAudio[kind].defaultVolume);
   const [notice, setNotice] = useState(0);
   const [audioError, setAudioError] = useState("");
   const preferencesKey = `mealdeck-${kind}-sound`;
-  const prefs = useRef({ enabled: false, volume: 0.55 });
+  const prefs = useRef({ enabled: false, volume: staffAlertAudio[kind].defaultVolume as number });
   const claimed = useRef(new Set<string>());
   const hydrated = useRef(false);
 
@@ -77,7 +79,10 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
       oscillator.type = "sine";
       oscillator.frequency.value = note.frequency;
       gain.gain.setValueAtTime(0, at);
-      gain.gain.linearRampToValueAtTime(prefs.current.volume * 0.25, at + 0.012);
+      const peak = prefs.current.volume * staffAlertAudio[kind].peakGain;
+      gain.gain.linearRampToValueAtTime(peak, at + 0.012);
+      if (staffAlertAudio[kind].sustainSeconds)
+        gain.gain.setValueAtTime(peak, at + staffAlertAudio[kind].sustainSeconds);
       gain.gain.exponentialRampToValueAtTime(0.001, at + note.duration);
       oscillator.connect(gain);
       gain.connect(ctx.destination);
@@ -146,7 +151,7 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
         await play();
         // Keep the optional cross-window lock through the chime, so simultaneous
         // polls cannot produce overlapping copies before the broadcast arrives.
-        await new Promise<void>((resolve) => setTimeout(resolve, 600));
+        await new Promise<void>((resolve) => setTimeout(resolve, staffAlertDurationMs(kind)));
       };
       if (navigator.locks)
         void navigator.locks.request(`mealdeck-chime:${key}`, { ifAvailable: true }, (lock) =>
@@ -154,7 +159,7 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
         );
       else if (document.visibilityState === "visible" && document.hasFocus()) void announce();
     },
-    [enabled, key, play, ledger],
+    [enabled, key, kind, play, ledger],
   );
   return {
     enabled,
@@ -188,7 +193,7 @@ export function StaffAlertControls({
         {alerts.enabled ? "Mute sound" : "Enable sound"}
       </button>
       <label className="flex min-h-11 items-center gap-2 text-xs font-semibold md-ops-muted">
-        Volume
+        Volume {Math.round(alerts.volume * 100)}%
         <input
           aria-label={`${kind === "kds" ? "Kitchen" : "Printer"} alert volume`}
           type="range"
@@ -200,6 +205,15 @@ export function StaffAlertControls({
           className="w-24 accent-red-600"
         />
       </label>
+      {kind === "kds" && alerts.volume < 1 && (
+        <button
+          type="button"
+          className="md-ops-button md-ops-secondary"
+          onClick={() => alerts.setVolume(1)}
+        >
+          Set to loudest
+        </button>
+      )}
       {alerts.enabled && (
         <button
           type="button"
@@ -208,6 +222,11 @@ export function StaffAlertControls({
         >
           Test {kind === "kds" ? "kitchen" : "printer"} sound
         </button>
+      )}
+      {kind === "kds" && (
+        <span className="text-xs md-ops-muted">
+          Two strong chimes for each new paid order. Turn up the device volume too.
+        </span>
       )}
       {alerts.notice > 0 && (
         <button

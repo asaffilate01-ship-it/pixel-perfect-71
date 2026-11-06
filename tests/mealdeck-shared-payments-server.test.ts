@@ -17,10 +17,10 @@ const env = {
   MEALDECK_CHECKOUT_SERVER_KEY: "sb_secret_group_fixture_server",
   MEALDECK_TENANT_ID: uid(1),
   MEALDECK_LUTON_LOCATION_ID: uid(2),
-  MEALDECK_STRIPE_SECRET_KEY: "sk_test_" + "a".repeat(32),
+  MEALDECK_STRIPE_SECRET_KEY: "sk_live_" + "a".repeat(32),
   MEALDECK_STRIPE_WEBHOOK_SECRET: "whsec_" + "b".repeat(32),
   MEALDECK_STRIPE_ACCOUNT_ID: "acct_fixture",
-  MEALDECK_STRIPE_MODE: "test",
+  MEALDECK_STRIPE_MODE: "live",
   MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "signed-off",
   MEALDECK_ONLINE_CHECKOUT_ENABLED: "true",
   MEALDECK_SHARED_PAYMENTS_ENABLED: "true",
@@ -84,6 +84,7 @@ function fixture() {
     available: true,
     role: "organiser",
     failCollections: false,
+    serverNow: Date.parse("2026-11-09T00:00:00Z"),
   };
   const collections: Record<string, unknown>[] = [];
   const room = rawRoom();
@@ -163,6 +164,7 @@ function fixture() {
       }),
       runtime,
       fetcher,
+      () => state.serverNow,
     );
   const member = { Authorization: "Bearer " + "m".repeat(48) };
   return { calls, state, room, fetcher, post, member, collections };
@@ -293,6 +295,28 @@ describe("private group payment links and server projection", () => {
 });
 
 describe("group creation admission and safe retry", () => {
+  test("new group payment rooms wait until 9 November while existing rooms recover", async () => {
+    const f = fixture();
+    const input = {
+      action: "create",
+      quoteId: uid(5),
+      attemptId: uid(10),
+      bagCount: 2,
+      splitMode: "by_bag",
+      reviewConfirmed: true,
+    };
+    f.state.serverNow = Date.parse("2026-11-08T23:59:59Z");
+    expect((await f.post(input, f.member)).status).toBe(403);
+    expect(f.calls.some((c) => c.name === "mealdeck_create_group_payment_room")).toBe(false);
+    expect((await f.post({ ...input, serverNow: "2026-11-09T00:00:00Z" }, f.member)).status).toBe(
+      400,
+    );
+    f.state.serverNow = Date.parse("2026-11-09T00:00:00Z");
+    expect((await f.post(input, f.member)).status).toBe(200);
+    f.state.serverNow = Date.parse("2026-11-08T23:59:59Z");
+    expect((await f.post(input, f.member)).status).toBe(200);
+    expect(f.calls.filter((c) => c.name === "mealdeck_create_group_payment_room")).toHaveLength(1);
+  });
   test("resume descriptors expose only the current payer's unexpired attempt and never provider credentials", async () => {
     const f = fixture();
     f.state.exists = true;
@@ -309,7 +333,7 @@ describe("group creation admission and safe retry", () => {
       currency: "gbp",
       requestHash: "a".repeat(64),
       stripeAccount: "acct_fixture",
-      livemode: false,
+      livemode: true,
       status: "pending",
       shareIds: [uid(6)],
       sessionId: "cs_test_private",

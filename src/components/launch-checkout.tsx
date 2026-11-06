@@ -1,3 +1,4 @@
+import { usePublicMenu } from "@/components/menus/use-public-menu";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { KERBSIDE_PARKING_INSTRUCTION } from "@/lib/mealdeck-customer-entry";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -142,6 +143,7 @@ type Receipt = {
 };
 type CheckoutStatus = {
   available: boolean;
+  prelaunchVerification?: boolean;
   openingOffer: MealDeckOpeningOffer;
   guestCheckout: GuestCheckoutState;
   kitchen: KitchenAvailability | null;
@@ -424,7 +426,7 @@ export function LaunchCheckout({
   const [accountIssue, setAccountIssue] = useState<string | null>(null);
   const [status, setStatus] = useState<CheckoutStatus | null>(null);
   const [statusCurrent, setStatusCurrent] = useState(false);
-  const [checkoutMode, setCheckoutMode] = useState<MealDeckCheckoutMode>("member");
+  const [checkoutMode, setCheckoutMode] = useState<MealDeckCheckoutMode>("guest");
   const [guestDetails, setGuestDetails] = useState({ name: "", email: "", phone: "" });
   useEffect(() => {
     if (!entryPolicy || orderId || modeChosen.current) return;
@@ -469,6 +471,12 @@ export function LaunchCheckout({
   const statusRequestId = useRef(0);
   const guestStateVersion = useRef(0);
   const registered = account?.status === "signed_in" && account.profile.registered;
+  const memberEntryVisible = entryPolicy?.emailRegistrationDeferred === false || registered;
+  useEffect(() => {
+    if (orderId) return;
+    if (registered && status?.prelaunchVerification) setCheckoutMode("member");
+    else if (!memberEntryVisible) setCheckoutMode("guest");
+  }, [orderId, registered, status?.prelaunchVerification, memberEntryVisible]);
   const guestSession = status?.guestCheckout.session ?? null;
   const orderingAvailable =
     status?.available === true &&
@@ -487,7 +495,9 @@ export function LaunchCheckout({
     checkoutMode === "guest"
       ? "guest:" + (guestSession?.id ?? "new")
       : "member:" + (account?.status === "signed_in" ? account.profile.userId : "signed-out");
-  const displayTotal = launchMenuBasketDisplayPrice(picks).itemsSubtotalPence;
+  const publicMenu = usePublicMenu();
+  const { catalogue } = publicMenu;
+  const displayTotal = launchMenuBasketDisplayPrice(picks, catalogue).itemsSubtotalPence;
   const accountReturnTo =
     !orderId && (groupExpected || groupCheckout) ? "/checkout?group=1" : "/checkout";
   const sharedAvailable =
@@ -1069,6 +1079,12 @@ export function LaunchCheckout({
           current={statusCurrent}
           available={orderingAvailable}
         />
+        {status?.prelaunchVerification && (
+          <p className="md-checkout-notice" role="status">
+            <strong>Pre-opening live order check.</strong> This checkout takes a real card payment.
+            The kitchen receives the order only after Stripe confirms payment.
+          </p>
+        )}
         {orderId && (guestSession || checkoutMode === "guest") && (
           <div className="md-checkout-notice md-checkout-identity-note">
             <span>
@@ -1318,30 +1334,31 @@ export function LaunchCheckout({
                   <h2>
                     <span className="md-checkout-step">2</span>Your details
                   </h2>
-                  {(guestEligible || guestSession || checkoutMode === "guest") && (
-                    <div
-                      className="md-checkout-identity-options"
-                      role="group"
-                      aria-label="Checkout account choice"
-                    >
-                      <button
-                        type="button"
-                        disabled={busy}
-                        aria-pressed={checkoutMode === "member"}
-                        onClick={() => chooseCheckoutMode("member")}
+                  {memberEntryVisible &&
+                    (guestEligible || guestSession || checkoutMode === "guest") && (
+                      <div
+                        className="md-checkout-identity-options"
+                        role="group"
+                        aria-label="Checkout account choice"
                       >
-                        Member checkout
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy || (!guestEligible && !guestSession)}
-                        aria-pressed={checkoutMode === "guest"}
-                        onClick={() => chooseCheckoutMode("guest")}
-                      >
-                        Continue as guest
-                      </button>
-                    </div>
-                  )}
+                        <button
+                          type="button"
+                          disabled={busy}
+                          aria-pressed={checkoutMode === "member"}
+                          onClick={() => chooseCheckoutMode("member")}
+                        >
+                          Member checkout
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy || (!guestEligible && !guestSession)}
+                          aria-pressed={checkoutMode === "guest"}
+                          onClick={() => chooseCheckoutMode("guest")}
+                        >
+                          Continue without registering
+                        </button>
+                      </div>
+                    )}
                   {checkoutMode === "guest" ? (
                     <div className="md-checkout-guest">
                       <p>
@@ -1642,7 +1659,7 @@ export function LaunchCheckout({
                         const lineId = "line-" + (index + 1);
                         const quantities = bagQuantities[lineId] ?? [pick.quantity];
                         const assigned = quantities.reduce((sum, quantity) => sum + quantity, 0);
-                        const found = findLaunchMenuItem(pick.brandId, pick.itemId);
+                        const found = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
                         return (
                           <fieldset className="md-checkout-bag-item" key={pick.key} disabled={busy}>
                             <legend>
@@ -1747,7 +1764,7 @@ export function LaunchCheckout({
                   ) : (
                     <ul>
                       {picks.map((pick) => {
-                        const found = findLaunchMenuItem(pick.brandId, pick.itemId);
+                        const found = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
                         return (
                           <li key={pick.key}>
                             <div>
@@ -1777,7 +1794,7 @@ export function LaunchCheckout({
                             </div>
                             <span>
                               {formatLaunchMenuPrice(
-                                launchMenuPickDisplayPrice(pick).itemsSubtotalPence,
+                                launchMenuPickDisplayPrice(pick, catalogue).itemsSubtotalPence,
                               )}
                             </span>
                           </li>
@@ -1895,7 +1912,7 @@ export function LaunchCheckout({
                       <button
                         type="button"
                         className="md-checkout-primary"
-                        disabled={busy || displayTotal === null}
+                        disabled={busy || !publicMenu.ready || displayTotal === null}
                         onClick={() => {
                           void reviewTotal();
                         }}

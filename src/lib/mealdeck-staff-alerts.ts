@@ -1,8 +1,10 @@
 export type StaffAlertKind = "kds" | "printer";
 export const staffAlertTones = {
   kds: [
-    { frequency: 660, at: 0, duration: 0.16 },
-    { frequency: 880, at: 0.23, duration: 0.22 },
+    { frequency: 660, at: 0, duration: 0.24 },
+    { frequency: 880, at: 0.3, duration: 0.32 },
+    { frequency: 660, at: 0.9, duration: 0.24 },
+    { frequency: 880, at: 1.2, duration: 0.36 },
   ],
   printer: [
     { frequency: 1100, at: 0, duration: 0.09 },
@@ -10,6 +12,17 @@ export const staffAlertTones = {
     { frequency: 1568, at: 0.3, duration: 0.13 },
   ],
 } as const;
+export const staffAlertAudio = {
+  kds: { defaultVolume: 0.9, peakGain: 0.75, sustainSeconds: 0.12 },
+  printer: { defaultVolume: 0.55, peakGain: 0.25, sustainSeconds: 0 },
+} as const;
+
+export function staffAlertDurationMs(kind: StaffAlertKind) {
+  return (
+    Math.ceil(Math.max(...staffAlertTones[kind].map((note) => note.at + note.duration)) * 1000) +
+    100
+  );
+}
 /** In-memory only: no private order IDs or jobs are written to browser storage. */
 export function createStaffAlertLedger(limit = 1500) {
   let seeded = false;

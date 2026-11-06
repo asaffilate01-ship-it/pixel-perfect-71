@@ -11,6 +11,10 @@ import {
   type GroupOrderRoom,
 } from "./mealdeck-group-rooms";
 import { normalisePackingPersonName } from "./mealdeck-packing-name";
+import {
+  MEALDECK_GROUP_ORDERING_STARTS_MESSAGE,
+  newGroupRoomsAreOpen,
+} from "./mealdeck-group-launch";
 import { parseKerbsideVehicle } from "./mealdeck-opening-offer";
 import {
   cancelOrderCollection,
@@ -301,18 +305,22 @@ export async function handleGroupOrdersRequest(
   request: Request,
   env: MealDeckRuntimeEnv,
   fetcher: typeof fetch = fetch,
+  serverNow: () => number = Date.now,
 ) {
   try {
     if (request.method === "GET") {
-      const available = await readSharedPaymentCapabilities(env, fetcher, request);
+      const available = await readSharedPaymentCapabilities(env, fetcher, request, serverNow);
       const existing = readOrderingActor(request);
       const actor = existing ?? randomBytes(32).toString("base64url");
       return Response.json(
         {
           ...available,
-          message: available.available
-            ? "Create one room, invite your people and choose your own food. Pay separately or let the organiser pay."
-            : "Group rooms are being prepared for this kitchen. Existing rooms can still be checked.",
+          available: available.newRoomsAvailable === true,
+          message: !newGroupRoomsAreOpen(serverNow())
+            ? MEALDECK_GROUP_ORDERING_STARTS_MESSAGE
+            : available.available
+              ? "Create one room, invite your people and choose your own food. Pay separately or let the organiser pay."
+              : "Group rooms are being prepared for this kitchen. Existing rooms can still be checked.",
           joinWindowSeconds: GROUP_ORDER_JOIN_SECONDS,
           maxPeople: GROUP_ORDER_MAX_PEOPLE,
         },
@@ -392,7 +400,7 @@ export async function handleGroupOrdersRequest(
     }
     const hasIdentity = Boolean(identity.customerId || identity.guestTokenHash);
     const stripe = readMealDeckStripeConfig(env);
-    const capabilities = await readSharedPaymentCapabilities(env, fetcher, request);
+    const capabilities = await readSharedPaymentCapabilities(env, fetcher, request, serverNow);
     const scope = (roomId: string) => ({ p_room: roomId, p_actor_hash: actorHash });
     const financialScope = (roomId: string) => ({
       ...scope(roomId),
@@ -519,13 +527,19 @@ export async function handleGroupOrdersRequest(
           tokenHash: hash(orderingInviteToken(secret, roomId, participantId)),
         };
       });
-      if (!capabilities.available) {
+      if (!capabilities.available || !newGroupRoomsAreOpen(serverNow())) {
         // A lost create response must not hide an existing room during a pause.
         try {
           return await result(await readRoom(roomId));
         } catch (error) {
           if (!(error instanceof CheckoutProblem) || error.code !== "room_unavailable") throw error;
         }
+        if (!newGroupRoomsAreOpen(serverNow()))
+          throw new CheckoutProblem(
+            "group_ordering_not_started",
+            MEALDECK_GROUP_ORDERING_STARTS_MESSAGE,
+            403,
+          );
         throw paymentUnavailable(capabilities.message);
       }
       return await result(

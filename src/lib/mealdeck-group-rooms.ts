@@ -58,6 +58,8 @@ export const groupOrderCapabilitiesSchema = z.strictObject({
   message: z.string().max(2000),
   joinWindowSeconds: z.literal(GROUP_ORDER_JOIN_SECONDS),
   maxPeople: z.literal(GROUP_ORDER_MAX_PEOPLE),
+  newRoomsAvailable: z.boolean().optional(),
+  groupOrderingStartsAt: z.iso.datetime().optional(),
 });
 export type GroupOrderCapabilities = z.infer<typeof groupOrderCapabilitiesSchema>;
 

@@ -1,16 +1,14 @@
-import {useEffect,useId,useRef,useState,type ReactNode} from "react";
+import {useEffect,useState,type ReactNode} from "react";
 import {
   AlertCircle,BookOpen,ClipboardList,
   Plus,ShieldCheck,Trash2,
 } from "lucide-react";
 import {opsRpc} from "@/lib/mealdeck-ops-browser";
-import {MenuKitchenRoute} from "./menu-kitchen-route";
-import {ModifierPricesPanel} from "./modifier-prices-panel";
 import {reviewOrderExceptions} from "@/lib/mealdeck-ops-alerts";
 import {OPS_PERMISSIONS,type OpsPermission} from "@/lib/mealdeck-ops-access";
 import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cleanDailySeries} from "@/lib/mealdeck-ops-math";
 import type {
-  OpsMenuItem,OpsTaxonomy,OpsIngredient,OpsOrder,OpsOrderLine,
+  OpsMenuItem,OpsIngredient,OpsOrder,OpsOrderLine,
   OpsRecipe,OpsStock,OpsCost,OpsRecipeCost,OpsExpense,
   OpsFinance,OpsAnalytics,OpsStaff,OpsLocation,OpsBrandSales,OpsAudit,
 } from "@/lib/mealdeck-ops-types";
@@ -57,152 +55,7 @@ function ErrorRow({error}:{error:string}){
   </p>:null;
 }
 
-export function OpsMenuPanel(props:Common&{
-  menu:OpsMenuItem[];taxonomy:OpsTaxonomy[];
-}){
-  const{menu,taxonomy,tenantId,locationId,can,canGlobal,reload,notice}=props;
-  const{busy,error,commit}=useCommit({reload,notice});
-  const[routingBusy,setRoutingBusy]=useState(false);
-  const menuBusy=busy||routingBusy;
-  const[query,setQuery]=useState("");
-  const[editing,setEditing]=useState("");
-  const editorId=useId();
-  const editorHeading=useRef<HTMLHeadingElement>(null);
-  const[editFocus,setEditFocus]=useState(0);
-  const[name,setName]=useState("");
-  const[description,setDescription]=useState("");
-  const[price,setPrice]=useState("");
-  const[active,setActive]=useState(true);
-  const[category,setCategory]=useState("");
-  const[newName,setNewName]=useState("");
-  const[newPrice,setNewPrice]=useState("");
-  const[newDesc,setNewDesc]=useState("");
-  const current=menu.find(row=>row.item_id===editing);
-  const filtered=menu.filter(row=>(row.item_name+" "+(row.brand_name??"")+" "+row.category_name)
-    .toLowerCase().includes(query.toLowerCase())).slice(0,120);
-  const selection=taxonomy.find(x=>x.category_id===category);
-  const globalWrite=canGlobal("menu.write");
-  function choose(row:OpsMenuItem){
-    if(editing!==row.item_id){
-      setEditing(row.item_id);
-      setName(row.item_name);
-      setDescription(row.description??"");
-      setPrice((row.price_pence/100).toFixed(2));
-      setActive(row.active);
-    }
-    setEditFocus(value=>value+1);
-  }
-  useEffect(()=>{
-    if(!editFocus)return;
-    const heading=editorHeading.current;
-    if(!heading)return;
-    heading.focus({preventScroll:true});
-    const bounds=heading.getBoundingClientRect();
-    if(bounds.top<16||bounds.bottom>window.innerHeight-16)
-      heading.scrollIntoView({block:"start",behavior:"auto"});
-  },[editFocus]);
-  return <div className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
-    <section className={card}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="text-xl font-black">Brand menus</h2>
-          <p className="mt-1 text-sm md-ops-muted">MealDeck products, with visibility managed for each kitchen.</p>
-        </div><Status label={menu.length+" products"}/>
-      </div>
-      <Labelled label="Search menus and brands">
-        <input type="search" value={query} onChange={e=>setQuery(e.target.value)} className={field}
-          placeholder="Burger, Skorch, drinks, tacos…"/>
-      </Labelled>
-      <div className="mt-4 max-h-[34rem] space-y-2 overflow-y-auto pr-1">
-        {filtered.map(row=><div key={row.item_id} className={"flex items-start justify-between gap-3 rounded-xl border p-3 "+(editing===row.item_id?"md-ops-selection":"md-ops-border")}>
-          <div className="min-w-0">
-            <p className="text-xs font-black uppercase tracking-wide md-ops-accent">{row.brand_name??"Unassigned"} · {row.category_name}</p>
-            <p className="mt-1 font-bold">{row.item_name}</p>
-            <p className="text-sm md-ops-muted">{penceToPounds(row.location_price_pence)} · {row.visible&&row.active?"Visible":"Hidden or inactive"}</p>
-          </div>
-          <div className="flex shrink-0 flex-col gap-2">
-            <button type="button" className={secondary} disabled={menuBusy} onClick={()=>choose(row)}
-              aria-label={`Edit ${row.item_name} from ${row.brand_name??"the menu"}`}
-              aria-controls={editorId} aria-current={editing===row.item_id?"true":undefined}>Edit</button>
-            {can("menu.write")&&<button type="button" className={secondary} disabled={menuBusy}
-              aria-label={`${row.visible?"Hide":"Show"} ${row.item_name} from ${row.brand_name??"the menu"}`}
-              onClick={()=>void commit(async()=>{
-                const ok=await opsRpc<boolean>("mealdeck_ops_set_menu_visibility",{
-                  p_tenant:tenantId,p_location:locationId,p_item:row.item_id,p_visible:!row.visible,
-                });
-                if(!ok)throw new Error("Visibility was not changed.");
-              },"Menu channel visibility updated. Other channels are unchanged.")}>
-              {row.visible?"Hide":"Show"}
-            </button>}
-          </div>
-        </div>)}
-        {filtered.length===0&&<div className={empty}>No products match the search, or your tenant has no menu records.</div>}
-      </div>
-    </section>
-    <div className="space-y-5">
-      <section className={card} id={editorId} aria-labelledby={editorId+"-heading"}>
-        <h2 ref={editorHeading} id={editorId+"-heading"} tabIndex={-1} className="scroll-mt-6 break-words text-lg font-black">
-          {current?`Edit ${current.item_name}`:"Edit master product"}
-        </h2>
-        <p className="mt-1 text-xs md-ops-muted">Price and name changes affect the MealDeck master product across its kitchens. A business-wide menu role is required. Channel-specific price overrides may still apply.</p>
-        {!current?<p className="mt-4 text-sm md-ops-muted">Select a product from the list to edit it.</p>:<div className="mt-4 space-y-3">
-          <Labelled label="Product name"><input value={name} disabled={!globalWrite||menuBusy}
-            onChange={e=>setName(e.target.value)} className={field}/></Labelled>
-          <Labelled label="Description"><textarea value={description} rows={3} disabled={!globalWrite||menuBusy}
-            onChange={e=>setDescription(e.target.value)} className={field}/></Labelled>
-          <Labelled label="Base price (£)"><input inputMode="decimal" value={price}
-            disabled={!globalWrite||menuBusy} onChange={e=>setPrice(e.target.value)} className={field}/></Labelled>
-          {!current.active&&can("menu.write")&&<MenuKitchenRoute
-            key={tenantId+":"+locationId+":"+current.item_id}
-            tenantId={tenantId} locationId={locationId} itemId={current.item_id}
-            disabled={busy} canActivate={globalWrite} onBusyChange={setRoutingBusy}/>}
-          <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={active}
-            disabled={!globalWrite||menuBusy} onChange={e=>setActive(e.target.checked)} className="size-5"/> Active in canonical menu</label>
-          <button type="button" className={primary} disabled={!globalWrite||menuBusy}
-            onClick={()=>void commit(async()=>{
-              const value=poundsToPence(price);
-              if(value===null)throw new Error("Enter a valid price with no more than two decimals.");
-              const saved=await opsRpc<boolean>("mealdeck_ops_update_menu_item",{
-                p_tenant:tenantId,p_item:current.item_id,p_name:name,
-                p_description:description,p_price_pence:value,p_active:active,
-              });
-              if(!saved)throw new Error("Product no longer exists.");
-            },"Canonical product saved.")}>Save product</button>
-        </div>}
-      </section>
-      {globalWrite&&<section className={card}>
-        <h2 className="text-lg font-black">Add product</h2>
-        <p className="mt-1 text-sm md-ops-muted">Choose an existing approved brand and category. New products do not bypass station routing or live availability checks.</p>
-        <div className="mt-3 space-y-3">
-          <Labelled label="Brand / category"><select className={field} value={category}
-            onChange={e=>setCategory(e.target.value)}>
-            <option value="">Choose category…</option>
-            {taxonomy.map(x=><option key={x.category_id} value={x.category_id}>{x.brand_name} · {x.category_name}</option>)}
-          </select></Labelled>
-          <Labelled label="Dish name"><input value={newName} onChange={e=>setNewName(e.target.value)} className={field}/></Labelled>
-          <Labelled label="Base price (£)"><input value={newPrice} inputMode="decimal"
-            onChange={e=>setNewPrice(e.target.value)} className={field}/></Labelled>
-          <Labelled label="Description"><textarea value={newDesc} rows={2}
-            onChange={e=>setNewDesc(e.target.value)} className={field}/></Labelled>
-          <button type="button" className={primary} disabled={menuBusy||!selection}
-            onClick={()=>void commit(async()=>{
-              const value=poundsToPence(newPrice);
-              if(value===null||!selection)throw new Error("Choose a category and valid price.");
-              const created=await opsRpc<string>("mealdeck_ops_create_menu_item",{
-                p_tenant:tenantId,p_brand:selection.brand_id,p_category:selection.category_id,
-                p_name:newName,p_description:newDesc,p_price_pence:value,
-              });
-              if(typeof created!=="string")throw new Error("The new product could not be confirmed. Reload the menu before trying again.");
-              setNewName("");setNewPrice("");setNewDesc("");
-            },"Product saved as an inactive draft. Choose Edit to assign it to the kitchen and review allergens and modifiers before activating.")}>
-            <Plus className="mr-1 inline size-4"/> Add product
-          </button>
-        </div>
-      </section>}
-      <ErrorRow error={error}/>
-    </div>
-    <ModifierPricesPanel key={tenantId} tenantId={tenantId} canRead={canGlobal("menu.read")} canWrite={globalWrite}/>
-  </div>;
-}
+export { OpsMenuPanel } from "./menu-manager";
 
 export function OpsOrdersPanel({
   orders,tenantId,locationId,

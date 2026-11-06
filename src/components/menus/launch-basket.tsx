@@ -1,3 +1,4 @@
+import { usePublicMenu } from "./use-public-menu";
 import { useEffect, useRef, type CSSProperties } from "react";
 import { Bookmark, ChevronUp, Minus, Plus, RotateCcw, ShoppingBag, Trash2 } from "lucide-react";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
@@ -77,8 +78,9 @@ export function LaunchBasket({
   storageStatus: LaunchBasketStorageStatus;
   onRetrySave: () => boolean;
 }) {
+  const { catalogue } = usePublicMenu();
   const total = launchPickCount(picks);
-  const basketPrice = launchMenuBasketDisplayPrice(picks);
+  const basketPrice = launchMenuBasketDisplayPrice(picks, catalogue);
   const clearButtonRef = useRef<HTMLButtonElement>(null);
   const undoButtonRef = useRef<HTMLButtonElement>(null);
   const emptyHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -167,10 +169,10 @@ export function LaunchBasket({
           </div>
           <ul className="lmb-list" aria-label="Basket selections">
             {picks.map((pick, index) => {
-              const found = findLaunchMenuItem(pick.brandId, pick.itemId);
+              const found = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
               if (!found) return null;
               const controlName = found.item.name + " from " + found.section.title;
-              const price = launchMenuPickDisplayPrice(pick);
+              const price = launchMenuPickDisplayPrice(pick, catalogue);
               const groups = launchItemGroups(found.brand, found.item);
               const children = launchCrossSelectionSummaries(
                 found.brand,
@@ -203,7 +205,11 @@ export function LaunchBasket({
                     <span>
                       {formatLaunchMenuPrice(price.baseUnitPence)} each × {pick.quantity}
                     </span>
-                    <strong>{formatLaunchMenuPrice(price.baseLinePence)}</strong>
+                    <strong>
+                      {found.item.available === false
+                        ? "Currently unavailable — remove or replace this item"
+                        : formatLaunchMenuPrice(price.baseLinePence)}
+                    </strong>
                   </div>
                   {price.options.length > 0 && (
                     <dl className="lmb-option-prices" aria-label={"Options for " + controlName}>
@@ -333,7 +339,7 @@ export function LaunchBasket({
           <p>
             {storageStatus === "session"
               ? "This browser couldn’t save your basket. Keep this page open so your choices stay with you."
-              : "Plan your favourites with the item prices shown. Ordering is coming soon."}
+              : "Your choices stay here. Availability and the final total are checked before payment."}
           </p>
           {storageStatus === "session" && (
             <button

@@ -36,6 +36,7 @@ export type LaunchMenuPriceVariant = {
   selections: Record<string, string>;
   /** Full dish price, including this exact flavour and portion. */
   pricePence: number;
+  available?: boolean;
 };
 
 export type LaunchMenuItem = {
@@ -43,6 +44,10 @@ export type LaunchMenuItem = {
   name: string;
   description?: string;
   pricePence: number | null;
+  /** Current public catalogue state; source templates leave these unset. */
+  available?: boolean;
+  replacementPricePence?: number | null;
+  availableOptionIds?: string[];
   optionGroupIds: string[];
   priceVariants?: LaunchMenuPriceVariant[];
   sourceRefs: string[];
@@ -950,9 +955,12 @@ addIncludedMealDrinks(skorch, skorchLoaddDrinks);
 /** Five owner-priced menus; portion/flavour variants remain selectable choices. */
 export const launchMenuBrands: LaunchMenuBrand[] = [tavo, moktl, loadd, skorch, souvano];
 
-export function getLaunchMenuBrand(id: string): LaunchMenuBrand | undefined {
+export function getLaunchMenuBrand(
+  id: string,
+  catalogue = launchMenuBrands,
+): LaunchMenuBrand | undefined {
   const canonicalId = id === "skorch" ? "skorch-burgers" : id;
-  return launchMenuBrands.find((brand) => brand.id === canonicalId);
+  return catalogue.find((brand) => brand.id === canonicalId);
 }
 
 /** Price approval is not proof of opening hours, stock, payment or availability. */
@@ -966,8 +974,9 @@ export function getLaunchMenuPriceVariant(
   brandId: string,
   itemId: string,
   selections: Record<string, string[]>,
+  catalogue = launchMenuBrands,
 ): LaunchMenuPriceVariant | undefined {
-  const item = getLaunchMenuBrand(brandId)
+  const item = getLaunchMenuBrand(brandId, catalogue)
     ?.sections.flatMap((entry) => entry.items)
     .find((entry) => entry.id === itemId);
   return item?.priceVariants?.find((variant) =>
@@ -985,14 +994,18 @@ export function launchMenuConfiguredItemPrice(
   brandId: string,
   itemId: string,
   selections: Record<string, string[]>,
+  catalogue = launchMenuBrands,
 ): number | null {
   if (!isLaunchBrandPriceApproved(brandId)) return null;
-  const item = getLaunchMenuBrand(brandId)
+  const item = getLaunchMenuBrand(brandId, catalogue)
     ?.sections.flatMap((entry) => entry.items)
     .find((entry) => entry.id === itemId);
-  if (!item) return null;
+  if (!item || item.available === false) return null;
+  const variant = getLaunchMenuPriceVariant(brandId, itemId, selections, catalogue);
   return item.priceVariants
-    ? (getLaunchMenuPriceVariant(brandId, itemId, selections)?.pricePence ?? null)
+    ? variant?.available === false
+      ? null
+      : (variant?.pricePence ?? null)
     : item.pricePence;
 }
 

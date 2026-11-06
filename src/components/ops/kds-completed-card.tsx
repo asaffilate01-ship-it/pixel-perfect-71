@@ -1,71 +1,139 @@
-import { Check, PackageCheck } from "lucide-react";
+import { Check, LockKeyhole, ShoppingBag, StickyNote, Users, Utensils } from "lucide-react";
 import type { KdsCompletedOrder } from "@/lib/mealdeck-kds-workflow";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
+import { KDS_FULFILMENT_LABELS, kdsClockTime } from "@/lib/mealdeck-kds-view";
 
 /** Read-only durable history. No checklist, mutation, payment or print action. */
 export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
+  const quantity = order.items.reduce((total, item) => total + item.quantity, 0);
+  const bags = new Set(order.items.flatMap((item) => item.bags?.map((bag) => bag.number) ?? []));
   return (
     <article
-      className="md-ops-ticket min-w-0 overflow-hidden border md-ops-border border-t-4 md-ops-stage-ready md-ops-paper"
+      className="md-ops-ticket md-kds-ticket min-w-0 overflow-hidden border md-ops-border border-t-4 md-ops-stage-ready md-ops-paper"
       data-testid="kds-completed-order"
       data-order-id={order.order_id}
+      data-stage="done"
+      aria-labelledby={`kds-completed-${order.order_id}`}
     >
-      <header className="md-ops-ticket-heading border-b md-ops-divider px-4 py-3">
+      <header className="md-ops-ticket-heading md-kds-ticket-heading border-b md-ops-divider">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="font-display text-2xl font-black md-ops-ink">{order.display_code}</h3>
+          <span className="md-kds-fulfilment">{KDS_FULFILMENT_LABELS[order.fulfilment]}</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900">
             <Check size={16} aria-hidden="true" />
             Done
           </span>
         </div>
-        <p className="mt-1 text-sm md-ops-muted">
-          Handover confirmed at{" "}
-          <time dateTime={order.completed_at}>
-            {new Date(order.completed_at).toLocaleTimeString("en-GB", {
-              timeZone: "Europe/London",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </time>{" "}
-          UK time
+        <div className="md-kds-ticket-identity">
+          <div className="min-w-0">
+            <p className="md-kds-ticket-eyebrow">Order</p>
+            <h3 id={`kds-completed-${order.order_id}`} className="md-kds-order-number">
+              {order.display_code}
+            </h3>
+          </div>
+          <div className="md-kds-ticket-timer">
+            <span>Handed over</span>
+            <strong>
+              <time dateTime={order.completed_at}>{kdsClockTime(order.completed_at)}</time>
+            </strong>
+          </div>
+        </div>
+        <div className="md-kds-ticket-meta">
+          <span>
+            {quantity} {quantity === 1 ? "item" : "items"}
+          </span>
+          {bags.size > 0 && (
+            <span>
+              {bags.size} {bags.size === 1 ? "bag" : "bags"}
+            </span>
+          )}
+          {order.group_order && (
+            <span className="inline-flex items-center gap-1">
+              <Users className="size-3.5" aria-hidden="true" />
+              Group order
+            </span>
+          )}
+        </div>
+        <p className="mt-2 text-xs md-ops-muted">
+          Handover confirmed ·{" "}
+          {new Date(order.completed_at).toLocaleDateString("en-GB", {
+            timeZone: "Europe/London",
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+          })}{" "}
+          · UK time
         </p>
       </header>
-      <ul className="space-y-4 p-4" aria-label={`Completed items for ${order.display_code}`}>
-        {order.items.map((item) => (
-          <li key={item.order_item_id} className="min-w-0 break-words">
-            <p className="text-xs font-bold uppercase md-ops-muted">{item.brand_name}</p>
-            <p className="font-bold md-ops-ink">
-              {item.quantity}× {item.item_name}
+      <div className="md-kds-ticket-body">
+        <div className="md-kds-packing-flags">
+          <span
+            className={order.cutlery_requested ? "md-kds-cutlery-requested" : "md-kds-cutlery-none"}
+          >
+            <Utensils className="size-3.5 shrink-0" aria-hidden="true" />
+            {order.cutlery_requested ? "Cutlery requested" : "No cutlery requested"}
+          </span>
+        </div>
+        {order.notes && (
+          <div className="md-kds-note flex items-start gap-2">
+            <StickyNote className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <p className="min-w-0 whitespace-pre-wrap break-words text-sm leading-5">
+              <strong>Order note: </strong>
+              {order.notes}
             </p>
-            {!!item.bags?.length && (
-              <p className="mt-1 text-sm font-semibold md-ops-text">
-                {item.bags
-                  .map((bag) => `${formatPackingBagName(bag)}: ${bag.quantity}×`)
-                  .join(" · ")}
-              </p>
-            )}
-            {!item.bags?.length && item.participant_name && (
-              <p className="text-sm md-ops-text">For {item.participant_name}</p>
-            )}
-            {item.modifiers.map((modifier, index) => (
-              <p key={index} className="mt-1 text-sm md-ops-text">
-                {modifier}
-              </p>
-            ))}
-            {item.notes && (
-              <p className="mt-1 whitespace-pre-wrap text-sm md-ops-text">Note: {item.notes}</p>
-            )}
-          </li>
-        ))}
-      </ul>
-      {order.notes && (
-        <p className="px-4 pb-3 whitespace-pre-wrap text-sm md-ops-text">
-          Order note: {order.notes}
-        </p>
-      )}
-      <footer className="flex items-center gap-2 border-t md-ops-divider px-4 py-3 text-sm font-semibold md-ops-muted">
-        <PackageCheck size={18} aria-hidden="true" />
-        Completed · no further kitchen action
+          </div>
+        )}
+        <ul className="md-kds-lines" aria-label={`Completed items for ${order.display_code}`}>
+          {order.items.map((item) => (
+            <li
+              key={item.order_item_id}
+              className="md-kds-line min-w-0 break-words"
+              data-ready="true"
+            >
+              <p className="mb-1 text-xs font-bold uppercase md-ops-accent">{item.brand_name}</p>
+              <div className="md-kds-line-title">
+                <span className="md-ops-ticket-quantity md-kds-quantity">{item.quantity}×</span>
+                <p>{item.item_name}</p>
+              </div>
+              {!!item.bags?.length && (
+                <ul className="md-kds-bag-labels" aria-label={`Packing for ${item.item_name}`}>
+                  {item.bags.map((bag) => (
+                    <li key={bag.number}>
+                      <ShoppingBag className="size-3 shrink-0" aria-hidden="true" />
+                      <span>{formatPackingBagName(bag)}</span>
+                      <strong>{bag.quantity}×</strong>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {!item.bags?.length && item.participant_name && (
+                <p className="text-sm md-ops-text">For {item.participant_name}</p>
+              )}
+              {!!item.modifiers.length && (
+                <ul className="md-kds-choices" aria-label={`Choices for ${item.item_name}`}>
+                  {item.modifiers.map((modifier, index) => (
+                    <li key={index}>
+                      <span className="md-kds-choice-mark" aria-hidden="true" />
+                      <span>{modifier}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {item.notes && (
+                <div className="md-kds-note mt-2 flex items-start gap-2">
+                  <StickyNote className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <p className="min-w-0 whitespace-pre-wrap break-words text-sm leading-5">
+                    <strong>Item note: </strong>
+                    {item.notes}
+                  </p>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <footer className="md-ops-ticket-footer flex items-center gap-2 border-t md-ops-divider px-4 py-3 text-sm font-semibold md-ops-muted">
+        <LockKeyhole size={16} aria-hidden="true" />
+        Completed · read-only
       </footer>
     </article>
   );

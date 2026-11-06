@@ -209,7 +209,8 @@
   text-decoration: none;
   padding: 12px 18px;
 }
-.md-account-primary {
+.md-account-page .md-account-primary,
+.md-account-page a.md-account-primary:visited {
   border: 1px solid var(--account-red);
   background: var(--account-red);
   color: #fff;
@@ -229,8 +230,21 @@
   cursor: default;
   opacity: 0.54;
 }
-.md-account-primary:not(:disabled):hover {
+.md-account-page .md-account-primary:not(:disabled):hover,
+.md-account-page .md-account-primary:not(:disabled):active {
   background: #a80f17;
+  color: #fff;
+}
+.md-account-guest .md-account-primary {
+  width: 100%;
+  min-height: 52px;
+  text-align: center;
+}
+.md-account-guest .md-account-primary svg {
+  flex-shrink: 0;
+}
+.md-account-page .md-account-guest-note {
+  margin-top: 18px;
 }
 .md-account-secondary:not(:disabled):hover {
   background: #f2eadd;

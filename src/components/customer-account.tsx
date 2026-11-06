@@ -18,6 +18,11 @@ import { CustomerOrders } from "./customer-orders";
 import { useCustomerEntryPolicy } from "./use-customer-entry-policy";
 import { customerReturnTarget, type CustomerReturnTarget } from "@/lib/mealdeck-customer-return";
 import {
+  accountAfterAuthPath,
+  hasAccountAuthCallback,
+  showPublicGuestAccount,
+} from "@/lib/mealdeck-account-entry";
+import {
   CustomerAccountError,
   EMPTY_CUSTOMER_PREFERENCES,
   validateCustomerRegistration,
@@ -171,18 +176,23 @@ function ContactFields({
 
 function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
   return (
-    <div className="md-account-notice" role="status">
-      <div>
-        <h2>Just your name and WhatsApp number.</h2>
-        <p>
-          No email registration or verification is needed for guest orders this opening weekend.
-          Email registration opens on Monday 9 November 2026.
-        </p>
-        <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>
-          Continue without registering <ArrowRight size={18} aria-hidden="true" />
-        </a>
+    <section className="md-account-panel md-account-guest" aria-labelledby="account-guest-heading">
+      <div className="md-account-icon">
+        <UserRound size={26} aria-hidden="true" />
       </div>
-    </div>
+      <h2 id="account-guest-heading">Just your name and WhatsApp number.</h2>
+      <p>
+        Choose your food and continue as a guest this opening weekend. Enter your name and WhatsApp
+        number at checkout.
+      </p>
+      <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>
+        Continue without registering <ArrowRight size={18} aria-hidden="true" />
+      </a>
+      <p className="md-account-fine md-account-guest-note">
+        Email registration opens at 00:00 on Monday 9 November 2026, UK time. Guest orders earn no
+        loyalty points.
+      </p>
+    </section>
   );
 }
 
@@ -191,17 +201,17 @@ function CustomerEntry({
   onPassword,
   busy,
   registrationDeferred,
-  returnTo,
+  signInOnly,
 }: {
   onRequest: (email: string, registration?: CustomerRegistration) => Promise<void>;
   onPassword: (email: string, password: string) => Promise<void>;
   busy: boolean;
   registrationDeferred: boolean;
-  returnTo: CustomerReturnTarget;
+  signInOnly: boolean;
 }) {
   const [requestedMode, setMode] = useState<"register" | "signin">("register");
-  const mode = registrationDeferred ? "signin" : requestedMode;
-  const [usePassword, setUsePassword] = useState(false);
+  const mode = registrationDeferred || signInOnly ? "signin" : requestedMode;
+  const [usePassword, setUsePassword] = useState(signInOnly);
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -211,9 +221,8 @@ function CustomerEntry({
   });
   return (
     <section className="md-account-panel" aria-labelledby="account-entry-heading">
-      {registrationDeferred && <QuickCheckoutNotice returnTo={returnTo} />}
       <div className="md-account-tabs" aria-label="Account action">
-        {!registrationDeferred && (
+        {!registrationDeferred && !signInOnly && (
           <button
             type="button"
             aria-pressed={mode === "register"}
@@ -674,7 +683,13 @@ function CustomerSettings({
 const LINK_FAILED =
   "That sign-in link didn’t work here. Links only work once, in the same browser that requested them. Use Sign in to request a new link, enter the code from your email, or sign in with a password.";
 
-export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerReturnTarget }) {
+export function CustomerAccount({
+  returnTo = "/menus",
+  signInRequested = false,
+}: {
+  returnTo?: CustomerReturnTarget;
+  signInRequested?: boolean;
+}) {
   const returnTarget = customerReturnTarget(returnTo);
   const entryPolicy = useCustomerEntryPolicy();
   const registrationDeferred = entryPolicy?.emailRegistrationDeferred !== false;
@@ -690,6 +705,8 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
   const [draft, setDraft] = useState<CustomerRegistration | undefined>();
   const [resendAt, setResendAt] = useState(0);
   const [attempt, setAttempt] = useState(0);
+  const [authCallback, setAuthCallback] = useState(false);
+  const callbackSeen = useRef(false);
   const acting = useRef(false);
   const alertRef = useRef<HTMLDivElement>(null);
 
@@ -720,12 +737,11 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
         return null;
       }
     }
-    const linkParams = new URLSearchParams(
-      window.location.search + "&" + window.location.hash.slice(1),
-    );
-    const arrivedFromEmailLink =
-      attempt === 0 &&
-      (linkParams.has("code") || linkParams.has("error") || linkParams.has("error_code"));
+    if (hasAccountAuthCallback(window.location.search, window.location.hash)) {
+      callbackSeen.current = true;
+      setAuthCallback(true);
+    }
+    const arrivedFromEmailLink = attempt === 0 && callbackSeen.current;
     void (async () => {
       setLoading(true);
       setConnectionError("");
@@ -744,12 +760,7 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
         if (active && arrivedFromEmailLink) {
           if (status !== "signed_in") linkFailed = true;
           if (linkFailed) showError(new CustomerAccountError("invalid", LINK_FAILED));
-          window.history.replaceState(
-            null,
-            "",
-            window.location.pathname +
-              (returnTarget !== "/menus" ? `?returnTo=${encodeURIComponent(returnTarget)}` : ""),
-          );
+          window.history.replaceState(null, "", accountAfterAuthPath(returnTarget));
         }
         if (active)
           unsubscribe = subscribeMealDeckCustomerAuth(() => {
@@ -765,7 +776,7 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
       active = false;
       unsubscribe();
     };
-  }, [attempt, showError]);
+  }, [attempt, showError, returnTarget]);
 
   useEffect(() => {
     if (error) alertRef.current?.focus();
@@ -847,6 +858,14 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
 
   const signedIn = account.status === "signed_in";
   const profile = signedIn ? account.profile : null;
+  const publicGuestView = showPublicGuestAccount({
+    registrationDeferred,
+    signInRequested,
+    authCallback,
+    signedIn,
+    emailPending: emailPending !== null,
+  });
+  const signInOnly = signInRequested || authCallback;
   return (
     <div className="md-account-page">
       <header className="md-account-header">
@@ -863,12 +882,20 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
           <h1>
             {profile?.registered
               ? `Good to see you, ${profile.name?.split(" ")[0]}.`
-              : "Good food. Your kind of perks."}
+              : publicGuestView
+                ? "Order without an account."
+                : signInOnly
+                  ? "Sign in to MealDeck."
+                  : "Good food. Your kind of perks."}
           </h1>
           <p>
             {profile?.registered
               ? "Your details, your preferences and a place in the MealDeck family."
-              : "One account for all your favourite brands. Verify your email and get ready for the Luton launch."}
+              : publicGuestView
+                ? "Every craving, one order. Choose your food and we’ll take the details we need at checkout."
+                : signInOnly
+                  ? "Use your verified account to continue."
+                  : "One account for all your favourite brands. Verify your email and get ready for the Luton launch."}
           </p>
           {signedIn && (
             <button
@@ -887,7 +914,7 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
             </a>
           )}
         </div>
-        {error && (
+        {error && !publicGuestView && (
           <div
             ref={alertRef}
             className="md-account-notice md-account-error"
@@ -908,7 +935,9 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
         )}
         <div className="md-account-layout">
           <div className="md-account-content">
-            {loading ? (
+            {publicGuestView ? (
+              <QuickCheckoutNotice returnTo={returnTarget} />
+            ) : loading ? (
               <section className="md-account-panel" aria-busy="true">
                 <p role="status">Connecting to your MealDeck account…</p>
               </section>
@@ -982,11 +1011,18 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
                 onRequest={request}
                 onPassword={passwordSignIn}
                 registrationDeferred={registrationDeferred}
-                returnTo={returnTarget}
+                signInOnly={signInOnly}
               />
             )}
           </div>
-          <aside className="md-account-aside" aria-label="Your orders and member benefits">
+          <aside
+            className="md-account-aside"
+            aria-label={
+              publicGuestView
+                ? "Opening weekend and the MealDeck app"
+                : "Your orders and member benefits"
+            }
+          >
             {profile?.registered && <CustomerOrders key={profile.userId} />}
             <section className="md-account-benefit">
               <Gift size={25} aria-hidden="true" />
@@ -1006,36 +1042,38 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
                 <ArrowRight size={17} aria-hidden="true" />
               </a>
             </section>
-            <section
-              className="md-account-panel md-account-loyalty"
-              aria-labelledby="account-loyalty-heading"
-            >
-              <div className="md-account-section-heading">
-                <Gift size={20} aria-hidden="true" />
-                <h2 id="account-loyalty-heading">Loyalty, dealt your way.</h2>
-              </div>
-              {profile?.loyalty.enabled ? (
-                <>
-                  <strong className="md-account-points">
-                    {profile.loyalty.points.toLocaleString("en-GB")} <span>points</span>
-                  </strong>
-                  <p>{profile.loyalty.terms}</p>
-                </>
-              ) : (
-                <>
-                  <span className="md-account-soon">Points balance coming soon</span>
-                  <p>
-                    Register and spend £15 or more by and including Friday 13 November 2026 for
-                    double loyalty points. <a href="/offers#double-points">See offer details</a>.
-                    Your points balance will appear here when loyalty is available.
-                  </p>
-                </>
-              )}
-              <p className="md-account-fine">
-                Guest orders earn no loyalty points. No marketing opt-in is needed for loyalty
-                membership.
-              </p>
-            </section>
+            {!publicGuestView && (
+              <section
+                className="md-account-panel md-account-loyalty"
+                aria-labelledby="account-loyalty-heading"
+              >
+                <div className="md-account-section-heading">
+                  <Gift size={20} aria-hidden="true" />
+                  <h2 id="account-loyalty-heading">Loyalty, dealt your way.</h2>
+                </div>
+                {profile?.loyalty.enabled ? (
+                  <>
+                    <strong className="md-account-points">
+                      {profile.loyalty.points.toLocaleString("en-GB")} <span>points</span>
+                    </strong>
+                    <p>{profile.loyalty.terms}</p>
+                  </>
+                ) : (
+                  <>
+                    <span className="md-account-soon">Points balance coming soon</span>
+                    <p>
+                      Register and spend £15 or more by and including Friday 13 November 2026 for
+                      double loyalty points. <a href="/offers#double-points">See offer details</a>.
+                      Your points balance will appear here when loyalty is available.
+                    </p>
+                  </>
+                )}
+                <p className="md-account-fine">
+                  Guest orders earn no loyalty points. No marketing opt-in is needed for loyalty
+                  membership.
+                </p>
+              </section>
+            )}
             <section className="md-account-panel md-account-app">
               <div className="md-account-section-heading">
                 <Smartphone size={20} aria-hidden="true" />
