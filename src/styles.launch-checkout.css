@@ -292,6 +292,37 @@
   position: sticky;
   top: 96px;
 }
+.md-checkout-pickup-review {
+  margin: 18px 0;
+  padding: 15px;
+  border: 1px solid #e5d7c6;
+  border-radius: 10px;
+  background: #fff8ed;
+}
+.md-checkout-pickup-review h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+.md-checkout-pickup-review dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.md-checkout-pickup-review dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.md-checkout-pickup-review dt {
+  color: #736657;
+}
+.md-checkout-pickup-review dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
 .md-checkout-summary ul {
   list-style: none;
   padding: 0;

@@ -525,6 +525,15 @@ export function LaunchCheckout({
     else if (!memberEntryVisible) setCheckoutMode("guest");
   }, [orderId, registered, status?.prelaunchVerification, memberEntryVisible]);
   const guestSession = status?.guestCheckout.session ?? null;
+  const pickupContact =
+    checkoutMode === "guest"
+      ? guestSession
+      : account?.status === "signed_in" && registered
+        ? account.profile
+        : null;
+  useEffect(() => {
+    setReviewConfirmed(false);
+  }, [pickupContact?.name, pickupContact?.phone]);
   const orderingAvailable =
     status?.available === true &&
     status.kitchen !== null &&
@@ -1384,6 +1393,12 @@ export function LaunchCheckout({
                   <h2>
                     <span className="md-checkout-step">2</span>Your details
                   </h2>
+                  {fulfilment === "curbside" && (
+                    <p className="md-checkout-muted">
+                      For kerbside pickup, we need your name, WhatsApp number, car make, colour and
+                      last 4 registration characters.
+                    </p>
+                  )}
                   {memberEntryVisible &&
                     (guestEligible || guestSession || checkoutMode === "guest") && (
                       <div
@@ -1429,7 +1444,7 @@ export function LaunchCheckout({
                             <div>
                               <strong>{guestSession.name}</strong>
                               {guestSession.email && <span>{guestSession.email}</span>}
-                              <span>{guestSession.phone}</span>
+                              <span>WhatsApp: {guestSession.phone}</span>
                               <small>Guest contact details</small>
                             </div>
                           </div>
@@ -1513,7 +1528,10 @@ export function LaunchCheckout({
                       <div>
                         <strong>{account.profile.name}</strong>
                         <span>{account.profile.email}</span>
-                        <span>{account.profile.phone}</span>
+                        <span>
+                          {fulfilment === "curbside" ? "WhatsApp: " : ""}
+                          {account.profile.phone}
+                        </span>
                         <small>Email verified</small>
                       </div>
                       <Link to="/account" search={{ returnTo: accountReturnTo, signin: 1 }}>
@@ -1557,47 +1575,57 @@ export function LaunchCheckout({
                   </p>
                 </section>
               )}
-              {fulfilment === "curbside" && canViewReceipt && (
+              {fulfilment === "curbside" && (
                 <section className="md-checkout-card">
                   <h2>
-                    <span className="md-checkout-step">3</span>Help us find your car
+                    <span className="md-checkout-step">3</span>Your car details
                   </h2>
                   <p className="md-checkout-muted">{KERBSIDE_PARKING_INSTRUCTION}</p>
+                  <p className="md-checkout-muted">All three car details are required.</p>
                   <div className="md-checkout-vehicle">
                     <label>
                       Car make
                       <input
+                        required
                         disabled={busy}
                         value={vehicle.make}
+                        minLength={2}
                         maxLength={60}
                         autoComplete="off"
                         placeholder="e.g. Volkswagen"
                         onChange={(event) => {
                           setVehicle({ ...vehicle, make: event.target.value });
                           setQuote(null);
+                          setReviewConfirmed(false);
                         }}
                       />
                     </label>
                     <label>
                       Colour
                       <input
+                        required
                         disabled={busy}
                         value={vehicle.colour}
+                        minLength={2}
                         maxLength={40}
                         autoComplete="off"
                         placeholder="e.g. Blue"
                         onChange={(event) => {
                           setVehicle({ ...vehicle, colour: event.target.value });
                           setQuote(null);
+                          setReviewConfirmed(false);
                         }}
                       />
                     </label>
                     <label>
                       Last 4 registration characters
                       <input
+                        required
                         disabled={busy}
                         value={vehicle.registrationLast4}
+                        minLength={4}
                         maxLength={4}
+                        pattern="[A-Za-z0-9]{4}"
                         autoCapitalize="characters"
                         autoComplete="off"
                         spellCheck={false}
@@ -1610,6 +1638,7 @@ export function LaunchCheckout({
                               .replace(/[^A-Z0-9]/g, ""),
                           });
                           setQuote(null);
+                          setReviewConfirmed(false);
                         }}
                       />
                       <small>Letters and numbers only. We don't need your full registration.</small>
@@ -1805,6 +1834,36 @@ export function LaunchCheckout({
                         Current kitchen prices confirmed
                       </p>
                       <DetailedOrderLines lines={quote.lines} packingPlan={quote.packingPlan} />
+                      {fulfilment === "curbside" && pickupContact && (
+                        <section
+                          className="md-checkout-pickup-review"
+                          aria-label="Kerbside pickup details"
+                        >
+                          <h3>Kerbside pickup details</h3>
+                          <dl>
+                            <div>
+                              <dt>Name</dt>
+                              <dd>{pickupContact.name}</dd>
+                            </div>
+                            <div>
+                              <dt>WhatsApp number</dt>
+                              <dd>{pickupContact.phone}</dd>
+                            </div>
+                            <div>
+                              <dt>Car make</dt>
+                              <dd>{vehicle.make.trim()}</dd>
+                            </div>
+                            <div>
+                              <dt>Colour</dt>
+                              <dd>{vehicle.colour.trim()}</dd>
+                            </div>
+                            <div>
+                              <dt>Registration (last 4)</dt>
+                              <dd>{vehicle.registrationLast4}</dd>
+                            </div>
+                          </dl>
+                        </section>
+                      )}
                     </>
                   ) : (
                     <ul>
@@ -1919,6 +1978,8 @@ export function LaunchCheckout({
                             <small>
                               Items, quantities, flavours, extras, numbered bags and cutlery are
                               correct.
+                              {fulfilment === "curbside" &&
+                                " My name, WhatsApp number and car details are also correct."}
                             </small>
                           </span>
                         </label>
