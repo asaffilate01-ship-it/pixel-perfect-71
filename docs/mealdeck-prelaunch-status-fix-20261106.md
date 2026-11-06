@@ -22,9 +22,39 @@ borrow the member's identity. Responses remain private and non-cacheable.
 
 The fallback is used only when the public channel is closed and the kitchen is
 Online or Busy. Pause/Closed, missing extensions, absent server/provider secrets,
-unsigned-off payment readiness and invalid provider configuration stay closed.
+and invalid provider configuration stay closed.
 Existing payment reconciliation, receipt polling and order authority are unchanged.
 No account was verified and no payment was taken by this source change.
+
+## Live verification before public signoff
+
+The owner subsequently requested one real live paid order from the approved
+account before public opening. `prelaunchVerification` is derived only from the
+Auth-verified customer and the deployed service-only database status. It requires
+the anonymous channel to be closed, the private channel to be open, guest access
+to be false and the database clock to be within 08:00–14:59:59 on 6 November.
+Only that admission may proceed before `MEALDECK_CHECKOUT_INTEGRATION_APPROVED`
+is `signed-off`. The online flag, same-project server credential, dedicated LIVE
+Stripe configuration, expected account and operator availability remain required.
+Preparation rechecks scoped availability after the provider account lookup.
+
+Public trading still requires `signed-off`; sandbox credentials never enable
+public ordering or this live verification. This does not set a readiness flag,
+take a payment, alter payment authority, or release a pending order to KDS.
+Payment preparation returns an unpaid order and a provider URL. Only the existing
+authenticated webhook/provider reconciliation may confirm it and release it.
+Staff acceptance then queues the one original kitchen receipt.
+
+## Group ordering starts 9 November
+
+New ordering rooms and new shared-payment rooms are rejected by the server until
+`2026-11-09T00:00:00Z` (midnight Europe/London). Availability includes
+`groupOrderingStartsAt` and `newRoomsAvailable`. Group-room GET `available` refers
+to creating a new room; shared-payment `available` continues to describe payments
+for existing rooms. Existing room reads, valid create-response recovery and
+payment/reconciliation paths are retained. The request schemas accept no clock
+or launch-override flag. The optional clock dependency used by tests is supplied
+by the test harness, never by a route, request or environment variable.
 
 The obsolete group-room footer about collecting replies is removed.
 

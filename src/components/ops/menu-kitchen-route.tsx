@@ -132,7 +132,7 @@ export function MenuKitchenRoute({
     >
       <h3 className="font-bold md-ops-ink">Prepare in this kitchen</h3>
       <p className="mt-1 text-xs leading-5 md-ops-muted">
-        Assign this draft product before activating it. All brands stay on the same kitchen display.
+        Assign this product before activating it. All brands stay on the same kitchen display.
       </p>
       {loading ? (
         <p className="mt-3 text-sm md-ops-muted" role="status">
@@ -168,7 +168,7 @@ export function MenuKitchenRoute({
                 {canActivate
                   ? "Review allergens and modifiers, then activate and save the product."
                   : "Ask staff with a business-wide menu role to activate and save the product."}{" "}
-                Customer ordering remains closed.
+                Kitchen opening and ordering settings still apply.
               </span>
             </p>
           ) : (

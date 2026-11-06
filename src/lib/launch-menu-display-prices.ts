@@ -1,4 +1,4 @@
-import { launchMenuConfiguredItemPrice } from "./launch-menu-catalogue";
+import { launchMenuConfiguredItemPrice, type LaunchMenuBrand } from "./launch-menu-catalogue";
 import {
   findLaunchMenuItem,
   launchItemGroups,
@@ -23,19 +23,25 @@ export function formatLaunchMenuPrice(pence: number | null): string {
 }
 
 /** Display only: never an order quote or payment amount. */
-export function launchMenuItemPrice(brandId: string, itemId: string): number | null {
-  const item = findLaunchMenuItem(brandId, itemId)?.item;
-  return item ? knownPrice(item.pricePence) : null;
+export function launchMenuItemPrice(
+  brandId: string,
+  itemId: string,
+  catalogue?: LaunchMenuBrand[],
+): number | null {
+  const item = findLaunchMenuItem(brandId, itemId, catalogue)?.item;
+  return item && item.available !== false ? knownPrice(item.pricePence) : null;
 }
 
 export function launchMenuCrossChoicePrice(
   mode: "extra" | "upgrade",
   brandId: string,
   itemId: string,
+  catalogue?: LaunchMenuBrand[],
 ): number | null {
-  const found = findLaunchMenuItem(brandId, itemId);
-  const itemPrice = launchMenuItemPrice(brandId, itemId);
+  const found = findLaunchMenuItem(brandId, itemId, catalogue);
+  const itemPrice = launchMenuItemPrice(brandId, itemId, catalogue);
   if (!found || itemPrice === null) return null;
+  if (mode === "upgrade" && catalogue) return knownPrice(found.item.replacementPricePence ?? null);
   return knownPrice(priceForLaunchCrossChoice(mode, itemPrice, found.section.id));
 }
 
@@ -92,10 +98,13 @@ function sumKnownPrices(amounts: (number | null)[]): number | null {
  * so those selections cannot be charged twice.
  * All amounts are re-read from this catalogue; saved browser amounts are ignored.
  */
-export function launchMenuPickDisplayPrice(pick: PriceSelection): LaunchPickDisplayPrice {
-  const found = findLaunchMenuItem(pick.brandId, pick.itemId);
+export function launchMenuPickDisplayPrice(
+  pick: PriceSelection,
+  catalogue?: LaunchMenuBrand[],
+): LaunchPickDisplayPrice {
+  const found = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
 
-  if (!found) {
+  if (!found || found.item.available === false) {
     return {
       baseUnitPence: null,
       baseLinePence: null,
@@ -115,6 +124,7 @@ export function launchMenuPickDisplayPrice(pick: PriceSelection): LaunchPickDisp
     pick.brandId,
     pick.itemId,
     configuration.selections,
+    catalogue,
   );
   const baseLinePence = linePrice(baseUnitPence, pick.quantity);
   const children = launchCrossSelectionSummaries(
@@ -124,7 +134,12 @@ export function launchMenuPickDisplayPrice(pick: PriceSelection): LaunchPickDisp
     configuration.crossSelections,
   );
   const additions = children.map((child) => {
-    const unitPence = launchMenuCrossChoicePrice(child.mode, child.brandId, child.itemId);
+    const unitPence = launchMenuCrossChoicePrice(
+      child.mode,
+      child.brandId,
+      child.itemId,
+      catalogue,
+    );
     return {
       mode: child.mode,
       slot: child.slot,
@@ -138,7 +153,11 @@ export function launchMenuPickDisplayPrice(pick: PriceSelection): LaunchPickDisp
     group.options
       .filter((option) => configuration.selections[group.id]?.includes(option.id))
       .map((option) => {
-        const unitPence = knownPrice(option.pricePence);
+        const unitPence =
+          option.available === false ||
+          (found.item.availableOptionIds && !found.item.availableOptionIds.includes(option.id))
+            ? null
+            : knownPrice(option.pricePence);
         return {
           groupId: group.id,
           optionId: option.id,
@@ -162,8 +181,11 @@ export function launchMenuPickDisplayPrice(pick: PriceSelection): LaunchPickDisp
   };
 }
 
-export function launchMenuBasketDisplayPrice(picks: PriceSelection[]) {
-  const lines = picks.map(launchMenuPickDisplayPrice);
+export function launchMenuBasketDisplayPrice(
+  picks: PriceSelection[],
+  catalogue?: LaunchMenuBrand[],
+) {
+  const lines = picks.map((pick) => launchMenuPickDisplayPrice(pick, catalogue));
   return {
     itemsSubtotalPence: sumKnownPrices(lines.map((line) => line.itemsSubtotalPence)),
     hasPaidChoices: lines.some(

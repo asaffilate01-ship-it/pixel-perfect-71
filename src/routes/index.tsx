@@ -26,6 +26,7 @@ import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import { OfferDiscovery } from "@/components/marketing/offer-discovery";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
+import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { ldScript, orgJsonLd, seo, SITE_DESCRIPTION } from "@/lib/seo";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
@@ -89,6 +90,10 @@ const steps = [
 ];
 
 function LandingPage() {
+  const entryPolicy = useCustomerEntryPolicy();
+  const groupOrderingOpen =
+    !!entryPolicy &&
+    Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
   return (
     <div className="md-marketing-shell">
       <SiteHeader />
@@ -203,6 +208,11 @@ function LandingPage() {
             </div>
             <p className="md-kicker md-kicker-light">Ordering with friends?</p>
             <h2>One room. Everyone’s favourites.</h2>
+            {!groupOrderingOpen && (
+              <p>
+                <strong>Group ordering · Starting 9 November</strong>
+              </p>
+            )}
             <ul>
               <li>
                 <Share2 /> Create a room and invite your group
@@ -223,7 +233,8 @@ function LandingPage() {
               an itemised bill for each person.
             </p>
             <Link to="/group-order" className="md-btn md-btn-yellow">
-              Start a group order <ArrowRight />
+              {groupOrderingOpen ? "Start a group order" : "Group ordering · Starting 9 November"}{" "}
+              <ArrowRight />
             </Link>
           </article>
 

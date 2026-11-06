@@ -189,7 +189,7 @@ describe("MealDeck independent backend selection", () => {
 describe("MealDeck dedicated checkout credential", () => {
   const config = { url, anonKey: publicKey };
 
-  test("only selects an explicitly provisioned dedicated server credential", () => {
+  test("requires a dedicated credential or the explicitly matching platform project", () => {
     expect(
       readMealDeckCheckoutServerKey({ ...shared, MEALDECK_CHECKOUT_SERVER_KEY: secretKey }, config),
     ).toBe(secretKey);
@@ -204,6 +204,52 @@ describe("MealDeck dedicated checkout credential", () => {
     ).toBeNull();
     expect(
       readMealDeckCheckoutServerKey({ ...shared, MEALDECK_CHECKOUT_SERVER_KEY: publicKey }, config),
+    ).toBeNull();
+  });
+
+  test("reuses a platform credential only for the exact explicitly selected project", () => {
+    expect(
+      readMealDeckCheckoutServerKey(
+        { ...shared, SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: secretKey },
+        config,
+      ),
+    ).toBe(secretKey);
+    expect(
+      readMealDeckCheckoutServerKey(
+        {
+          ...shared,
+          SUPABASE_URL: "https://foreign.supabase.co",
+          SUPABASE_SERVICE_ROLE_KEY: secretKey,
+        },
+        config,
+      ),
+    ).toBeNull();
+    expect(
+      readMealDeckCheckoutServerKey(
+        { SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: secretKey },
+        config,
+      ),
+    ).toBeNull();
+    expect(
+      readMealDeckCheckoutServerKey(
+        {
+          ...shared,
+          SUPABASE_URL: url,
+          SUPABASE_SERVICE_ROLE_KEY: legacyKey("service_role", "foreign"),
+        },
+        config,
+      ),
+    ).toBeNull();
+    expect(
+      readMealDeckCheckoutServerKey(
+        {
+          ...shared,
+          MEALDECK_CHECKOUT_SERVER_KEY: "invalid",
+          SUPABASE_URL: url,
+          SUPABASE_SERVICE_ROLE_KEY: secretKey,
+        },
+        config,
+      ),
     ).toBeNull();
   });
 

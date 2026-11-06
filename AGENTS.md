@@ -157,3 +157,16 @@ The following records the earlier local flow and its compatibility requirements.
 - The payment and privacy secrets must not go in public environment
   variables or public client modules. Never use unsigned browser status to
   publish kitchen tickets.
+
+
+## 6 November 2026 kitchen release and live acceptance
+
+- The owner requested the improved KDS ticket/stage views, menu manager, louder KDS alert, and commit/push/merge/publication together.
+- Only server-confirmed paid orders may enter the KDS. Browser success redirects, pending payment and partially funded shared orders are insufficient. Preserve full-order visibility, staff acceptance and exactly-once receipt queueing.
+- The owner explicitly requires one real live Stripe order using the authenticated `test@mealdeck.co.uk` account before opening to everyone else. Keep the existing database-owned pre-opening identity/window restrictions. A sandbox simulation alone does not satisfy this acceptance.
+- Preserve the three-day name-and-WhatsApp guest checkout change for 6–8 November. Email is optional; new email registration resumes at 00:00 UK time on Monday 9 November. Existing member sign-in remains available.
+- Physical printer output and an actual provider payment must be observed before reporting live acceptance complete. Never fabricate payment, print, or handover evidence.
+
+- Later in the same release, the owner requested hiding public member/email sign-in as well as registration until Monday 00:00 UK. Keep explicit secure `/account?signin=1` access for the approved live verification; this is presentation only and confers no permissions.
+- Group ordering stays visible with “Starting 9 November”. New ordering/shared-payment rooms open at 00:00 UK on 9 November; existing room/payment recovery remains available. Enforce new-room timing on the server.
+- The menu item quick availability actions read “Out of stock” and “Back in stock” for the current kitchen; keep global deactivation scope explicit. Shared add-on/upgrade price edits apply everywhere that canonical option is offered.

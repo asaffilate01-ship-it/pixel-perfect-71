@@ -23,6 +23,7 @@ import { usePaymentIdentity } from "@/components/group-payments/use-payment-iden
 import { GroupRoomMenu, GroupRoomChoices } from "@/components/group-room-menu";
 import { GroupRoomSetup, type RoomCreationDetails } from "@/components/group-room-setup";
 import { GroupRoomBilling } from "@/components/group-room-billing";
+import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import {
   receiveRoomChoices,
   roomPersonPicks,
@@ -314,6 +315,10 @@ function RoomRoster({
 
 export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
   const navigate = useNavigate();
+  const entryPolicy = useCustomerEntryPolicy();
+  const newRoomsOpen =
+    !!entryPolicy &&
+    Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
   const identity = usePaymentIdentity();
   const identityRef = useRef(identity);
   identityRef.current = identity;
@@ -415,6 +420,10 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
       requestController.current?.abort();
     };
   }, [refreshCapabilities]);
+
+  useEffect(() => {
+    if (newRoomsOpen) void refreshCapabilities();
+  }, [newRoomsOpen, refreshCapabilities]);
 
   const availabilityAccountId =
     identity.account?.status === "signed_in" ? identity.account.profile.userId : null;
@@ -692,6 +701,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
   }
 
   async function createRoom(details: RoomCreationDetails) {
+    if (!newRoomsOpen) return;
     const fingerprint = JSON.stringify(details);
     if (createAttempt.current?.fingerprint !== fingerprint)
       createAttempt.current = { fingerprint, attemptId: crypto.randomUUID() };
@@ -905,12 +915,16 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                 ? "Your room. One order."
                 : invite
                   ? "You’re invited to the table."
-                  : "Get the group together."}
+                  : newRoomsOpen
+                    ? "Get the group together."
+                    : "Group ordering · Starting 9 November"}
             </h1>
             <p>
               {room
                 ? "Choose your food, get ready, pay your way."
-                : "Everyone chooses their favourites. We bring the whole order together."}
+                : !invite && !newRoomsOpen
+                  ? "Your next meal together starts on Monday. Explore the menus and order for yourself today."
+                  : "Everyone chooses their favourites. We bring the whole order together."}
             </p>
           </div>
           {room && (
@@ -990,7 +1004,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             </button>
             {roomId && !room && !invite && !loading && (
               <button type="button" className="md-room-text-button" onClick={startNewRoom}>
-                Start a new room
+                {newRoomsOpen ? "Start a new room" : "Group ordering · Starting 9 November"}
               </button>
             )}
           </div>
@@ -1020,7 +1034,9 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
           <div className="md-room-notice">
             <h2>This is an older group-planning link.</h2>
             <p>
-              MealDeck now uses live rooms. Create a room below and invite everyone to join it.
+              {newRoomsOpen
+                ? "MealDeck now uses live rooms. Create a room below and invite everyone to join it."
+                : "New group rooms start on Monday 9 November."}{" "}
               Older reply links cannot add food to this order.
             </p>
           </div>
@@ -1031,7 +1047,23 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             room…
           </div>
         )}
-        {entryReady && !roomId && !invite && (
+        {entryReady && !roomId && !invite && !newRoomsOpen && (
+          <section className="md-room-card md-room-join" aria-labelledby="group-start-heading">
+            <span className="md-room-kicker">Coming Monday</span>
+            <h2 id="group-start-heading">Their favourites. One collection.</h2>
+            <p>
+              From Monday 9 November, invite your people into one room, choose food from all five
+              menus and pay separately or together. We’ll pack everyone’s food by name.
+            </p>
+            <a href="/menus" className="md-room-button">
+              Explore the menus <ArrowRight size={19} aria-hidden="true" />
+            </a>
+            <p className="md-room-fine">
+              Already have a room? Your existing room or invitation link still works.
+            </p>
+          </section>
+        )}
+        {entryReady && !roomId && !invite && newRoomsOpen && (
           <GroupRoomSetup
             identity={identity}
             capabilities={capabilities}
@@ -1506,7 +1538,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                   disabled={busy || !!draft?.dirty}
                   onClick={startNewRoom}
                 >
-                  Start a new room
+                  {newRoomsOpen ? "Start a new room" : "Group ordering · Starting 9 November"}
                 </button>
               )}
             </div>

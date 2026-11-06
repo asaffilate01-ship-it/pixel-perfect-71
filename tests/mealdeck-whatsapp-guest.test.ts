@@ -113,10 +113,10 @@ describe("opening weekend name and WhatsApp checkout", () => {
       MEALDECK_LUTON_LOCATION_ID: id,
       MEALDECK_ONLINE_CHECKOUT_ENABLED: "true",
       MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "signed-off",
-      MEALDECK_STRIPE_SECRET_KEY: "sk_test_" + "a".repeat(32),
+      MEALDECK_STRIPE_SECRET_KEY: "sk_live_" + "a".repeat(32),
       MEALDECK_STRIPE_WEBHOOK_SECRET: "whsec_" + "b".repeat(32),
       MEALDECK_STRIPE_ACCOUNT_ID: "acct_fixture",
-      MEALDECK_STRIPE_MODE: "test",
+      MEALDECK_STRIPE_MODE: "live",
     };
     const fetcher = (async (url: RequestInfo | URL, init?: RequestInit) => {
       const path = new URL(typeof url === "string" ? url : url instanceof URL ? url.href : url.url)

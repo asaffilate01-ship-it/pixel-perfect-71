@@ -36,6 +36,11 @@ import {
   type SharedPaymentRoom,
 } from "./mealdeck-shared-payments";
 import { readMealDeckStripeConfig, verifyStripeAccount } from "./mealdeck-stripe.server";
+import {
+  MEALDECK_GROUP_ORDERING_STARTS_AT,
+  MEALDECK_GROUP_ORDERING_STARTS_MESSAGE,
+  newGroupRoomsAreOpen,
+} from "./mealdeck-group-launch";
 
 const GROUP_ORIGIN = "https://mealdeck.co.uk";
 const hashToken = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -112,6 +117,7 @@ export async function readSharedPaymentCapabilities(
   env: MealDeckRuntimeEnv,
   fetcher: typeof fetch = fetch,
   request?: Request,
+  serverNow: () => number = Date.now,
 ): Promise<SharedPaymentCapabilities> {
   const status = request
     ? await readRequestOnlineCheckoutStatus(request, env, fetcher)
@@ -122,6 +128,8 @@ export async function readSharedPaymentCapabilities(
     readGroupLinkSecret(env) !== null;
   return {
     available,
+    newRoomsAvailable: available && newGroupRoomsAreOpen(serverNow()),
+    groupOrderingStartsAt: MEALDECK_GROUP_ORDERING_STARTS_AT,
     guestEligible: available && status.guestCheckout.eligible,
     message: available
       ? "Choose one payment, pay by numbered bag, or split the total equally. The kitchen receives one order after the full total is paid."
@@ -288,10 +296,11 @@ export async function handleSharedPaymentsRequest(
   request: Request,
   env: MealDeckRuntimeEnv,
   fetcher: typeof fetch = fetch,
+  serverNow: () => number = Date.now,
 ) {
   try {
     if (request.method === "GET")
-      return Response.json(await readSharedPaymentCapabilities(env, fetcher, request), {
+      return Response.json(await readSharedPaymentCapabilities(env, fetcher, request, serverNow), {
         headers: PAYMENT_NO_STORE,
       });
     if (request.method !== "POST")
@@ -314,7 +323,7 @@ export async function handleSharedPaymentsRequest(
       input.action === "create" || input.action === "pay" || input.action === "cancel",
     );
     const hasIdentity = Boolean(identity.customerId || identity.guestTokenHash);
-    const capabilities = await readSharedPaymentCapabilities(env, fetcher, request);
+    const capabilities = await readSharedPaymentCapabilities(env, fetcher, request, serverNow);
     const projectRoom = (raw: PaymentJson) =>
       sharedRoomForBrowser(raw, { available: capabilities.available, hasIdentity });
     const recoveryShareHash =
@@ -386,6 +395,12 @@ export async function handleSharedPaymentsRequest(
       } catch (error) {
         if (!(error instanceof CheckoutProblem) || error.code !== "payment_not_found") throw error;
       }
+      if (!newGroupRoomsAreOpen(serverNow()))
+        throw new CheckoutProblem(
+          "group_ordering_not_started",
+          MEALDECK_GROUP_ORDERING_STARTS_MESSAGE,
+          403,
+        );
       if (!capabilities.available) throw paymentUnavailable(capabilities.message);
       await verifyStripeAccount(stripe, fetcher);
       const tokens = Array.from({ length: input.bagCount }, (_, index) => {

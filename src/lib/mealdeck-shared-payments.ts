@@ -18,6 +18,8 @@ export const sharedPaymentCapabilitiesSchema = z.strictObject({
   available: z.boolean(),
   guestEligible: z.boolean(),
   message: z.string().max(2000),
+  newRoomsAvailable: z.boolean().optional(),
+  groupOrderingStartsAt: instant.optional(),
 });
 export type SharedPaymentCapabilities = z.infer<typeof sharedPaymentCapabilitiesSchema>;
 

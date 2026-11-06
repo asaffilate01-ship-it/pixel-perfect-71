@@ -152,6 +152,21 @@ async function inspect(f: ReturnType<typeof fixture>, settings: MealDeckRuntimeE
   return { response, report, check };
 }
 describe("private payment and email setup checks", () => {
+  test("public acceptance requires live mode while sandbox diagnostics remain readable", async () => {
+    const f = fixture();
+    expect((await inspect(f)).report.acceptingOnlineOrders).toBe(false);
+    f.state.locationMode = true;
+    const live = {
+      ...env,
+      MEALDECK_STRIPE_MODE: "live",
+      MEALDECK_STRIPE_SECRET_KEY: "sk_live_" + "a".repeat(32),
+    };
+    expect((await inspect(f, live)).report.acceptingOnlineOrders).toBe(true);
+    expect(
+      (await inspect(f, { ...live, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" })).report
+        .acceptingOnlineOrders,
+    ).toBe(false);
+  });
   test("rejects cross-site, oversized, unknown, unauthenticated and wrong-kitchen requests before provider inspection", async () => {
     for (const [req, status] of [
       [request({ origin: "https://other.invalid" }), 403],
@@ -190,7 +205,7 @@ describe("private payment and email setup checks", () => {
   test("returns a scoped report without any credential, payment creation, email send or financial write", async () => {
     const f = fixture();
     const { response, report, check } = await inspect(f);
-    expect(report.acceptingOnlineOrders).toBe(true);
+    expect(report.acceptingOnlineOrders).toBe(false);
     expect(check("stripe").state).toBe("checked");
     expect(check("terminal").state).toBe("configured");
     expect(check("domain").state).toBe("unverified");

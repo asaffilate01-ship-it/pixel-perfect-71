@@ -5,14 +5,19 @@ import {
   Check,
   ChefHat,
   Clock3,
+  Columns3,
+  LayoutGrid,
   LockKeyhole,
   PackageCheck,
   RefreshCw,
   Search,
+  ShoppingBag,
   StickyNote,
+  Utensils,
   Users,
   Wifi,
   WifiOff,
+  X,
 } from "lucide-react";
 import { PwaInstallCard } from "@/components/pwa-install-card";
 import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
@@ -33,6 +38,19 @@ import {
   type KdsOrderStage as Stage,
   type KdsOrderAction as Action,
 } from "@/lib/mealdeck-kds-presentation";
+import {
+  KDS_ACTIVE_STAGES,
+  KDS_FULFILMENT_LABELS as fulfilmentLabels,
+  kdsClockTime,
+  kdsTicketProgress,
+  selectCompletedKdsOrders,
+  selectKdsOrders,
+  type KdsFulfilmentFilter,
+  type KdsSort,
+  type KdsStageFilter as StageFilter,
+  type KdsView,
+} from "@/lib/mealdeck-kds-view";
+import "./kds-workspace.css";
 
 const POLL_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -46,7 +64,6 @@ type Props = {
   can: (permission: OpsPermission) => boolean;
 };
 type FeedState = "loading" | "connected" | "stale" | "access_blocked" | "setup_required";
-type StageFilter = "all" | Stage;
 
 const stageLabels = KDS_STAGE_LABELS;
 const stageStyles: Record<Stage, { badge: string; border: string }> = {
@@ -57,27 +74,6 @@ const stageStyles: Record<Stage, { badge: string; border: string }> = {
   sealed: { badge: "md-ops-inverse", border: "md-ops-stage-sealed" },
   done: { badge: "md-ops-soft md-ops-text", border: "md-ops-stage-ready" },
 };
-const fulfilmentLabels: Record<KdsOrder["fulfilment"], string> = {
-  delivery: "Delivery",
-  pickup: "Collection",
-  curbside: "Kerbside",
-  dine_in: "Dine in",
-};
-
-function matchesSearch(
-  order:
-    | Pick<KdsOrder, "display_code" | "items">
-    | import("@/lib/mealdeck-kds-workflow").KdsCompletedOrder,
-  query: string,
-): boolean {
-  const term = query.trim().toLocaleLowerCase("en-GB");
-  if (!term) return true;
-  return [
-    order.display_code,
-    ...order.items.flatMap((item) => [item.item_name, item.brand_name, ...item.modifiers]),
-  ].some((value) => value.toLocaleLowerCase("en-GB").includes(term));
-}
-
 function elapsedLabel(since: string, now: number): string {
   const seconds = Math.max(0, Math.floor((now - Date.parse(since)) / 1000));
   const minutes = Math.floor(seconds / 60);
@@ -145,6 +141,10 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
   const [pendingOrder, setPendingOrder] = useState<string | null>(null);
   const [filter, setFilter] = useState<StageFilter>("all");
   const [query, setQuery] = useState("");
+  const [fulfilment, setFulfilment] = useState<KdsFulfilmentFilter>("all");
+  const [sort, setSort] = useState<KdsSort>("oldest");
+  const [completedSort, setCompletedSort] = useState<KdsSort>("newest");
+  const [view, setView] = useState<KdsView>("tickets");
   const [sealConfirmation, setSealConfirmation] = useState<string | null>(null);
   const mounted = useRef(false);
   const request = useRef(0);
@@ -154,7 +154,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
   const boardRef = useRef<KdsBoard | null>(null);
   const actionButtons = useRef(new Map<string, HTMLButtonElement>());
   const orderCards = useRef(new Map<string, HTMLElement>());
-  const stageControl = useRef<HTMLSelectElement>(null);
+  const stageControl = useRef<HTMLButtonElement>(null);
   const invalidateRead = useCallback(() => {
     request.current++;
   }, []);
@@ -187,6 +187,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
         setActionError("");
         setQuery("");
         setFilter("all");
+        setFulfilment("all");
         setFeedState("access_blocked");
       } else if (reason instanceof OpsRequestError && reason.code === "unconfigured") {
         boardRef.current = null;
@@ -278,17 +279,18 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
     return result;
   }, [board]);
   const visibleOrders = useMemo(
-    () =>
-      (board?.orders ?? []).filter(
-        (order) =>
-          (filter === "all" || kdsOrderStage(order) === filter) && matchesSearch(order, query),
-      ),
-    [board, filter, query],
+    () => selectKdsOrders(board?.orders ?? [], { query, fulfilment, sort, stage: filter }),
+    [board, filter, query, fulfilment, sort],
   );
 
   const completedOrders = useMemo(
-    () => (board?.completed_orders ?? []).filter((order) => matchesSearch(order, query)),
-    [board, query],
+    () =>
+      selectCompletedKdsOrders(board?.completed_orders ?? [], {
+        query,
+        fulfilment,
+        sort: completedSort,
+      }),
+    [board, query, fulfilment, completedSort],
   );
 
   async function updateOrder(order: KdsOrder, action: Action) {
@@ -354,6 +356,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
         setActionError("");
         setQuery("");
         setFilter("all");
+        setFulfilment("all");
         setSealConfirmation(null);
         setFeedState("access_blocked");
         setFeedError(safeMessage(reason, "Your kitchen access needs to be checked."));
@@ -386,35 +389,28 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
   return (
     <section
       aria-labelledby="mealdeck-kitchen-title"
-      className="min-w-0 space-y-3"
+      className="md-kds-workspace min-w-0 space-y-4"
       data-testid="mealdeck-kds-board"
     >
-      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <h2 id="mealdeck-kitchen-title" className="sr-only">
-          Kitchen orders
-        </h2>
-        {board?.readiness === "ready" ? (
-          <div className="flex flex-wrap items-center gap-1.5" aria-label="Kitchen stages">
-            {(Object.keys(stageLabels) as Stage[]).map((stage) => (
-              <button
-                key={stage}
-                type="button"
-                aria-pressed={filter === stage}
-                onClick={() => setFilter(filter === stage ? "all" : stage)}
-                className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${filter === stage ? "md-ops-inverse" : "md-ops-border md-ops-paper md-ops-ink"}`}
-              >
-                {stageLabels[stage]}
-                <strong className="tabular-nums">{counts[stage]}</strong>
-              </button>
-            ))}
+      <header className="md-kds-heading">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2
+              id="mealdeck-kitchen-title"
+              className="font-display text-2xl font-black tracking-tight md-ops-ink"
+            >
+              Kitchen orders
+            </h2>
+            {board?.readiness === "ready" && (
+              <span className="md-kds-active-count">{board.orders.length} active</span>
+            )}
           </div>
-        ) : (
-          <p className="text-sm font-semibold md-ops-muted">
-            All brands together. One card per order.
+          <p className="mt-1 text-sm md-ops-muted">
+            All brands together. One ticket from prep to handover.
           </p>
-        )}
+        </div>
         <div
-          className="flex items-center gap-1.5 text-xs font-semibold md-ops-muted"
+          className="md-kds-connection flex items-center gap-2 text-xs font-semibold md-ops-muted"
           aria-live="off"
         >
           {fresh ? (
@@ -438,6 +434,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
               <span className="ml-2 font-normal">
                 · Updated{" "}
                 {new Date(lastSync).toLocaleTimeString("en-GB", {
+                  timeZone: "Europe/London",
                   hour: "2-digit",
                   minute: "2-digit",
                   second: "2-digit",
@@ -450,54 +447,33 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
 
       <StaffAlertControls alerts={alerts} kind="kds" />
       {board?.readiness === "ready" && (
-        <>
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,15rem)_auto]">
-            <label className="relative col-span-2 min-w-0 sm:col-span-1">
-              <span className="sr-only">Find an order, dish or brand</span>
-              <Search
-                className="pointer-events-none absolute left-3 top-3.5 size-4 md-ops-muted"
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Find order, dish or brand"
-                className={`${control} md-ops-field-search w-full`}
-              />
-            </label>
-            <label className="min-w-0">
-              <span className="sr-only">Show orders at this stage</span>
-              <select
-                ref={stageControl}
-                value={filter}
-                onChange={(event) => setFilter(event.target.value as StageFilter)}
-                className={`${control} w-full`}
-              >
-                <option value="all">All active orders ({board.orders.length})</option>
-                {(Object.keys(stageLabels) as Stage[]).map((stage) => (
-                  <option key={stage} value={stage}>
-                    {stageLabels[stage]} ({counts[stage]})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => void refresh()}
-              disabled={refreshing || !!pendingOrder}
-              className={`${button} md-ops-secondary`}
-              aria-label="Refresh kitchen orders"
-              title="Refresh kitchen orders"
-            >
-              <RefreshCw
-                className={`size-4 ${refreshing ? "motion-safe:animate-spin" : ""}`}
-                aria-hidden="true"
-              />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-          </div>
-        </>
+        <KdsWorkspaceControls
+          activeCount={board.orders.length}
+          counts={counts}
+          filter={filter}
+          onFilterChange={setFilter}
+          stageControl={(element) => {
+            stageControl.current = element;
+          }}
+          query={query}
+          onQueryChange={setQuery}
+          fulfilment={fulfilment}
+          onFulfilmentChange={setFulfilment}
+          sort={filter === "done" ? completedSort : sort}
+          onSortChange={filter === "done" ? setCompletedSort : setSort}
+          view={view}
+          onViewChange={setView}
+          visibleCount={filter === "done" ? completedOrders.length : visibleOrders.length}
+          refreshing={refreshing}
+          refreshDisabled={refreshing || !!pendingOrder}
+          onRefresh={() => void refresh()}
+          onClear={() => {
+            setFilter("all");
+            setQuery("");
+            setFulfilment("all");
+            window.requestAnimationFrame(() => stageControl.current?.focus());
+          }}
+        />
       )}
 
       {notice && (
@@ -616,10 +592,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
               ` Showing the latest ${board.completed_orders.length}; ${board.completed_remaining_order_count} more are available in order history.`}
           </p>
           {completedOrders.length ? (
-            <div
-              className="grid min-w-0 items-start gap-4 md:grid-cols-2 xl:grid-cols-3"
-              aria-label="Completed kitchen orders"
-            >
+            <div className="md-kds-ticket-grid" aria-label="Completed kitchen orders">
               {completedOrders.map((order) => (
                 <KdsCompletedCard key={order.order_id} order={order} />
               ))}
@@ -627,22 +600,26 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
           ) : (
             <StateCard
               icon={<PackageCheck className="size-8" />}
-              title={query ? "No completed orders match" : "No completed handovers yet"}
+              title={
+                query || fulfilment !== "all"
+                  ? "No completed orders match"
+                  : "No completed handovers yet"
+              }
             >
               <p>
-                {query
-                  ? "Try another order number, dish or brand."
+                {query || fulfilment !== "all"
+                  ? "Try another search or clear the fulfilment filter."
                   : "Orders appear here only after the handover has been confirmed."}
               </p>
             </StateCard>
           )}
         </div>
       ) : visibleOrders.length ? (
-        <div
-          className="grid min-w-0 items-start gap-4 md:grid-cols-2 xl:grid-cols-3"
-          aria-label="Kitchen orders"
-        >
-          {visibleOrders.map((order) => {
+        <KdsOrderCollection
+          orders={visibleOrders}
+          view={view}
+          filter={filter}
+          renderOrder={(order) => {
             const stage = kdsOrderStage(order);
             const action = nextKdsOrderAction(order);
             const confirmingSeal = sealConfirmation === `${order.order_id}:${order.pass?.version}`;
@@ -703,8 +680,8 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
                 }}
               />
             );
-          })}
-        </div>
+          }}
+        />
       ) : (
         <StateCard
           icon={<ChefHat className="size-8" />}
@@ -718,18 +695,19 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
         >
           <p>
             {board.orders.length
-              ? "Try another order number, dish or stage."
+              ? "Try another order, dish, name or note, or clear the stage and fulfilment filters."
               : stale
                 ? "Reconnect before checking whether new orders have arrived."
                 : "New orders will appear here after kitchen release."}
           </p>
-          {(filter !== "all" || query) && (
+          {(filter !== "all" || query || fulfilment !== "all") && (
             <button
               type="button"
               className={`${button} md-ops-secondary mt-5`}
               onClick={() => {
                 setFilter("all");
                 setQuery("");
+                setFulfilment("all");
               }}
             >
               Show all orders
@@ -739,6 +717,233 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
       )}
       <PwaInstallCard appName="MealDeck Kitchen" />
     </section>
+  );
+}
+
+/** Presentation-only controls; filtering never changes an order or its contents. */
+export function KdsWorkspaceControls({
+  activeCount,
+  counts,
+  filter,
+  onFilterChange,
+  stageControl,
+  query,
+  onQueryChange,
+  fulfilment,
+  onFulfilmentChange,
+  sort,
+  onSortChange,
+  view,
+  onViewChange,
+  visibleCount,
+  refreshing,
+  refreshDisabled,
+  onRefresh,
+  onClear,
+}: {
+  activeCount: number;
+  counts: Record<Stage, number>;
+  filter: StageFilter;
+  onFilterChange: (value: StageFilter) => void;
+  stageControl?: (element: HTMLButtonElement | null) => void;
+  query: string;
+  onQueryChange: (value: string) => void;
+  fulfilment: KdsFulfilmentFilter;
+  onFulfilmentChange: (value: KdsFulfilmentFilter) => void;
+  sort: KdsSort;
+  onSortChange: (value: KdsSort) => void;
+  view: KdsView;
+  onViewChange: (value: KdsView) => void;
+  visibleCount: number;
+  refreshing: boolean;
+  refreshDisabled: boolean;
+  onRefresh: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="md-kds-controls">
+      <div className="md-kds-stage-rail" role="group" aria-label="Filter kitchen orders by stage">
+        <button
+          ref={stageControl}
+          type="button"
+          className="md-kds-stage-chip"
+          data-stage="all"
+          aria-pressed={filter === "all"}
+          onClick={() => onFilterChange("all")}
+        >
+          <span>All active</span>
+          <strong>{activeCount}</strong>
+        </button>
+        {(Object.keys(stageLabels) as Stage[]).map((stage) => (
+          <button
+            key={stage}
+            type="button"
+            className="md-kds-stage-chip"
+            data-stage={stage}
+            aria-pressed={filter === stage}
+            onClick={() => onFilterChange(filter === stage ? "all" : stage)}
+            title={stage === "done" ? "Confirmed handovers from the last 12 hours" : undefined}
+          >
+            <span>
+              <span className="md-kds-stage-dot" aria-hidden="true" />
+              {stageLabels[stage]}
+            </span>
+            <strong>{counts[stage]}</strong>
+          </button>
+        ))}
+      </div>
+      <div className="md-kds-toolbar">
+        <label className="md-kds-search relative min-w-0">
+          <span className="sr-only">Find an order, dish, brand, bag name, note or vehicle</span>
+          <Search
+            className="pointer-events-none absolute left-3 top-3.5 size-4 md-ops-muted"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Order, dish, name or note"
+            className={`${control} md-ops-field-search w-full`}
+          />
+        </label>
+        <label className="min-w-0">
+          <span className="sr-only">Filter by fulfilment</span>
+          <select
+            value={fulfilment}
+            onChange={(event) => onFulfilmentChange(event.target.value as KdsFulfilmentFilter)}
+            className={`${control} w-full`}
+          >
+            <option value="all">All fulfilment</option>
+            {(Object.keys(fulfilmentLabels) as KdsOrder["fulfilment"][]).map((key) => (
+              <option key={key} value={key}>
+                {fulfilmentLabels[key]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="min-w-0">
+          <span className="sr-only">Sort kitchen orders</span>
+          <select
+            value={sort}
+            onChange={(event) => onSortChange(event.target.value as KdsSort)}
+            className={`${control} w-full`}
+          >
+            <option value="oldest">
+              {filter === "done" ? "Earliest handover" : "Oldest first"}
+            </option>
+            <option value="newest">{filter === "done" ? "Latest handover" : "Newest first"}</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={refreshDisabled}
+          className={`${button} md-ops-secondary md-kds-refresh`}
+          aria-label="Refresh kitchen orders"
+        >
+          <RefreshCw
+            className={`size-4 ${refreshing ? "motion-safe:animate-spin" : ""}`}
+            aria-hidden="true"
+          />
+          <span>Refresh</span>
+        </button>
+      </div>
+      <div className="md-kds-viewbar">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <p className="text-sm font-semibold md-ops-muted" role="status">
+            <strong className="md-ops-ink">{visibleCount}</strong> of{" "}
+            {filter === "done" ? counts.done : activeCount}{" "}
+            {filter === "done" ? "recent handovers" : "active orders"}
+          </p>
+          {(filter !== "all" || query || fulfilment !== "all") && (
+            <button type="button" onClick={onClear} className="md-kds-clear">
+              <X className="size-3.5" aria-hidden="true" />
+              Clear filters
+            </button>
+          )}
+        </div>
+        {filter === "done" ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold md-ops-muted">
+            <LockKeyhole className="size-3.5" aria-hidden="true" /> Read-only history
+          </span>
+        ) : (
+          <div className="md-kds-view-switch" role="group" aria-label="Kitchen board layout">
+            <button
+              type="button"
+              aria-pressed={view === "tickets"}
+              onClick={() => onViewChange("tickets")}
+            >
+              <LayoutGrid className="size-4" aria-hidden="true" /> Tickets
+            </button>
+            <button
+              type="button"
+              aria-pressed={view === "stages"}
+              onClick={() => onViewChange("stages")}
+            >
+              <Columns3 className="size-4" aria-hidden="true" /> Stage lanes
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Each order renders once, including all brands, attached extras and bag allocations. */
+export function KdsOrderCollection({
+  orders,
+  view,
+  filter,
+  renderOrder,
+}: {
+  orders: KdsOrder[];
+  view: KdsView;
+  filter: StageFilter;
+  renderOrder: (order: KdsOrder) => ReactNode;
+}) {
+  if (view === "tickets") {
+    return (
+      <div className="md-kds-ticket-grid" aria-label="Kitchen orders">
+        {orders.map(renderOrder)}
+      </div>
+    );
+  }
+  const stages = KDS_ACTIVE_STAGES.filter((stage) => filter === "all" || filter === stage);
+  return (
+    <div
+      className={`md-kds-lanes ${stages.length === 1 ? "md-kds-lanes-single" : ""}`}
+      role="region"
+      aria-label="Kitchen stage lanes. Scroll horizontally to see each stage."
+      tabIndex={0}
+    >
+      {stages.map((stage) => {
+        const laneOrders = orders.filter((order) => kdsOrderStage(order) === stage);
+        return (
+          <section
+            key={stage}
+            className="md-kds-lane"
+            data-stage={stage}
+            aria-labelledby={`kds-lane-${stage}`}
+          >
+            <header className="md-kds-lane-heading">
+              <h3 id={`kds-lane-${stage}`}>
+                <span className="md-kds-stage-dot" aria-hidden="true" />
+                {stageLabels[stage]}
+              </h3>
+              <span>{laneOrders.length}</span>
+            </header>
+            <div className="md-kds-lane-orders">
+              {laneOrders.length ? (
+                laneOrders.map(renderOrder)
+              ) : (
+                <p className="md-kds-lane-empty">No orders in this view</p>
+              )}
+            </div>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -765,7 +970,7 @@ function StateCard({
   );
 }
 
-function KitchenOrderCard({
+export function KitchenOrderCard({
   order,
   stage,
   now,
@@ -802,92 +1007,124 @@ function KitchenOrderCard({
     if (confirmingSeal) confirmButton.current?.focus();
   }, [confirmingSeal]);
   const groups = groupKdsItems(order);
-  const totalItems = groups.reduce(
-    (sum, group) => sum + group.items.reduce((count, item) => count + item.quantity, 0),
-    0,
-  );
-  const elapsedUntil = stage === "sealed" && order.pass ? Date.parse(order.pass.updated_at) : now;
+  const progress = kdsTicketProgress(order);
   return (
     <article
       ref={cardRef}
       tabIndex={-1}
       aria-labelledby={`kds-order-${order.order_id}`}
-      className={`md-ops-ticket min-w-0 overflow-hidden border md-ops-border border-t-4 md-ops-paper outline-none ${stageStyles[stage].border}`}
+      className={`md-ops-ticket md-kds-ticket min-w-0 overflow-hidden border md-ops-border border-t-4 md-ops-paper outline-none ${stageStyles[stage].border}`}
       data-testid="kds-order-card"
       data-order-id={order.order_id}
+      data-stage={stage}
+      aria-busy={saving}
     >
-      <header className="md-ops-ticket-heading border-b md-ops-divider px-4 py-3">
+      <header className="md-ops-ticket-heading md-kds-ticket-heading border-b md-ops-divider">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3
-            id={`kds-order-${order.order_id}`}
-            className="min-w-0 break-words font-display text-2xl font-black tracking-tight md-ops-ink"
-          >
-            {order.display_code}
-          </h3>
+          <span className="md-kds-fulfilment">{fulfilmentLabels[order.fulfilment]}</span>
           <span
-            className={`rounded-full px-2.5 py-1 text-xs font-bold ${stageStyles[stage].badge}`}
+            className={`md-kds-status rounded-full px-2.5 py-1 text-xs font-bold ${stageStyles[stage].badge}`}
           >
             {stageLabels[stage]}
           </span>
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold md-ops-muted">
-          <span>{fulfilmentLabels[order.fulfilment]}</span>
-          <span>
-            {totalItems} {totalItems === 1 ? "item" : "items"}
+        <div className="md-kds-ticket-identity">
+          <div className="min-w-0">
+            <p className="md-kds-ticket-eyebrow">Order</p>
+            <h3 id={`kds-order-${order.order_id}`} className="md-kds-order-number">
+              {order.display_code}
+            </h3>
+          </div>
+          <div className="md-kds-ticket-timer" title="Elapsed time since verified kitchen release">
+            <span>In kitchen</span>
+            <strong aria-label={`Time in kitchen: ${elapsedLabel(order.released_at, now)}`}>
+              {elapsedLabel(order.released_at, now)}
+            </strong>
+          </div>
+        </div>
+        <div className="md-kds-ticket-meta">
+          <span className="inline-flex items-center gap-1">
+            <Clock3 className="size-3.5" aria-hidden="true" />
+            <span className="sr-only">Released at </span>
+            <time dateTime={order.released_at}>{kdsClockTime(order.released_at)}</time>
           </span>
+          <span>
+            {progress.quantity} {progress.quantity === 1 ? "item" : "items"}
+          </span>
+          {progress.bagCount > 0 && (
+            <span>
+              {progress.bagCount} {progress.bagCount === 1 ? "bag" : "bags"}
+            </span>
+          )}
           {order.group_order && (
             <span className="inline-flex items-center gap-1">
               <Users className="size-3.5" aria-hidden="true" />
               Group order
             </span>
           )}
-          <span
-            className="ml-auto inline-flex items-center gap-1 tabular-nums"
-            title="Time since kitchen release"
-          >
-            <Clock3 className="size-3.5" aria-hidden="true" />
-            <span className="sr-only">Time in kitchen: </span>
-            {elapsedLabel(order.released_at, elapsedUntil)}
-          </span>
         </div>
       </header>
-      <div className="space-y-3 px-4 py-3">
-        <div className="flex flex-wrap gap-2 text-xs font-bold md-ops-text">
-          <span className="rounded-md border md-ops-border px-2 py-1">
+      <div className="md-kds-ticket-body">
+        <div className="md-kds-packing-flags">
+          <span
+            className={order.cutlery_requested ? "md-kds-cutlery-requested" : "md-kds-cutlery-none"}
+          >
+            <Utensils className="size-3.5 shrink-0" aria-hidden="true" />
             {order.cutlery_requested ? "Include cutlery" : "No cutlery requested"}
           </span>
           {order.vehicle && (
-            <span className="rounded-md border md-ops-border px-2 py-1">
+            <span className="md-kds-vehicle">
               {order.vehicle.colour} {order.vehicle.make} · Reg ends{" "}
-              {order.vehicle.registrationLast4}
+              <strong>{order.vehicle.registrationLast4}</strong>
             </span>
           )}
         </div>
         {order.accepted_at && (
-          <p className="text-xs md-ops-muted">
-            {order.items.filter((item) => item.status === "ready").length} of {order.items.length}{" "}
-            lines ready · tick each item and its extras.
-          </p>
+          <div className="md-kds-progress">
+            <div>
+              <span>Preparation checklist</span>
+              <strong>
+                {progress.readyLines} / {progress.totalLines} lines ready
+              </strong>
+            </div>
+            <progress
+              value={progress.readyLines}
+              max={progress.totalLines}
+              aria-label={`Preparation checklist for ${order.display_code}: ${progress.readyLines} of ${progress.totalLines} lines ready`}
+            />
+            <p>Check every dish, drink and extra.</p>
+          </div>
         )}
         {order.notes && <Note label="Order note" text={order.notes} />}
         {groups.map((group) => (
-          <section key={group.key} aria-label={`${group.name} items`}>
-            <h4 className="md-ops-ticket-brand mb-1.5 border-b md-ops-border pb-1 text-xs font-black uppercase tracking-[0.12em]">
-              {group.name}
-            </h4>
-            <ul className="space-y-3">
+          <section
+            key={group.key}
+            className="md-kds-brand-group"
+            aria-label={`${group.name} items`}
+          >
+            <div className="md-kds-brand-heading">
+              <h4 className="md-ops-ticket-brand">{group.name}</h4>
+              <span
+                aria-label={`${group.items.filter((item) => item.status === "ready").length} of ${group.items.length} lines ready`}
+              >
+                {group.items.filter((item) => item.status === "ready").length}/{group.items.length}{" "}
+                ready
+              </span>
+            </div>
+            <ul className="md-kds-lines">
               {group.items.map((item) => (
                 <li
                   key={item.order_item_id}
-                  className={`min-w-0 ${item.parent_checkout_line_id ? "ml-5 border-l-2 md-ops-border pl-3" : ""}`}
+                  className={`md-kds-line min-w-0 ${item.parent_checkout_line_id ? "md-kds-attached-line" : ""}`}
+                  data-ready={item.status === "ready"}
                 >
                   <div className="flex items-start gap-2.5">
-                    <label className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg border md-ops-border">
+                    <label className="md-kds-ready-toggle">
                       <input
                         type="checkbox"
                         className="size-6 accent-emerald-700"
                         checked={item.status === "ready"}
-                        aria-label={`Ready: ${item.quantity} ${item.item_name}`}
+                        aria-label={`Ready: ${item.quantity} ${item.item_name}${item.bags?.length ? ` · ${item.bags.map(formatPackingBagName).join(", ")}` : item.participant_name ? ` · ${item.participant_name}` : ""}`}
                         disabled={
                           disabled ||
                           !order.accepted_at ||
@@ -899,27 +1136,34 @@ function KitchenOrderCard({
                         onChange={(event) => onItemReady(item.order_item_id, event.target.checked)}
                       />
                     </label>
-                    <span
-                      className="md-ops-ticket-quantity grid min-h-7 min-w-7 shrink-0 place-items-center rounded-md px-1 text-sm font-black tabular-nums"
-                      aria-label={`Quantity ${item.quantity}`}
-                    >
-                      {item.quantity}×
-                    </span>
                     <div className="min-w-0 flex-1">
-                      <p className="break-words text-base font-bold leading-6 md-ops-ink">
-                        {item.item_name}
-                      </p>
+                      <div className="md-kds-line-title">
+                        <span
+                          className="md-ops-ticket-quantity md-kds-quantity"
+                          aria-label={`Quantity ${item.quantity}`}
+                        >
+                          {item.quantity}×
+                        </span>
+                        <p>{item.item_name}</p>
+                      </div>
                       {item.parent_checkout_line_id && (
                         <p className="text-xs font-semibold md-ops-muted">
                           Extra from {item.brand_name} · with the item above
                         </p>
                       )}
                       {!!item.bags?.length && (
-                        <p className="mt-1 break-words text-xs font-bold md-ops-text">
-                          {item.bags
-                            .map((bag) => `${formatPackingBagName(bag)}: ${bag.quantity}×`)
-                            .join(" · ")}
-                        </p>
+                        <ul
+                          className="md-kds-bag-labels"
+                          aria-label={`Packing for ${item.item_name}`}
+                        >
+                          {item.bags.map((bag) => (
+                            <li key={bag.number}>
+                              <ShoppingBag className="size-3 shrink-0" aria-hidden="true" />
+                              <span>{formatPackingBagName(bag)}</span>
+                              <strong>{bag.quantity}×</strong>
+                            </li>
+                          ))}
+                        </ul>
                       )}
                       {item.unit_pence != null && (
                         <p className="mt-1 text-xs md-ops-muted">
@@ -935,30 +1179,36 @@ function KitchenOrderCard({
                           </p>
                         )}
                       {item.modifiers.length > 0 && (
-                        <ul
-                          className="mt-1.5 space-y-1 text-sm leading-5 md-ops-text"
-                          aria-label={`Choices for ${item.item_name}`}
-                        >
-                          {item.modifiers.map((modifier, index) => (
-                            <li key={`${index}:${modifier}`} className="flex items-start gap-1.5">
-                              <span
-                                className="mt-2 size-1 shrink-0 rounded-full md-ops-dot"
-                                aria-hidden="true"
-                              />
-                              <span className="min-w-0 break-words">
-                                {modifier}
-                                {item.modifier_details?.[index] && (
-                                  <span className="ml-1 text-xs md-ops-muted">
-                                    {" "}
-                                    · {item.modifier_details[index].quantity_per_parent}× each
-                                    {item.modifier_details[index].price_delta_pence
-                                      ? ` · +£${(item.modifier_details[index].price_delta_pence / 100).toFixed(2)}`
-                                      : " · included"}
-                                  </span>
-                                )}
-                              </span>
-                            </li>
-                          ))}
+                        <ul className="md-kds-choices" aria-label={`Choices for ${item.item_name}`}>
+                          {item.modifiers.map((modifier, index) => {
+                            const detail = item.modifier_details?.[index];
+                            return (
+                              <li key={`${index}:${modifier}`}>
+                                <span className="md-kds-choice-mark" aria-hidden="true" />
+                                <span className="min-w-0 break-words">
+                                  {detail?.group_name &&
+                                    !modifier
+                                      .toLocaleLowerCase("en-GB")
+                                      .startsWith(
+                                        `${detail.group_name.toLocaleLowerCase("en-GB")}:`,
+                                      ) && (
+                                      <span className="md-kds-choice-group">
+                                        {detail.group_name}:{" "}
+                                      </span>
+                                    )}
+                                  {modifier}
+                                  {detail && (
+                                    <span className="md-kds-choice-detail">
+                                      {detail.quantity_per_parent}× each
+                                      {detail.price_delta_pence
+                                        ? ` · ${detail.price_delta_pence < 0 ? "−" : "+"}£${(Math.abs(detail.price_delta_pence) / 100).toFixed(2)}`
+                                        : " · included"}
+                                    </span>
+                                  )}
+                                </span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       )}
                       {item.notes && (
@@ -980,6 +1230,9 @@ function KitchenOrderCard({
         )}
       </div>
       <footer className="md-ops-ticket-footer border-t md-ops-divider px-4 py-3">
+        {!order.accepted_at && order.routing_complete && (
+          <p className="md-kds-action-hint">Accepting queues the kitchen receipt once.</p>
+        )}
         {order.pass?.status === "packing" && (
           <p className="mb-2 text-sm font-semibold md-ops-muted">
             Packing in progress · check all named bags before handover.
@@ -1087,7 +1340,7 @@ function KitchenOrderCard({
 
 function Note({ label, text }: { label: string; text: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-amber-950">
+    <div className="md-kds-note flex items-start gap-2">
       <StickyNote className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <p className="min-w-0 whitespace-pre-wrap break-words text-sm leading-5">
         <strong className="font-bold">{label}: </strong>

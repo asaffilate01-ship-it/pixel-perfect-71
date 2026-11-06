@@ -1,3 +1,5 @@
+import { usePublicMenu } from "@/components/menus/use-public-menu";
+import { PublicMenuStatus } from "@/components/menus/public-menu-status";
 import { useRef, useState, type CSSProperties } from "react";
 import { Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -43,10 +45,11 @@ export function GroupRoomChoices({
   onEdit?: ((pick: LaunchMenuPick) => void) | undefined;
   onRemove?: ((pick: LaunchMenuPick) => void) | undefined;
 }) {
+  const { catalogue } = usePublicMenu();
   return (
     <ul className="md-room-choices">
       {picks.map((pick) => {
-        const entry = findLaunchMenuItem(pick.brandId, pick.itemId);
+        const entry = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
         if (!entry) return <li key={pick.key}>This item needs a menu refresh.</li>;
         const options = [
           ...launchSelectionLabels(entry.brand, entry.item, pick.selections, pick.crossSelections),
@@ -66,7 +69,9 @@ export function GroupRoomChoices({
               </strong>
               {options.length > 0 && <p>{options.join(" · ")}</p>}
               <span>
-                {formatLaunchMenuPrice(launchMenuPickDisplayPrice(pick).itemsSubtotalPence)}
+                {formatLaunchMenuPrice(
+                  launchMenuPickDisplayPrice(pick, catalogue).itemsSubtotalPence,
+                )}
               </span>
             </div>
             {(onEdit || onRemove) && (
@@ -108,6 +113,8 @@ export function GroupRoomMenu({
   onChange: (next: LaunchMenuPick[]) => void;
   disabled: boolean;
 }) {
+  const publicMenu = usePublicMenu();
+  const { catalogue } = publicMenu;
   const [brandId, setBrandId] = useState("skorch-burgers");
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState<LaunchItemDraft | null>(null);
@@ -115,23 +122,25 @@ export function GroupRoomMenu({
   const [notice, setNotice] = useState("");
   const returnFocus = useRef<HTMLElement | null>(null);
   const choicesHeading = useRef<HTMLHeadingElement>(null);
-  const brand = getLaunchMenuBrand(brandId)!;
+  const brand = getLaunchMenuBrand(brandId, catalogue)!;
   const query = search.trim().toLocaleLowerCase("en-GB");
   const sections = brand.sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) =>
-        [item.name, item.description, section.title]
-          .filter(Boolean)
-          .join(" ")
-          .toLocaleLowerCase("en-GB")
-          .includes(query),
-      ),
+      items: section.items
+        .filter((item) => item.available !== false)
+        .filter((item) =>
+          [item.name, item.description, section.title]
+            .filter(Boolean)
+            .join(" ")
+            .toLocaleLowerCase("en-GB")
+            .includes(query),
+        ),
     }))
     .filter((section) => section.items.length);
 
   function openItem(entry: LaunchMenuEntry, existing?: LaunchMenuPick) {
-    if (disabled) return;
+    if (disabled || !publicMenu.ready || entry.item.available === false) return;
     returnFocus.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setError("");
@@ -143,7 +152,7 @@ export function GroupRoomMenu({
     quantity: number,
     crossSelections: LaunchCrossSelection[],
   ) {
-    if (!draft || disabled) return;
+    if (!draft || disabled || !publicMenu.ready) return;
     const next = draft.existing
       ? updateLaunchPick(picks, draft.existing.key, selections, quantity, crossSelections)
       : addLaunchPick(picks, draft.brand.id, draft.item.id, selections, quantity, crossSelections);
@@ -162,6 +171,7 @@ export function GroupRoomMenu({
 
   return (
     <div className="md-room-composer">
+      <PublicMenuStatus />
       <section className="md-room-own-choices" aria-labelledby="room-own-choices">
         <div className="md-room-section-title">
           <ShoppingBag size={22} aria-hidden="true" />
@@ -176,7 +186,7 @@ export function GroupRoomMenu({
               disabled
                 ? undefined
                 : (pick) => {
-                    const entry = findLaunchMenuItem(pick.brandId, pick.itemId);
+                    const entry = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
                     if (entry) openItem(entry, pick);
                   }
             }
@@ -196,7 +206,9 @@ export function GroupRoomMenu({
         <p className="md-room-money-row">
           <span>Menu subtotal</span>
           <strong>
-            {formatLaunchMenuPrice(launchMenuBasketDisplayPrice(picks).itemsSubtotalPence)}
+            {formatLaunchMenuPrice(
+              launchMenuBasketDisplayPrice(picks, catalogue).itemsSubtotalPence,
+            )}
           </strong>
         </p>
         <p className="md-room-fine">
@@ -241,7 +253,12 @@ export function GroupRoomMenu({
                 <button
                   type="button"
                   key={item.id}
-                  disabled={disabled || !isLaunchBrandPriceApproved(brand.id)}
+                  disabled={
+                    disabled ||
+                    !publicMenu.ready ||
+                    item.available === false ||
+                    !isLaunchBrandPriceApproved(brand.id)
+                  }
                   onClick={() => openItem({ brand, section, item })}
                 >
                   <span>

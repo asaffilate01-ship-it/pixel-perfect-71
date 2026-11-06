@@ -25,8 +25,8 @@ export const LAUNCH_PICKS_STORAGE_KEY = "mealdeck-launch-picks-v1";
 export const MAX_LAUNCH_PICK_QUANTITY = 20;
 export const MAX_LAUNCH_PICKS = 60;
 
-export function findLaunchMenuItem(brandId: string, itemId: string) {
-  const brand = getLaunchMenuBrand(brandId);
+export function findLaunchMenuItem(brandId: string, itemId: string, catalogue?: LaunchMenuBrand[]) {
+  const brand = getLaunchMenuBrand(brandId, catalogue);
   if (!brand) return undefined;
   for (const section of brand.sections) {
     const item = section.items.find((entry) => entry.id === itemId);

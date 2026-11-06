@@ -232,3 +232,32 @@
     font-size: 14px;
   }
 }
+
+.lm-public-menu-status {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0.7rem 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  color: #514943;
+  font-size: 0.85rem;
+}
+.lm-public-menu-status p {
+  margin: 0;
+}
+.lm-public-menu-status button {
+  min-height: 44px;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  background: #fffaf3;
+  color: #82121b;
+  font-weight: 700;
+}
+.lm-dish:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}

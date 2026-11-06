@@ -18,12 +18,14 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - name: Launch menu prices, basket arithmetic and cross-brand choices
-        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts
+        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
       - name: Launch menu and approved logo implementation lint
         run: >-
           bunx eslint src/lib/launch-menu-catalogue.ts src/lib/launch-menu-picks.ts
           src/lib/launch-menu-upsells.ts
           src/lib/launch-menu-display-prices.ts
+          src/lib/mealdeck-public-menu.ts src/lib/mealdeck-public-menu.server.ts
+          src/components/menus/use-public-menu.ts src/components/menus/public-menu-status.tsx
           src/lib/brand-logos.ts src/components/mealdeck-logo.tsx
           src/components/menus/launch-menu-browser.tsx src/routes/menus.tsx
           src/components/menus/launch-basket.tsx src/components/menus/launch-item-customiser.tsx
@@ -45,7 +47,7 @@ jobs:
           bunx eslint src/components/pwa-provider.tsx src/components/pwa-install-card.tsx src/lib/mealdeck-pwa-context.ts tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
       - name: Verified customer checkout, packing, receipt printing and distinct staff alerts
         run: >-
-          bun test tests/mealdeck-customer.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
+          bun test tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
           tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts
           tests/mealdeck-checkout-browser.test.ts
           tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts
@@ -64,7 +66,7 @@ jobs:
       - name: Customer launch implementation lint
         run: >-
           bunx eslint src/components/customer-account.tsx src/components/customer-orders.tsx
-          src/lib/mealdeck-customer.ts src/lib/mealdeck-customer-orders.ts
+          src/lib/mealdeck-customer.ts src/lib/mealdeck-account-entry.ts src/lib/mealdeck-customer-orders.ts
           src/lib/mealdeck-customer-browser.ts src/lib/mealdeck-customer.functions.ts
           src/lib/mealdeck-customer-notifications.ts src/routes/account.tsx
           src/components/launch-checkout.tsx src/lib/mealdeck-online-checkout.server.ts
@@ -72,7 +74,7 @@ jobs:
           src/lib/mealdeck-opening-offer.ts src/lib/mealdeck-opening-offer.functions.ts
           src/lib/mealdeck-customer-order-timing.ts
           src/lib/mealdeck-guest.ts src/lib/mealdeck-guest-session.server.ts src/lib/mealdeck-launch-schedule.ts
-          src/lib/mealdeck-checkout-browser.ts
+          src/lib/mealdeck-checkout-browser.ts src/lib/mealdeck-group-launch.ts
           src/lib/mealdeck-kitchen-availability.ts
           src/routes/checkout.tsx src/routes/api.checkout.ts src/routes/api.stripe.webhook.ts
           src/components/opening-weekend-offer.tsx src/components/menus/menu-install-prompt.tsx
@@ -103,7 +105,7 @@ jobs:
       - name: "WhatsApp assistant test: privacy, validation and multi-brand handoff"
         run: bun test tests/whatsapp-assistance.test.ts
       - name: MealDeck backend staff, costing, analytics and RLS source contracts
-        run: bun test tests/mealdeck-ops.test.ts
+        run: bun test tests/mealdeck-ops.test.ts tests/mealdeck-menu-manager.test.ts
       - name: Private payment and email connection diagnostics
         run: bun test tests/mealdeck-integration-status.test.ts tests/mealdeck-checkout-domain.test.ts
       - name: Payment and email diagnostics implementation checks
@@ -164,7 +166,9 @@ jobs:
           src/components/ops/operations-workspace.tsx src/components/ops/kds-panel.tsx
           src/lib/mealdeck-kds.ts src/lib/mealdeck-kds-presentation.ts
           tests/mealdeck-kds*.test.ts
-          src/components/ops/ops-panels.tsx
+          src/components/ops/ops-panels.tsx src/components/ops/menu-manager.tsx
+          src/lib/mealdeck-menu-manager.ts src/lib/mealdeck-kds-view.ts
+          tests/mealdeck-menu-manager.test.ts
           src/components/ops/menu-kitchen-route.tsx
           src/components/ops/modifier-prices-panel.tsx
           src/lib/mealdeck-ops-browser.ts src/lib/mealdeck-ops-access.ts
@@ -632,6 +636,7 @@ jobs:
             shared-terminal-payments,
             checkout-domain,
             ordering-rooms,
+            public-menu,
           ]
     services:
       postgres:

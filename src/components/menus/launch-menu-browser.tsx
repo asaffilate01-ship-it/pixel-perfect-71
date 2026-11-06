@@ -1,3 +1,6 @@
+import { usePublicMenu } from "./use-public-menu";
+import { PublicMenuStatus } from "./public-menu-status";
+import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ArrowRight, ChevronRight, Layers3, Plus, Search, ShoppingBag, X } from "lucide-react";
@@ -92,7 +95,13 @@ export function LaunchMenuBrowser({
   requestedSectionId?: string | undefined;
 }) {
   const navigate = useNavigate();
-  const brand = getLaunchMenuBrand(requestedBrandId ?? "skorch-burgers");
+  const entryPolicy = useCustomerEntryPolicy();
+  const groupOrderingOpen =
+    !!entryPolicy &&
+    Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
+  const publicMenu = usePublicMenu();
+  const { catalogue } = publicMenu;
+  const brand = getLaunchMenuBrand(requestedBrandId ?? "skorch-burgers", catalogue);
   const pendingBrand = marketingBrands.find((entry) => entry.id === requestedBrandId);
   const [search, setSearch] = useState("");
   const [picks, setPicks] = useState<LaunchMenuPick[]>([]);
@@ -180,6 +189,7 @@ export function LaunchMenuBrowser({
   }
 
   function openItem(entry: LaunchMenuEntry, existing?: LaunchMenuPick) {
+    if (!publicMenu.ready || entry.item.available === false) return;
     if (!picksOpen)
       returnFocusRef.current =
         document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -193,7 +203,12 @@ export function LaunchMenuBrowser({
     quantity: number,
     crossSelections: LaunchCrossSelection[],
   ) {
-    if (!draft) return;
+    if (
+      !draft ||
+      !publicMenu.ready ||
+      findLaunchMenuItem(draft.brand.id, draft.item.id, catalogue)?.item.available === false
+    )
+      return;
     const next = draft.existing
       ? updateLaunchPick(picks, draft.existing.key, selections, quantity, crossSelections)
       : addLaunchPick(picks, draft.brand.id, draft.item.id, selections, quantity, crossSelections);
@@ -250,7 +265,7 @@ export function LaunchMenuBrowser({
   }
 
   const quantity = launchPickCount(picks);
-  const basketPrice = launchMenuBasketDisplayPrice(picks);
+  const basketPrice = launchMenuBasketDisplayPrice(picks, catalogue);
   const activeSection = brand?.sections.some((section) => section.id === requestedSectionId)
     ? requestedSectionId
     : undefined;
@@ -259,23 +274,25 @@ export function LaunchMenuBrowser({
     .filter((section) => !activeSection || section.id === activeSection)
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) =>
-        [
-          item.name,
-          item.description,
-          section.title,
-          section.description,
-          ...(brand
-            ? launchItemGroups(brand, item).flatMap((group) =>
-                group.options.map((option) => option.label),
-              )
-            : []),
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLocaleLowerCase("en-GB")
-          .includes(query),
-      ),
+      items: section.items
+        .filter((item) => item.available !== false)
+        .filter((item) =>
+          [
+            item.name,
+            item.description,
+            section.title,
+            section.description,
+            ...(brand
+              ? launchItemGroups(brand, item).flatMap((group) =>
+                  group.options.map((option) => option.label),
+                )
+              : []),
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLocaleLowerCase("en-GB")
+            .includes(query),
+        ),
     }))
     .filter((section) => section.items.length > 0);
   const visibleCount = sections.reduce((total, section) => total + section.items.length, 0);
@@ -290,9 +307,9 @@ export function LaunchMenuBrowser({
   const pairings: LaunchMenuEntry[] = pairingOrder
     .filter((id) => id !== brand?.id && isLaunchBrandPriceApproved(id))
     .flatMap((id) => {
-      const pairing = getLaunchMenuBrand(id);
+      const pairing = getLaunchMenuBrand(id, catalogue);
       const section = pairing?.sections.find((entry) => entry.id === pairingSections[id]);
-      const item = section?.items[0];
+      const item = section?.items.find((item) => item.available !== false);
       return pairing && section && item ? [{ brand: pairing, section, item }] : [];
     });
   const pickProps = {
@@ -305,11 +322,11 @@ export function LaunchMenuBrowser({
     onQuantity: (key: string, value: number) =>
       updatePicks(setLaunchPickQuantity(picks, key, value)),
     onEdit: (pick: LaunchMenuPick) => {
-      const entry = findLaunchMenuItem(pick.brandId, pick.itemId);
+      const entry = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
       if (entry) openItem(entry, pick);
     },
     onRemove: (pick: LaunchMenuPick) => {
-      const entry = findLaunchMenuItem(pick.brandId, pick.itemId);
+      const entry = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
       updatePicks(setLaunchPickQuantity(picks, pick.key, 0));
       setNotice({ message: (entry?.item.name ?? "Item") + " removed from your basket." });
     },
@@ -323,6 +340,7 @@ export function LaunchMenuBrowser({
       style={menuStyle}
     >
       <SiteHeader />
+      <PublicMenuStatus />
       <main className="lm-main">
         <div className="lm-page-heading">
           <span className="lm-eyebrow">The Luton launch deck</span>
@@ -331,10 +349,14 @@ export function LaunchMenuBrowser({
         </div>
         <div className="lm-group-entry">
           <p>
-            <strong>Ordering together?</strong> Join one room. Choose how you pay.
+            <strong>Ordering together?</strong>{" "}
+            {groupOrderingOpen
+              ? "Join one room. Choose how you pay."
+              : "Group rooms open on Monday 9 November."}
           </p>
           <Link to="/group-order">
-            Start a group <ArrowRight size={18} aria-hidden="true" />
+            {groupOrderingOpen ? "Start a group" : "Group ordering · Starting 9 November"}{" "}
+            <ArrowRight size={18} aria-hidden="true" />
           </Link>
         </div>
         <OpeningWeekendOffer compact />
@@ -345,7 +367,7 @@ export function LaunchMenuBrowser({
           aria-label="Choose a brand menu"
         >
           {brandOrder.map((id) => {
-            const entry = getLaunchMenuBrand(id);
+            const entry = getLaunchMenuBrand(id, catalogue);
             return entry ? (
               <button
                 key={id}
@@ -402,7 +424,7 @@ export function LaunchMenuBrowser({
               brandId={brand.id}
               brandName={brand.name}
               brands={brandOrder.flatMap((id) => {
-                const entry = getLaunchMenuBrand(id);
+                const entry = getLaunchMenuBrand(id, catalogue);
                 return entry ? [{ id: entry.id, name: entry.name }] : [];
               })}
               sections={brand.sections.map((entry) => ({ id: entry.id, name: entry.title }))}
@@ -496,6 +518,7 @@ export function LaunchMenuBrowser({
                               <button
                                 type="button"
                                 className="lm-dish"
+                                disabled={!publicMenu.ready || item.available === false}
                                 onClick={() => openItem({ brand, section, item })}
                                 aria-label={"Choose " + item.name + " from " + section.title}
                                 aria-describedby={"launch-price-" + item.id}
@@ -614,7 +637,13 @@ export function LaunchMenuBrowser({
                       <Link
                         to="/checkout"
                         className="lm-primary"
-                        onClick={() => prepareLaunchCheckout(picks)}
+                        onClick={(event) => {
+                          if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null) {
+                            event.preventDefault();
+                            return;
+                          }
+                          prepareLaunchCheckout(picks);
+                        }}
                       >
                         Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
                       </Link>
@@ -697,7 +726,7 @@ export function LaunchMenuBrowser({
       <LaunchBasketDock count={quantity} onOpen={openBasket} />
       <LaunchMenuAppNav
         brands={brandOrder.flatMap((id) => {
-          const entry = getLaunchMenuBrand(id);
+          const entry = getLaunchMenuBrand(id, catalogue);
           return entry ? [{ id: entry.id, name: entry.name, logo: logoFor(id) }] : [];
         })}
         brandId={brand?.id}
@@ -804,7 +833,11 @@ export function LaunchMenuBrowser({
                   <Link
                     to="/checkout"
                     className="lm-primary"
-                    onClick={() => {
+                    onClick={(event) => {
+                      if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null) {
+                        event.preventDefault();
+                        return;
+                      }
                       prepareLaunchCheckout(picks);
                       setPicksOpen(false);
                     }}

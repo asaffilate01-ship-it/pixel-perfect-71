@@ -185,7 +185,17 @@ export function readMealDeckCheckoutServerKey(
     selected.backend.publishableKey !== config.anonKey
   )
     return null;
-  const key = configured(env, "MEALDECK_CHECKOUT_SERVER_KEY");
+  const explicit = configured(env, "MEALDECK_CHECKOUT_SERVER_KEY");
+  // Lovable Cloud injects its existing privileged credential on the server.
+  // Reuse it only when its separately supplied project origin exactly matches
+  // MealDeck's explicitly configured backend. Never combine unrelated projects
+  // or recover from an invalid explicit MealDeck credential using a fallback.
+  const platformUrl = configured(env, "SUPABASE_URL");
+  const platformKey =
+    platformUrl && projectOrigin(platformUrl) === config.url
+      ? configured(env, "SUPABASE_SERVICE_ROLE_KEY")
+      : undefined;
+  const key = explicit ?? platformKey;
   const oldKey = configured(env, "DISHBEE_MEALDECK_CHECKOUT_SERVER_KEY");
   if (!key || key === config.anonKey || (oldKey && oldKey !== key)) return null;
   if (/^sb_secret_[A-Za-z0-9_-]{16,512}$/.test(key)) return key;

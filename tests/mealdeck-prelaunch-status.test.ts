@@ -19,10 +19,10 @@ const env = {
   MEALDECK_LUTON_LOCATION_ID: id(2),
   MEALDECK_ONLINE_CHECKOUT_ENABLED: "true",
   MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "signed-off",
-  MEALDECK_STRIPE_SECRET_KEY: "sk_test_" + "a".repeat(32),
+  MEALDECK_STRIPE_SECRET_KEY: "sk_live_" + "a".repeat(32),
   MEALDECK_STRIPE_WEBHOOK_SECRET: "whsec_" + "b".repeat(32),
   MEALDECK_STRIPE_ACCOUNT_ID: "acct_fixture",
-  MEALDECK_STRIPE_MODE: "test",
+  MEALDECK_STRIPE_MODE: "live",
   MEALDECK_SHARED_PAYMENTS_ENABLED: "true",
   MEALDECK_GROUP_LINK_SECRET: "g".repeat(64),
 };
@@ -41,6 +41,7 @@ function fixture() {
     kitchen: "online",
     configured: true,
     missingRpc: false,
+    providerCrossesCutoff: false,
   };
   function status(privateCustomer?: unknown) {
     const at = Date.parse(state.at);
@@ -68,7 +69,8 @@ function fixture() {
     );
     const headers = new Headers(init?.headers);
     const name = url.pathname.split("/").at(-1)!;
-    const args: Record<string, unknown> = init?.body ? JSON.parse(String(init.body)) : {};
+    const args: Record<string, unknown> =
+      init?.body && String(init.body).startsWith("{") ? JSON.parse(String(init.body)) : {};
     calls.push({ name, args, key: headers.get("apikey") });
     if (url.pathname === "/auth/v1/user") {
       if (state.badToken) return Response.json({ message: "Invalid session" }, { status: 401 });
@@ -87,6 +89,45 @@ function fixture() {
     }
     if (name === "mealdeck_create_checkout_quote")
       return Response.json({ quoteId: id(5), totalPence: 279 });
+    if (name === "account" && url.hostname === "api.stripe.com") {
+      if (state.providerCrossesCutoff) state.at = "2026-11-06T15:00:00Z";
+      return Response.json({ id: "acct_fixture", charges_enabled: true });
+    }
+    if (name === "mealdeck_prepare_stripe_order")
+      return Response.json({
+        orderId: id(6),
+        quoteId: id(5),
+        totalPence: 279,
+        grossPence: 399,
+        discountPence: 120,
+        currency: "gbp",
+        email: "test@mealdeck.co.uk",
+        fulfilment: "pickup",
+        sessionId: null,
+        sessionUrl: null,
+        expiresAt: new Date(Date.now() + 35 * 60_000).toISOString(),
+        requestHash: "d".repeat(64),
+        lines: [{ name: "The Ace", quantity: 1, line_pence: 399 }],
+      });
+    if (["sessions", "cs_live_prelaunch"].includes(name) && url.hostname === "api.stripe.com")
+      return Response.json({
+        id: "cs_live_prelaunch",
+        url: "https://checkout.stripe.com/c/pay/cs_live_prelaunch",
+        livemode: true,
+        mode: "payment",
+        status: "open",
+        payment_status: "unpaid",
+        client_reference_id: id(6),
+        amount_total: 279,
+        currency: "gbp",
+        metadata: {
+          source: "mealdeck",
+          mealdeck_order_id: id(6),
+          mealdeck_quote_id: id(5),
+          mealdeck_request_hash: "d".repeat(64),
+        },
+      });
+    if (name === "mealdeck_bind_stripe_session") return Response.json(true);
     throw new Error("Unexpected provider request: " + url.pathname);
   }) as typeof fetch;
   const request = (path = "/api/checkout", authorised = true, input?: unknown) =>
@@ -192,7 +233,6 @@ describe("identity-bound prelaunch availability", () => {
     ).toBe(false);
     for (const setting of [
       "MEALDECK_ONLINE_CHECKOUT_ENABLED",
-      "MEALDECK_CHECKOUT_INTEGRATION_APPROVED",
       "MEALDECK_STRIPE_SECRET_KEY",
       "MEALDECK_CHECKOUT_SERVER_KEY",
     ]) {
@@ -234,20 +274,99 @@ describe("identity-bound prelaunch availability", () => {
     expect(f.calls.some((c) => c.name === "mealdeck_create_checkout_quote")).toBe(false);
   });
 
-  test("group room and shared-payment capability reads use the same account boundary", async () => {
+  test("existing group payment capabilities keep their identity boundary while new rooms wait until Monday", async () => {
     for (const [path, handler] of [
       ["/api/group-orders", handleGroupOrdersRequest],
       ["/api/group-payments", handleSharedPaymentsRequest],
     ] as const) {
       const f = fixture();
-      const signedIn = await handler(f.request(path), env, f.fetcher);
+      const signedIn = await handler(f.request(path), env, f.fetcher, () =>
+        Date.parse("2026-11-06T10:30:00Z"),
+      );
       expect(signedIn.status).toBe(200);
-      expect((await signedIn.json()).available).toBe(true);
+      const capabilities = await signedIn.json();
+      expect(capabilities.available).toBe(path === "/api/group-payments");
+      expect(capabilities.newRoomsAvailable).toBe(false);
+      expect(capabilities.groupOrderingStartsAt).toBe("2026-11-09T00:00:00Z");
       const anonymous = await handler(f.request(path, false), env, f.fetcher);
       expect((await anonymous.json()).available).toBe(false);
       f.state.userId = other;
       expect((await (await handler(f.request(path), env, f.fetcher)).json()).available).toBe(false);
     }
+  });
+
+  test("only the admitted live verification may run before public integration signoff", async () => {
+    const runtime = { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" };
+    const f = fixture();
+    let response = await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher);
+    expect(await response.json()).toMatchObject({ available: true, prelaunchVerification: true });
+    const payment = { action: "pay", quoteId: id(5), attemptId: id(9), reviewConfirmed: true };
+    response = await handleOnlineCheckoutRequest(
+      f.request("/api/checkout", true, payment),
+      runtime,
+      f.fetcher,
+    );
+    expect(response.status).toBe(200);
+    expect(
+      f.calls.find((c) => c.name === "mealdeck_prepare_stripe_order")?.args["p_livemode"],
+    ).toBe(true);
+    expect(f.calls.filter((c) => c.name === "sessions")).toHaveLength(1);
+    expect(f.calls.some((c) => /confirm.*payment|release.*kds/.test(c.name))).toBe(false);
+    f.state.userId = other;
+    expect(
+      (await (await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher)).json()).available,
+    ).toBe(false);
+    f.state.userId = tester;
+    f.state.at = "2026-11-06T15:00:00Z";
+    expect(
+      await (await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher)).json(),
+    ).toMatchObject({ available: false, prelaunchVerification: false });
+    expect(
+      (
+        await (
+          await handleOnlineCheckoutRequest(f.request("/api/checkout", false), runtime, f.fetcher)
+        ).json()
+      ).available,
+    ).toBe(false);
+  });
+
+  test("provider checks crossing 15:00 cannot prepare a payment without public signoff", async () => {
+    const f = fixture();
+    f.state.providerCrossesCutoff = true;
+    const response = await handleOnlineCheckoutRequest(
+      f.request("/api/checkout", true, {
+        action: "pay",
+        quoteId: id(5),
+        attemptId: id(9),
+        reviewConfirmed: true,
+      }),
+      { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" },
+      f.fetcher,
+    );
+    expect(response.status).toBe(503);
+    expect(
+      f.calls.some((c) => c.name === "mealdeck_prepare_stripe_order" || c.name === "sessions"),
+    ).toBe(false);
+  });
+
+  test("sandbox credentials never enable this live verification or public trading", async () => {
+    const f = fixture();
+    const sandbox = {
+      ...env,
+      MEALDECK_STRIPE_MODE: "test",
+      MEALDECK_STRIPE_SECRET_KEY: "sk_test_" + "a".repeat(32),
+    };
+    expect(
+      (await (await handleOnlineCheckoutRequest(f.request(), sandbox, f.fetcher)).json()).available,
+    ).toBe(false);
+    f.state.at = "2026-11-06T15:00:00Z";
+    expect(
+      (
+        await (
+          await handleOnlineCheckoutRequest(f.request("/api/checkout", false), sandbox, f.fetcher)
+        ).json()
+      ).available,
+    ).toBe(false);
   });
 });
 

@@ -16,7 +16,8 @@ import { handleGroupOrdersRequest } from "../src/lib/mealdeck-group-rooms.server
 import { groupOrderResultSchema } from "../src/lib/mealdeck-group-rooms";
 
 /** A real HTTP-handler -> Supabase named-RPC -> PostgreSQL contract test.
- * Auth and Stripe are simulated external services. No RPC result, price,
+ * Auth and Stripe are simulated external services. Mock live-mode data exercises
+ * public trading; the transport never performs an external payment call. No RPC result, price,
  * payment state, permission check or kitchen release is mocked.
  * There is deliberately no fallback to global fetch: unexpected URLs fail.
  */
@@ -32,10 +33,10 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
       MEALDECK_CHECKOUT_SERVER_KEY: "sb_secret_payment_integration_fixture",
       MEALDECK_TENANT_ID: f.tenantId,
       MEALDECK_LUTON_LOCATION_ID: f.locationId,
-      MEALDECK_STRIPE_SECRET_KEY: "sk_test_" + "a".repeat(32),
+      MEALDECK_STRIPE_SECRET_KEY: "sk_live_" + "a".repeat(32),
       MEALDECK_STRIPE_WEBHOOK_SECRET: "whsec_" + "b".repeat(32),
       MEALDECK_STRIPE_ACCOUNT_ID: "acct_Fixture",
-      MEALDECK_STRIPE_MODE: "test",
+      MEALDECK_STRIPE_MODE: "live",
       MEALDECK_STRIPE_CHECKOUT_HOST:
         checkoutHostname === "pay.mealdeck.co.uk" ? checkoutHostname : "",
       MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "signed-off",
@@ -106,7 +107,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
         amount,
         amount_received: 0,
         currency: "gbp",
-        livemode: false,
+        livemode: true,
         status: "requires_payment_method",
         capture_method: "automatic",
         payment_method_types: [method],
@@ -130,7 +131,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
         amount_refunded: 0,
         disputed: false,
         currency: "gbp",
-        livemode: false,
+        livemode: true,
         status: "succeeded",
         paid: true,
         captured: true,
@@ -250,7 +251,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
             return Response.json({
               id: "tml_Fixture",
               address: { country: "GB" },
-              livemode: false,
+              livemode: true,
             });
           if (path.startsWith("checkout/sessions/")) {
             const session = sessions.get(path.split("/").at(-1)!);
@@ -289,7 +290,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
               payment_status: "unpaid",
               amount_total: Number(form.get("line_items[0][price_data][unit_amount]")),
               currency: form.get("line_items[0][price_data][currency]")!,
-              livemode: false,
+              livemode: true,
               client_reference_id: form.get("client_reference_id")!,
               metadata: meta,
               payment_intent: null,
@@ -343,6 +344,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
         }),
         env,
         fetcher,
+        () => Date.parse("2026-11-09T00:00:00Z"),
       );
       return { response, body: await response.json() };
     };
@@ -350,7 +352,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
       const event = {
         id: "evt_http" + ++sequence,
         type: "checkout.session.completed",
-        livemode: false,
+        livemode: true,
         data: { object: { id: session.id } },
       };
       events.set(event.id, event);
@@ -385,6 +387,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
       sessions,
       creations,
       fetcher,
+      tokens,
     };
   } catch (error) {
     await db.close();
@@ -783,6 +786,7 @@ test.each(["separate", "organiser"])(
           new Request("https://mealdeck.co.uk/api/group-orders"),
           h.env,
           h.fetcher,
+          () => Date.parse("2026-11-09T00:00:00Z"),
         );
         expect(response.status).toBe(200);
         expect(await response.json()).toMatchObject({ available: true, joinWindowSeconds: 180 });
@@ -800,6 +804,26 @@ test.each(["separate", "organiser"])(
         fulfilment: "pickup",
         cutleryRequested: true,
       };
+      const early = await handleGroupOrdersRequest(
+        new Request("https://mealdeck.co.uk/api/group-orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "https://mealdeck.co.uk",
+            Authorization: "Bearer " + h.tokens.organiser,
+            Cookie: ownerCookie,
+          },
+          body: JSON.stringify(create),
+        }),
+        h.env,
+        h.fetcher,
+        () => Date.parse("2026-11-08T23:59:59Z"),
+      );
+      expect(early.status).toBe(403);
+      expect((await early.json()).error).toBe("group_ordering_not_started");
+      expect(
+        (await h.db.query("select count(*)::int n from mealdeck_private.ordering_rooms")).rows[0].n,
+      ).toBe(0);
       const created = await h.post("group-orders", create, "organiser", ownerCookie);
       successful(created);
       expect(groupOrderResultSchema.safeParse(created.body).success).toBe(true);
