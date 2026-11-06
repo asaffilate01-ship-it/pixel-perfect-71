@@ -115,7 +115,7 @@ export type PreparedStripeOrder = {
   grossPence: number;
   discountPence: number;
   currency: "gbp";
-  email: string;
+  email: string | null;
   fulfilment: "pickup" | "curbside";
   sessionId: string | null;
   sessionUrl: string | null;
@@ -137,7 +137,7 @@ export function stripeSessionParameters(order: PreparedStripeOrder) {
     mode: "payment",
     "payment_method_types[0]": "card",
     "payment_method_options[card][request_three_d_secure]": "automatic",
-    customer_email: order.email,
+    ...(order.email ? { customer_email: order.email } : {}),
     client_reference_id: order.orderId,
     success_url: origin + "/checkout?order=" + order.orderId,
     cancel_url: origin + "/checkout?order=" + order.orderId + "&cancelled=1",

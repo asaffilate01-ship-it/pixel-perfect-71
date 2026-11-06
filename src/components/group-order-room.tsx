@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Clock3,
   Copy,
-  Link2,
   Loader2,
   LockKeyhole,
   RefreshCw,
@@ -1515,10 +1514,6 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             />
           </div>
         )}
-        <p className="md-room-footer-note">
-          <Link2 size={16} aria-hidden="true" /> One room for choices, payment and progress. No
-          replies to collect.
-        </p>
       </main>
       <SiteFooter />
       <Dialog

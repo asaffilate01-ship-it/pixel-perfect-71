@@ -1,0 +1,37 @@
+name: Verify WhatsApp guest checkout
+on:
+  pull_request:
+  push:
+    branches: [main, feature/mealdeck-whatsapp-guest-weekend-20261106]
+permissions:
+  contents: read
+jobs:
+  contact-only-checkout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_contact_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_contact_only"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: npm ci --prefix tests/postgres
+      - run: bun test tests/mealdeck-whatsapp-guest.test.ts tests/mealdeck-guest-checkout.test.ts tests/mealdeck-customer.test.ts
+      - name: PostgreSQL contact-only orders, scoped receipts and Monday registration
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_contact_only
+        run: node tests/postgres/whatsapp-guest-behavior.mjs --native
+      - name: Customer entry implementation lint
+        run: bunx eslint src/lib/mealdeck-customer-entry.ts src/components/use-customer-entry-policy.ts tests/mealdeck-whatsapp-guest.test.ts

@@ -99,7 +99,7 @@ function backendProblem(error: unknown): CheckoutProblem {
     [
       /guest_invalid_contact|guest_details_invalid/,
       "invalid_guest",
-      "Please check your name, email and phone number.",
+      "Please check your name and WhatsApp number.",
       400,
     ],
     [
