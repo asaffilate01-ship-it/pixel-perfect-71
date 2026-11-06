@@ -1,0 +1,70 @@
+name: H10S printer setup APK
+
+on:
+  pull_request:
+    paths:
+      - "apps/mealdeck-printer-probe/**"
+      - "tools/receipt-bridge/assets/mealdeck-thermal-logo.png"
+      - "src/assets/approved-logos/mealdeck.webp"
+      - ".github/workflows/printer-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  printer-probe-android:
+    name: H10S diagnostic Android build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/mealdeck-printer-probe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/mealdeck-printer-probe/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install pinned app dependencies
+        run: npm ci --ignore-scripts
+      - name: Check native and screen recovery behavior
+        run: |
+          npm run typecheck
+          npm run test:web
+          npm run test:native-core
+      - name: Bundle the offline app and verify Android boundaries
+        run: |
+          npm run sync:android
+          npm run verify:native
+      - name: Install Android compiler components
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Compile the setup APK without production credentials
+        working-directory: apps/mealdeck-printer-probe/android
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace
+      - name: Check packaged permissions and prepare the supervised setup download
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/mealdeck-printer-setup-h10s-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions dist/mealdeck-printer-setup-h10s-debug.apk > dist/permissions.txt
+          if rg "uses-permission: name='android.permission." dist/permissions.txt; then
+            echo "Unexpected Android permission in the setup-only APK"
+            exit 1
+          fi
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs dist/mealdeck-printer-setup-h10s-debug.apk > dist/signature.txt
+          cd dist
+          sha256sum mealdeck-printer-setup-h10s-debug.apk > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-printer-setup-h10s
+          path: apps/mealdeck-printer-probe/dist/
+          retention-days: 30
+          if-no-files-found: error

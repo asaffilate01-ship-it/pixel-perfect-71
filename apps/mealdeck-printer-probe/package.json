@@ -1,0 +1,26 @@
+{
+  "name": "mealdeck-printer-probe",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:web": "node scripts/build-web.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:web": "node --experimental-strip-types --test web/*.test.ts",
+    "test:native-core": "node native/run-core-tests.mjs",
+    "sync:android": "npm run build:web && cap sync android",
+    "verify:native": "node scripts/verify-native.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/core": "8.6.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0",
+    "esbuild": "0.25.12",
+    "typescript": "5.9.3"
+  }
+}
