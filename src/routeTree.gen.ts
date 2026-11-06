@@ -41,6 +41,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
 import { Route as ApiAuthEmailRouteImport } from './routes/api.auth.email'
+import { Route as ApiOpsCashRouteImport } from './routes/api.ops.cash'
 import { Route as ApiOpsIntegrationsRouteImport } from './routes/api.ops.integrations'
 import { Route as ApiPublicMenuRouteImport } from './routes/api.public.menu'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
@@ -205,6 +206,11 @@ const ApiAuthEmailRoute = ApiAuthEmailRouteImport.update({
   path: '/api/auth/email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOpsCashRoute = ApiOpsCashRouteImport.update({
+  id: '/api/ops/cash',
+  path: '/api/ops/cash',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOpsIntegrationsRoute = ApiOpsIntegrationsRouteImport.update({
   id: '/api/ops/integrations',
   path: '/api/ops/integrations',
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -291,6 +298,7 @@ export interface FileRoutesByTo {
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
   '/blog': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -329,6 +337,7 @@ export interface FileRoutesById {
   '/franchise_/$brandId': typeof FranchiseBrandIdRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -368,6 +377,7 @@ export interface FileRouteTypes {
     | '/franchise/$brandId'
     | '/blog/'
     | '/api/auth/email'
+    | '/api/ops/cash'
     | '/api/ops/integrations'
     | '/api/public/menu'
     | '/api/stripe/webhook'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/franchise/$brandId'
     | '/blog'
     | '/api/auth/email'
+    | '/api/ops/cash'
     | '/api/ops/integrations'
     | '/api/public/menu'
     | '/api/stripe/webhook'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/franchise_/$brandId'
     | '/blog/'
     | '/api/auth/email'
+    | '/api/ops/cash'
     | '/api/ops/integrations'
     | '/api/public/menu'
     | '/api/stripe/webhook'
@@ -480,6 +492,7 @@ export interface RootRouteChildren {
   FranchiseBrandIdRoute: typeof FranchiseBrandIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
   ApiAuthEmailRoute: typeof ApiAuthEmailRoute
+  ApiOpsCashRoute: typeof ApiOpsCashRoute
   ApiOpsIntegrationsRoute: typeof ApiOpsIntegrationsRoute
   ApiPublicMenuRoute: typeof ApiPublicMenuRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -711,6 +724,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ops/cash': {
+      id: '/api/ops/cash'
+      path: '/api/ops/cash'
+      fullPath: '/api/ops/cash'
+      preLoaderRoute: typeof ApiOpsCashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ops/integrations': {
       id: '/api/ops/integrations'
       path: '/api/ops/integrations'
@@ -768,6 +788,7 @@ const rootRouteChildren: RootRouteChildren = {
   FranchiseBrandIdRoute: FranchiseBrandIdRoute,
   BlogIndexRoute: BlogIndexRoute,
   ApiAuthEmailRoute: ApiAuthEmailRoute,
+  ApiOpsCashRoute: ApiOpsCashRoute,
   ApiOpsIntegrationsRoute: ApiOpsIntegrationsRoute,
   ApiPublicMenuRoute: ApiPublicMenuRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,

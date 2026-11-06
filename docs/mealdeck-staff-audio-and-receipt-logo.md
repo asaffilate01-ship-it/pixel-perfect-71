@@ -2,6 +2,10 @@
 
 Owner decisions: 6 November 2026. These source changes make new KDS and printer sound preferences enabled at 100% volume and add the approved MealDeck logo to receipts. Publication and physical-device acceptance remain separate outcomes.
 
+## Published release
+
+PR110 was normally merged as `c982c8c945dfb4b66ab9c0718b6fd6f3c42fefa4`; all 25 CI jobs passed. Deployment `979a7cce-69b4-4516-98b1-a897ca3cf499` was verified on the canonical public pages at 20:42 UK on 6 November. Public checkout remained available. An already-open staff PWA must load this version to use the new renderer and sound controller. A local Node bridge is separate software and is not updated by website publication.
+
 ## Sound
 
 The shared controller tracks the actual AudioContext state. A saved explicit mute or volume choice is retained. On a device without saved preferences, sound is requested by default at full application volume. If the browser requires interaction, a compact visible Enable sound prompt remains on the staff screen even when other tools are hidden; an ordinary trusted interaction can unlock it too. The interface never reports an inactive or suspended audio context as working sound.

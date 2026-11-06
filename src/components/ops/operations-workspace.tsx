@@ -86,6 +86,7 @@ import { paidOrderGoalRange, summariseWeeklyPaidOrders } from "@/lib/mealdeck-we
 import type { OpsSupplier, OpsPurchase, OpsBatch } from "@/lib/mealdeck-ops-procurement-types";
 
 import { OpsKdsPanel } from "@/components/ops/kds-panel";
+import { CashOrderPanel } from "@/components/ops/cash-order-panel";
 import { CheckoutLaunchSettings } from "@/components/ops/checkout-launch-settings";
 import { IntegrationStatusPanel } from "@/components/ops/integration-status-panel";
 import { StaffPasswordPanel } from "@/components/ops/staff-password-panel";
@@ -1171,7 +1172,24 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                   <OpsMenuPanel {...common} menu={data.menu} taxonomy={data.taxonomy} />
                 )}
                 {selectedSection === "orders" && (
-                  <OpsOrdersPanel orders={data.orders} tenantId={tenant} locationId={location} />
+                  <div className="space-y-5">
+                    {!!location && can("payments.collect") && (
+                      <CashOrderPanel
+                        key={tenant + ":" + location + ":" + user.id}
+                        tenantId={tenant}
+                        locationId={location}
+                        staffUserId={user.id}
+                        onRecorded={(order) =>
+                          setNotice(
+                            order.verifiedPaid && order.paymentStatus === "paid"
+                              ? `Cash order ${order.orderNumber} recorded. ${order.acceptedAt ? "Check its progress on KDS." : "Awaiting kitchen acceptance."}`
+                              : `Saved cash order ${order.orderNumber} found. Its payment status has changed; review order history before taking further payment.`,
+                          )
+                        }
+                      />
+                    )}
+                    <OpsOrdersPanel orders={data.orders} tenantId={tenant} locationId={location} />
+                  </div>
                 )}
                 {selectedSection === "recipes" && (
                   <OpsRecipePanel

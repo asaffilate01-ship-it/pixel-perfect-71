@@ -77,7 +77,7 @@ export function LaunchItemCustomiser({
   ) => void;
   onBack: () => void;
   error: string;
-  context?: "preview" | "group-order";
+  context?: "preview" | "group-order" | "staff-order";
 }) {
   const publicMenu = usePublicMenu();
   const { catalogue } = publicMenu;
@@ -321,7 +321,9 @@ export function LaunchItemCustomiser({
           <DialogDescription className="lmc-description">
             {context === "group-order"
               ? "Choose your food for this group"
-              : "Make it yours · Add to your basket"}
+              : context === "staff-order"
+                ? "Choose the customer’s food and extras"
+                : "Make it yours · Add to your basket"}
           </DialogDescription>
         </div>
       </header>
@@ -352,7 +354,7 @@ export function LaunchItemCustomiser({
               ? "Make it yours"
               : step === "extras"
                 ? "Complete your meal"
-                : context === "group-order"
+                : context !== "preview"
                   ? "Ready for your order"
                   : "Ready for your basket"}
         </h2>
@@ -582,7 +584,9 @@ export function LaunchItemCustomiser({
                 : existing
                   ? context === "group-order"
                     ? "My choices"
-                    : "Basket"
+                    : context === "staff-order"
+                      ? "Order"
+                      : "Basket"
                   : "Menu"}
           </button>
           {picker && (
@@ -610,7 +614,9 @@ export function LaunchItemCustomiser({
                   ? "Save changes"
                   : context === "group-order"
                     ? "Add to my order"
-                    : "Add to basket"
+                    : context === "staff-order"
+                      ? "Add to cash order"
+                      : "Add to basket"
                 : "Next"}
               {step === "review" ? (
                 existing ? (
