@@ -18,9 +18,9 @@ const clients = createMealDeckBackendClientCache<SupabaseClient>({
     void client.auth.stopAutoRefresh().catch(() => {});
   },
 });
-export async function initializePrinterClient() {
+export async function initializePrinterClient(refresh = false) {
   if (typeof window === "undefined") throw new Error("Browser required");
-  return clients.initialise();
+  return clients.initialise(refresh);
 }
 export async function printerRpc(name: string, args: Record<string, unknown> = {}) {
   if (!/^mealdeck_printer_[a-z_]+$/.test(name)) throw new Error("Invalid printer operation");

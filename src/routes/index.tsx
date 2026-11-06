@@ -65,7 +65,7 @@ const directBenefits = [
   {
     icon: Star,
     title: "Double points offer",
-    copy: "Register and spend £15 or more by Friday 13 November 2026.",
+    copy: "Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive.",
   },
   { icon: MapPin, title: "Live tracking", copy: "Follow the complete MealDeck handoff." },
 ];
@@ -481,8 +481,8 @@ function LandingPage() {
           <h2>Ready to play your cravings right?</h2>
           <p>
             Guests and members get 30% off the entire menu during our 6–8 November opening hours.
-            Register and spend £15 or more by and including Friday 13 November for double loyalty
-            points. Marketing updates are optional.
+            Register and spend £15 or more from Monday 9 to Friday 13 November inclusive for double
+            loyalty points. Marketing updates are optional.
           </p>
           <div>
             <Link to="/account" className="md-btn md-btn-yellow">

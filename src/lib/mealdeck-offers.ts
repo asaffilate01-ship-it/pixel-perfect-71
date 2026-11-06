@@ -1,11 +1,11 @@
 import { OPENING_OFFER_PERCENT } from "./mealdeck-opening-offer";
 
 /**
- * Owner-approved public terms, 5 November 2026. This catalogue publishes offers;
+ * Owner-approved public terms, updated 6 November 2026. This catalogue publishes offers;
  * it cannot grant discounts, issue points or enable a payment channel.
  * Pricing and membership evidence remain the independent MealDeck server's job.
  */
-export const MEALDECK_OFFERS_TERMS_VERSION = "mealdeck-offers-20261105-v2";
+export const MEALDECK_OFFERS_TERMS_VERSION = "mealdeck-offers-20261106-v3";
 export const MEALDECK_OFFERS_TIME_ZONE = "Europe/London";
 
 export const MILK_CAKE_CAMPAIGN = Object.freeze({
@@ -21,8 +21,10 @@ export const MILK_CAKE_CAMPAIGN = Object.freeze({
 export const DOUBLE_POINTS_CAMPAIGN = Object.freeze({
   minimumSpendPence: 1_500,
   multiplier: 2,
+  startsOn: "2026-11-09",
+  startsAtInclusive: "2026-11-09T00:00:00+00:00",
   throughDate: "2026-11-13",
-  // Friday is inclusive; this is a campaign deadline, not kitchen opening hours.
+  // Monday through Friday inclusive; these dates do not establish kitchen hours.
   endsAtExclusive: "2026-11-14T00:00:00+00:00",
   registrationRequired: true,
   marketingOptInRequired: false,
@@ -88,13 +90,13 @@ export const MEALDECK_OFFERS: readonly MealDeckOffer[] = [
     title: "Double loyalty points",
     value: `${DOUBLE_POINTS_CAMPAIGN.multiplier}×`,
     description:
-      "Register and spend £15 or more by and including Friday 13 November to get double loyalty points.",
-    dateLabel: "Until Friday 13 November 2026, inclusive",
-    startsOn: null,
+      "Register and spend £15 or more from Monday 9 to Friday 13 November inclusive to get double loyalty points.",
+    dateLabel: "Monday 9 – Friday 13 November 2026, inclusive",
+    startsOn: DOUBLE_POINTS_CAMPAIGN.startsOn,
     throughDate: DOUBLE_POINTS_CAMPAIGN.throughDate,
     audience: "Registered members",
     terms: [
-      "Register and spend £15 or more by and including Friday 13 November 2026 to get double loyalty points.",
+      "Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive to get double loyalty points.",
       "Use your registered MealDeck account. Guest orders earn no loyalty points.",
       "Email marketing and promotional app alerts are optional, separate choices. Neither is required for this offer.",
     ],

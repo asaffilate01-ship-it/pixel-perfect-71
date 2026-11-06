@@ -47,12 +47,21 @@ describe("The three approved November MealDeck offers", () => {
     expect("maximumPerOrder" in MILK_CAKE_CAMPAIGN).toBe(false);
   });
 
-  test("includes all of Friday 13 November in the double-points deadline", () => {
+  test("limits double points to Monday 9 through Friday 13 November, inclusive in the UK", () => {
+    expect(DOUBLE_POINTS_CAMPAIGN.startsOn).toBe("2026-11-09");
     expect(DOUBLE_POINTS_CAMPAIGN.throughDate).toBe("2026-11-13");
+    const start = Date.parse(DOUBLE_POINTS_CAMPAIGN.startsAtInclusive);
     const end = Date.parse(DOUBLE_POINTS_CAMPAIGN.endsAtExclusive);
+    expect(Date.parse("2026-11-08T23:59:59.999+00:00")).toBeLessThan(start);
+    expect(Date.parse("2026-11-09T00:00:00+00:00")).toBe(start);
     expect(Date.parse("2026-11-13T00:00:00+00:00")).toBeLessThan(end);
     expect(Date.parse("2026-11-13T23:59:59.999+00:00")).toBeLessThan(end);
     expect(Date.parse("2026-11-14T00:00:00+00:00")).toBe(end);
+    expect(end - start).toBe(5 * 24 * 60 * 60 * 1_000);
+    const offer = MEALDECK_OFFERS.find((entry) => entry.id === "double-points")!;
+    expect(offer.startsOn).toBe(DOUBLE_POINTS_CAMPAIGN.startsOn);
+    expect(offer.throughDate).toBe(DOUBLE_POINTS_CAMPAIGN.throughDate);
+    expect(offer.dateLabel).toBe("Monday 9 – Friday 13 November 2026, inclusive");
   });
 
   test("records the member threshold and multiplier without inventing earning rules or consent", () => {
@@ -63,7 +72,6 @@ describe("The three approved November MealDeck offers", () => {
     expect(DOUBLE_POINTS_CAMPAIGN.basePointsPerPound).toBeNull();
     expect(DOUBLE_POINTS_CAMPAIGN.minimumSpendBasis).toBeNull();
     expect(DOUBLE_POINTS_CAMPAIGN.automaticAwardsEnabled).toBe(false);
-    expect(MEALDECK_OFFERS.find((offer) => offer.id === "double-points")?.startsOn).toBeNull();
   });
 
   test("removes retired deals and unapproved loyalty promises from the published blog", () => {

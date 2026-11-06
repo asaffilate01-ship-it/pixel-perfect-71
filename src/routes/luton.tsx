@@ -49,7 +49,7 @@ export const Route = createFileRoute("/luton")({
         },
         {
           q: "Do I need to register?",
-          a: "You can order as a guest during the opening hours on 6–8 November. Guests and members can use the 30% offer and Sunday's 99p milk cake offer. Register and spend £15 or more by and including Friday 13 November 2026 for double loyalty points. Guest orders earn no loyalty points. Verify your email for your member account; marketing emails and promotional app alerts remain separate, optional choices.",
+          a: "You can order as a guest during the opening hours on 6–8 November. Guests and members can use the 30% offer and Sunday's 99p milk cake offer. Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive for double loyalty points. Guest orders earn no loyalty points. Verify your email for your member account; marketing emails and promotional app alerts remain separate, optional choices.",
         },
         {
           q: "Can we order as a group?",

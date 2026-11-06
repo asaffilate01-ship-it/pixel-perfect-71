@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AlertCircle,
   ArrowRight,
+  Bell,
   Check,
+  ChevronDown,
   ChefHat,
   Clock3,
   Columns3,
@@ -12,6 +14,7 @@ import {
   RefreshCw,
   Search,
   ShoppingBag,
+  SlidersHorizontal,
   StickyNote,
   Utensils,
   Users,
@@ -50,6 +53,7 @@ import {
   type KdsStageFilter as StageFilter,
   type KdsView,
 } from "@/lib/mealdeck-kds-view";
+import { readKdsToolsPreference, saveKdsToolsPreference } from "@/lib/mealdeck-kds-preferences";
 import "./kds-workspace.css";
 
 const POLL_MS = 15_000;
@@ -154,7 +158,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
   const boardRef = useRef<KdsBoard | null>(null);
   const actionButtons = useRef(new Map<string, HTMLButtonElement>());
   const orderCards = useRef(new Map<string, HTMLElement>());
-  const stageControl = useRef<HTMLButtonElement>(null);
+  const toolbarControl = useRef<HTMLButtonElement>(null);
   const invalidateRead = useCallback(() => {
     request.current++;
   }, []);
@@ -375,7 +379,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
             const focusTarget =
               actionButtons.current.get(order.order_id) ??
               orderCards.current.get(order.order_id) ??
-              stageControl.current;
+              toolbarControl.current;
             focusTarget?.focus();
           });
         }
@@ -401,13 +405,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
             >
               Kitchen orders
             </h2>
-            {board?.readiness === "ready" && (
-              <span className="md-kds-active-count">{board.orders.length} active</span>
-            )}
           </div>
-          <p className="mt-1 text-sm md-ops-muted">
-            All brands together. One ticket from prep to handover.
-          </p>
         </div>
         <div
           className="md-kds-connection flex items-center gap-2 text-xs font-semibold md-ops-muted"
@@ -445,16 +443,23 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
         </div>
       </header>
 
-      <StaffAlertControls alerts={alerts} kind="kds" />
       {board?.readiness === "ready" && (
         <KdsWorkspaceControls
           activeCount={board.orders.length}
           counts={counts}
           filter={filter}
           onFilterChange={setFilter}
-          stageControl={(element) => {
-            stageControl.current = element;
+          toolbarControl={(element) => {
+            toolbarControl.current = element;
           }}
+          preferencesScope={`${tenantId}:${locationId}`}
+          soundEnabled={alerts.enabled}
+          extraTools={
+            <>
+              <StaffAlertControls alerts={{ ...alerts, notice: 0, audioError: "" }} kind="kds" />
+              <PwaInstallCard appName="MealDeck Kitchen" />
+            </>
+          }
           query={query}
           onQueryChange={setQuery}
           fulfilment={fulfilment}
@@ -471,11 +476,27 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
             setFilter("all");
             setQuery("");
             setFulfilment("all");
-            window.requestAnimationFrame(() => stageControl.current?.focus());
+            window.requestAnimationFrame(() => toolbarControl.current?.focus());
           }}
         />
       )}
 
+      {alerts.notice > 0 && (
+        <div className="md-kds-new-orders" role="status">
+          <Bell className="size-4" aria-hidden="true" />
+          <strong>
+            {alerts.notice} new {alerts.notice === 1 ? "order" : "orders"}
+          </strong>
+          <button type="button" onClick={alerts.clearNotice} className="md-kds-clear">
+            Dismiss alert
+          </button>
+        </div>
+      )}
+      {alerts.audioError && (
+        <p role="status" className="text-sm md-ops-muted">
+          {alerts.audioError}
+        </p>
+      )}
       {notice && (
         <p
           role="status"
@@ -715,7 +736,6 @@ function ScopedKitchenBoard({ tenantId, locationId, can }: Props) {
           )}
         </StateCard>
       )}
-      <PwaInstallCard appName="MealDeck Kitchen" />
     </section>
   );
 }
@@ -726,7 +746,10 @@ export function KdsWorkspaceControls({
   counts,
   filter,
   onFilterChange,
-  stageControl,
+  toolbarControl,
+  preferencesScope = "default",
+  soundEnabled,
+  extraTools,
   query,
   onQueryChange,
   fulfilment,
@@ -745,7 +768,10 @@ export function KdsWorkspaceControls({
   counts: Record<Stage, number>;
   filter: StageFilter;
   onFilterChange: (value: StageFilter) => void;
-  stageControl?: (element: HTMLButtonElement | null) => void;
+  toolbarControl?: (element: HTMLButtonElement | null) => void;
+  preferencesScope?: string;
+  soundEnabled?: boolean;
+  extraTools?: ReactNode;
   query: string;
   onQueryChange: (value: string) => void;
   fulfilment: KdsFulfilmentFilter;
@@ -760,131 +786,189 @@ export function KdsWorkspaceControls({
   onRefresh: () => void;
   onClear: () => void;
 }) {
+  const toolsId = useId();
+  const [toolsOpen, setToolsOpen] = useState(false);
+  useEffect(() => {
+    setToolsOpen(readKdsToolsPreference(preferencesScope));
+  }, [preferencesScope]);
+  const hasFilters = filter !== "all" || !!query.trim() || fulfilment !== "all";
+  const history = filter === "done";
+  const totalCount = history ? counts.done : activeCount;
+
   return (
     <div className="md-kds-controls">
-      <div className="md-kds-stage-rail" role="group" aria-label="Filter kitchen orders by stage">
-        <button
-          ref={stageControl}
-          type="button"
-          className="md-kds-stage-chip"
-          data-stage="all"
-          aria-pressed={filter === "all"}
-          onClick={() => onFilterChange("all")}
-        >
-          <span>All active</span>
-          <strong>{activeCount}</strong>
-        </button>
-        {(Object.keys(stageLabels) as Stage[]).map((stage) => (
-          <button
-            key={stage}
-            type="button"
-            className="md-kds-stage-chip"
-            data-stage={stage}
-            aria-pressed={filter === stage}
-            onClick={() => onFilterChange(filter === stage ? "all" : stage)}
-            title={stage === "done" ? "Confirmed handovers from the last 12 hours" : undefined}
-          >
-            <span>
-              <span className="md-kds-stage-dot" aria-hidden="true" />
-              {stageLabels[stage]}
-            </span>
-            <strong>{counts[stage]}</strong>
-          </button>
-        ))}
-      </div>
-      <div className="md-kds-toolbar">
-        <label className="md-kds-search relative min-w-0">
-          <span className="sr-only">Find an order, dish, brand, bag name, note or vehicle</span>
-          <Search
-            className="pointer-events-none absolute left-3 top-3.5 size-4 md-ops-muted"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Order, dish, name or note"
-            className={`${control} md-ops-field-search w-full`}
-          />
-        </label>
-        <label className="min-w-0">
-          <span className="sr-only">Filter by fulfilment</span>
-          <select
-            value={fulfilment}
-            onChange={(event) => onFulfilmentChange(event.target.value as KdsFulfilmentFilter)}
-            className={`${control} w-full`}
-          >
-            <option value="all">All fulfilment</option>
-            {(Object.keys(fulfilmentLabels) as KdsOrder["fulfilment"][]).map((key) => (
-              <option key={key} value={key}>
-                {fulfilmentLabels[key]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="min-w-0">
-          <span className="sr-only">Sort kitchen orders</span>
-          <select
-            value={sort}
-            onChange={(event) => onSortChange(event.target.value as KdsSort)}
-            className={`${control} w-full`}
-          >
-            <option value="oldest">
-              {filter === "done" ? "Earliest handover" : "Oldest first"}
-            </option>
-            <option value="newest">{filter === "done" ? "Latest handover" : "Newest first"}</option>
-          </select>
-        </label>
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={refreshDisabled}
-          className={`${button} md-ops-secondary md-kds-refresh`}
-          aria-label="Refresh kitchen orders"
-        >
-          <RefreshCw
-            className={`size-4 ${refreshing ? "motion-safe:animate-spin" : ""}`}
-            aria-hidden="true"
-          />
-          <span>Refresh</span>
-        </button>
-      </div>
-      <div className="md-kds-viewbar">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-          <p className="text-sm font-semibold md-ops-muted" role="status">
-            <strong className="md-ops-ink">{visibleCount}</strong> of{" "}
-            {filter === "done" ? counts.done : activeCount}{" "}
-            {filter === "done" ? "recent handovers" : "active orders"}
+      <div className="md-kds-tools-bar">
+        <div className="md-kds-tools-summary">
+          <p className="md-kds-summary-count" role="status">
+            <strong>{visibleCount}</strong>
+            {visibleCount !== totalCount && <> of {totalCount}</>}{" "}
+            {history ? "recent handovers" : "active orders"}
           </p>
-          {(filter !== "all" || query || fulfilment !== "all") && (
-            <button type="button" onClick={onClear} className="md-kds-clear">
-              <X className="size-3.5" aria-hidden="true" />
-              Clear filters
-            </button>
+          {history ? (
+            <span className="md-kds-summary-detail">
+              <LockKeyhole className="size-3.5" aria-hidden="true" /> Done · read-only
+            </span>
+          ) : (
+            <span className="md-kds-summary-detail">
+              {view === "tickets" ? "Tickets" : "Stage lanes"}
+            </span>
+          )}
+          <span className="md-kds-summary-detail">
+            {sort === "oldest"
+              ? history
+                ? "Earliest handover"
+                : "Oldest first"
+              : history
+                ? "Latest handover"
+                : "Newest first"}
+          </span>
+          {soundEnabled !== undefined && (
+            <span className="md-kds-summary-detail">Sound {soundEnabled ? "on" : "off"}</span>
           )}
         </div>
-        {filter === "done" ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold md-ops-muted">
-            <LockKeyhole className="size-3.5" aria-hidden="true" /> Read-only history
-          </span>
-        ) : (
-          <div className="md-kds-view-switch" role="group" aria-label="Kitchen board layout">
+        <div className="md-kds-tools-actions">
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshDisabled}
+            className={`${button} md-ops-secondary md-kds-refresh`}
+            aria-label="Refresh kitchen orders"
+          >
+            <RefreshCw
+              className={`size-4 ${refreshing ? "motion-safe:animate-spin" : ""}`}
+              aria-hidden="true"
+            />
+            <span>Refresh</span>
+          </button>
+          <button
+            ref={toolbarControl}
+            type="button"
+            className={`${button} md-ops-secondary md-kds-tools-toggle`}
+            aria-expanded={toolsOpen}
+            aria-controls={toolsId}
+            onClick={() => {
+              const next = !toolsOpen;
+              setToolsOpen(next);
+              saveKdsToolsPreference(preferencesScope, next);
+            }}
+          >
+            <SlidersHorizontal className="size-4" aria-hidden="true" />
+            {toolsOpen ? "Hide tools" : "Show tools"}
+            <ChevronDown className="md-kds-tools-chevron size-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      {hasFilters && (
+        <div className="md-kds-applied-filters" aria-label="Applied kitchen filters">
+          {filter !== "all" && <span>Stage: {stageLabels[filter]}</span>}
+          {fulfilment !== "all" && <span>{fulfilmentLabels[fulfilment]}</span>}
+          {query.trim() && (
+            <span className="md-kds-applied-search" title={query.trim()}>
+              Search: “{query.trim()}”
+            </span>
+          )}
+          <button type="button" onClick={onClear} className="md-kds-clear">
+            <X className="size-3.5" aria-hidden="true" /> Clear filters
+          </button>
+        </div>
+      )}
+      <div className="md-kds-tools-panel" id={toolsId} hidden={!toolsOpen}>
+        <div className="md-kds-stage-rail" role="group" aria-label="Filter kitchen orders by stage">
+          <button
+            type="button"
+            className="md-kds-stage-chip"
+            data-stage="all"
+            aria-pressed={filter === "all"}
+            onClick={() => onFilterChange("all")}
+          >
+            <span>All active</span>
+            <strong>{activeCount}</strong>
+          </button>
+          {(Object.keys(stageLabels) as Stage[]).map((stage) => (
             <button
+              key={stage}
               type="button"
-              aria-pressed={view === "tickets"}
-              onClick={() => onViewChange("tickets")}
+              className="md-kds-stage-chip"
+              data-stage={stage}
+              aria-pressed={filter === stage}
+              onClick={() => onFilterChange(filter === stage ? "all" : stage)}
+              title={stage === "done" ? "Confirmed handovers from the last 12 hours" : undefined}
             >
-              <LayoutGrid className="size-4" aria-hidden="true" /> Tickets
+              <span>
+                <span className="md-kds-stage-dot" aria-hidden="true" />
+                {stageLabels[stage]}
+              </span>
+              <strong>{counts[stage]}</strong>
             </button>
-            <button
-              type="button"
-              aria-pressed={view === "stages"}
-              onClick={() => onViewChange("stages")}
+          ))}
+        </div>
+        <div className="md-kds-toolbar">
+          <label className="md-kds-search relative min-w-0">
+            <span className="sr-only">Find an order, dish, brand, bag name, note or vehicle</span>
+            <Search
+              className="pointer-events-none absolute left-3 top-3.5 size-4 md-ops-muted"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder="Order, dish, name or note"
+              className={`${control} md-ops-field-search w-full`}
+            />
+          </label>
+          <label className="min-w-0">
+            <span className="sr-only">Filter by fulfilment</span>
+            <select
+              value={fulfilment}
+              onChange={(event) => onFulfilmentChange(event.target.value as KdsFulfilmentFilter)}
+              className={`${control} w-full`}
             >
-              <Columns3 className="size-4" aria-hidden="true" /> Stage lanes
-            </button>
-          </div>
-        )}
+              <option value="all">All fulfilment</option>
+              {(Object.keys(fulfilmentLabels) as KdsOrder["fulfilment"][]).map((key) => (
+                <option key={key} value={key}>
+                  {fulfilmentLabels[key]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="min-w-0">
+            <span className="sr-only">Sort kitchen orders</span>
+            <select
+              value={sort}
+              onChange={(event) => onSortChange(event.target.value as KdsSort)}
+              className={`${control} w-full`}
+            >
+              <option value="oldest">
+                {filter === "done" ? "Earliest handover" : "Oldest first"}
+              </option>
+              <option value="newest">
+                {filter === "done" ? "Latest handover" : "Newest first"}
+              </option>
+            </select>
+          </label>
+        </div>
+        <div className="md-kds-viewbar">
+          {filter !== "done" && (
+            <div className="md-kds-view-switch" role="group" aria-label="Kitchen board layout">
+              <button
+                type="button"
+                aria-pressed={view === "tickets"}
+                onClick={() => onViewChange("tickets")}
+              >
+                <LayoutGrid className="size-4" aria-hidden="true" /> Tickets
+              </button>
+              <button
+                type="button"
+                aria-pressed={view === "stages"}
+                onClick={() => onViewChange("stages")}
+              >
+                <Columns3 className="size-4" aria-hidden="true" /> Stage lanes
+              </button>
+            </div>
+          )}
+        </div>
+        {extraTools && <div className="md-kds-extra-tools">{extraTools}</div>}
       </div>
     </div>
   );

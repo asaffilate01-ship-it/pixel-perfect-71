@@ -1,6 +1,127 @@
 # Independent MealDeck Cloud deployment
 
-## Latest activation check — 6 November 2026
+## Latest published verification — 6 November 2026
+
+This section records the live review after the following releases were merged and
+published. The earlier time-stamped records below remain historical evidence.
+
+| Release | Merge commit | Verified release state |
+| --- | --- | --- |
+| [PR #88](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/88) | `86ce81b` | Merged and published |
+| [PR #89](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/89) | `5b83813` | Merged and published |
+| [PR #90](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/90) | `ad987396` | Merged and published; all 15 web/PostgreSQL jobs passed |
+
+Native Android/iPhone compilation remains a separate verification outcome. The
+15 web/PostgreSQL results do not establish a native build, signed installation,
+phone payment or physical receipt print.
+
+### Public menu and guest entry now work
+
+The live `https://mealdeck.co.uk/api/public/menu` returned **HTTP 200 with 77
+items**. The browser displayed **“Prices and availability are updated from the
+kitchen.”** This supersedes the earlier `503 menu_unconfigured` observation. The
+current count is the filtered public projection; source catalogue totals and
+visible counts can differ under publication, routing and required-choice rules.
+
+The reviewed modifier-price prerequisite and category/add-on editing extension
+were installed, followed by
+`20261106115120_mealdeck_public_menu_read.sql`. The new no-argument
+`mealdeck_public_menu()` resolves the installed MealDeck scope internally and
+returns reviewed source keys and public menu fields only. Its anonymous read is
+independent of checkout credentials. The raw scoped catalogue remains
+service-role only, and no direct menu, customer, staff or payment table access was
+granted. See [the public menu read contract](mealdeck-public-menu-read.md) and
+[category/add-on editing](mealdeck-menu-structure-editing.md).
+
+The live basket was checked with **The Ace £3.99 + Cheese Slice £0.50 + meal
+upgrade £2.50 + included Pepsi = £6.99**. This verifies the displayed basket
+subtotal and selected choices. Choosing **Collection** opened the guest name and
+WhatsApp-number fields without a member-login step. Checkout remained disabled
+because the hosted checkout status was unavailable; this was not a completed
+canonical quote, payment or order.
+
+### Printer access and paid-test readiness
+
+Read-only database checks at approximately **12:00–12:02 UTC** found an active
+MealDeck Luton kitchen, checkout and channel switches enabled, operator state
+**Online**, a **30-minute** collection estimate, and pickup/kerbside fulfilment.
+The public database status correctly remained closed before the 15:00 opening
+while returning the configured kitchen and an upcoming opening offer.
+
+The dedicated **`printer@mealdeck.co.uk`** account has an enabled Luton printer
+assignment, but its Auth email is **unconfirmed**. It therefore does not yet meet
+the printer's verified-identity requirement. The existing verified global owner
+has canonical `staff.manage` permission and meets the deployed
+`printer_can_manage` checks; that owner can use `/printer` after normal sign-in
+without a separate printer assignment. The dedicated account needs its normal
+email-verification flow completed.
+
+At that database check there were **zero orders, KDS tickets, receipt jobs and
+receipt events**. Queued, claimed, sending, sent-unconfirmed, printed, held and
+failed receipt counts were all zero. Ten printer RPCs were installed. There is no
+receipt-terminal registry in the database: browser pairing and the local receipt
+bridge at `https://127.0.0.1:17443` determine hardware configuration. Device
+sign-in, bridge pairing, LAN-printer connectivity and physical paper acceptance
+remain to be verified. Receipt printing is separate from Stripe payment Terminal
+configuration.
+
+At **12:01 UTC**, `test@mealdeck.co.uk` matched the private approved identity, had
+a confirmed Auth email and an existing customer profile, and passed
+`launch_test_eligible_at(..., now())`. The fixed window is **6 November
+08:00–15:00 UTC**, with 15:00 excluded; the exact-cutoff check returned false.
+This establishes database eligibility at that time. A successful hosted LIVE
+payment, verified release of one KDS order, staff acceptance and physical receipt
+confirmation remain outstanding.
+
+### Hosted checkout fallback: current evidence and next diagnostics
+
+The latest hosted checkout review still returned `available:false`,
+`kitchen:null` and an `unscheduled` opening offer. The independently queried
+database returned **Online / 30 minutes / upcoming 15:00**, so the public menu
+repair does not establish checkout readiness.
+
+The deployed `mealdeck_online_checkout_status(uuid,uuid)` has exactly the requested
+`p_tenant` and `p_location` arguments, no defaults, and execute permission for
+`anon`, `authenticated` and `service_role`. The private customer wrapper has
+exactly `p_tenant`, `p_location`, `p_customer` and remains service-role only. No
+function-signature or ACL mismatch was found. The actual database response passes
+the current kitchen and opening-offer contracts.
+
+Missing service or Stripe credentials, an unsigned-off integration, a disabled
+online flag or invalid Checkout-domain configuration can keep `available:false`,
+but a successful status read preserves the kitchen and opening offer. This GET
+does not make a Stripe network request. A read-only unmatched-scope probe also
+returned an **upcoming** offer because the installed `opening_offer` uses the
+fixed launch window. The full **unscheduled** fallback therefore points to a
+runtime-configuration failure before the RPC, a failed public RPC request, or an
+invalid response. Missing or conflicting tenant/location settings are a leading
+inference; their exact hosted presence has not been observed.
+
+Continue diagnostics in this order:
+
+1. Confirm the served revision and retain the successful no-argument public-menu
+   response as evidence that the explicit MealDeck public connection can read
+   PostgREST. `/kds` initialization alone does not validate checkout scope.
+2. In the owning hosted configuration, check the presence, UUID format and
+   consistency of `MEALDECK_TENANT_ID` / `MEALDECK_LUTON_TENANT_ID` and
+   `MEALDECK_LUTON_LOCATION_ID` against the actual installation and active Luton
+   kitchen. Every configured tenant alias, including a St Albans alias, must
+   agree; Luton and St Albans location IDs must not be identical. This is a scope
+   check, not evidence that any particular variable is absent.
+3. If scope is valid, inspect the public status RPC's HTTP/error code and confirm
+   its request contains exactly the two server-selected argument names above.
+   Distinguish configuration rejection, transport/API failure and response
+   validation. Record the failing stage and sanitized code without credentials,
+   bearer tokens or private payloads. The schema signature and database grants
+   have already been checked.
+4. Once the hosted status returns the actual kitchen and schedule, use the
+   authorized integration diagnostics to verify service-key binding, LIVE Stripe
+   configuration/account/webhook readiness and the applicable approval gates.
+   The approved account's bounded prelaunch access and public release sign-off
+   remain separate. Perform the real paid-order/printer acceptance through the
+   normal authenticated flow; only verified payment may release the order to KDS.
+
+## Earlier activation check — 6 November 2026, 00:10 UTC
 
 Read-only inspection of the dedicated MealDeck project at `2026-11-06 00:10:59 UTC`
 found zero Auth accounts for the intended owner `info@mealdeck.co.uk`, zero verified

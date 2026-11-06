@@ -12,7 +12,7 @@ export const Route = createFileRoute("/offers")({
     seo({
       title: "MealDeck Offers — 30% Off, 99p Milk Cake & Double Points",
       description:
-        "30% off the entire menu, 6–8 November 2026. Milk cake 99p with every order on 8 November. Register and spend £15 or more by 13 November for double loyalty points.",
+        "30% off the entire menu, 6–8 November 2026. Milk cake 99p with every order on 8 November. Register and spend £15 or more from 9–13 November inclusive for double loyalty points.",
       path: "/offers",
     }),
   component: OffersPage,
@@ -33,7 +33,7 @@ function OffersPage() {
             </h1>
             <p>
               30% off your opening-weekend order. A 99p Sunday treat. Double points for registered
-              members spending £15 or more by Friday 13 November.
+              members spending £15 or more from Monday 9 to Friday 13 November inclusive.
             </p>
             <div className="md-offers-page-actions">
               <Link to="/menus" className="md-btn md-btn-red">
@@ -77,9 +77,9 @@ function OffersPage() {
                 required for the 30% offer or Sunday’s 99p milk cake.
               </p>
               <p>
-                For double loyalty points, register and spend £15 or more by and including Friday 13
-                November 2026. Verify your email and use your MealDeck member account. Guest orders
-                earn no loyalty points.
+                For double loyalty points, register and spend £15 or more from Monday 9 to Friday 13
+                November 2026 inclusive. Verify your email and use your MealDeck member account.
+                Guest orders earn no loyalty points.
               </p>
               <p>
                 Registration does not sign you up for marketing. Choose promotional emails and app

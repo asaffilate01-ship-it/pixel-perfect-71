@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal, flushSync } from "react-dom";
-import { Link } from "@tanstack/react-router";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   AlertTriangle,
@@ -20,6 +19,8 @@ import {
   PrinterBridgeError,
 } from "@/lib/mealdeck-printer-browser";
 import { confirmReceiptPaper } from "@/lib/mealdeck-printer-recovery";
+import { MealDeckBackendSetupError } from "@/lib/mealdeck-backend-client-cache";
+import { PrinterSignInError, signInPrinterWithPassword } from "@/lib/mealdeck-printer-auth";
 import { OpsRequestError } from "@/lib/mealdeck-ops-browser";
 import {
   parsePrinterBoard,
@@ -34,7 +35,11 @@ import { ReceiptPreview } from "./receipt-preview";
 import "./ops-theme.css";
 import "./printer.css";
 const errorMessage = (reason: unknown, fallback: string) =>
-  reason instanceof OpsRequestError ? reason.message : fallback;
+  reason instanceof OpsRequestError ||
+  reason instanceof PrinterSignInError ||
+  reason instanceof MealDeckBackendSetupError
+    ? reason.message
+    : fallback;
 const accessError = (e: unknown) =>
   e instanceof OpsRequestError && (e.code === "forbidden" || e.code === "unauthenticated");
 
@@ -50,27 +55,56 @@ export function PrinterWorkspace() {
   const [scopes, setScopes] = useState<PrinterScope[]>([]),
     [scopeId, setScopeId] = useState("");
   const [loginNotice, setLoginNotice] = useState("");
+  const [connectionReady, setConnectionReady] = useState(false),
+    [connectionCycle, setConnectionCycle] = useState(0),
+    [checkingAccess, setCheckingAccess] = useState(false);
   const [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const loadAccess = useCallback(async () => {
+    const userId = activeUser.current;
+    if (!userId) return;
     const request = ++accessRequest.current;
-    const result = parsePrinterScopes(await printerRpc("mealdeck_printer_my_access"));
-    if (!live.current || request !== accessRequest.current) return;
-    setScopes(result);
-    setScopeId(result[0]?.locationId ?? "");
-    setSignedIn(true);
+    setCheckingAccess(true);
+    setError("");
+    const isCurrent = () =>
+      live.current && request === accessRequest.current && activeUser.current === userId;
+    try {
+      const result = parsePrinterScopes(await printerRpc("mealdeck_printer_my_access"));
+      if (!isCurrent()) return;
+      setScopes(result);
+      setScopeId((previous) =>
+        result.some((entry) => entry.locationId === previous)
+          ? previous
+          : (result[0]?.locationId ?? ""),
+      );
+    } catch (reason) {
+      if (isCurrent()) {
+        setScopes([]);
+        setScopeId("");
+        setError(
+          errorMessage(reason, "Printer access could not be verified. Check it again below."),
+        );
+      }
+    } finally {
+      if (isCurrent()) setCheckingAccess(false);
+    }
   }, []);
   useEffect(() => {
     live.current = true;
+    let current = true;
     let unsubscribe: (() => void) | undefined;
+    setLoading(true);
+    setConnectionReady(false);
+    setError("");
     void (async () => {
       try {
-        const db = await initializePrinterClient();
-        if (!live.current) return;
+        const db = await initializePrinterClient(true);
+        if (!current) return;
         client.current = db;
+        setConnectionReady(true);
         const subscription = db.auth.onAuthStateChange((event, session) => {
-          if (!live.current) return;
+          if (!current) return;
           const changed = activeUser.current !== null && session?.user.id !== activeUser.current;
           if (!session || event === "SIGNED_OUT" || changed) {
             accessRequest.current++;
@@ -78,28 +112,37 @@ export function PrinterWorkspace() {
             setScopes([]);
             setScopeId("");
             setAuthId("");
+            setCheckingAccess(false);
           }
           if (session) {
             activeUser.current = session.user.id;
             setAuthId(session.user.id);
+            setSignedIn(true);
             if (event === "SIGNED_IN")
               setTimeout(() => {
-                if (live.current)
-                  void loadAccess().catch((e) =>
-                    setError(errorMessage(e, "Printer access could not be verified.")),
-                  );
+                if (current && activeUser.current === session.user.id) void loadAccess();
               }, 0);
           } else activeUser.current = null;
         }).data.subscription;
         unsubscribe = () => subscription.unsubscribe();
         const { data, error: issue } = await db.auth.getUser();
+        if (!current) return;
         if (data.user && !issue) {
           activeUser.current = data.user.id;
           setAuthId(data.user.id);
+          setSignedIn(true);
           await loadAccess();
+        } else {
+          accessRequest.current++;
+          activeUser.current = null;
+          setAuthId("");
+          setSignedIn(false);
+          setScopes([]);
+          setScopeId("");
+          setCheckingAccess(false);
         }
       } catch (e) {
-        if (live.current)
+        if (current)
           setError(
             errorMessage(
               e,
@@ -107,34 +150,36 @@ export function PrinterWorkspace() {
             ),
           );
       } finally {
-        if (live.current) setLoading(false);
+        if (current) setLoading(false);
       }
     })();
     return () => {
+      current = false;
       live.current = false;
       accessRequest.current++;
       unsubscribe?.();
       client.current = null;
     };
-  }, [loadAccess]);
+  }, [loadAccess, connectionCycle]);
   async function signIn(event: FormEvent) {
     event.preventDefault();
     if (!client.current || busy) return;
     setBusy(true);
     setError("");
+    setLoginNotice("");
     try {
-      const { error } = await client.current.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      setPassword("");
-      if (error) throw new Error("signin");
+      const user = await signInPrinterWithPassword(client.current.auth, email, password);
+      if (!live.current) return;
+      activeUser.current = user.id;
+      setAuthId(user.id);
+      setSignedIn(true);
       await loadAccess();
     } catch (e) {
       setError(
         errorMessage(e, "Sign-in was not confirmed. Check your details and verified email."),
       );
     } finally {
+      setPassword("");
       setBusy(false);
     }
   }
@@ -167,7 +212,10 @@ export function PrinterWorkspace() {
     setSignedIn(false);
     setScopes([]);
     setScopeId("");
+    setCheckingAccess(false);
     setPassword("");
+    setError("");
+    setLoginNotice("");
     await client.current?.auth.signOut({ scope: "local" });
   }
   const scope = scopes.find((s) => s.locationId === scopeId);
@@ -188,6 +236,7 @@ export function PrinterWorkspace() {
             <button
               className="md-ops-button md-ops-secondary"
               onClick={() => void signOut()}
+              disabled={busy}
               type="button"
             >
               <LogOut className="size-4" />
@@ -206,6 +255,23 @@ export function PrinterWorkspace() {
           <p role="status" className="md-ops-card p-8 text-center">
             Connecting to the receipt service…
           </p>
+        ) : !connectionReady ? (
+          <section className="md-ops-card mx-auto max-w-md space-y-4 p-6">
+            <AlertTriangle className="size-8 md-ops-accent" />
+            <h2 className="text-2xl font-black">Printer connection unavailable</h2>
+            <p className="text-sm leading-6 md-ops-muted">
+              The secure MealDeck connection must load before you can sign in. Check this device’s
+              internet connection, then try again.
+            </p>
+            <button
+              className="md-ops-button md-ops-primary w-full"
+              type="button"
+              onClick={() => setConnectionCycle((cycle) => cycle + 1)}
+            >
+              <RefreshCw className="size-4" />
+              Retry printer connection
+            </button>
+          </section>
         ) : !signedIn ? (
           <section className="md-ops-card mx-auto max-w-md space-y-4 p-6">
             <LockKeyhole className="size-8 md-ops-accent" />
@@ -255,27 +321,26 @@ export function PrinterWorkspace() {
               )}
             </form>
             <p className="text-xs leading-5 md-ops-muted">
-              An owner can assign printer access after the account’s email is verified.{" "}
-              <Link to="/account" className="font-bold underline">
-                Register or verify an account
-              </Link>
-              .
+              Use an existing staff account. The secure email link verifies your email; it does not
+              create an account or grant printer access. An owner assigns printer access after
+              verification.
             </p>
           </section>
         ) : !scope ? (
           <section className="md-ops-card p-6">
-            <h2 className="text-xl font-black">Printer access needed</h2>
+            <h2 className="text-xl font-black">
+              {checkingAccess ? "Checking printer access…" : "Printer access needed"}
+            </h2>
             <p className="mt-2 text-sm md-ops-muted">
-              Ask your owner to assign this verified account to a kitchen in the printer app.
+              {checkingAccess
+                ? "Verifying this account’s permission for the kitchen receipt queue."
+                : "You are signed in. Check access again, or ask your owner to assign this verified account to a kitchen."}
             </p>
             <button
               type="button"
               className="md-ops-button md-ops-primary mt-4"
-              onClick={() =>
-                void loadAccess().catch((e) =>
-                  setError(errorMessage(e, "Access could not be checked.")),
-                )
-              }
+              disabled={checkingAccess || busy}
+              onClick={() => void loadAccess()}
             >
               Check access again
             </button>
@@ -351,7 +416,10 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
         call("board"),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 12000)),
       ]);
-      const board = parsePrinterBoard(raw, scope);
+      const board = parsePrinterBoard(raw, {
+        tenantId: scope.tenantId,
+        locationId: scope.locationId,
+      });
       if (!mounted.current || g !== generation.current) return;
       setJobs(board.jobs);
       currentJobs.current = board.jobs;
@@ -381,7 +449,7 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
     } finally {
       reading.current = false;
     }
-  }, [call, scope]);
+  }, [call, scope.tenantId, scope.locationId]);
   useEffect(() => {
     mounted.current = true;
     terminal.current = crypto.randomUUID();

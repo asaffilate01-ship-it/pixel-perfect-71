@@ -269,9 +269,9 @@ function FirstOrderExplainer() {
             <p className="md-first-eyebrow">Make yourself at home</p>
             <h2>One account. More to look forward to.</h2>
             <p>
-              Register and spend £15 or more by and including Friday 13 November 2026 for double
-              loyalty points. Offer emails and promotional app alerts are separate, optional choices
-              — saying no does not affect an eligible offer.
+              Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive for
+              double loyalty points. Offer emails and promotional app alerts are separate, optional
+              choices — saying no does not affect an eligible offer.
             </p>
             <Link to="/account" className="md-btn md-btn-red">
               Create your account <ArrowRight size={18} aria-hidden="true" />
