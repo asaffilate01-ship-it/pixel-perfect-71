@@ -244,7 +244,9 @@ export async function handleMealDeckAuthEmail(
     // One batch includes both secure-email-change recipients. No auto retry or key substitution.
     const response = await fetcher("https://api.resend.com/emails/batch", {
       method: "POST",
-      redirect: "error",
+      // Workers supports manual redirects; reject them below without forwarding
+      // the provider key or account email to another destination.
+      redirect: "manual",
       credentials: "omit",
       cache: "no-store",
       signal: AbortSignal.timeout(4000),
