@@ -55,6 +55,7 @@ jobs:
           bun test tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
           tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts
           tests/mealdeck-checkout-browser.test.ts
+          tests/mealdeck-checkout-feedback.test.ts
           tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts
           tests/mealdeck-printer-auth.test.ts
           tests/mealdeck-printer-acceptance.test.ts
@@ -98,6 +99,7 @@ jobs:
           tests/mealdeck-customer.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
           tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts
           tests/mealdeck-checkout-browser.test.ts
+          tests/mealdeck-checkout-feedback.test.ts
           deploy/mealdeck/guest-checkout.mjs tests/postgres/guest-checkout-fixture.mjs
           tests/postgres/guest-checkout-behavior.mjs
           deploy/mealdeck/kitchen-availability.mjs
