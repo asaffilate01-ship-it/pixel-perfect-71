@@ -84,3 +84,42 @@ export async function updateModifierPrice(
     throw invalidResponse();
   return { ...row, changed: (data as Record<string, unknown>)["changed"] as boolean };
 }
+
+export async function updateModifierOption(
+  tenantId: string,
+  current: OpsModifierPrice,
+  draft: { name: string; pricePence: number; active: boolean },
+  request: typeof opsRpc = opsRpc,
+): Promise<OpsModifierPriceUpdate> {
+  const previous = readRow(current);
+  const name = draft.name.trim();
+  const hasControl = [...draft.name].some((character) => {
+    const code = character.charCodeAt(0);
+    return code < 32 || code === 127;
+  });
+  if (!label(name) || hasControl || !price(draft.pricePence) || typeof draft.active !== "boolean")
+    throw new Error("Use an option name of 1–140 characters and a price from £0.00 to £10,000.00.");
+  const data = await request<unknown>("mealdeck_ops_modifier_update_option", {
+    p_tenant: tenantId,
+    p_option: previous.option_id,
+    p_group: previous.group_id,
+    p_name: name,
+    p_price_pence: draft.pricePence,
+    p_active: draft.active,
+    p_expected_name: previous.option_name,
+    p_expected_price_pence: previous.price_delta_pence,
+    p_expected_active: previous.active,
+  });
+  const row = readRow(data);
+  const changed = (data as Record<string, unknown>)["changed"];
+  if (
+    row.option_id !== previous.option_id ||
+    row.group_id !== previous.group_id ||
+    row.option_name !== name ||
+    row.price_delta_pence !== draft.pricePence ||
+    row.active !== draft.active ||
+    typeof changed !== "boolean"
+  )
+    throw invalidResponse();
+  return { ...row, changed };
+}

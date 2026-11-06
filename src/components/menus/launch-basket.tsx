@@ -179,6 +179,7 @@ export function LaunchBasket({
                 found.item,
                 pick.selections,
                 pick.crossSelections ?? [],
+                catalogue,
               );
 
               return (

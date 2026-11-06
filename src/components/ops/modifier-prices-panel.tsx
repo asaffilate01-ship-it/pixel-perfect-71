@@ -1,18 +1,36 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { RefreshCcw } from "lucide-react";
 import { OpsRequestError } from "@/lib/mealdeck-ops-browser";
-import { penceToPounds, poundsToPence } from "@/lib/mealdeck-ops-math";
+import { penceToPounds } from "@/lib/mealdeck-ops-math";
 import {
   listModifierPrices,
-  updateModifierPrice,
+  updateModifierOption,
   type OpsModifierPrice,
 } from "@/lib/mealdeck-ops-modifier-prices";
+import {
+  menuOptionChanged,
+  menuOptionDraftChanged,
+  validateMenuOptionDraft,
+} from "@/lib/mealdeck-menu-choice-editor";
 
-type Props = { tenantId: string; canRead: boolean; canWrite: boolean };
+type Props = {
+  tenantId: string;
+  canRead: boolean;
+  canWrite: boolean;
+  disabled?: boolean;
+  onBusyChange?: (busy: boolean) => void;
+};
 
-export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
+export function ModifierPricesPanel({
+  tenantId,
+  canRead,
+  canWrite,
+  disabled = false,
+  onBusyChange,
+}: Props) {
   const id = useId();
   const request = useRef(0);
+  const nameInput = useRef<HTMLInputElement>(null);
   const priceInput = useRef<HTMLInputElement>(null);
   const reviewFocusPending = useRef(false);
   const [rows, setRows] = useState<OpsModifierPrice[]>([]);
@@ -22,6 +40,9 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
   const [group, setGroup] = useState("");
   const [editing, setEditing] = useState<OpsModifierPrice | null>(null);
   const [amount, setAmount] = useState("");
+  const [optionName, setOptionName] = useState("");
+  const [active, setActive] = useState(false);
+  const [requested, setRequested] = useState<OpsModifierPrice | null>(null);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [conflict, setConflict] = useState(false);
@@ -56,6 +77,9 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
     setRows([]);
     setEditing(null);
     setAmount("");
+    setOptionName("");
+    setActive(false);
+    setRequested(null);
     setSaveError("");
     setConflict(false);
     setNotice("");
@@ -79,71 +103,93 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
       (!group || row.group_id === group) &&
       `${row.group_name} ${row.option_name}`.toLowerCase().includes(query.trim().toLowerCase()),
   );
-  const changedElsewhere =
-    !!current && !!editing && current.price_delta_pence !== editing.price_delta_pence;
+  const changedElsewhere = !!current && !!editing && menuOptionChanged(editing, current);
   const needsReview = conflict || changedElsewhere;
-  const enteredPence = poundsToPence(amount);
+  const draft = { name: optionName, price: amount, active };
+  const dirty = !!editing && menuOptionDraftChanged(draft, editing);
+  const locked = busy || loading || disabled;
 
-  function choose(row: OpsModifierPrice) {
-    if (editing?.option_id !== row.option_id) {
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  function choose(row: OpsModifierPrice, discard = false) {
+    if (locked) return;
+    if (editing?.option_id !== row.option_id || discard) {
+      if (dirty && !discard) {
+        setRequested(row);
+        return;
+      }
       setEditing(row);
       setAmount((row.price_delta_pence / 100).toFixed(2));
+      setOptionName(row.option_name);
+      setActive(row.active);
+      setRequested(null);
       setSaveError("");
       setConflict(false);
       setNotice("");
     }
     window.requestAnimationFrame(() => {
-      priceInput.current?.focus({ preventScroll: true });
-      priceInput.current?.scrollIntoView({ block: "center", behavior: "auto" });
+      nameInput.current?.focus({ preventScroll: true });
+      nameInput.current?.scrollIntoView({ block: "center", behavior: "auto" });
     });
   }
 
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (!canWrite || !editing || !current || busy || loading || needsReview) return;
-    if (enteredPence === null || enteredPence > 1000000) {
-      setSaveError("Enter a price from £0.00 to £10,000.00 with no more than two decimals.");
-      priceInput.current?.focus();
+    if (!canWrite || !editing || !current || locked || loadError || needsReview || !dirty) return;
+    const checked = validateMenuOptionDraft(draft);
+    if (!checked.valid) {
+      setSaveError(checked.message);
       return;
     }
     const cycle = request.current;
     setBusy(true);
+    onBusyChange?.(true);
     setSaveError("");
     setNotice("");
     try {
-      const saved = await updateModifierPrice(
-        tenantId,
-        editing.option_id,
-        enteredPence,
-        editing.price_delta_pence,
-      );
+      const saved = await updateModifierOption(tenantId, editing, {
+        name: checked.name,
+        pricePence: checked.pricePence,
+        active: checked.active,
+      });
       if (cycle !== request.current) return;
       setRows((previous) =>
         previous.map((row) => (row.option_id === saved.option_id ? saved : row)),
       );
       setEditing(saved);
       setAmount((saved.price_delta_pence / 100).toFixed(2));
+      setOptionName(saved.option_name);
+      setActive(saved.active);
       setNotice(
-        `${saved.option_name} saved at ${penceToPounds(saved.price_delta_pence)}. ${saved.affected_item_count === 0 ? "This option is not linked to a menu item yet." : `Used by ${saved.affected_item_count} menu ${saved.affected_item_count === 1 ? "item" : "items"}.`}`,
+        `${saved.option_name} saved at ${penceToPounds(saved.price_delta_pence)} · ${saved.active ? "Available" : "Unavailable"}. ${saved.affected_item_count === 0 ? "Changes apply wherever this choice is offered, including shared meal upgrades." : `Directly linked to ${saved.affected_item_count} menu ${saved.affected_item_count === 1 ? "item" : "items"}.`}`,
       );
     } catch (reason) {
       if (cycle !== request.current) return;
       if (reason instanceof OpsRequestError && reason.code === "conflict") {
         setConflict(true);
         setSaveError(
-          "This price changed on another screen. Your entry has been kept. Review the latest saved price before saving again.",
+          "This add-on changed on another screen. Your edits have been kept. Review its latest saved name, price and availability before saving again.",
         );
       } else
         setSaveError(
-          reason instanceof Error ? reason.message : "The price could not be saved. Please retry.",
+          reason instanceof Error ? reason.message : "The add-on could not be saved. Please retry.",
         );
     } finally {
       if (cycle === request.current) setBusy(false);
+      onBusyChange?.(false);
     }
   }
 
   async function reviewLatest() {
-    if (!editing) return;
+    if (!editing || locked) return;
     const selected = editing.option_id;
     const cycle = ++request.current;
     setLoading(true);
@@ -162,7 +208,7 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
       setConflict(false);
       setSaveError("");
       setNotice(
-        `Latest saved price: ${penceToPounds(latest.price_delta_pence)}. Your entry is still ${amount || "empty"}. Review it before saving.`,
+        `Latest saved: ${latest.option_name} · ${penceToPounds(latest.price_delta_pence)} · ${latest.active ? "Available" : "Unavailable"}. Your edits are still in the form. Review them before saving.`,
       );
       reviewFocusPending.current = true;
     } catch (reason) {
@@ -170,7 +216,7 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
         setLoadError(
           reason instanceof Error
             ? reason.message
-            : "The latest price could not be loaded. Please retry.",
+            : "The latest add-on could not be loaded. Please retry.",
         );
     } finally {
       if (cycle === request.current) setLoading(false);
@@ -182,37 +228,36 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
           <h2 id={id + "-heading"} className="text-xl font-black">
-            Add-ons &amp; upgrade prices
+            Add-ons &amp; upgrades
           </h2>
           <p className="mt-1 text-sm md-ops-muted">
-            Manage the price of each choice across the business. A shared option changes for every
-            menu item that uses its group.
+            Edit each choice’s name, price and availability. Shared add-ons change for every menu
+            item that uses their group.
           </p>
           <p className="mt-2 text-xs md-ops-muted">
-            These prices are saved for the live menu. The current coming-soon menu still shows the
-            approved launch prices.
+            Saved changes appear in the live menu and are checked again before a new order is paid.
           </p>
         </div>
         {canRead && (
           <button
             type="button"
             className="md-ops-button md-ops-secondary"
-            disabled={loading || busy}
+            disabled={locked}
             onClick={() => void load()}
           >
-            <RefreshCcw className="size-4" aria-hidden="true" /> Reload prices
+            <RefreshCcw className="size-4" aria-hidden="true" /> Reload add-ons
           </button>
         )}
       </div>
       {!canRead ? (
         <p className="mt-4 text-sm md-ops-muted">
-          A business-wide menu role is required to view shared option prices.
+          A business-wide menu role is required to view shared add-ons.
         </p>
       ) : (
         <>
           {loading && (
             <p role="status" className="mt-4 text-sm md-ops-muted">
-              Loading option prices…
+              Loading add-ons…
             </p>
           )}
           {loadError && (
@@ -224,10 +269,10 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
               <button
                 type="button"
                 className="md-ops-button md-ops-secondary mt-3"
-                disabled={loading || busy}
+                disabled={locked}
                 onClick={() => void load()}
               >
-                Retry option prices
+                Retry add-ons
               </button>
             </div>
           )}
@@ -273,7 +318,7 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
                 </p>
                 <ul
                   className="mt-2 max-h-80 space-y-2 overflow-y-auto pr-1"
-                  aria-label="Saved add-on and upgrade prices"
+                  aria-label="Saved add-ons and upgrades"
                 >
                   {filtered.map((row) => (
                     <li
@@ -285,19 +330,19 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
                         <p className="mt-1 font-bold">{row.option_name}</p>
                         <p className="mt-1 text-sm md-ops-muted">
                           {penceToPounds(row.price_delta_pence)} ·{" "}
-                          {row.active ? "Active option" : "Draft option"}
+                          {row.active ? "Available" : "Unavailable"}
                         </p>
                         <p className="text-xs md-ops-muted">
                           {row.affected_item_count === 0
-                            ? "Not linked to menu items"
-                            : `Used by ${row.affected_item_count} menu ${row.affected_item_count === 1 ? "item" : "items"}`}
+                            ? "Applies wherever offered, including shared meal upgrades"
+                            : `Directly linked to ${row.affected_item_count} menu ${row.affected_item_count === 1 ? "item" : "items"}`}
                         </p>
                       </div>
                       <button
                         type="button"
                         className="md-ops-button md-ops-secondary shrink-0"
-                        disabled={busy || loading}
-                        aria-label={`${canWrite ? "Edit price for" : "View price for"} ${row.option_name} in ${row.group_name}`}
+                        disabled={locked}
+                        aria-label={`${canWrite ? "Edit" : "View"} ${row.option_name} in ${row.group_name}`}
                         aria-controls={id + "-editor"}
                         aria-current={editing?.option_id === row.option_id ? "true" : undefined}
                         onClick={() => choose(row)}
@@ -314,21 +359,63 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
                 )}
               </div>
               <div id={id + "-editor"} className="min-w-0 rounded-xl border md-ops-border p-4">
+                {requested && (
+                  <div className="md-menu-review" role="alert">
+                    <p>Your add-on edits haven’t been saved.</p>
+                    <div className="md-menu-button-row">
+                      <button
+                        type="button"
+                        className="md-ops-button md-ops-secondary"
+                        onClick={() => setRequested(null)}
+                      >
+                        Keep editing
+                      </button>
+                      <button
+                        type="button"
+                        className="md-ops-button md-ops-secondary"
+                        onClick={() => choose(requested, true)}
+                      >
+                        Discard and open {requested.option_name}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {!current || !editing ? (
-                  <p className="text-sm md-ops-muted">Choose an option to review its price.</p>
+                  <p className="text-sm md-ops-muted">
+                    Choose an add-on to edit its name, price and availability.
+                  </p>
                 ) : (
                   <form onSubmit={(event) => void save(event)}>
-                    <p className="text-xs font-bold md-ops-accent">{current.group_name}</p>
+                    <div className="md-menu-editor-top">
+                      <p className="text-xs font-bold md-ops-accent">{current.group_name}</p>
+                      {dirty && <span className="md-menu-unsaved">Unsaved edits</span>}
+                    </div>
                     <h3 className="mt-1 break-words text-lg font-black">{current.option_name}</h3>
                     <p className="mt-2 text-sm md-ops-muted">
                       {current.affected_item_count === 0
-                        ? "This option is not linked to a menu item yet."
-                        : `This group is used by ${current.affected_item_count} menu ${current.affected_item_count === 1 ? "item" : "items"}. The saved price applies wherever this option is offered.`}
+                        ? "Changes apply wherever this choice is offered, including shared meal upgrades."
+                        : `Directly linked to ${current.affected_item_count} menu ${current.affected_item_count === 1 ? "item" : "items"}. These changes apply wherever this add-on is offered.`}
                     </p>
                     <p className="mt-2 text-xs md-ops-muted">
-                      Status: {current.active ? "active" : "draft"}. Saving a price does not change
-                      availability.
+                      Saved availability: {editing.active ? "Available" : "Unavailable"}.
                     </p>
+                    <label className="mt-4 block text-sm font-semibold" htmlFor={id + "-name"}>
+                      Add-on name
+                    </label>
+                    <input
+                      ref={nameInput}
+                      id={id + "-name"}
+                      className="md-ops-field mt-2"
+                      required
+                      maxLength={140}
+                      value={optionName}
+                      disabled={!canWrite || locked || !!loadError}
+                      onChange={(event) => {
+                        setOptionName(event.target.value);
+                        setNotice("");
+                      }}
+                    />
+                    <p className="mt-2 text-xs md-ops-muted">Saved name: {editing.option_name}</p>
                     <label className="mt-4 block text-sm font-semibold" htmlFor={id + "-price"}>
                       Option price (£)
                     </label>
@@ -339,7 +426,7 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
                       inputMode="decimal"
                       value={amount}
                       aria-describedby={id + "-price-help"}
-                      disabled={!canWrite || busy || loading}
+                      disabled={!canWrite || locked || !!loadError}
                       onChange={(e) => {
                         setAmount(e.target.value);
                         setNotice("");
@@ -349,32 +436,48 @@ export function ModifierPricesPanel({ tenantId, canRead, canWrite }: Props) {
                       Saved price: {penceToPounds(editing.price_delta_pence)}. Enter 0.00 for an
                       included choice.
                     </p>
+                    <label className="md-menu-active-check md-menu-option-availability mt-4">
+                      <input
+                        type="checkbox"
+                        checked={active}
+                        disabled={!canWrite || locked || !!loadError}
+                        onChange={(event) => {
+                          setActive(event.target.checked);
+                          setNotice("");
+                        }}
+                      />
+                      <span>
+                        Add-on available
+                        <small>Customers can choose this add-on on eligible products.</small>
+                      </span>
+                    </label>
+                    {!active && (
+                      <p className="md-menu-review">
+                        Customers cannot select this add-on after saving. A product that needs this
+                        as its only required choice may also become unavailable.
+                      </p>
+                    )}
                     {needsReview && (
                       <button
                         type="button"
                         className="md-ops-button md-ops-secondary mt-3"
-                        disabled={busy || loading}
+                        disabled={locked}
                         onClick={() => void reviewLatest()}
                       >
-                        Review latest price
+                        Review latest add-on
                       </button>
                     )}
                     {canWrite ? (
                       <button
                         type="submit"
                         className="md-ops-button md-ops-primary mt-4 w-full"
-                        disabled={
-                          busy ||
-                          loading ||
-                          needsReview ||
-                          enteredPence === editing.price_delta_pence
-                        }
+                        disabled={locked || !!loadError || needsReview || !dirty}
                       >
-                        {busy ? "Saving price…" : "Save option price"}
+                        {busy ? "Saving add-on…" : "Save add-on"}
                       </button>
                     ) : (
                       <p className="mt-4 text-sm md-ops-muted">
-                        Your role can view these prices. A business-wide menu editor can change
+                        Your role can view these add-ons. A business-wide menu editor can change
                         them.
                       </p>
                     )}

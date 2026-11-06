@@ -59,9 +59,9 @@ export function nativeConfig() {
   };
 }
 
-export async function createDatabase(native = false) {
+export async function createDatabase(native = false, extensions = {}) {
   if (!native) {
-    const instance = await PGlite.create();
+    const instance = await PGlite.create({ extensions });
     return {
       native: false,
       query: (sql, values = []) => instance.query(sql, values),

@@ -22,6 +22,7 @@ import {
 } from "@/lib/launch-menu-picks";
 import {
   cleanLaunchCrossConfiguration,
+  describeLaunchCrossChoice,
   getLaunchCrossOffers,
   isMappedLaunchUpgradeOption,
   launchCrossSelectionSummaries,
@@ -114,11 +115,7 @@ export function LaunchItemCustomiser({
             launchMenuCrossChoicePrice(offer.mode, choice.brandId, choice.itemId, catalogue) !==
             null,
         )
-        .map((choice) => ({
-          ...choice,
-          name:
-            findLaunchMenuItem(choice.brandId, choice.itemId, catalogue)?.item.name ?? choice.name,
-        })),
+        .map((choice) => describeLaunchCrossChoice(choice, offer.mode, catalogue)),
     }))
     .filter((offer) => offer.choices.length > 0);
   const steps: Step[] = [
@@ -140,7 +137,13 @@ export function LaunchItemCustomiser({
   );
   const stepIndex = steps.indexOf(step);
   const labels = launchSelectionLabels(brand, item, selections, crossSelections);
-  const summaries = launchCrossSelectionSummaries(brand, item, selections, crossSelections);
+  const summaries = launchCrossSelectionSummaries(
+    brand,
+    item,
+    selections,
+    crossSelections,
+    catalogue,
+  );
   const price = launchMenuPickDisplayPrice(
     {
       brandId: brand.id,
@@ -383,7 +386,7 @@ export function LaunchItemCustomiser({
                   aria-pressed={pickerSelection?.itemId === choice.itemId}
                   onClick={() => chooseCross(picker, choice.itemId)}
                 >
-                  <strong>{choice.name}</strong>
+                  <strong>{choice.label}</strong>
                   {choice.description && <small>{choice.description}</small>}
                   <span className="lmc-choice-price">
                     +
@@ -446,7 +449,7 @@ export function LaunchItemCustomiser({
                         <small>
                           {choice
                             ? (offer.slot === "side" ? choice.sectionTitle + " · " : "") +
-                              choice.name
+                              choice.label
                             : offer.description}
                         </small>
                         <small className="lmc-choice-price">

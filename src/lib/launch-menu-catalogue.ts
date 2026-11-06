@@ -47,6 +47,7 @@ export type LaunchMenuItem = {
   /** Current public catalogue state; source templates leave these unset. */
   available?: boolean;
   replacementPricePence?: number | null;
+  replacementLabel?: string;
   availableOptionIds?: string[];
   optionGroupIds: string[];
   priceVariants?: LaunchMenuPriceVariant[];

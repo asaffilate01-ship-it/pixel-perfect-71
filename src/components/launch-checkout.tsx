@@ -1795,6 +1795,7 @@ export function LaunchCheckout({
                                         found.item,
                                         pick.selections,
                                         pick.crossSelections,
+                                        catalogue,
                                       ).map((choice) => choice.label),
                                     ].join(" · ")
                                   : ""}
