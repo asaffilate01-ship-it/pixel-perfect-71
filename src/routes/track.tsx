@@ -28,7 +28,12 @@ export const Route = createFileRoute("/track")({
   // account. Keep the legacy reference lookup behind its existing release gate.
   beforeLoad: () => {
     if (COMING_SOON)
-      throw redirect({ to: "/account", hash: "customer-orders-title", replace: true });
+      throw redirect({
+        to: "/account",
+        search: { signin: 1 },
+        hash: "customer-orders-title",
+        replace: true,
+      });
   },
   head: () =>
     seo({

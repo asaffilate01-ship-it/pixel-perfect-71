@@ -1,5 +1,6 @@
 import { Check, Loader2, MailCheck, RefreshCw, ShoppingBag } from "lucide-react";
 import { rememberSharedPaymentRoom } from "@/lib/mealdeck-shared-payments-browser";
+import { accountAfterAuthPath } from "@/lib/mealdeck-account-entry";
 import type { PaymentIdentityState } from "./use-payment-identity";
 
 export function PaymentIdentity({
@@ -19,7 +20,9 @@ export function PaymentIdentity({
   onRememberRoom?: () => void;
   purpose?: "payment" | "organiser";
 }) {
-  const accountHref = "/account?returnTo=" + encodeURIComponent(returnTo);
+  const accountHref = identity.registrationDeferred
+    ? accountAfterAuthPath(returnTo)
+    : "/account?returnTo=" + encodeURIComponent(returnTo);
   return (
     <section
       className="md-shared-card md-shared-identity"

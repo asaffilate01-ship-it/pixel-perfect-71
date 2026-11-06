@@ -67,6 +67,7 @@ import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timin
 import { safeMealDeckCheckoutRedirect } from "@/lib/mealdeck-checkout-url";
 import {
   CHECKOUT_MODE_KEY,
+  checkoutModeForEntry,
   requestMealDeckAvailability,
   requestMealDeckCheckout,
   type MealDeckCheckoutMode,
@@ -426,7 +427,9 @@ export function LaunchCheckout({
   const [accountIssue, setAccountIssue] = useState<string | null>(null);
   const [status, setStatus] = useState<CheckoutStatus | null>(null);
   const [statusCurrent, setStatusCurrent] = useState(false);
-  const [checkoutMode, setCheckoutMode] = useState<MealDeckCheckoutMode>("guest");
+  const [selectedCheckoutMode, setCheckoutMode] = useState<MealDeckCheckoutMode>(
+    orderId ? "member" : "guest",
+  );
   const [guestDetails, setGuestDetails] = useState({ name: "", email: "", phone: "" });
   useEffect(() => {
     if (!entryPolicy || orderId || modeChosen.current) return;
@@ -471,6 +474,11 @@ export function LaunchCheckout({
   const statusRequestId = useRef(0);
   const guestStateVersion = useRef(0);
   const registered = account?.status === "signed_in" && account.profile.registered;
+  const checkoutMode = checkoutModeForEntry(selectedCheckoutMode, {
+    hasOrder: !!orderId,
+    registrationDeferred: entryPolicy?.emailRegistrationDeferred,
+    registered,
+  });
   const memberEntryVisible = entryPolicy?.emailRegistrationDeferred === false || registered;
   useEffect(() => {
     if (orderId) return;
@@ -1123,7 +1131,7 @@ export function LaunchCheckout({
             <Link
               to="/account"
               onClick={() => chooseCheckoutMode("member")}
-              search={{ returnTo: accountReturnTo }}
+              search={{ returnTo: accountReturnTo, signin: 1 }}
               className="md-checkout-primary"
             >
               Sign in securely
@@ -1254,7 +1262,7 @@ export function LaunchCheckout({
                         </p>
                         <Link
                           to="/account"
-                          search={{ returnTo: accountReturnTo }}
+                          search={{ returnTo: accountReturnTo, signin: 1 }}
                           className="md-checkout-refresh"
                           onClick={() => chooseCheckoutMode("member")}
                         >
@@ -1466,7 +1474,7 @@ export function LaunchCheckout({
                         <span>{account.profile.phone}</span>
                         <small>Email verified</small>
                       </div>
-                      <Link to="/account" search={{ returnTo: accountReturnTo }}>
+                      <Link to="/account" search={{ returnTo: accountReturnTo, signin: 1 }}>
                         Edit
                       </Link>
                     </div>
@@ -1491,7 +1499,7 @@ export function LaunchCheckout({
                       )}
                       <Link
                         to="/account"
-                        search={{ returnTo: accountReturnTo }}
+                        search={{ returnTo: accountReturnTo, signin: 1 }}
                         className="md-checkout-primary"
                       >
                         {entryPolicy?.emailRegistrationDeferred !== false

@@ -1,7 +1,49 @@
 import { describe, expect, test } from "bun:test";
-import { requestMealDeckCheckout } from "../src/lib/mealdeck-checkout-browser";
+import {
+  checkoutModeForEntry,
+  requestMealDeckCheckout,
+} from "../src/lib/mealdeck-checkout-browser";
 
 describe("checkout identity transport", () => {
+  test("weekend guest entry overrides an old member choice before and after policy loads", () => {
+    for (const registrationDeferred of [undefined, true]) {
+      expect(
+        checkoutModeForEntry("member", {
+          hasOrder: false,
+          registrationDeferred,
+          registered: false,
+        }),
+      ).toBe("guest");
+      expect(
+        checkoutModeForEntry("guest", { hasOrder: false, registrationDeferred, registered: false }),
+      ).toBe("guest");
+    }
+  });
+  test("existing receipts, registered test sign-in and Monday member entry keep their selected identity", () => {
+    for (const selected of ["member", "guest"] as const) {
+      expect(
+        checkoutModeForEntry(selected, {
+          hasOrder: true,
+          registrationDeferred: true,
+          registered: false,
+        }),
+      ).toBe(selected);
+      expect(
+        checkoutModeForEntry(selected, {
+          hasOrder: false,
+          registrationDeferred: true,
+          registered: true,
+        }),
+      ).toBe(selected);
+      expect(
+        checkoutModeForEntry(selected, {
+          hasOrder: false,
+          registrationDeferred: false,
+          registered: false,
+        }),
+      ).toBe(selected);
+    }
+  });
   test("guest quote, payment and receipt use cookies without reading a signed-in member token", async () => {
     let tokenReads = 0;
     const requests: RequestInit[] = [];
