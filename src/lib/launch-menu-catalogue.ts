@@ -970,7 +970,6 @@ for (const brand of launchMenuBrands) {
   brand.sections.push({
     id: "desserts",
     title: "Desserts",
-    description: "Milkcakes · Biscoff or Oreo",
     sourceRefs,
     items: [
       { id: `${brand.id}-desserts-biscoff-milkcake`, name: "Biscoff Milkcake" },
