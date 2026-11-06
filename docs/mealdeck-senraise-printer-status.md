@@ -14,6 +14,12 @@ The Hardware Settings app version is not evidence of a printer-service package o
 
 ## What the Cafe1 source actually provides
 
+### Later Capacitor direction
+
+The owner explicitly requested a GitHub Capacitor wrapper later on 6 November. The setup app in [`apps/mealdeck-printer-probe`](../apps/mealdeck-printer-probe/README.md) is now the concrete first step. It uses a minimal adapter based on the public `mawlood-fareq/capacitor-senraise-printer` protocol pinned at `7e2c4e2e6dde6872a239c6cb00fa209317078e45`, without installing the broad upstream plugin or distributing an opaque vendor SDK. The upstream package declares MIT; this is not manufacturer certification or evidence of compatibility with the owner's exact firmware.
+
+The app checks the explicit service `recieptservice.com.recieptservice/recieptservice.com.recieptservice.service.PrinterService` and descriptor before a fixed test bitmap can be sent. It is offline, has no account/queue/payment capability, and holds uncertain sends for inspection. The earlier need to obtain an SDK before any diagnostic build is superseded by the owner's express direction. Service identity on this device and physical paper remain unverified; full automatic customer receipts are still a separate commissioning step.
+
 The owner reported that Cafe1 printed on the same device. The following files were refreshed read-only from the default branch of `asaffilate01-ship-it/cafe1-connect-dash` on 6 November 2026, alongside the local audit checkout at `1aad3af52a41f779c3c1c735f18f29572d36a56c`:
 
 | Source                                                                                                                                | Observed implementation                                                                                                                                                                                       |

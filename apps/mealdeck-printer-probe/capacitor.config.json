@@ -1,0 +1,15 @@
+{
+  "appId": "uk.co.mealdeck.printerprobe",
+  "appName": "MealDeck Printer Setup",
+  "webDir": "www",
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false,
+    "loggingBehavior": "none"
+  }
+}

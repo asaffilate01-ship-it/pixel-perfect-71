@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#951018" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; media-src 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <title>MealDeck Printer Setup</title>
+    <link rel="stylesheet" href="./app.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <img src="./assets/mealdeck.webp" alt="MealDeck" width="72" height="73" />
+        <div>
+          <p class="eyebrow">H10S · Setup utility</p>
+          <h1>Printer setup</h1>
+        </div>
+        <span class="scope-badge">Setup only</span>
+      </header>
+      <main id="main">
+        <p class="intro">
+          Check the built-in printer, send one fixed setup ticket, then confirm the paper.
+        </p>
+        <div id="browser-notice" class="notice notice-warning" hidden>
+          <h2>Open the Android setup app</h2>
+          <p>
+            Install and open the MealDeck Printer Setup APK on the H10S. A website or PWA cannot run
+            this native printer check.
+          </p>
+        </div>
+        <p id="error-message" class="notice notice-warning" role="alert" tabindex="-1" hidden></p>
+        <p id="storage-message" class="notice notice-warning" role="alert" tabindex="-1" hidden></p>
+
+        <section class="card" aria-labelledby="connection-heading">
+          <div class="section-heading">
+            <span class="step" aria-hidden="true">1</span>
+            <h2 id="connection-heading">Check connection</h2>
+            <span id="connection-badge" class="status-badge">Not checked</span>
+          </div>
+          <p id="connection-message" class="muted">
+            This checks the installed printer service. It does not print a ticket.
+          </p>
+          <button id="check-connection" type="button" class="button button-secondary" disabled>
+            Check printer connection
+          </button>
+        </section>
+
+        <section class="card" aria-labelledby="setup-heading" id="test-card">
+          <div class="section-heading">
+            <span class="step" aria-hidden="true">2</span>
+            <h2 id="setup-heading">Print a setup ticket</h2>
+          </div>
+          <p class="muted">
+            Use a loaded paper roll. This sends the app’s fixed MealDeck setup ticket once.
+          </p>
+          <button id="print-setup" type="button" class="button button-primary" disabled>
+            Print one setup ticket
+          </button>
+          <p id="print-help" class="action-help">Check the printer connection first.</p>
+
+          <div class="test-result" id="test-result" aria-live="polite" aria-atomic="true">
+            <span id="test-badge" class="status-badge">Checking saved test</span>
+            <h3 id="test-heading" tabindex="-1">Checking the saved result…</h3>
+            <p id="test-message" class="muted">No new ticket is sent when this screen opens.</p>
+          </div>
+
+          <div id="recovery-actions" class="recovery-actions" hidden>
+            <button id="check-result" type="button" class="button button-secondary" disabled>
+              Check saved result
+            </button>
+            <button id="retry-same" type="button" class="button button-secondary" hidden disabled>
+              Retry the same setup request
+            </button>
+            <p id="retry-help" class="action-help" hidden>
+              The same saved request is reused. A recorded test is returned without sending another
+              ticket.
+            </p>
+          </div>
+
+          <div id="paper-confirmation" class="paper-confirmation" hidden>
+            <h3>Did one complete ticket print?</h3>
+            <p class="muted">
+              Check the actual paper before choosing. If you are unsure, leave this test unresolved.
+            </p>
+            <button id="paper-printed" type="button" class="button button-primary" disabled>
+              Yes, the full ticket printed
+            </button>
+            <button id="paper-not-printed" type="button" class="button button-secondary" disabled>
+              No, it did not print
+            </button>
+          </div>
+        </section>
+
+        <details class="card diagnostics">
+          <summary>Device &amp; printer details</summary>
+          <p class="muted">
+            Software versions and setup-test results only. No serial number, customer details or
+            account credentials.
+          </p>
+          <label class="sr-only" for="diagnostic-text">Selectable setup diagnostics</label>
+          <textarea
+            id="diagnostic-text"
+            readonly
+            rows="12"
+            spellcheck="false"
+            autocomplete="off"
+          ></textarea>
+          <button id="copy-details" type="button" class="button button-secondary">
+            Copy details
+          </button>
+          <p id="copy-message" class="action-help" role="status" aria-live="polite"></p>
+        </details>
+      </main>
+      <footer>This utility is separate from live ordering and the receipt queue.</footer>
+    </div>
+    <noscript>This setup app needs JavaScript enabled. No printer check has run.</noscript>
+  </body>
+</html>

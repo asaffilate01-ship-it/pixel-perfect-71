@@ -1,6 +1,6 @@
 # Android printer companion build plan
 
-Proposed, not implemented — 6 November 2026.
+Full receipt consumer proposed — 6 November 2026. The owner subsequently authorised the GitHub/Capacitor approach. A separate **setup-only** utility now lives in [`apps/mealdeck-printer-probe`](../apps/mealdeck-printer-probe/README.md), using a reviewed public Binder protocol to check the installed service and offer one fixed test slip. That instruction supersedes this document's earlier SDK-only prerequisite for making a diagnostic APK. The canonical receipt consumer, background operation and physical commissioning below remain outstanding.
 
 Build a small signed Android companion alongside the existing MealDeck Printer PWA. The PWA remains the screen for accepting paid orders, watching the queue and resolving paper outcomes. The companion consumes the same receipt queue and talks to the terminal's documented built-in printer service. Installing the PWA does not install this native component.
 
@@ -78,4 +78,4 @@ Once the matching official SDK and service contract are available:
 4. Use one real canonical paid order. Accept it through KDS or the Printer PWA; verify one queued original, one native dispatch and one physical receipt. Confirm paper through the existing action.
 5. Test interrupted sends, out-of-paper, reconnection, account revocation, restart and an explicitly authorized numbered reprint. Resolve every uncertain attempt before another dispatch. Keep automatic operation disabled if any of these boundaries fail.
 
-The next deliverable is therefore a device-specific signed test APK after the official service/SDK contract is supplied. No native printer adapter, background service or APK was added by this planning work, and no built-in printer connection or physical output is claimed.
+The original planning work added no native module or APK. The later owner-approved setup utility supplies the first bounded native diagnostic and CI APK build, as recorded in its README. It does not implement this document's account, receipt-queue or background-service plan. No built-in printer connection or physical output is claimed from source review or compilation alone.
