@@ -105,6 +105,7 @@ type PricedLine = {
   modifiers: {
     group_name: string;
     name: string;
+    quantity_per_parent?: number;
     price_delta_pence: number;
     kind: string;
     target_brand_name: string | null;
@@ -238,7 +239,7 @@ function KitchenAvailabilityNotice({
   );
 }
 
-function DetailedOrderLines({
+export function DetailedOrderLines({
   lines,
   packingPlan,
 }: {
@@ -278,28 +279,21 @@ function DetailedOrderLines({
                     {parent && <small>Extra with {parent.name}</small>}
                     <dl className="md-checkout-choice-list">
                       <div>
-                        <dt>{allocation.quantity} × dish</dt>
-                        <dd>{formatLaunchMenuPrice(line.base_unit_pence * allocation.quantity)}</dd>
+                        <dt>{line.modifiers.length ? "Each, including choices" : "Each"}</dt>
+                        <dd>{formatLaunchMenuPrice(line.unit_pence)}</dd>
                       </div>
                       {line.modifiers.map((modifier, index) => (
                         <div key={index}>
                           <dt>
                             <span>{modifier.group_name}</span>
-                            {allocation.quantity} ×{" "}
+                            {allocation.quantity * (modifier.quantity_per_parent ?? 1)} ×{" "}
                             {modifier.target_brand_name ? modifier.target_brand_name + " · " : ""}
                             {modifier.name}
                             {modifier.target_description && (
                               <small>{modifier.target_description}</small>
                             )}
                           </dt>
-                          <dd>
-                            {modifier.price_delta_pence === 0
-                              ? "Included"
-                              : "+" +
-                                formatLaunchMenuPrice(
-                                  modifier.price_delta_pence * allocation.quantity,
-                                )}
-                          </dd>
+                          <dd>Included</dd>
                         </div>
                       ))}
                     </dl>
