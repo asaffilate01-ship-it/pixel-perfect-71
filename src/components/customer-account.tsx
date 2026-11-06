@@ -15,6 +15,7 @@ import {
 import { MealDeckLogo } from "./mealdeck-logo";
 import { PwaInstallCard } from "./pwa-install-card";
 import { CustomerOrders } from "./customer-orders";
+import { useCustomerEntryPolicy } from "./use-customer-entry-policy";
 import { customerReturnTarget, type CustomerReturnTarget } from "@/lib/mealdeck-customer-return";
 import {
   CustomerAccountError,
@@ -168,16 +169,38 @@ function ContactFields({
   );
 }
 
+function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
+  return (
+    <div className="md-account-notice" role="status">
+      <div>
+        <h2>Just your name and WhatsApp number.</h2>
+        <p>
+          No email registration or verification is needed for guest orders this opening weekend.
+          Email registration opens on Monday 9 November 2026.
+        </p>
+        <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>
+          Continue without registering <ArrowRight size={18} aria-hidden="true" />
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function CustomerEntry({
   onRequest,
   onPassword,
   busy,
+  registrationDeferred,
+  returnTo,
 }: {
   onRequest: (email: string, registration?: CustomerRegistration) => Promise<void>;
   onPassword: (email: string, password: string) => Promise<void>;
   busy: boolean;
+  registrationDeferred: boolean;
+  returnTo: CustomerReturnTarget;
 }) {
-  const [mode, setMode] = useState<"register" | "signin">("register");
+  const [requestedMode, setMode] = useState<"register" | "signin">("register");
+  const mode = registrationDeferred ? "signin" : requestedMode;
   const [usePassword, setUsePassword] = useState(false);
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -188,15 +211,18 @@ function CustomerEntry({
   });
   return (
     <section className="md-account-panel" aria-labelledby="account-entry-heading">
+      {registrationDeferred && <QuickCheckoutNotice returnTo={returnTo} />}
       <div className="md-account-tabs" aria-label="Account action">
-        <button
-          type="button"
-          aria-pressed={mode === "register"}
-          disabled={busy}
-          onClick={() => setMode("register")}
-        >
-          Register
-        </button>
+        {!registrationDeferred && (
+          <button
+            type="button"
+            aria-pressed={mode === "register"}
+            disabled={busy}
+            onClick={() => setMode("register")}
+          >
+            Register
+          </button>
+        )}
         <button
           type="button"
           aria-pressed={mode === "signin"}
@@ -650,6 +676,8 @@ const LINK_FAILED =
 
 export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerReturnTarget }) {
   const returnTarget = customerReturnTarget(returnTo);
+  const entryPolicy = useCustomerEntryPolicy();
+  const registrationDeferred = entryPolicy?.emailRegistrationDeferred !== false;
   const [account, setAccount] = useState<CustomerAccountState>({ status: "signed_out" });
   const [capabilities, setCapabilities] = useState<CustomerCapabilities | null>(null);
   const [pushPublicKey, setPushPublicKey] = useState<string | null>(null);
@@ -687,11 +715,14 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
         }
         return next.status;
       } catch (reason) {
-        if (active) showError(linkFailed ? new CustomerAccountError("invalid", LINK_FAILED) : reason);
+        if (active)
+          showError(linkFailed ? new CustomerAccountError("invalid", LINK_FAILED) : reason);
         return null;
       }
     }
-    const linkParams = new URLSearchParams(window.location.search + "&" + window.location.hash.slice(1));
+    const linkParams = new URLSearchParams(
+      window.location.search + "&" + window.location.hash.slice(1),
+    );
     const arrivedFromEmailLink =
       attempt === 0 &&
       (linkParams.has("code") || linkParams.has("error") || linkParams.has("error_code"));
@@ -711,10 +742,14 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
         // An email link that couldn't sign in (opened in another browser or app,
         // already used, or expired) used to land silently on Register.
         if (active && arrivedFromEmailLink) {
-          if (status !== "signed_in")
-            linkFailed = true;
+          if (status !== "signed_in") linkFailed = true;
           if (linkFailed) showError(new CustomerAccountError("invalid", LINK_FAILED));
-          window.history.replaceState(null, "", window.location.pathname + (returnTarget !== "/menus" ? `?returnTo=${encodeURIComponent(returnTarget)}` : ""));
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname +
+              (returnTarget !== "/menus" ? `?returnTo=${encodeURIComponent(returnTarget)}` : ""),
+          );
         }
         if (active)
           unsubscribe = subscribeMealDeckCustomerAuth(() => {
@@ -911,7 +946,11 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
                 onMessage={showMessage}
               />
             ) : signedIn ? (
-              <FinishRegistration account={account} busy={busy} onFinish={finish} />
+              registrationDeferred ? (
+                <QuickCheckoutNotice returnTo={returnTarget} />
+              ) : (
+                <FinishRegistration account={account} busy={busy} onFinish={finish} />
+              )
             ) : emailPending ? (
               <CheckEmail
                 email={emailPending}
@@ -938,7 +977,13 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
                 </button>
               </section>
             ) : (
-              <CustomerEntry busy={busy} onRequest={request} onPassword={passwordSignIn} />
+              <CustomerEntry
+                busy={busy}
+                onRequest={request}
+                onPassword={passwordSignIn}
+                registrationDeferred={registrationDeferred}
+                returnTo={returnTarget}
+              />
             )}
           </div>
           <aside className="md-account-aside" aria-label="Your orders and member benefits">

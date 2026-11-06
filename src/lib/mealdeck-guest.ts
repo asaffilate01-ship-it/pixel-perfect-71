@@ -11,7 +11,7 @@ export class GuestInputError extends Error {}
 export type GuestSession = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string;
 };
 
@@ -21,7 +21,7 @@ const guestInput = z
   .object({
     action: z.literal("guest"),
     name: z.string().max(240),
-    email: z.string().max(254),
+    email: z.string().max(254).nullable().optional(),
     phone: z.string().max(40),
     privacyVersion: z.literal(GUEST_PRIVACY_VERSION),
   })
@@ -33,12 +33,11 @@ export function normaliseGuestInput(value: unknown) {
   if (!parsed.success)
     throw new GuestInputError("Please check your guest details and privacy notice.");
   const name = normalizeCustomerName(parsed.data.name);
-  const email = normalizeCustomerEmail(parsed.data.email);
+  const rawEmail = parsed.data.email?.trim() ?? "";
+  const email = rawEmail ? normalizeCustomerEmail(rawEmail) : null;
   const phone = normalizeCustomerPhone(parsed.data.phone);
-  if (!name || !email || !phone)
-    throw new GuestInputError(
-      "Enter your name, a valid email and a phone number with its country code.",
-    );
+  if (!name || (rawEmail !== "" && !email) || !phone)
+    throw new GuestInputError("Enter your name and WhatsApp number, including its country code.");
   return { name, email, phone };
 }
 
@@ -49,8 +48,10 @@ export function parseGuestSession(value: unknown): GuestSession | null {
     !z.uuid().safeParse(entry["id"]).success ||
     typeof entry["name"] !== "string" ||
     !normalizeCustomerName(entry["name"]) ||
-    typeof entry["email"] !== "string" ||
-    !normalizeCustomerEmail(entry["email"]) ||
+    !(
+      entry["email"] === null ||
+      (typeof entry["email"] === "string" && normalizeCustomerEmail(entry["email"]))
+    ) ||
     typeof entry["phone"] !== "string" ||
     !normalizeCustomerPhone(entry["phone"])
   )

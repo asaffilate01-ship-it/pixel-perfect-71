@@ -5,6 +5,7 @@ import { PaymentIdentity } from "@/components/group-payments/payment-identity";
 import type { PaymentIdentityState } from "@/components/group-payments/use-payment-identity";
 import type { GroupOrderCapabilities, GroupOrderRequest } from "@/lib/mealdeck-group-rooms";
 import { parseKerbsideVehicle } from "@/lib/mealdeck-opening-offer";
+import { KERBSIDE_PARKING_INSTRUCTION } from "@/lib/mealdeck-customer-entry";
 
 export type RoomCreationDetails = Omit<
   Extract<GroupOrderRequest, { action: "create" }>,
@@ -240,6 +241,7 @@ export function GroupRoomSetup({
               </fieldset>
               {fulfilment === "curbside" && (
                 <div className="md-room-vehicle-fields">
+                  <p className="md-room-fine">{KERBSIDE_PARKING_INSTRUCTION}</p>
                   <label>
                     Car make
                     <input

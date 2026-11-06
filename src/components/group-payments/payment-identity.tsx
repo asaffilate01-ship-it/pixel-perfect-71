@@ -69,8 +69,12 @@ export function PaymentIdentity({
                   ? "Verify your email to organise this room as a member."
                   : "Verify your email before making a member payment."
                 : purpose === "organiser"
-                  ? "Sign in or register with a verified email to organise the collection."
-                  : "Sign in or register with a verified email to make a member payment."}
+                  ? identity.registrationDeferred
+                    ? "Already a member? Sign in, or choose Guest to use just your name and WhatsApp number."
+                    : "Sign in or register with a verified email to organise the collection."
+                  : identity.registrationDeferred
+                    ? "Choose Guest to pay with just your name and WhatsApp number, or sign in to an existing account."
+                    : "Sign in or register with a verified email to make a member payment."}
             </p>
             {identity.accountIssue && (
               <p className="md-shared-notice" role="status">
@@ -85,7 +89,9 @@ export function PaymentIdentity({
                 else rememberSharedPaymentRoom(roomId);
               }}
             >
-              Sign in or register
+              {identity.registrationDeferred
+                ? "Sign in to an existing account"
+                : "Sign in or register"}
             </a>
             <p className="md-shared-muted">
               You’ll return to{" "}
@@ -98,8 +104,8 @@ export function PaymentIdentity({
         <>
           <p>
             {purpose === "organiser"
-              ? "Organise the collection with guest contact details."
-              : "Pay without creating an account."}{" "}
+              ? "Organise the collection with your name and WhatsApp number. No email registration needed."
+              : "Pay with your name and WhatsApp number. No email registration needed."}{" "}
             Guest payments earn no loyalty points and do not sign you up for marketing.
           </p>
           {identity.guest?.session ? (
@@ -107,7 +113,7 @@ export function PaymentIdentity({
               <ShoppingBag size={24} aria-hidden="true" />
               <div>
                 <strong>{identity.guest.session.name}</strong>
-                <span>{identity.guest.session.email}</span>
+                {identity.guest.session.email && <span>{identity.guest.session.email}</span>}
                 <span>{identity.guest.session.phone}</span>
                 <small>Guest contact details saved in this browser</small>
               </div>
@@ -136,22 +142,7 @@ export function PaymentIdentity({
                   />
                 </label>
                 <label>
-                  Email
-                  <input
-                    required
-                    type="email"
-                    autoComplete="email"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    maxLength={254}
-                    value={identity.details.email}
-                    onChange={(event) =>
-                      identity.setDetails({ ...identity.details, email: event.target.value })
-                    }
-                  />
-                </label>
-                <label>
-                  Mobile number
+                  WhatsApp number
                   <input
                     required
                     type="tel"

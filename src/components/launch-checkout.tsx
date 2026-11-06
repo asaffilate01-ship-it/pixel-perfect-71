@@ -1,3 +1,5 @@
+import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
+import { KERBSIDE_PARKING_INSTRUCTION } from "@/lib/mealdeck-customer-entry";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -411,6 +413,8 @@ export function LaunchCheckout({
   cancelled?: boolean;
   groupExpected?: boolean;
 }) {
+  const entryPolicy = useCustomerEntryPolicy();
+  const modeChosen = useRef(false);
   const [picks, setPicks] = useState<LaunchMenuPick[]>([]);
   const [basketLoaded, setBasketLoaded] = useState(false);
   const [fulfilment, setFulfilment] = useState<Fulfilment | null>(null);
@@ -421,6 +425,20 @@ export function LaunchCheckout({
   const [statusCurrent, setStatusCurrent] = useState(false);
   const [checkoutMode, setCheckoutMode] = useState<MealDeckCheckoutMode>("member");
   const [guestDetails, setGuestDetails] = useState({ name: "", email: "", phone: "" });
+  useEffect(() => {
+    if (!entryPolicy || orderId || modeChosen.current) return;
+    try {
+      const saved = sessionStorage.getItem(CHECKOUT_MODE_KEY);
+      if (saved === "member" || saved === "guest") {
+        setCheckoutMode(saved);
+        modeChosen.current = true;
+        return;
+      }
+    } catch {
+      /* No stored choice. */
+    }
+    setCheckoutMode(entryPolicy.emailRegistrationDeferred ? "guest" : "member");
+  }, [entryPolicy, orderId]);
   const [guestIssue, setGuestIssue] = useState<string | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -748,6 +766,7 @@ export function LaunchCheckout({
   }, [receipt]);
 
   function chooseCheckoutMode(next: MealDeckCheckoutMode) {
+    modeChosen.current = true;
     if (next === checkoutMode) return;
     checkoutRequestId.current += 1;
     receiptRequest.current += 1;
@@ -793,7 +812,7 @@ export function LaunchCheckout({
       const next = parseGuestCheckoutState(result.guestCheckout);
       if (!next?.session) throw new Error("We couldn't save your guest details. Please try again.");
       if (alive.current && requestId === checkoutRequestId.current) {
-        setGuestDetails(contact);
+        setGuestDetails({ ...contact, email: contact.email ?? "" });
         setStatus((current) => (current ? { ...current, guestCheckout: next } : current));
       }
     } catch (error) {
@@ -1154,8 +1173,8 @@ export function LaunchCheckout({
                     )}
                     {receipt.verifiedPaid && receipt.fulfilment === "curbside" && (
                       <p>
-                        For kerbside pickup, we’ll use your car details and confirm your order
-                        number at handoff.
+                        {KERBSIDE_PARKING_INSTRUCTION} For kerbside pickup, we’ll use your car
+                        details and confirm your order number at handoff.
                       </p>
                     )}
                     {!receipt.verifiedPaid && !receipt.held && !receipt.paymentSessionExpired && (
@@ -1323,9 +1342,9 @@ export function LaunchCheckout({
                   {checkoutMode === "guest" ? (
                     <div className="md-checkout-guest">
                       <p>
-                        Order without creating an account. Guest orders earn no loyalty points. The
-                        30% opening offer applies during launch hours; other member offers require
-                        registration.
+                        Enter your name and WhatsApp number. No email registration or verification
+                        is needed. Guest orders earn no loyalty points. The 30% opening offer
+                        applies during launch hours; other member offers require registration.
                       </p>
                       {!guestEligible && (
                         <p className="md-checkout-notice" role="status">
@@ -1339,7 +1358,7 @@ export function LaunchCheckout({
                             <ShoppingBag size={25} />
                             <div>
                               <strong>{guestSession.name}</strong>
-                              <span>{guestSession.email}</span>
+                              {guestSession.email && <span>{guestSession.email}</span>}
                               <span>{guestSession.phone}</span>
                               <small>Guest contact details</small>
                             </div>
@@ -1382,22 +1401,7 @@ export function LaunchCheckout({
                               />
                             </label>
                             <label>
-                              Email
-                              <input
-                                required
-                                type="email"
-                                autoComplete="email"
-                                autoCapitalize="none"
-                                spellCheck={false}
-                                maxLength={254}
-                                value={guestDetails.email}
-                                onChange={(event) =>
-                                  setGuestDetails({ ...guestDetails, email: event.target.value })
-                                }
-                              />
-                            </label>
-                            <label>
-                              Mobile number
+                              WhatsApp number
                               <input
                                 required
                                 type="tel"
@@ -1449,8 +1453,9 @@ export function LaunchCheckout({
                   ) : (
                     <>
                       <p>
-                        Register with your name, email and mobile number. We'll verify your email
-                        before checkout.
+                        {entryPolicy?.emailRegistrationDeferred !== false
+                          ? "For quick checkout, choose Continue as guest and enter your name and WhatsApp number. Existing members can still sign in."
+                          : "Register with your name, email and mobile number. We’ll verify your email before member checkout."}
                       </p>
                       <div className="md-checkout-benefit">
                         <ShieldCheck size={21} />
@@ -1469,9 +1474,11 @@ export function LaunchCheckout({
                         search={{ returnTo: accountReturnTo }}
                         className="md-checkout-primary"
                       >
-                        {account?.status === "signed_in"
-                          ? "Finish registration"
-                          : "Register or sign in"}
+                        {entryPolicy?.emailRegistrationDeferred !== false
+                          ? "Existing member sign-in"
+                          : account?.status === "signed_in"
+                            ? "Finish registration"
+                            : "Register or sign in"}
                       </Link>
                     </>
                   )}
@@ -1485,6 +1492,7 @@ export function LaunchCheckout({
                   <h2>
                     <span className="md-checkout-step">3</span>Help us find your car
                   </h2>
+                  <p className="md-checkout-muted">{KERBSIDE_PARKING_INSTRUCTION}</p>
                   <div className="md-checkout-vehicle">
                     <label>
                       Car make
