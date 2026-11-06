@@ -142,6 +142,26 @@ export function PrinterPendingOrderCard({
                 {item.brandName}
                 {item.parentLineId ? " · extra with the item above" : ""}
               </p>
+              {!!item.mealComponents?.length && (
+                <div className="mt-2 border-l-2 md-ops-border pl-2 text-sm">
+                  <p className="text-xs font-bold">
+                    Meal includes{item.quantity > 1 ? ` · totals for ${item.quantity} items` : ""}
+                  </p>
+                  <ul aria-label="Meal contents" className="mt-1 space-y-1 break-words">
+                    {item.mealComponents.map((component) => (
+                      <li key={component.slot}>
+                        <strong>{item.quantity * component.quantityPerParent}×</strong>{" "}
+                        {component.name}
+                        {component.replacement && (
+                          <span className="block text-xs md-ops-muted">
+                            Replaces the standard {component.slot === "drink" ? "drink" : "side"}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </li>
           ))}
         </ul>

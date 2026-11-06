@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ReceiptPreview } from "../src/components/ops/receipt-preview";
 import { validateReceipt } from "../tools/receipt-bridge/receipt.mjs";
+import { receiptLogoSource, waitForReceiptLogo } from "../src/lib/mealdeck-receipt-logo";
 import {
   receiptSchema,
   parsePrinterBoard,
@@ -102,6 +103,78 @@ const job = () => ({
   receipt: receipt(),
 });
 describe("canonical receipt presentation", () => {
+  test("prints the approved fixed logo and canonical meal contents without changing money or extras", () => {
+    const legacy = receipt();
+    expect(receiptSchema.parse(legacy).items[0]).not.toHaveProperty("mealComponents");
+    const value = receipt();
+    value.paymentMethod = "cash";
+    value.items[0]!.mealComponents = [
+      { slot: "side", name: "Fries with peri salt", quantityPerParent: 1, replacement: false },
+      { slot: "drink", name: "Mango <Mirage>", quantityPerParent: 1, replacement: true },
+    ];
+    const parsed = receiptSchema.parse(value);
+    expect(validateReceipt(parsed)).toEqual(validateReceipt(value));
+    expect(parsed.totalPence).toBe(legacy.totalPence);
+    expect(parsed.items[0]!.modifiers).toEqual(legacy.items[0]!.modifiers);
+    const html = renderToStaticMarkup(createElement(ReceiptPreview, { receipt: parsed }));
+    expect(html).toContain(`src="${receiptLogoSource}"`);
+    expect(html).toContain('data-receipt-logo="true"');
+    expect(html).toContain('alt="MealDeck"');
+    expect(html).toContain("Meal includes");
+    expect(html).toContain("2× Fries with peri salt");
+    expect(html).toContain("2× Mango &lt;Mirage&gt;");
+    expect(html).toContain("replaces standard drink");
+    expect(html).toContain("CASH PAID");
+    expect(html).toContain("extra with item above");
+    expect(html).toContain("£14.67");
+    expect(renderToStaticMarkup(createElement(ReceiptPreview, { receipt: legacy }))).not.toContain(
+      "Meal includes",
+    );
+  });
+
+  test("meal metadata rejects duplicate slots, prices and unsafe or missing contents", () => {
+    const component = { slot: "side", name: "Fries", quantityPerParent: 1, replacement: false };
+    for (const mealComponents of [
+      [component, component],
+      [{ ...component, name: "Fries\u202e" }],
+      [{ ...component, quantityPerParent: 0 }],
+      [{ ...component, name: "" }],
+      [{ ...component, slot: "main", replacement: true }],
+    ]) {
+      const value = receipt();
+      Object.assign(value.items[0]!, { mealComponents });
+      expect(() => receiptSchema.parse(value)).toThrow();
+      expect(() => validateReceipt(value)).toThrow();
+    }
+  });
+
+  test("logo readiness waits for a real decoded image and rejects a failed load", async () => {
+    const image = Object.assign(new EventTarget(), {
+      complete: false,
+      naturalWidth: 0,
+      decoded: 0,
+      async decode() {
+        this.decoded++;
+      },
+    });
+    let ready = false;
+    const loading = waitForReceiptLogo(image as unknown as HTMLImageElement).then(() => {
+      ready = true;
+    });
+    await Promise.resolve();
+    expect(ready).toBe(false);
+    image.naturalWidth = 1106;
+    image.complete = true;
+    image.dispatchEvent(new Event("load"));
+    await loading;
+    expect(ready).toBe(true);
+    expect(image.decoded).toBe(1);
+    const broken = Object.assign(new EventTarget(), { complete: false, naturalWidth: 0 });
+    const failed = waitForReceiptLogo(broken as unknown as HTMLImageElement);
+    broken.dispatchEvent(new Event("error"));
+    await expect(failed).rejects.toThrow("receipt logo could not be loaded");
+  });
+
   test("browser and hardware validators retain exactly the same optional order number", () => {
     const legacy = receipt();
     expect(receiptSchema.parse(legacy)).not.toHaveProperty("orderNumber");

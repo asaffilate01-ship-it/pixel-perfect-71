@@ -4,9 +4,9 @@ import {
   createStaffAlertLedger,
   staffAlertAudio,
   staffAlertDurationMs,
-  playStaffAlert,
   type StaffAlertKind,
 } from "@/lib/mealdeck-staff-alerts";
+import { createStaffAudioController, readStaffSoundPreferences } from "@/lib/mealdeck-staff-audio";
 const ledgers = new Map<string, ReturnType<typeof createStaffAlertLedger>>();
 
 export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
@@ -18,15 +18,14 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
     ledgers.set(key, next);
     return next;
   }, [key]);
-  const context = useRef<AudioContext | null>(null);
-  const activeSound = useRef<ReturnType<typeof playStaffAlert>>(null);
+  const controller = useRef<ReturnType<typeof createStaffAudioController> | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [volume, setVolumeState] = useState<number>(staffAlertAudio[kind].defaultVolume);
   const [notice, setNotice] = useState(0);
   const [audioError, setAudioError] = useState("");
+  const [waitingForGesture, setWaitingForGesture] = useState(false);
   const preferencesKey = `mealdeck-${kind}-sound`;
-  const prefs = useRef({ enabled: false, volume: staffAlertAudio[kind].defaultVolume as number });
   const claimed = useRef(new Set<string>());
   const hydrated = useRef(false);
 
@@ -36,92 +35,100 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
     setAudioError("");
     claimed.current.clear();
     hydrated.current = false;
+    let saved: string | null = null;
     try {
-      const p = JSON.parse(localStorage.getItem(preferencesKey) ?? "{}");
-      if (typeof p.volume === "number" && p.volume >= 0 && p.volume <= 1) {
-        setVolumeState(p.volume);
-        prefs.current.volume = p.volume;
-      }
-      prefs.current.enabled = p.enabled === true;
+      saved = localStorage.getItem(preferencesKey);
     } catch {
       /* Preferences are optional. */
     }
-    if (typeof BroadcastChannel === "undefined") return;
-    const c = new BroadcastChannel(`mealdeck-staff-alert:${key}`);
-    channel.current = c;
-    c.onmessage = (event) => {
-      const data = event.data as { type?: unknown; ids?: unknown };
-      if (
-        data.type !== "heard" ||
-        !Array.isArray(data.ids) ||
-        data.ids.length > 250 ||
-        data.ids.some((x) => typeof x !== "string" || x.length > 100)
-      )
-        return;
-      for (const id of data.ids as string[]) claimed.current.add(id);
-      ledger.remember(data.ids as string[]);
-      if (claimed.current.size > 1500) claimed.current.clear();
-    };
-    return () => {
-      c.close();
-      channel.current = null;
-      activeSound.current?.stop();
-      activeSound.current = null;
-      void context.current?.close().catch(() => {});
-      context.current = null;
-    };
-  }, [key, preferencesKey, ledger]);
-
-  const play = useCallback(async () => {
-    if (!context.current) return false;
-    const next = playStaffAlert(
-      context.current,
+    const audio = createStaffAudioController({
       kind,
-      prefs.current.volume,
-      activeSound.current?.endsAt ?? 0,
-    );
-    if (next === null) return false;
-    activeSound.current = next;
-    return true;
-  }, [kind]);
-  const persist = useCallback(() => {
+      preferences: readStaffSoundPreferences(kind, saved),
+      createContext: () => new AudioContext(),
+      onChange: (state) => {
+        setEnabled(state.enabled);
+        setVolumeState(state.volume);
+        setWaitingForGesture(state.waitingForGesture);
+        setAudioError(
+          state.unavailable
+            ? "Sound is unavailable. New orders will still show a visual alert."
+            : "",
+        );
+      },
+    });
+    controller.current = audio;
+    const unlock = (event: Event) => {
+      if (!event.isTrusted || !audio.state().waitingForGesture) return;
+      // These controls manage their own explicit gesture. Avoid a pointer-down
+      // changing Enable into Mute before the same button's click is handled.
+      if (event.target instanceof Element && event.target.closest("[data-staff-sound-control]"))
+        return;
+      void audio.unlockFromGesture(true);
+    };
+    const gestureEvents = ["pointerdown", "pointerup", "click", "keydown"] as const;
+    for (const event of gestureEvents) window.addEventListener(event, unlock);
+    audio.start();
+    let c: BroadcastChannel | null = null;
     try {
-      localStorage.setItem(preferencesKey, JSON.stringify(prefs.current));
+      if (typeof BroadcastChannel !== "undefined")
+        c = new BroadcastChannel(`mealdeck-staff-alert:${key}`);
+    } catch {
+      /* Cross-window coordination is optional in restricted browser contexts. */
+    }
+    channel.current = c;
+    if (c)
+      c.onmessage = (event) => {
+        const data = event.data as { type?: unknown; ids?: unknown };
+        if (
+          data.type !== "heard" ||
+          !Array.isArray(data.ids) ||
+          data.ids.length > 250 ||
+          data.ids.some((x) => typeof x !== "string" || x.length > 100)
+        )
+          return;
+        for (const id of data.ids as string[]) claimed.current.add(id);
+        ledger.remember(data.ids as string[]);
+        if (claimed.current.size > 1500) claimed.current.clear();
+      };
+    return () => {
+      for (const event of gestureEvents) window.removeEventListener(event, unlock);
+      c?.close();
+      channel.current = null;
+      audio.dispose();
+      if (controller.current === audio) controller.current = null;
+    };
+  }, [kind, key, preferencesKey, ledger]);
+
+  const play = useCallback(async () => controller.current?.play() ?? false, []);
+  const persist = useCallback(() => {
+    const preferences = controller.current?.preferences();
+    if (!preferences) return;
+    try {
+      localStorage.setItem(preferencesKey, JSON.stringify(preferences));
     } catch {
       /* No order data is persisted. */
     }
   }, [preferencesKey]);
-  const toggle = useCallback(async () => {
-    if (enabled) {
-      activeSound.current?.stop();
-      activeSound.current = null;
-      setEnabled(false);
-      prefs.current.enabled = false;
+  const toggle = useCallback(
+    async (trusted: boolean) => {
+      const audio = controller.current;
+      if (!audio || !trusted) return;
+      if (audio.state().enabled) {
+        audio.setEnabled(false);
+        persist();
+        return;
+      }
+      audio.setEnabled(true);
       persist();
-      return;
-    }
-    try {
-      context.current ??= new AudioContext();
-      await context.current.resume();
-      if (context.current.state !== "running") throw new Error("audio suspended");
-      setEnabled(true);
-      prefs.current.enabled = true;
-      persist();
-      setAudioError("");
-      await play();
-    } catch {
-      setAudioError("Sound is unavailable. New orders will still show a visual alert.");
-    }
-  }, [enabled, persist, play]);
+      if (await audio.unlockFromGesture(trusted)) {
+        if (controller.current === audio) audio.play();
+      }
+    },
+    [persist],
+  );
   const setVolume = useCallback(
     (value: number) => {
-      const next = Math.min(1, Math.max(0, value));
-      if (next === 0) {
-        activeSound.current?.stop();
-        activeSound.current = null;
-      }
-      setVolumeState(next);
-      prefs.current.volume = next;
+      controller.current?.setVolume(value);
       persist();
     },
     [persist],
@@ -141,9 +148,9 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
       const announce = async () => {
         const unheard = next.filter((id) => !claimed.current.has(id));
         if (!unheard.length) return;
+        if (!(await play())) return;
         for (const id of unheard) claimed.current.add(id);
         channel.current?.postMessage({ type: "heard", ids: unheard });
-        await play();
         // Keep the optional cross-window lock through the chime, so simultaneous
         // polls cannot produce overlapping copies before the broadcast arrives.
         await new Promise<void>((resolve) => setTimeout(resolve, staffAlertDurationMs(kind)));
@@ -161,12 +168,37 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
     volume,
     notice,
     audioError,
+    waitingForGesture,
     toggle,
     setVolume,
     observe,
     clearNotice: () => setNotice(0),
     test: play,
   };
+}
+
+export function StaffSoundUnlock({
+  alerts,
+}: {
+  alerts: Pick<ReturnType<typeof useStaffAlerts>, "waitingForGesture" | "toggle">;
+}) {
+  if (!alerts.waitingForGesture) return null;
+  return (
+    <div
+      data-staff-sound-control
+      role="status"
+      className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border md-ops-border md-ops-paper px-3 py-1 text-xs md-ops-muted"
+    >
+      <span>Sound is waiting for your first interaction.</span>
+      <button
+        type="button"
+        className="min-h-11 font-bold underline"
+        onClick={(event) => void alerts.toggle(event.isTrusted)}
+      >
+        Enable sound
+      </button>
+    </div>
+  );
 }
 
 export function StaffAlertControls({
@@ -184,10 +216,13 @@ export function StaffAlertControls({
       ? { singular: "order", plural: "orders" }
       : { singular: "receipt", plural: "receipts" });
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border md-ops-border md-ops-paper p-3">
+    <div
+      data-staff-sound-control
+      className="flex flex-wrap items-center gap-3 rounded-xl border md-ops-border md-ops-paper p-3"
+    >
       <button
         type="button"
-        onClick={() => void alerts.toggle()}
+        onClick={(event) => void alerts.toggle(event.isTrusted)}
         className="md-ops-button md-ops-secondary"
         aria-pressed={alerts.enabled}
       >
@@ -231,6 +266,11 @@ export function StaffAlertControls({
           : "Two rising chimes when new orders or receipts arrive."}{" "}
         Turn up the device volume too.
       </span>
+      {alerts.waitingForGesture && (
+        <p role="status" className="basis-full text-xs font-semibold md-ops-muted">
+          Sound is waiting for your first interaction. Tap Enable sound to activate it now.
+        </p>
+      )}
       {alerts.notice > 0 && (
         <button
           type="button"

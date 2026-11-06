@@ -23,7 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { PwaInstallCard } from "@/components/pwa-install-card";
-import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
+import { StaffAlertControls, StaffSoundUnlock, useStaffAlerts } from "./staff-alerts";
 import { StaffMobileNav, StaffMobileSheet } from "./staff-mobile-navigation";
 import type { OpsPermission } from "@/lib/mealdeck-ops-access";
 import { OpsRequestError, opsRpc } from "@/lib/mealdeck-ops-browser";
@@ -34,6 +34,7 @@ import {
 } from "@/lib/mealdeck-kds-workflow";
 import { KdsCompletedCard } from "./kds-completed-card";
 import { KdsPickupDetails } from "./kds-pickup-details";
+import { KdsMealComponents } from "./kds-meal-components";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
@@ -489,6 +490,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
         />
       )}
 
+      <StaffSoundUnlock alerts={alerts} />
       {alerts.notice > 0 && (
         <div className="md-kds-new-orders" role="status">
           <Bell className="size-4" aria-hidden="true" />
@@ -1428,6 +1430,10 @@ export function KitchenOrderCard({
                             ))}
                           </ul>
                         )}
+                        <KdsMealComponents
+                          components={item.mealComponents ?? []}
+                          quantity={item.quantity}
+                        />
                         {item.unit_pence != null && (
                           <p className="md-kds-line-price">
                             <strong>£{(item.unit_pence / 100).toFixed(2)} each</strong>

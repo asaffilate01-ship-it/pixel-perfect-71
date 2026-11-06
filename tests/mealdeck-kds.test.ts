@@ -69,6 +69,32 @@ function board(): KdsBoard {
 }
 
 describe("MealDeck canonical KDS response boundaries", () => {
+  test("retains canonical meal components without inferring them from mutable labels", () => {
+    const value = board();
+    const mealComponents = [
+      { slot: "side", name: "Fries", quantityPerParent: 1, replacement: false },
+      { slot: "drink", name: "Pepsi", quantityPerParent: 1, replacement: false },
+    ] as const;
+    Object.assign(value.orders[0]!.items[0]!, { mealComponents });
+    const parsed = parseKdsBoard(value, scope).orders[0]!.items[0]!;
+    expect(parsed.mealComponents).toEqual(mealComponents);
+    expect(parsed.modifiers).toEqual(item().modifiers);
+    const legacy = board();
+    legacy.orders[0]!.items[0]!.modifiers = ["Make it a meal"];
+    legacy.orders[0]!.tickets[0]!.items[0]!.modifiers = ["Make it a meal"];
+    expect(parseKdsBoard(legacy, scope).orders[0]!.items[0]!.mealComponents).toBeUndefined();
+    for (const invalid of [
+      null,
+      [...mealComponents, mealComponents[0]],
+      [{ ...mealComponents[0], quantityPerParent: 0 }],
+      [{ ...mealComponents[0], name: "Fries\u202e" }],
+      [{ ...mealComponents[0], slot: "unreviewed" }],
+    ]) {
+      Object.assign(value.orders[0]!.items[0]!, { mealComponents: invalid });
+      expect(() => parseKdsBoard(value, scope)).toThrow();
+    }
+  });
+
   test("retains explicit modifier kinds without changing full canonical item prices", () => {
     for (const kind of ["source", "cross", "variant", undefined] as const) {
       const value = board();

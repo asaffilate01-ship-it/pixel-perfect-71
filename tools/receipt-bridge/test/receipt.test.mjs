@@ -1,7 +1,39 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateReceipt, encodeReceipt, RECEIPT_LIMITS } from "../receipt.mjs";
+import { createHash } from "node:crypto";
+import { validateReceipt, encodeReceipt, encodeReceiptLogo, RECEIPT_LIMITS } from "../receipt.mjs";
+import { receiptLogo } from "../receipt-logo.mjs";
 import { fixture, JOB } from "./fixtures.mjs";
+
+const receiptBodyBytes = (result) => result.bytes.slice(2 + encodeReceiptLogo().length);
+
+test("one fixed approved logo uses bounded graphics framing before the unchanged text receipt", () => {
+  const logo = encodeReceiptLogo();
+  assert.deepEqual([...logo.slice(0, 3)], [27, 97, 1]);
+  assert.deepEqual([...logo.slice(3, 18)], [29, 40, 76, 74, 32, 48, 112, 48, 1, 1, 49, 0, 1, 2, 1]);
+  const raster = logo.slice(18, 18 + 8256);
+  assert.equal(raster.length, 32 * 258);
+  assert.equal(
+    createHash("sha256").update(raster).digest("hex"),
+    "c0fbaa3f0d4df08e0ab3841f1489868b4bb17a3ad213b6da745a95d64db233d0",
+  );
+  assert.equal(
+    receiptLogo.sourceRgbaSha256,
+    "189f6d001fc02fae56197c6f9d771892ca1f6fae79625600c5596ad4f47639c3",
+  );
+  assert.deepEqual([...logo.slice(18 + 8256)], [29, 40, 76, 2, 0, 48, 50, 27, 97, 0]);
+  const value = fixture();
+  const before = JSON.stringify(validateReceipt(value));
+  const result = encodeReceipt(value);
+  assert.deepEqual(result.bytes.slice(2, 2 + logo.length), logo);
+  assert.equal(new TextDecoder().decode(receiptBodyBytes(result)), result.text + "\n\n\n\n");
+  assert.equal(JSON.stringify(validateReceipt(value)), before);
+  assert.equal(result.text.match(/END OF RECEIPT/g)?.length, 1);
+  for (const key of ["logo", "logoUrl", "raster", "image"])
+    assert.throws(() => encodeReceipt({ ...value, [key]: "https://untrusted.invalid/logo" }), {
+      code: "unexpected_receipt_fields",
+    });
+});
 
 test("canonical order number prints separately from the unchanged collection credential", () => {
   const legacy = fixture();
@@ -105,9 +137,9 @@ test("one receipt prints exact paid time, flavours, extras, amounts, bags and cu
     "checkout draft time must not be printed as placed time",
   );
   assert.deepEqual([...result.bytes.slice(0, 2)], [27, 64]);
-  assert.equal([...result.bytes].filter((byte) => byte === 27).length, 1);
+  assert.equal([...receiptBodyBytes(result)].filter((byte) => byte === 27).length, 0);
   assert.equal(
-    [...result.bytes].filter((byte) => byte === 29).length,
+    [...receiptBodyBytes(result)].filter((byte) => byte === 29).length,
     0,
     "cutter disabled by default",
   );
@@ -136,8 +168,8 @@ test("names survive canonical validation and print beside food choices and each 
   ])
     assert.ok(text.includes(expected), expected);
   assert.ok(result.text.split("\n").every((line) => line.length <= 32));
-  assert.equal([...result.bytes].filter((byte) => byte === 27).length, 1);
-  assert.equal([...result.bytes].filter((byte) => byte === 29).length, 0);
+  assert.equal([...receiptBodyBytes(result)].filter((byte) => byte === 27).length, 0);
+  assert.equal([...receiptBodyBytes(result)].filter((byte) => byte === 29).length, 0);
 });
 
 test("packing names reject all C0/C1, bidi, noncanonical and unknown fields before any print", () => {
@@ -192,12 +224,65 @@ test("configured cutter is exactly one final command, with bounded feed and no r
   ]) {
     const result = encodeReceipt(fixture(), { cut, feedLines: 2, columns: 32 });
     assert.deepEqual([...result.bytes.slice(-6)], [10, 10, 10, 29, 86, code]);
-    assert.equal([...result.bytes].filter((byte) => byte === 29).length, 1);
+    assert.equal([...receiptBodyBytes(result)].filter((byte) => byte === 29).length, 1);
     assert.equal(result.text.match(/END OF RECEIPT/g)?.length, 1);
     assert.ok(result.text.split("\n").every((line) => line.length <= 32));
   }
   for (const profile of [{ cut: "drawer" }, { feedLines: 99 }, { columns: 80 }])
     assert.throws(() => encodeReceipt(fixture(), profile), { code: "invalid_printer_profile" });
+});
+
+test("canonical meal contents and cash label preserve amounts, extras and copy identity", () => {
+  const r = fixture();
+  const legacy = validateReceipt(r);
+  assert.equal(Object.hasOwn(legacy, "paymentMethod"), false);
+  assert.equal(Object.hasOwn(legacy.items[0], "mealComponents"), false);
+  r.paymentMethod = "cash";
+  r.items[0].mealComponents = [
+    {
+      slot: "side",
+      name: "King of Hearts · Loaded Fries",
+      quantityPerParent: 1,
+      replacement: true,
+    },
+    { slot: "drink", name: "Pepsi", quantityPerParent: 1, replacement: false },
+  ];
+  const normalized = validateReceipt(r);
+  assert.equal(normalized.totalPence, legacy.totalPence);
+  assert.deepEqual(normalized.items[0].modifiers, legacy.items[0].modifiers);
+  assert.equal(normalized.copyNumber, legacy.copyNumber);
+  assert.equal(normalized.orderId, legacy.orderId);
+  const output = encodeReceipt(r).text.replace(/\n\s*/g, " ");
+  assert.match(output, /PAYMENT: CASH PAID/);
+  assert.match(
+    output,
+    /MEAL INCLUDES: 2 x King of Hearts - Loaded Fries - replaces standard side 2 x Pepsi/,
+  );
+  assert.match(output, /Extra for Cruncher/);
+  for (const change of [
+    (v) => {
+      v.items[0].mealComponents.push(v.items[0].mealComponents[0]);
+    },
+    (v) => {
+      v.items[0].mealComponents[0].name = "Fries\x1b@";
+    },
+    (v) => {
+      v.items[0].mealComponents[0].quantityPerParent = 0;
+    },
+    (v) => {
+      v.items[0].mealComponents[0].pricePence = 1;
+    },
+    (v) => {
+      v.items[0].mealComponents[0].slot = "main";
+    },
+    (v) => {
+      v.paymentMethod = "bank";
+    },
+  ]) {
+    const invalid = structuredClone(r);
+    change(invalid);
+    assert.throws(() => validateReceipt(invalid));
+  }
 });
 
 test("rejects tampered totals, omitted modifiers, duplicate lines and inconsistent packing before rendering", () => {

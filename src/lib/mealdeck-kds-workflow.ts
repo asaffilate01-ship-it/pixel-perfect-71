@@ -2,6 +2,7 @@ import { z } from "zod";
 import { parseKdsBoard, parseKdsPickupContact, type KdsBoard } from "./mealdeck-kds";
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
 import { orderNumberSchema } from "./mealdeck-order-number";
+import { mealComponentsSchema } from "./mealdeck-meal-components";
 
 const timestamp = z
   .string()
@@ -13,6 +14,7 @@ const completedItem = z.object({
   brand_name: z.string().max(1000),
   quantity: z.number().int().positive().max(100000),
   modifiers: z.array(z.string().max(1000)).max(100),
+  mealComponents: mealComponentsSchema.optional(),
   notes: z.string().max(20000).nullable(),
   participant_name: z.string().max(1000).nullable(),
   bags: z

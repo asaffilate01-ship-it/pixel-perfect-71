@@ -26,7 +26,7 @@ Existing receipt snapshots are not automatically regenerated. Their original col
 
 The owner-only `mealdeck_private.add_order_number_to_unsent_receipt(job, order, expected_payload_md5)` helper can add this field to a single original receipt only if the job is still queued and has never been claimed, attempted, sent, confirmed, resolved or copied. It locks the order and job, checks the exact original payload digest, changes only `orderNumber` and the job update timestamp, verifies the rest of the JSON is unchanged, and writes an audit event. A changed or attempted job is rejected. It does not print or enqueue a replacement.
 
-The live test order is `15e1228c-2669-4ac7-acef-7993de543efe`, paid £3.49 at 18:22 UK on 6 November. Its existing collection code is **4601**. The production mapping was read after installation and confirms sequential number **0001**. Its original acceptance receipt remains queued, and physical printer output remains unconfirmed.
+The live test order is `15e1228c-2669-4ac7-acef-7993de543efe`, paid £3.49 at 18:22 UK on 6 November. Its existing collection code is **4601**. The production mapping was read after installation and confirms sequential number **0001**. Its acceptance receipt was initially queued. The operator later recorded an unusable print, and at 20:11 UK the owner-requested retirement archived that completed order's receipt work with its actual history intact; see [receipt retirement](./mealdeck-receipt-retirement.md).
 
 ## Observed production release
 

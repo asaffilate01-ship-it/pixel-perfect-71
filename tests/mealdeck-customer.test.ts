@@ -66,7 +66,18 @@ describe("MealDeck customer contracts", () => {
       "@example.test",
     ])
       expect(normalizeCustomerEmail(invalid)).toBeNull();
-    for (const invalid of ["", " ", "Sam\nAdmin", "Sam\u0000", "a".repeat(121)])
+    for (const invalid of [
+      "",
+      " ",
+      "Sam\nAdmin",
+      "Sam\u0000",
+      "Sam\u0085",
+      "Sam\u202e",
+      "Sam\u200e",
+      "\u200b",
+      "Sam\ufeff",
+      "a".repeat(121),
+    ])
       expect(normalizeCustomerName(invalid)).toBeNull();
   });
   test("marketing and order alert choices default off and accept only explicit booleans", () => {

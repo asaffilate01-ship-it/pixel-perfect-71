@@ -32,6 +32,7 @@ export function matchesKdsOrderSearch(order: KdsOrder | KdsCompletedOrder, query
       item.participant_name ?? "",
       item.notes ?? "",
       ...item.modifiers,
+      ...(item.mealComponents?.map((component) => component.name) ?? []),
       ...(item.bags?.map(formatPackingBagName) ?? []),
     ]),
     ...("vehicle" in order && order.vehicle

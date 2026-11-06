@@ -1,5 +1,6 @@
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
 import { isOrderNumber } from "./mealdeck-order-number";
+import { mealComponentsSchema, type MealComponent } from "./mealdeck-meal-components";
 
 /**
  * The staff KDS consumes a privacy-minimised projection of canonical MealDeck
@@ -24,6 +25,7 @@ export type KdsOrderItem = {
   item_name: string;
   quantity: number;
   modifiers: string[];
+  mealComponents?: MealComponent[];
   notes: string | null;
   participant_name: string | null;
   status: KdsTicketStatus;
@@ -203,6 +205,9 @@ function parseOrderItem(value: unknown): KdsOrderItem {
     item_name: text(v["item_name"], 1000),
     quantity: integer(v["quantity"], 1),
     modifiers: list(v["modifiers"], (m) => text(m, 1000), 100),
+    ...(v["mealComponents"] === undefined
+      ? {}
+      : { mealComponents: mealComponentsSchema.parse(v["mealComponents"]) }),
     notes: nullableText(v["notes"], 20000),
     participant_name: nullableText(v["participant_name"], 1000),
     status: choice(v["status"], ticketStatuses),

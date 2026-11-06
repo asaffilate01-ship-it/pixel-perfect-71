@@ -1,4 +1,5 @@
 /** Browser-safe receipt validation and bounded ESC/POS rendering. No raw bytes from callers. */
+import { receiptLogo } from "./receipt-logo.mjs";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const lineId = /^[a-zA-Z0-9][a-zA-Z0-9:_-]{0,99}$/;
 export const RECEIPT_LIMITS = Object.freeze({
@@ -120,7 +121,7 @@ export function validateReceipt(input) {
       "currency",
       "orderNotes",
     ],
-    ["orderNumber"],
+    ["orderNumber", "paymentMethod"],
   );
   requireValue(
     r.schemaVersion === 1 &&
@@ -143,18 +144,22 @@ export function validateReceipt(input) {
     "invalid_reprint_receipt",
   );
   const items = list(r.items, 1, RECEIPT_LIMITS.items).map((inputItem) => {
-    const item = object(inputItem, [
-      "lineId",
-      "parentLineId",
-      "brandName",
-      "name",
-      "quantity",
-      "baseUnitPence",
-      "unitPence",
-      "linePence",
-      "notes",
-      "modifiers",
-    ]);
+    const item = object(
+      inputItem,
+      [
+        "lineId",
+        "parentLineId",
+        "brandName",
+        "name",
+        "quantity",
+        "baseUnitPence",
+        "unitPence",
+        "linePence",
+        "notes",
+        "modifiers",
+      ],
+      ["mealComponents"],
+    );
     const quantity = integer(item.quantity, 1, 999);
     const baseUnitPence = integer(item.baseUnitPence);
     const unitPence = integer(item.unitPence);
@@ -173,6 +178,35 @@ export function validateReceipt(input) {
         priceDeltaPence: integer(modifier.priceDeltaPence, -1000000, 1000000),
       };
     });
+    const mealComponents = Object.hasOwn(item, "mealComponents")
+      ? list(item.mealComponents, 0, 3).map((inputComponent) => {
+          const component = object(inputComponent, [
+            "slot",
+            "name",
+            "quantityPerParent",
+            "replacement",
+          ]);
+          requireValue(
+            ["main", "side", "drink"].includes(component.slot),
+            "invalid_meal_component",
+          );
+          const name = text(component.name, 1000);
+          requireValue(name === component.name, "invalid_meal_component");
+          const replacement = bool(component.replacement);
+          requireValue(component.slot !== "main" || !replacement, "invalid_meal_component");
+          return {
+            slot: component.slot,
+            name,
+            quantityPerParent: integer(component.quantityPerParent, 1, 999),
+            replacement,
+          };
+        })
+      : undefined;
+    requireValue(
+      mealComponents === undefined ||
+        new Set(mealComponents.map((component) => component.slot)).size === mealComponents.length,
+      "invalid_meal_component",
+    );
     requireValue(
       baseUnitPence +
         modifiers.reduce((sum, m) => sum + m.priceDeltaPence * m.quantityPerParent, 0) ===
@@ -190,6 +224,7 @@ export function validateReceipt(input) {
       linePence,
       notes: nullableText(item.notes),
       modifiers,
+      ...(mealComponents === undefined ? {} : { mealComponents }),
     };
   });
   const byLine = new Map(items.map((item) => [item.lineId, item]));
@@ -274,6 +309,10 @@ export function validateReceipt(input) {
         /^(?!0000$)(?:[0-9]{4}|[1-9][0-9]{4,18})$/.test(r.orderNumber)),
     "invalid_receipt_order_number",
   );
+  requireValue(
+    !Object.hasOwn(r, "paymentMethod") || ["card", "cash"].includes(r.paymentMethod),
+    "invalid_receipt_payment_method",
+  );
   return {
     schemaVersion: 1,
     orderId: identifier(r.orderId),
@@ -282,6 +321,7 @@ export function validateReceipt(input) {
     reprintReason,
     displayCode: r.displayCode,
     ...(Object.hasOwn(r, "orderNumber") ? { orderNumber: r.orderNumber } : {}),
+    ...(Object.hasOwn(r, "paymentMethod") ? { paymentMethod: r.paymentMethod } : {}),
     brand: "MealDeck",
     tradingName: "313 Brands Ltd",
     locationName: text(r.locationName, 140),
@@ -303,6 +343,49 @@ export function validateReceipt(input) {
 }
 
 const money = (pence) => "GBP " + (pence / 100).toFixed(2);
+/** Epson ESC/POS graphics functions 112 and 50. The only graphic is the fixed
+ * reviewed logo. There is no caller-supplied raster, address or command. */
+export function encodeReceiptLogo() {
+  const pixels = Uint8Array.from(atob(receiptLogo.rasterBase64), (value) => value.charCodeAt(0));
+  requireValue(
+    receiptLogo.width === 256 &&
+      receiptLogo.height === 258 &&
+      pixels.length === receiptLogo.rowBytes * receiptLogo.height,
+    "invalid_fixed_receipt_logo",
+  );
+  const length = pixels.length + 10;
+  return Uint8Array.from([
+    0x1b,
+    0x61,
+    1,
+    0x1d,
+    0x28,
+    0x4c,
+    length & 255,
+    length >> 8,
+    48,
+    112,
+    48,
+    1,
+    1,
+    49,
+    receiptLogo.width & 255,
+    receiptLogo.width >> 8,
+    receiptLogo.height & 255,
+    receiptLogo.height >> 8,
+    ...pixels,
+    0x1d,
+    0x28,
+    0x4c,
+    2,
+    0,
+    48,
+    50,
+    0x1b,
+    0x61,
+    0,
+  ]);
+}
 function ascii(value) {
   return value
     .replace(/[‘’]/g, "'")
@@ -390,6 +473,7 @@ export function encodeReceipt(input, profile = {}) {
   write("Placed / paid: " + date(receipt.paidAt));
   write("Accepted: " + date(receipt.acceptedAt));
   write(receipt.fulfilment === "curbside" ? "KERBSIDE PICKUP" : "COLLECTION");
+  if (receipt.paymentMethod === "cash") write("PAYMENT: CASH PAID");
   write("Name: " + receipt.customerName);
   if (receipt.car)
     write(
@@ -418,6 +502,19 @@ export function encodeReceipt(input, profile = {}) {
         "Extra for " + receipt.items.find((parent) => parent.lineId === item.parentLineId).name,
         "  ",
       );
+    if (item.mealComponents?.length) {
+      write("MEAL INCLUDES:", "  ");
+      for (const component of item.mealComponents)
+        write(
+          item.quantity * component.quantityPerParent +
+            " x " +
+            component.name +
+            (component.replacement
+              ? " - replaces standard " + (component.slot === "drink" ? "drink" : "side")
+              : ""),
+          "  ",
+        );
+    }
     if (item.modifiers.length) {
       pair("  Base each", money(item.baseUnitPence));
       write("Choices included in line total:", "  ");
@@ -473,7 +570,7 @@ export function encodeReceipt(input, profile = {}) {
   write("END OF RECEIPT");
   const body = new TextEncoder().encode(lines.join("\n") + "\n" + "\n".repeat(feedLines));
   const ending = cut === "none" ? [] : [0x1d, 0x56, cut === "partial" ? 1 : 0];
-  const bytes = Uint8Array.from([0x1b, 0x40, ...body, ...ending]);
+  const bytes = Uint8Array.from([0x1b, 0x40, ...encodeReceiptLogo(), ...body, ...ending]);
   requireValue(bytes.length <= RECEIPT_LIMITS.bytes, "receipt_too_long");
   return {
     bytes,

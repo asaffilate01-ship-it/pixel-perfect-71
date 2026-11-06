@@ -4,6 +4,7 @@ import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { KDS_FULFILMENT_LABELS, kdsClockTime } from "@/lib/mealdeck-kds-view";
 import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { KdsPickupDetails } from "./kds-pickup-details";
+import { KdsMealComponents } from "./kds-meal-components";
 
 /** Read-only durable history. No checklist, mutation, payment or print action. */
 export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
@@ -112,6 +113,7 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
                 <span className="md-ops-ticket-quantity md-kds-quantity">{item.quantity}×</span>
                 <p>{item.item_name}</p>
               </div>
+              <KdsMealComponents components={item.mealComponents ?? []} quantity={item.quantity} />
               {!!item.bags?.length && (
                 <ul className="md-kds-bag-labels" aria-label={`Packing for ${item.item_name}`}>
                   {item.bags.map((bag) => (

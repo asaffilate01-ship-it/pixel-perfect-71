@@ -1,6 +1,6 @@
 # Included-drink stock and special requests
 
-Owner decisions and reviewed release artifacts: **6 November 2026**. This document describes the implementation and deployment checks. It does not claim that the stock or notes migration has been installed; record actual installation and live checks in `mealdeck-cloud-deployment-status.md`.
+Owner decisions and reviewed release artifacts: **6 November 2026**. Both guarded extensions were installed and the compatible PR108 application was verified live at 19:54 UK. Actual hashes, deployment and public-stock checks are recorded in `mealdeck-cloud-deployment-status.md`.
 
 ## Included drinks use the actual stock item
 

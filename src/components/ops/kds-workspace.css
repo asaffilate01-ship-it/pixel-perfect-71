@@ -703,6 +703,44 @@
   font-weight: 750;
   font-variant-numeric: tabular-nums;
 }
+
+.md-kds-workspace .md-kds-meal-components {
+  min-width: 0;
+  margin-top: 5px;
+  border-left: 2px solid var(--ops-line);
+  border-radius: 3px;
+  background: var(--ops-soft);
+  padding: 5px 7px;
+  color: var(--ops-text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.md-kds-workspace .md-kds-meal-components > p {
+  margin-bottom: 3px;
+  color: var(--ops-muted);
+  font-size: 11px;
+}
+.md-kds-workspace .md-kds-meal-components ul {
+  display: grid;
+  gap: 2px;
+}
+.md-kds-workspace .md-kds-meal-components li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px;
+}
+.md-kds-workspace .md-kds-meal-components li > strong {
+  font-variant-numeric: tabular-nums;
+}
+.md-kds-workspace .md-kds-meal-components li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.md-kds-workspace .md-kds-meal-components small {
+  display: block;
+  color: var(--ops-muted);
+  font-size: 11px;
+}
 .md-kds-workspace .md-kds-attached-line {
   border-left: 2px solid var(--ops-line);
   margin-left: 10px;

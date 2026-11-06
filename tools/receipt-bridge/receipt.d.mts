@@ -15,6 +15,12 @@ export type ReceiptItem = {
   linePence: number;
   notes: string | null;
   modifiers: ReceiptModifier[];
+  mealComponents?: {
+    slot: "main" | "side" | "drink";
+    name: string;
+    quantityPerParent: number;
+    replacement: boolean;
+  }[];
 };
 export type ReceiptPackingPlan = {
   version: 1;
@@ -30,6 +36,7 @@ export type MealDeckReceipt = {
   reprintReason: string | null;
   displayCode: string;
   orderNumber?: string | null;
+  paymentMethod?: "card" | "cash";
   brand: "MealDeck";
   tradingName: "313 Brands Ltd";
   locationName: string;
@@ -65,6 +72,7 @@ export class ReceiptError extends Error {
   constructor(code: string);
 }
 export function validateReceipt(input: unknown): MealDeckReceipt;
+export function encodeReceiptLogo(): Uint8Array;
 export function encodeReceipt(
   input: unknown,
   profile?: PrinterProfile,

@@ -44,6 +44,25 @@ function fixture() {
   };
 }
 describe("durable Done history", () => {
+  test("completed meal instructions retain canonical side replacements and reject malformed components", () => {
+    const value = fixture();
+    const mealComponents = [
+      { slot: "side", name: "Loaded tots", quantityPerParent: 1, replacement: true },
+      { slot: "drink", name: "Pepsi", quantityPerParent: 1, replacement: false },
+    ];
+    Object.assign(value.completed_orders[0]!.items[0]!, { mealComponents });
+    expect(
+      parseKdsWorkflowBoard(value, scope).completed_orders[0]!.items[0]!.mealComponents,
+    ).toEqual(mealComponents);
+    Object.assign(value.completed_orders[0]!.items[0]!, {
+      mealComponents: [...mealComponents, { ...mealComponents[0], name: "Fries" }],
+    });
+    expect(() => parseKdsWorkflowBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+    expect(
+      parseKdsWorkflowBoard(fixture(), scope).completed_orders[0]!.items[0]!.mealComponents,
+    ).toBeUndefined();
+  });
+
   test("keeps sanitized pickup and kerbside contacts on completed tickets only", () => {
     for (const fulfilment of ["pickup", "curbside"]) {
       const value = fixture();
