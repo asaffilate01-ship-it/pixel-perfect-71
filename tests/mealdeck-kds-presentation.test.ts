@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import type { KdsItem, KdsOrder, KdsTicket } from "../src/lib/mealdeck-kds";
 import {
+  KDS_STAGES,
+  KDS_STAGE_LABELS,
   groupKdsItems,
   kdsOrderStage,
   nextKdsOrderAction,
@@ -148,18 +150,18 @@ describe("one shared-kitchen order card", () => {
       const packed = order({
         pass: { status, version: "c".repeat(32), updated_at: "2026-11-04T12:10:00Z" },
       });
-      expect(kdsOrderStage(packed)).toBe("sealed");
+      expect(kdsOrderStage(packed)).toBe("ready_for_handover");
       expect(nextKdsOrderAction(packed)).toBeNull();
     }
     const packing = order({
       preparation_status: "ready",
       pass: { status: "packing", version: "c".repeat(32), updated_at: "2026-11-04T12:10:00Z" },
     });
-    expect(kdsOrderStage(packing)).toBe("packing");
+    expect(kdsOrderStage(packing)).toBe("ready_to_pack");
     expect(nextKdsOrderAction(packing)).toEqual({
       target: "pass",
       status: "sealed",
-      label: "Seal order",
+      label: "Ready for handover",
     });
     expect(nextKdsOrderAction({ ...packing, preparation_status: "preparing" })).toBeNull();
   });
@@ -180,5 +182,48 @@ describe("one shared-kitchen order card", () => {
     });
     expect(nextKdsOrderAction({ ...ready, preparation_status: "preparing" })).toBeNull();
     expect(nextKdsOrderAction(order({ preparation_status: "ready" }))).toBeNull();
+  });
+});
+
+describe("six explicit kitchen stages", () => {
+  test("keeps the exact requested labels and sequence", () => {
+    expect(KDS_STAGES.map((stage) => KDS_STAGE_LABELS[stage])).toEqual([
+      "New",
+      "Accepted",
+      "Preparing",
+      "Ready to pack",
+      "Ready for handover",
+      "Done",
+    ]);
+  });
+  test("acceptance is separate from paid release and preparation", () => {
+    expect(kdsOrderStage(order({ accepted_at: null }))).toBe("new");
+    expect(kdsOrderStage(order())).toBe("accepted");
+    expect(kdsOrderStage(order({ preparation_status: "preparing" }))).toBe("preparing");
+  });
+  test("packing is a step within ready to pack, not a seventh stage", () => {
+    for (const status of ["ready_to_pack", "packing"] as const)
+      expect(
+        kdsOrderStage(
+          order({
+            preparation_status: "ready",
+            pass: {
+              status,
+              version: "c".repeat(32),
+              updated_at: "2026-11-04T12:10:00Z",
+            },
+          }),
+        ),
+      ).toBe("ready_to_pack");
+  });
+  test("only a fulfilled server record is done and never offers mutation", () => {
+    const done = order({
+      order_status: "fulfilled",
+      completed_at: "2026-11-04T12:15:00Z",
+      pass: { status: "handed_off", version: "c".repeat(32), updated_at: "2026-11-04T12:15:00Z" },
+    });
+    expect(kdsOrderStage(done)).toBe("done");
+    expect(nextKdsOrderAction(done)).toBeNull();
+    expect(nextKdsOrderAction({ ...done, accepted_at: null })).toBeNull();
   });
 });

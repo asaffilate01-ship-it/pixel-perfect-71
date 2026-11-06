@@ -350,3 +350,64 @@ describe("MealDeck one-card cooking and packing controls", () => {
     expect(() => parseKdsMutation({ ...value, replayed: "false" }, expected)).toThrow();
   });
 });
+
+describe("confirmed Done history", () => {
+  function completedBoard() {
+    const b = board();
+    const o = b.orders[0]!;
+    o.order_status = "fulfilled";
+    o.accepted_at = now;
+    o.completed_at = now;
+    o.preparation_status = "ready";
+    o.items.forEach((i) => (i.status = "ready"));
+    o.tickets.forEach((t) => {
+      t.status = "ready";
+      t.items.forEach((i) => (i.status = "ready"));
+    });
+    o.pass = { status: "handed_off", version, updated_at: now };
+    b.orders = [];
+    b.completed_orders = [o];
+    b.remaining_completed_count = 0;
+    return b;
+  }
+  test("legacy feed does not pretend history is available", () => {
+    expect(parseKdsBoard(board(), scope).completed_history_available).toBe(false);
+  });
+  test("retains the original code, items and confirmed completion", () => {
+    const result = parseKdsBoard(completedBoard(), scope);
+    expect(result.orders).toHaveLength(0);
+    expect(result.completed_history_available).toBe(true);
+    expect(result.completed_orders![0]!.display_code).toBe("0438");
+    expect(result.completed_orders![0]!.completed_at).toBe(now);
+    expect(result.completed_orders![0]!.items[0]!.notes).toBe("Keep sauces separate");
+  });
+  test("rejects fabricated completion, unfinished food and mixed queues", () => {
+    for (const mutate of [
+      (b: KdsBoard) => {
+        b.completed_orders![0]!.completed_at = null;
+      },
+      (b: KdsBoard) => {
+        b.completed_orders![0]!.completed_at = "2999-01-01T00:00:00Z";
+      },
+      (b: KdsBoard) => {
+        b.completed_orders![0]!.accepted_at = null;
+      },
+      (b: KdsBoard) => {
+        b.completed_orders![0]!.order_status = "ready";
+      },
+      (b: KdsBoard) => {
+        b.completed_orders![0]!.pass!.status = "ready_for_handoff";
+      },
+      (b: KdsBoard) => {
+        b.completed_orders![0]!.items[0]!.status = "preparing";
+      },
+      (b: KdsBoard) => {
+        b.orders = b.completed_orders!;
+      },
+    ]) {
+      const b = completedBoard();
+      mutate(b);
+      expect(() => parseKdsBoard(b, scope)).toThrow();
+    }
+  });
+});

@@ -7,7 +7,12 @@ import { packingPersonNameSchema } from "./mealdeck-packing-name";
  */
 export type KdsTicketStatus = "queued" | "preparing" | "ready";
 export type KdsPassStatus =
-  "waiting_for_kitchen" | "ready_to_pack" | "packing" | "sealed" | "ready_for_handoff";
+  | "waiting_for_kitchen"
+  | "ready_to_pack"
+  | "packing"
+  | "sealed"
+  | "ready_for_handoff"
+  | "handed_off";
 
 export type KdsStation = {
   station_id: string;
@@ -66,7 +71,7 @@ export type KdsOrder = {
   display_code: string;
   created_at: string;
   released_at: string;
-  order_status: "accepted" | "preparing" | "ready";
+  order_status: "accepted" | "preparing" | "ready" | "fulfilled";
   fulfilment: "delivery" | "pickup" | "curbside" | "dine_in";
   notes: string | null;
   group_order: boolean;
@@ -76,6 +81,7 @@ export type KdsOrder = {
   tickets: KdsTicket[];
   pass: KdsPass | null;
   accepted_at?: string | null;
+  completed_at?: string | null;
   cutlery_requested?: boolean;
   vehicle?: { make: string; colour: string; registrationLast4: string } | null;
 };
@@ -90,6 +96,10 @@ export type KdsBoard = {
   remaining_order_count: number;
   stations: KdsStation[];
   orders: KdsOrder[];
+  /** Separate history never counts as a new order or fills the active work queue. */
+  completed_orders?: KdsOrder[];
+  completed_history_available?: boolean;
+  remaining_completed_count?: number;
 };
 
 export type KdsMutation = {
@@ -108,6 +118,7 @@ const passStatuses = [
   "packing",
   "sealed",
   "ready_for_handoff",
+  "handed_off",
 ] as const;
 
 function invalid(): never {
@@ -276,7 +287,7 @@ function parsePass(value: unknown): KdsPass {
   };
 }
 
-function parseOrder(value: unknown): KdsOrder {
+function parseOrder(value: unknown, completed = false): KdsOrder {
   const v = record(value);
   const tickets = list(v["tickets"], parseTicket, 100);
   const items = list(v["items"], parseOrderItem, 500);
@@ -343,6 +354,30 @@ function parseOrder(value: unknown): KdsOrder {
     (preparationStatus !== "ready" || !allReady)
   )
     invalid();
+  const orderStatus = choice(v["order_status"], [
+    "accepted",
+    "preparing",
+    "ready",
+    "fulfilled",
+  ] as const);
+  const completedAt = v["completed_at"] == null ? null : timestamp(v["completed_at"]);
+  if (completed) {
+    if (
+      orderStatus !== "fulfilled" ||
+      pass?.status !== "handed_off" ||
+      !completedAt ||
+      !v["accepted_at"] ||
+      preparationStatus !== "ready" ||
+      !allReady ||
+      items.some((item) => item.status !== "ready")
+    )
+      invalid();
+    if (
+      Date.parse(completedAt) < Date.parse(timestamp(v["accepted_at"])) ||
+      Date.parse(completedAt) < Date.parse(timestamp(v["released_at"]))
+    )
+      invalid();
+  } else if (orderStatus === "fulfilled" || pass?.status === "handed_off" || completedAt) invalid();
   return {
     order_id: id(v["order_id"]),
     version: version(v["version"]),
@@ -350,7 +385,7 @@ function parseOrder(value: unknown): KdsOrder {
     display_code: text(v["display_code"], 40),
     created_at: timestamp(v["created_at"]),
     released_at: timestamp(v["released_at"]),
-    order_status: choice(v["order_status"], ["accepted", "preparing", "ready"] as const),
+    order_status: orderStatus,
     fulfilment: choice(v["fulfilment"], ["delivery", "pickup", "curbside", "dine_in"] as const),
     notes: nullableText(v["notes"], 20000),
     group_order: flag(v["group_order"]),
@@ -360,6 +395,7 @@ function parseOrder(value: unknown): KdsOrder {
     tickets,
     pass,
     accepted_at: v["accepted_at"] == null ? null : timestamp(v["accepted_at"]),
+    completed_at: completedAt,
     cutlery_requested: v["cutlery_requested"] === undefined ? false : flag(v["cutlery_requested"]),
     vehicle:
       v["vehicle"] == null
@@ -400,14 +436,25 @@ export function parseKdsBoard(
     },
     100,
   );
-  const orders = list(v["orders"], parseOrder, 250);
+  const orders = list(v["orders"], (input) => parseOrder(input), 250);
+  const completedAvailable = v["completed_orders"] !== undefined;
+  const completedOrders = completedAvailable
+    ? list(v["completed_orders"], (input) => parseOrder(input, true), 100)
+    : [];
+  const allOrders = [...orders, ...completedOrders];
+  if (
+    completedOrders.some(
+      (order) => Date.parse(order.completed_at!) > Date.parse(timestamp(v["generated_at"])),
+    )
+  )
+    invalid();
   const readiness = choice(v["readiness"], ["ready", "setup_required"] as const);
-  if (readiness === "setup_required" && orders.length) invalid();
+  if (readiness === "setup_required" && allOrders.length) invalid();
   unique(stations.map((station) => station["station_id"]));
-  unique(orders.map((order) => order.order_id));
-  unique(orders.flatMap((order) => order.tickets.map((ticket) => ticket.ticket_id)));
+  unique(allOrders.map((order) => order.order_id));
+  unique(allOrders.flatMap((order) => order.tickets.map((ticket) => ticket.ticket_id)));
   const stationIds = new Set(stations.map((station) => station["station_id"]));
-  if (orders.some((order) => order.tickets.some((ticket) => !stationIds.has(ticket.station_id))))
+  if (allOrders.some((order) => order.tickets.some((ticket) => !stationIds.has(ticket.station_id))))
     invalid();
   return {
     schema_version: 1,
@@ -419,6 +466,9 @@ export function parseKdsBoard(
     remaining_order_count: integer(v["remaining_order_count"]),
     stations,
     orders,
+    completed_orders: completedOrders,
+    completed_history_available: completedAvailable,
+    remaining_completed_count: completedAvailable ? integer(v["remaining_completed_count"]) : 0,
   };
 }
 
