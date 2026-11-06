@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { CheckoutProblem } from "./mealdeck-checkout-selection";
+import { checkoutPathMatchesSession } from "./mealdeck-checkout-url";
 import {
   paymentObject,
   paymentRpc,
@@ -276,8 +277,14 @@ export async function ensureCheckoutCollection(
   }
   const intent = paymentObject(session["payment_intent"]);
   if (Object.keys(intent).length) checkIntent(intent, collection);
+  const sessionCheckoutUrl = safeStripeCheckoutUrl(session["url"], stripe.checkoutDomain);
+  const matchesSessionPath =
+    sessionCheckoutUrl !== null &&
+    checkoutPathMatchesSession(new URL(sessionCheckoutUrl).pathname, session["id"]);
   let current = collection;
   if (!collection.sessionId && session["status"] === "open") {
+    // Validate the exact Session path before persisting a newly issued URL.
+    if (!matchesSessionPath) mismatch();
     current = await bindCollection(clients, stripe, collection, session, null);
   } else if (!collection.sessionId) {
     // Completed/expired Sessions may no longer have a URL. Independently
@@ -295,12 +302,13 @@ export async function ensureCheckoutCollection(
     session["status"] === "open" &&
     session["payment_status"] === "unpaid" &&
     !current.cancelRequested &&
-    Date.parse(current.expiresAt) > Date.now()
-      ? safeStripeCheckoutUrl(session["url"], stripe.checkoutDomain)
+    Date.parse(current.expiresAt) > Date.now() &&
+    matchesSessionPath
+      ? sessionCheckoutUrl
       : null;
   if (
     session["status"] === "open" &&
-    (!checkoutUrl || new URL(checkoutUrl).pathname !== "/c/pay/" + session["id"]) &&
+    !checkoutUrl &&
     !current.cancelRequested &&
     Date.parse(current.expiresAt) > Date.now()
   )

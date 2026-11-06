@@ -132,7 +132,8 @@ jobs:
           src/routes/api.ops.integrations.ts src/components/ops/integration-status-panel.tsx
           src/lib/mealdeck-checkout-url.ts src/lib/mealdeck-stripe-checkout-domain.server.ts
           tests/mealdeck-integration-status.test.ts tests/mealdeck-checkout-domain.test.ts
-          deploy/mealdeck/checkout-domain.mjs tests/postgres/checkout-domain-behavior.mjs
+          deploy/mealdeck/checkout-domain.mjs deploy/mealdeck/checkout-session-paths.mjs
+          tests/postgres/checkout-domain-behavior.mjs
           --rule 'prettier/prettier: off'
       - name: Shared kitchen board, strict feed and full-order presentation
         run: bun test tests/mealdeck-kds*.test.ts
