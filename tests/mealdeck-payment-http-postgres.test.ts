@@ -14,6 +14,7 @@ import { buildCheckoutDomainSql } from "../deploy/mealdeck/checkout-domain.mjs";
 import { buildOrderingRoomsSql } from "../deploy/mealdeck/ordering-rooms.mjs";
 import { handleGroupOrdersRequest } from "../src/lib/mealdeck-group-rooms.server";
 import { groupOrderResultSchema } from "../src/lib/mealdeck-group-rooms";
+import { MEALDECK_STRIPE_API_VERSION } from "../src/lib/mealdeck-stripe.server";
 
 /** A real HTTP-handler -> Supabase named-RPC -> PostgreSQL contract test.
  * Auth and Stripe are simulated external services. Mock live-mode data exercises
@@ -242,6 +243,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
           request.headers.get("Authorization"),
           "Bearer " + env.MEALDECK_STRIPE_SECRET_KEY,
         );
+        assert.equal(request.headers.get("Stripe-Version"), MEALDECK_STRIPE_API_VERSION);
         const path = url.pathname.replace(/^\/v1\//, "");
         const key = request.headers.get("Idempotency-Key");
         providerCalls.push({ path, method: request.method, key });
@@ -277,6 +279,21 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
         }
         if (request.method === "POST" && ["checkout/sessions", "payment_intents"].includes(path)) {
           const form = new URLSearchParams(await request.text());
+          // Endive removed this Session/PaymentIntent create parameter. Reject it
+          // before creating or caching a provider object, as the real API does.
+          if ([...form.keys()].some((name) => /^payment_method_types(?:\[|$)/.test(name)))
+            return Response.json(
+              {
+                error: {
+                  type: "invalid_request_error",
+                  ...(path === "payment_intents"
+                    ? { code: "payment_method_types_no_longer_supported" }
+                    : {}),
+                  param: "payment_method_types",
+                },
+              },
+              { status: 400 },
+            );
           assert.ok(key);
           const prior = creations.get(key);
           if (prior) {
@@ -287,6 +304,14 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
           assert.equal(meta.source, "mealdeck");
           let response: unknown;
           if (path === "checkout/sessions") {
+            assert.deepEqual(
+              [...form].filter(([name]) => /^allowed_payment_method_types(?:\[|$)/.test(name)),
+              [["allowed_payment_method_types[0]", "card"]],
+            );
+            assert.equal(
+              form.get("payment_method_options[card][request_three_d_secure]"),
+              "automatic",
+            );
             assert.deepEqual(metadata(form, "payment_intent_data[metadata]"), meta);
             const id = "cs_test_http" + ++sequence;
             const session: Session = {
@@ -307,11 +332,15 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
             sessions.set(id, session);
             response = session;
           } else {
+            assert.deepEqual(
+              [...form].filter(([name]) => /^allowed_payment_method_types(?:\[|$)/.test(name)),
+              [["allowed_payment_method_types[0]", "card_present"]],
+            );
             assert.equal(form.get("capture_method"), "automatic");
             response = newIntent(
               Number(form.get("amount")),
               meta,
-              form.get("payment_method_types[0]")!,
+              form.get("allowed_payment_method_types[0]")!,
             );
           }
           creations.set(key, { form: form.toString(), response: structuredClone(response) });
@@ -772,6 +801,52 @@ test("restricted-key permission failures create no paid order, KDS ticket or rec
       expect(JSON.stringify(result.body)).not.toContain("Permission denied for");
       expect(result.body.checkoutUrl).toBeUndefined();
     }
+    expect(h.unexpectedRequests).toEqual([]);
+  } finally {
+    await h.db.close();
+  }
+}, 30_000);
+
+test("Endive provider fixture rejects removed Session and PaymentIntent parameters before creating any object", async () => {
+  const h = await integrationFixture();
+  try {
+    for (const path of ["checkout/sessions", "payment_intents"]) {
+      for (const includeAllowed of [false, true]) {
+        const method = path === "checkout/sessions" ? "card" : "card_present";
+        const body = new URLSearchParams({ "payment_method_types[0]": method });
+        if (includeAllowed) body.set("allowed_payment_method_types[0]", method);
+        const response = await h.fetcher("https://api.stripe.com/v1/" + path, {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + h.env.MEALDECK_STRIPE_SECRET_KEY,
+            "Stripe-Version": MEALDECK_STRIPE_API_VERSION,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Idempotency-Key": "removed-payment-parameter-fixture",
+          },
+          body: body.toString(),
+        });
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+          error: {
+            type: "invalid_request_error",
+            ...(path === "payment_intents"
+              ? { code: "payment_method_types_no_longer_supported" }
+              : {}),
+            param: "payment_method_types",
+          },
+        });
+      }
+    }
+    expect(h.sessions.size).toBe(0);
+    expect(h.intents.size).toBe(0);
+    expect(h.creations.size).toBe(0);
+    // These are direct fake-provider requests, not pay-handler calls. An actual
+    // failed pay request may retain its already-prepared, unpaid order.
+    expect((await h.db.query("select count(*)::int n from public.orders")).rows[0].n).toBe(0);
+    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(0);
+    expect(
+      (await h.db.query("select count(*)::int n from mealdeck_private.receipt_jobs")).rows[0].n,
+    ).toBe(0);
     expect(h.unexpectedRequests).toEqual([]);
   } finally {
     await h.db.close();

@@ -148,7 +148,7 @@ export function groupSessionParameters(collection: PaymentCollection) {
     collection.roomId;
   const body = new URLSearchParams({
     mode: "payment",
-    "payment_method_types[0]": "card",
+    "allowed_payment_method_types[0]": "card",
     "payment_method_options[card][request_three_d_secure]": "automatic",
     client_reference_id: collection.orderId,
     success_url: returnUrl,
@@ -176,7 +176,7 @@ export function terminalIntentParameters(collection: PaymentCollection) {
   const body = new URLSearchParams({
     amount: String(collection.amountPence),
     currency: "gbp",
-    "payment_method_types[0]": "card_present",
+    "allowed_payment_method_types[0]": "card_present",
     capture_method: "automatic",
     description: "MealDeck · Luton collection payment",
   });
