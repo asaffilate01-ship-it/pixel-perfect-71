@@ -75,6 +75,7 @@ import type { OpsSupplier, OpsPurchase, OpsBatch } from "@/lib/mealdeck-ops-proc
 import { OpsKdsPanel } from "@/components/ops/kds-panel";
 import { CheckoutLaunchSettings } from "@/components/ops/checkout-launch-settings";
 import { IntegrationStatusPanel } from "@/components/ops/integration-status-panel";
+import { StaffPasswordPanel } from "@/components/ops/staff-password-panel";
 const field = "md-ops-field";
 const btn = "md-ops-button md-ops-primary";
 const columns = "md-ops-card p-5";
@@ -1132,12 +1133,17 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                   </>
                 )}
                 {selectedSection === "team" && (
-                  <OpsTeamPanel
-                    {...common}
-                    staff={data.staff}
-                    audit={data.audit}
-                    locations={locations}
-                  />
+                  <div className="space-y-5">
+                    {canGlobal("staff.manage") && accesses.some((a) => a.tenant_id === tenant && a.location_id === null && a.role === "owner") && (
+                      <StaffPasswordPanel key={tenant + ":" + user.id} />
+                    )}
+                    <OpsTeamPanel
+                      {...common}
+                      staff={data.staff}
+                      audit={data.audit}
+                      locations={locations}
+                    />
+                  </div>
                 )}
               </div>
             )}

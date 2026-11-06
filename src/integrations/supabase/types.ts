@@ -2652,6 +2652,10 @@ export type Database = {
         }
         Returns: Json
       }
+      mealdeck_checkout_status_for_customer: {
+        Args: { p_customer: string; p_location: string; p_tenant: string }
+        Returns: Json
+      }
       mealdeck_close_ordering_invitations: {
         Args: { p_actor_hash: string; p_room: string }
         Returns: Json
