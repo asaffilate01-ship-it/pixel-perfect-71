@@ -1,0 +1,38 @@
+name: Six-stage KDS database verification
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  kds-six-stages-postgres17:
+    name: Six-stage KDS PostgreSQL 17 permissions and handover
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_six_stages
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_six_stages"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated PostgreSQL test dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Verify all six stages, private Done history and exactly-once receipt
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_six_stages
+        run: node --experimental-strip-types tests/postgres/kds-six-stages-behavior.mjs --native
