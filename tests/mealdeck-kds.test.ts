@@ -202,7 +202,7 @@ describe("MealDeck canonical KDS response boundaries", () => {
     expect(() => parseKdsBoard(board(), { ...scope, locationId: id(99) })).toThrow();
   });
 
-  test("copies only reviewed prep fields, never contact, payment or delivery data", () => {
+  test("ignores unrelated contact, payment and delivery fields", () => {
     const value = board();
     Object.assign(value, { provider_secret: "do-not-return" });
     Object.assign(value.orders[0]!, {
@@ -215,6 +215,72 @@ describe("MealDeck canonical KDS response boundaries", () => {
     expect(serialised).not.toContain("private");
     expect(serialised).not.toContain("do-not-return");
     expect(serialised).not.toContain("total_pence");
+  });
+
+  test("old kerbside payloads stay valid without a contact projection", () => {
+    const value = board();
+    value.orders[0]!.fulfilment = "curbside";
+    expect(parseKdsBoard(value, scope).orders[0]!.pickupContact).toBeNull();
+    value.orders[0]!.pickupContact = null;
+    expect(parseKdsBoard(value, scope).orders[0]!.pickupContact).toBeNull();
+  });
+
+  test("copies only validated kerbside name and canonical contact number", () => {
+    const value = board();
+    Object.assign(value.orders[0]!, {
+      fulfilment: "curbside",
+      pickupContact: {
+        name: "\u00a0آمنہ O’Neill\u00a0",
+        phone: "+447700900123",
+        email: "not-for-the-kitchen@example.invalid",
+        deliveryAddress: "not-for-the-kitchen",
+      },
+    });
+    const result = parseKdsBoard(value, scope).orders[0]!;
+    expect(result.pickupContact).toEqual({ name: "آمنہ O’Neill", phone: "+447700900123" });
+    expect(JSON.stringify(result)).not.toContain("not-for-the-kitchen");
+    expect(result.items[0]!.participant_name).toBe("Alex");
+  });
+
+  test("rejects malformed contacts, unsafe names and noncanonical phone numbers", () => {
+    const contact = { name: "Sam O'Neill", phone: "+447700900123" };
+    for (const invalidContact of [
+      [],
+      "Sam",
+      {},
+      { ...contact, name: "" },
+      { ...contact, name: "   " },
+      { ...contact, name: "A".repeat(121) },
+      { ...contact, name: "Sam\n" },
+      { ...contact, name: "Sam\x1b@" },
+      { ...contact, name: "Sam\u0085" },
+      { ...contact, name: "Sam\u202e" },
+      { ...contact, name: "Sam\u2066" },
+      { ...contact, phone: "07700900123" },
+      { ...contact, phone: "+44 7700 900123" },
+      { ...contact, phone: "+007700900123" },
+      { ...contact, phone: "+44123" },
+      { ...contact, phone: "+4477009001234567" },
+      { ...contact, phone: "https://wa.me/447700900123" },
+    ]) {
+      const value = board();
+      Object.assign(value.orders[0]!, { fulfilment: "curbside", pickupContact: invalidContact });
+      expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+    }
+  });
+
+  test("discards contact projections from every other fulfilment", () => {
+    for (const fulfilment of ["pickup", "delivery", "dine_in"] as const) {
+      const value = board();
+      Object.assign(value.orders[0]!, {
+        fulfilment,
+        pickupContact: { name: "Private contact", phone: "+447700900123" },
+      });
+      const result = parseKdsBoard(value, scope);
+      expect(result.orders[0]!.pickupContact).toBeNull();
+      expect(JSON.stringify(result)).not.toContain("Private contact");
+      expect(JSON.stringify(result)).not.toContain("+447700900123");
+    }
   });
 
   test("rejects invalid scope IDs, unknown statuses and optimistic boolean strings", () => {

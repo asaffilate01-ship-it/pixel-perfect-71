@@ -231,6 +231,44 @@ test("Done tickets retain instructions but expose no mutation or print control",
 });
 
 describe("ticket alignment retains every kitchen instruction", () => {
+  test("kerbside contact appears as escaped text beside the car, without a messaging action", () => {
+    const html = ticketMarkup(
+      order({
+        fulfilment: "curbside",
+        vehicle: { make: "Toyota", colour: "Blue", registrationLast4: "12AB" },
+        pickupContact: { name: "Sam & <Guest>", phone: "+447700900123" },
+      }),
+    );
+    for (const text of [
+      'aria-label="Kerbside pickup contact"',
+      ">Name</dt>",
+      "WhatsApp number",
+      "Sam &amp; &lt;Guest&gt;",
+      "+447700900123",
+      "Toyota",
+      "Blue",
+      "12AB",
+    ])
+      expect(html).toContain(text);
+    expect(html).not.toContain("<Guest>");
+    expect(html).not.toMatch(/href="(?:tel:|https?:\/\/(?:wa\.me|[^/]*whatsapp))/);
+  });
+
+  test("old tickets and non-kerbside fulfilments do not display a contact block", () => {
+    for (const candidate of [
+      order({ fulfilment: "curbside" }),
+      order({ fulfilment: "curbside", pickupContact: null }),
+      ...(["pickup", "delivery", "dine_in"] as const).map((fulfilment) =>
+        order({ fulfilment, pickupContact: { name: "Private contact", phone: "+447700900123" } }),
+      ),
+    ]) {
+      const html = ticketMarkup(candidate);
+      expect(html).not.toContain('aria-label="Kerbside pickup contact"');
+      expect(html).not.toContain("Private contact");
+      expect(html).not.toContain("+447700900123");
+    }
+  });
+
   test("long dish, modifier, extra and bag names stay complete in their detail rows", () => {
     const mainName = "Double smash burger with mature cheddar and caramelised onions";
     const extraName = "Passion fruit and mango mocktail with a fresh mint garnish";

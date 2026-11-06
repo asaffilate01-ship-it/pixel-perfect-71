@@ -1327,6 +1327,19 @@ export function KitchenOrderCard({
               <strong>{order.vehicle.registrationLast4}</strong>
             </span>
           )}
+          {order.fulfilment === "curbside" && order.pickupContact && (
+            <dl
+              className="grid w-full min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-1"
+              aria-label="Kerbside pickup contact"
+            >
+              <dt className="font-medium md-ops-muted">Name</dt>
+              <dd className="m-0 min-w-0 break-words font-bold">{order.pickupContact.name}</dd>
+              <dt className="font-medium md-ops-muted">WhatsApp number</dt>
+              <dd className="m-0 min-w-0 break-words font-bold tabular-nums">
+                {order.pickupContact.phone}
+              </dd>
+            </dl>
+          )}
         </div>
         {order.accepted_at && (
           <div className="md-kds-progress">
