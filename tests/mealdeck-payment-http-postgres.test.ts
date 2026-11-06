@@ -60,6 +60,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
     const rpcCalls: { name: string; role: string; args: Record<string, unknown> }[] = [];
     const rpcErrors: { name: string; code: string; message: string }[] = [];
     const providerCalls: { path: string; method: string; key: string | null }[] = [];
+    const deniedProviderPermissions = new Set<string>();
     const unexpectedRequests: string[] = [];
     let rpcQueue: Promise<unknown> = Promise.resolve();
     let sequence = 0;
@@ -244,6 +245,11 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
         const path = url.pathname.replace(/^\/v1\//, "");
         const key = request.headers.get("Idempotency-Key");
         providerCalls.push({ path, method: request.method, key });
+        if (deniedProviderPermissions.has(path))
+          return Response.json(
+            { error: { message: "Permission denied for " + env.MEALDECK_STRIPE_SECRET_KEY } },
+            { status: 403 },
+          );
         if (request.method === "GET") {
           if (path === "account")
             return Response.json({ id: "acct_Fixture", country: "GB", charges_enabled: true });
@@ -382,6 +388,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
       rpcCalls,
       rpcErrors,
       providerCalls,
+      deniedProviderPermissions,
       unexpectedRequests,
       intents,
       sessions,
@@ -708,9 +715,69 @@ test.each(["checkout.stripe.com", "pay.mealdeck.co.uk"])(
   30_000,
 );
 
-test("ordinary custom-domain checkout resumes one saved Session and reconciles even after a domain configuration error", async () => {
+test("restricted-key permission failures create no paid order, KDS ticket or receipt and never silently retry", async () => {
+  const h = await integrationFixture();
+  try {
+    h.env.MEALDECK_STRIPE_SECRET_KEY = "rk_live_" + "aZ09".repeat(16);
+    const quote = await h.post(
+      "checkout",
+      {
+        action: "quote",
+        fulfilment: "pickup",
+        picks: [{ brandId: "skorch-burgers", itemId: h.f.ace.id, quantity: 1, selections: {} }],
+        packing: { cutleryRequested: false, separateBags: false, bagCount: 1, allocations: [] },
+      },
+      "organiser",
+    );
+    successful(quote);
+    const input = {
+      action: "pay",
+      quoteId: quote.body.quote.quoteId,
+      attemptId: h.f.next(),
+      reviewConfirmed: true,
+    };
+    h.deniedProviderPermissions.add("account");
+    const deniedAccount = await h.post("checkout", input, "organiser");
+    expect(deniedAccount.response.status).toBe(503);
+    expect(deniedAccount.body.error).toBe("payment_service_unavailable");
+    expect((await h.db.query("select count(*)::int n from public.orders")).rows[0].n).toBe(0);
+    expect(h.rpcCalls.some((call) => call.name === "mealdeck_prepare_stripe_order")).toBe(false);
+    expect(h.providerCalls).toEqual([{ path: "account", method: "GET", key: null }]);
+
+    // A separate explicit request can get past account verification, but a
+    // denied Session write still leaves the canonical order pending and unseen.
+    h.deniedProviderPermissions.clear();
+    h.deniedProviderPermissions.add("checkout/sessions");
+    const deniedSession = await h.post("checkout", input, "organiser");
+    expect(deniedSession.response.status).toBe(503);
+    expect(deniedSession.body.error).toBe("payment_service_unavailable");
+    expect(
+      (await h.db.query("select payment_status::text,status::text,paid_at from public.orders"))
+        .rows,
+    ).toEqual([{ payment_status: "pending", status: "payment_pending", paid_at: null }]);
+    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(0);
+    expect(
+      (await h.db.query("select count(*)::int n from mealdeck_private.receipt_jobs")).rows[0].n,
+    ).toBe(0);
+    expect(h.providerCalls.filter((call) => call.path === "checkout/sessions")).toHaveLength(1);
+    expect(h.sessions.size).toBe(0);
+    expect(h.rpcCalls.some((call) => /bind_stripe|reconcile_stripe/.test(call.name))).toBe(false);
+    for (const result of [deniedAccount, deniedSession]) {
+      expect(result.response.headers.get("Cache-Control")).toContain("no-store");
+      expect(JSON.stringify(result.body)).not.toContain(h.env.MEALDECK_STRIPE_SECRET_KEY);
+      expect(JSON.stringify(result.body)).not.toContain("Permission denied for");
+      expect(result.body.checkoutUrl).toBeUndefined();
+    }
+    expect(h.unexpectedRequests).toEqual([]);
+  } finally {
+    await h.db.close();
+  }
+}, 30_000);
+
+test("ordinary restricted-key custom-domain checkout resumes one saved Session and reconciles even after a domain configuration error", async () => {
   const h = await integrationFixture("pay.mealdeck.co.uk");
   try {
+    h.env.MEALDECK_STRIPE_SECRET_KEY = "rk_live_" + "aZ09".repeat(16);
     const quote = await h.post(
       "checkout",
       {
@@ -754,6 +821,23 @@ test("ordinary custom-domain checkout resumes one saved Session and reconciles e
     expect(completedRetry.body.error).toBe("payment_confirmation_pending");
     expect(h.sessions.size).toBe(1);
     expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(0);
+
+    h.deniedProviderPermissions.add("account");
+    const deniedVerification = await h.webhook(session);
+    expect(deniedVerification.status).toBe(503);
+    expect(await deniedVerification.json()).toEqual({ error: "payment_service_unavailable" });
+    expect(
+      (
+        await h.db.query("select payment_status::text from public.orders where id=$1", [
+          paidRequest.body.orderId,
+        ])
+      ).rows[0].payment_status,
+    ).toBe("pending");
+    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(0);
+    expect(
+      (await h.db.query("select count(*)::int n from mealdeck_private.receipt_jobs")).rows[0].n,
+    ).toBe(0);
+    h.deniedProviderPermissions.clear();
 
     h.env.MEALDECK_STRIPE_CHECKOUT_HOST = "https://wrong.invalid";
     expect((await h.webhook(session)).status).toBe(200);

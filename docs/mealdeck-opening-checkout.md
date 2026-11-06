@@ -29,7 +29,7 @@ Use the existing dedicated MealDeck public backend configuration and the exact b
 | Setting                                  | Purpose                                                             |
 | ---------------------------------------- | ------------------------------------------------------------------- |
 | `MEALDECK_CHECKOUT_SERVER_KEY`           | Secret/service credential from the same dedicated MealDeck project. |
-| `MEALDECK_STRIPE_SECRET_KEY`             | Stripe test or live secret, consistent with the declared mode.      |
+| `MEALDECK_STRIPE_SECRET_KEY`             | Stripe restricted or secret API key, consistent with the declared mode. |
 | `MEALDECK_STRIPE_WEBHOOK_SECRET`         | Signing secret for this environment's webhook endpoint.             |
 | `MEALDECK_STRIPE_ACCOUNT_ID`             | Expected Stripe merchant account ID.                                |
 | `MEALDECK_STRIPE_MODE`                   | Exactly `test` or `live`.                                           |
@@ -38,6 +38,28 @@ Use the existing dedicated MealDeck public backend configuration and the exact b
 | `MEALDECK_CHECKOUT_INTEGRATION_APPROVED` | Exactly `signed-off` after end-to-end acceptance.                   |
 
 Do not substitute Dishbee credentials or infer authority from a publishable Stripe key. Conflicting legacy backend configuration fails closed.
+
+### Restricted Stripe API keys
+
+Prefer a restricted key with the permissions needed by this integration. The same server setting accepts `rk_live_` and `sk_live_` in live mode, or `rk_test_` and `sk_test_` in test mode. Store the complete value in the hosting platform's Secrets screen. Do not change its prefix, paste a masked value, or put the credential in source code. `MEALDECK_STRIPE_WEBHOOK_SECRET` remains a separate endpoint signing secret beginning `whsec_`.
+
+The current browser checkout and canonical webhook use these Stripe resources:
+
+| Resource | Required access | MealDeck use |
+| --- | --- | --- |
+| Checkout Sessions | Write, which includes Read | Create and recover the exact order session; list by PaymentIntent; expire an existing shared-payment attempt when authorised. |
+| Events | Read | Independently retrieve the signed event before reconciliation. |
+| Payment Intents | Read | Retrieve or expand the payment and its latest charge, including lifecycle/refund/dispute reconciliation. |
+| Charges | Read | Verify captured funds and provider refund/dispute evidence. |
+| Current merchant account | Successful `GET /v1/account` | Check the credential's actual merchant identity and charging capability. |
+
+These are an inventory of the current requests, not evidence that a particular key has been accepted. Stripe's published permission table does not list the singular `/v1/account` request separately; verify that required request with the deployed key rather than guessing a Dashboard permission label or skipping the account check. Checkout also supplies inline `price_data.product_data` and expands `payment_intent.latest_charge`. Check those exact requests in Stripe's request logs and add only any further permission Stripe identifies as necessary. The application makes no separate Products or Prices API request.
+
+If native Terminal collection is enabled later, it additionally needs Payment Intents Write, Terminal Connection Tokens Write and Terminal Locations Read. The receipt-printer PWA is independent of these Stripe Terminal permissions. Runtime code does not manage webhook destinations, issue refunds, send payouts or transfer funds; do not grant those write permissions merely to receive payment notifications.
+
+The owner connection report can confirm the merchant-account read; it does not prove session creation, every restricted permission or signed webhook processing. Complete the approved private checkout, reconcile the actual provider payment into its matching KDS order, and verify the receipt separately before public sign-off. A denied Stripe request still fails closed and cannot mark an order paid.
+
+References: [restricted API key setup and permissions](https://docs.stripe.com/keys/restricted-api-keys), [endpoint permission reference](https://docs.stripe.com/keys/permissions-reference).
 
 The approved Stripe custom hostname is `pay.mealdeck.co.uk`. Single and shared Checkout validate the actual provider-issued URL, including during recovery, against the exact configured host; they never construct a replacement URL. Install the additive database URL guard before setting the server value. DNS entry alone is not confirmation that Stripe has activated the domain. See [custom Checkout domain setup and acceptance](mealdeck-stripe-custom-domain.md).
 

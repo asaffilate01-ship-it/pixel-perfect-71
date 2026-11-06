@@ -35,7 +35,8 @@ function stripeSettings(env: MealDeckRuntimeEnv) {
   // Preserve the payment validator's exact mode contract; do not silently
   // repair whitespace, case or an unrecognised mode in the diagnostic path.
   const mode = env["MEALDECK_STRIPE_MODE"] ?? "";
-  const secretValid = /^sk_(test|live)_[A-Za-z0-9]{16,512}$/.test(secretKey);
+  const secretMode = /^(?:sk|rk)_(test|live)_[A-Za-z0-9]{16,512}$/.exec(secretKey)?.[1];
+  const secretValid = secretMode !== undefined;
   const modeValid = mode === "test" || mode === "live";
   const issues: MealDeckStripeSettingIssue[] = [];
   const check = (setting: MealDeckStripeSetting, value: string, valid: boolean) => {
@@ -50,7 +51,7 @@ function stripeSettings(env: MealDeckRuntimeEnv) {
   );
   check("MEALDECK_STRIPE_ACCOUNT_ID", accountId, /^acct_[A-Za-z0-9]+$/.test(accountId));
   check("MEALDECK_STRIPE_MODE", mode, modeValid);
-  if (secretValid && modeValid && !secretKey.startsWith("sk_" + mode + "_")) {
+  if (secretValid && modeValid && secretMode !== mode) {
     issues.push(
       { setting: "MEALDECK_STRIPE_SECRET_KEY", status: "mode_mismatch" },
       { setting: "MEALDECK_STRIPE_MODE", status: "mode_mismatch" },
