@@ -3126,6 +3126,10 @@ export type Database = {
         Args: { p_location: string; p_tenant: string }
         Returns: Json
       }
+      mealdeck_ops_kds_board_v2: {
+        Args: { p_location: string; p_tenant: string }
+        Returns: Json
+      }
       mealdeck_ops_kds_complete_handoff: {
         Args: {
           p_code: string
@@ -3165,6 +3169,10 @@ export type Database = {
           p_status: string
           p_tenant: string
         }
+        Returns: Json
+      }
+      mealdeck_ops_kds_workflow_board: {
+        Args: { p_location: string; p_tenant: string }
         Returns: Json
       }
       mealdeck_ops_kitchen_stations: {
