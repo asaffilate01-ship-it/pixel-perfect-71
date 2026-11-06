@@ -4,6 +4,8 @@
 
 The owner's typed Skorch, Load’d, Moktl, Tavo and Souvano menus replace the earlier **£20 placeholders**. Prices are integer GBP pence in `src/lib/launch-menu-catalogue.ts`; generated database input is `deploy/mealdeck/catalogue/launch-catalogue.json`. The price revision is `owner-menu-20261105-v2`.
 
+On 6 November, the owner added **Biscoff Milkcake £3.99** and **Oreo Milkcake £3.99** to a Desserts section in each of those five menus. The additive approval is `owner-desserts-20261106`; the previous menu revision remains unchanged. Each dessert is a standalone product with no meal, side or drink modifiers. Existing live kitchens use the separate additive dessert import; the full initial import below still creates drafts and requires ordering to be disabled.
+
 | Menu | Main prices | Included choices and changes |
 | --- | --- | --- |
 | Skorch | The Ace £3.99; Double Deal £5.50; Triple Stack £7; Four of a Kind £8.99 | Lettuce included in the revised description. Nuggets Meal £5. Add-ons £1.99/£1.99/£0.50. |
@@ -42,15 +44,15 @@ The database import creates one hidden required `price-variant` modifier group p
 | Record | Count | Initial imported state |
 | --- | ---: | --- |
 | Approved brands | 5 | Existing bootstrap brand UUIDs resolved by stable slug |
-| Menu sections | 20 | New sections inactive |
-| Standalone items | 79 | Reviewed prices; new items inactive |
+| Menu sections | 25 | New sections inactive |
+| Standalone items | 89 | Reviewed prices; new items inactive |
 | Source modifier groups/options | 19 / 80 | Includes standard meal drinks and Souvano sides |
 | Hidden price-variant groups/options | 3 / 36 | Twelve exact combinations for each Tavo wings/tenders item |
 | Named cross-brand replacement groups/options | 2 / 17 | Nine Load’d sides and eight Moktl drinks; inactive and unattached |
 | All modifier groups/options | 24 / 133 | New options inactive |
 | Item/group associations | 62 | Includes hidden variant groups; replacement groups need the server adapter |
-| Shared station routes | 79 | Actual existing `SHARED` station only |
-| MealDeck visibility rules | 79 | New rules hidden |
+| Shared station routes | 89 | Actual existing `SHARED` station only |
+| MealDeck visibility rules | 89 | New rules hidden |
 
 Stable source item IDs remain the canonical `menu_items.sku`. Renamed kids meals and Souvano Doner retain their prior SKU. Modifier UUIDs use the existing tenant-scoped UUIDv5 scheme in `launchModifierDatabaseId`; public display names are never identifiers.
 

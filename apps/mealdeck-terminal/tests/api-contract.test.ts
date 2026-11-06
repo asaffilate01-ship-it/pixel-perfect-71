@@ -113,7 +113,7 @@ test("the native composer consumes all current menu brands and blocks unknown so
   assert.equal(parsed.brands.length, 5);
   assert.equal(
     parsed.brands.flatMap((brand) => brand.sections.flatMap((section) => section.items)).length,
-    79,
+    89,
   );
   assert.equal(
     catalogueSchema.safeParse({ ...catalogue, priceRevision: "unreviewed-menu" }).success,

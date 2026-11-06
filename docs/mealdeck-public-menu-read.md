@@ -11,10 +11,17 @@ requires the existing `extensions.uuid_generate_v5(uuid,text)` function to map
 reviewed source choices to their existing canonical records internally.
 
 The frozen allowlist in migration
-`20261106115120_mealdeck_public_menu_read.sql` is generated from the reviewed launch
+`20261106170330_mealdeck_public_menu_milkcakes.sql` is generated from the reviewed launch
 catalogue. It contains source identifiers and source availability rules only.
 The generator and SHA-256 are included for review; changing the source catalogue
 does not rewrite this migration or automatically extend public access.
+
+The 6 November dessert extension adds the ten approved Biscoff/Oreo milkcake source
+keys, two per launch brand. It retains the original read function's scope,
+publication checks, output shape and permissions. The original
+`20261106115120_mealdeck_public_menu_read.sql` remains unchanged in migration history.
+The separate [dessert importer](mealdeck-milkcake-desserts.md) inserts the canonical
+products; updating the read allowlist alone never publishes or prices a product.
 
 Only exact reviewed SKU/brand matches can appear. Their item, brand and category
 must be active, their MealDeck channel rule visible, and their shared-kitchen

@@ -189,7 +189,10 @@ export function buildLaunchCatalogueData() {
           ...item,
           canonicalOptionGroupIds,
           importDescription: description,
-          prepKind: brand.id === "moktl" || section.id === "cans-drinks" ? "drink" : "prep",
+          prepKind:
+            (brand.id === "moktl" && section.id !== "desserts") || section.id === "cans-drinks"
+              ? "drink"
+              : "prep",
         };
       });
       return { ...section, items };

@@ -238,6 +238,13 @@ export const launchMenuPriceApproval = {
   description: "Owner-supplied typed Skorch, Load’d, Moktl, Tavo and Souvano menus and prices.",
   brandIds: ["skorch-burgers", "loadd", "moktl", "tavo-chicken", "souvano"] as const,
 };
+/** Additive owner instruction; the existing menu price revision remains intact. */
+export const launchMenuDessertApproval = {
+  id: "owner-desserts-20261106",
+  approvedOn: "2026-11-06",
+  description: "Biscoff and Oreo milkcakes, £3.99 each, on every menu with dessert upsells.",
+  brandIds: launchMenuPriceApproval.brandIds,
+} as const;
 export const LAUNCH_MEAL_PRICE_PENCE = 250;
 export const LAUNCH_SIDE_UPGRADE_PRICE_PENCE = {
   "loaded-fries": 299,
@@ -956,6 +963,22 @@ addIncludedMealDrinks(skorch, skorchLoaddDrinks);
 /** Five owner-priced menus; portion/flavour variants remain selectable choices. */
 export const launchMenuBrands: LaunchMenuBrand[] = [tavo, moktl, loadd, skorch, souvano];
 
+// Standalone products keep flavour, quantity and bag assignment explicit through
+// checkout, the shared kitchen ticket and receipts. They are never meal replacements.
+for (const brand of launchMenuBrands) {
+  const sourceRefs = [`${launchMenuDessertApproval.id}#${brand.id}`];
+  brand.sections.push({
+    id: "desserts",
+    title: "Desserts",
+    description: "Milkcakes · Biscoff or Oreo",
+    sourceRefs,
+    items: [
+      { id: `${brand.id}-desserts-biscoff-milkcake`, name: "Biscoff Milkcake" },
+      { id: `${brand.id}-desserts-oreo-milkcake`, name: "Oreo Milkcake" },
+    ].map((item) => ({ ...item, pricePence: 399, optionGroupIds: [], sourceRefs })),
+  });
+}
+
 export function getLaunchMenuBrand(
   id: string,
   catalogue = launchMenuBrands,
@@ -1011,6 +1034,7 @@ export function launchMenuConfiguredItemPrice(
 }
 
 export const launchMenuSourceNotes = [
+  "The owner added Biscoff and Oreo milkcakes at £3.99 each to all five menus on 6 November 2026. These are standalone desserts; the separate Sunday promotion keeps its existing activation rules.",
   "The owner’s typed menus and prices dated 5 November 2026 supersede the earlier £20 placeholders for all five launch brands.",
   "Souvano’s three approved mains each include fries, rice or naan. No extra meal charge or standalone Souvano drinks were supplied; cross-brand additions are separately priced extras.",
   "Tavo wing and tender prices depend on the exact portion and flavour together. Grilled wings use Spicy Honey BBQ; fried wings and tenders use Korean BBQ.",

@@ -27,6 +27,10 @@ import {
   type LaunchMenuEntry,
 } from "@/components/menus/launch-item-customiser";
 import type { LaunchCrossSelection } from "@/lib/launch-menu-upsells";
+import {
+  getLaunchDessertRecommendations,
+  type LaunchDessertRecommendation,
+} from "@/lib/launch-menu-desserts";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
 import {
@@ -86,6 +90,50 @@ function visibleBasketTrigger(): HTMLElement | undefined {
   );
 }
 
+function LaunchDessertUpsells({
+  recommendations,
+  onAdd,
+}: {
+  recommendations: LaunchDessertRecommendation[];
+  onAdd: (entry: LaunchDessertRecommendation) => void;
+}) {
+  if (!recommendations.length) return null;
+  return (
+    <section className="lm-dessert-upsell" aria-label="Dessert suggestions">
+      <span className="lm-eyebrow">Desserts</span>
+      <h3>Finish with a milkcake</h3>
+      <div className="lm-dessert-choices">
+        {recommendations.map((entry) => (
+          <button
+            key={entry.item.id}
+            type="button"
+            onClick={() => onAdd(entry)}
+            aria-label={
+              "Add " +
+              entry.item.name +
+              " from " +
+              entry.brand.name +
+              " for " +
+              formatLaunchMenuPrice(entry.item.pricePence)
+            }
+          >
+            <span className="lm-dessert-copy">
+              <strong>{entry.item.name}</strong>
+              <small>{entry.brand.name}</small>
+            </span>
+            <span className="lm-dessert-add">
+              <strong>{formatLaunchMenuPrice(entry.item.pricePence)}</strong>
+              <span>
+                <Plus size={16} aria-hidden="true" /> Add
+              </span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function LaunchMenuBrowser({
   requestedBrandId,
   requestedSectionId,
@@ -112,6 +160,7 @@ export function LaunchMenuBrowser({
   const [saveError, setSaveError] = useState("");
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const basketHeadingRef = useRef<HTMLHeadingElement>(null);
+  const desktopBasketHeadingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     try {
       setPicks(decodeLaunchPicks(window.localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY)));
@@ -235,6 +284,24 @@ export function LaunchMenuBrowser({
     setPicksOpen(true);
   }
 
+  function addDessert(entry: LaunchDessertRecommendation) {
+    if (!publicMenu.ready) return;
+    const current = getLaunchDessertRecommendations(picks, catalogue, brand?.id).find(
+      (candidate) => candidate.item.id === entry.item.id,
+    );
+    if (!current) return;
+    const next = addLaunchPick(picks, current.brand.id, current.item.id, {}, 1);
+    if (next === picks) return;
+    updatePicks(next);
+    setNotice({ message: current.item.name + " added to your basket." });
+    // The suggestions disappear once a dessert is present. Keep keyboard focus
+    // inside the active basket rather than on a removed Add button.
+    requestAnimationFrame(() => {
+      const heading = picksOpen ? basketHeadingRef.current : desktopBasketHeadingRef.current;
+      heading?.focus({ preventScroll: true });
+    });
+  }
+
   function chooseUpsell(upsell: LaunchMenuUpsell) {
     if (!brand) return;
     if (upsell.targetBrandId) {
@@ -267,6 +334,9 @@ export function LaunchMenuBrowser({
 
   const quantity = launchPickCount(picks);
   const basketPrice = launchMenuBasketDisplayPrice(picks, catalogue);
+  const dessertRecommendations = publicMenu.ready
+    ? getLaunchDessertRecommendations(picks, catalogue, brand?.id)
+    : [];
   const activeSection = brand?.sections.some((section) => section.id === requestedSectionId)
     ? requestedSectionId
     : undefined;
@@ -622,7 +692,11 @@ export function LaunchMenuBrowser({
               <aside className="lm-sidebar" aria-label="Your basket and meal upgrades">
                 <section className="lm-picks-panel">
                   <div className="lm-picks-title">
-                    <h2 className="lm-basket-title-brand">
+                    <h2
+                      className="lm-basket-title-brand"
+                      ref={desktopBasketHeadingRef}
+                      tabIndex={-1}
+                    >
                       <MealDeckLogo className="lm-basket-logo" decorative loading="lazy" />
                       <ShoppingBag size={20} aria-hidden="true" />
                       Your basket
@@ -630,6 +704,10 @@ export function LaunchMenuBrowser({
                     <span>{quantity}</span>
                   </div>
                   <LaunchBasket {...pickProps} />
+                  <LaunchDessertUpsells
+                    recommendations={dessertRecommendations}
+                    onAdd={addDessert}
+                  />
                   {quantity > 0 && (
                     <div className="lm-checkout-entry">
                       <Link
@@ -829,6 +907,10 @@ export function LaunchMenuBrowser({
                 </DialogDescription>
               </div>
               <LaunchBasket {...pickProps} />
+              <LaunchDessertUpsells recommendations={dessertRecommendations} onAdd={addDessert} />
+              <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                {notice?.message ?? ""}
+              </p>
               <div className="lm-dialog-bottom lm-basket-footer">
                 {quantity > 0 && (
                   <div className="lm-basket-footer-total">
