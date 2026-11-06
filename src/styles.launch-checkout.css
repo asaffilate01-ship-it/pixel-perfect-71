@@ -419,6 +419,15 @@
   color: inherit;
   font-weight: 700;
 }
+.md-checkout-action-feedback {
+  margin: 14px 0;
+  overflow-wrap: anywhere;
+  scroll-margin-block: 108px 24px;
+}
+.md-checkout-action-feedback:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
 .md-checkout-kitchen-notice {
   display: flex;
   align-items: flex-start;

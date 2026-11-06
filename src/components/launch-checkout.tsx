@@ -408,6 +408,44 @@ function PriceSummary({
   );
 }
 
+export function CheckoutActionFeedback({
+  issue,
+  paymentPending,
+}: {
+  issue: string | null;
+  paymentPending: boolean;
+}) {
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (!issue || !errorRef.current) return;
+    errorRef.current.focus({ preventScroll: true });
+    errorRef.current.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+      block: "nearest",
+    });
+  }, [issue]);
+  if (issue)
+    return (
+      <p
+        ref={errorRef}
+        className="md-checkout-notice md-checkout-error md-checkout-action-feedback"
+        role="alert"
+        tabIndex={-1}
+      >
+        {issue}
+      </p>
+    );
+  if (paymentPending)
+    return (
+      <p className="md-checkout-action-feedback md-checkout-muted" role="status">
+        Keep this page open while we connect to secure checkout.
+      </p>
+    );
+  return null;
+}
+
 export function LaunchCheckout({
   orderId,
   cancelled = false,
@@ -450,6 +488,7 @@ export function LaunchCheckout({
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [issue, setIssue] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [paymentPending, setPaymentPending] = useState(false);
   const [deliveryNotice, setDeliveryNotice] = useState(false);
   const [cutleryRequested, setCutleryRequested] = useState(false);
   const [separateBags, setSeparateBags] = useState(false);
@@ -694,6 +733,7 @@ export function LaunchCheckout({
     receiptInFlight.current = false;
     checkoutRequestId.current += 1;
     setBusy(false);
+    setPaymentPending(false);
     setReceipt(null);
     setReceiptRefreshed(false);
     setQuote(null);
@@ -963,6 +1003,7 @@ export function LaunchCheckout({
       attempt.current = { quoteId, attemptId: crypto.randomUUID() };
     const selected = attempt.current!;
     setBusy(true);
+    setPaymentPending(true);
     setIssue(null);
     try {
       const result = await checkoutRequest(checkoutMode, {
@@ -994,6 +1035,7 @@ export function LaunchCheckout({
       if (alive.current && requestId === checkoutRequestId.current) {
         setIssue(error instanceof Error ? error.message : "We couldn't open secure payment.");
         setBusy(false);
+        setPaymentPending(false);
       }
     }
   }
@@ -1232,7 +1274,7 @@ export function LaunchCheckout({
                           ) : (
                             <CreditCard size={18} />
                           )}
-                          Continue payment
+                          {paymentPending ? "Opening secure payment…" : "Continue payment"}
                         </button>
                         {!canCheckout && (
                           <p className="md-checkout-notice">
@@ -1770,11 +1812,6 @@ export function LaunchCheckout({
                   </p>
                 </section>
               )}
-              {issue && (
-                <p className="md-checkout-notice md-checkout-error" role="alert">
-                  {issue}
-                </p>
-              )}
             </div>
             <aside className="md-checkout-card md-checkout-summary">
               <h2>Your basket</h2>
@@ -1916,6 +1953,7 @@ export function LaunchCheckout({
                       Your 30% opening discount will be applied to the verified checkout total.
                     </p>
                   ) : null}
+                  <CheckoutActionFeedback issue={issue} paymentPending={paymentPending} />
                   {canCheckout &&
                     fulfilment &&
                     (quote ? (
@@ -1963,9 +2001,11 @@ export function LaunchCheckout({
                           ) : (
                             <CreditCard size={18} />
                           )}
-                          {paymentChoice === "host"
-                            ? "Confirm & pay " + formatLaunchMenuPrice(quote.totalPence)
-                            : "Confirm & open payment room"}
+                          {paymentPending
+                            ? "Opening secure payment…"
+                            : paymentChoice === "host"
+                              ? "Confirm & pay " + formatLaunchMenuPrice(quote.totalPence)
+                              : "Confirm & open payment room"}
                         </button>
                         <button
                           type="button"

@@ -39,6 +39,12 @@ Use the existing dedicated MealDeck public backend configuration and the exact b
 
 Do not substitute Dishbee credentials or infer authority from a publishable Stripe key. Conflicting legacy backend configuration fails closed.
 
+### Stripe API request compatibility
+
+Requests are pinned to `2026-10-28.endive`. Endive removed the writable `payment_method_types` parameter: ordinary and shared Checkout Session creation use `allowed_payment_method_types[0]=card`, and native Terminal PaymentIntent creation uses `allowed_payment_method_types[0]=card_present`. Retain the provider's read-only `payment_method_types` response field for payment-method verification. The provider test fixture rejects the removed request parameter, so accepting a permissive simulated response cannot hide this API incompatibility again.
+
+References: [Checkout Session parameter removal](https://docs.stripe.com/changelog/endive/2026-09-30/remove-payment-method-types-checkout-sessions), [PaymentIntent parameter removal](https://docs.stripe.com/changelog/endive/2026-09-30/removes-the-payment-method-types-parameter-from-payment-intents-and-setup-intents), and [Terminal card-present allowlist support](https://docs.stripe.com/changelog/endive/2026-09-30/card-present-and-interac-present-enum-values-for-allowed-payment-method-types).
+
 ### Restricted Stripe API keys
 
 Prefer a restricted key with the permissions needed by this integration. The same server setting accepts `rk_live_` and `sk_live_` in live mode, or `rk_test_` and `sk_test_` in test mode. Store the complete value in the hosting platform's Secrets screen. Do not change its prefix, paste a masked value, or put the credential in source code. `MEALDECK_STRIPE_WEBHOOK_SECRET` remains a separate endpoint signing secret beginning `whsec_`.

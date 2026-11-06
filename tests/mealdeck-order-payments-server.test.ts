@@ -317,6 +317,11 @@ describe("immutable shared and Terminal provider collection", () => {
     const group = baseCollection("checkout");
     const session = groupSessionParameters(group);
     expect(session.get("line_items[0][price_data][unit_amount]")).toBe("1001");
+    expect([...session].filter(([key]) => key.startsWith("allowed_payment_method_types"))).toEqual([
+      ["allowed_payment_method_types[0]", "card"],
+    ]);
+    expect([...session.keys()].some((key) => key.startsWith("payment_method_types"))).toBe(false);
+    expect(session.get("payment_method_options[card][request_three_d_secure]")).toBe("automatic");
     expect(session.get("success_url")).toBe(
       "https://mealdeck.co.uk/group-pay?room=" + group.roomId,
     );
@@ -335,7 +340,10 @@ describe("immutable shared and Terminal provider collection", () => {
     );
     const terminal = terminalIntentParameters(baseCollection());
     expect(terminal.get("capture_method")).toBe("automatic");
-    expect(terminal.get("payment_method_types[0]")).toBe("card_present");
+    expect([...terminal].filter(([key]) => key.startsWith("allowed_payment_method_types"))).toEqual(
+      [["allowed_payment_method_types[0]", "card_present"]],
+    );
+    expect([...terminal.keys()].some((key) => key.startsWith("payment_method_types"))).toBe(false);
     expect(terminal.get("amount")).toBe("1001");
     expect(() => terminalIntentParameters(group)).toThrow();
   });

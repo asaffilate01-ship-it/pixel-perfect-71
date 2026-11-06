@@ -181,7 +181,7 @@ export function stripeSessionParameters(order: PreparedStripeOrder) {
   const origin = "https://mealdeck.co.uk";
   const body = new URLSearchParams({
     mode: "payment",
-    "payment_method_types[0]": "card",
+    "allowed_payment_method_types[0]": "card",
     "payment_method_options[card][request_three_d_secure]": "automatic",
     ...(order.email ? { customer_email: order.email } : {}),
     client_reference_id: order.orderId,

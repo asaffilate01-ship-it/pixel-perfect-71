@@ -466,7 +466,10 @@ describe("Stripe server boundaries", () => {
   test("Hosted Checkout uses canonical total, fixed return URLs, card wallets and automatic 3DS without pickup address fields", () => {
     const params = stripeSessionParameters(prepared);
     expect(params.get("line_items[0][price_data][unit_amount]")).toBe("279");
-    expect(params.get("payment_method_types[0]")).toBe("card");
+    expect([...params].filter(([key]) => key.startsWith("allowed_payment_method_types"))).toEqual([
+      ["allowed_payment_method_types[0]", "card"],
+    ]);
+    expect([...params.keys()].some((key) => key.startsWith("payment_method_types"))).toBe(false);
     expect(params.get("payment_method_options[card][request_three_d_secure]")).toBe("automatic");
     expect(params.get("success_url")).toBe("https://mealdeck.co.uk/checkout?order=" + orderId);
     expect(
