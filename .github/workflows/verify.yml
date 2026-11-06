@@ -52,6 +52,8 @@ jobs:
           tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts
           tests/mealdeck-checkout-browser.test.ts
           tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts
+          tests/mealdeck-printer-auth.test.ts
+          tests/mealdeck-kds-toolbar.test.ts
           tests/mealdeck-staff-alerts.test.ts
       - name: Receipt bridge one-copy delivery, pairing and canonical order verification
         run: node --test tools/receipt-bridge/test/*.test.mjs
@@ -61,6 +63,7 @@ jobs:
           src/components/ops/printer-workspace.tsx src/components/ops/receipt-preview.tsx
           src/components/ops/staff-alerts.tsx src/lib/mealdeck-printer.ts
           src/lib/mealdeck-printer-browser.ts src/lib/mealdeck-printer-recovery.ts
+          src/lib/mealdeck-printer-auth.ts tests/mealdeck-printer-auth.test.ts
           src/lib/mealdeck-staff-alerts.ts tests/mealdeck-printer.test.ts
           tests/mealdeck-staff-alerts.test.ts
           --rule 'prettier/prettier: off'
@@ -171,6 +174,7 @@ jobs:
           tests/mealdeck-kds*.test.ts
           src/components/ops/ops-panels.tsx src/components/ops/menu-manager.tsx
           src/lib/mealdeck-menu-manager.ts src/lib/mealdeck-kds-view.ts
+          src/lib/mealdeck-kds-preferences.ts tests/mealdeck-kds-toolbar.test.ts
           tests/mealdeck-menu-manager.test.ts
           src/components/ops/menu-kitchen-route.tsx
           src/components/ops/menu-categories-panel.tsx

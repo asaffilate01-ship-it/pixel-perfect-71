@@ -1062,9 +1062,10 @@ export function CustomerAccount({
                   <>
                     <span className="md-account-soon">Points balance coming soon</span>
                     <p>
-                      Register and spend £15 or more by and including Friday 13 November 2026 for
-                      double loyalty points. <a href="/offers#double-points">See offer details</a>.
-                      Your points balance will appear here when loyalty is available.
+                      Register and spend £15 or more from Monday 9 to Friday 13 November 2026
+                      inclusive for double loyalty points.{" "}
+                      <a href="/offers#double-points">See offer details</a>. Your points balance
+                      will appear here when loyalty is available.
                     </p>
                   </>
                 )}

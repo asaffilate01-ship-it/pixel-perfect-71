@@ -18,7 +18,7 @@ export const posts: Post[] = [
     slug: "cash-in-your-chips-loyalty-points",
     title: "Double Loyalty Points: Your November MealDeck Offer",
     excerpt:
-      "Register and spend £15 or more by and including Friday 13 November 2026 for double loyalty points. Marketing choices stay optional.",
+      "Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive for double loyalty points. Marketing choices stay optional.",
     image: "/blog/loyalty-points.jpg",
     date: "2026-11-05",
     rank: "10",
@@ -27,7 +27,7 @@ export const posts: Post[] = [
     keywords: "MealDeck double loyalty points, Luton offers November 2026, MealDeck member offers",
     body: [
       {
-        p: "The November member offer is double loyalty points when you register and spend £15 or more by and including Friday 13 November 2026.",
+        p: "The November member offer is double loyalty points when you register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive.",
       },
       {
         h: "Use your member account",
@@ -98,7 +98,7 @@ export const posts: Post[] = [
       },
       {
         h: "Check the current offers",
-        p: "The November offers are 30% off the entire menu on 6–8 November, milk cake for 99p with every order on Sunday 8 November, and double loyalty points when you register and spend £15 or more by and including Friday 13 November. See the Offers page for details. Guest orders earn no points.",
+        p: "The November offers are 30% off the entire menu on 6–8 November, milk cake for 99p with every order on Sunday 8 November, and double loyalty points when you register and spend £15 or more from Monday 9 to Friday 13 November inclusive. See the Offers page for details. Guest orders earn no points.",
       },
       {
         h: "Keep each person’s food together",
@@ -132,7 +132,7 @@ export const posts: Post[] = [
       },
       {
         h: "Explore the November offers",
-        p: "See the Offers page for 30% off the entire menu on 6–8 November, Sunday's 99p milk cake, and the registered-member double-points offer ending Friday 13 November 2026.",
+        p: "See the Offers page for 30% off the entire menu on 6–8 November, Sunday's 99p milk cake, and the registered-member double-points offer from Monday 9 to Friday 13 November 2026 inclusive.",
       },
     ],
   },
@@ -187,7 +187,7 @@ export const posts: Post[] = [
       },
       {
         h: "Three November offers",
-        p: "30% off the entire menu from 6–8 November; milk cake for 99p with every order on Sunday 8 November; register and spend £15 or more by and including Friday 13 November for double loyalty points. Marketing opt-ins are optional. See the Offers page for details.",
+        p: "30% off the entire menu from 6–8 November; milk cake for 99p with every order on Sunday 8 November; register and spend £15 or more from Monday 9 to Friday 13 November inclusive for double loyalty points. Marketing opt-ins are optional. See the Offers page for details.",
       },
       {
         h: "Review and follow your order",

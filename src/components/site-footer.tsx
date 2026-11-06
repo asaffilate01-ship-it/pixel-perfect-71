@@ -67,8 +67,8 @@ export function SiteFooter() {
           <strong>Luton launches first.</strong> Order as a guest during our opening hours on 6–8
           November, with no loyalty points on guest orders. See our{" "}
           <Link to="/offers">three November offers</Link>, including double points when you register
-          and spend £15 or more by Friday 13 November. Offer emails and app alerts are optional,
-          separate choices.
+          and spend £15 or more from Monday 9 to Friday 13 November inclusive. Offer emails and app
+          alerts are optional, separate choices.
         </p>
         <div className="md-footer-apps-row" aria-label="Ordering channels and social links">
           <div className="md-footer-social" aria-label="Social links">

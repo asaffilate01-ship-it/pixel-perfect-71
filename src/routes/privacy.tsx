@@ -86,8 +86,8 @@ function PrivacyPage() {
             required to receive an eligible discount.
           </p>
           <p>
-            The double-points offer requires registration and a spend of £15 or more by and
-            including Friday 13 November 2026. When loyalty is available, your account may hold a
+            The double-points offer requires registration and a spend of £15 or more from Monday 9
+            to Friday 13 November 2026 inclusive. When loyalty is available, your account may hold a
             points balance and a record of qualifying purchases and adjustments. Earning and
             redemption details will be shown before points are credited. Promotional updates about
             rewards remain optional.

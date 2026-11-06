@@ -93,9 +93,9 @@ function OpeningOfferPage() {
             are optional and can be switched off in <Link to="/account">your account</Link>.
           </p>
           <p>
-            Register and spend £15 or more by and including Friday 13 November 2026 for double
-            loyalty points. Guest orders earn no loyalty points. Choosing not to receive marketing
-            does not affect an eligible opening discount or member offer.
+            Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive for
+            double loyalty points. Guest orders earn no loyalty points. Choosing not to receive
+            marketing does not affect an eligible opening discount or member offer.
           </p>
           <h2>More on the table</h2>
           <p>
