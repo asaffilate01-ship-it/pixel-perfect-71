@@ -459,7 +459,7 @@ describe("ticket alignment retains every kitchen instruction", () => {
       "Dark blue",
       "Volkswagen",
       "12AB",
-      "2× each · +£1.50",
+      "2× each · included in item price",
     ]) {
       expect(html).toContain(text);
     }
@@ -536,8 +536,116 @@ describe("ticket alignment retains every kitchen instruction", () => {
     );
     expect(done).toContain("Korean BBQ · 3 pcs");
     expect(done).toContain("Fiery Sweet Chilli · 3 pcs");
+    expect(done.match(/£3\.50 each/g)).toHaveLength(2);
     expect(done).not.toContain("£0.51");
     expect(done).not.toMatch(/<(button|input|form)\b/);
+  });
+
+  test("legacy choices without kind keep food and extra quantities without showing internal price adjustments", () => {
+    const candidate = order({
+      preparation_status: "preparing",
+      accepted_at: "2026-11-06T18:50:00Z",
+      items: [
+        item({
+          checkout_line_id: "wings",
+          item_name: "Fried Chicken Wings",
+          quantity: 2,
+          base_unit_pence: 299,
+          unit_pence: 350,
+          modifiers: ["3 pcs", "Korean BBQ", "Korean BBQ · 3 pcs"],
+          modifier_details: [
+            { name: "3 pcs", group_name: "Portion", price_delta_pence: 0, quantity_per_parent: 1 },
+            {
+              name: "Korean BBQ",
+              group_name: "Flavour",
+              price_delta_pence: 0,
+              quantity_per_parent: 1,
+            },
+            {
+              name: "Korean BBQ · 3 pcs",
+              group_name: "Renamed choice",
+              price_delta_pence: 51,
+              quantity_per_parent: 1,
+            },
+          ],
+          bags: [{ number: 1, name: "Amer", quantity: 2 }],
+          status: "preparing",
+        }),
+        item({
+          order_item_id: "dip",
+          checkout_line_id: "dip",
+          parent_checkout_line_id: "wings",
+          item_name: "Garlic dip",
+          quantity: 2,
+          unit_pence: 50,
+          modifiers: ["Extra pot"],
+          modifier_details: [
+            {
+              name: "Extra pot",
+              group_name: "Extras",
+              kind: "source",
+              price_delta_pence: 50,
+              quantity_per_parent: 2,
+            },
+          ],
+          status: "preparing",
+        }),
+      ],
+    });
+    const before = JSON.stringify(candidate);
+    for (const html of [
+      ticketMarkup(candidate),
+      renderToStaticMarkup(
+        createElement(KdsCompletedCard, { order: completed({ items: candidate.items }) }),
+      ),
+    ]) {
+      for (const text of [
+        "£3.50 each",
+        "£7.00 line total",
+        "Korean BBQ · 3 pcs",
+        "Garlic dip",
+        "£0.50 each",
+        "£1.00 line total",
+        "Extra pot",
+        "Amer · Bag 1",
+      ])
+        expect(html).toContain(text);
+      expect(html).not.toContain("£0.51");
+      expect(html).not.toContain("£2.99");
+      expect(html).not.toContain("+£0.50");
+    }
+    const active = ticketMarkup(candidate);
+    expect(active).toContain("2× each · included in item price");
+    expect(active.match(/type="checkbox"/g)).toHaveLength(2);
+    expect(JSON.stringify(candidate)).toBe(before);
+  });
+
+  test("missing canonical unit prices are omitted rather than reconstructed from base or choices", () => {
+    const candidate = order({
+      items: [
+        item({
+          base_unit_pence: 299,
+          modifiers: ["Korean BBQ · 3 pcs"],
+          modifier_details: [
+            {
+              name: "Korean BBQ · 3 pcs",
+              group_name: "Portion",
+              price_delta_pence: 51,
+              quantity_per_parent: 1,
+            },
+          ],
+        }),
+      ],
+    });
+    for (const html of [
+      ticketMarkup(candidate),
+      renderToStaticMarkup(
+        createElement(KdsCompletedCard, { order: completed({ items: candidate.items }) }),
+      ),
+    ]) {
+      expect(html).toContain("Korean BBQ · 3 pcs");
+      expect(html).not.toContain("£");
+    }
   });
 
   test("the responsive sealing action keeps its explicit confirmation and locked checklist", () => {

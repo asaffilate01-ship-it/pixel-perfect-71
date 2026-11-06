@@ -6,17 +6,18 @@ Build a small signed Android companion alongside the existing MealDeck Printer P
 
 The existing Node bridge is already implemented for a configured POSIX host and TCP ESC/POS printer. Its receipt validation, local journal and recovery rules are reusable specifications. It is not an Android service or a Senraise driver. The existing `apps/mealdeck-terminal` app is a payment companion; its payment/NFC permissions and API are not required for printing.
 
-## First obtain the device contract
+## Confirmed device and remaining service contract
 
-The immediate next step is to obtain these screens from the actual terminal:
+The owner's screenshots supplied on 6 November 2026 directly confirm **Senraise H10S**, **Android 13**, system build **`H10S-OS02-13.1.95`**, printer firmware **`307`** and **Hardware Settings app version `8.3.6`**. These are observed device fields, not an inference from the serial prefix. No serial, IMEI, IP address or MAC address is retained. Hardware Settings version `8.3.6` does not identify the printer-service package, its API version or an SDK compatibility guarantee.
 
-1. **Settings → About device:** model, Android version and firmware/build version. Omit serial numbers, IMEI and other unique identifiers.
-2. **Settings → Apps**, including system apps if necessary: the printer service's exact app name and version. Also show **Settings → Printing** and any enabled print service.
-3. The name of the app/browser and print settings that produced the earlier working Cafe1 receipt on this same device.
+The remaining device evidence is:
 
-Then obtain the matching official Senraise SDK or service documentation, including the permitted distribution terms, service/component/action names, required permissions, supported firmware, paper width, text/raster methods and completion/error callbacks. [Senraise's official download page](https://www.senraise.com/download.html) still showed email verification when checked on 6 November 2026. No download gate was bypassed and no email was sent. The owner can supply the official download or SDK archive through that process.
+1. **Settings → Apps**, including system apps if necessary: the printer service's exact app/package name and version. Also show **Settings → Printing** and any enabled print service.
+2. The name of the app/browser and print settings that produced the earlier working Cafe1 receipt on this same device.
 
-Do not infer a model from a serial prefix, assume Sunmi/iMin compatibility, guess an Android package or bind to an undocumented service. Cafe1's inspected source only probes already-injected printer objects or falls back to its Node bridge/browser printing; it does not provide a verified Senraise SDK. The exact source references and investigation are in [the Senraise integration record](./mealdeck-senraise-printer-status.md).
+Then obtain the official Senraise SDK or service documentation compatible with this H10S build and printer firmware, including the permitted distribution terms, service/component/action names, required permissions, supported firmware, paper width, text/raster methods and completion/error callbacks. [Senraise's official download page](https://www.senraise.com/download.html) still showed email verification when rechecked on 6 November 2026. No matching downloadable artifact with verified manufacturer provenance was established from the public pages checked. No download gate was bypassed and no email was sent. The owner can supply the official download or SDK archive through that process.
+
+Do not assume Sunmi/iMin compatibility from the confirmed model, guess an Android package or bind to an undocumented service. Cafe1's inspected source only probes already-injected printer objects or falls back to its Node bridge/browser printing; it does not provide a verified Senraise SDK. The exact source references and investigation are in [the Senraise integration record](./mealdeck-senraise-printer-status.md).
 
 ## Smallest supported implementation
 
@@ -63,13 +64,13 @@ Keep paper inspection separate. If a new numbered copy is required, use the exis
 
 ## Android lifecycle and sound
 
-Start automatic service explicitly while the companion is visible and show a persistent operating/paused status. Select the correct foreground-service type only after the hardware and target Android version are known. Android documents [background-start restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start), [timeouts for certain foreground-service types](https://developer.android.com/develop/background-work/services/fgs/timeout), and [Doze/App Standby limits on network, jobs and alarms](https://developer.android.com/training/monitoring-device-state/doze-standby). These official sources were checked on 6 November 2026.
+Start automatic service explicitly while the companion is visible and show a persistent operating/paused status. Select the correct foreground-service type using the verified service contract and the companion's target Android version, and test it on this Android 13 build. Android documents [background-start restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start), [timeouts for certain foreground-service types](https://developer.android.com/develop/background-work/services/fgs/timeout), and [Doze/App Standby limits on network, jobs and alarms](https://developer.android.com/training/monitoring-device-state/doze-standby). These official sources were checked on 6 November 2026.
 
 Do not assume a polling timer, WorkManager task or scheduled alarm guarantees immediate background printing. Use native notifications/status and any permitted native alert sound for the companion; preserve the user's sound preferences and operating-system controls. Test the actual terminal while the PWA is in front, the screen is off, the network is lost, the printer service restarts and the device reboots. A build result cannot establish all-day background operation or audible alerts on this firmware.
 
 ## Build, install and acceptance
 
-Once the official SDK and device details are available:
+Once the matching official SDK and service contract are available:
 
 1. Add the smallest adapter and local journal with fixture tests for validation, duplicate jobs, mismatched fingerprints, claim expiry, concurrent consumers, callback timeout and crash recovery. Compile in native CI with locked dependencies.
 2. Produce a signed internal test APK with a recorded checksum and controlled signing key. Do not place signing secrets or SDK credentials in the repository. Install it on the actual Senraise device through the approved internal distribution method.

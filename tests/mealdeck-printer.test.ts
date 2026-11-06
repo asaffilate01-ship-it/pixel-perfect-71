@@ -126,10 +126,94 @@ describe("canonical receipt presentation", () => {
     expect(html).toContain("replaces standard drink");
     expect(html).toContain("CASH PAID");
     expect(html).toContain("extra with item above");
+    expect(html).toContain("Burger add-ons: 1× 3 Onion rings per item");
+    expect(html).toContain("£5.98 each");
+    expect(html).toContain("£11.96");
+    expect(html).toContain("£4.50 each");
+    expect(html).toContain("£9.00");
+    expect(html).not.toContain("£1.99");
     expect(html).toContain("£14.67");
     expect(renderToStaticMarkup(createElement(ReceiptPreview, { receipt: legacy }))).not.toContain(
       "Meal includes",
     );
+  });
+
+  test("legacy portion and meal adjustments retain all choices with full inclusive prices", () => {
+    const value = receipt();
+    const original = value.items[0]!;
+    const wings = (lineId: string, choice: string) => ({
+      ...original,
+      lineId,
+      brandName: "Tavo",
+      name: "Fried Chicken Wings",
+      quantity: 1,
+      baseUnitPence: 299,
+      unitPence: 350,
+      linePence: 350,
+      modifiers: [
+        {
+          name: choice,
+          groupName: "Portion & flavour",
+          quantityPerParent: 1,
+          priceDeltaPence: 51,
+        },
+      ],
+    });
+    value.items = [
+      wings("wings-korean", "Korean BBQ · 3 pcs"),
+      wings("wings-chilli", "Fiery Sweet Chilli · 3 pcs"),
+      {
+        ...original,
+        lineId: "burger-meal",
+        quantity: 1,
+        baseUnitPence: 399,
+        unitPence: 649,
+        linePence: 649,
+        modifiers: [
+          {
+            name: "Make it a meal",
+            groupName: "Meal",
+            quantityPerParent: 1,
+            priceDeltaPence: 250,
+          },
+          {
+            name: "Rubicon Mango",
+            groupName: "Included meal drink",
+            quantityPerParent: 1,
+            priceDeltaPence: 0,
+          },
+        ],
+      },
+    ];
+    value.packingPlan.separateBags = false;
+    value.packingPlan.bags = [
+      { number: 1, allocations: value.items.map((item) => ({ lineId: item.lineId, quantity: 1 })) },
+    ];
+    value.subtotalPence = 1349;
+    value.discountPence = 405;
+    value.totalPence = 944;
+    const canonical = JSON.stringify(validateReceipt(value));
+    const parsed = receiptSchema.parse(value);
+    const html = renderToStaticMarkup(createElement(ReceiptPreview, { receipt: parsed }));
+    for (const label of [
+      "Korean BBQ · 3 pcs",
+      "Fiery Sweet Chilli · 3 pcs",
+      "Make it a meal",
+      "Rubicon Mango",
+      "Choices included in item price",
+      "£3.50 each",
+      "£6.49 each",
+      "£13.49",
+      "£4.05",
+      "£9.44",
+    ])
+      expect(html).toContain(label);
+    for (const internalAmount of ["£0.51", "£2.99", "£2.50", "£3.99"])
+      expect(html).not.toContain(internalAmount);
+    expect(JSON.stringify(validateReceipt(value))).toBe(canonical);
+    expect(JSON.stringify(validateReceipt(parsed))).toBe(canonical);
+    expect(parsed.items[0]!.modifiers[0]!.priceDeltaPence).toBe(51);
+    expect(parsed.items[2]!.modifiers[0]!.priceDeltaPence).toBe(250);
   });
 
   test("meal metadata rejects duplicate slots, prices and unsafe or missing contents", () => {

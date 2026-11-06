@@ -2,6 +2,14 @@
 
 This is a web staff workflow for a new pickup order. It works in the Operations workspace on a desktop or staff phone/PWA without Stripe Terminal, NFC, or a native application. The staff member must already hold `payments.collect` for the selected kitchen. Printer-only access does not grant that permission.
 
+## Installed and published release — 6 November 2026
+
+[PR111](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/111) merged normally as `f2b33c8ffc6baddd3b5cb7f0b2c7acd57d5fb5cf`. The cash and subsequent meal-components migrations were installed in the selected independent MealDeck database. Owner readback matched the reviewed function hashes, grants, private RLS and guard triggers, with no inconsistent cash records. All 13 pre-existing receipt snapshots were preserved, including the six previously archived originals.
+
+The release owner verified deployment `06acab03-642a-4a97-b28d-9fff86cd1aa1` on canonical public pages at **20:54:40 UK**. At **20:57:08 UK**, `/ops` served the expected cash-order controls and `/api/ops/cash` reference in `operations-workspace-B_6SIE9a.js`. An anonymous, correctly shaped cash status request returned **401 `sign_in_required`** with **`Cache-Control: no-store, private`**. All cash ledger tables were empty after installation; verification did not create a synthetic cash payment.
+
+Public checkout remained available, guests remained eligible, and the kitchen remained Online with a 30-minute estimate. The exact PR head `435589406ca6b6cc21e62770c4574349a9b33105` passed all **27 jobs** in [Verify run 42291286117](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42291286117): 25 web/PostgreSQL jobs plus Android and iPhone compilation. The three dedicated private-access, KDS and WhatsApp guest workflows also passed. The [native cash job](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42291286117/job/128145062099) passed all **18 groups**, including the five real multi-session races. Publication and compilation do not establish an observed staff cash collection or automatic physical printing.
+
 ## Staff flow
 
 Choose the current menu items and modifiers, enter the customer's real name and phone number, and optionally add special requests. Review the kitchen's current total before confirming **Cash received**. The server freezes the contact details and notes with that quote and rechecks prices, stock, packing, opening hours and kitchen availability before saving the order.
@@ -62,6 +70,6 @@ MEALDECK_KDS_TEST_DATABASE_URL='<explicit empty localhost test database>' \
 
 The test harness refuses a non-local, nonempty or incorrectly named native database. These checks do not create a production cash payment or commission a physical printer.
 
-Frozen source verification on 6 November: 13 PostgreSQL/PGlite behavior groups, 17 cash API/recovery tests with 136 assertions, full TypeScript and scoped lint passed. Five additional real multi-session groups are registered for the native PostgreSQL 17 release gate. The cash SQL SHA256 is `4576864ef1004b06dc5dcb319758bcc329637e068185291fae8579b347c395c9`.
+Frozen source verification on 6 November: 13 PostgreSQL/PGlite behavior groups, 17 cash API/recovery tests with 136 assertions, full TypeScript and scoped lint passed. The native PostgreSQL 17 release gate subsequently passed all 18 groups, including duplicate confirmation, commit/rollback recovery, both confirmation/closure orderings and concurrent permission denial. The installed cash SQL SHA256 is `4576864ef1004b06dc5dcb319758bcc329637e068185291fae8579b347c395c9`.
 
 After each installation step, run `deploy/mealdeck/operations/20261106_verify_cash_and_meal.sql` through an authorized database-owner connection. The query returns only metadata and aggregate counts. It checks exact function definitions and grants, private RLS tables, immutable guards, the paid numbering trigger, receipt composition and inconsistent cash records. The exact query was exercised against disposable databases after cash and after cash plus meal components. It does not create a cash transaction or mark a receipt printed. Production rollout is recorded separately in the deployment status.

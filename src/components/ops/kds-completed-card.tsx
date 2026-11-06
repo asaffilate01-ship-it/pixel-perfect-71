@@ -113,6 +113,18 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
                 <span className="md-ops-ticket-quantity md-kds-quantity">{item.quantity}×</span>
                 <p>{item.item_name}</p>
               </div>
+              {item.unit_pence != null && (
+                <p className="md-kds-line-price">
+                  <strong>£{(item.unit_pence / 100).toFixed(2)} each</strong>
+                  <span> · selected choices included</span>
+                  {item.quantity > 1 && (
+                    <span>
+                      {" "}
+                      · £{((item.quantity * item.unit_pence) / 100).toFixed(2)} line total
+                    </span>
+                  )}
+                </p>
+              )}
               <KdsMealComponents components={item.mealComponents ?? []} quantity={item.quantity} />
               {!!item.bags?.length && (
                 <ul className="md-kds-bag-labels" aria-label={`Packing for ${item.item_name}`}>

@@ -1,13 +1,149 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { createElement } from "react";
+import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import {
   CheckoutActionFeedback,
   CheckoutSpecialRequests,
   CheckoutSpecialRequestsReview,
+  DetailedOrderLines,
 } from "../src/components/launch-checkout";
+
+describe("canonical checkout item prices", () => {
+  test("review and customer receipt show inclusive prices, complete bag quantities and separately priced extras", () => {
+    const props: ComponentProps<typeof DetailedOrderLines> = {
+      lines: [
+        {
+          lineId: "wings",
+          parentLineId: null,
+          name: "Fried Chicken Wings",
+          quantity: 3,
+          base_unit_pence: 299,
+          unit_pence: 350,
+          line_pence: 1050,
+          attachment: null,
+          modifiers: [
+            {
+              group_name: "Portion & flavour",
+              name: "Korean BBQ · 3 pcs",
+              price_delta_pence: 51,
+              kind: "variant",
+              target_brand_name: null,
+              target_description: null,
+            },
+            {
+              group_name: "Sauces",
+              name: "Selected sauce",
+              quantity_per_parent: 2,
+              price_delta_pence: 0,
+              kind: "source",
+              target_brand_name: null,
+              target_description: null,
+            },
+          ],
+        },
+        {
+          lineId: "burger",
+          parentLineId: null,
+          name: "The Ace",
+          quantity: 1,
+          base_unit_pence: 399,
+          unit_pence: 649,
+          line_pence: 649,
+          attachment: null,
+          modifiers: [
+            {
+              group_name: "Meal",
+              name: "Make it a meal",
+              quantity_per_parent: 1,
+              price_delta_pence: 250,
+              kind: "source",
+              target_brand_name: null,
+              target_description: null,
+            },
+          ],
+        },
+        {
+          lineId: "wings-extra-drink",
+          parentLineId: "wings",
+          name: "Mango Mirage",
+          quantity: 3,
+          base_unit_pence: 450,
+          unit_pence: 450,
+          line_pence: 1350,
+          attachment: "drink",
+          modifiers: [
+            {
+              group_name: "Selected drink",
+              name: "Mango Mirage",
+              quantity_per_parent: 1,
+              price_delta_pence: 0,
+              kind: "source",
+              target_brand_name: "Moktl",
+              target_description: "Mango <fruit> & lime",
+            },
+          ],
+        },
+      ],
+      packingPlan: {
+        version: 1,
+        separateBags: true,
+        cutleryRequested: false,
+        bags: [
+          {
+            number: 1,
+            name: "Amer",
+            allocations: [
+              { lineId: "wings", quantity: 2 },
+              { lineId: "burger", quantity: 1 },
+              { lineId: "wings-extra-drink", quantity: 2 },
+            ],
+          },
+          {
+            number: 2,
+            name: "Jay",
+            allocations: [
+              { lineId: "wings", quantity: 1 },
+              { lineId: "wings-extra-drink", quantity: 1 },
+            ],
+          },
+        ],
+      },
+    };
+    const before = JSON.stringify(props);
+    const html = renderToStaticMarkup(createElement(DetailedOrderLines, props));
+    const bags = html.split('class="md-checkout-bag"').slice(1);
+    expect(bags).toHaveLength(2);
+    const first = bags[0]!;
+    const second = bags[1]!;
+    expect(first).toContain('aria-label="Amer · Bag 1"');
+    expect(second).toContain('aria-label="Jay · Bag 2"');
+    expect(html).toContain("Separate numbered bags");
+    expect(html).toContain("No cutlery requested");
+    expect(html).toContain("Each, including choices");
+    expect(first).toContain("2 × Fried Chicken Wings</strong><span>£7.00");
+    expect(second).toContain("1 × Fried Chicken Wings</strong><span>£3.50");
+    expect(first).toContain("1 × The Ace</strong><span>£6.49");
+    expect(first).toContain("2 × Mango Mirage</strong><span>£9.00");
+    expect(second).toContain("1 × Mango Mirage</strong><span>£4.50");
+    expect(first).toContain("2 × Korean BBQ · 3 pcs");
+    expect(second).toContain("1 × Korean BBQ · 3 pcs");
+    expect(first).toContain("4 × Selected sauce");
+    expect(second).toContain("2 × Selected sauce");
+    expect(first).toContain("1 × Make it a meal");
+    for (const bag of bags) {
+      expect(bag).toContain("Extra with Fried Chicken Wings");
+      expect(bag).toContain("£3.50</dd>");
+      expect(bag).toContain("£4.50</dd>");
+      expect(bag).toContain("Moktl · Mango Mirage");
+      expect(bag).toContain("Mango &lt;fruit&gt; &amp; lime");
+    }
+    for (const internalAmount of ["£0.51", "£1.02", "£2.99", "£5.98", "£2.50", "£3.99"])
+      expect(html).not.toContain(internalAmount);
+    expect(JSON.stringify(props)).toBe(before);
+  });
+});
 
 describe("checkout action feedback", () => {
   test("a rejected payment has one focusable alert with the actual escaped error", () => {

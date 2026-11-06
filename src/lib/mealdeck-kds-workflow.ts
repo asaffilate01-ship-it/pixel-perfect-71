@@ -13,6 +13,7 @@ const completedItem = z.object({
   item_name: z.string().min(1).max(1000),
   brand_name: z.string().max(1000),
   quantity: z.number().int().positive().max(100000),
+  unit_pence: z.number().int().nonnegative().nullable().optional(),
   modifiers: z.array(z.string().max(1000)).max(100),
   mealComponents: mealComponentsSchema.optional(),
   notes: z.string().max(20000).nullable(),
