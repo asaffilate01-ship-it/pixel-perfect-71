@@ -1,0 +1,411 @@
+diff --git a/.github/workflows/whatsapp-guest.yml b/.github/workflows/whatsapp-guest.yml
+new file mode 100644
+index 0000000..c59201e
+--- /dev/null
++++ b/.github/workflows/whatsapp-guest.yml
+@@ -0,0 +1,37 @@
++name: Verify WhatsApp guest checkout
++on:
++  pull_request:
++  push:
++    branches: [main, feature/mealdeck-whatsapp-guest-weekend-20261106]
++permissions:
++  contents: read
++jobs:
++  contact-only-checkout:
++    runs-on: ubuntu-latest
++    timeout-minutes: 10
++    services:
++      postgres:
++        image: postgres:17
++        env:
++          POSTGRES_USER: postgres
++          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
++          POSTGRES_DB: mealdeck_kds_test_contact_only
++        ports: ['5432:5432']
++        options: >-
++          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_contact_only"
++          --health-interval 5s --health-timeout 5s --health-retries 10
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: '22'
++      - uses: oven-sh/setup-bun@v2
++      - run: bun install --frozen-lockfile
++      - run: npm ci --prefix tests/postgres
++      - run: bun test tests/mealdeck-whatsapp-guest.test.ts tests/mealdeck-guest-checkout.test.ts tests/mealdeck-customer.test.ts
++      - name: PostgreSQL contact-only orders, scoped receipts and Monday registration
++        env:
++          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_contact_only
++        run: node tests/postgres/whatsapp-guest-behavior.mjs --native
++      - name: Customer entry implementation lint
++        run: bunx eslint src/lib/mealdeck-customer-entry.ts src/components/use-customer-entry-policy.ts tests/mealdeck-whatsapp-guest.test.ts
+diff --git a/deploy/mealdeck/whatsapp-guest.mjs b/deploy/mealdeck/whatsapp-guest.mjs
+new file mode 100644
+index 0000000..b143d35
+--- /dev/null
++++ b/deploy/mealdeck/whatsapp-guest.mjs
+@@ -0,0 +1,4 @@
++import { readFileSync } from "node:fs";
++export function buildWhatsappGuestSql() {
++  return readFileSync(new URL("./whatsapp-guest.sql", import.meta.url), "utf8");
++}
+diff --git a/deploy/mealdeck/whatsapp-guest.sql b/deploy/mealdeck/whatsapp-guest.sql
+new file mode 100644
+index 0000000..6096506
+--- /dev/null
++++ b/deploy/mealdeck/whatsapp-guest.sql
+@@ -0,0 +1,115 @@
++-- Additive opening-weekend contact-only checkout. Preserve historical contacts,
++-- all payment gates, staff authentication, opening hours and receipt capabilities.
++begin;
++set local lock_timeout='5s';
++do $guard$ begin
++  if to_regnamespace('dishbee_private') is not null
++    or to_regclass('mealdeck_private.installation') is null then
++    raise exception 'mealdeck_guest_independent_profile_required'; end if;
++  if not exists(select 1 from mealdeck_private.installation where singleton and profile='mealdeck-independent-v1')
++    or to_regclass('mealdeck_private.guest_sessions') is null then
++    raise exception 'mealdeck_guest_previous_extensions_required'; end if;
++  if coalesce((select md5(prosrc) from pg_proc where oid=to_regprocedure('public.mealdeck_begin_guest_session(uuid,uuid,text,text,text,text)')),'')
++    not in ('c2c39b85995dc319432a17b6846cba58','7dc521c64ec93ab8b32bdb6f1e05213e') then
++    raise exception 'mealdeck_guest_unexpected_definition'; end if;
++  if coalesce((select md5(prosrc) from pg_proc where oid=to_regprocedure('public.mealdeck_customer_register(text,text,boolean,boolean,boolean,text,text)')),'')
++    not in ('7a8569c26d368070b9ef8ee08504e244','b266bab37cd4260efe1c7f2ffe9d7090') then
++    raise exception 'mealdeck_guest_unexpected_registration_definition'; end if;
++end $guard$;
++
++-- NULL is a genuinely absent email, never a made-up email or account identity.
++-- The existing email CHECK still validates every non-null historical/new value.
++alter table mealdeck_private.guest_sessions alter column email drop not null;
++
++create or replace function mealdeck_private.email_registration_available_at(p_at timestamptz)
++returns boolean language sql immutable security invoker set search_path='' as $$
++  select p_at is not null and (p_at<timestamptz '2026-11-06 00:00:00 Europe/London'
++    or p_at>=timestamptz '2026-11-09 00:00:00 Europe/London')
++$$;
++revoke all on function mealdeck_private.email_registration_available_at(timestamptz)
++  from public,anon,authenticated,service_role;
++
++create or replace function public.mealdeck_begin_guest_session(
++  p_tenant uuid,p_location uuid,p_token_hash text,p_name text,p_email text,p_phone text
++) returns jsonb language plpgsql security definer set search_path='' as $$
++declare g mealdeck_private.guest_sessions%rowtype;v_name text;v_email text;
++begin
++  if public.mealdeck_online_checkout_status(p_tenant,p_location)->'guestCheckoutEligible' is distinct from 'true'::jsonb then
++    raise exception 'mealdeck_checkout_guest_unavailable';
++  end if;
++  v_name:=regexp_replace(btrim(p_name),'[[:space:]]+',' ','g');v_email:=nullif(lower(btrim(p_email)),'');
++  if p_token_hash is null or p_token_hash !~ '^[a-f0-9]{64}$'
++    or p_name is null or p_name ~ '[[:cntrl:]]' or length(v_name) not between 1 and 120
++    or (v_email is not null and (length(v_email) not between 3 and 254
++      or v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'))
++    or p_phone is null or p_phone !~ '^\+[1-9][0-9]{7,14}$' then
++    raise exception 'mealdeck_checkout_guest_details_invalid';
++  end if;
++  -- Serialize creation per kitchen so unique contacts cannot evade the global
++  -- bound. Repeat requests for the same secret/contact are idempotent.
++  perform pg_advisory_xact_lock(hashtextextended('mealdeck-guest-create:'||p_tenant::text||':'||p_location::text,0));
++  select * into g from mealdeck_private.guest_sessions where token_hash=p_token_hash;
++  if found then
++    if g.tenant_id<>p_tenant or g.location_id<>p_location or g.name<>v_name or g.email is distinct from v_email or g.phone<>p_phone
++      or g.revoked_at is not null or g.expires_at<=now() then
++      raise exception 'mealdeck_checkout_guest_session_invalid';
++    end if;
++    return mealdeck_private.guest_session_card(g);
++  end if;
++  if (select count(*) from mealdeck_private.guest_sessions where tenant_id=p_tenant and location_id=p_location
++      and created_at>now()-interval '10 minutes' and (email=v_email or phone=p_phone))>=6
++    or (select count(*) from mealdeck_private.guest_sessions where tenant_id=p_tenant and location_id=p_location
++      and created_at>now()-interval '5 minutes')>=500 then
++    raise exception 'mealdeck_checkout_retry_later';
++  end if;
++  insert into mealdeck_private.guest_sessions(tenant_id,location_id,token_hash,name,email,phone)
++    values(p_tenant,p_location,p_token_hash,v_name,v_email,p_phone) returning * into g;
++  return mealdeck_private.guest_session_card(g);
++end $$;
++revoke all on function public.mealdeck_begin_guest_session(uuid,uuid,text,text,text,text) from public,anon,authenticated,service_role;
++grant execute on function public.mealdeck_begin_guest_session(uuid,uuid,text,text,text,text) to service_role;
++
++create or replace function public.mealdeck_customer_register(
++  p_name text,p_phone text,p_email_marketing boolean,p_push_marketing boolean,
++  p_order_notifications boolean,p_privacy_version text,p_consent_version text
++) returns jsonb language plpgsql security definer set search_path=''
++as $$
++declare v_user uuid:=auth.uid(); v_inserted integer; v_authority jsonb; v_email text;
++begin
++  if v_user is null then raise exception 'mealdeck_customer_unauthenticated' using errcode='42501'; end if;
++  v_authority:=mealdeck_private.customer_registration_authority(v_user);
++  if v_authority is null then
++    raise exception 'mealdeck_customer_email_verification_required' using errcode='42501';
++  end if;
++  if not mealdeck_private.email_registration_available_at(now())
++    and not exists(select 1 from mealdeck_private.customer_profiles where user_id=v_user) then
++    raise exception 'mealdeck_customer_registration_deferred';
++  end if;
++  v_email:=v_authority->>'email';
++  if p_name is null or length(btrim(p_name)) not between 1 and 120 or p_name~'[[:cntrl:]]'
++    or p_phone is null or p_phone!~'^\+[1-9][0-9]{7,14}$'
++    or p_email_marketing is null or p_push_marketing is null or p_order_notifications is null
++    or p_privacy_version is distinct from 'mealdeck-customer-2026-11-05'
++    or p_consent_version is distinct from 'mealdeck-preferences-2026-11-05' then
++    raise exception 'mealdeck_customer_invalid_profile';
++  end if;
++  insert into mealdeck_private.customer_profiles(
++    user_id,name,phone,email_marketing,email_marketing_address,push_marketing,order_notifications,privacy_notice_version
++  ) values(v_user,btrim(p_name),p_phone,p_email_marketing,case when p_email_marketing then v_email else null end,
++    p_push_marketing,p_order_notifications,p_privacy_version)
++    on conflict(user_id) do nothing;
++  get diagnostics v_inserted=row_count;
++  if v_inserted=1 then
++    perform mealdeck_private.record_customer_preferences(v_user,p_email_marketing,p_push_marketing,
++      p_order_notifications,null,null,null,'registration',v_email);
++  end if;
++  -- An email-link retry never overwrites the customer's newer preferences.
++  return public.mealdeck_customer_profile();
++end;
++$$;
++revoke all on function public.mealdeck_customer_register(text,text,boolean,boolean,boolean,text,text)
++  from public,anon,authenticated,service_role;
++grant execute on function public.mealdeck_customer_register(text,text,boolean,boolean,boolean,text,text)
++  to authenticated;
++
++commit;
+diff --git a/docs/mealdeck-whatsapp-guest-weekend.md b/docs/mealdeck-whatsapp-guest-weekend.md
+new file mode 100644
+index 0000000..10ad06e
+--- /dev/null
++++ b/docs/mealdeck-whatsapp-guest-weekend.md
+@@ -0,0 +1,21 @@
++# Opening-weekend quick checkout
++
++Owner decision, 6 November 2026: customers enter their name and WhatsApp number only. No MealDeck email registration, email verification or password is needed for a guest order. This applies to the ordinary basket, the group organiser and individual group payers. Kerbside still requires car make, colour and exactly the last four registration characters. Both kerbside forms and the paid kerbside receipt show “Please park near our location, somewhere safe and legal, and keep your phone nearby.”
++
++The guest session stores a genuinely absent email as SQL NULL. Historical email-bearing guest sessions and receipts remain valid. No fake email address, Auth user, verified-phone claim, marketing consent, membership or loyalty points is created. Entering a WhatsApp number is an order contact detail, not proof of phone ownership or activation of automated WhatsApp messaging.
++
++## Monday boundary
++
++New email membership registration is deferred from 6 November 00:00 until **Monday 9 November 2026, 00:00 Europe/London**. Customer UI and registration actions use server time, and the database independently rejects a new member profile during this interval. Existing members retain sign-in, profile access and idempotent registration recovery. Staff, printer and administrator authentication/password/MFA rules are unchanged. The client refreshes the entry policy at the boundary and on return to the page. Registration resuming does not reopen a paused kitchen, configure Resend or change opening hours.
++
++Guest ordering still uses the existing server-authoritative launch hours, location, kitchen state, catalogue and payment-readiness checks. It cannot override the pre-opening test-account restriction. The existing 30% discount remains automatic and unchanged. Payment must still be independently verified before KDS release. Stripe-hosted payment collection is separate: omitting MealDeck's email field does not promise that Stripe will never request an email or billing details for the selected payment method.
++
++## Privacy and deployment
++
++Guest receipts remain protected by the existing high-entropy Secure/HttpOnly host cookie and scoped server RPCs. A matching name or phone number grants no access to another order. Existing email contacts are retained; no old account or order is rewritten. Contact details remain outside PWA caches. The old group-room footer about replies has been removed as requested.
++
++Apply the complete reviewed SQL atomically to the independent MealDeck database before publishing the application. The release workflow creates the post-install migration filename using the official Supabase CLI; its contents must match `deploy/mealdeck/whatsapp-guest.sql`. It makes the guest email column nullable and updates only guest-session validation and customer-registration policy. Existing opening, payment, KDS, printer and staff routines are unchanged.
++
++Run `bun test tests/mealdeck-whatsapp-guest.test.ts`, the existing guest/checkout/group suites and `node tests/postgres/whatsapp-guest-behavior.mjs --native` against a new disposable local PostgreSQL database. Never run the destructive fixture harness against hosted production. The new SQL checks cover null email, replay, contact validation, permissions, exact discount, kerbside details, private receipt access, Monday boundaries and existing membership recovery.
++
++A source merge, migration or successful simulated checkout is not a live Stripe payment, real inbox/WhatsApp delivery or a physical printer test. Record live acceptance separately.
+diff --git a/src/components/customer-account.tsx b/src/components/customer-account.tsx
+index b4225d9..8548adc 100644
+--- a/src/components/customer-account.tsx
++++ b/src/components/customer-account.tsx
+@@ -15,6 +15,7 @@ import {
+ import { MealDeckLogo } from "./mealdeck-logo";
+ import { PwaInstallCard } from "./pwa-install-card";
+ import { CustomerOrders } from "./customer-orders";
++import { useCustomerEntryPolicy } from "./use-customer-entry-policy";
+ import { customerReturnTarget, type CustomerReturnTarget } from "@/lib/mealdeck-customer-return";
+ import {
+   CustomerAccountError,
+@@ -167,14 +168,36 @@ function ContactFields({
+   );
+ }
+ 
++function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
++  return (
++    <div className="md-account-notice" role="status">
++      <div>
++        <h2>Just your name and WhatsApp number.</h2>
++        <p>
++          No email registration or verification is needed for guest orders this opening weekend.
++          Email registration opens on Monday 9 November 2026.
++        </p>
++        <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>
++          Continue without registering <ArrowRight size={18} aria-hidden="true" />
++        </a>
++      </div>
++    </div>
++  );
++}
++
+ function CustomerEntry({
+   onRequest,
+   busy,
++  registrationDeferred,
++  returnTo,
+ }: {
+   onRequest: (email: string, registration?: CustomerRegistration) => Promise<void>;
+   busy: boolean;
++  registrationDeferred: boolean;
++  returnTo: CustomerReturnTarget;
+ }) {
+-  const [mode, setMode] = useState<"register" | "signin">("register");
++  const [requestedMode, setMode] = useState<"register" | "signin">("register");
++  const mode = registrationDeferred ? "signin" : requestedMode;
+   const [name, setName] = useState("");
+   const [email, setEmail] = useState("");
+   const [phone, setPhone] = useState("");
+@@ -183,15 +206,18 @@ function CustomerEntry({
+   });
+   return (
+     <section className="md-account-panel" aria-labelledby="account-entry-heading">
++      {registrationDeferred && <QuickCheckoutNotice returnTo={returnTo} />}
+       <div className="md-account-tabs" aria-label="Account action">
+-        <button
+-          type="button"
+-          aria-pressed={mode === "register"}
+-          disabled={busy}
+-          onClick={() => setMode("register")}
+-        >
+-          Register
+-        </button>
++        {!registrationDeferred && (
++          <button
++            type="button"
++            aria-pressed={mode === "register"}
++            disabled={busy}
++            onClick={() => setMode("register")}
++          >
++            Register
++          </button>
++        )}
+         <button
+           type="button"
+           aria-pressed={mode === "signin"}
+@@ -598,6 +624,8 @@ function CustomerSettings({
+ 
+ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerReturnTarget }) {
+   const returnTarget = customerReturnTarget(returnTo);
++  const entryPolicy = useCustomerEntryPolicy();
++  const registrationDeferred = entryPolicy?.emailRegistrationDeferred !== false;
+   const [account, setAccount] = useState<CustomerAccountState>({ status: "signed_out" });
+   const [capabilities, setCapabilities] = useState<CustomerCapabilities | null>(null);
+   const [pushPublicKey, setPushPublicKey] = useState<string | null>(null);
+@@ -837,7 +865,11 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
+                 onMessage={showMessage}
+               />
+             ) : signedIn ? (
+-              <FinishRegistration account={account} busy={busy} onFinish={finish} />
++              registrationDeferred ? (
++                <QuickCheckoutNotice returnTo={returnTarget} />
++              ) : (
++                <FinishRegistration account={account} busy={busy} onFinish={finish} />
++              )
+             ) : emailPending ? (
+               <CheckEmail
+                 email={emailPending}
+@@ -864,7 +896,12 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
+                 </button>
+               </section>
+             ) : (
+-              <CustomerEntry busy={busy} onRequest={request} />
++              <CustomerEntry
++                busy={busy}
++                onRequest={request}
++                registrationDeferred={registrationDeferred}
++                returnTo={returnTarget}
++              />
+             )}
+           </div>
+           <aside className="md-account-aside" aria-label="Your orders and member benefits">
+diff --git a/src/components/group-order-room.tsx b/src/components/group-order-room.tsx
+index 39b8086..c2b30fd 100644
+--- a/src/components/group-order-room.tsx
++++ b/src/components/group-order-room.tsx
+@@ -7,7 +7,6 @@ import {
+   CheckCircle2,
+   Clock3,
+   Copy,
+-  Link2,
+   Loader2,
+   LockKeyhole,
+   RefreshCw,
+@@ -1514,10 +1513,6 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
+             />
+           </div>
+         )}
+-        <p className="md-room-footer-note">
+-          <Link2 size={16} aria-hidden="true" /> One room for choices, payment and progress. No
+-          replies to collect.
+-        </p>
+       </main>
+       <SiteFooter />
+       <Dialog
+diff --git a/src/components/group-payments/payment-identity.tsx b/src/components/group-payments/payment-identity.tsx
+index 4588327..1765c2f 100644
+--- a/src/components/group-payments/payment-identity.tsx
++++ b/src/components/group-payments/payment-identity.tsx
+@@ -69,8 +69,12 @@ export function PaymentIdentity({
+                   ? "Verify your email to organise this room as a member."
+                   : "Verify your email before making a member payment."
+                 : purpose === "organiser"
+-                  ? "Sign in or register with a verified email to organise the collection."
+-                  : "Sign in or register with a verified email to make a member payment."}
++                  ? identity.registrationDeferred
++                    ? "Already a member? Sign in, or choose Guest to use just your name and WhatsApp number."
++                    : "Sign in or register with a verified email to organise the collection."
++                  : identity.registrationDeferred
++                    ? "Choose Guest to pay with just your name and WhatsApp number, or sign in to an existing account."
++                    : "Sign in or register with a verified email to make a member payment."}
+             </p>
+             {identity.accountIssue && (
+               <p className="md-shared-notice" role="status">
+@@ -85,7 +89,9 @@ export function PaymentIdentity({
+                 else rememberSharedPaymentRoom(roomId);
+               }}
+             >
+-              Sign in or register
++              {identity.registrationDeferred
++                ? "Sign in to an existing account"
++                : "Sign in or register"}
+             </a>
+             <p className="md-shared-muted">
+               You’ll return to{" "}
+@@ -98,8 +104,8 @@ export function PaymentIdentity({
+         <>
+           <p>
+             {purpose === "organiser"
+-              ? "Organise the collection with guest contact details."
+-              : "Pay without creating an account."}{" "}
++              ? "Organise the collection with your name and WhatsApp number. No email registration needed."
++              : "Pay with your name and WhatsApp number. No email registration needed."}{" "}
+             Guest payments earn no loyalty points and do not sign you up for marketing.
+           </p>
+           {identity.guest?.session ? (
+@@ -107,7 +113,7 @@ export function PaymentIdentity({
+               <ShoppingBag size={24} aria-hidden="true" />
+               <div>
+                 <strong>{identity.guest.session.name}</strong>
+-                <span>{identity.guest.session.email}</span>
++                {identity.guest.session.email && <span>{identity.guest.session.email}</span>}
+                 <span>{identity.guest.session.phone}</span>
+                 <small>Guest contact details saved in this browser</small>
+               </div>
+@@ -136,22 +142,7 @@ export function PaymentIdentity({
+                   />
+                 </label>
+                 <label>
+-                  Email
+-                  <input
+-                    required
+-                    type="email"
+-                    autoComplete="email"
+-                    autoCapitalize="none"
+-                    spellCheck={false}
+-                    maxLength={254}
+-                    value={identity.details.email}
+-                    onChange={(event) =>
+-                      identity.setDetails({ ...identity.details, email: event.target.value })
+-                    }
+-                  />
+-                </label>
+-                <label>
+-                  Mobile number
++                  WhatsApp number
+                   <input
+                     required
+                     type="tel"
