@@ -321,7 +321,7 @@ export function LaunchItemCustomiser({
           <DialogDescription className="lmc-description">
             {context === "group-order"
               ? "Choose your food for this group"
-              : "Build your basket · Ordering coming soon"}
+              : "Make it yours · Add to your basket"}
           </DialogDescription>
         </div>
       </header>

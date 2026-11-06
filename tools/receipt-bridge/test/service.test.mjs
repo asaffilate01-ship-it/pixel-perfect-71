@@ -86,6 +86,34 @@ test("browser-edited receipt and a rejected claim never reach the writer", async
   assert.equal(h.journal.get(JOB), null);
 });
 
+test("canonical order numbering participates in payload matching and one-copy replay protection", async (t) => {
+  const h = await harness(t);
+  h.canonical.orderNumber = "0001";
+  for (const value of ["0002", null, undefined]) {
+    const altered = structuredClone(h.canonical);
+    if (value === undefined) delete altered.orderNumber;
+    else altered.orderNumber = value;
+    await assert.rejects(h.bridge.submit(job(altered), "pair-hash", "token"), {
+      code: "canonical_receipt_mismatch",
+    });
+  }
+  assert.equal(h.writes.length, 0);
+  assert.equal(h.journal.get(JOB), null);
+  await h.bridge.submit(job(h.canonical), "pair-hash", "token");
+  assert.equal(h.writes.length, 1);
+  assert.match(h.writes[0].toString("ascii"), /ORDER 0001/);
+  assert.match(h.writes[0].toString("ascii"), /Collection code: 0427/);
+  assert.equal((await h.bridge.submit(job(h.canonical), "pair-hash", "token")).replayed, true);
+  assert.equal(h.writes.length, 1);
+  await assert.rejects(
+    h.bridge.submit(job({ ...h.canonical, orderNumber: "0002" }), "pair-hash", "token"),
+    {
+      code: "job_payload_conflict",
+    },
+  );
+  assert.equal(h.writes.length, 1);
+});
+
 test("dropping or changing a person's canonical packing name cannot print a different receipt", async (t) => {
   const h = await harness(t);
   h.canonical.packingPlan.bags[0].name = "Amer";

@@ -93,7 +93,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <h2>{isLuton ? "Five brands. One kitchen." : "More flavours to come."}</h2>
               <p>
                 {isLuton
-                  ? "Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and the Moktl mocktail lounge menu launch in Luton first. Ordering is coming soon; more brands join a future deck."
+                  ? "Order Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails for Luton collection or kerbside. More brands join a future deck."
                   : `Luton launches first. The ${town} line-up and opening date will be confirmed separately; this is the wider brand collection.`}
               </p>
             </div>
@@ -124,11 +124,11 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
           </article>
           <article className="md-location-info-panel md-location-info-panel-red">
             <Store />
-            <p className="md-kicker md-kicker-light">Coming soon</p>
+            <p className="md-kicker md-kicker-light">{isLuton ? "Order online" : "Coming soon"}</p>
             <h2>{fulfilment}</h2>
             <p>
               {isLuton
-                ? "Luton opens 6–8 November 2026. Browse the five launch menus while online ordering is prepared. Register for member offers and choose your optional offer alerts, or order as a guest during the first three days’ opening hours."
+                ? "Order from the five Luton menus for collection or kerbside during kitchen opening hours. Guest ordering is available on 6–8 November, with name and WhatsApp number. Registration and member sign-in return on Monday 9 November."
                 : `${town} is coming in a future deck. MealDeck is launching in Luton first, with no orders accepted here yet.`}
             </p>
           </article>

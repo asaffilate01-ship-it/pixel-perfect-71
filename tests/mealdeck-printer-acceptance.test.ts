@@ -99,6 +99,20 @@ const accepted = (replayed = false) => ({
 });
 
 describe("printer paid-order acceptance projection", () => {
+  test("retains a separate display number while preserving the authoritative order and version", () => {
+    for (const orderNumber of ["0001", "10000", null]) {
+      const value = board();
+      value.orders[0]!.orderNumber = orderNumber;
+      const parsed = parsePrinterAcceptanceBoard(value, scope).orders[0]!;
+      expect(parsed.orderNumber).toBe(orderNumber);
+      expect(parsed.displayCode).toBe("0427");
+      expect(parsed.orderId).toBe(id(1));
+      expect(parsed.version).toBe("a".repeat(32));
+    }
+    const value = board();
+    value.orders[0]!.orderNumber = "0000";
+    expect(() => parsePrinterAcceptanceBoard(value, scope)).toThrow();
+  });
   test("keeps purchased choices and named bags without constructing a preaccept receipt", () => {
     const result = parsePrinterAcceptanceBoard(board(), scope);
     expect(result.orders).toEqual([pending()]);

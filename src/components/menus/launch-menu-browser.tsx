@@ -417,7 +417,7 @@ export function LaunchMenuBrowser({
           <span className="lm-eyebrow">The Luton launch deck</span>
           <p>Five menus. Every craving.</p>
           <span className="lm-launch-label">
-            <span>Browse now · Ordering coming soon</span>
+            <span>Luton · Collection &amp; kerbside</span>
             <img
               className="lm-halal-mark"
               src="/halal-mark.svg"
@@ -903,7 +903,7 @@ export function LaunchMenuBrowser({
                     : storageStatus === "checking"
                       ? "Checking your saved choices."
                       : "Your choices are saved on this device."}{" "}
-                  Item prices are shown. Ordering is coming soon.
+                  Confirm current prices and collection availability at checkout.
                 </DialogDescription>
               </div>
               <div className="lm-basket-scroll">

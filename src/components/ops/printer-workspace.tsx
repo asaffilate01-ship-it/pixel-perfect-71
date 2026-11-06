@@ -22,6 +22,7 @@ import {
   PrinterBridgeError,
 } from "@/lib/mealdeck-printer-browser";
 import { confirmReceiptPaper } from "@/lib/mealdeck-printer-recovery";
+import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { MealDeckBackendSetupError } from "@/lib/mealdeck-backend-client-cache";
 import { PrinterSignInError, signInPrinterWithPassword } from "@/lib/mealdeck-printer-auth";
 import {
@@ -648,8 +649,8 @@ function ReceiptTerminal({
       setPendingOrders(currentPendingOrders.current);
       setNotice(
         result.replayed
-          ? `${order.displayCode} was already accepted. Its existing receipt is unchanged; no extra copy was requested.`
-          : `${order.displayCode} accepted. One receipt is queued.${paired && automatic ? " Automatic printing will send it when the live queue refreshes; check the paper afterwards." : " Enable automatic printing on a paired device, or print it from Receipt queue."}`,
+          ? `Order ${orderDisplayNumber(order.orderNumber, order.orderId.slice(0, 8).toUpperCase())} was already accepted. Its existing receipt is unchanged; no extra copy was requested.`
+          : `Order ${orderDisplayNumber(order.orderNumber, order.orderId.slice(0, 8).toUpperCase())} accepted. One receipt is queued.${paired && automatic ? " Automatic printing will send it when the live queue refreshes; check the paper afterwards." : " Enable automatic printing on a paired device, or print it from Receipt queue."}`,
       );
     } catch (reason) {
       if (mounted.current)
@@ -737,7 +738,7 @@ function ReceiptTerminal({
       });
       if (mounted.current)
         setNotice(
-          `${job.receipt.displayCode}: check that one complete receipt printed, then confirm the paper below.`,
+          `Order ${orderDisplayNumber(job.receipt.orderNumber, job.orderId.slice(0, 8).toUpperCase())}: check that one complete receipt printed, then confirm the paper below.`,
         );
     } catch (e) {
       if (claim)
@@ -1360,7 +1361,8 @@ function ReceiptJobCard({
     <article className="md-ops-card overflow-hidden" data-testid="printer-job">
       <header className="md-ops-ticket-heading flex flex-wrap items-center justify-between gap-3 border-b md-ops-border p-4">
         <div>
-          <h3 className="text-2xl font-black">{job.receipt.displayCode}</h3>
+          <h3 className="break-words text-2xl font-black tabular-nums">Order {orderDisplayNumber(job.receipt.orderNumber, job.orderId.slice(0, 8).toUpperCase())}</h3>
+          <p className="mt-1 text-sm md-ops-muted">Collection code <strong className="tabular-nums">{job.receipt.displayCode}</strong></p>
           <p className="mt-1 text-xs font-bold md-ops-muted">
             {job.receipt.fulfilment === "curbside" ? "Kerbside" : "Collection"} ·{" "}
             {job.copyNumber === 1 ? "Original" : `COPY ${job.copyNumber}`}

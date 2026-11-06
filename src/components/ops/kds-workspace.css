@@ -401,7 +401,8 @@
 }
 
 .md-kds-workspace .md-kds-ticket-identity {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   justify-content: space-between;
   gap: 12px;
@@ -421,8 +422,31 @@
   overflow-wrap: anywhere;
   font-size: 31px;
   font-weight: 900;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.035em;
   line-height: 1.15;
+}
+
+.md-kds-workspace .md-kds-collection-code {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-top: 8px;
+  color: var(--ops-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.md-kds-workspace .md-kds-collection-code strong {
+  min-width: 0;
+  color: var(--ops-text);
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
 }
 
 .md-kds-workspace .md-kds-ticket-timer {
@@ -467,6 +491,63 @@
   padding: 13px 15px 16px;
 }
 
+.md-kds-workspace .md-kds-pickup-details {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  background: var(--ops-canvas);
+  padding: 10px;
+}
+
+.md-kds-workspace .md-kds-pickup-details > div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+  align-items: baseline;
+  gap: 3px 10px;
+}
+
+.md-kds-workspace .md-kds-pickup-details dt {
+  min-width: 0;
+  color: var(--ops-muted);
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.md-kds-workspace .md-kds-pickup-details dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ops-ink);
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.md-kds-workspace .md-kds-pickup-details .md-kds-customer-name dd {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.md-kds-workspace .md-kds-contact-phone {
+  font-variant-numeric: tabular-nums;
+}
+
+.md-kds-workspace .md-kds-pickup-details .md-kds-registration {
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--ops-line);
+  border-radius: 3px;
+  background: var(--ops-paper);
+  padding: 1px 5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
+}
+
 .md-kds-workspace .md-kds-packing-flags {
   display: flex;
   flex-wrap: wrap;
@@ -496,19 +577,6 @@
 .md-kds-workspace .md-kds-cutlery-none {
   color: var(--ops-muted);
 }
-.md-kds-workspace .md-kds-vehicle {
-  width: 100%;
-  color: var(--ops-ink);
-}
-
-.md-kds-workspace .md-kds-vehicle strong {
-  border: 1px solid var(--ops-line);
-  border-radius: 3px;
-  background: var(--ops-canvas);
-  padding: 1px 5px;
-  letter-spacing: 0.1em;
-}
-
 .md-kds-workspace .md-kds-progress > div {
   display: flex;
   flex-wrap: wrap;
@@ -622,6 +690,18 @@
   font-weight: 650;
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+.md-kds-workspace .md-kds-line-price {
+  margin-top: 5px;
+  color: var(--ops-muted);
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.md-kds-workspace .md-kds-line-price strong {
+  color: var(--ops-text);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
 }
 .md-kds-workspace .md-kds-attached-line {
   border-left: 2px solid var(--ops-line);
@@ -990,5 +1070,11 @@
 
   .md-kds-workspace .md-kds-ticket-timer > strong {
     font-size: 23px;
+  }
+}
+
+@container kds-ticket (max-width: 280px) {
+  .md-kds-workspace .md-kds-pickup-details > div {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

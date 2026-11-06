@@ -85,6 +85,17 @@
 }
 .md-mobile-menu-button svg { width: 20px; }
 
+.md-nav-coming-soon {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font: 600 10px/1.25 var(--md-body);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 .md-mobile-nav {
   display: none;
   padding: 12px 16px 18px;

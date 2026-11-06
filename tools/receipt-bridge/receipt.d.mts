@@ -29,6 +29,7 @@ export type MealDeckReceipt = {
   reprintOf: string | null;
   reprintReason: string | null;
   displayCode: string;
+  orderNumber?: string | null;
   brand: "MealDeck";
   tradingName: "313 Brands Ltd";
   locationName: string;

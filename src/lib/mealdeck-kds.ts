@@ -1,4 +1,5 @@
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
+import { isOrderNumber } from "./mealdeck-order-number";
 
 /**
  * The staff KDS consumes a privacy-minimised projection of canonical MealDeck
@@ -35,6 +36,7 @@ export type KdsOrderItem = {
     group_name: string;
     price_delta_pence: number;
     quantity_per_parent: number;
+    kind?: "source" | "cross" | "variant";
   }[];
   bags?: { number: number; name?: string; quantity: number }[];
 };
@@ -64,6 +66,7 @@ export type KdsOrder = {
   version: string;
   preparation_status: KdsTicketStatus;
   display_code: string;
+  order_number?: string | null;
   created_at: string;
   released_at: string;
   order_status: "accepted" | "preparing" | "ready";
@@ -129,7 +132,7 @@ function nullableText(value: unknown, max = 500): string | null {
   return value === null ? null : text(value, max);
 }
 
-function parsePickupContact(value: unknown): { name: string; phone: string } | null {
+export function parseKdsPickupContact(value: unknown): { name: string; phone: string } | null {
   if (value == null) return null;
   const contact = record(value);
   const rawName = text(contact["name"], 240);
@@ -220,6 +223,9 @@ function parseOrderItem(value: unknown): KdsOrderItem {
                 group_name: text(m["group_name"], 1000),
                 price_delta_pence: integer(m["price_delta_pence"], -1000000),
                 quantity_per_parent: integer(m["quantity_per_parent"], 1),
+                ...(m["kind"] === undefined
+                  ? {}
+                  : { kind: choice(m["kind"], ["source", "cross", "variant"] as const) }),
               };
             },
             100,
@@ -366,11 +372,15 @@ function parseOrder(value: unknown): KdsOrder {
     (preparationStatus !== "ready" || !allReady)
   )
     invalid();
+  if (v["order_number"] != null && !isOrderNumber(v["order_number"])) invalid();
   return {
     order_id: id(v["order_id"]),
     version: version(v["version"]),
     preparation_status: preparationStatus,
     display_code: text(v["display_code"], 40),
+    ...(v["order_number"] === undefined
+      ? {}
+      : { order_number: v["order_number"] as string | null }),
     created_at: timestamp(v["created_at"]),
     released_at: timestamp(v["released_at"]),
     order_status: choice(v["order_status"], ["accepted", "preparing", "ready"] as const),
@@ -395,7 +405,10 @@ function parseOrder(value: unknown): KdsOrder {
               registrationLast4: text(car["registrationLast4"], 4),
             };
           })(),
-    pickupContact: fulfilment === "curbside" ? parsePickupContact(v["pickupContact"]) : null,
+    pickupContact:
+      fulfilment === "pickup" || fulfilment === "curbside"
+        ? parseKdsPickupContact(v["pickupContact"])
+        : null,
   };
 }
 

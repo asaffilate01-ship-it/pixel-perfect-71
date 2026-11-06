@@ -9,7 +9,7 @@ export const Route = createFileRoute("/menus")({
     seo({
       title: "Luton food menus — Skorch, Tavo, Souvano, Load’d & Moktl | MealDeck",
       description:
-        "Browse Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails in Luton. Ordering coming soon.",
+        "Order Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails for Luton collection or kerbside during kitchen opening hours.",
       path: "/menus",
     }),
   component: MenusPage,

@@ -108,6 +108,29 @@ describe("kitchen view keeps complete canonical tickets", () => {
     expect(matchesKdsOrderSearch(candidate, "   ")).toBe(true);
   });
 
+  test("search finds the canonical order number, distinct collection code and saved pickup contact", () => {
+    for (const fulfilment of ["pickup", "curbside"] as const) {
+      const candidate = order({
+        order_number: "0001",
+        display_code: "4601",
+        fulfilment,
+        pickupContact: { name: "Sam Palmer", phone: "+447700900123" },
+      });
+      for (const query of ["0001", "4601", "Sam Palmer", "900123", "0001 Palmer"]) {
+        expect(matchesKdsOrderSearch(candidate, query)).toBe(true);
+      }
+      expect(matchesKdsOrderSearch(candidate, "0002")).toBe(false);
+    }
+    for (const fulfilment of ["delivery", "dine_in"] as const) {
+      expect(
+        matchesKdsOrderSearch(
+          order({ fulfilment, pickupContact: { name: "Private contact", phone: "+447700900123" } }),
+          "Private contact",
+        ),
+      ).toBe(false);
+    }
+  });
+
   test("finds a kerbside vehicle without filtering food out of its master ticket", () => {
     const candidate = order({
       fulfilment: "curbside",
@@ -230,7 +253,41 @@ test("Done tickets retain instructions but expose no mutation or print control",
   expect(html).not.toMatch(/<(button|input|form)\b/);
 });
 
+test("Done tickets show their canonical number and saved pickup contact as read-only text", () => {
+  const candidate = completed({
+    order_number: "0002",
+    display_code: "7834",
+    pickupContact: { name: "Sam & <Guest>", phone: "+447700900123" },
+  });
+  const html = renderToStaticMarkup(createElement(KdsCompletedCard, { order: candidate }));
+  expect(html).toMatch(/<h3[^>]*>0002<\/h3>/);
+  expect(html).toContain("Collection code</span><strong>7834</strong>");
+  expect(html).toContain("Sam &amp; &lt;Guest&gt;");
+  expect(html).toContain("+447700900123");
+  expect(html).not.toMatch(/<(button|input|form|a)\b/);
+  expect(matchesKdsOrderSearch(candidate, "0002 Sam")).toBe(true);
+});
+
 describe("ticket alignment retains every kitchen instruction", () => {
+  test("canonical order numbers are prominent while collection codes remain separate", () => {
+    const html = ticketMarkup(order({ order_number: "0001", display_code: "4601" }));
+    expect(html).toMatch(/<h3[^>]*>0001<\/h3>/);
+    expect(html).toContain("Collection code</span><strong>4601</strong>");
+    expect(html).toContain('aria-label="Accept order · Order 0001"');
+    expect(html).not.toContain('aria-label="Accept order · Order 4601"');
+  });
+
+  test("historical tickets retain a useful reference until a canonical number is present", () => {
+    for (const order_number of [undefined, null]) {
+      const html = ticketMarkup(order({ order_number, display_code: "4601" }));
+      expect(html).toMatch(/<h3[^>]*>4601<\/h3>/);
+      expect(html).toContain('class="md-kds-ticket-eyebrow">Collection code</p>');
+      expect(html).not.toContain('class="md-kds-collection-code"');
+      expect(html).toContain('aria-label="Accept order · Collection code 4601"');
+      expect(html).not.toContain('class="md-kds-ticket-eyebrow">Order</p>');
+    }
+  });
+
   test("kerbside contact appears as escaped text beside the car, without a messaging action", () => {
     const html = ticketMarkup(
       order({
@@ -254,16 +311,30 @@ describe("ticket alignment retains every kitchen instruction", () => {
     expect(html).not.toMatch(/href="(?:tel:|https?:\/\/(?:wa\.me|[^/]*whatsapp))/);
   });
 
-  test("old tickets and non-kerbside fulfilments do not display a contact block", () => {
+  test("collection tickets include the saved name and phone without a car or messaging action", () => {
+    const html = ticketMarkup(
+      order({ pickupContact: { name: "Alex & <Family>", phone: "+447700900456" } }),
+    );
+    expect(html).toContain('aria-label="Collection contact"');
+    expect(html).toContain("Alex &amp; &lt;Family&gt;");
+    expect(html).toContain("+447700900456");
+    expect(html).not.toContain("Reg ends");
+    expect(html).not.toContain("<Family>");
+    expect(html).not.toMatch(/href="(?:tel:|https?:\/\/(?:wa\.me|[^/]*whatsapp))/);
+  });
+
+  test("old tickets and unsupported fulfilments do not invent or display contact details", () => {
     for (const candidate of [
       order({ fulfilment: "curbside" }),
       order({ fulfilment: "curbside", pickupContact: null }),
-      ...(["pickup", "delivery", "dine_in"] as const).map((fulfilment) =>
+      order({ fulfilment: "pickup", pickupContact: null }),
+      ...(["delivery", "dine_in"] as const).map((fulfilment) =>
         order({ fulfilment, pickupContact: { name: "Private contact", phone: "+447700900123" } }),
       ),
     ]) {
       const html = ticketMarkup(candidate);
       expect(html).not.toContain('aria-label="Kerbside pickup contact"');
+      expect(html).not.toContain('aria-label="Collection contact"');
       expect(html).not.toContain("Private contact");
       expect(html).not.toContain("+447700900123");
     }
@@ -343,9 +414,81 @@ describe("ticket alignment retains every kitchen instruction", () => {
     expect(checklist.every((input) => !input.includes("disabled"))).toBe(true);
   });
 
+  test("Tavo portion and flavour show the full dish price without the internal 51p adjustment", () => {
+    const wings = (flavour: string, lineId: string) =>
+      item({
+        order_item_id: lineId,
+        brand_id: "tavo-chicken",
+        brand_name: "Tavo Chicken",
+        item_name: "Fried Chicken Wings",
+        quantity: 1,
+        base_unit_pence: 299,
+        unit_pence: 350,
+        modifiers: ["3 pcs", flavour, `${flavour} · 3 pcs`],
+        modifier_details: [
+          {
+            name: "3 pcs",
+            group_name: "Portion",
+            kind: "source",
+            price_delta_pence: 0,
+            quantity_per_parent: 1,
+          },
+          {
+            name: flavour,
+            group_name: "Flavour",
+            kind: "source",
+            price_delta_pence: 0,
+            quantity_per_parent: 1,
+          },
+          {
+            name: `${flavour} · 3 pcs`,
+            group_name: "Tavo Chicken · Fried Chicken Wings · Portion and flavour price",
+            kind: "variant",
+            price_delta_pence: 51,
+            quantity_per_parent: 1,
+          },
+        ],
+        bags: [{ number: 1, quantity: 1 }],
+        notes: null,
+        status: "preparing",
+      });
+    const candidate = order({
+      order_number: "0002",
+      display_code: "7628",
+      accepted_at: "2026-11-06T18:50:00Z",
+      preparation_status: "preparing",
+      items: [wings("Korean BBQ", "wings-korean"), wings("Fiery Sweet Chilli", "wings-chilli")],
+    });
+    const before = JSON.stringify(candidate);
+    const html = ticketMarkup(candidate);
+    expect(html.match(/£3\.50 each/g)).toHaveLength(2);
+    expect(html.match(/selected choices included/g)).toHaveLength(2);
+    expect(html).toContain("Portion &amp; flavour:");
+    expect(html).toContain("Korean BBQ · 3 pcs");
+    expect(html).toContain("Fiery Sweet Chilli · 3 pcs");
+    expect(html).not.toContain("£0.51");
+    expect(html).not.toContain("£2.99");
+    expect(html).not.toContain("Portion and flavour price");
+    expect(html.match(/aria-label="Quantity 1"/g)).toHaveLength(2);
+    const checklist = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+    expect(checklist).toHaveLength(2);
+    expect(checklist.every((input) => !input.includes("disabled"))).toBe(true);
+    expect(JSON.stringify(candidate)).toBe(before);
+
+    const done = renderToStaticMarkup(
+      createElement(KdsCompletedCard, { order: completed({ items: candidate.items }) }),
+    );
+    expect(done).toContain("Korean BBQ · 3 pcs");
+    expect(done).toContain("Fiery Sweet Chilli · 3 pcs");
+    expect(done).not.toContain("£0.51");
+    expect(done).not.toMatch(/<(button|input|form)\b/);
+  });
+
   test("the responsive sealing action keeps its explicit confirmation and locked checklist", () => {
     const html = ticketMarkup(
       order({
+        order_number: "0001",
+        display_code: "4601",
         accepted_at: "2026-11-06T15:02:00Z",
         preparation_status: "ready",
         items: [item({ status: "ready" })],
@@ -364,6 +507,8 @@ describe("ticket alignment retains every kitchen instruction", () => {
   test("the larger handover field still requires a four-digit code before confirmation", () => {
     const html = ticketMarkup(
       order({
+        order_number: "0001",
+        display_code: "4601",
         accepted_at: "2026-11-06T15:02:00Z",
         preparation_status: "ready",
         items: [item({ status: "ready" })],
@@ -375,7 +520,10 @@ describe("ticket alignment retains every kitchen instruction", () => {
       }),
     );
     expect(html).toContain('class="md-kds-handoff-form space-y-2"');
-    expect(html).toContain('aria-label="Collection code for MD1234"');
+    expect(html).toContain('aria-label="Collection code for order 0001"');
+    expect(html).toContain("Enter the customer’s four-digit collection code");
+    expect(html).not.toContain("four-digit order number");
+    expect(html.match(/<input[^>]*inputMode="numeric"[^>]*>/)?.[0]).toContain('value=""');
     expect(html).toContain('inputMode="numeric"');
     expect(html).toContain('pattern="[0-9]{4}"');
     expect(html).toContain('maxLength="4"');

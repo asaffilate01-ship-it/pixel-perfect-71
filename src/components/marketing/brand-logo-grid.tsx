@@ -11,7 +11,7 @@ function BrandTile({ brand }: { brand: MarketingBrand }) {
       className="md-brand-tile"
       aria-label={
         hasMenu
-          ? `View ${brand.name} menu — ordering coming soon`
+          ? `View ${brand.name} menu for Luton collection or kerbside`
           : `${brand.name} — coming in the next deck`
       }
     >
@@ -22,7 +22,7 @@ function BrandTile({ brand }: { brand: MarketingBrand }) {
         <strong>{brand.name}</strong>
         <span>{brand.category}</span>
         <small className={hasMenu ? "md-brand-menu-status" : "md-brand-menu-status is-next"}>
-          {hasMenu ? "View menu · Ordering soon" : "Next deck"}
+          {hasMenu ? "View menu · Order online" : "Next deck"}
         </small>
       </div>
     </Link>

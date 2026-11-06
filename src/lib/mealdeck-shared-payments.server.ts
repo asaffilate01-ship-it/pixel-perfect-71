@@ -227,6 +227,7 @@ export function sharedRoomForBrowser(
     schemaVersion: 1,
     roomId: data["roomId"],
     orderId: data["orderId"],
+    ...(data["orderNumber"] === undefined ? {} : { orderNumber: data["orderNumber"] }),
     handoffCode: data["handoffCode"] ?? null,
     splitMode: data["splitMode"],
     status,

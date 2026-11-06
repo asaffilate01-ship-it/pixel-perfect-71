@@ -397,7 +397,7 @@ export function LaunchBasketDock({
               data-basket-update={!!feedbackMessage}
               title={feedbackMessage ?? undefined}
             >
-              {feedbackMessage || "Ordering coming soon"}
+              {feedbackMessage || "Review your order"}
             </small>
           </span>
           <span className="lmb-dock-count" aria-hidden="true">

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { printerPackingSchema, type PrinterJob, type PrinterScope } from "./mealdeck-printer";
+import { orderNumberSchema } from "./mealdeck-order-number";
 
 const uuid = z.string().uuid();
 const stamp = z.string().datetime({ offset: true });
@@ -32,6 +33,7 @@ export const printerPendingOrderSchema = z
     orderId: uuid,
     version: z.string().regex(/^[0-9a-f]{32}$/),
     displayCode: z.string().regex(/^\d{4}$/),
+    orderNumber: orderNumberSchema.nullable().optional(),
     paidAt: stamp,
     fulfilment: z.enum(["pickup", "curbside"]),
     totalPence: money,

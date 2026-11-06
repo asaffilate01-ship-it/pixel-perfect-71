@@ -93,31 +93,35 @@ function list(value, min, max) {
 
 /** Normalizes a receipt snapshot; throws before any transport/write on invalid input. */
 export function validateReceipt(input) {
-  const r = object(input, [
-    "schemaVersion",
-    "orderId",
-    "copyNumber",
-    "reprintOf",
-    "reprintReason",
-    "displayCode",
-    "brand",
-    "tradingName",
-    "locationName",
-    "createdAt",
-    "paidAt",
-    "acceptedAt",
-    "fulfilment",
-    "customerName",
-    "car",
-    "cutleryRequested",
-    "packingPlan",
-    "items",
-    "subtotalPence",
-    "discountPence",
-    "totalPence",
-    "currency",
-    "orderNotes",
-  ]);
+  const r = object(
+    input,
+    [
+      "schemaVersion",
+      "orderId",
+      "copyNumber",
+      "reprintOf",
+      "reprintReason",
+      "displayCode",
+      "brand",
+      "tradingName",
+      "locationName",
+      "createdAt",
+      "paidAt",
+      "acceptedAt",
+      "fulfilment",
+      "customerName",
+      "car",
+      "cutleryRequested",
+      "packingPlan",
+      "items",
+      "subtotalPence",
+      "discountPence",
+      "totalPence",
+      "currency",
+      "orderNotes",
+    ],
+    ["orderNumber"],
+  );
   requireValue(
     r.schemaVersion === 1 &&
       r.brand === "MealDeck" &&
@@ -263,6 +267,13 @@ export function validateReceipt(input) {
     typeof r.displayCode === "string" && /^\d{4}$/.test(r.displayCode),
     "invalid_receipt_display_code",
   );
+  requireValue(
+    !Object.hasOwn(r, "orderNumber") ||
+      r.orderNumber === null ||
+      (typeof r.orderNumber === "string" &&
+        /^(?!0000$)(?:[0-9]{4}|[1-9][0-9]{4,18})$/.test(r.orderNumber)),
+    "invalid_receipt_order_number",
+  );
   return {
     schemaVersion: 1,
     orderId: identifier(r.orderId),
@@ -270,6 +281,7 @@ export function validateReceipt(input) {
     reprintOf,
     reprintReason,
     displayCode: r.displayCode,
+    ...(Object.hasOwn(r, "orderNumber") ? { orderNumber: r.orderNumber } : {}),
     brand: "MealDeck",
     tradingName: "313 Brands Ltd",
     locationName: text(r.locationName, 140),
@@ -369,7 +381,8 @@ export function encodeReceipt(input, profile = {}) {
   const rule = "-".repeat(columns);
   write("MEALDECK");
   write(receipt.locationName);
-  write("ORDER " + receipt.displayCode);
+  write("ORDER " + (receipt.orderNumber ?? receipt.displayCode));
+  if (receipt.orderNumber) write("Collection code: " + receipt.displayCode);
   if (receipt.copyNumber > 1) {
     write("REPRINT - COPY " + receipt.copyNumber);
     write("Reason: " + receipt.reprintReason);

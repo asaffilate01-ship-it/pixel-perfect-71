@@ -71,6 +71,15 @@ test("invalid or inconsistent server totals and live simulation configuration fa
     message: "",
   };
   assert.equal(terminalOrderSchema.safeParse(order).success, true);
+  for (const orderNumber of ["0001", "10000", null]) {
+    const numbered = terminalOrderSchema.parse({ ...order, orderNumber });
+    assert.equal(numbered.orderNumber, orderNumber);
+    assert.equal(numbered.handoffCode, "1234");
+    assert.equal(numbered.status, "unpaid");
+    assert.equal(numbered.remainingPence, 1000);
+  }
+  for (const orderNumber of ["0000", "1", "00001", "0001\n", 1])
+    assert.equal(terminalOrderSchema.safeParse({ ...order, orderNumber }).success, false);
   const held = { ...order, status: "hold", paidPence: 1200, remainingPence: 0, canCollect: false };
   assert.equal(terminalOrderSchema.parse(held).paidPence, 1200);
   assert.equal(terminalOrderSchema.safeParse({ ...held, canCollect: true }).success, false);

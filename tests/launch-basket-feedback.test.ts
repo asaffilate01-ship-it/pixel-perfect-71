@@ -68,7 +68,7 @@ describe("one basket opener with separate change feedback", () => {
     );
     expect(closed).toContain('aria-label="View basket, 3 selections"');
     expect(closed).toContain('aria-haspopup="dialog" aria-expanded="false"');
-    expect(closed).toContain("Ordering coming soon");
+    expect(closed).toContain("Review your order");
     expect(closed).not.toContain('class="lmb-dock" hidden');
 
     const open = renderToStaticMarkup(
@@ -94,7 +94,7 @@ describe("one basket opener with separate change feedback", () => {
     expect(html).toContain(`id="${descriptionId}" data-basket-update="true"`);
     expect(html).toContain(`title="${message}"`);
     expect(html).toContain(`>${message}</small>`);
-    expect(html).not.toContain("Ordering coming soon");
+    expect(html).not.toContain("Review your order");
     // The shared feedback live region announces this once; the dock is a description.
     expect(html).not.toContain("aria-live");
   });

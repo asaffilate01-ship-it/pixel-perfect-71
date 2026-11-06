@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { parseKdsBoard, type KdsBoard } from "./mealdeck-kds";
+import { parseKdsBoard, parseKdsPickupContact, type KdsBoard } from "./mealdeck-kds";
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
+import { orderNumberSchema } from "./mealdeck-order-number";
 
 const timestamp = z
   .string()
@@ -25,19 +26,38 @@ const completedItem = z.object({
     .max(10)
     .optional(),
 });
-const completedOrder = z.object({
-  order_id: z.string().uuid(),
-  display_code: z.string().min(1).max(40),
-  order_status: z.literal("fulfilled"),
-  handoff_status: z.literal("handed_off"),
-  accepted_at: timestamp,
-  completed_at: timestamp,
-  fulfilment: z.enum(["delivery", "pickup", "curbside", "dine_in"]),
-  group_order: z.boolean(),
-  cutlery_requested: z.boolean(),
-  notes: z.string().max(20000).nullable(),
-  items: z.array(completedItem).min(1).max(500),
-});
+const completedOrder = z
+  .object({
+    order_id: z.string().uuid(),
+    display_code: z.string().min(1).max(40),
+    order_number: orderNumberSchema.nullable().optional(),
+    order_status: z.literal("fulfilled"),
+    handoff_status: z.literal("handed_off"),
+    accepted_at: timestamp,
+    completed_at: timestamp,
+    fulfilment: z.enum(["delivery", "pickup", "curbside", "dine_in"]),
+    pickupContact: z.unknown().optional(),
+    group_order: z.boolean(),
+    cutlery_requested: z.boolean(),
+    notes: z.string().max(20000).nullable(),
+    items: z.array(completedItem).min(1).max(500),
+  })
+  .transform((order, context) => {
+    try {
+      const { pickupContact: rawContact, ...rest } = order;
+      const pickupContact =
+        order.fulfilment === "pickup" || order.fulfilment === "curbside"
+          ? parseKdsPickupContact(rawContact)
+          : null;
+      return {
+        ...rest,
+        ...(rawContact === undefined ? {} : { pickupContact }),
+      };
+    } catch {
+      context.addIssue({ code: "custom", message: "Invalid collection contact" });
+      return z.NEVER;
+    }
+  });
 export type KdsCompletedOrder = z.infer<typeof completedOrder>;
 export type KdsWorkflowBoard = KdsBoard & {
   completed_orders: KdsCompletedOrder[];

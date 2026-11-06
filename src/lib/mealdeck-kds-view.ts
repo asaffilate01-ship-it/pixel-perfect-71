@@ -2,6 +2,7 @@ import type { KdsOrder } from "./mealdeck-kds";
 import type { KdsCompletedOrder } from "./mealdeck-kds-workflow";
 import { kdsOrderStage, type KdsOrderStage } from "./mealdeck-kds-presentation";
 import { formatPackingBagName } from "./mealdeck-packing-name";
+import { orderDisplayNumber } from "./mealdeck-order-number";
 
 export type KdsView = "tickets" | "stages";
 export type KdsSort = "oldest" | "newest";
@@ -21,6 +22,7 @@ export function matchesKdsOrderSearch(order: KdsOrder | KdsCompletedOrder, query
   const terms = query.trim().toLocaleLowerCase("en-GB").split(/\s+/).filter(Boolean);
   if (!terms.length) return true;
   const values = [
+    orderDisplayNumber(order.order_number, order.display_code),
     order.display_code,
     KDS_FULFILMENT_LABELS[order.fulfilment],
     order.notes ?? "",
@@ -34,6 +36,9 @@ export function matchesKdsOrderSearch(order: KdsOrder | KdsCompletedOrder, query
     ]),
     ...("vehicle" in order && order.vehicle
       ? [order.vehicle.make, order.vehicle.colour, order.vehicle.registrationLast4]
+      : []),
+    ...((order.fulfilment === "pickup" || order.fulfilment === "curbside") && order.pickupContact
+      ? [order.pickupContact.name, order.pickupContact.phone]
       : []),
   ].map((value) => value.toLocaleLowerCase("en-GB"));
   return terms.every((term) => values.some((value) => value.includes(term)));

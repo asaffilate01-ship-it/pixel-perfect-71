@@ -114,7 +114,7 @@ export const Route = createFileRoute("/order")({
     seo({
       title: "Luton menus, prices & basket | MealDeck",
       description:
-        "Explore MealDeck’s five Luton menus and prices. Build your basket with meal upgrades and extras for collection or kerbside pickup. Online ordering is being prepared.",
+        "Explore MealDeck’s five Luton menus and prices. Build your basket with meal upgrades and extras and order for collection or kerbside during kitchen opening hours.",
       path: "/order",
     }),
   component: OrderRoute,

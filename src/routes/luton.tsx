@@ -29,11 +29,11 @@ export const Route = createFileRoute("/luton")({
       faqs={[
         {
           q: "When is MealDeck opening in Luton?",
-          a: "Our opening weekend is 6–8 November 2026: Friday 6 November, 3pm–11pm; Saturday 7 November and Sunday 8 November, 1pm–11pm. All times are UK local time. Online ordering remains coming soon while the service is prepared for launch.",
+          a: "Our opening weekend is 6–8 November 2026: Friday 6 November, 3pm–11pm; Saturday 7 November and Sunday 8 November, 1pm–11pm. All times are UK local time. Order online for Luton collection or kerbside during kitchen opening hours.",
         },
         {
           q: "Which brands are in the first launch?",
-          a: "Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Mix the five launch brands in one basket when ordering opens. The other brands are planned for later decks.",
+          a: "Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Mix the five launch brands in one basket for collection or kerbside. The other brands are planned for later decks.",
         },
         {
           q: "Where can I find burgers in Luton?",
@@ -53,7 +53,7 @@ export const Route = createFileRoute("/luton")({
         },
         {
           q: "Can we order as a group?",
-          a: "Yes. The organiser creates a private room and invites each person to join within 3 minutes. Everyone chooses their own food and marks themselves ready. Unaccepted invitations expire; people who join keep their place. The organiser reviews and locks the choices, then each person pays for their own items or the organiser pays for everyone. Once all required payments are confirmed, one order goes to the kitchen with each person’s name beside their food and an itemised bill per person.",
+          a: "Group ordering starts on Monday 9 November. The organiser creates a private room and invites each person to join within 3 minutes. Everyone chooses their own food and marks themselves ready. Unaccepted invitations expire; people who join keep their place. The organiser reviews and locks the choices, then each person pays for their own items or the organiser pays for everyone. Once all required payments are confirmed, one order goes to the kitchen with each person’s name beside their food and an itemised bill per person.",
         },
       ]}
     />

@@ -749,4 +749,17 @@ describe("authorised native payment API", () => {
         .paidPence,
     ).toBe(1500);
   });
+  test("Terminal display numbering never replaces its collection code or creates paid evidence", () => {
+    const f = fixture();
+    const previous = terminalOrderForApp(f.rawOrder, true);
+    for (const orderNumber of ["0001", "10000", null]) {
+      const order = terminalOrderForApp({ ...f.rawOrder, orderNumber }, true);
+      expect(order.orderNumber).toBe(orderNumber);
+      expect(order.handoffCode).toBe(previous.handoffCode);
+      expect(order.status).toBe(previous.status);
+      expect(order.canCollect).toBe(previous.canCollect);
+      expect(order.remainingPence).toBe(previous.remainingPence);
+    }
+    expect(() => terminalOrderForApp({ ...f.rawOrder, orderNumber: "0000" }, true)).toThrow();
+  });
 });
