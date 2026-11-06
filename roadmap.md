@@ -22,6 +22,9 @@ Last reviewed: **5 November 2026**. This is the current checklist; numbered phas
 
 ## Current completion work
 
+- [x] Add secure owner-only password setup for the five requested internal accounts, preserving existing roles and requiring separate email-ownership approval.
+- [ ] Set the five actual passwords and verify signed-in setup: blocked by the only owner account having no password and an unverified email; an existing verified owner session is required.
+
 - [x] Publish the dedicated Offers page with exactly the three owner-approved November promotions and remove retired sample offers. PR #73 is merged; the live `/offers` page was visually checked after native publication.
 - [x] Build the host-pays group flow: invite individual choices, review replies, combine one basket and carry each person's items into numbered bags. Strict restoration, replay protection, stale-tab checks and a fixed authentication return preserve the reviewed group. Split payments remain separate and unavailable. See [the group guide](docs/mealdeck-group-ordering.md).
 - [x] Deliver a printable staff preparation/packing guide and individual PDFs for the five confirmed menu brands: 14-page combined guide plus Skorch (3), Tavo Chicken (4), Load’d (4), Moktl (2) and Souvano (2). All 79 items and 19 option groups are covered; all 29 pages were rendered and visually checked. These staff documents do not invent missing recipes or allergen declarations.
