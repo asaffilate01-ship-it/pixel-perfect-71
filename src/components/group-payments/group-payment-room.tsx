@@ -17,6 +17,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { getMealDeckCustomerAccessToken } from "@/lib/mealdeck-customer-browser";
+import { accountAfterAuthPath } from "@/lib/mealdeck-account-entry";
 import { formatLaunchMenuPrice } from "@/lib/launch-menu-display-prices";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import {
@@ -728,7 +729,7 @@ export function GroupPaymentRoom({ routeRoomId }: { routeRoomId?: string }) {
             {roomId && (
               <a
                 className="md-shared-button"
-                href={"/account?returnTo=" + encodeURIComponent("/group-pay")}
+                href={accountAfterAuthPath("/group-pay")}
                 onClick={() => rememberSharedPaymentRoom(roomId)}
               >
                 Sign in to reopen your room

@@ -68,7 +68,7 @@ export function AuthEmailConfirmation() {
                 This link could not be checked. Open the latest MealDeck email again, or enter its
                 code on the screen where you requested it.
               </p>
-              <Link to="/account" className="md-auth-confirm-link">
+              <Link to="/account" search={{ signin: 1 }} className="md-auth-confirm-link">
                 Go to your account
               </Link>
             </>

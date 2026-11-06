@@ -2,6 +2,15 @@ export type MealDeckCheckoutMode = "member" | "guest";
 
 export const CHECKOUT_MODE_KEY = "mealdeck-checkout-mode-v1";
 
+/** A remembered member choice must not strand the weekend guest entry at login. */
+export function checkoutModeForEntry(
+  selected: MealDeckCheckoutMode,
+  state: { hasOrder: boolean; registrationDeferred: boolean | undefined; registered: boolean },
+): MealDeckCheckoutMode {
+  if (!state.hasOrder && state.registrationDeferred !== false && !state.registered) return "guest";
+  return selected;
+}
+
 /** Availability may be account-specific; bearer state is transport, never authority. */
 export async function requestMealDeckAvailability(
   path: "/api/checkout" | "/api/group-orders" | "/api/group-payments",
