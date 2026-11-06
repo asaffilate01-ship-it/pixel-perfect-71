@@ -338,6 +338,28 @@ describe("MealDeck tenant and location configuration", () => {
     expect(readMealDeckRuntimeConfig(env, "stalbans")?.tenantId).toBe(tenant);
   });
 
+  test("canonicalises mixed-case aliases and returned kitchen scope", () => {
+    const business = "ab000000-0000-4000-8000-000000000001";
+    const firstKitchen = "cd000000-0000-4000-8000-000000000001";
+    const secondKitchen = "ef000000-0000-4000-8000-000000000002";
+    const env = {
+      ...shared,
+      MEALDECK_TENANT_ID: business.toUpperCase(),
+      MEALDECK_LUTON_TENANT_ID: business,
+      MEALDECK_STALBANS_TENANT_ID: business.toUpperCase(),
+      MEALDECK_LUTON_LOCATION_ID: firstKitchen.toUpperCase(),
+      MEALDECK_STALBANS_LOCATION_ID: secondKitchen.toUpperCase(),
+    };
+    expect(readMealDeckRuntimeConfig(env, "luton")).toMatchObject({
+      tenantId: business,
+      locationId: firstKitchen,
+    });
+    expect(readMealDeckRuntimeConfig(env, "stalbans")).toMatchObject({
+      tenantId: business,
+      locationId: secondKitchen,
+    });
+  });
+
   test("rejects conflicting legacy or canonical tenant IDs", () => {
     const mismatch = {
       ...shared,
@@ -349,6 +371,17 @@ describe("MealDeck tenant and location configuration", () => {
 
   test("rejects duplicate location IDs instead of cross-routing orders", () => {
     const sameKitchen = { ...shared, MEALDECK_STALBANS_LOCATION_ID: luton };
+    expect(readMealDeckRuntimeConfig(sameKitchen, "luton")).toBeNull();
+    expect(readMealDeckRuntimeConfig(sameKitchen, "stalbans")).toBeNull();
+  });
+
+  test("rejects duplicate kitchen UUIDs even when their casing differs", () => {
+    const kitchen = "ab000000-0000-4000-8000-000000000001";
+    const sameKitchen = {
+      ...shared,
+      MEALDECK_LUTON_LOCATION_ID: kitchen,
+      MEALDECK_STALBANS_LOCATION_ID: kitchen.toUpperCase(),
+    };
     expect(readMealDeckRuntimeConfig(sameKitchen, "luton")).toBeNull();
     expect(readMealDeckRuntimeConfig(sameKitchen, "stalbans")).toBeNull();
   });
@@ -366,6 +399,12 @@ describe("MealDeck tenant and location configuration", () => {
     ).toBeNull();
     expect(
       readMealDeckRuntimeConfig({ ...shared, MEALDECK_LUTON_LOCATION_ID: "luton" }, "luton"),
+    ).toBeNull();
+    expect(
+      readMealDeckRuntimeConfig({ ...shared, MEALDECK_STALBANS_LOCATION_ID: "stalbans" }, "luton"),
+    ).toBeNull();
+    expect(
+      readMealDeckRuntimeConfig({ ...shared, MEALDECK_LUTON_LOCATION_ID: "luton" }, "stalbans"),
     ).toBeNull();
   });
 

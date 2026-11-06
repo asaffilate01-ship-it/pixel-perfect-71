@@ -4,6 +4,19 @@
 .md-receipt-preview {
   overflow-wrap: anywhere;
 }
+.md-printer .md-printer-mobile-only {
+  display: none;
+}
+.md-printer .md-printer-view {
+  min-width: 0;
+}
+.md-printer .md-printer-view-heading {
+  outline-offset: 5px;
+}
+.md-printer .md-printer-setup-details > summary {
+  min-height: 44px;
+  padding-block: 0.65rem;
+}
 .md-printer .md-printer-connection {
   display: flex;
   flex-wrap: wrap;
@@ -114,6 +127,143 @@
   font-weight: 800;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+@media (max-width: 800px) {
+  .md-printer .md-printer-desktop-only,
+  .md-printer .md-printer-view[data-mobile-active="false"] {
+    display: none;
+  }
+  .md-printer .md-printer-mobile-only {
+    display: block;
+  }
+  .md-printer .md-printer-header {
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-bottom: 12px;
+  }
+  .md-printer .md-printer-header-logo {
+    width: 48px;
+    height: 42px;
+  }
+  .md-printer .md-printer-header h1 {
+    font-size: 20px;
+    line-height: 1.15;
+  }
+  .md-printer .md-printer-header p {
+    margin-bottom: 4px;
+    font-size: 10px;
+  }
+  .md-printer .md-printer-main {
+    padding-top: 14px;
+    padding-inline: max(14px, env(safe-area-inset-left, 0px))
+      max(14px, env(safe-area-inset-right, 0px));
+  }
+  .md-printer .md-printer-overview {
+    align-items: center;
+    gap: 12px;
+  }
+  .md-printer .md-printer-overview > div {
+    min-width: 0;
+    flex: 1;
+  }
+  .md-printer .md-printer-overview p {
+    overflow-wrap: anywhere;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .md-printer .md-printer-overview .md-ops-button {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .md-printer .md-printer-live-strip {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    border: 1px solid var(--ops-line);
+    border-radius: 12px;
+    padding-inline: 12px 4px;
+    background: var(--ops-paper);
+  }
+  .md-printer .md-printer-live-strip > p {
+    min-width: 0;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.45;
+  }
+  .md-printer .md-printer-live-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 6px;
+    border-radius: 50%;
+  }
+  .md-printer .md-printer-live-dot.is-ready {
+    background: #23744a;
+  }
+  .md-printer .md-printer-live-dot.is-waiting {
+    background: #ad690a;
+  }
+  .md-printer .md-printer-status-action {
+    display: inline-flex;
+    flex: 0 0 auto;
+    min-height: 44px;
+    align-items: center;
+    gap: 5px;
+    border-radius: 9px;
+    padding: 8px;
+    color: var(--ops-ink);
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .md-printer .md-printer-status-action:hover {
+    background: var(--ops-soft);
+  }
+  .md-printer .md-printer-paper-reminder {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    gap: 9px;
+    border: 1px solid #d9b980;
+    border-radius: 12px;
+    padding: 12px;
+    color: #6b4214;
+    background: #fff1d5;
+    font-size: 12px;
+    font-weight: 750;
+    text-align: left;
+  }
+  .md-printer .md-printer-view-heading {
+    font-size: 23px;
+    font-weight: 850;
+    line-height: 1.2;
+  }
+  .md-printer .md-ops-button,
+  .md-printer .md-ops-field {
+    min-height: 48px;
+  }
+  .md-printer .md-ops-button {
+    touch-action: manipulation;
+  }
+  .md-printer details > summary {
+    min-height: 48px;
+  }
+  .md-printer .md-printer-connection {
+    gap: 1rem;
+    padding: 1rem;
+  }
+  .md-printer .md-printer-connection-controls {
+    flex-basis: 100%;
+    gap: 0.75rem;
+  }
+  .md-printer .md-printer-pending-header {
+    padding: 0.9rem;
+  }
+  .md-printer .md-printer-order-number {
+    font-size: 2.65rem;
+  }
 }
 @media print {
   body > * {

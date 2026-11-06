@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { KdsWorkspaceControls } from "../src/components/ops/kds-panel";
+import {
+  KdsWorkspaceControls,
+  KdsWorkspaceTools,
+  OpsKdsPanel,
+} from "../src/components/ops/kds-panel";
 import {
   readKdsToolsPreference,
   saveKdsToolsPreference,
@@ -96,6 +100,118 @@ describe("compact kitchen toolbar", () => {
     expect(visible).toContain("Latest handover");
     expect(visible).toContain("Clear filters");
     expect(visible).not.toMatch(/Accept order|Start prep|Print receipt|Mark done/);
+  });
+});
+
+function kitchenNavigation(html: string) {
+  const nav = html.match(/<nav[^>]*aria-label="Kitchen navigation"[^>]*>[\s\S]*?<\/nav>/)?.[0];
+  expect(nav).toBeTruthy();
+  return nav!;
+}
+
+function navigationButton(nav: string, label: string) {
+  const found = nav.match(
+    new RegExp(`<button[^>]*aria-label="${label}(?:, \\d+)?"[^>]*>[\\s\\S]*?</button>`),
+  )?.[0];
+  expect(found).toBeTruthy();
+  return found!;
+}
+
+describe("standalone kitchen mobile navigation", () => {
+  test("is opt-in so the embedded operations board does not add another navigation bar", () => {
+    expect(renderControls()).not.toContain('aria-label="Kitchen navigation"');
+    const html = renderControls({ mobileNavigation: true });
+    const nav = kitchenNavigation(html);
+    expect(nav.match(/<button\b/g)).toHaveLength(4);
+    expect(navigationButton(nav, "Tickets")).toContain('aria-pressed="true"');
+    expect(navigationButton(nav, "Tickets")).toContain('aria-label="Tickets, 8"');
+    expect(navigationButton(nav, "Board")).not.toContain("disabled");
+    expect(navigationButton(nav, "Tools")).toContain('aria-expanded="false"');
+    expect(navigationButton(nav, "Tools")).toContain("aria-controls=");
+    expect(navigationButton(nav, "Refresh")).not.toContain("disabled");
+
+    const outsideTools = visibleToolbar(html);
+    expect(outsideTools.match(/data-stage="/g)).toHaveLength(7);
+    expect(outsideTools).toContain("Ready for handover");
+    expect(outsideTools).toContain("Done");
+  });
+
+  test("board selection and hidden-filter counts reflect the current controlled state", () => {
+    const html = renderControls({
+      mobileNavigation: true,
+      view: "stages",
+      query: "Amer",
+      fulfilment: "curbside",
+      refreshDisabled: true,
+    });
+    const nav = kitchenNavigation(html);
+    expect(navigationButton(nav, "Board")).toContain('aria-pressed="true"');
+    expect(navigationButton(nav, "Tickets")).toContain('aria-pressed="false"');
+    expect(navigationButton(nav, "Tools")).toContain('aria-label="Tools, 2"');
+    expect(navigationButton(nav, "Refresh")).toContain('disabled=""');
+    expect(visibleToolbar(html)).toContain("Search: “Amer”");
+  });
+
+  test("Done remains read-only ticket history, with no misleading active-stage board action", () => {
+    const html = renderControls({
+      mobileNavigation: true,
+      filter: "done",
+      view: "stages",
+      visibleCount: 4,
+    });
+    const nav = kitchenNavigation(html);
+    expect(visibleToolbar(html)).toContain("Done · read-only");
+    expect(navigationButton(nav, "Tickets")).toContain('aria-pressed="true"');
+    expect(navigationButton(nav, "Tickets")).toContain('aria-label="Tickets, 4"');
+    expect(navigationButton(nav, "Board")).toContain('disabled=""');
+    expect(navigationButton(nav, "Board")).toContain('aria-pressed="false"');
+    expect(nav).not.toMatch(/Accept order|Start prep|Print receipt|Mark done/);
+  });
+
+  test("an unverified initial feed offers refresh without inventing usable tickets or tools", () => {
+    const props = {
+      tenantId: "00000000-0000-4000-8000-000000000001",
+      locationId: "00000000-0000-4000-8000-000000000002",
+      can: () => false,
+    };
+    expect(renderToStaticMarkup(createElement(OpsKdsPanel, props))).not.toContain(
+      'aria-label="Kitchen navigation"',
+    );
+    const html = renderToStaticMarkup(
+      createElement(OpsKdsPanel, { ...props, mobileNavigation: true }),
+    );
+    expect(html).toContain("Loading kitchen orders");
+    const nav = kitchenNavigation(html);
+    for (const label of ["Tickets", "Board", "Tools"]) {
+      expect(navigationButton(nav, label)).toContain('disabled=""');
+    }
+    expect(navigationButton(nav, "Refresh")).not.toContain("disabled");
+    expect(html).not.toContain('data-testid="kds-order-card"');
+  });
+
+  test("mobile tools retain the same query, fulfilment, sorting and staff controls", () => {
+    const html = renderToStaticMarkup(
+      createElement(KdsWorkspaceTools, {
+        mobile: true,
+        filter: "ready",
+        query: "Amer Bag 1",
+        onQueryChange: () => {},
+        fulfilment: "curbside",
+        onFulfilmentChange: () => {},
+        sort: "newest",
+        onSortChange: () => {},
+        view: "stages",
+        onViewChange: () => {},
+        extraTools: createElement("span", null, "Existing sound and installation controls"),
+      }),
+    );
+    expect(html).toContain('value="Amer Bag 1"');
+    expect(html).toContain('<option value="curbside" selected="">');
+    expect(html).toContain('<option value="newest" selected="">');
+    expect(html).toContain("Find an order, dish, brand, bag name, note or vehicle");
+    expect(html).toContain("Existing sound and installation controls");
+    expect(html).not.toContain('aria-label="Kitchen board layout"');
+    expect(html).not.toMatch(/Accept order|Start prep|Print receipt|Mark done/);
   });
 });
 
