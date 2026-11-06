@@ -2,12 +2,14 @@ import { describe, expect, test } from "bun:test";
 import { createHmac } from "node:crypto";
 import { launchMenuBrands } from "../src/lib/launch-menu-catalogue";
 import {
+  CheckoutProblem,
   checkoutModifierId,
   checkoutPayInput,
   normaliseCheckoutSelection,
 } from "../src/lib/mealdeck-checkout-selection";
 import { openingOfferDiscountPence, parseKerbsideVehicle } from "../src/lib/mealdeck-opening-offer";
 import { customerOrderElapsedMinutes } from "../src/lib/mealdeck-customer-order-timing";
+import { paymentErrorResponse } from "../src/lib/mealdeck-payment-server-core";
 import {
   readOnlineCheckoutStatus,
   handleOnlineCheckoutRequest,
@@ -15,6 +17,8 @@ import {
 import {
   readMealDeckStripeConfig,
   safeStripeCheckoutUrl,
+  StripeProviderHttpProblem,
+  stripeRequest,
   stripeSessionParameters,
   verifiedStripeEvent,
   verifyStripeSignature,
@@ -354,6 +358,43 @@ const fetchFixture = (change?: (value: typeof session) => unknown) =>
   }) as typeof fetch;
 
 describe("Stripe server boundaries", () => {
+  test("provider HTTP status stays server-only, error bodies stay unread and customer errors stay generic", async () => {
+    for (const providerStatus of [401, 403, 429, 500, 503]) {
+      const providerResponse = Response.json(
+        { error: { message: `private_error_body ${config.secretKey} ${config.accountId}` } },
+        { status: providerStatus, headers: { "Request-Id": "private_request_identifier" } },
+      );
+      let caught: unknown;
+      let calls = 0;
+      try {
+        await stripeRequest(config, "account", (async () => {
+          calls++;
+          return providerResponse;
+        }) as typeof fetch);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(StripeProviderHttpProblem);
+      expect(caught).toBeInstanceOf(CheckoutProblem);
+      if (!(caught instanceof StripeProviderHttpProblem))
+        throw new Error("Expected safe Stripe HTTP failure");
+      expect(caught.providerStatus).toBe(providerStatus);
+      expect(caught.status).toBe(503);
+      expect(caught.code).toBe("payment_service_unavailable");
+      expect(caught.message).toBe("Secure payment is temporarily unavailable. Please try again.");
+      expect(providerResponse.bodyUsed).toBe(false);
+      expect(calls).toBe(1);
+      for (const property of ["request", "response", "headers", "body", "cause"])
+        expect(Object.hasOwn(caught, property)).toBe(false);
+      const customerResponse = paymentErrorResponse(caught);
+      expect(customerResponse.status).toBe(503);
+      expect(customerResponse.headers.get("Cache-Control")).toContain("no-store");
+      expect(await customerResponse.json()).toEqual({
+        error: "payment_service_unavailable",
+        message: "Secure payment is temporarily unavailable. Please try again.",
+      });
+    }
+  });
   test("public keys or mixed live/test secrets never establish readiness", () => {
     expect(
       readMealDeckStripeConfig({ VITE_PAYMENTS_CLIENT_TOKEN: "pk_live_untrusted" }),

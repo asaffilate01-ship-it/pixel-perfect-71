@@ -89,6 +89,17 @@ export function safeStripeCheckoutUrl(
   return safeHostedCheckoutUrl(value, domain?.status === "configured" ? domain.hostname : null);
 }
 
+/** Server-only diagnostic metadata; public payment responses keep the same error. */
+export class StripeProviderHttpProblem extends CheckoutProblem {
+  constructor(public readonly providerStatus: number) {
+    super(
+      "payment_service_unavailable",
+      "Secure payment is temporarily unavailable. Please try again.",
+      503,
+    );
+  }
+}
+
 export async function stripeRequest(
   config: MealDeckStripeConfig,
   path: string,
@@ -111,12 +122,8 @@ export async function stripeRequest(
     },
     ...(options ? { body: options.body.toString() } : {}),
   });
-  if (!response.ok)
-    throw new CheckoutProblem(
-      "payment_service_unavailable",
-      "Secure payment is temporarily unavailable. Please try again.",
-      503,
-    );
+  // Do not read, retain or expose provider error bodies, headers or requests.
+  if (!response.ok) throw new StripeProviderHttpProblem(response.status);
   const result: unknown = await response.json();
   if (!result || typeof result !== "object" || Array.isArray(result))
     throw new CheckoutProblem(

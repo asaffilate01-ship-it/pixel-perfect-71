@@ -61,6 +61,25 @@ The owner connection report can confirm the merchant-account read; it does not p
 
 References: [restricted API key setup and permissions](https://docs.stripe.com/keys/restricted-api-keys), [endpoint permission reference](https://docs.stripe.com/keys/permissions-reference).
 
+### Reading the owner connection report
+
+After the existing owner/admin, current Auth, MFA, kitchen and finance-permission checks pass, the private connection report distinguishes these account-read results:
+
+| Result | Next check |
+| --- | --- |
+| Stripe HTTP 401 | The saved API key must be complete and active. |
+| Stripe HTTP 403 | Review the key's account-read permissions and access policies. This result does not identify a particular missing permission by itself. |
+| A different merchant account was returned | Check both `MEALDECK_STRIPE_SECRET_KEY` and `MEALDECK_STRIPE_ACCOUNT_ID` against the intended MealDeck account. |
+| The matching account has charges disabled | Review that account's activation or restrictions in Stripe. Replacing the key does not enable charges. |
+| Malformed account response | Stripe's account data could not be validated; the check remains unsuccessful. |
+| Other HTTP, network or response-read failure | The account check could not complete; inspect the provider request and connectivity before retrying. |
+
+The report returns fixed diagnostic text, a bounded provider HTTP status when available, and setting names only. Non-success response bodies are not read, and raw errors, supplied credentials and returned account identifiers are not included. Customer checkout keeps its existing generic error code, message and 503 response. A failed Terminal-location check does not erase an already successful account check.
+
+For deeper diagnosis, use the restricted key's **View request logs** action in Stripe and find the relevant `GET /v1/account`. HTTP status, error code and a required permission name are useful; do not copy the raw message or key into support chat. See [Stripe HTTP errors](https://docs.stripe.com/api/errors) and [request-log filters](https://docs.stripe.com/development/dashboard/request-logs).
+
+An account check does not prove session creation or signed payment processing. Keep public approval pending during the approved private live test. The standard Stripe-hosted checkout URL remains supported; custom-domain activation is a separate optional check.
+
 The approved Stripe custom hostname is `pay.mealdeck.co.uk`. Single and shared Checkout validate the actual provider-issued URL, including during recovery, against the exact configured host; they never construct a replacement URL. Install the additive database URL guard before setting the server value. DNS entry alone is not confirmation that Stripe has activated the domain. See [custom Checkout domain setup and acceptance](mealdeck-stripe-custom-domain.md).
 
 The signed webhook is `https://mealdeck.co.uk/api/stripe/webhook`. Subscribe to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `charge.refunded`, `charge.dispute.created`, and `charge.dispute.closed`. The handler verifies the signature over the raw body, checks the Stripe account and mode, then independently retrieves the provider event, complete Checkout session, succeeded PaymentIntent and captured charge before calling the narrow database reconciliation function. Event replay and order/session binding are enforced inside a transaction.

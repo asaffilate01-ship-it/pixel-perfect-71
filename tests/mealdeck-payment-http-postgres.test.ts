@@ -764,6 +764,10 @@ test("restricted-key permission failures create no paid order, KDS ticket or rec
     expect(h.rpcCalls.some((call) => /bind_stripe|reconcile_stripe/.test(call.name))).toBe(false);
     for (const result of [deniedAccount, deniedSession]) {
       expect(result.response.headers.get("Cache-Control")).toContain("no-store");
+      expect(result.body).toEqual({
+        error: "payment_service_unavailable",
+        message: "Secure payment is temporarily unavailable. Please try again.",
+      });
       expect(JSON.stringify(result.body)).not.toContain(h.env.MEALDECK_STRIPE_SECRET_KEY);
       expect(JSON.stringify(result.body)).not.toContain("Permission denied for");
       expect(result.body.checkoutUrl).toBeUndefined();

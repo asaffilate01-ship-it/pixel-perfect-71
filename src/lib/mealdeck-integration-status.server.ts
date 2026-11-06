@@ -20,6 +20,7 @@ import {
 import {
   readMealDeckStripeConfig,
   readMealDeckStripeSettingIssues,
+  StripeProviderHttpProblem,
   stripeRequest,
 } from "./mealdeck-stripe.server";
 import { readMealDeckStripeCheckoutDomain } from "./mealdeck-stripe-checkout-domain.server";
@@ -38,6 +39,53 @@ const accessSchema = z.object({
   location_id: z.uuid().nullable(),
   role: z.string(),
 });
+
+type StripeAccountFailure =
+  | "credential_rejected"
+  | "access_denied"
+  | "http_failure"
+  | "network_failure"
+  | "malformed_response"
+  | "account_mismatch"
+  | "charges_disabled";
+const stripeAccountFailures: Record<StripeAccountFailure, { detail: string; settings: string[] }> =
+  {
+    credential_rejected: {
+      detail:
+        "Stripe rejected the server credential (HTTP 401). Check that MEALDECK_STRIPE_SECRET_KEY is complete and active for the MealDeck Stripe account.",
+      settings: ["MEALDECK_STRIPE_SECRET_KEY"],
+    },
+    access_denied: {
+      detail:
+        "Stripe denied the account read (HTTP 403). Check the permissions and IP/access restrictions for MEALDECK_STRIPE_SECRET_KEY.",
+      settings: ["MEALDECK_STRIPE_SECRET_KEY"],
+    },
+    http_failure: {
+      detail:
+        "Stripe returned an unsuccessful HTTP response to the account check. Retry the check; account readiness is not confirmed.",
+      settings: [],
+    },
+    network_failure: {
+      detail:
+        "The Stripe account request failed or timed out before a usable response was received. Retry the check.",
+      settings: [],
+    },
+    malformed_response: {
+      detail:
+        "Stripe returned an account response that could not be validated. Retry the check; account readiness is not confirmed.",
+      settings: [],
+    },
+    account_mismatch: {
+      detail:
+        "The key returned a different merchant account from the configured MealDeck account. Check MEALDECK_STRIPE_SECRET_KEY and MEALDECK_STRIPE_ACCOUNT_ID together.",
+      settings: ["MEALDECK_STRIPE_SECRET_KEY", "MEALDECK_STRIPE_ACCOUNT_ID"],
+    },
+    charges_disabled: {
+      detail:
+        "Stripe returned the configured merchant account, but charges are disabled. Open that account in Stripe and review its payment activation status.",
+      settings: [],
+    },
+  };
 
 /** Read-only owner/admin diagnostics. Never creates provider objects or sends mail. */
 export async function handleIntegrationStatusRequest(
@@ -125,25 +173,61 @@ export async function handleIntegrationStatusRequest(
     const validTerminalId = !!terminalId && /^tml_[A-Za-z0-9]+$/.test(terminalId);
     let providerAccountChecked = false;
     let providerTerminalChecked = false;
+    let accountFailure: StripeAccountFailure | null = null;
+    let accountHttpStatus: number | null = null;
     let accountCountry: unknown;
     if (stripe) {
       try {
         const account = await stripeRequest(stripe, "account", fetcher);
-        providerAccountChecked =
-          account["id"] === stripe.accountId && account["charges_enabled"] === true;
-        accountCountry = account["country"];
-        if (providerAccountChecked && accountCountry === "GB" && validTerminalId) {
+        if (
+          typeof account["id"] !== "string" ||
+          !/^acct_[A-Za-z0-9]+$/.test(account["id"]) ||
+          typeof account["charges_enabled"] !== "boolean"
+        )
+          accountFailure = "malformed_response";
+        else if (account["id"] !== stripe.accountId) accountFailure = "account_mismatch";
+        else if (!account["charges_enabled"]) accountFailure = "charges_disabled";
+        else {
+          providerAccountChecked = true;
+          accountCountry = account["country"];
+        }
+      } catch (error) {
+        // Classify only safe metadata after owner guards. Never echo raw errors.
+        if (
+          error instanceof StripeProviderHttpProblem &&
+          Number.isInteger(error.providerStatus) &&
+          error.providerStatus >= 300 &&
+          error.providerStatus <= 599
+        )
+          accountHttpStatus = error.providerStatus;
+        accountFailure =
+          error instanceof StripeProviderHttpProblem
+            ? error.providerStatus === 401
+              ? "credential_rejected"
+              : error.providerStatus === 403
+                ? "access_denied"
+                : "http_failure"
+            : error instanceof SyntaxError ||
+                (error instanceof CheckoutProblem && error.code === "invalid_provider_response")
+              ? "malformed_response"
+              : "network_failure";
+      }
+      if (providerAccountChecked && accountCountry === "GB" && validTerminalId) {
+        try {
           const location = await stripeRequest(stripe, "terminal/locations/" + terminalId, fetcher);
           providerTerminalChecked =
             location["id"] === terminalId &&
             location["livemode"] === stripe.livemode &&
             paymentObject(location["address"])["country"] === "GB";
+        } catch {
+          // An optional Terminal failure does not erase successful account evidence.
         }
-      } catch {
-        // Keep successful account evidence if only the location request failed.
-        // Raw provider errors, credentials and identifiers never enter the report.
       }
     }
+    const accountFailureDetail =
+      accountFailure === "http_failure" && accountHttpStatus !== null
+        ? `Stripe returned HTTP ${accountHttpStatus} for the account check. Retry the check; account readiness is not confirmed.`
+        : stripeAccountFailures[accountFailure ?? "network_failure"].detail;
     const publicApprovalPending = env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off";
     const checkoutSetupReady =
       !!serviceKey &&
@@ -195,14 +279,16 @@ export async function handleIntegrationStatusRequest(
       providerAccountChecked
         ? "Stripe returned the configured merchant account with charges enabled. A completed payment and webhook acceptance still need separate verification."
         : stripe
-          ? "The configured merchant account or its ability to accept charges could not be confirmed with Stripe. Check the account connection and retry."
+          ? accountFailureDetail
           : stripeIssues
               .map(
                 (issue) =>
                   `${issue.setting}: ${issue.status === "mode_mismatch" ? "invalid (key/mode mismatch)" : issue.status}.`,
               )
               .join(" "),
-      stripeIssues.map((issue) => issue.setting),
+      accountFailure
+        ? stripeAccountFailures[accountFailure].settings
+        : stripeIssues.map((issue) => issue.setting),
     );
     add(
       "checkout",
