@@ -1,0 +1,56 @@
+name: Verify pre-opening source repair
+on:
+  push:
+    branches: [fix/mealdeck-test-checkout-access-20261106]
+    paths: [.github/workflows/preopening-repair-retry.yml]
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.repository == 'asaffilate01-ship-it/pixel-perfect-71'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+      - name: Apply exact checksum-verified source patch
+        shell: python
+        run: |
+          import ast,base64,gzip,hashlib,pathlib,re,subprocess
+          text=pathlib.Path('.github/workflows/preopening-access-repair.yml').read_text()
+          expected=ast.literal_eval(re.search(r'expected = (\{[^\n]+\})',text).group(1))
+          for path,sha in expected.items():
+            assert subprocess.check_output(['git','hash-object',path],text=True).strip()==sha,path+' changed; stop rather than overwrite'
+          payload=re.search("payload='''([^']+)'''",text).group(1)
+          payload=payload.replace('AGlCFxUPSzF1F8','AGlCFxUPSzF8')
+          patch=gzip.decompress(base64.b64decode(payload,validate=True))
+          assert hashlib.sha256(patch).hexdigest()=='fb3d962add808317232aae1c923fcf972505892d9ada46d795424a4ac7f21c65'
+          subprocess.run(['git','apply','--check','--index','--whitespace=error-all','-'],input=patch,check=True)
+          subprocess.run(['git','apply','--index','--whitespace=error-all','-'],input=patch,check=True)
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Format and test the repair
+        run: |
+          set -euo pipefail
+          git diff --cached --name-only -z | xargs -0 bunx --no-install prettier --write
+          git diff --cached --name-only -z | xargs -0 git add --
+          bun test tests/mealdeck-online-checkout.test.ts tests/mealdeck-checkout-browser.test.ts tests/mealdeck-shared-payments-server.test.ts tests/mealdeck-group-rooms.test.ts tests/mealdeck-order-payments-server.test.ts
+          bunx --no-install tsc --noEmit
+          bun run build
+          git diff --cached --check
+      - name: Commit reviewed source without changing workflows
+        run: |
+          set -euo pipefail
+          target='fix/mealdeck-test-checkout-access-20261106'
+          test "$GITHUB_REF" = "refs/heads/$target"
+          test "$(git ls-remote origin "refs/heads/$target" | cut -f1)" = "$GITHUB_SHA"
+          if git diff --cached --name-only | grep -q '^.github/'; then exit 1; fi
+          git config user.name 'MealDeck Build'
+          git config user.email 'build@mealdeck.invalid'
+          git commit -m 'Connect verified pre-opening test access to checkout and group rooms'
+          git push origin "HEAD:refs/heads/$target"
