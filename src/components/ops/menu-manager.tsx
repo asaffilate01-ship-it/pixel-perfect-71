@@ -38,6 +38,8 @@ import {
 } from "@/lib/mealdeck-menu-manager";
 import { MenuKitchenRoute } from "./menu-kitchen-route";
 import { ModifierPricesPanel } from "./modifier-prices-panel";
+import { MenuCategoriesPanel } from "./menu-categories-panel";
+import type { OpsMenuCategory } from "@/lib/mealdeck-ops-menu-structure";
 import "./menu-manager.css";
 
 type Props = {
@@ -77,8 +79,17 @@ export function OpsMenuPanel(props: Props) {
   return <MenuManager key={props.tenantId + ":" + props.locationId} {...props} />;
 }
 
-function MenuManager({ menu, taxonomy, tenantId, locationId, can, canGlobal, notice }: Props) {
+function MenuManager({
+  menu,
+  taxonomy: initialTaxonomy,
+  tenantId,
+  locationId,
+  can,
+  canGlobal,
+  notice,
+}: Props) {
   const id = useId();
+  const [taxonomy, setTaxonomy] = useState(initialTaxonomy);
   const [initial] = useState(() => initialMenu(menu));
   const [rows, setRows] = useState(initial.rows);
   const [loadError, setLoadError] = useState(initial.error);
@@ -86,6 +97,7 @@ function MenuManager({ menu, taxonomy, tenantId, locationId, can, canGlobal, not
   const [success, setSuccess] = useState("");
   const [pending, setPending] = useState("");
   const [routingBusy, setRoutingBusy] = useState(false);
+  const [structureBusy, setStructureBusy] = useState(false);
   const [filters, setFilters] = useState<MenuFilters>(blankFilters);
   const [limit, setLimit] = useState(pageSize);
   const [selected, setSelected] = useState<OpsMenuItem | null>(null);
@@ -108,7 +120,7 @@ function MenuManager({ menu, taxonomy, tenantId, locationId, can, canGlobal, not
   const actionLock = useRef(false);
   const globalWrite = canGlobal("menu.write");
   const localWrite = can("menu.write");
-  const busy = !!pending || routingBusy;
+  const busy = !!pending || routingBusy || structureBusy;
   const writable = !busy && !loadError;
   const current = rows.find((item) => item.item_id === selected?.item_id);
   const dirty = !!selected && menuDraftHasChanges(draft, selected);
@@ -191,6 +203,49 @@ function MenuManager({ menu, taxonomy, tenantId, locationId, can, canGlobal, not
         p_location: locationId,
       }),
     );
+  }
+
+  async function categorySaved(saved: OpsMenuCategory) {
+    const previous = taxonomy.find((category) => category.category_id === saved.category_id);
+    setTaxonomy((categories) =>
+      [
+        ...categories.filter((category) => category.category_id !== saved.category_id),
+        ...(saved.active
+          ? [
+              {
+                category_id: saved.category_id,
+                category_name: saved.category_name,
+                brand_id: saved.brand_id,
+                brand_name: saved.brand_name,
+              },
+            ]
+          : []),
+      ].sort((a, b) =>
+        `${a.brand_name} ${a.category_name}`.localeCompare(
+          `${b.brand_name} ${b.category_name}`,
+          "en-GB",
+        ),
+      ),
+    );
+    if (previous && previous.category_name !== saved.category_name)
+      setFilters((currentFilters) =>
+        currentFilters.category === previous.category_name
+          ? { ...currentFilters, category: saved.category_name }
+          : currentFilters,
+      );
+    const cycle = generation.current;
+    try {
+      const next = await readMenu();
+      if (cycle === generation.current) {
+        setRows(next);
+        setLoadError("");
+      }
+    } catch {
+      if (cycle === generation.current)
+        setLoadError(
+          "The category was saved, but the product list could not be refreshed. Reload the menu to continue.",
+        );
+    }
   }
 
   async function refresh() {
@@ -491,10 +546,16 @@ function MenuManager({ menu, taxonomy, tenantId, locationId, can, canGlobal, not
           <p className="md-menu-eyebrow">Kitchen menu</p>
           <h2 id={id + "-heading"}>Brand menus</h2>
           <p className="md-ops-muted">
-            Find a dish, update its price or mark it out of stock for this kitchen.
+            Manage products, categories and add-ons. Keep names, prices and availability current.
           </p>
         </div>
         <div className="md-menu-heading-actions">
+          <a href={"#" + id + "-categories"} className="md-ops-button md-ops-secondary">
+            Categories
+          </a>
+          <a href={"#" + id + "-modifiers"} className="md-ops-button md-ops-secondary">
+            Add-ons
+          </a>
           <button
             type="button"
             className="md-ops-button md-ops-secondary"
@@ -881,7 +942,8 @@ function MenuManager({ menu, taxonomy, tenantId, locationId, can, canGlobal, not
           )}
           <p className="md-menu-setting-note">
             Hide a dish when it sells out; restore it when it can be served again. “Shown” is the
-            saved menu setting. Kitchen opening and ordering checks still apply.
+            product’s saved setting. Its category must also be available; kitchen and ordering
+            checks still apply.
           </p>
         </section>
 
@@ -1104,8 +1166,7 @@ function MenuManager({ menu, taxonomy, tenantId, locationId, can, canGlobal, not
                   </div>
                 )}
                 <a href={"#" + id + "-modifiers"} className="md-menu-modifier-link">
-                  <ArrowDown className="size-4" aria-hidden="true" /> Manage add-on and upgrade
-                  prices
+                  <ArrowDown className="size-4" aria-hidden="true" /> Manage add-ons and upgrades
                 </a>
               </>
             )}
@@ -1210,12 +1271,25 @@ function MenuManager({ menu, taxonomy, tenantId, locationId, can, canGlobal, not
           )}
         </div>
       </div>
+      <div id={id + "-categories"} className="md-menu-modifiers">
+        <MenuCategoriesPanel
+          key={tenantId}
+          tenantId={tenantId}
+          canRead={canGlobal("menu.read")}
+          canWrite={globalWrite}
+          disabled={busy}
+          onBusyChange={setStructureBusy}
+          onSaved={categorySaved}
+        />
+      </div>
       <div id={id + "-modifiers"} className="md-menu-modifiers">
         <ModifierPricesPanel
           key={tenantId}
           tenantId={tenantId}
           canRead={canGlobal("menu.read")}
           canWrite={globalWrite}
+          disabled={busy}
+          onBusyChange={setStructureBusy}
         />
       </div>
     </div>

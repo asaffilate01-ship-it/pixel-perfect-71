@@ -300,11 +300,33 @@ export function setLaunchCrossChoice(
   return cleanLaunchCrossConfiguration(brand, item, sourceSelections, next);
 }
 
+/** Current display names only; source IDs, allowed choices and prices stay unchanged. */
+export function describeLaunchCrossChoice(
+  choice: LaunchCrossChoice,
+  mode: LaunchCrossMode,
+  catalogue?: LaunchMenuBrand[],
+): LaunchCrossChoice & { label: string } {
+  const brand = getLaunchMenuBrand(choice.brandId, catalogue);
+  const section = brand?.sections.find((entry) =>
+    entry.items.some((item) => item.id === choice.itemId),
+  );
+  const item = section?.items.find((entry) => entry.id === choice.itemId);
+  const name = item?.name ?? choice.name;
+  const replacementLabel = mode === "upgrade" ? item?.replacementLabel : undefined;
+  return {
+    ...choice,
+    name,
+    sectionTitle: section?.title ?? choice.sectionTitle,
+    label: replacementLabel && replacementLabel !== name ? `${replacementLabel} · ${name}` : name,
+  };
+}
+
 export function launchCrossSelectionSummaries(
   brand: LaunchMenuBrand,
   item: LaunchMenuItem,
   selections: LaunchMenuSelections,
   input: unknown = [],
+  catalogue?: LaunchMenuBrand[],
 ): LaunchCrossSummary[] {
   const clean = cleanLaunchCrossConfiguration(brand, item, selections, input);
   const offers = getLaunchCrossOffers(brand, item, clean.selections);
@@ -325,13 +347,15 @@ export function launchCrossSelectionSummaries(
         : brand.id === "souvano" && item.id === "souvano-heatwave-heatwave"
           ? "Fries base"
           : "Meal fries";
-    const name = selection.slot === "side" ? `${choice.sectionTitle}: ${choice.name}` : choice.name;
+    const display = describeLaunchCrossChoice(choice, selection.mode, catalogue);
+    const name =
+      selection.slot === "side" ? `${display.sectionTitle}: ${display.label}` : display.label;
     return [
       {
         ...selection,
         brandName: target.name,
-        itemName: choice.name,
-        sectionTitle: choice.sectionTitle,
+        itemName: display.name,
+        sectionTitle: display.sectionTitle,
         label:
           selection.mode === "upgrade"
             ? `${component} replaced with ${target.name} · ${name}`

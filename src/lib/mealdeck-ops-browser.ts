@@ -118,13 +118,45 @@ export async function opsRpc<T>(
         "Your staff role is not permitted to access this area.",
       );
     }
+    if (name === "mealdeck_ops_menu_categories" || name === "mealdeck_ops_update_menu_category") {
+      if (error.code === "PGRST202")
+        throw new OpsRequestError(
+          "unconfigured",
+          "Category editing is not installed yet. Ask your administrator to finish the menu setup.",
+        );
+      if (/mealdeck_ops_category_conflict/.test(error.message))
+        throw new OpsRequestError(
+          "conflict",
+          "This category changed on another screen. Reload its latest name and availability before saving.",
+        );
+      if (/mealdeck_ops_category_invalid/.test(error.message))
+        throw new OpsRequestError(
+          "unavailable",
+          "Use a category name of 2–140 characters and choose its availability.",
+        );
+      if (/mealdeck_ops_category_not_found/.test(error.message))
+        throw new OpsRequestError(
+          "unavailable",
+          "This category is no longer available for this brand. Reload categories and try again.",
+        );
+    }
     if (name.startsWith("mealdeck_ops_modifier_")) {
       if (error.code === "PGRST202") {
         throw new OpsRequestError(
           "unconfigured",
-          "Shared option price editing is not installed yet. Ask your administrator to finish the menu setup.",
+          "Shared option editing is not installed yet. Ask your administrator to finish the menu setup.",
         );
       }
+      if (/mealdeck_ops_modifier_option_conflict/.test(error.message))
+        throw new OpsRequestError(
+          "conflict",
+          "This option changed on another screen. Reload its latest name, price and availability before saving.",
+        );
+      if (/mealdeck_ops_modifier_option_invalid/.test(error.message))
+        throw new OpsRequestError(
+          "unavailable",
+          "Use an option name of 1–140 characters and a price from £0.00 to £10,000.00.",
+        );
       if (/mealdeck_ops_modifier_price_conflict/.test(error.message)) {
         throw new OpsRequestError(
           "conflict",

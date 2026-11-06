@@ -58,6 +58,7 @@ export function GroupRoomChoices({
             entry.item,
             pick.selections,
             pick.crossSelections,
+            catalogue,
           ).map((choice) => choice.label),
         ];
         return (

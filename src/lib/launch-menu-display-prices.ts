@@ -132,6 +132,7 @@ export function launchMenuPickDisplayPrice(
     found.item,
     configuration.selections,
     configuration.crossSelections,
+    catalogue,
   );
   const additions = children.map((child) => {
     const unitPence = launchMenuCrossChoicePrice(

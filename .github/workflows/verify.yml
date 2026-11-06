@@ -36,6 +36,7 @@ jobs:
           tests/launch-menu-upsells.test.ts
           tests/launch-menu-navigation.test.ts
           tests/launch-menu-display-prices.test.ts
+          deploy/mealdeck/public-menu-read.mjs tests/postgres/public-menu-read-behavior.mjs
           --rule 'prettier/prettier: off'
       - name: Installable app cache isolation and offline behavior
         run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
@@ -105,7 +106,9 @@ jobs:
       - name: "WhatsApp assistant test: privacy, validation and multi-brand handoff"
         run: bun test tests/whatsapp-assistance.test.ts
       - name: MealDeck backend staff, costing, analytics and RLS source contracts
-        run: bun test tests/mealdeck-ops.test.ts tests/mealdeck-menu-manager.test.ts
+        run: >-
+          bun test tests/mealdeck-ops.test.ts tests/mealdeck-menu-manager.test.ts
+          tests/mealdeck-menu-choice-editor.test.ts tests/mealdeck-menu-structure.test.ts
       - name: Private payment and email connection diagnostics
         run: bun test tests/mealdeck-integration-status.test.ts tests/mealdeck-checkout-domain.test.ts
       - name: Payment and email diagnostics implementation checks
@@ -170,11 +173,15 @@ jobs:
           src/lib/mealdeck-menu-manager.ts src/lib/mealdeck-kds-view.ts
           tests/mealdeck-menu-manager.test.ts
           src/components/ops/menu-kitchen-route.tsx
+          src/components/ops/menu-categories-panel.tsx
           src/components/ops/modifier-prices-panel.tsx
           src/lib/mealdeck-ops-browser.ts src/lib/mealdeck-ops-access.ts
-          src/lib/mealdeck-ops-modifier-prices.ts
+          src/lib/mealdeck-ops-modifier-prices.ts src/lib/mealdeck-ops-menu-structure.ts
+          src/lib/mealdeck-menu-choice-editor.ts
           src/lib/mealdeck-ops-math.ts src/lib/mealdeck-ops-types.ts
-          tests/mealdeck-ops.test.ts
+          tests/mealdeck-ops.test.ts tests/mealdeck-menu-choice-editor.test.ts
+          tests/mealdeck-menu-structure.test.ts
+          deploy/mealdeck/menu-structure.mjs tests/postgres/menu-structure-behavior.mjs
           --rule 'prettier/prettier: off'
 
       - name: Procurement and stock batch lint
@@ -220,6 +227,12 @@ jobs:
 
       - name: Install isolated PostgreSQL integration dependencies
         run: npm ci --prefix tests/postgres
+
+      - name: Category and add-on authorization, conflicts and canonical checkout
+        run: node tests/postgres/menu-structure-behavior.mjs
+
+      - name: Safe anonymous menu read and private authority isolation
+        run: node tests/postgres/public-menu-read-behavior.mjs
 
       - name: Payment HTTP handlers against migrated PostgreSQL contracts
         run: bun test tests/mealdeck-payment-http-postgres.test.ts
@@ -637,6 +650,8 @@ jobs:
             checkout-domain,
             ordering-rooms,
             public-menu,
+            menu-structure,
+            public-menu-read,
           ]
     services:
       postgres:
