@@ -345,7 +345,10 @@ export function LaunchMenuBrowser({
         <div className="lm-page-heading">
           <span className="lm-eyebrow">The Luton launch deck</span>
           <p>Five menus. Every craving.</p>
-          <span className="lm-launch-label">Browse now · Ordering coming soon</span>
+          <span className="lm-launch-label">
+            Browse now · Ordering coming soon
+            <small className="mt-1 block text-xs font-normal">All food is halal</small>
+          </span>
         </div>
         <div className="lm-group-entry">
           <p>
