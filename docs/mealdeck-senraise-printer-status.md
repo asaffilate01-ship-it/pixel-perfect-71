@@ -1,6 +1,16 @@
 # Senraise printer integration status — 6 November 2026
 
-The owner uses a Senraise Android terminal and wants the **MealDeck Printer PWA** at `https://mealdeck.co.uk/printer` to remain the working screen, with automatic receipts after acceptance on either KDS or printer. The exact model, installed firmware and printer service have not been verified. No device serial or other unique hardware identifier is recorded here. No integrated-printer connection, APK installation or physical-paper acceptance was performed during this investigation.
+The owner uses a **Senraise H10S** and wants the **MealDeck Printer PWA** at `https://mealdeck.co.uk/printer` to remain the working screen, with automatic receipts after acceptance on either KDS or printer. The owner's device screenshots supplied on 6 November 2026 directly confirm the following details; the model is no longer inferred from a serial prefix.
+
+| Device field                          | Observed value      |
+| ------------------------------------- | ------------------- |
+| Model                                 | H10S                |
+| Android version                       | 13                  |
+| System build                          | `H10S-OS02-13.1.95` |
+| Printer firmware                      | `307`               |
+| Hardware Settings app current version | `8.3.6`             |
+
+The Hardware Settings app version is not evidence of a printer-service package or SDK API version. The exact service contract and compatibility with this build remain to be verified. No serial, IMEI, IP address, MAC address or other unique hardware identifier is recorded here. This investigation has not commissioned a native printer adapter or verified automatic output from the PWA through the built-in printer.
 
 ## What the Cafe1 source actually provides
 
@@ -43,8 +53,8 @@ The existing native CI demonstrates a reusable build process: locked dependencie
 
 ### Evidence needed to proceed
 
-1. The app/browser name and its settings from the **working Cafe1 print flow**, plus the terminal's **Settings → Printing** services and **About device** model/firmware fields. Unique device identifiers are unnecessary.
-2. The matching official Senraise SDK/AAR/AIDL or print-service package, its distribution licence, service/component/action names, permissions and supported firmware versions.
+1. The app/browser name and its settings from the **working Cafe1 print flow**, plus the terminal's **Settings → Printing** services and the actual printer-service app/package and version. The model, Android version, build, printer firmware and Hardware Settings version are already recorded above; unique device identifiers are unnecessary.
+2. The official Senraise SDK/AAR/AIDL or print-service package documented for H10S on Android 13 / build `H10S-OS02-13.1.95` / printer firmware `307`, its distribution licence, service/component/action names, permissions and supported firmware versions. No matching downloadable artifact with verified manufacturer provenance has been established from the public pages checked.
 3. The documented printable width, encoding/rendering contract, status/error callbacks, completion semantics and behaviour after service disconnect or timeout.
 4. A supervised clearly labelled setup print on the actual device, followed by a real canonical receipt test confirming one physical copy and correct interrupted-send recovery.
 

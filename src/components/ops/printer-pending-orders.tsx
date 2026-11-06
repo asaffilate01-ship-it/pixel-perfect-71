@@ -142,6 +142,16 @@ export function PrinterPendingOrderCard({
                 {item.brandName}
                 {item.parentLineId ? " · extra with the item above" : ""}
               </p>
+              <p className="mt-1 text-xs md-ops-muted">
+                <strong>{formatReceiptMoney(item.unitPence)} each</strong>
+                {" · selected choices included"}
+                {item.quantity > 1 && (
+                  <span>
+                    {" · "}
+                    {formatReceiptMoney(item.quantity * item.unitPence)} line total
+                  </span>
+                )}
+              </p>
               {!!item.mealComponents?.length && (
                 <div className="mt-2 border-l-2 md-ops-border pl-2 text-sm">
                   <p className="text-xs font-bold">

@@ -113,14 +113,16 @@ test("one receipt prints exact paid time, flavours, extras, amounts, bags and cu
     "Blue Ford / last 4: AB12",
     "TAVO",
     "Fiery Sweet Chilli",
-    "GBP 1.50 each item",
+    "Choices included in item price:",
+    "Each, including choices",
+    "GBP 8.49",
     "No gherkin",
     "LOAD'D",
     "King of Hearts loaded fries",
     "MOKTL",
     "Mango Mirage",
     "Mocktail flavour",
-    "included",
+    "per item",
     "GBP 28.94",
     "GBP 8.68",
     "GBP 20.26",
@@ -147,6 +149,101 @@ test("one receipt prints exact paid time, flavours, extras, amounts, bags and cu
   assert.deepEqual([...result.bytes.slice(-4)], [10, 10, 10, 10]);
   assert.ok(result.text.split("\n").every((line) => line.length <= 42));
   assert.ok(result.bytes.length < RECEIPT_LIMITS.bytes);
+});
+
+test("legacy portion and meal deltas never print as extra charges while inclusive prices and fingerprints remain", () => {
+  const r = fixture();
+  const original = r.items[0];
+  const wings = (lineId, choice) => ({
+    ...original,
+    lineId,
+    brandName: "Tavo",
+    name: "Fried Chicken Wings",
+    quantity: 1,
+    baseUnitPence: 299,
+    unitPence: 350,
+    linePence: 350,
+    modifiers: [
+      {
+        name: choice,
+        groupName: "Portion & flavour",
+        quantityPerParent: 1,
+        priceDeltaPence: 51,
+      },
+    ],
+  });
+  r.items = [
+    wings("wings-korean", "Korean BBQ · 3 pcs"),
+    wings("wings-chilli", "Fiery Sweet Chilli · 3 pcs"),
+    {
+      ...original,
+      lineId: "burger-meal",
+      brandName: "Skorch",
+      name: "The Ace",
+      quantity: 1,
+      baseUnitPence: 399,
+      unitPence: 649,
+      linePence: 649,
+      modifiers: [
+        {
+          name: "Make it a meal",
+          groupName: "Meal",
+          quantityPerParent: 1,
+          priceDeltaPence: 250,
+        },
+        {
+          name: "Rubicon Mango",
+          groupName: "Included meal drink",
+          quantityPerParent: 1,
+          priceDeltaPence: 0,
+        },
+      ],
+    },
+  ];
+  r.packingPlan.separateBags = false;
+  r.packingPlan.bags = [
+    { number: 1, allocations: r.items.map((item) => ({ lineId: item.lineId, quantity: 1 })) },
+  ];
+  r.subtotalPence = 1349;
+  r.discountPence = 405;
+  r.totalPence = 944;
+  const canonical = JSON.stringify(validateReceipt(r));
+  const fingerprint = createHash("sha256").update(canonical).digest("hex");
+  for (const columns of [32, 42]) {
+    const rendered = encodeReceipt(r, { columns });
+    const text = rendered.text.replace(/\n\s*/g, " ");
+    for (const label of [
+      "Korean BBQ - 3 pcs x1 per item",
+      "Fiery Sweet Chilli - 3 pcs x1 per item",
+      "Make it a meal x1 per item",
+      "Rubicon Mango x1 per item",
+      "Choices included in item price:",
+      "GBP 3.50",
+      "GBP 6.49",
+      "GBP 13.49",
+      "GBP 4.05",
+      "GBP 9.44",
+    ])
+      assert.ok(text.includes(label), label);
+    for (const internalAmount of ["GBP 0.51", "GBP 2.99", "GBP 2.50", "GBP 3.99", "Base each"])
+      assert.equal(text.includes(internalAmount), false, internalAmount);
+    assert.deepEqual(rendered.bytes.slice(2, 2 + encodeReceiptLogo().length), encodeReceiptLogo());
+    assert.ok(rendered.text.split("\n").every((line) => line.length <= columns));
+  }
+  assert.equal(JSON.stringify(validateReceipt(r)), canonical);
+  assert.equal(
+    createHash("sha256")
+      .update(JSON.stringify(validateReceipt(r)))
+      .digest("hex"),
+    fingerprint,
+  );
+  assert.equal(r.items[0].modifiers[0].priceDeltaPence, 51);
+  assert.equal(r.items[2].modifiers[0].priceDeltaPence, 250);
+  const extras = encodeReceipt(fixture()).text.replace(/\n\s*/g, " ");
+  assert.match(extras, /King of Hearts loaded fries/);
+  assert.match(extras, /Mango Mirage/);
+  assert.equal(extras.match(/GBP 5\.98/g)?.length, 2);
+  assert.doesNotMatch(extras, /GBP 1\.50 each item/);
 });
 
 test("names survive canonical validation and print beside food choices and each packing bag", () => {
@@ -336,7 +433,7 @@ test("unicode fallback is explicit, and an oversized order is rejected whole", (
   assert.throws(() => encodeReceipt(r), { code: "receipt_too_long" });
 });
 
-test("explicit copies require original reference and reason; a signed modifier remains itemised", () => {
+test("explicit copies require provenance and signed adjustments retain their label and inclusive price", () => {
   const r = fixture();
   r.copyNumber = 2;
   assert.throws(() => validateReceipt(r), { code: "invalid_reprint_receipt" });
@@ -350,5 +447,9 @@ test("explicit copies require original reference and reason; a signed modifier r
     quantityPerParent: 1,
     priceDeltaPence: -50,
   });
-  assert.match(encodeReceipt(r).text.replace(/\n\s*/g, " "), /GBP -0.50 each item/);
+  const text = encodeReceipt(r).text.replace(/\n\s*/g, " ");
+  assert.match(text, /Adjustment: Approved discount x1 per item/);
+  assert.match(text, /Each, including choices\s+GBP 8\.49/);
+  assert.doesNotMatch(text, /GBP -0\.50/);
+  assert.equal(validateReceipt(r).items[0].modifiers.at(-1).priceDeltaPence, -50);
 });

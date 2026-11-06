@@ -1478,9 +1478,7 @@ export function KitchenOrderCard({
                                     {detail && !priceVariant && (
                                       <span className="md-kds-choice-detail">
                                         {detail.quantity_per_parent}× each
-                                        {detail.price_delta_pence
-                                          ? ` · ${detail.price_delta_pence < 0 ? "−" : "+"}£${(Math.abs(detail.price_delta_pence) / 100).toFixed(2)}`
-                                          : " · included"}
+                                        {item.unit_pence != null && " · included in item price"}
                                       </span>
                                     )}
                                   </span>

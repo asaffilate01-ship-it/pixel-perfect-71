@@ -44,6 +44,24 @@ function fixture() {
   };
 }
 describe("durable Done history", () => {
+  test("retains only an optional canonical unit price and rejects malformed prices", () => {
+    const value = fixture();
+    Object.assign(value.completed_orders[0]!.items[0]!, { unit_pence: 350, base_unit_pence: 299 });
+    const parsed = parseKdsWorkflowBoard(value, scope).completed_orders[0]!.items[0]!;
+    expect(parsed.unit_pence).toBe(350);
+    expect(parsed).not.toHaveProperty("base_unit_pence");
+    for (const unit_pence of [undefined, null]) {
+      Object.assign(value.completed_orders[0]!.items[0]!, { unit_pence });
+      expect(parseKdsWorkflowBoard(value, scope).completed_orders[0]!.items[0]!.unit_pence).toBe(
+        unit_pence,
+      );
+    }
+    for (const unit_pence of [-1, 3.5, "350", NaN, Infinity]) {
+      Object.assign(value.completed_orders[0]!.items[0]!, { unit_pence });
+      expect(() => parseKdsWorkflowBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+    }
+  });
+
   test("completed meal instructions retain canonical side replacements and reject malformed components", () => {
     const value = fixture();
     const mealComponents = [

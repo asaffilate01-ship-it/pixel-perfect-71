@@ -516,20 +516,18 @@ export function encodeReceipt(input, profile = {}) {
         );
     }
     if (item.modifiers.length) {
-      pair("  Base each", money(item.baseUnitPence));
-      write("Choices included in line total:", "  ");
+      // Stored receipts do not distinguish variants from add-ons. Show every
+      // choice with its inclusive item price, never guess from editable labels.
+      pair("  Each, including choices", money(item.unitPence));
+      write("Choices included in item price:", "  ");
       for (const modifier of item.modifiers) {
-        const amount =
-          modifier.priceDeltaPence === 0
-            ? "included"
-            : money(modifier.priceDeltaPence * modifier.quantityPerParent) + " each item";
         write(
           modifier.groupName +
             ": " +
             modifier.name +
-            (modifier.quantityPerParent > 1 ? " x" + modifier.quantityPerParent : "") +
-            " - " +
-            amount,
+            " x" +
+            modifier.quantityPerParent +
+            " per item",
           "  ",
         );
       }

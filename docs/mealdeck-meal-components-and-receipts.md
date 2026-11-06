@@ -1,6 +1,16 @@
 # Canonical meal contents and branded receipts
 
-Source and verification record: 6 November 2026. The owner asked the kitchen to see what “Make it a meal” includes and asked for the approved MealDeck logo on receipts. The compatible client can be released before the meal database extension. This document does not claim that the new cash/meal migrations have been installed or that any printer has produced paper.
+Source and verification record: 6 November 2026. The owner asked the kitchen to see what “Make it a meal” includes and asked for the approved MealDeck logo on receipts. The cash and meal database extensions are now installed, and their compatible application release is published. Printer output remains a separate device outcome.
+
+## Installed and published release
+
+[PR111](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/111) merged normally as `f2b33c8ffc6baddd3b5cb7f0b2c7acd57d5fb5cf`. The release owner installed cash first, then the exact meal-components migration, in the selected independent MealDeck database. Readback verified the expected function hashes, permissions, private RLS and receipt composition. All 13 existing receipt snapshots were preserved, including six previously archived originals.
+
+A targeted canonical read checked two paid orders containing four purchased items, including one meal item. It found zero differences between the expected meal components and the KDS/receipt projections. This sample is not a count of all paid orders. No historical purchased amount, modifier, snapshot or printing event was rewritten.
+
+Deployment `06acab03-642a-4a97-b28d-9fff86cd1aa1` was verified on canonical public pages at **20:54:40 UK**, with the new staff cash assets and anonymous cash API denial verified at **20:57:08 UK**. Public checkout remained available with eligible guests and an Online kitchen showing a 30-minute estimate. All **27 jobs** in [Verify run 42291286117](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42291286117) passed, including both native phone compilations, alongside the three dedicated workflows. The [native meal-components job](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42291286117/job/128145061779) passed all seven behavior groups.
+
+The later request to remove the visible **£0.51 internal variant difference** from KDS/receipt price presentation is a separate follow-up rendering change. PR111's component projection preserves canonical purchased totals and does not claim that later presentation correction is already published.
 
 ## What the kitchen sees
 
@@ -88,4 +98,4 @@ These commands require commissioning against the actual configured printer. The 
 
 `tests/postgres/meal-components-behavior.mjs` passed seven actual PostgreSQL/PGlite behavior groups: frozen generation and rollback/replay; all 16 parent identities; peri and all 17 named replacements; extras/unknown/unsafe choices; unpaid exclusion through paid acceptance and Done; cash composition; and private ACL/guard failure. It compares historical business and receipt digests across installation.
 
-The receipt client suite passed 14 tests with 123 assertions. All 31 Node bridge tests passed, including fixed-raster framing/hash, strict optional fields, unchanged canonical receipt comparison, transport and durable-journal behavior. These establish source and local protocol behavior, not actual speaker volume, printer pairing or physical paper output. Native PostgreSQL release gates and production installation are recorded separately by the release owner.
+The receipt client suite passed 14 tests with 123 assertions. All 31 Node bridge tests passed, including fixed-raster framing/hash, strict optional fields, unchanged canonical receipt comparison, transport and durable-journal behavior. These establish source and local protocol behavior, not actual speaker volume, printer pairing or physical paper output. The seven-group native PostgreSQL 17 gate subsequently passed for PR111; the installed/current state is recorded above and in the deployment record.

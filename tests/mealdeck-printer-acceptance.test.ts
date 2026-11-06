@@ -100,6 +100,43 @@ const accepted = (replayed = false) => ({
 });
 
 describe("printer paid-order acceptance projection", () => {
+  test("pending tickets show inclusive unit and line prices with every choice and real extra", () => {
+    const order = pending();
+    Object.assign(order.items[0]!, {
+      name: "Fried Chicken Wings",
+      unitPence: 350,
+      modifiers: ["3 pcs", "Korean BBQ", "Korean BBQ · 3 pcs"],
+    });
+    const before = JSON.stringify(order);
+    const html = renderToStaticMarkup(
+      createElement(PrinterPendingOrderCard, {
+        order,
+        fresh: true,
+        paired: false,
+        automatic: false,
+        busy: false,
+        accepting: false,
+        onAccept: () => {},
+      }),
+    );
+    for (const text of [
+      "£3.50",
+      "£7.00",
+      "£4.50",
+      "£9.00",
+      "selected choices included",
+      "Korean BBQ · 3 pcs",
+      "Mango Mirage",
+      "extra with the item above",
+      "Accept &amp; queue receipt",
+    ])
+      expect(html).toContain(text);
+    expect(html).not.toContain("£0.51");
+    expect(html).not.toContain("£2.99");
+    expect(html.indexOf("£3.50")).toBeLessThan(html.indexOf("<details"));
+    expect(JSON.stringify(order)).toBe(before);
+  });
+
   test("retains a separate display number while preserving the authoritative order and version", () => {
     for (const orderNumber of ["0001", "10000", null]) {
       const value = board();

@@ -95,16 +95,16 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
               </div>
             )}
             {item.modifiers.length > 0 && (
-              <ul className="mt-1 space-y-1 text-xs">
-                {item.modifiers.map((m, n) => (
-                  <li key={n}>
-                    {m.quantityPerParent}× {m.name} per item ·{" "}
-                    {m.priceDeltaPence
-                      ? `${money(m.priceDeltaPence)} included in item price`
-                      : "included"}
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-1 text-xs">
+                <p className="font-bold">Choices included in item price</p>
+                <ul className="mt-1 space-y-1">
+                  {item.modifiers.map((m, n) => (
+                    <li key={n}>
+                      {m.groupName}: {m.quantityPerParent}× {m.name} per item
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             {item.notes && (
               <p className="mt-1 whitespace-pre-wrap text-sm font-bold">Note: {item.notes}</p>
