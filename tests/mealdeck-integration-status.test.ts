@@ -5,6 +5,7 @@ import type { MealDeckRuntimeEnv } from "../src/lib/mealdeck-runtime-config";
 import {
   readMealDeckStripeConfig,
   readMealDeckStripeSettingIssues,
+  StripeProviderHttpProblem,
 } from "../src/lib/mealdeck-stripe.server";
 
 const uid = (n: number) => "40000000-0000-4000-8000-" + String(n).padStart(12, "0");
@@ -74,6 +75,9 @@ function fixture() {
     locationFails: false,
     accountFails: false,
     accountPermissionDenied: false,
+    accountResponse: null as Response | null,
+    accountException: null as Error | null,
+    locationResponse: null as Response | null,
     mfa: false,
   };
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -128,6 +132,8 @@ function fixture() {
     if (url.hostname === "api.stripe.com") {
       expect(init?.method).toBe("GET");
       if (path === "/v1/account") {
+        if (state.accountResponse) return state.accountResponse;
+        if (state.accountException) throw state.accountException;
         if (state.accountPermissionDenied)
           return Response.json(
             { error: { message: "Permission denied for " + headers.get("Authorization") } },
@@ -142,6 +148,7 @@ function fixture() {
         });
       }
       if (path === "/v1/terminal/locations/tml_fixture") {
+        if (state.locationResponse) return state.locationResponse;
         if (state.locationFails) throw new Error("fixture location read unavailable");
         return Response.json({
           id: "tml_fixture",
@@ -240,12 +247,121 @@ describe("private payment and email setup checks", () => {
       MEALDECK_STRIPE_MODE: "live",
     });
     expect(check("stripe").state).toBe("needs_setup");
+    expect(check("stripe").detail).toContain("denied the account read (HTTP 403)");
+    expect(check("stripe").settings).toEqual(["MEALDECK_STRIPE_SECRET_KEY"]);
     expect(report.acceptingOnlineOrders).toBe(false);
     expect(JSON.stringify(report)).not.toContain(key);
     expect(JSON.stringify(report)).not.toContain("Permission denied for");
     expect(f.calls.filter((call) => call.host === "api.stripe.com")).toEqual([
       { host: "api.stripe.com", path: "/v1/account", method: "GET", body: "" },
     ]);
+  });
+  test("owner diagnostics distinguish rejected credentials, denied access and other HTTP failures without reading error bodies", async () => {
+    for (const [status, detail, settings] of [
+      [401, "rejected the server credential (HTTP 401)", ["MEALDECK_STRIPE_SECRET_KEY"]],
+      [403, "denied the account read (HTTP 403)", ["MEALDECK_STRIPE_SECRET_KEY"]],
+      [400, "Stripe returned HTTP 400", []],
+      [404, "Stripe returned HTTP 404", []],
+      [429, "Stripe returned HTTP 429", []],
+      [500, "Stripe returned HTTP 500", []],
+      [503, "Stripe returned HTTP 503", []],
+    ] as const) {
+      const f = fixture();
+      const providerResponse = Response.json(
+        {
+          error: {
+            message: `private_provider_error ${env.MEALDECK_STRIPE_SECRET_KEY} acct_privateMerchant https://private.invalid/request`,
+          },
+        },
+        { status, headers: { "Request-Id": "private_request_identifier" } },
+      );
+      f.state.accountResponse = providerResponse;
+      const { report, check } = await inspect(f);
+      expect(check("stripe").state).toBe("needs_setup");
+      expect(check("stripe").detail).toContain(detail);
+      expect(check("stripe").settings).toEqual(settings);
+      expect(report.acceptingOnlineOrders).toBe(false);
+      expect(providerResponse.bodyUsed).toBe(false);
+      for (const hidden of [
+        env.MEALDECK_STRIPE_SECRET_KEY,
+        env.MEALDECK_STRIPE_ACCOUNT_ID,
+        "private_provider_error",
+        "acct_privateMerchant",
+        "private.invalid",
+        "private_request_identifier",
+        "providerStatus",
+      ])
+        expect(JSON.stringify(report)).not.toContain(hidden);
+      expect(f.calls.filter((call) => call.host === "api.stripe.com")).toEqual([
+        { host: "api.stripe.com", path: "/v1/account", method: "GET", body: "" },
+      ]);
+    }
+  });
+  test("invalid or unbounded provider status metadata never enters owner-facing text", async () => {
+    for (const status of [0, -1, 299, 401.5, 600, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const f = fixture();
+      f.state.accountException = new StripeProviderHttpProblem(status);
+      const { report, check } = await inspect(f);
+      expect(check("stripe").detail).toBe(
+        "Stripe returned an unsuccessful HTTP response to the account check. Retry the check; account readiness is not confirmed.",
+      );
+      expect(check("stripe").settings).toEqual([]);
+      expect(report.acceptingOnlineOrders).toBe(false);
+    }
+  });
+  test("network and timeout failures give fixed retry guidance without raw error details", async () => {
+    for (const error of [
+      new TypeError(
+        `private_network_error ${env.MEALDECK_STRIPE_SECRET_KEY} https://private.invalid/request`,
+      ),
+      new DOMException(`private_timeout_error ${env.MEALDECK_STRIPE_ACCOUNT_ID}`, "TimeoutError"),
+    ]) {
+      const f = fixture();
+      f.state.accountException = error;
+      const { report, check } = await inspect(f);
+      expect(check("stripe").detail).toContain("request failed or timed out");
+      expect(check("stripe").settings).toEqual([]);
+      expect(report.acceptingOnlineOrders).toBe(false);
+      for (const hidden of [
+        error.message,
+        env.MEALDECK_STRIPE_SECRET_KEY,
+        env.MEALDECK_STRIPE_ACCOUNT_ID,
+        "private.invalid",
+      ])
+        expect(JSON.stringify(report)).not.toContain(hidden);
+      expect(f.calls.filter((call) => call.host === "api.stripe.com")).toHaveLength(1);
+    }
+  });
+  test("invalid JSON and malformed account fields cannot be mistaken for a matching charge-enabled merchant", async () => {
+    const malformed = [
+      new Response(`{invalid_json_${env.MEALDECK_STRIPE_SECRET_KEY}`, { status: 200 }),
+      ...[
+        null,
+        [],
+        {},
+        { id: env.MEALDECK_STRIPE_ACCOUNT_ID },
+        { id: 123, charges_enabled: true },
+        { id: "invalid_private_account", charges_enabled: true },
+        { id: env.MEALDECK_STRIPE_ACCOUNT_ID, charges_enabled: "true" },
+        { id: env.MEALDECK_STRIPE_ACCOUNT_ID, charges_enabled: null },
+      ].map((value) => Response.json(value)),
+    ];
+    for (const accountResponse of malformed) {
+      const f = fixture();
+      f.state.accountResponse = accountResponse;
+      const { report, check } = await inspect(f);
+      expect(check("stripe").detail).toContain("account response that could not be validated");
+      expect(check("stripe").settings).toEqual([]);
+      expect(report.acceptingOnlineOrders).toBe(false);
+      for (const hidden of [
+        env.MEALDECK_STRIPE_SECRET_KEY,
+        env.MEALDECK_STRIPE_ACCOUNT_ID,
+        "invalid_private_account",
+        "invalid_json",
+      ])
+        expect(JSON.stringify(report)).not.toContain(hidden);
+      expect(f.calls.filter((call) => call.host === "api.stripe.com")).toHaveLength(1);
+    }
   });
   test("public acceptance requires live mode while sandbox diagnostics remain readable", async () => {
     const f = fixture();
@@ -293,9 +409,14 @@ describe("private payment and email setup checks", () => {
     ]) {
       const f = fixture();
       Object.assign(f.state, change);
+      f.state.accountResponse = new Response("private_provider_body", { status: 401 });
       const response = await handleIntegrationStatusRequest(request(), env, f.fetcher);
       expect(response.status).toBe("verified" in change || "anonymous" in change ? 401 : 403);
       expect(f.calls.some((call) => call.host === "api.stripe.com")).toBe(false);
+      expect(await response.text()).not.toMatch(
+        /MEALDECK_STRIPE_SECRET_KEY|Stripe rejected|private_provider_body/,
+      );
+      expect(f.state.accountResponse.bodyUsed).toBe(false);
     }
   });
   test("returns a scoped report without any credential, payment creation, email send or financial write", async () => {
@@ -474,18 +595,28 @@ describe("private payment and email setup checks", () => {
       expect(f.calls.some((call) => call.host === "api.stripe.com")).toBe(false);
     }
   });
-  test("account mismatch, disabled charges and failed reads block the status even with valid configuration", async () => {
-    for (const change of [
-      { accountId: "acct_other" },
-      { charges: false },
-      { accountFails: true },
-    ]) {
+  test("wrong merchant, disabled charges and failed reads have distinct guidance without identifying either account", async () => {
+    for (const [change, detail, settings] of [
+      [
+        { accountId: "acct_otherPrivateMerchant" },
+        "different merchant account",
+        ["MEALDECK_STRIPE_SECRET_KEY", "MEALDECK_STRIPE_ACCOUNT_ID"],
+      ],
+      [{ charges: false }, "charges are disabled. Open that account in Stripe", []],
+      [{ accountFails: true }, "request failed or timed out", []],
+    ] as const) {
       const f = fixture();
       Object.assign(f.state, change);
       const { check, report } = await inspect(f);
       expect(check("stripe").state).toBe("needs_setup");
+      expect(check("stripe").detail).toContain(detail);
+      expect(check("stripe").settings).toEqual(settings);
       expect(report.acceptingOnlineOrders).toBe(false);
       expect(JSON.stringify(report)).not.toContain(env.MEALDECK_STRIPE_SECRET_KEY);
+      expect(JSON.stringify(report)).not.toContain(env.MEALDECK_STRIPE_ACCOUNT_ID);
+      expect(JSON.stringify(report)).not.toContain("acct_otherPrivateMerchant");
+      if ("charges" in change)
+        expect(check("stripe").detail).not.toContain("MEALDECK_STRIPE_SECRET_KEY");
     }
   });
   test("a closed kitchen remains closed when provider configuration is complete", async () => {
@@ -497,11 +628,21 @@ describe("private payment and email setup checks", () => {
     expect(check("kitchen").state).toBe("needs_setup");
   });
   test("a wrong-mode or unreadable Terminal location does not erase a successful account check", async () => {
-    for (const change of [{ locationMode: true }, { locationFails: true }, { country: "US" }]) {
+    for (const change of [
+      { locationMode: true },
+      { locationFails: true },
+      { country: "US" },
+      { locationResponse: new Response("private_terminal_body", { status: 401 }) },
+      { locationResponse: new Response("private_terminal_body", { status: 403 }) },
+      { locationResponse: new Response("private_terminal_body", { status: 503 }) },
+      { locationResponse: new Response("invalid_private_terminal_json", { status: 200 }) },
+    ]) {
       const f = fixture();
       Object.assign(f.state, change);
       const { check } = await inspect(f);
       expect(check("stripe").state).toBe("checked");
+      expect(check("stripe").settings).toEqual([]);
+      expect(check("stripe").detail).toContain("configured merchant account with charges enabled");
       expect(check("terminal").state).toBe("needs_setup");
     }
   });
