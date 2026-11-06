@@ -40,7 +40,7 @@ function visibleToolbar(html: string) {
 }
 
 describe("compact kitchen toolbar", () => {
-  test("starts collapsed with an accessible toggle and keeps refresh and sound status visible", () => {
+  test("starts with tools collapsed while stage tabs, refresh and sound status stay visible", () => {
     const html = renderControls();
     const visible = visibleToolbar(html);
     expect(visible).toContain('aria-expanded="false"');
@@ -52,7 +52,22 @@ describe("compact kitchen toolbar", () => {
     expect(visible).toContain("Sound off");
     expect(visible).toContain("active orders");
     expect(visible).not.toMatch(/<(input|select)\b/);
-    expect(html).toContain("Filter kitchen orders by stage");
+    expect(visible).toContain("Filter kitchen orders by stage");
+    for (const [stage, label, count] of [
+      ["all", "All active", 8],
+      ["queued", "New", 3],
+      ["accepted", "Accepted", 2],
+      ["preparing", "Preparing", 1],
+      ["ready", "Ready to pack", 1],
+      ["sealed", "Ready for handover", 1],
+      ["done", "Done", 4],
+    ]) {
+      const tab = visible.match(
+        new RegExp(`<button[^>]*data-stage="${stage}"[^>]*>[\\s\\S]*?</button>`),
+      )?.[0];
+      expect(tab).toContain(String(label));
+      expect(tab).toContain(`<strong>${count}</strong>`);
+    }
     expect(html).toContain("Find an order, dish, brand, bag name, note or vehicle");
   });
 
