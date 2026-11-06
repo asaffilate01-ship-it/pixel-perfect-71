@@ -16,13 +16,14 @@ const destinations = new Set([
   customerEmailReturnPath("/checkout"),
   customerEmailReturnPath("/checkout?group=1"),
   customerEmailReturnPath("/group-pay"),
+  customerEmailReturnPath("/group-order"),
   "/ops",
   "/kds",
   "/printer",
 ]);
 export const isAuthTokenHash = (value: string) => /^(?:pkce_)?[a-f0-9]{56,128}$/.test(value);
 
-/** Fixed production destinations for checkout, shared payments and staff sign-in. */
+/** Fixed production destinations for checkout, group rooms and staff sign-in. */
 export function safeAuthEmailRedirect(value: string): string | null {
   try {
     const url = new URL(value);

@@ -116,7 +116,7 @@ export type MealDeckPackingPlan = {
   version: 1;
   separateBags: boolean;
   cutleryRequested: boolean;
-  bags: { number: number; allocations: { lineId: string; quantity: number }[] }[];
+  bags: { number: number; name?: string; allocations: { lineId: string; quantity: number }[] }[];
 };
 
 /** Strict source validation, then server-derived canonical IDs. No browser prices survive. */

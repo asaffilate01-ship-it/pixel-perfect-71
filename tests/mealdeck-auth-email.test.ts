@@ -273,6 +273,23 @@ describe("Auth email content and provider token mapping", () => {
     expect(link.searchParams.get("type")).toBe("magiclink");
     expect(f.calls[0]!.messages[0]!["text"]).not.toContain("room=");
   });
+  test("group-room sign-in preserves its fixed return through signed delivery without carrying an invitation", async () => {
+    const redirect = AUTH_EMAIL_SITE_ORIGIN + customerEmailReturnPath("/group-order");
+    expect(redirect).toBe(AUTH_EMAIL_SITE_ORIGIN + "/account?returnTo=%2Fgroup-order");
+    const group = {
+      ...event,
+      email_data: { ...event.email_data, email_action_type: "magiclink", redirect_to: redirect },
+    };
+    const f = provider();
+    expect((await handleMealDeckAuthEmail(signed(group), env, f.fetcher)).status).toBe(200);
+    const link = providerLink(f.calls[0]!.messages[0] as { text: string });
+    expect(link.searchParams.get("redirect_to")).toBe(redirect);
+    expect(link.searchParams.get("token")).toBe(event.email_data.token_hash);
+    expect(link.searchParams.get("type")).toBe("magiclink");
+    expect(new URL(redirect).searchParams.get("returnTo")).toBe("/group-order");
+    for (const field of ["room=", "participant=", "invite=", "share="])
+      expect(f.calls[0]!.messages[0]!["text"]).not.toContain(field);
+  });
   test("native OTP default returns keep the code usable in the app without accepting a custom scheme", async () => {
     for (const redirect of [
       undefined,
@@ -416,6 +433,7 @@ describe("Confirmation interstitial redirects", () => {
       "/account?returnTo=%2Fcheckout",
       "/account?returnTo=%2Fcheckout%3Fgroup%3D1",
       "/account?returnTo=%2Fgroup-pay",
+      "/account?returnTo=%2Fgroup-order",
     ])
       expect(safeAuthEmailRedirect(AUTH_EMAIL_SITE_ORIGIN + path)).toBe(
         AUTH_EMAIL_SITE_ORIGIN + path,
@@ -435,6 +453,11 @@ describe("Confirmation interstitial redirects", () => {
       AUTH_EMAIL_SITE_ORIGIN + "/account?returnTo=%2Fgroup-pay&room=private",
       AUTH_EMAIL_SITE_ORIGIN + "/account?returnTo=%2Fgroup-pay%3Froom%3Dprivate",
       AUTH_EMAIL_SITE_ORIGIN + "/account?returnTo=%2Fgroup-pay&returnTo=https://evil.test",
+      AUTH_EMAIL_SITE_ORIGIN + "/account?returnTo=%2Fgroup-order&room=private",
+      AUTH_EMAIL_SITE_ORIGIN + "/account?returnTo=%2Fgroup-order%3Froom%3Dprivate",
+      AUTH_EMAIL_SITE_ORIGIN + "/account?returnTo=%2Fgroup-order%23token%3Dsecret",
+      AUTH_EMAIL_SITE_ORIGIN + "/account?returnTo=%2Fgroup-order&invite=secret",
+      AUTH_EMAIL_SITE_ORIGIN + "/account?returnTo=%2Fgroup-order&returnTo=https://evil.test",
       AUTH_EMAIL_SITE_ORIGIN + "/account#token",
       AUTH_EMAIL_SITE_ORIGIN + "/api/terminal",
     ])

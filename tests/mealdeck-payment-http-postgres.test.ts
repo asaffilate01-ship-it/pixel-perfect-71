@@ -11,17 +11,21 @@ import { handleTerminalRequest } from "../src/lib/mealdeck-terminal.server";
 import { asActor, createDatabase } from "./postgres/harness.mjs";
 import { setupSharedPaymentsFixture } from "./postgres/shared-terminal-payments-fixture.mjs";
 import { buildCheckoutDomainSql } from "../deploy/mealdeck/checkout-domain.mjs";
+import { buildOrderingRoomsSql } from "../deploy/mealdeck/ordering-rooms.mjs";
+import { handleGroupOrdersRequest } from "../src/lib/mealdeck-group-rooms.server";
+import { groupOrderResultSchema } from "../src/lib/mealdeck-group-rooms";
 
 /** A real HTTP-handler -> Supabase named-RPC -> PostgreSQL contract test.
  * Auth and Stripe are simulated external services. No RPC result, price,
  * payment state, permission check or kitchen release is mocked.
  * There is deliberately no fallback to global fetch: unexpected URLs fail.
  */
-async function integrationFixture(checkoutHostname = "checkout.stripe.com") {
+async function integrationFixture(checkoutHostname = "checkout.stripe.com", orderingRooms = false) {
   const db = await createDatabase();
   try {
     const f = await setupSharedPaymentsFixture(db);
     await db.exec(buildCheckoutDomainSql());
+    if (orderingRooms) await db.exec(buildOrderingRoomsSql());
     const env = {
       MEALDECK_SUPABASE_URL: "https://paymentintegration.supabase.co",
       MEALDECK_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_payment_integration_fixture",
@@ -313,7 +317,7 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com") {
       );
     }) as typeof fetch;
     const post = async (
-      endpoint: "checkout" | "group-payments" | "terminal",
+      endpoint: "checkout" | "group-payments" | "terminal" | "group-orders",
       body: unknown,
       actor?: keyof typeof tokens,
       cookie?: string,
@@ -321,9 +325,11 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com") {
       const handler =
         endpoint === "checkout"
           ? handleOnlineCheckoutRequest
-          : endpoint === "terminal"
-            ? handleTerminalRequest
-            : handleSharedPaymentsRequest;
+          : endpoint === "group-orders"
+            ? handleGroupOrdersRequest
+            : endpoint === "terminal"
+              ? handleTerminalRequest
+              : handleSharedPaymentsRequest;
       const response = await handler(
         new Request("https://mealdeck.co.uk/api/" + endpoint, {
           method: "POST",
@@ -377,6 +383,8 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com") {
       unexpectedRequests,
       intents,
       sessions,
+      creations,
+      fetcher,
     };
   } catch (error) {
     await db.close();
@@ -764,3 +772,396 @@ test("ordinary custom-domain checkout resumes one saved Session and reconciles e
     await h.db.close();
   }
 }, 30_000);
+
+test.each(["separate", "organiser"])(
+  "accepted ordering room with %s payment keeps named bags and releases one fully funded kitchen order",
+  async (paymentMode: string) => {
+    const h = await integrationFixture("pay.mealdeck.co.uk", true);
+    try {
+      const session = async () => {
+        const response = await handleGroupOrdersRequest(
+          new Request("https://mealdeck.co.uk/api/group-orders"),
+          h.env,
+          h.fetcher,
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({ available: true, joinWindowSeconds: 180 });
+        return response.headers.get("Set-Cookie")!.split(";")[0]!;
+      };
+      const ownerCookie = await session();
+      const participantCookie = await session();
+      const strangerCookie = await session();
+      const create = {
+        action: "create",
+        attemptId: h.f.next(),
+        name: "  Amer  ",
+        inviteNames: ["Jay", "Late"],
+        paymentMode,
+        fulfilment: "pickup",
+        cutleryRequested: true,
+      };
+      const created = await h.post("group-orders", create, "organiser", ownerCookie);
+      successful(created);
+      expect(groupOrderResultSchema.safeParse(created.body).success).toBe(true);
+      const roomId = created.body.room.roomId;
+      expect(created.body.room.people[0].name).toBe("Amer");
+      expect(created.body.payment).toBeNull();
+      expect(created.body.inviteLinks).toHaveLength(2);
+      const retry = await h.post("group-orders", create, "organiser", ownerCookie);
+      successful(retry);
+      expect(retry.body.room.roomId).toBe(roomId);
+      expect(
+        (await h.db.query("select count(*)::int n from mealdeck_private.ordering_rooms")).rows[0].n,
+      ).toBe(1);
+
+      const fragments = created.body.inviteLinks.map(
+        (link: { url: string }) => new URLSearchParams(new URL(link.url).hash.slice(1)),
+      );
+      const invitation = {
+        roomId,
+        participantId: fragments[0].get("invite"),
+        token: fragments[0].get("key"),
+      };
+      const preview = await h.post("group-orders", { action: "preview", ...invitation });
+      successful(preview);
+      expect(preview.body).toMatchObject({
+        organiserName: "Amer",
+        inviteeName: "Jay",
+        joinable: true,
+      });
+      expect(
+        (await h.post("group-orders", { action: "room", roomId }, undefined, ownerCookie)).body.room
+          .joinedCount,
+      ).toBe(1);
+      const joined = await h.post(
+        "group-orders",
+        { action: "join", ...invitation, name: "Jay" },
+        undefined,
+        participantCookie,
+      );
+      successful(joined);
+      expect(joined.body.room.people[0].picks).toBeUndefined();
+      expect(joined.body.inviteLinks).toBeUndefined();
+      expect(joined.body.room.viewer.role).toBe("participant");
+      expect(
+        (
+          await h.post(
+            "group-orders",
+            { action: "join", ...invitation, name: "Takeover" },
+            undefined,
+            strangerCookie,
+          )
+        ).response.status,
+      ).toBe(404);
+      expect(
+        (await h.post("group-orders", { action: "room", roomId }, undefined, strangerCookie))
+          .response.status,
+      ).toBe(404);
+      expect(
+        (await h.post("group-orders", { action: "close", roomId }, undefined, participantCookie))
+          .response.status,
+      ).toBe(403);
+      expect(
+        (
+          await h.post(
+            "group-orders",
+            {
+              action: "save",
+              roomId,
+              version: 0,
+              picks: [],
+              participantId: created.body.room.people[0].participantId,
+            },
+            undefined,
+            participantCookie,
+          )
+        ).response.status,
+      ).toBe(400);
+
+      const choose = async (cookie: string, quantity: number) => {
+        const current = await h.post("group-orders", { action: "room", roomId }, undefined, cookie);
+        successful(current);
+        const self = current.body.room.people.find(
+          (person: { participantId: string }) =>
+            person.participantId === current.body.room.viewer.participantId,
+        );
+        const saved = await h.post(
+          "group-orders",
+          {
+            action: "save",
+            roomId,
+            version: self.version,
+            picks: [{ brandId: "skorch-burgers", itemId: h.f.ace.id, quantity, selections: {} }],
+          },
+          undefined,
+          cookie,
+        );
+        successful(saved);
+        const person = saved.body.room.people.find(
+          (entry: { participantId: string }) => entry.participantId === self.participantId,
+        );
+        const ready = await h.post(
+          "group-orders",
+          { action: "ready", roomId, version: person.version, ready: true },
+          undefined,
+          cookie,
+        );
+        successful(ready);
+        return ready;
+      };
+      await choose(ownerCookie, 1);
+      await choose(participantCookie, 2);
+      let current = await h.post(
+        "group-orders",
+        { action: "room", roomId },
+        undefined,
+        ownerCookie,
+      );
+      expect(current.body.room.canFinalize).toBe(false);
+      await h.db.query(
+        "update mealdeck_private.ordering_rooms set join_deadline=clock_timestamp()-interval '1 second' where id=$1",
+        [roomId],
+      );
+      current = await h.post("group-orders", { action: "room", roomId }, undefined, ownerCookie);
+      successful(current);
+      expect(current.body.room).toMatchObject({
+        pendingCount: 0,
+        joinedCount: 2,
+        readyCount: 2,
+        canFinalize: true,
+      });
+      expect(current.body.room.people[2].state).toBe("expired");
+      expect(
+        (
+          await h.post(
+            "group-orders",
+            {
+              action: "join",
+              roomId,
+              participantId: fragments[1].get("invite"),
+              token: fragments[1].get("key"),
+              name: "Late",
+            },
+            undefined,
+            strangerCookie,
+          )
+        ).response.status,
+      ).toBe(404);
+      const freeze = {
+        action: "finalize",
+        roomId,
+        revision: current.body.room.revision,
+        attemptId: h.f.next(),
+        reviewConfirmed: true,
+      };
+      const frozen = await h.post("group-orders", freeze, "organiser", ownerCookie);
+      successful(frozen);
+      const orderId = frozen.body.room.orderId;
+      expect(frozen.body.room.phase).toBe("payment");
+      expect(frozen.body.payment).toMatchObject({
+        totalPence: 838,
+        paidPence: 0,
+        remainingPence: 838,
+      });
+      expect(
+        frozen.body.payment.shares.map((share: { amountPence: number }) => share.amountPence),
+      ).toEqual([279, 559]);
+      expect(frozen.body.payment.bags.map((bag: { name: string }) => bag.name)).toEqual([
+        "Amer",
+        "Jay",
+      ]);
+      expect(frozen.body.payment.lines).toHaveLength(2);
+      expect(
+        (await h.post("group-orders", freeze, "organiser", ownerCookie)).body.room.orderId,
+      ).toBe(orderId);
+      expect((await h.db.query("select count(*)::int n from public.orders")).rows[0].n).toBe(1);
+      const kitchenCount = async () =>
+        (
+          await h.db.query("select count(*)::int n from public.kds_tickets where order_id=$1", [
+            orderId,
+          ])
+        ).rows[0].n;
+      expect(await kitchenCount()).toBe(0);
+      const own = await h.post(
+        "group-orders",
+        { action: "room", roomId },
+        undefined,
+        participantCookie,
+      );
+      successful(own);
+      expect(own.body.payment.bags).toHaveLength(1);
+      expect(own.body.payment.bags[0].name).toBe("Jay");
+      expect(own.body.payment.shares[0].amountPence).toBe(559);
+      expect(
+        (await h.post("group-orders", freeze, "participant", participantCookie)).response.status,
+      ).toBe(403);
+      // Email verification alone is insufficient to pay; an accepted room is
+      // still readable while that account completes MealDeck registration.
+      const incompleteMember = await h.post(
+        "group-orders",
+        { action: "room", roomId },
+        "staff",
+        participantCookie,
+      );
+      successful(incompleteMember);
+      expect(incompleteMember.body.payment.canPay).toBe(false);
+      expect(incompleteMember.body.resumePayments).toEqual([]);
+      const checkWithoutMembership = await h.post(
+        "group-orders",
+        { action: "reconcile", roomId },
+        "staff",
+        participantCookie,
+      );
+      successful(checkWithoutMembership);
+      expect(JSON.stringify(own.body)).not.toMatch(
+        /example\.invalid|tokenHash|paymentIntentId|stripeAccount|requestHash|guestId|customerId|actorHash/,
+      );
+      expect(JSON.stringify(own.body)).not.toContain(invitation.token);
+      expect(
+        (
+          await h.post(
+            "group-orders",
+            { action: "save", roomId, version: 2, picks: [] },
+            undefined,
+            participantCookie,
+          )
+        ).response.status,
+      ).toBe(409);
+      expect(
+        (
+          await h.post(
+            "group-orders",
+            {
+              action: "pay",
+              roomId,
+              attemptId: h.f.next(),
+              coverRemaining: true,
+              reviewConfirmed: true,
+            },
+            "participant",
+            ownerCookie,
+          )
+        ).response.status,
+      ).toBe(403);
+
+      const participantAttempt = {
+        action: "pay",
+        roomId,
+        attemptId: h.f.next(),
+        coverRemaining: false,
+        reviewConfirmed: true,
+      };
+      expect(
+        (await h.post("group-orders", participantAttempt, "staff", participantCookie)).response
+          .status,
+      ).toBe(401);
+      const participantPay = await h.post(
+        "group-orders",
+        participantAttempt,
+        "participant",
+        participantCookie,
+      );
+      if (paymentMode === "organiser") {
+        expect(participantPay.response.status).toBe(403);
+        expect(h.sessions.size).toBe(0);
+      } else {
+        successful(participantPay);
+        expect(participantPay.body.resumePayments).toEqual([
+          { attemptId: participantAttempt.attemptId, amountPence: 559, coverRemaining: false },
+        ]);
+        h.env.MEALDECK_SHARED_PAYMENTS_ENABLED = "false";
+        const resumed = await h.post(
+          "group-orders",
+          participantAttempt,
+          "participant",
+          participantCookie,
+        );
+        successful(resumed);
+        expect(resumed.body.checkoutUrl).toBe(participantPay.body.checkoutUrl);
+        expect(h.sessions.size).toBe(1);
+        h.captureSession(participantPay.body.checkoutUrl);
+        const partial = await h.post(
+          "group-orders",
+          { action: "reconcile", roomId },
+          undefined,
+          ownerCookie,
+        );
+        successful(partial);
+        expect(partial.body.payment).toMatchObject({
+          paidPence: 559,
+          remainingPence: 279,
+          status: "partially_paid",
+        });
+        expect(partial.body.room.people[1].paymentState).toBe("paid");
+        expect(partial.body.room.people[1].state).toBe("ready");
+        expect(await kitchenCount()).toBe(0);
+        h.env.MEALDECK_SHARED_PAYMENTS_ENABLED = "true";
+      }
+      const hostPay = await h.post(
+        "group-orders",
+        {
+          action: "pay",
+          roomId,
+          attemptId: h.f.next(),
+          coverRemaining: true,
+          reviewConfirmed: true,
+        },
+        "organiser",
+        ownerCookie,
+      );
+      successful(hostPay);
+      expect(hostPay.body.resumePayments[0].amountPence).toBe(
+        paymentMode === "organiser" ? 838 : 279,
+      );
+      for (const creation of h.creations.values()) {
+        const form = new URLSearchParams(creation.form);
+        expect(form.get("success_url")).toBe("https://mealdeck.co.uk/group-order?room=" + roomId);
+        expect(form.get("cancel_url")).toBe(form.get("success_url"));
+        expect(creation.form).not.toContain(invitation.token);
+      }
+      const paidSession = h.captureSession(hostPay.body.checkoutUrl);
+      expect((await h.webhook(paidSession)).status).toBe(200);
+      expect((await h.webhook(paidSession)).status).toBe(200);
+      const paid = await h.post(
+        "group-orders",
+        { action: "room", roomId },
+        undefined,
+        participantCookie,
+      );
+      successful(paid);
+      expect(paid.body.payment).toMatchObject({
+        status: "paid",
+        totalPence: 838,
+        paidPence: 838,
+        remainingPence: 0,
+      });
+      expect(
+        paid.body.room.people
+          .slice(0, 2)
+          .map((person: { paymentState: string }) => person.paymentState),
+      ).toEqual(["paid", "paid"]);
+      expect(await kitchenCount()).toBe(1);
+      const items = (
+        await h.db.query(
+          "select group_participant_name,quantity from public.order_items where order_id=$1 order by checkout_line_id",
+          [orderId],
+        )
+      ).rows;
+      expect(items).toEqual([
+        { group_participant_name: "Amer", quantity: 1 },
+        { group_participant_name: "Jay", quantity: 2 },
+      ]);
+      const receipt = await h.post("checkout", { action: "receipt", orderId }, "organiser");
+      successful(receipt);
+      expect(receipt.body.receipt.verifiedPaid).toBe(true);
+      expect(
+        receipt.body.receipt.packingPlan.bags.map((bag: { name: string }) => bag.name),
+      ).toEqual(["Amer", "Jay"]);
+      expect(h.rpcErrors.filter((error) => error.code === "PGRST202")).toEqual([]);
+      expect(h.unexpectedRequests).toEqual([]);
+    } finally {
+      await h.db.close();
+    }
+  },
+  30_000,
+);

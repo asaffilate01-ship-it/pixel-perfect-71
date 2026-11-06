@@ -33,6 +33,7 @@ import { Route as StAlbansRouteImport } from './routes/st-albans'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
 import { Route as ApiFranchiseRouteImport } from './routes/api.franchise'
+import { Route as ApiGroupOrdersRouteImport } from './routes/api.group-orders'
 import { Route as ApiGroupPaymentsRouteImport } from './routes/api.group-payments'
 import { Route as ApiTerminalRouteImport } from './routes/api.terminal'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
@@ -163,6 +164,11 @@ const ApiFranchiseRoute = ApiFranchiseRouteImport.update({
   path: '/api/franchise',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGroupOrdersRoute = ApiGroupOrdersRouteImport.update({
+  id: '/api/group-orders',
+  path: '/api/group-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGroupPaymentsRoute = ApiGroupPaymentsRouteImport.update({
   id: '/api/group-payments',
   path: '/api/group-payments',
@@ -234,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/track': typeof TrackRoute
   '/api/checkout': typeof ApiCheckoutRoute
   '/api/franchise': typeof ApiFranchiseRoute
+  '/api/group-orders': typeof ApiGroupOrdersRoute
   '/api/group-payments': typeof ApiGroupPaymentsRoute
   '/api/terminal': typeof ApiTerminalRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/track': typeof TrackRoute
   '/api/checkout': typeof ApiCheckoutRoute
   '/api/franchise': typeof ApiFranchiseRoute
+  '/api/group-orders': typeof ApiGroupOrdersRoute
   '/api/group-payments': typeof ApiGroupPaymentsRoute
   '/api/terminal': typeof ApiTerminalRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -305,6 +313,7 @@ export interface FileRoutesById {
   '/track': typeof TrackRoute
   '/api/checkout': typeof ApiCheckoutRoute
   '/api/franchise': typeof ApiFranchiseRoute
+  '/api/group-orders': typeof ApiGroupOrdersRoute
   '/api/group-payments': typeof ApiGroupPaymentsRoute
   '/api/terminal': typeof ApiTerminalRoute
   '/auth/confirm': typeof AuthConfirmRoute
@@ -342,6 +351,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/api/checkout'
     | '/api/franchise'
+    | '/api/group-orders'
     | '/api/group-payments'
     | '/api/terminal'
     | '/auth/confirm'
@@ -377,6 +387,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/api/checkout'
     | '/api/franchise'
+    | '/api/group-orders'
     | '/api/group-payments'
     | '/api/terminal'
     | '/auth/confirm'
@@ -412,6 +423,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/api/checkout'
     | '/api/franchise'
+    | '/api/group-orders'
     | '/api/group-payments'
     | '/api/terminal'
     | '/auth/confirm'
@@ -448,6 +460,7 @@ export interface RootRouteChildren {
   TrackRoute: typeof TrackRoute
   ApiCheckoutRoute: typeof ApiCheckoutRoute
   ApiFranchiseRoute: typeof ApiFranchiseRoute
+  ApiGroupOrdersRoute: typeof ApiGroupOrdersRoute
   ApiGroupPaymentsRoute: typeof ApiGroupPaymentsRoute
   ApiTerminalRoute: typeof ApiTerminalRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
@@ -629,6 +642,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFranchiseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/group-orders': {
+      id: '/api/group-orders'
+      path: '/api/group-orders'
+      fullPath: '/api/group-orders'
+      preLoaderRoute: typeof ApiGroupOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/group-payments': {
       id: '/api/group-payments'
       path: '/api/group-payments'
@@ -720,6 +740,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrackRoute: TrackRoute,
   ApiCheckoutRoute: ApiCheckoutRoute,
   ApiFranchiseRoute: ApiFranchiseRoute,
+  ApiGroupOrdersRoute: ApiGroupOrdersRoute,
   ApiGroupPaymentsRoute: ApiGroupPaymentsRoute,
   ApiTerminalRoute: ApiTerminalRoute,
   AuthConfirmRoute: AuthConfirmRoute,

@@ -84,6 +84,19 @@ describe("shared payment snapshots are strict, role-aware server data", () => {
         .totalPence,
     ).toBe(1000);
   });
+  test("preserves canonical person names with the exact food and share, rejecting malformed names", () => {
+    const value = room();
+    value.bags[0]!.name = "Amer";
+    value.bags[1]!.name = "Jay";
+    const parsed = parseSharedPaymentRoom(value)!;
+    expect(parsed.bags).toEqual(value.bags);
+    expect(parsed.shares).toEqual(value.shares);
+    expect(parsed.lines).toEqual(value.lines);
+    for (const name of ["", "Amer ", "Amer\x1b@", "Amer\u202e", "A".repeat(33), null]) {
+      Object.assign(value.bags[0]!, { name });
+      expect(parseSharedPaymentRoom(value)).toBeNull();
+    }
+  });
   test("organiser cover excludes processing, paid and stopped shares", () => {
     const value = room();
     value.shares[1]!.status = "processing";

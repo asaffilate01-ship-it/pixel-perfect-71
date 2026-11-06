@@ -89,11 +89,14 @@ The production return allowlist is deliberately fixed:
 - `/account?returnTo=%2Fcheckout`
 - `/account?returnTo=%2Fcheckout%3Fgroup%3D1`
 - `/account?returnTo=%2Fgroup-pay`
+- `/account?returnTo=%2Fgroup-order`
 - `/ops`, `/kds`, `/printer`
 
 The root production Site URL maps to `/account` for native OTP defaults. Other origins, arbitrary queries, duplicate provider fields, credentials in URLs, fragments and admin/provider paths are rejected. The confirmation page is no-store, no-referrer, noindex, nofollow and noarchive, and belongs outside the public sitemap. The service worker does not cache this route or Auth/API traffic.
 
-Shared-payment sign-in returns only to the fixed `/group-pay` page. Room IDs and invitation capabilities are restored by the existing shared-payment flow; they are not added to the Auth email return URL. Native staff email sign-in sends no custom-scheme redirect and verifies the code in the native app. Its Auth host must retain the production Site URL above; an empty hook redirect also defaults to `/account`.
+Group-room sign-in returns only to the fixed `/group-order` page; older shared-payment sessions retain the fixed `/group-pay` return. Room IDs and invitation capabilities are restored by the room flow, never appended to the Auth email return URL. Add the exact production URL `https://mealdeck.co.uk/account?returnTo=%2Fgroup-order` to the owning Auth host's supported redirect configuration; do not widen the application allowlist to arbitrary room queries or fragments. This follows the provider's guidance to use [exact production redirect paths](https://supabase.com/docs/guides/auth/redirect-urls). If a confirmation opens in a browser without the room context, reopen the original room link after sign-in.
+
+Native staff email sign-in sends no custom-scheme redirect and verifies the code in the native app. Its Auth host must retain the production Site URL above; an empty hook redirect also defaults to `/account`.
 
 The email also contains the one-time code. Customers and native staff can enter it on the original requesting browser/phone; this helps when an email opens in another app where the PKCE verifier is unavailable. Use the latest requested email and preserve the existing Auth expiry and resend behavior. The interstitial does not add password-recovery UI or change staff access, enrolment or permission rules.
 
@@ -107,7 +110,7 @@ The completed email-change security notice goes to the old address. Reauthentica
 
 Local automated checks cover bad/missing signatures, old/future timestamps, secret rotation, unchanged raw-body verification, disabled and mixed-project configuration, unknown actions, recipient/token pairing, concurrent/replayed provider IDs, lost responses, strict redirects, PKCE/group preservation, plain-text output and escaping. Tests use synthetic data and a mocked Resend endpoint. They send no messages.
 
-The source passed the production build, TypeScript and scoped lint checks. The email suite now includes 21 tests; with the existing customer-return/customer checks, the focused run covers 33 tests. The local Playwright browser binary download returned a truncated archive, so no visual browser or inbox-rendering acceptance is claimed. Actual device/inbox checks remain part of hosted activation.
+The 5 November release passed the production build, TypeScript and scoped lint checks; its email suite had 21 tests, with 33 across the focused customer-return/customer run. Those counts are historical. The room extension adds signed-delivery/interstitial coverage for `/group-order` and rejects room IDs, invitation data, fragments and extra return parameters. The earlier local Playwright browser binary download returned a truncated archive, so that release claimed no visual browser or inbox-rendering acceptance. Record current device/inbox evidence separately during hosted activation.
 
 Before claiming hosted readiness, the authorised operator should verify the published confirmation page/logo, the actual sender domain and Auth host configuration, then complete an explicitly requested email on the intended customer/staff devices. Check expiry, reuse, resend, a link preview, the original-browser OTP fallback, both secure email-change recipients and the existing account/staff permissions. Resend acceptance alone is not inbox delivery; email delivery is not verified membership; membership is not owner access. In particular, the existing private owner bootstrap must still require the intended owner's Auth-verified email.
 

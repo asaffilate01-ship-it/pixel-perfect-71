@@ -45,6 +45,7 @@ import {
   type LaunchCheckoutGroup,
 } from "@/lib/launch-basket-transfer";
 import type { MealDeckPackingPlan } from "@/lib/mealdeck-checkout-selection";
+import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import {
   formatLaunchMenuPrice,
   launchMenuBasketDisplayPrice,
@@ -236,8 +237,12 @@ function DetailedOrderLines({
         {packingPlan.cutleryRequested ? "Cutlery requested" : "No cutlery requested"}
       </p>
       {packingPlan.bags.map((bag) => (
-        <section className="md-checkout-bag" key={bag.number} aria-label={"Bag " + bag.number}>
-          <h3>Bag {bag.number}</h3>
+        <section
+          className="md-checkout-bag"
+          key={bag.number}
+          aria-label={formatPackingBagName(bag)}
+        >
+          <h3>{formatPackingBagName(bag)}</h3>
           <ul>
             {bag.allocations.map((allocation) => {
               const line = lines.find((item) => item.lineId === allocation.lineId);

@@ -53,7 +53,7 @@ export const Route = createFileRoute("/luton")({
         },
         {
           q: "Can we order as a group?",
-          a: "Yes. Open Group order to send each person an invitation. They choose food and send a reply link back; the organiser reviews the choices and separate numbered bags. The food draft stays in the organiser’s browser. When checkout is open, it shows the payment options currently available: one organiser payment, or enabled shared options with separate private payment links. A shared order reaches the kitchen only after all required payments are confirmed.",
+          a: "Yes. The organiser creates a private room and invites each person to join within 3 minutes. Everyone chooses their own food and marks themselves ready. Unaccepted invitations expire; people who join keep their place. The organiser reviews and locks the choices, then each person pays for their own items or the organiser pays for everyone. Once all required payments are confirmed, one order goes to the kitchen with each person’s name beside their food and an itemised bill per person.",
         },
       ]}
     />

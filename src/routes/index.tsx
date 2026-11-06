@@ -54,12 +54,12 @@ const directBenefits = [
   {
     icon: Users,
     title: "Packed your way",
-    copy: "Choose numbered bags so everyone can find their own food.",
+    copy: "Food grouped by name so everyone gets their own choices.",
   },
   {
     icon: WalletCards,
     title: "Order together",
-    copy: "Everyone chooses; the organiser reviews the food and available payment options.",
+    copy: "Join one room. Pay for your own food, or let the organiser pay for everyone.",
   },
   {
     icon: Star,
@@ -202,25 +202,25 @@ function LandingPage() {
               <Users />
             </div>
             <p className="md-kicker md-kicker-light">Ordering with friends?</p>
-            <h2>Everyone picks. You bring it together.</h2>
+            <h2>One room. Everyone’s favourites.</h2>
             <ul>
               <li>
-                <Share2 /> Send each person their invitation link
+                <Share2 /> Create a room and invite your group
               </li>
               <li>
-                <ShoppingBasket /> They choose food and send their picks back
+                <ShoppingBasket /> Everyone joins and chooses their food
               </li>
               <li>
-                <WalletCards /> Review the order and available ways to pay
+                <WalletCards /> Pay for your own items, or one person pays
               </li>
               <li>
-                <Package /> Separate numbered bags for collection
+                <Package /> One kitchen order, packed by name
               </li>
             </ul>
             <p>
-              Your food draft stays in this browser. When checkout is open, it shows the payment
-              options currently available. Shared payments, when enabled, use separate private
-              payment links after the order review.
+              Invitations have a 3-minute joining window. Once everyone in the room is ready, the
+              organiser locks the choices. The fully paid order goes to the kitchen together, with
+              an itemised bill for each person.
             </p>
             <Link to="/group-order" className="md-btn md-btn-yellow">
               Start a group order <ArrowRight />

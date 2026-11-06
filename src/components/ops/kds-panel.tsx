@@ -19,6 +19,7 @@ import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
 import type { OpsPermission } from "@/lib/mealdeck-ops-access";
 import { OpsRequestError, opsRpc } from "@/lib/mealdeck-ops-browser";
 import { parseKdsBoard, parseKdsMutation, type KdsBoard, type KdsOrder } from "@/lib/mealdeck-kds";
+import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import {
   groupKdsItems,
   kdsOrderStage,
@@ -874,9 +875,9 @@ function KitchenOrderCard({
                         </p>
                       )}
                       {!!item.bags?.length && (
-                        <p className="mt-1 text-xs font-bold md-ops-text">
+                        <p className="mt-1 break-words text-xs font-bold md-ops-text">
                           {item.bags
-                            .map((bag) => `Bag ${bag.number}: ${bag.quantity}×`)
+                            .map((bag) => `${formatPackingBagName(bag)}: ${bag.quantity}×`)
                             .join(" · ")}
                         </p>
                       )}
@@ -886,11 +887,13 @@ function KitchenOrderCard({
                           {((item.quantity * item.unit_pence) / 100).toFixed(2)} total
                         </p>
                       )}
-                      {order.group_order && item.participant_name && (
-                        <p className="mt-0.5 break-words text-xs font-semibold md-ops-muted">
-                          For {item.participant_name}
-                        </p>
-                      )}
+                      {order.group_order &&
+                        item.participant_name &&
+                        !item.bags?.some((bag) => bag.name === item.participant_name) && (
+                          <p className="mt-0.5 break-words text-xs font-semibold md-ops-muted">
+                            For {item.participant_name}
+                          </p>
+                        )}
                       {item.modifiers.length > 0 && (
                         <ul
                           className="mt-1.5 space-y-1 text-sm leading-5 md-ops-text"

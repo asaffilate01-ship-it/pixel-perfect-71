@@ -1,6 +1,50 @@
-# Independent MealDeck Cloud deployment — 5 November 2026
+# Independent MealDeck Cloud deployment
 
-## Current verified position — 5 November 2026
+## Latest activation check — 6 November 2026
+
+Read-only inspection of the dedicated MealDeck project at `2026-11-06 00:10:59 UTC`
+found zero Auth accounts for the intended owner `info@mealdeck.co.uk`, zero verified
+intended-owner accounts, zero tenants, zero kitchens, zero operational menu items
+and zero orders. This does not describe unrelated Auth users or establish that
+every hosted secret is absent. The verified owner, private kitchen bootstrap,
+reviewed catalogue and payment commissioning remain required before accepting
+customer orders.
+
+The native Android/iPhone staff app and shared-payment implementation were merged
+and published through PR #75. The branded Checkout domain support and private
+owner/admin payment/email diagnostics were merged and published through PR #76.
+The domain migration `20261105194218_mealdeck_checkout_domain.sql` was installed
+atomically; its SHA-256 is
+`be73c0bde631a8a694e14219ca9291a03b98507c488c8b2a6a09eed203ed537b`.
+Both native compilation jobs passed in
+[Verify MealDeck run 767](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42098744053).
+Those jobs build an Android debug APK and an unsigned iPhone simulator target;
+they do not establish signed distribution, Apple entitlement approval or a real
+phone payment. The native app already includes Apple's How to Tap education
+bridge and the server-owned payment recovery flow.
+
+On 6 November the owner reported that Stripe DNS/custom-domain setup was live.
+An unauthenticated HTTPS request to `https://pay.mealdeck.co.uk` returned 204.
+This is a reachability observation, not a verified merchant-domain status or a
+completed Checkout Session. Hosted use still requires the exact server setting
+`MEALDECK_STRIPE_CHECKOUT_HOST=pay.mealdeck.co.uk` and an approved end-to-end
+provider check. No real charge or email was sent as a probe.
+
+The requested replacement for the old reply-link planner is documented in
+[group ordering](mealdeck-group-ordering.md). Its release adds service-owned rooms,
+single-use invitations, a three-minute join window, named frozen bags, own-item
+or organiser payments and one kitchen release after full verified funding. The
+additive migration is `20261105235509_mealdeck_ordering_rooms.sql`; install its
+complete guarded transaction after the existing shared-payment/domain extensions.
+Local release validation passed 899 Bun tests, 20 PostgreSQL behavior checks,
+27 receipt-bridge tests, production build, TypeScript and scoped lint. The release
+workflow additionally runs eight native PostgreSQL concurrency cases and both
+native app builds. Its release PR records the exact CI, hosted migration and
+publication results; these local checks alone do not establish live activation.
+
+## Earlier installation record — 5 November 2026
+
+### Foundation installation
 
 Access to the correct MealDeck Lovable project `2184585f-d92c-4d42-b25b-b7f87f98d0d8` is restored. Read-only inspection confirmed PostgreSQL 17.11, zero public application tables and zero Auth users before installation. The Supabase connector still lists Dishbee only; it was not used for MealDeck writes.
 

@@ -773,7 +773,7 @@ export function CustomerAccount({ returnTo = "/menus" }: { returnTo?: CustomerRe
           )}
           {profile?.registered && returnTarget !== "/menus" && (
             <a className="md-account-primary md-account-return" href={returnTarget}>
-              Continue to checkout
+              {returnTarget === "/group-order" ? "Return to group room" : "Continue to checkout"}
               <ArrowRight size={18} aria-hidden="true" />
             </a>
           )}

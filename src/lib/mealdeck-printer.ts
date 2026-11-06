@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { packingPersonNameSchema } from "./mealdeck-packing-name";
 const uuid = z.string().uuid(),
   stamp = z.string().datetime({ offset: true });
 const money = z.number().int().min(0).max(10000000);
@@ -10,6 +11,7 @@ const packingSchema = z.object({
     .array(
       z.object({
         number: z.number().int().min(1).max(10),
+        name: packingPersonNameSchema.optional(),
         allocations: z
           .array(
             z.object({
@@ -226,7 +228,11 @@ export function receiptItemBags(receipt: MealDeckReceipt, lineId: string) {
   return receipt.packingPlan.bags.flatMap((b) =>
     b.allocations
       .filter((a) => a.lineId === lineId)
-      .map((a) => ({ number: b.number, quantity: a.quantity })),
+      .map((a) => ({
+        number: b.number,
+        ...(b.name === undefined ? {} : { name: b.name }),
+        quantity: a.quantity,
+      })),
   );
 }
 export const formatReceiptMoney = (pence: number) =>

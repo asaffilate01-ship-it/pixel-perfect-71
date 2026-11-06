@@ -220,6 +220,26 @@ jobs:
       - name: Payment HTTP handlers against migrated PostgreSQL contracts
         run: bun test tests/mealdeck-payment-http-postgres.test.ts
 
+      - name: Live ordering rooms, private invitations and named packing
+        run: >-
+          bun test tests/mealdeck-group-rooms.test.ts
+          tests/mealdeck-group-room-ui-state.test.ts
+          tests/mealdeck-packing-name.test.ts
+
+      - name: Ordering room implementation and migration checks
+        run: >-
+          bunx eslint src/lib/mealdeck-group-rooms.ts
+          src/lib/mealdeck-group-rooms-browser.ts src/lib/mealdeck-group-rooms.server.ts
+          src/lib/mealdeck-packing-name.ts src/components/group-order-room.tsx
+          src/components/group-order-room-state.ts src/components/group-room-menu.tsx
+          src/components/group-room-billing.tsx src/components/group-room-setup.tsx
+          src/routes/api.group-orders.ts src/routes/group-order.tsx
+          tests/mealdeck-group-rooms.test.ts tests/mealdeck-group-room-ui-state.test.ts
+          tests/mealdeck-packing-name.test.ts deploy/mealdeck/ordering-rooms.mjs
+          tests/postgres/ordering-rooms-fixture.mjs tests/postgres/ordering-rooms-behavior.mjs
+          tests/postgres/ordering-rooms-concurrency.mjs
+          --rule 'prettier/prettier: off'
+
       - name: Branded authentication email and public search metadata
         run: bun test tests/mealdeck-auth-email.test.ts tests/mealdeck-seo.test.ts
 
@@ -611,6 +631,7 @@ jobs:
             kitchen-availability,
             shared-terminal-payments,
             checkout-domain,
+            ordering-rooms,
           ]
     services:
       postgres:

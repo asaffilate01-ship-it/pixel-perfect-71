@@ -205,7 +205,7 @@ export function LaunchMenuAppNav({
               <nav className="lma-more-links" aria-label="Explore MealDeck">
                 <Link to="/group-order" onClick={followLink}>
                   <Users size={21} aria-hidden="true" />
-                  <span>Group order · One person pays</span>
+                  <span>Group order · Choose together</span>
                   <ArrowUpRight size={18} aria-hidden="true" />
                 </Link>
                 <Link to="/account" onClick={followLink}>

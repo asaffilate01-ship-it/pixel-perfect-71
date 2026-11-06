@@ -86,6 +86,99 @@ describe("MealDeck canonical KDS response boundaries", () => {
     expect(result.orders[0]!.display_code).toBe("0438");
   });
 
+  test("one complete kitchen order retains a person's name on each meal and cross-brand extra", () => {
+    const value = board();
+    const order = value.orders[0]!;
+    order.items = [
+      {
+        ...item(),
+        quantity: 1,
+        participant_name: "Amer",
+        checkout_line_id: "line-1",
+        modifiers: ["Korean BBQ"],
+        bags: [{ number: 1, name: "Amer", quantity: 1 }],
+      },
+      {
+        ...item(),
+        order_item_id: id(12),
+        quantity: 1,
+        participant_name: "Jay",
+        checkout_line_id: "line-2",
+        modifiers: ["Dynamite"],
+        bags: [{ number: 2, name: "Jay", quantity: 1 }],
+      },
+      {
+        ...item(),
+        order_item_id: id(13),
+        quantity: 1,
+        brand_name: "Moktl",
+        item_name: "Mango Mirage",
+        participant_name: "Amer",
+        checkout_line_id: "line-1-extra-drink",
+        parent_checkout_line_id: "line-1",
+        modifiers: ["Mango Mirage"],
+        bags: [{ number: 1, name: "Amer", quantity: 1 }],
+      },
+    ];
+    order.tickets[0]!.items = order.items.map((line, index) => ({
+      ...structuredClone(line),
+      ticket_item_id: id(20 + index),
+    }));
+    const parsed = parseKdsBoard(value, scope).orders[0]!;
+    expect(parsed.items).toHaveLength(3);
+    expect(parsed.items.map((line) => line.bags)).toEqual(order.items.map((line) => line.bags));
+    expect(parsed.items.map((line) => line.modifiers)).toEqual([
+      ["Korean BBQ"],
+      ["Dynamite"],
+      ["Mango Mirage"],
+    ]);
+    expect(parsed.items[2]!.parent_checkout_line_id).toBe("line-1");
+    order.items[0]!.participant_name = "Jay";
+    order.tickets[0]!.items[0]!.participant_name = "Jay";
+    expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+    order.items[0]!.participant_name = "Amer";
+    order.tickets[0]!.items[0]!.participant_name = "Amer";
+    order.items[2]!.bags![0]!.name = "Jay";
+    order.items[2]!.participant_name = "Jay";
+    order.tickets[0]!.items[2]!.bags![0]!.name = "Jay";
+    order.tickets[0]!.items[2]!.participant_name = "Jay";
+    expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+  });
+
+  test("named room packing cannot disappear or change between master and station copies", () => {
+    for (const changed of [
+      [],
+      [{ number: 1, quantity: 2 }],
+      [{ number: 1, name: "Jay", quantity: 2 }],
+    ]) {
+      const value = board();
+      value.orders[0]!.items[0]!.participant_name = "Amer";
+      value.orders[0]!.tickets[0]!.items[0]!.participant_name = "Amer";
+      value.orders[0]!.items[0]!.bags = [{ number: 1, name: "Amer", quantity: 2 }];
+      value.orders[0]!.tickets[0]!.items[0]!.bags = changed;
+      expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+    }
+    const legacy = board();
+    legacy.orders[0]!.items[0]!.checkout_line_id = "line-1";
+    legacy.orders[0]!.items[0]!.bags = [{ number: 1, quantity: 2 }];
+    expect(parseKdsBoard(legacy, scope).orders[0]!.items[0]!.bags).toEqual([
+      { number: 1, quantity: 2 },
+    ]);
+  });
+
+  test("rejects unsafe packing names and bag numbers before they can reach a kitchen card", () => {
+    for (const name of ["", "Amer ", "Amer\u202e", "Amer\x1b@", "A".repeat(33), null]) {
+      const value = board();
+      const bags = [{ number: 1, name, quantity: 2 }];
+      Object.assign(value.orders[0]!.items[0]!, { bags });
+      Object.assign(value.orders[0]!.tickets[0]!.items[0]!, { bags });
+      expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+    }
+    const value = board();
+    value.orders[0]!.items[0]!.bags = [{ number: 11, quantity: 2 }];
+    expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+  });
+
   test("preserves the end of long kitchen notes and modifier labels", () => {
     const value = board();
     const note =

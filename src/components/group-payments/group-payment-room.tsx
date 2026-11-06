@@ -18,6 +18,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { getMealDeckCustomerAccessToken } from "@/lib/mealdeck-customer-browser";
 import { formatLaunchMenuPrice } from "@/lib/launch-menu-display-prices";
+import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import {
   sharedPaymentRoomPath,
   sharedPaymentUnclaimedPence,
@@ -84,7 +85,7 @@ function focusVisible(element: HTMLElement | null) {
   return true;
 }
 
-function SharePaymentLink({ value, bagNumber }: { value: string; bagNumber: number }) {
+function SharePaymentLink({ value, bagLabel }: { value: string; bagLabel: string }) {
   const [message, setMessage] = useState("");
   const [expanded, setExpanded] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
@@ -110,12 +111,12 @@ function SharePaymentLink({ value, bagNumber }: { value: string; bagNumber: numb
           void copy();
         }}
       >
-        <Copy size={17} aria-hidden="true" /> Copy Bag {bagNumber} payment link
+        <Copy size={17} aria-hidden="true" /> Copy {bagLabel} payment link
       </button>
       <details open={expanded} onToggle={(event) => setExpanded(event.currentTarget.open)}>
         <summary>View private link</summary>
         <label>
-          Payment link for Bag {bagNumber}
+          Payment link for {bagLabel}
           <textarea
             ref={input}
             value={value}
@@ -192,6 +193,9 @@ function RoomShares({
       )}
       <div className="md-shared-share-list">
         {shares.map((share) => {
+          const bagLabel = formatPackingBagName(
+            room.bags.find((bag) => bag.number === share.bagNumber) ?? { number: share.bagNumber },
+          );
           const invite = invites.find(
             (entry) => entry.shareId === share.shareId && entry.bagNumber === share.bagNumber,
           );
@@ -207,7 +211,7 @@ function RoomShares({
               <div className="md-shared-share-heading">
                 <div>
                   <span className="md-shared-kicker">{own ? "Your share" : "Payment share"}</span>
-                  <h3>Bag {share.bagNumber}</h3>
+                  <h3>{bagLabel}</h3>
                 </div>
                 <span className={"md-shared-status md-shared-status-" + share.status}>
                   {share.status === "paid" && <CheckCircle2 size={16} aria-hidden="true" />}
@@ -239,13 +243,13 @@ function RoomShares({
               )}
               <details className="md-shared-bag-details" open={own || room.shares.length === 1}>
                 <summary>
-                  <Package size={17} aria-hidden="true" /> Review Bag {share.bagNumber} food,
-                  flavours &amp; extras
+                  <Package size={17} aria-hidden="true" /> Review {bagLabel} food, flavours &amp;
+                  extras
                 </summary>
                 <BagContents room={room} bagNumber={share.bagNumber} />
               </details>
               {room.viewer.role === "organiser" && url && (
-                <SharePaymentLink value={url} bagNumber={share.bagNumber} />
+                <SharePaymentLink value={url} bagLabel={bagLabel} />
               )}
               {room.viewer.role === "organiser" && invite && !url && (
                 <p className="md-shared-error" role="alert">
