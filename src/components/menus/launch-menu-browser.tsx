@@ -906,8 +906,10 @@ export function LaunchMenuBrowser({
                   Item prices are shown. Ordering is coming soon.
                 </DialogDescription>
               </div>
-              <LaunchBasket {...pickProps} />
-              <LaunchDessertUpsells recommendations={dessertRecommendations} onAdd={addDessert} />
+              <div className="lm-basket-scroll">
+                <LaunchBasket {...pickProps} />
+                <LaunchDessertUpsells recommendations={dessertRecommendations} onAdd={addDessert} />
+              </div>
               <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
                 {notice?.message ?? ""}
               </p>
