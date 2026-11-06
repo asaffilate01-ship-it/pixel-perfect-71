@@ -858,6 +858,35 @@ export function KdsWorkspaceControls({
           </button>
         </div>
       </div>
+      <div className="md-kds-stage-rail" role="group" aria-label="Filter kitchen orders by stage">
+        <button
+          type="button"
+          className="md-kds-stage-chip"
+          data-stage="all"
+          aria-pressed={filter === "all"}
+          onClick={() => onFilterChange("all")}
+        >
+          <span>All active</span>
+          <strong>{activeCount}</strong>
+        </button>
+        {(Object.keys(stageLabels) as Stage[]).map((stage) => (
+          <button
+            key={stage}
+            type="button"
+            className="md-kds-stage-chip"
+            data-stage={stage}
+            aria-pressed={filter === stage}
+            onClick={() => onFilterChange(filter === stage ? "all" : stage)}
+            title={stage === "done" ? "Confirmed handovers from the last 12 hours" : undefined}
+          >
+            <span>
+              <span className="md-kds-stage-dot" aria-hidden="true" />
+              {stageLabels[stage]}
+            </span>
+            <strong>{counts[stage]}</strong>
+          </button>
+        ))}
+      </div>
       {hasFilters && (
         <div className="md-kds-applied-filters" aria-label="Applied kitchen filters">
           {filter !== "all" && <span>Stage: {stageLabels[filter]}</span>}
@@ -873,35 +902,6 @@ export function KdsWorkspaceControls({
         </div>
       )}
       <div className="md-kds-tools-panel" id={toolsId} hidden={!toolsOpen}>
-        <div className="md-kds-stage-rail" role="group" aria-label="Filter kitchen orders by stage">
-          <button
-            type="button"
-            className="md-kds-stage-chip"
-            data-stage="all"
-            aria-pressed={filter === "all"}
-            onClick={() => onFilterChange("all")}
-          >
-            <span>All active</span>
-            <strong>{activeCount}</strong>
-          </button>
-          {(Object.keys(stageLabels) as Stage[]).map((stage) => (
-            <button
-              key={stage}
-              type="button"
-              className="md-kds-stage-chip"
-              data-stage={stage}
-              aria-pressed={filter === stage}
-              onClick={() => onFilterChange(filter === stage ? "all" : stage)}
-              title={stage === "done" ? "Confirmed handovers from the last 12 hours" : undefined}
-            >
-              <span>
-                <span className="md-kds-stage-dot" aria-hidden="true" />
-                {stageLabels[stage]}
-              </span>
-              <strong>{counts[stage]}</strong>
-            </button>
-          ))}
-        </div>
         <div className="md-kds-toolbar">
           <label className="md-kds-search relative min-w-0">
             <span className="sr-only">Find an order, dish, brand, bag name, note or vehicle</span>

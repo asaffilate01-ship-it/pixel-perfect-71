@@ -153,8 +153,8 @@
   gap: 7px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  padding: 4px 4px 12px;
-  margin: -4px -4px 0;
+  padding: 4px;
+  margin: 8px -4px 0;
   scrollbar-width: thin;
   scrollbar-color: var(--ops-line) transparent;
 }
