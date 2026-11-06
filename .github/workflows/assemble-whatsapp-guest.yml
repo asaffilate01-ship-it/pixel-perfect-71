@@ -1,0 +1,113 @@
+name: Assemble reviewed WhatsApp guest checkout
+on:
+  push:
+    branches: [feature/mealdeck-whatsapp-guest-weekend-20261106]
+    paths: [.github/workflows/assemble-whatsapp-guest.yml]
+permissions:
+  contents: write
+concurrency:
+  group: mealdeck-whatsapp-guest-assembly
+  cancel-in-progress: false
+jobs:
+  assemble:
+    if: github.repository == 'asaffilate01-ship-it/pixel-perfect-71'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+      - name: Verify and apply the reviewed plain-text patches
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' 'f3b0369edcf75bf3d80b7cf056d6b84d0da4b97b5ecf297e7f6bac8e653f8196  tools/release-inputs/guest-review-1.patch' 'f344d68d74c501910c37c9e471e377e17cd63385b0958b8ecf4f38b209b61506  tools/release-inputs/guest-review-2.patch' '97ad3adb5eb134e52071368de14726406309b42db32d06169144f556fe0698db  tools/release-inputs/guest-review-3.patch' | sha256sum --check
+          for patch in tools/release-inputs/guest-review-{1,2,3}.patch; do
+            git apply --3way --index --exclude=src/components/customer-account.tsx "$patch"
+          done
+      - name: Preserve the newer existing password sign-in while deferring registration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/components/customer-account.tsx')
+          s=p.read_text()
+          def change(a,b):
+              global s
+              assert s.count(a)==1, ('Unexpected customer account source',a[:80],s.count(a))
+              s=s.replace(a,b)
+          change('import { CustomerOrders } from "./customer-orders";', 'import { CustomerOrders } from "./customer-orders";\nimport { useCustomerEntryPolicy } from "./use-customer-entry-policy";')
+          notice='''function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
+            return <div className="md-account-notice" role="status"><div>
+              <h2>Just your name and WhatsApp number.</h2>
+              <p>No email registration or verification is needed for guest orders this opening weekend. Email registration opens on Monday 9 November 2026.</p>
+              <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>Continue without registering <ArrowRight size={18} aria-hidden="true" /></a>
+            </div></div>;
+          }
+          
+          '''
+          change('function CustomerEntry({',notice+'function CustomerEntry({')
+          change('  onPassword,\n  busy,\n}: {','  onPassword,\n  busy,\n  registrationDeferred,\n  returnTo,\n}: {')
+          change('  onPassword: (email: string, password: string) => Promise<void>;\n  busy: boolean;','  onPassword: (email: string, password: string) => Promise<void>;\n  busy: boolean;\n  registrationDeferred: boolean;\n  returnTo: CustomerReturnTarget;')
+          change('  const [mode, setMode] = useState<"register" | "signin">("register");','  const [requestedMode, setMode] = useState<"register" | "signin">("register");\n  const mode = registrationDeferred ? "signin" : requestedMode;')
+          change('    <section className="md-account-panel" aria-labelledby="account-entry-heading">','    <section className="md-account-panel" aria-labelledby="account-entry-heading">\n      {registrationDeferred && <QuickCheckoutNotice returnTo={returnTo} />}')
+          change('        <button\n          type="button"\n          aria-pressed={mode === "register"}', '        {!registrationDeferred && <button\n          type="button"\n          aria-pressed={mode === "register"}')
+          change('          Register\n        </button>\n        <button', '          Register\n        </button>}\n        <button')
+          change('  const returnTarget = customerReturnTarget(returnTo);', '  const returnTarget = customerReturnTarget(returnTo);\n  const entryPolicy = useCustomerEntryPolicy();\n  const registrationDeferred = entryPolicy?.emailRegistrationDeferred !== false;')
+          change('              <FinishRegistration account={account} busy={busy} onFinish={finish} />','              registrationDeferred ? <QuickCheckoutNotice returnTo={returnTarget} /> : <FinishRegistration account={account} busy={busy} onFinish={finish} />')
+          change('              <CustomerEntry busy={busy} onRequest={request} onPassword={passwordSignIn} />','              <CustomerEntry busy={busy} onRequest={request} onPassword={passwordSignIn} registrationDeferred={registrationDeferred} returnTo={returnTarget} />')
+          p.write_text(s)
+          PY
+      - name: Allocate the migration filename using the official CLI
+        run: |
+          npx --yes supabase@3.0.0 migration new mealdeck_whatsapp_guest_weekend
+          file=$(find supabase/migrations -maxdepth 1 -name '*_mealdeck_whatsapp_guest_weekend.sql')
+          test -n "$file"
+          cp deploy/mealdeck/whatsapp-guest.sql "$file"
+          mv "$file" deploy/mealdeck/post-install-migrations/
+      - run: bun install --frozen-lockfile
+      - run: npm ci --prefix tests/postgres
+      - run: bunx prettier --write src/components/customer-account.tsx
+      - name: Verify the combined application
+        run: |
+          bunx tsc --noEmit
+          bunx eslint src/components/customer-account.tsx src/lib/mealdeck-customer-browser.ts src/lib/mealdeck-customer-entry.ts src/components/use-customer-entry-policy.ts tests/mealdeck-whatsapp-guest.test.ts
+          bun test tests/
+          node tests/postgres/whatsapp-guest-behavior.mjs
+          bun run build
+      - name: Create a candidate commit without changing main or any branch ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_PARENT: ${{ github.sha }}
+        run: |
+          git rm .github/workflows/assemble-whatsapp-guest.yml tools/release-inputs/guest-review-1.patch tools/release-inputs/guest-review-2.patch tools/release-inputs/guest-review-3.patch
+          git add .github/workflows/whatsapp-guest.yml src/components/customer-account.tsx src/components/group-order-room.tsx src/components/group-payments/payment-identity.tsx src/components/group-payments/use-payment-identity.ts src/components/group-room-setup.tsx src/components/launch-checkout.tsx src/components/use-customer-entry-policy.ts src/lib/mealdeck-customer-browser.ts src/lib/mealdeck-customer-entry.ts src/lib/mealdeck-customer.functions.ts src/lib/mealdeck-guest.ts src/lib/mealdeck-online-checkout.server.ts src/lib/mealdeck-stripe.server.ts src/routes/privacy.tsx deploy/mealdeck/whatsapp-guest.mjs deploy/mealdeck/whatsapp-guest.sql deploy/mealdeck/post-install-migrations/*_mealdeck_whatsapp_guest_weekend.sql docs/mealdeck-whatsapp-guest-weekend.md tests/mealdeck-whatsapp-guest.test.ts tests/postgres/whatsapp-guest-behavior.mjs
+          git diff --cached --check
+          git diff --cached --stat
+          python3 - <<'PY'
+          import os,json,base64,subprocess,urllib.request
+          repo='asaffilate01-ship-it/pixel-perfect-71'
+          root='https://api.github.com/repos/'+repo
+          def api(path,body=None):
+              req=urllib.request.Request(root+path,data=None if body is None else json.dumps(body).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'})
+              with urllib.request.urlopen(req) as response: return json.load(response)
+          parent=os.environ['EXPECTED_PARENT']
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==parent
+          entries=[]
+          for path in subprocess.check_output(['git','diff','--cached','--name-only','-z'],text=True).split('\0'):
+              if not path: continue
+              try: content=subprocess.check_output(['git','show',':'+path],stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:
+                  entries.append({'path':path,'mode':'100644','type':'blob','sha':None});continue
+              sha=api('/git/blobs',{'content':base64.b64encode(content).decode(),'encoding':'base64'})['sha']
+              entries.append({'path':path,'mode':'100644','type':'blob','sha':sha})
+          base=api('/git/commits/'+parent)['tree']['sha']
+          tree=api('/git/trees',{'base_tree':base,'tree':entries})['sha']
+          result=api('/git/commits',{'message':'Use name and WhatsApp checkout until Monday; preserve staff and payment security','tree':tree,'parents':[parent]})
+          print('VERIFIED_CANDIDATE_COMMIT='+result['sha'])
+          print('VERIFIED_CANDIDATE_TREE='+tree)
+          PY
