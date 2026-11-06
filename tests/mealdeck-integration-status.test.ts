@@ -2,6 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { handleIntegrationStatusRequest } from "../src/lib/mealdeck-integration-status.server";
 import { integrationStatusSchema } from "../src/lib/mealdeck-integration-status";
 import type { MealDeckRuntimeEnv } from "../src/lib/mealdeck-runtime-config";
+import {
+  readMealDeckStripeConfig,
+  readMealDeckStripeSettingIssues,
+} from "../src/lib/mealdeck-stripe.server";
 
 const uid = (n: number) => "40000000-0000-4000-8000-" + String(n).padStart(12, "0");
 const token = "fixture-staff-access-token-123456789";
@@ -182,6 +186,7 @@ describe("private payment and email setup checks", () => {
       expect(response.status).toBe(status);
       expect(f.calls.some((call) => call.host === "api.stripe.com")).toBe(false);
       expect(response.headers.get("Cache-Control")).toContain("no-store");
+      expect(await response.text()).not.toContain("MEALDECK_STRIPE_SECRET_KEY");
     }
   });
   test("server identity, current owner/admin role, exact scope and database denials control access", async () => {
@@ -244,7 +249,124 @@ describe("private payment and email setup checks", () => {
     });
     expect(check("database").state).toBe("checked");
     expect(check("checkout").state).toBe("needs_setup");
+    expect(check("checkout").settings).toEqual(["MEALDECK_CHECKOUT_SERVER_KEY"]);
+    expect(check("checkout").detail).toContain("MEALDECK_CHECKOUT_SERVER_KEY: missing or invalid");
     expect(report.acceptingOnlineOrders).toBe(false);
+  });
+  test("only the missing Stripe setting is listed after owner authorisation", async () => {
+    for (const setting of [
+      "MEALDECK_STRIPE_SECRET_KEY",
+      "MEALDECK_STRIPE_WEBHOOK_SECRET",
+      "MEALDECK_STRIPE_ACCOUNT_ID",
+      "MEALDECK_STRIPE_MODE",
+    ]) {
+      const f = fixture();
+      const runtime = { ...env, [setting]: undefined };
+      const { report, check } = await inspect(f, runtime);
+      expect(check("stripe").settings).toEqual([setting]);
+      expect(check("stripe").detail).toBe(`${setting}: missing.`);
+      expect(readMealDeckStripeSettingIssues(runtime)).toEqual([{ setting, status: "missing" }]);
+      expect(readMealDeckStripeConfig(runtime)).toBeNull();
+      expect(report.mode).toBe("unconfigured");
+      expect(f.calls.some((call) => call.host === "api.stripe.com")).toBe(false);
+    }
+  });
+  test("invalid Stripe settings report fixed names and statuses without echoing values", async () => {
+    for (const [setting, value] of [
+      ["MEALDECK_STRIPE_SECRET_KEY", "pk_live_fixture_value_must_not_be_echoed"],
+      ["MEALDECK_STRIPE_WEBHOOK_SECRET", "wrong_webhook_value_must_not_be_echoed"],
+      ["MEALDECK_STRIPE_ACCOUNT_ID", "wrong_account_value_must_not_be_echoed"],
+      ["MEALDECK_STRIPE_MODE", "wrong_mode_value_must_not_be_echoed"],
+    ]) {
+      const f = fixture();
+      const runtime = { ...env, [setting!]: value };
+      const { report, check } = await inspect(f, runtime);
+      expect(check("stripe").settings).toEqual([setting]);
+      expect(check("stripe").detail).toBe(`${setting}: invalid.`);
+      expect(readMealDeckStripeConfig(runtime)).toBeNull();
+      const rendered = JSON.stringify(report);
+      for (const forbidden of [
+        value!,
+        env.MEALDECK_STRIPE_SECRET_KEY,
+        env.MEALDECK_STRIPE_WEBHOOK_SECRET,
+        env.MEALDECK_STRIPE_ACCOUNT_ID,
+        env.MEALDECK_CHECKOUT_SERVER_KEY,
+        token,
+      ])
+        expect(rendered).not.toContain(forbidden);
+      expect(f.calls.some((call) => call.host === "api.stripe.com")).toBe(false);
+    }
+  });
+  test("key/mode mismatch identifies the pair and preserves exact mode validation", async () => {
+    const mismatch = { ...env, MEALDECK_STRIPE_MODE: "live" };
+    const { check } = await inspect(fixture(), mismatch);
+    expect(check("stripe").settings).toEqual([
+      "MEALDECK_STRIPE_SECRET_KEY",
+      "MEALDECK_STRIPE_MODE",
+    ]);
+    expect(check("stripe").detail).toBe(
+      "MEALDECK_STRIPE_SECRET_KEY: invalid (key/mode mismatch). MEALDECK_STRIPE_MODE: invalid (key/mode mismatch).",
+    );
+    expect(readMealDeckStripeConfig(mismatch)).toBeNull();
+    for (const mode of [" test ", "TEST"]) {
+      const runtime = { ...env, MEALDECK_STRIPE_MODE: mode };
+      expect(readMealDeckStripeSettingIssues(runtime)).toEqual([
+        { setting: "MEALDECK_STRIPE_MODE", status: "invalid" },
+      ]);
+      expect(readMealDeckStripeConfig(runtime)).toBeNull();
+    }
+    const trimmed = {
+      ...env,
+      MEALDECK_STRIPE_SECRET_KEY: ` ${env.MEALDECK_STRIPE_SECRET_KEY} `,
+      MEALDECK_STRIPE_WEBHOOK_SECRET: ` ${env.MEALDECK_STRIPE_WEBHOOK_SECRET} `,
+      MEALDECK_STRIPE_ACCOUNT_ID: ` ${env.MEALDECK_STRIPE_ACCOUNT_ID} `,
+    };
+    expect(readMealDeckStripeSettingIssues(trimmed)).toEqual([]);
+    expect(readMealDeckStripeConfig(trimmed)).toMatchObject({
+      secretKey: env.MEALDECK_STRIPE_SECRET_KEY,
+      webhookSecret: env.MEALDECK_STRIPE_WEBHOOK_SECRET,
+      accountId: env.MEALDECK_STRIPE_ACCOUNT_ID,
+      livemode: false,
+    });
+  });
+  test("pending public approval is separate from valid live payment setup", async () => {
+    const f = fixture();
+    f.state.locationMode = true;
+    const { check, report } = await inspect(f, {
+      ...env,
+      MEALDECK_STRIPE_SECRET_KEY: "sk_live_" + "d".repeat(32),
+      MEALDECK_STRIPE_MODE: "live",
+      MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "pending",
+    });
+    expect(check("stripe").state).toBe("checked");
+    expect(check("stripe").settings).toEqual([]);
+    expect(check("checkout").state).toBe("unverified");
+    expect(check("checkout").settings).toEqual([]);
+    expect(check("checkout").detail).toContain("Public checkout approval is pending");
+    expect(check("checkout").detail).toContain("Keep it pending");
+    expect(check("checkout").detail).not.toContain("MEALDECK_CHECKOUT_SERVER_KEY");
+    expect(report.mode).toBe("live");
+    expect(report.acceptingOnlineOrders).toBe(false);
+  });
+  test("real checkout faults remain specific while public approval stays pending", async () => {
+    for (const [setting, value, status] of [
+      ["MEALDECK_CHECKOUT_SERVER_KEY", undefined, "missing or invalid"],
+      ["MEALDECK_ONLINE_CHECKOUT_ENABLED", "false", "disabled"],
+      ["MEALDECK_ONLINE_CHECKOUT_ENABLED", undefined, "missing"],
+      ["MEALDECK_ONLINE_CHECKOUT_ENABLED", "TRUE", "invalid"],
+      ["MEALDECK_STRIPE_CHECKOUT_HOST", "unapproved.invalid", "invalid"],
+    ] as const) {
+      const { check } = await inspect(fixture(), {
+        ...env,
+        MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "pending",
+        [setting]: value,
+      });
+      expect(check("checkout").state).toBe("needs_setup");
+      expect(check("checkout").settings).toEqual([setting]);
+      expect(check("checkout").detail).toContain(`${setting}: ${status}.`);
+      expect(check("checkout").detail).toContain("Public checkout approval is pending");
+      expect(check("checkout").settings).not.toContain("MEALDECK_CHECKOUT_INTEGRATION_APPROVED");
+    }
   });
   test("disabled or mismatched Stripe configuration never makes provider calls or reports readiness", async () => {
     for (const change of [

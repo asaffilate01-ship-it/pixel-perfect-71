@@ -18,22 +18,57 @@ export type MealDeckStripeConfig = {
 };
 type Json = Record<string, unknown>;
 
+type MealDeckStripeSetting =
+  | "MEALDECK_STRIPE_SECRET_KEY"
+  | "MEALDECK_STRIPE_WEBHOOK_SECRET"
+  | "MEALDECK_STRIPE_ACCOUNT_ID"
+  | "MEALDECK_STRIPE_MODE";
+export type MealDeckStripeSettingIssue = {
+  setting: MealDeckStripeSetting;
+  status: "missing" | "invalid" | "mode_mismatch";
+};
+
+function stripeSettings(env: MealDeckRuntimeEnv) {
+  const secretKey = env["MEALDECK_STRIPE_SECRET_KEY"]?.trim() ?? "";
+  const webhookSecret = env["MEALDECK_STRIPE_WEBHOOK_SECRET"]?.trim() ?? "";
+  const accountId = env["MEALDECK_STRIPE_ACCOUNT_ID"]?.trim() ?? "";
+  // Preserve the payment validator's exact mode contract; do not silently
+  // repair whitespace, case or an unrecognised mode in the diagnostic path.
+  const mode = env["MEALDECK_STRIPE_MODE"] ?? "";
+  const secretValid = /^sk_(test|live)_[A-Za-z0-9]{16,512}$/.test(secretKey);
+  const modeValid = mode === "test" || mode === "live";
+  const issues: MealDeckStripeSettingIssue[] = [];
+  const check = (setting: MealDeckStripeSetting, value: string, valid: boolean) => {
+    if (!value.trim()) issues.push({ setting, status: "missing" });
+    else if (!valid) issues.push({ setting, status: "invalid" });
+  };
+  check("MEALDECK_STRIPE_SECRET_KEY", secretKey, secretValid);
+  check(
+    "MEALDECK_STRIPE_WEBHOOK_SECRET",
+    webhookSecret,
+    /^whsec_[A-Za-z0-9]{16,512}$/.test(webhookSecret),
+  );
+  check("MEALDECK_STRIPE_ACCOUNT_ID", accountId, /^acct_[A-Za-z0-9]+$/.test(accountId));
+  check("MEALDECK_STRIPE_MODE", mode, modeValid);
+  if (secretValid && modeValid && !secretKey.startsWith("sk_" + mode + "_")) {
+    issues.push(
+      { setting: "MEALDECK_STRIPE_SECRET_KEY", status: "mode_mismatch" },
+      { setting: "MEALDECK_STRIPE_MODE", status: "mode_mismatch" },
+    );
+  }
+  return { secretKey, webhookSecret, accountId, mode, issues };
+}
+
+/** Safe diagnostic projection: fixed setting names/statuses, never values. */
+export function readMealDeckStripeSettingIssues(
+  env: MealDeckRuntimeEnv,
+): MealDeckStripeSettingIssue[] {
+  return stripeSettings(env).issues;
+}
+
 export function readMealDeckStripeConfig(env: MealDeckRuntimeEnv): MealDeckStripeConfig | null {
-  const secretKey = env["MEALDECK_STRIPE_SECRET_KEY"]?.trim();
-  const webhookSecret = env["MEALDECK_STRIPE_WEBHOOK_SECRET"]?.trim();
-  const accountId = env["MEALDECK_STRIPE_ACCOUNT_ID"]?.trim();
-  const mode = env["MEALDECK_STRIPE_MODE"];
-  if (
-    !secretKey ||
-    !/^sk_(test|live)_[A-Za-z0-9]{16,512}$/.test(secretKey) ||
-    !webhookSecret ||
-    !/^whsec_[A-Za-z0-9]{16,512}$/.test(webhookSecret) ||
-    !accountId ||
-    !/^acct_[A-Za-z0-9]+$/.test(accountId) ||
-    !["test", "live"].includes(mode ?? "") ||
-    !secretKey.startsWith("sk_" + mode + "_")
-  )
-    return null;
+  const { secretKey, webhookSecret, accountId, mode, issues } = stripeSettings(env);
+  if (issues.length) return null;
   // A broken URL setting must not disable reconciliation of existing payments.
   // New Checkout requests check the domain separately before creating a Session.
   return {
