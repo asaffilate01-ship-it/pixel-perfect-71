@@ -74,3 +74,45 @@ describe("checkout identity transport", () => {
     expect(sentSignal).toBe(controller.signal);
   });
 });
+
+describe("availability identity transport", () => {
+  test("all three capability routes send the current bearer without a query-string identity", async () => {
+    const { requestMealDeckAvailability } = await import("../src/lib/mealdeck-checkout-browser");
+    const controller = new AbortController();
+    for (const path of ["/api/checkout", "/api/group-orders", "/api/group-payments"] as const) {
+      let seen = false;
+      await requestMealDeckAvailability(
+        path,
+        async () => "fixture-token",
+        controller.signal,
+        (async (url, init) => {
+          seen = true;
+          expect(url).toBe(path);
+          expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer fixture-token");
+          expect(init).toMatchObject({
+            method: "GET",
+            cache: "no-store",
+            credentials: "same-origin",
+            signal: controller.signal,
+          });
+          return Response.json({ available: true });
+        }) as typeof fetch,
+      );
+      expect(seen).toBe(true);
+    }
+  });
+  test("signed-out and unavailable Auth connections only request public status", async () => {
+    const { requestMealDeckAvailability } = await import("../src/lib/mealdeck-checkout-browser");
+    for (const token of [
+      async () => null,
+      async () => {
+        throw new Error("unavailable");
+      },
+    ]) {
+      await requestMealDeckAvailability("/api/checkout", token, undefined, (async (_url, init) => {
+        expect(new Headers(init?.headers).has("Authorization")).toBe(false);
+        return Response.json({ available: false });
+      }) as typeof fetch);
+    }
+  });
+});

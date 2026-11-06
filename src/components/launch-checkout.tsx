@@ -64,6 +64,7 @@ import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timin
 import { safeMealDeckCheckoutRedirect } from "@/lib/mealdeck-checkout-url";
 import {
   CHECKOUT_MODE_KEY,
+  requestMealDeckAvailability,
   requestMealDeckCheckout,
   type MealDeckCheckoutMode,
 } from "@/lib/mealdeck-checkout-browser";
@@ -550,6 +551,7 @@ export function LaunchCheckout({
         if (alive.current) {
           setAccount(result);
           setAccountIssue(null);
+          refreshStatus();
         }
       } catch (error) {
         if (alive.current)
@@ -573,11 +575,11 @@ export function LaunchCheckout({
       if (document.visibilityState === "hidden") return;
       const requestId = ++statusRequestId.current;
       const guestVersion = guestStateVersion.current;
-      void fetch("/api/checkout", {
-        cache: "no-store",
-        credentials: "same-origin",
-        signal: controller.signal,
-      })
+      void requestMealDeckAvailability(
+        "/api/checkout",
+        getMealDeckCustomerAccessToken,
+        controller.signal,
+      )
         .then(async (response) => {
           if (!response.ok) throw new Error("Checkout status unavailable.");
           return (await response.json()) as CheckoutStatus;

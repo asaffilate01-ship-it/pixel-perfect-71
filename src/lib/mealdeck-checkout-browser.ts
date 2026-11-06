@@ -29,3 +29,23 @@ export async function requestMealDeckCheckout<T>(
     throw new Error(result.message ?? "We couldn't complete that request. Please try again.");
   return result;
 }
+
+/** Availability uses the current member token only as transport. The server
+ * verifies it with Auth; neither an email nor local browser state grants access.
+ * Guest mutations continue to omit member credentials entirely.
+ */
+export async function requestMealDeckAvailability(
+  path: "/api/checkout" | "/api/group-orders" | "/api/group-payments",
+  getAccessToken: () => Promise<string | null>,
+  signal?: AbortSignal,
+  request: typeof fetch = fetch,
+): Promise<Response> {
+  const token = await getAccessToken().catch(() => null);
+  return request(path, {
+    method: "GET",
+    headers: token ? { Authorization: "Bearer " + token } : {},
+    credentials: "same-origin",
+    cache: "no-store",
+    ...(signal ? { signal } : {}),
+  });
+}

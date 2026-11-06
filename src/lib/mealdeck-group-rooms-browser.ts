@@ -1,5 +1,8 @@
 import { getMealDeckCustomerAccessToken } from "./mealdeck-customer-browser";
-import type { MealDeckCheckoutMode } from "./mealdeck-checkout-browser";
+import {
+  requestMealDeckAvailability,
+  type MealDeckCheckoutMode,
+} from "./mealdeck-checkout-browser";
 import { safeMealDeckCheckoutRedirect } from "./mealdeck-checkout-url";
 import {
   groupOrderCapabilitiesSchema,
@@ -42,14 +45,11 @@ async function readResponse(response: Response): Promise<unknown> {
 export async function fetchGroupOrderCapabilities(
   signal?: AbortSignal,
   request: typeof fetch = fetch,
+  getToken: () => Promise<string | null> = getMealDeckCustomerAccessToken,
 ): Promise<GroupOrderCapabilities> {
   const parsed = groupOrderCapabilitiesSchema.safeParse(
     await readResponse(
-      await request("/api/group-orders", {
-        credentials: "same-origin",
-        cache: "no-store",
-        ...(signal ? { signal } : {}),
-      }),
+      await requestMealDeckAvailability("/api/group-orders", getToken, signal, request),
     ),
   );
   if (!parsed.success) throw new Error("Group ordering availability could not be checked.");

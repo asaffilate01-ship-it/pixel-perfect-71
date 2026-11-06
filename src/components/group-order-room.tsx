@@ -588,8 +588,9 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
   }, [roomId, refreshRoom]);
 
   useEffect(() => {
+    void refreshCapabilities();
     if (roomId && identity.ready) void refreshRoom();
-  }, [identity.ready, identity.mode, roomId, refreshRoom]);
+  }, [identity.ready, identity.mode, roomId, refreshRoom, refreshCapabilities]);
 
   useEffect(() => {
     setReviewed(false);

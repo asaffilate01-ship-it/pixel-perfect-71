@@ -73,6 +73,12 @@ function backendProblem(error: unknown): CheckoutProblem {
   const message = String(object(error)["message"] ?? "");
   const known: [RegExp, string, string, number][] = [
     [
+      /prelaunch_test_account_required/,
+      "prelaunch_test_account_required",
+      "This kitchen is currently restricted to its approved test account.",
+      403,
+    ],
+    [
       /guest_window_closed|guest_unavailable/,
       "guest_window_closed",
       "Guest ordering is available only during our opening hours on 6–8 November. Sign in to order after the opening weekend.",
@@ -225,6 +231,7 @@ export type MealDeckOnlineCheckoutStatus = {
 export async function readOnlineCheckoutStatus(
   env: MealDeckRuntimeEnv,
   fetcher: typeof fetch = fetch,
+  request?: Request,
 ): Promise<MealDeckOnlineCheckoutStatus> {
   const base: MealDeckOnlineCheckoutStatus = {
     available: false,
@@ -236,10 +243,21 @@ export async function readOnlineCheckoutStatus(
   const clients = databaseClients(env, fetcher);
   if (!clients) return base;
   try {
-    const state = await rpc(clients.publicClient, "mealdeck_online_checkout_status", {
+    let state = await rpc(clients.publicClient, "mealdeck_online_checkout_status", {
       p_tenant: clients.config.tenantId,
       p_location: clients.config.locationId,
     });
+    // Public hours stay closed. Only a current Auth-verified member may ask the
+    // service-only RPC for its scoped exception. The database owns the allowlist
+    // and expiry; client email, query parameters and clocks grant no authority.
+    if (state["channelOpen"] !== true && clients.service && request?.headers.has("Authorization")) {
+      const customerId = await verifiedCustomer(request, clients.publicClient);
+      state = await rpc(clients.service, "mealdeck_checkout_status_for_customer", {
+        p_tenant: clients.config.tenantId,
+        p_location: clients.config.locationId,
+        p_customer: customerId,
+      });
+    }
     const openingOffer = parseOpeningOffer(state["openingOffer"]);
     if (!openingOffer) return base;
     const kitchen = parseKitchenAvailability(state["kitchen"]);
@@ -337,7 +355,7 @@ export async function handleOnlineCheckoutRequest(
 ) {
   try {
     if (request.method === "GET") {
-      const status = await readOnlineCheckoutStatus(env, fetcher);
+      const status = await readOnlineCheckoutStatus(env, fetcher, request);
       const clients = databaseClients(env, fetcher);
       if (clients)
         status.guestCheckout.session = await resolveGuest(
@@ -458,7 +476,7 @@ export async function handleOnlineCheckoutRequest(
       env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off"
     )
       throw backendProblem({});
-    const status = await readOnlineCheckoutStatus(env, fetcher);
+    const status = await readOnlineCheckoutStatus(env, fetcher, request);
     if (!status.available) throw newOrderingUnavailable(status);
     if (action === "quote") {
       const selection = normaliseCheckoutSelection(input, clients.config.tenantId);

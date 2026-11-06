@@ -108,8 +108,9 @@ function readShareAccess(request: Request, secret: string | null, roomId: string
 export async function readSharedPaymentCapabilities(
   env: MealDeckRuntimeEnv,
   fetcher: typeof fetch = fetch,
+  request?: Request,
 ): Promise<SharedPaymentCapabilities> {
-  const status = await readOnlineCheckoutStatus(env, fetcher);
+  const status = await readOnlineCheckoutStatus(env, fetcher, request);
   const available =
     status.available &&
     env["MEALDECK_SHARED_PAYMENTS_ENABLED"] === "true" &&
@@ -285,7 +286,7 @@ export async function handleSharedPaymentsRequest(
 ) {
   try {
     if (request.method === "GET")
-      return Response.json(await readSharedPaymentCapabilities(env, fetcher), {
+      return Response.json(await readSharedPaymentCapabilities(env, fetcher, request), {
         headers: PAYMENT_NO_STORE,
       });
     if (request.method !== "POST")
@@ -308,7 +309,7 @@ export async function handleSharedPaymentsRequest(
       input.action === "create" || input.action === "pay" || input.action === "cancel",
     );
     const hasIdentity = Boolean(identity.customerId || identity.guestTokenHash);
-    const capabilities = await readSharedPaymentCapabilities(env, fetcher);
+    const capabilities = await readSharedPaymentCapabilities(env, fetcher, request);
     const projectRoom = (raw: PaymentJson) =>
       sharedRoomForBrowser(raw, { available: capabilities.available, hasIdentity });
     const recoveryShareHash =

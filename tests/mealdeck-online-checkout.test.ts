@@ -469,3 +469,249 @@ describe("Stripe server boundaries", () => {
     expect(result.headers.get("Cache-Control")).toContain("no-store");
   });
 });
+
+// Simulated Auth/provider HTTP only; these tests never contact a live service.
+const prelaunchUid = (n: number) => `80000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+const prelaunchEnv = {
+  MEALDECK_SUPABASE_URL: "https://prelaunchfixture.supabase.co",
+  MEALDECK_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_prelaunch_fixture_public",
+  MEALDECK_CHECKOUT_SERVER_KEY: "sb_secret_prelaunch_fixture_server",
+  MEALDECK_TENANT_ID: prelaunchUid(1),
+  MEALDECK_LUTON_LOCATION_ID: prelaunchUid(2),
+  MEALDECK_STRIPE_SECRET_KEY: "sk_test_" + "a".repeat(32),
+  MEALDECK_STRIPE_WEBHOOK_SECRET: "whsec_" + "b".repeat(32),
+  MEALDECK_STRIPE_ACCOUNT_ID: "acct_fixture",
+  MEALDECK_STRIPE_MODE: "test",
+  MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "signed-off",
+  MEALDECK_ONLINE_CHECKOUT_ENABLED: "true",
+  MEALDECK_SHARED_PAYMENTS_ENABLED: "true",
+  MEALDECK_GROUP_LINK_SECRET: "A".repeat(43),
+};
+const prelaunchBearer = "Bearer " + "t".repeat(32);
+function prelaunchFixture() {
+  const calls: { name: string; args: Record<string, unknown>; credential: string | null }[] = [];
+  const state = {
+    publicOpen: false,
+    eligible: true,
+    verified: true,
+    authValid: true,
+    customerId: prelaunchUid(9),
+    kitchen: "online",
+    missingRpc: false,
+  };
+  const status = (allowed: boolean) => ({
+    channelOpen: allowed,
+    guestCheckoutEligible: state.publicOpen,
+    kitchen: { state: state.kitchen, collectionEstimateMinutes: 30 },
+    openingOffer: {
+      status: allowed ? "active" : "upcoming",
+      startsAt: "2026-11-06T15:00:00Z",
+      endsAt: "2026-11-08T23:00:00Z",
+      timezone: "Europe/London",
+      serverNow: "2026-11-06T10:45:00Z",
+    },
+  });
+  const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(
+      typeof input === "string" ? input : input instanceof URL ? input.href : input.url,
+    );
+    const name = url.pathname.split("/").at(-1)!;
+    const args = typeof init?.body === "string" ? JSON.parse(init.body) : {};
+    calls.push({ name, args, credential: new Headers(init?.headers).get("apikey") });
+    if (url.pathname === "/auth/v1/user") {
+      if (!state.authValid) return Response.json({ message: "Invalid token" }, { status: 401 });
+      return Response.json({
+        id: state.customerId,
+        email: "fixture@example.invalid",
+        email_confirmed_at: state.verified ? "2026-11-01T12:00:00Z" : null,
+        is_anonymous: false,
+      });
+    }
+    if (name === "mealdeck_online_checkout_status") return Response.json(status(state.publicOpen));
+    if (name === "mealdeck_checkout_status_for_customer") {
+      if (state.missingRpc) return Response.json({ code: "PGRST202" }, { status: 404 });
+      return Response.json(
+        status(state.publicOpen || (state.eligible && args.p_customer === prelaunchUid(9))),
+      );
+    }
+    if (name === "mealdeck_create_checkout_quote")
+      return Response.json({ quoteId: prelaunchUid(5) });
+    throw new Error("Unexpected prelaunch fixture request: " + url.pathname);
+  }) as typeof fetch;
+  const request = (authorization?: string, body?: unknown, path = "/api/checkout") =>
+    new Request("https://mealdeck.co.uk" + path, {
+      method: body ? "POST" : "GET",
+      headers: {
+        ...(authorization ? { Authorization: authorization } : {}),
+        ...(body ? { Origin: "https://mealdeck.co.uk", "Content-Type": "application/json" } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+  return { state, calls, fetcher, request };
+}
+
+describe("identity-bound pre-opening website access", () => {
+  test("anonymous status stays closed and cannot supply an identity in a URL or email header", async () => {
+    const f = prelaunchFixture();
+    const response = await handleOnlineCheckoutRequest(
+      new Request(
+        "https://mealdeck.co.uk/api/checkout?email=test%40mealdeck.co.uk&customerId=" +
+          prelaunchUid(9),
+        { headers: { "X-Customer-Email": "test@mealdeck.co.uk" } },
+      ),
+      prelaunchEnv,
+      f.fetcher,
+    );
+    expect((await response.json()).available).toBe(false);
+    expect(f.calls.some((c) => c.name === "mealdeck_checkout_status_for_customer")).toBe(false);
+    expect(response.headers.get("Cache-Control")).toBe("no-store, private");
+    expect(response.headers.get("Vary")).toContain("Authorization");
+  });
+  test("verified test status uses service-only scoped RPC and keeps guest ordering closed", async () => {
+    const f = prelaunchFixture();
+    const response = await handleOnlineCheckoutRequest(
+      f.request(prelaunchBearer),
+      prelaunchEnv,
+      f.fetcher,
+    );
+    expect(await response.json()).toMatchObject({
+      available: true,
+      guestCheckout: { eligible: false },
+      openingOffer: { status: "active" },
+      kitchen: { state: "online" },
+    });
+    const scoped = f.calls.find((c) => c.name === "mealdeck_checkout_status_for_customer")!;
+    expect(scoped.args).toEqual({
+      p_tenant: prelaunchUid(1),
+      p_location: prelaunchUid(2),
+      p_customer: prelaunchUid(9),
+    });
+    expect(scoped.credential).toBe(prelaunchEnv.MEALDECK_CHECKOUT_SERVER_KEY);
+    expect(f.calls.findIndex((c) => c.name === "user")).toBeLessThan(f.calls.indexOf(scoped));
+  });
+  test("ordinary verified members, invalid tokens and unverified accounts cannot inherit test access", async () => {
+    for (const change of [
+      { customerId: prelaunchUid(10) },
+      { authValid: false },
+      { verified: false },
+      { eligible: false },
+    ]) {
+      const f = prelaunchFixture();
+      Object.assign(f.state, change);
+      const response = await handleOnlineCheckoutRequest(
+        f.request(prelaunchBearer),
+        prelaunchEnv,
+        f.fetcher,
+      );
+      expect((await response.json()).available).toBe(false);
+      if ("verified" in change || "authValid" in change)
+        expect(f.calls.some((c) => c.name === "mealdeck_checkout_status_for_customer")).toBe(false);
+    }
+  });
+  test("malformed bearer and missing private RPC fail closed", async () => {
+    const f = prelaunchFixture();
+    expect(
+      (await readOnlineCheckoutStatus(prelaunchEnv, f.fetcher, f.request("Bearer bad"))).available,
+    ).toBe(false);
+    expect(f.calls.some((c) => c.name === "user")).toBe(false);
+    f.state.missingRpc = true;
+    expect(
+      (await readOnlineCheckoutStatus(prelaunchEnv, f.fetcher, f.request(prelaunchBearer)))
+        .available,
+    ).toBe(false);
+  });
+  test("test access cannot bypass Pause, Closed, missing credentials or integration sign-off", async () => {
+    for (const kitchen of ["paused", "closed"]) {
+      const f = prelaunchFixture();
+      f.state.kitchen = kitchen;
+      expect(
+        (await readOnlineCheckoutStatus(prelaunchEnv, f.fetcher, f.request(prelaunchBearer)))
+          .available,
+      ).toBe(false);
+    }
+    for (const key of [
+      "MEALDECK_CHECKOUT_SERVER_KEY",
+      "MEALDECK_STRIPE_SECRET_KEY",
+      "MEALDECK_ONLINE_CHECKOUT_ENABLED",
+      "MEALDECK_CHECKOUT_INTEGRATION_APPROVED",
+    ]) {
+      const f = prelaunchFixture();
+      const runtime = { ...prelaunchEnv, [key]: "" };
+      expect(
+        (await readOnlineCheckoutStatus(runtime, f.fetcher, f.request(prelaunchBearer))).available,
+      ).toBe(false);
+    }
+  });
+  test("public opening no longer needs the test exception; unsigned guests can check availability", async () => {
+    const f = prelaunchFixture();
+    f.state.publicOpen = true;
+    f.state.eligible = false;
+    const response = await handleOnlineCheckoutRequest(f.request(), prelaunchEnv, f.fetcher);
+    expect(await response.json()).toMatchObject({
+      available: true,
+      guestCheckout: { eligible: true },
+    });
+    expect(f.calls.some((c) => c.name === "mealdeck_checkout_status_for_customer")).toBe(false);
+  });
+  test("signed-in quote action uses the same exception while another member cannot create a quote", async () => {
+    const f = prelaunchFixture();
+    const response = await handleOnlineCheckoutRequest(
+      f.request(prelaunchBearer, base()),
+      prelaunchEnv,
+      f.fetcher,
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ quote: { quoteId: prelaunchUid(5) } });
+    expect(f.calls.find((c) => c.name === "mealdeck_create_checkout_quote")?.args.p_customer).toBe(
+      prelaunchUid(9),
+    );
+    f.calls.length = 0;
+    f.state.customerId = prelaunchUid(10);
+    expect(
+      (
+        await handleOnlineCheckoutRequest(
+          f.request(prelaunchBearer, base()),
+          prelaunchEnv,
+          f.fetcher,
+        )
+      ).status,
+    ).toBe(503);
+    expect(f.calls.some((c) => c.name === "mealdeck_create_checkout_quote")).toBe(false);
+  });
+  test("guest creation never borrows a signed-in test account's exception", async () => {
+    const f = prelaunchFixture();
+    const { GUEST_PRIVACY_VERSION } = await import("../src/lib/mealdeck-guest");
+    const response = await handleOnlineCheckoutRequest(
+      f.request(prelaunchBearer, {
+        action: "guest",
+        name: "Fixture",
+        email: "fixture@example.invalid",
+        phone: "+447700900123",
+        privacyVersion: GUEST_PRIVACY_VERSION,
+      }),
+      prelaunchEnv,
+      f.fetcher,
+    );
+    expect(response.status).toBe(403);
+    expect(f.calls.some((c) => c.name === "mealdeck_checkout_status_for_customer")).toBe(false);
+  });
+  test("group ordering and payment capability endpoints retain the signed-in test identity", async () => {
+    const { handleGroupOrdersRequest } = await import("../src/lib/mealdeck-group-rooms.server");
+    const { handleSharedPaymentsRequest } =
+      await import("../src/lib/mealdeck-shared-payments.server");
+    for (const [handler, path] of [
+      [handleGroupOrdersRequest, "/api/group-orders"],
+      [handleSharedPaymentsRequest, "/api/group-payments"],
+    ] as const) {
+      const f = prelaunchFixture();
+      const accepted = await handler(
+        f.request(prelaunchBearer, undefined, path),
+        prelaunchEnv,
+        f.fetcher,
+      );
+      expect(await accepted.json()).toMatchObject({ available: true, guestEligible: false });
+      const denied = await handler(f.request(undefined, undefined, path), prelaunchEnv, f.fetcher);
+      expect((await denied.json()).available).toBe(false);
+    }
+  });
+});
