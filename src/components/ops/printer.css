@@ -4,6 +4,117 @@
 .md-receipt-preview {
   overflow-wrap: anywhere;
 }
+.md-printer .md-printer-connection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  padding: 1.15rem;
+}
+.md-printer .md-printer-connection-copy {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+.md-printer .md-printer-connection-controls {
+  display: grid;
+  gap: 0.5rem;
+  flex: 0 1 23rem;
+}
+.md-printer .md-printer-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.md-printer .md-printer-status-chip {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.md-printer .md-printer-status-chip.is-ready {
+  color: #16432e;
+  background: #e2f2e6;
+  border-color: #9dbba6;
+}
+.md-printer .md-printer-status-chip.is-waiting {
+  color: #6b4214;
+  background: #fff1d5;
+  border-color: #d9b980;
+}
+.md-printer .md-printer-pending-card {
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.md-printer .md-printer-pending-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem;
+  color: #211c18;
+  background: #fbf2e4;
+  border-bottom: 1px solid #d8c9b4;
+}
+.md-printer .md-printer-new-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.md-printer .md-printer-order-number {
+  margin: 0.4rem 0;
+  font-size: 2.4rem;
+  line-height: 1;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.md-printer .md-printer-paid-total {
+  display: grid;
+  text-align: right;
+  font-size: 1.2rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+.md-printer .md-printer-paid-total span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.md-printer .md-printer-order-items {
+  display: grid;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+}
+.md-printer .md-printer-attached-item {
+  margin-left: 0.6rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid #d8c9b4;
+}
+.md-printer .md-printer-order-note {
+  padding: 0.65rem 0.8rem;
+  color: #6b4214;
+  background: #fff1d5;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 750;
+  white-space: pre-wrap;
+}
+.md-printer .md-printer-choice-details > summary {
+  min-height: 44px;
+  padding: 0.7rem 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 @media print {
   body > * {
     display: none !important;

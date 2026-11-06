@@ -10,6 +10,8 @@ published. The earlier time-stamped records below remain historical evidence.
 | [PR #88](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/88) | `86ce81b` | Merged and published |
 | [PR #89](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/89) | `5b83813` | Merged and published |
 | [PR #90](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/90) | `ad987396` | Merged and published; all 15 web/PostgreSQL jobs passed |
+| [PR #91](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/91) | `5bcf463` | Merged and published; compact KDS toolbar, printer sign-in recovery and 9–13 November loyalty wording verified live |
+| [PR #92](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/92) | `a79d34c` | Merged and published; delivered KDS bundle verified at 12:37:56 UTC with stage tabs outside the hidden tools panel |
 
 Native Android/iPhone compilation remains a separate verification outcome. The
 15 web/PostgreSQL results do not establish a native build, signed installation,
@@ -55,6 +57,14 @@ has canonical `staff.manage` permission and meets the deployed
 `printer_can_manage` checks; that owner can use `/printer` after normal sign-in
 without a separate printer assignment. The dedicated account needs its normal
 email-verification flow completed.
+
+A later read-only check at **12:39:52 UTC** supersedes that account blocker:
+`printer@mealdeck.co.uk` is now email-confirmed and has an enabled assignment for
+the active Luton kitchen. It has no Operations role, as intended for the dedicated
+printer account; `/printer` uses the separate assignment and does not require
+general `/ops` or `/kds` access. The deployed printer identity and scope checks
+are satisfied. A successful device session, local bridge pairing and actual
+paper output remain unverified.
 
 At that database check there were **zero orders, KDS tickets, receipt jobs and
 receipt events**. Queued, claimed, sending, sent-unconfirmed, printed, held and
