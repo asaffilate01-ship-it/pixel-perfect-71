@@ -1,6 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { CheckoutProblem } from "./mealdeck-checkout-selection";
-import { safeHostedCheckoutUrl } from "./mealdeck-checkout-url";
+import { checkoutPathMatchesSession, safeHostedCheckoutUrl } from "./mealdeck-checkout-url";
 import {
   readMealDeckStripeCheckoutDomain,
   type MealDeckStripeCheckoutDomain,
@@ -289,7 +289,7 @@ export async function resolveStripeCheckoutSession(
   const url = safeStripeCheckoutUrl(session["url"], config.checkoutDomain);
   if (
     !url ||
-    new URL(url).pathname !== "/c/pay/" + sessionId ||
+    !checkoutPathMatchesSession(new URL(url).pathname, sessionId) ||
     session["status"] !== "open" ||
     session["payment_status"] !== "unpaid"
   )

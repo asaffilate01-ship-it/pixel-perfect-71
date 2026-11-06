@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   MEALDECK_STRIPE_CHECKOUT_HOST,
+  checkoutPathMatchesSession,
   safeHostedCheckoutUrl,
   safeMealDeckCheckoutRedirect,
 } from "../src/lib/mealdeck-checkout-url";
@@ -24,6 +25,8 @@ const stripe = readMealDeckStripeConfig(env)!;
 const customUrl =
   "https://pay.mealdeck.co.uk/c/pay/cs_test_fixture?prefilled=1#fidkdWxOYHwnPyd1blpf%2B";
 const defaultUrl = "https://checkout.stripe.com/c/pay/cs_test_fixture#fidkdWxOYHwnPyd1blpf%2B";
+const customGUrl = customUrl.replace("/c/pay/", "/g/pay/");
+const defaultGUrl = defaultUrl.replace("/c/pay/", "/g/pay/");
 const prepared = (): PreparedStripeOrder => ({
   orderId: "00000000-0000-4000-8000-000000000001",
   quoteId: "00000000-0000-4000-8000-000000000002",
@@ -91,12 +94,38 @@ describe("MealDeck's exact hosted Checkout domain", () => {
 
   test("preserves provider URLs byte-for-byte and retains existing Stripe sessions after opt-in", () => {
     expect(safeStripeCheckoutUrl(customUrl)).toBeNull();
-    for (const value of [customUrl, defaultUrl]) {
+    expect(safeStripeCheckoutUrl(customGUrl)).toBeNull();
+    for (const value of [customUrl, defaultUrl, customGUrl, defaultGUrl]) {
       expect(safeStripeCheckoutUrl(value, stripe.checkoutDomain)).toBe(value);
       expect(safeMealDeckCheckoutRedirect(value)).toBe(value);
       expect(safeSharedPaymentCheckoutUrl(value)).toBe(value);
     }
     expect(safeHostedCheckoutUrl(defaultUrl)).toBe(defaultUrl);
+    expect(safeHostedCheckoutUrl(defaultGUrl)).toBe(defaultGUrl);
+  });
+
+  test("both supported paths must identify the exact verified Session", () => {
+    for (const path of ["c", "g"]) {
+      expect(checkoutPathMatchesSession(`/${path}/pay/cs_test_fixture`, "cs_test_fixture")).toBe(
+        true,
+      );
+      expect(checkoutPathMatchesSession(`/${path}/pay/cs_test_other`, "cs_test_fixture")).toBe(
+        false,
+      );
+      expect(
+        checkoutPathMatchesSession(`/${path}/pay/cs_test_fixture/extra`, "cs_test_fixture"),
+      ).toBe(false);
+      expect(checkoutPathMatchesSession(`/${path}/pay/cs_test_fixture`, undefined)).toBe(false);
+    }
+    for (const path of [
+      "/h/pay/cs_test_fixture",
+      "/cg/pay/cs_test_fixture",
+      "/G/pay/cs_test_fixture",
+      "/g/pay/%63s_test_fixture",
+      "/g/pay/",
+    ]) {
+      expect(checkoutPathMatchesSession(path, "cs_test_fixture")).toBe(false);
+    }
   });
 
   test("rejects deceptive origins, wrong Stripe products, paths, credentials and malformed bytes", () => {
@@ -114,6 +143,15 @@ describe("MealDeck's exact hosted Checkout domain", () => {
       "https://pay.mealdeck.co.uk/c/pay/",
       "https://pay.mealdeck.co.uk/c/pay/cs_test_fixture/another",
       "https://pay.mealdeck.co.uk/c/pay/cs_test_fixture\\evil",
+      "https://pay.mealdeck.co.uk.evil.invalid/g/pay/cs_test_fixture",
+      "https://user:secret@pay.mealdeck.co.uk/g/pay/cs_test_fixture",
+      "https://pay.mealdeck.co.uk/%67/pay/cs_test_fixture",
+      "https://pay.mealdeck.co.uk/g/pay/cs_test_fixture/another",
+      "https://pay.mealdeck.co.uk/g/pay/cs_test_fixture\\evil",
+      "https://pay.mealdeck.co.uk/g/pay/../login",
+      "https://pay.mealdeck.co.uk/h/pay/cs_test_fixture",
+      "https://pay.mealdeck.co.uk/cg/pay/cs_test_fixture",
+      "https://pay.mealdeck.co.uk/G/pay/cs_test_fixture",
       "https://pay.mealdeck.co.uk/login",
       "https://pay.mealdeck.co.uk/p/session/bps_123",
       "https://buy.stripe.com/123",
@@ -131,42 +169,53 @@ describe("MealDeck's exact hosted Checkout domain", () => {
 });
 
 describe("single-order Checkout recovery on the original provider Session", () => {
-  test("creates once with the frozen attempt and reads current state before returning a custom URL", async () => {
-    const order = prepared();
-    const calls: { url: string; init?: RequestInit }[] = [];
-    const fetcher = (async (url: unknown, init?: RequestInit) => {
-      calls.push({ url: String(url), init });
-      return Response.json(response(order));
-    }) as typeof fetch;
-    expect(await resolveStripeCheckoutSession(stripe, order, fetcher)).toEqual({
-      sessionId: "cs_test_fixture",
-      url: customUrl,
-    });
-    expect(calls.map((call) => call.init?.method)).toEqual(["POST", "GET"]);
-    expect(new Headers(calls[0]!.init?.headers).get("Idempotency-Key")).toBe(
-      "mealdeck-order-" + order.orderId,
-    );
-    expect(calls[1]!.url).toBe("https://api.stripe.com/v1/checkout/sessions/cs_test_fixture");
-    const form = new URLSearchParams(String(calls[0]!.init?.body));
-    expect(form.get("line_items[0][price_data][unit_amount]")).toBe("279");
-    expect(form.get("success_url")).toBe("https://mealdeck.co.uk/checkout?order=" + order.orderId);
-    expect(form.toString()).not.toContain("pay.mealdeck");
-  });
+  test.each([customUrl, customGUrl])(
+    "creates once with the frozen attempt and returns the fresh GET URL %s",
+    async (hostedUrl) => {
+      const order = prepared();
+      const calls: { url: string; init?: RequestInit }[] = [];
+      const fetcher = (async (url: unknown, init?: RequestInit) => {
+        calls.push({ url: String(url), init });
+        return Response.json({
+          ...response(order),
+          url: init?.method === "POST" ? defaultUrl : hostedUrl,
+        });
+      }) as typeof fetch;
+      expect(await resolveStripeCheckoutSession(stripe, order, fetcher)).toEqual({
+        sessionId: "cs_test_fixture",
+        url: hostedUrl,
+      });
+      expect(calls.map((call) => call.init?.method)).toEqual(["POST", "GET"]);
+      expect(new Headers(calls[0]!.init?.headers).get("Idempotency-Key")).toBe(
+        "mealdeck-order-" + order.orderId,
+      );
+      expect(calls[1]!.url).toBe("https://api.stripe.com/v1/checkout/sessions/cs_test_fixture");
+      const form = new URLSearchParams(String(calls[0]!.init?.body));
+      expect(form.get("line_items[0][price_data][unit_amount]")).toBe("279");
+      expect(form.get("success_url")).toBe(
+        "https://mealdeck.co.uk/checkout?order=" + order.orderId,
+      );
+      expect(form.toString()).not.toContain("pay.mealdeck");
+    },
+  );
 
-  test("recovers by saved Session ID even if its old URL is invalid; never creates a replacement", async () => {
-    const order = {
-      ...prepared(),
-      sessionId: "cs_test_fixture",
-      sessionUrl: "https://old.invalid/session",
-    };
-    const methods: string[] = [];
-    const fetcher = (async (_url: unknown, init?: RequestInit) => {
-      methods.push(init!.method!);
-      return Response.json(response(order));
-    }) as typeof fetch;
-    expect((await resolveStripeCheckoutSession(stripe, order, fetcher)).url).toBe(customUrl);
-    expect(methods).toEqual(["GET"]);
-  });
+  test.each([customUrl, customGUrl])(
+    "recovers %s by saved Session ID even if its old URL is invalid; never creates a replacement",
+    async (hostedUrl) => {
+      const order = {
+        ...prepared(),
+        sessionId: "cs_test_fixture",
+        sessionUrl: "https://old.invalid/session",
+      };
+      const methods: string[] = [];
+      const fetcher = (async (_url: unknown, init?: RequestInit) => {
+        methods.push(init!.method!);
+        return Response.json({ ...response(order), url: hostedUrl });
+      }) as typeof fetch;
+      expect((await resolveStripeCheckoutSession(stripe, order, fetcher)).url).toBe(hostedUrl);
+      expect(methods).toEqual(["GET"]);
+    },
+  );
 
   test("a lost-response retry cannot use the stale open POST response after payment", async () => {
     const order = prepared();
@@ -205,7 +254,11 @@ describe("single-order Checkout recovery on the original provider Session", () =
       },
       { ...response(order), id: "cs_test_different" },
       { ...response(order), url: "https://pay.mealdeck.co.uk/c/pay/cs_test_different" },
+      { ...response(order), url: "https://pay.mealdeck.co.uk/g/pay/cs_test_different" },
+      { ...response(order), url: "https://pay.mealdeck.co.uk/g/pay/cs_test_fixture/extra" },
+      { ...response(order), url: "https://pay.mealdeck.co.uk/h/pay/cs_test_fixture" },
       { ...response(order), url: "https://evil.invalid/c/pay/cs_test_fixture" },
+      { ...response(order), url: "https://evil.invalid/g/pay/cs_test_fixture" },
     ]) {
       const methods: string[] = [];
       await expect(

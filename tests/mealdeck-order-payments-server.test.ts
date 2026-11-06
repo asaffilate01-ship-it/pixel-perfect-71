@@ -517,6 +517,66 @@ describe("immutable shared and Terminal provider collection", () => {
       (await ensureCheckoutCollection(f.clients, stripe, f.collection, f.fetcher)).checkoutUrl,
     ).toBeNull();
   });
+  test.each(["c", "g"])(
+    "shared /%s/pay Sessions retain the exact URL and recover the same bound Session",
+    async (path) => {
+      const f = fixture("checkout");
+      f.collection.sessionId = null;
+      f.collection.sessionUrl = null;
+      f.collection.paymentIntentId = null;
+      f.session.status = "open";
+      f.session.payment_status = "unpaid";
+      f.session.payment_intent = null;
+      const url = `https://checkout.stripe.com/${path}/pay/cs_test_fixture?fixture=1#fixture%2B`;
+      f.session.url = url;
+      expect(
+        (await ensureCheckoutCollection(f.clients, stripe, f.collection, f.fetcher)).checkoutUrl,
+      ).toBe(url);
+      expect(
+        (await ensureCheckoutCollection(f.clients, stripe, f.collection, f.fetcher)).checkoutUrl,
+      ).toBe(url);
+      expect(
+        f.calls.filter((call) => call.path === "/v1/checkout/sessions" && call.method === "POST"),
+      ).toHaveLength(1);
+      expect(
+        f.calls.filter(
+          (call) =>
+            call.path.startsWith("/v1/checkout/sessions/cs_test_fixture") && call.method === "GET",
+        ),
+      ).toHaveLength(2);
+      const bindings = f.calls.filter((call) => call.path.endsWith("/mealdeck_bind_order_payment"));
+      expect(bindings).toHaveLength(1);
+      expect(bindings[0]!.args.p_session).toBe("cs_test_fixture");
+      expect(bindings[0]!.args.p_url).toBe(url);
+      expect(f.reconciliations()).toHaveLength(0);
+    },
+  );
+  test("new shared Sessions reject mismatched or forged URL paths before binding", async () => {
+    for (const url of [
+      "https://checkout.stripe.com/c/pay/cs_test_other",
+      "https://checkout.stripe.com/g/pay/cs_test_other",
+      "https://checkout.stripe.com/g/pay/cs_test_fixture/extra",
+      "https://checkout.stripe.com/h/pay/cs_test_fixture",
+      "https://evil.invalid/g/pay/cs_test_fixture",
+    ]) {
+      const f = fixture("checkout");
+      f.collection.sessionId = null;
+      f.collection.sessionUrl = null;
+      f.collection.paymentIntentId = null;
+      f.session.status = "open";
+      f.session.payment_status = "unpaid";
+      f.session.payment_intent = null;
+      f.session.url = url;
+      await expect(
+        ensureCheckoutCollection(f.clients, stripe, f.collection, f.fetcher),
+      ).rejects.toThrow("could not be verified");
+      expect(f.calls.some((call) => call.path.endsWith("/mealdeck_bind_order_payment"))).toBe(
+        false,
+      );
+      expect(f.collection.sessionId).toBeNull();
+      expect(f.reconciliations()).toHaveLength(0);
+    }
+  });
 });
 
 describe("signed common payment webhook", () => {

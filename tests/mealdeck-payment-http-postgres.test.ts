@@ -11,6 +11,7 @@ import { handleTerminalRequest } from "../src/lib/mealdeck-terminal.server";
 import { asActor, createDatabase } from "./postgres/harness.mjs";
 import { setupSharedPaymentsFixture } from "./postgres/shared-terminal-payments-fixture.mjs";
 import { buildCheckoutDomainSql } from "../deploy/mealdeck/checkout-domain.mjs";
+import { buildCheckoutSessionPathsSql } from "../deploy/mealdeck/checkout-session-paths.mjs";
 import { buildOrderingRoomsSql } from "../deploy/mealdeck/ordering-rooms.mjs";
 import { handleGroupOrdersRequest } from "../src/lib/mealdeck-group-rooms.server";
 import { groupOrderResultSchema } from "../src/lib/mealdeck-group-rooms";
@@ -22,11 +23,16 @@ import { MEALDECK_STRIPE_API_VERSION } from "../src/lib/mealdeck-stripe.server";
  * payment state, permission check or kitchen release is mocked.
  * There is deliberately no fallback to global fetch: unexpected URLs fail.
  */
-async function integrationFixture(checkoutHostname = "checkout.stripe.com", orderingRooms = false) {
+async function integrationFixture(
+  checkoutHostname = "checkout.stripe.com",
+  orderingRooms = false,
+  checkoutPath: "c" | "g" = "c",
+) {
   const db = await createDatabase();
   try {
     const f = await setupSharedPaymentsFixture(db);
     await db.exec(buildCheckoutDomainSql());
+    await db.exec(buildCheckoutSessionPathsSql());
     if (orderingRooms) await db.exec(buildOrderingRoomsSql());
     const env = {
       MEALDECK_SUPABASE_URL: "https://paymentintegration.supabase.co",
@@ -326,7 +332,8 @@ async function integrationFixture(checkoutHostname = "checkout.stripe.com", orde
               metadata: meta,
               payment_intent: null,
               expires_at: Number(form.get("expires_at")),
-              url: "https://" + checkoutHostname + "/c/pay/" + id,
+              url:
+                "https://" + checkoutHostname + "/" + checkoutPath + "/pay/" + id + "#fixture%2B",
             };
             assert.equal(form.get("line_items[0][quantity]"), "1");
             sessions.set(id, session);
@@ -437,8 +444,8 @@ function successful(result: { response: Response; body: unknown }) {
   return result.body;
 }
 
-async function verifyGroupAndPhonePayments(hostname: string) {
-  const h = await integrationFixture(hostname);
+async function verifyGroupAndPhonePayments(hostname: string, checkoutPath: "c" | "g" = "c") {
+  const h = await integrationFixture(hostname, false, checkoutPath);
   try {
     const quoteInput = (quantity: number, group: boolean) => ({
       action: "quote",
@@ -537,7 +544,9 @@ async function verifyGroupAndPhonePayments(hostname: string) {
     );
     successful(participantPay);
     expect(new URL(participantPay.body.checkoutUrl).hostname).toBe(hostname);
-    expect(new URL(participantPay.body.checkoutUrl).pathname).toMatch(/^\/c\/pay\/cs_test_http/);
+    expect(new URL(participantPay.body.checkoutUrl).pathname).toStartWith(
+      "/" + checkoutPath + "/pay/cs_test_http",
+    );
     expect(participantPay.body.resumePayments).toEqual([
       { attemptId: participantAttempt, amountPence: 559, coverRemaining: false },
     ]);
@@ -740,7 +749,12 @@ async function verifyGroupAndPhonePayments(hostname: string) {
 
 test.each(["checkout.stripe.com", "pay.mealdeck.co.uk"])(
   "group and phone HTTP payments through %s execute real scoped SQL and release only after verified full funding",
-  verifyGroupAndPhonePayments,
+  (hostname) => verifyGroupAndPhonePayments(hostname, "c"),
+  30_000,
+);
+test.each(["checkout.stripe.com", "pay.mealdeck.co.uk"])(
+  "group and phone HTTP payments through %s /g/pay execute real scoped SQL and preserve verified full funding",
+  (hostname) => verifyGroupAndPhonePayments(hostname, "g"),
   30_000,
 );
 
@@ -853,91 +867,149 @@ test("Endive provider fixture rejects removed Session and PaymentIntent paramete
   }
 }, 30_000);
 
-test("ordinary restricted-key custom-domain checkout resumes one saved Session and reconciles even after a domain configuration error", async () => {
-  const h = await integrationFixture("pay.mealdeck.co.uk");
-  try {
-    h.env.MEALDECK_STRIPE_SECRET_KEY = "rk_live_" + "aZ09".repeat(16);
-    const quote = await h.post(
-      "checkout",
-      {
-        action: "quote",
-        fulfilment: "pickup",
-        picks: [{ brandId: "skorch-burgers", itemId: h.f.ace.id, quantity: 1, selections: {} }],
-        packing: { cutleryRequested: false, separateBags: false, bagCount: 1, allocations: [] },
-      },
-      "organiser",
-    );
-    successful(quote);
-    const input = {
-      action: "pay",
-      quoteId: quote.body.quote.quoteId,
-      attemptId: h.f.next(),
-      reviewConfirmed: true,
-    };
-    const paidRequest = await h.post("checkout", input, "organiser");
-    successful(paidRequest);
-    expect(new URL(paidRequest.body.checkoutUrl).hostname).toBe("pay.mealdeck.co.uk");
-    const resumed = await h.post("checkout", input, "organiser");
-    successful(resumed);
-    expect(resumed.body).toEqual(paidRequest.body);
-    expect(
-      h.providerCalls.filter((call) => call.method === "POST" && call.path === "checkout/sessions"),
-    ).toHaveLength(1);
-    expect(h.sessions.size).toBe(1);
-    expect(
-      (
+test.each(["c", "g"] as const)(
+  "ordinary restricted-key /%s/pay checkout recovers one previously unbound Session and preserves payment authority",
+  async (checkoutPath) => {
+    const h = await integrationFixture("pay.mealdeck.co.uk", false, checkoutPath);
+    try {
+      h.env.MEALDECK_STRIPE_SECRET_KEY = "rk_live_" + "aZ09".repeat(16);
+      const quote = await h.post(
+        "checkout",
+        {
+          action: "quote",
+          fulfilment: "pickup",
+          picks: [{ brandId: "skorch-burgers", itemId: h.f.ace.id, quantity: 1, selections: {} }],
+          packing: { cutleryRequested: false, separateBags: false, bagCount: 1, allocations: [] },
+        },
+        "organiser",
+      );
+      successful(quote);
+      const input = {
+        action: "pay",
+        quoteId: quote.body.quote.quoteId,
+        attemptId: h.f.next(),
+        reviewConfirmed: true,
+      };
+      // Simulate the observed provider-created, locally unbound state: the
+      // provider issues its custom URL before this server has opted into it.
+      h.env.MEALDECK_STRIPE_CHECKOUT_HOST = "";
+      const rejectedUrl = await h.post("checkout", input, "organiser");
+      expect(rejectedUrl.response.status).toBe(503);
+      expect(rejectedUrl.body.error).toBe("invalid_payment_session");
+      expect(rejectedUrl.body.checkoutUrl).toBeUndefined();
+      expect(h.sessions.size).toBe(1);
+      expect(h.intents.size).toBe(0);
+      const unbound = (
         await h.db.query(
-          "select session_url from mealdeck_private.stripe_orders where order_id=$1",
-          [paidRequest.body.orderId],
+          "select order_id,session_id,session_url,attempt_id from mealdeck_private.stripe_orders",
         )
-      ).rows[0].session_url,
-    ).toBe(paidRequest.body.checkoutUrl);
-    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(0);
+      ).rows[0];
+      expect(unbound.session_id).toBeNull();
+      expect(unbound.session_url).toBeNull();
+      expect(unbound.attempt_id).toBe(input.attemptId);
+      expect(
+        (await h.db.query("select payment_status::text,paid_at from public.orders")).rows,
+      ).toEqual([{ payment_status: "pending", paid_at: null }]);
+      expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(
+        0,
+      );
+      expect(
+        (await h.db.query("select count(*)::int n from mealdeck_private.receipt_jobs")).rows[0].n,
+      ).toBe(0);
 
-    const session = h.captureSession(paidRequest.body.checkoutUrl);
-    const completedRetry = await h.post("checkout", input, "organiser");
-    expect(completedRetry.response.status).toBe(409);
-    expect(completedRetry.body.error).toBe("payment_confirmation_pending");
-    expect(h.sessions.size).toBe(1);
-    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(0);
+      h.env.MEALDECK_STRIPE_CHECKOUT_HOST = "pay.mealdeck.co.uk";
+      // Continuing a receipt may regenerate the browser attempt UUID. The same
+      // quote still resolves to the original order and provider idempotency key.
+      const recoveryInput = { ...input, attemptId: h.f.next() };
+      const paidRequest = await h.post("checkout", recoveryInput, "organiser");
+      successful(paidRequest);
+      expect(paidRequest.body.orderId).toBe(unbound.order_id);
+      expect(new URL(paidRequest.body.checkoutUrl).hostname).toBe("pay.mealdeck.co.uk");
+      expect(new URL(paidRequest.body.checkoutUrl).pathname).toStartWith(
+        "/" + checkoutPath + "/pay/",
+      );
+      const resumed = await h.post("checkout", recoveryInput, "organiser");
+      successful(resumed);
+      expect(resumed.body).toEqual(paidRequest.body);
+      expect(
+        h.providerCalls.filter(
+          (call) => call.method === "POST" && call.path === "checkout/sessions",
+        ),
+      ).toHaveLength(2);
+      expect(
+        h.providerCalls
+          .filter((call) => call.method === "POST" && call.path === "checkout/sessions")
+          .map((call) => call.key),
+      ).toEqual(["mealdeck-order-" + unbound.order_id, "mealdeck-order-" + unbound.order_id]);
+      expect(h.sessions.size).toBe(1);
+      expect(h.creations.size).toBe(1);
+      expect((await h.db.query("select count(*)::int n from public.orders")).rows[0].n).toBe(1);
+      expect(
+        (
+          await h.db.query(
+            "select session_url from mealdeck_private.stripe_orders where order_id=$1",
+            [paidRequest.body.orderId],
+          )
+        ).rows[0].session_url,
+      ).toBe(paidRequest.body.checkoutUrl);
+      expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(
+        0,
+      );
 
-    h.deniedProviderPermissions.add("account");
-    const deniedVerification = await h.webhook(session);
-    expect(deniedVerification.status).toBe(503);
-    expect(await deniedVerification.json()).toEqual({ error: "payment_service_unavailable" });
-    expect(
-      (
-        await h.db.query("select payment_status::text from public.orders where id=$1", [
-          paidRequest.body.orderId,
-        ])
-      ).rows[0].payment_status,
-    ).toBe("pending");
-    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(0);
-    expect(
-      (await h.db.query("select count(*)::int n from mealdeck_private.receipt_jobs")).rows[0].n,
-    ).toBe(0);
-    h.deniedProviderPermissions.clear();
+      const session = h.captureSession(paidRequest.body.checkoutUrl);
+      const completedRetry = await h.post("checkout", input, "organiser");
+      expect(completedRetry.response.status).toBe(409);
+      expect(completedRetry.body.error).toBe("payment_confirmation_pending");
+      expect(h.sessions.size).toBe(1);
+      expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(
+        0,
+      );
 
-    h.env.MEALDECK_STRIPE_CHECKOUT_HOST = "https://wrong.invalid";
-    expect((await h.webhook(session)).status).toBe(200);
-    expect((await h.webhook(session)).status).toBe(200);
-    const receipt = await h.post(
-      "checkout",
-      { action: "receipt", orderId: paidRequest.body.orderId },
-      "organiser",
-    );
-    successful(receipt);
-    expect(receipt.body.receipt.verifiedPaid).toBe(true);
-    expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(1);
-    expect(
-      h.providerCalls.filter((call) => call.method === "POST" && call.path === "checkout/sessions"),
-    ).toHaveLength(1);
-    expect(h.rpcErrors.filter((error) => error.code === "PGRST202")).toEqual([]);
-    expect(h.unexpectedRequests).toEqual([]);
-  } finally {
-    await h.db.close();
-  }
-}, 30_000);
+      h.deniedProviderPermissions.add("account");
+      const deniedVerification = await h.webhook(session);
+      expect(deniedVerification.status).toBe(503);
+      expect(await deniedVerification.json()).toEqual({ error: "payment_service_unavailable" });
+      expect(
+        (
+          await h.db.query("select payment_status::text from public.orders where id=$1", [
+            paidRequest.body.orderId,
+          ])
+        ).rows[0].payment_status,
+      ).toBe("pending");
+      expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(
+        0,
+      );
+      expect(
+        (await h.db.query("select count(*)::int n from mealdeck_private.receipt_jobs")).rows[0].n,
+      ).toBe(0);
+      h.deniedProviderPermissions.clear();
+
+      h.env.MEALDECK_STRIPE_CHECKOUT_HOST = "https://wrong.invalid";
+      expect((await h.webhook(session)).status).toBe(200);
+      expect((await h.webhook(session)).status).toBe(200);
+      const receipt = await h.post(
+        "checkout",
+        { action: "receipt", orderId: paidRequest.body.orderId },
+        "organiser",
+      );
+      successful(receipt);
+      expect(receipt.body.receipt.verifiedPaid).toBe(true);
+      expect((await h.db.query("select count(*)::int n from public.kds_tickets")).rows[0].n).toBe(
+        1,
+      );
+      expect(
+        h.providerCalls.filter(
+          (call) => call.method === "POST" && call.path === "checkout/sessions",
+        ),
+      ).toHaveLength(2);
+      expect(h.rpcErrors.filter((error) => error.code === "PGRST202")).toEqual([]);
+      expect(h.unexpectedRequests).toEqual([]);
+    } finally {
+      await h.db.close();
+    }
+  },
+  30_000,
+);
 
 test.each(["separate", "organiser"])(
   "accepted ordering room with %s payment keeps named bags and releases one fully funded kitchen order",
