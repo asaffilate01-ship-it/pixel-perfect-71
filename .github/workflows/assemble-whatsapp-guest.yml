@@ -79,7 +79,7 @@ jobs:
           bun test tests/
           node tests/postgres/whatsapp-guest-behavior.mjs
           bun run build
-      - name: Create a candidate commit without changing main or any branch ref
+      - name: Save tested source blobs and manifest without changing any ref
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_PARENT: ${{ github.sha }}
@@ -89,7 +89,7 @@ jobs:
           git diff --cached --check
           git diff --cached --stat
           python3 - <<'PY'
-          import os,json,base64,subprocess,urllib.request
+          import os,json,base64,subprocess,urllib.request,pathlib
           repo='asaffilate01-ship-it/pixel-perfect-71'
           root='https://api.github.com/repos/'+repo
           def api(path,body=None):
@@ -106,8 +106,12 @@ jobs:
               sha=api('/git/blobs',{'content':base64.b64encode(content).decode(),'encoding':'base64'})['sha']
               entries.append({'path':path,'mode':'100644','type':'blob','sha':sha})
           base=api('/git/commits/'+parent)['tree']['sha']
-          tree=api('/git/trees',{'base_tree':base,'tree':entries})['sha']
-          result=api('/git/commits',{'message':'Use name and WhatsApp checkout until Monday; preserve staff and payment security','tree':tree,'parents':[parent]})
-          print('VERIFIED_CANDIDATE_COMMIT='+result['sha'])
-          print('VERIFIED_CANDIDATE_TREE='+tree)
+          manifest={'repository':repo,'parent_sha':parent,'base_tree_sha':base,'tree_entries':entries,'verification':'TypeScript, scoped lint, full Bun tests, contact-only PostgreSQL and production build passed before manifest generation.'}
+          pathlib.Path('tested-guest-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          print(json.dumps(manifest,indent=2))
           PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tested-guest-manifest
+          path: tested-guest-manifest.json
+          retention-days: 1
