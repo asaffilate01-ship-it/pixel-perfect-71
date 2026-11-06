@@ -550,6 +550,10 @@
     right: 0;
     bottom: 0;
     left: 0;
+    /* The CSS compiler may fold translate:none into transform. Reset the
+       dialog's native Tailwind translate variables as well. */
+    --tw-translate-x: 0px;
+    --tw-translate-y: 0px;
     width: 100%;
     max-width: 800px;
     max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)));
