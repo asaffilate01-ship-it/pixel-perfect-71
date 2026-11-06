@@ -75,7 +75,7 @@ function backendProblem(error: unknown): CheckoutProblem {
     [
       /prelaunch_test_account_required/,
       "prelaunch_test_account_required",
-      "Public ordering opens at 3pm UK time on 6 November. Before then, use the approved test account.",
+      "This live order check is available only to the approved, verified test account.",
       403,
     ],
     [
@@ -248,14 +248,16 @@ export async function readOnlineCheckoutStatus(
     const scope = { p_tenant: clients.config.tenantId, p_location: clients.config.locationId };
     let state = await rpc(clients.publicClient, "mealdeck_online_checkout_status", scope);
     const publicChannelOpen = state["channelOpen"] === true;
-    let privateAdmission = false;
+    const integrationApproved = env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] === "signed-off";
+    let liveVerification: Json | null = null;
     const publicKitchen = parseKitchenAvailability(state["kitchen"]);
-    // The public status must stay closed before launch. A currently verified Auth
-    // identity can ask the service-only RPC for its own time-limited access. The
-    // database owns the account allowlist and clock; no client email/flag opens it.
+    // A scheduled public opening does not sign off payment integration. A
+    // currently verified Auth identity can ask the service-only RPC for its own
+    // time-limited verification access while public signoff remains pending.
+    // The database owns the allowlist and clock; no client email/flag opens it.
     // Operator Pause/Closed and every provider-readiness check remain authoritative.
     if (
-      state["channelOpen"] !== true &&
+      (!publicChannelOpen || !integrationApproved) &&
       clients.service &&
       verifiedCustomerId &&
       z.uuid().safeParse(verifiedCustomerId).success &&
@@ -270,22 +272,34 @@ export async function readOnlineCheckoutStatus(
       // accurate public kitchen state, rather than replacing it with an empty one.
       if (!error && data && typeof data === "object" && !Array.isArray(data)) {
         state = data as Json;
-        privateAdmission = state["channelOpen"] === true;
+        liveVerification = object(state["liveVerification"]);
       }
     }
     const openingOffer = parseOpeningOffer(state["openingOffer"]);
     if (!openingOffer) return base;
     const kitchen = parseKitchenAvailability(state["kitchen"]);
     const serverNow = Date.parse(openingOffer.serverNow);
-    // The already deployed private allowlist is the sole admission authority.
-    // Bound the readiness exception to its exact window, including a two-read
-    // boundary race at 15:00. It never signs off or opens the public channel.
+    const verificationStartsAt =
+      typeof liveVerification?.["startsAt"] === "string"
+        ? Date.parse(liveVerification["startsAt"])
+        : NaN;
+    const verificationExpiresAt =
+      typeof liveVerification?.["expiresAt"] === "string"
+        ? Date.parse(liveVerification["expiresAt"])
+        : NaN;
+    // Only an explicit private RPC admission can waive integration signoff.
+    // Validate its database-clock window within the owner's approved bounds;
+    // missing/legacy evidence and an expired or unbounded window stay closed.
     const prelaunchVerification =
-      !publicChannelOpen &&
-      privateAdmission &&
+      liveVerification?.["eligible"] === true &&
+      state["channelOpen"] === true &&
       state["guestCheckoutEligible"] === false &&
-      serverNow >= Date.parse("2026-11-06T08:00:00Z") &&
-      serverNow < Date.parse("2026-11-06T15:00:00Z");
+      Number.isFinite(verificationStartsAt) &&
+      Number.isFinite(verificationExpiresAt) &&
+      verificationStartsAt >= Date.parse("2026-11-06T08:00:00Z") &&
+      verificationExpiresAt <= Date.parse("2026-11-06T23:00:00Z") &&
+      serverNow >= verificationStartsAt &&
+      serverNow < verificationExpiresAt;
     const stripe = readMealDeckStripeConfig(env);
     const available =
       state["channelOpen"] === true &&
@@ -294,7 +308,7 @@ export async function readOnlineCheckoutStatus(
       kitchen.collectionEstimateMinutes !== null &&
       clients.service !== null &&
       env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] === "true" &&
-      (env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] === "signed-off" || prelaunchVerification) &&
+      ((integrationApproved && publicChannelOpen) || prelaunchVerification) &&
       stripe?.livemode === true &&
       readMealDeckStripeCheckoutDomain(env).status !== "invalid";
     return {

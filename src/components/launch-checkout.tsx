@@ -1089,8 +1089,8 @@ export function LaunchCheckout({
         />
         {status?.prelaunchVerification && (
           <p className="md-checkout-notice" role="status">
-            <strong>Pre-opening live order check.</strong> This checkout takes a real card payment.
-            The kitchen receives the order only after Stripe confirms payment.
+            <strong>Private live order check.</strong> This checkout takes a real card payment. The
+            kitchen receives the order only after Stripe confirms payment.
           </p>
         )}
         {orderId && (guestSession || checkoutMode === "guest") && (

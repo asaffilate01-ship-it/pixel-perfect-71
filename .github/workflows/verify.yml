@@ -246,6 +246,9 @@ jobs:
       - name: Shared KDS and printer acceptance with one canonical receipt
         run: node tests/postgres/printer-acceptance-behavior.mjs
 
+      - name: Bounded live verification and public ordering isolation
+        run: node tests/postgres/live-verification-behavior.mjs
+
       - name: Payment HTTP handlers against migrated PostgreSQL contracts
         run: bun test tests/mealdeck-payment-http-postgres.test.ts
 
@@ -665,6 +668,7 @@ jobs:
             public-menu,
             menu-structure,
             public-menu-read,
+            live-verification,
           ]
     services:
       postgres:
