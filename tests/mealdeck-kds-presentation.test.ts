@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { KdsItem, KdsOrder, KdsTicket } from "../src/lib/mealdeck-kds";
 import {
+  KDS_STAGE_LABELS,
   groupKdsItems,
   kdsOrderStage,
   nextKdsOrderAction,
@@ -155,11 +156,11 @@ describe("one shared-kitchen order card", () => {
       preparation_status: "ready",
       pass: { status: "packing", version: "c".repeat(32), updated_at: "2026-11-04T12:10:00Z" },
     });
-    expect(kdsOrderStage(packing)).toBe("packing");
+    expect(kdsOrderStage(packing)).toBe("ready");
     expect(nextKdsOrderAction(packing)).toEqual({
       target: "pass",
       status: "sealed",
-      label: "Seal order",
+      label: "Ready for handover",
     });
     expect(nextKdsOrderAction({ ...packing, preparation_status: "preparing" })).toBeNull();
   });
@@ -180,5 +181,53 @@ describe("one shared-kitchen order card", () => {
     });
     expect(nextKdsOrderAction({ ...ready, preparation_status: "preparing" })).toBeNull();
     expect(nextKdsOrderAction(order({ preparation_status: "ready" }))).toBeNull();
+  });
+});
+
+describe("six-stage kitchen workflow", () => {
+  test("shows the owner's exact labels in workflow order", () => {
+    expect(Object.values(KDS_STAGE_LABELS)).toEqual([
+      "New",
+      "Accepted",
+      "Preparing",
+      "Ready to pack",
+      "Ready for handover",
+      "Done",
+    ]);
+  });
+  test("paid but unaccepted is New; staff acceptance has its own queue", () => {
+    expect(kdsOrderStage(order({ accepted_at: null }))).toBe("queued");
+    expect(kdsOrderStage(order())).toBe("accepted");
+    expect(kdsOrderStage(order({ preparation_status: "preparing" }))).toBe("preparing");
+  });
+  test("packing remains inside Ready to pack until staff confirm packing", () => {
+    for (const status of ["ready_to_pack", "packing"] as const) {
+      expect(
+        kdsOrderStage(
+          order({
+            preparation_status: "ready",
+            pass: {
+              status,
+              version: "c".repeat(32),
+              updated_at: "2026-11-04T12:10:00Z",
+            },
+          }),
+        ),
+      ).toBe("ready");
+    }
+    for (const status of ["sealed", "ready_for_handoff"] as const) {
+      expect(
+        kdsOrderStage(
+          order({
+            preparation_status: "ready",
+            pass: {
+              status,
+              version: "c".repeat(32),
+              updated_at: "2026-11-04T12:10:00Z",
+            },
+          }),
+        ),
+      ).toBe("sealed");
+    }
   });
 });

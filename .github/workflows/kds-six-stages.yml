@@ -1,0 +1,38 @@
+name: Verify KDS six-stage workflow
+on:
+  pull_request:
+  push:
+    branches: [main, feature/mealdeck-kds-six-stages-20261106]
+permissions:
+  contents: read
+jobs:
+  kds-six-stages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_six_stages
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_six_stages"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: npm ci --prefix tests/postgres
+      - name: Stage mapping and completed-history parsing
+        run: bun test tests/mealdeck-kds-presentation.test.ts tests/mealdeck-kds-workflow.test.ts tests/mealdeck-kds.test.ts tests/mealdeck-kds-readiness.test.ts
+      - name: Actual PostgreSQL lifecycle, permissions and read-only Done history
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_six_stages
+        run: node tests/postgres/kds-workflow-behavior.mjs --native
+      - name: KDS implementation lint
+        run: bunx eslint src/lib/mealdeck-kds-presentation.ts src/lib/mealdeck-kds-workflow.ts src/components/ops/kds-panel.tsx src/components/ops/kds-completed-card.tsx tests/mealdeck-kds-presentation.test.ts tests/mealdeck-kds-workflow.test.ts
