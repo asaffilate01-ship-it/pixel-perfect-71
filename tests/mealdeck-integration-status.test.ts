@@ -73,6 +73,7 @@ function fixture() {
     kitchenOpen: true,
     locationFails: false,
     accountFails: false,
+    accountPermissionDenied: false,
     mfa: false,
   };
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -127,6 +128,11 @@ function fixture() {
     if (url.hostname === "api.stripe.com") {
       expect(init?.method).toBe("GET");
       if (path === "/v1/account") {
+        if (state.accountPermissionDenied)
+          return Response.json(
+            { error: { message: "Permission denied for " + headers.get("Authorization") } },
+            { status: 403 },
+          );
         if (state.accountFails)
           throw new Error("fixture account read unavailable: " + env.MEALDECK_STRIPE_SECRET_KEY);
         return Response.json({
@@ -156,6 +162,91 @@ async function inspect(f: ReturnType<typeof fixture>, settings: MealDeckRuntimeE
   return { response, report, check };
 }
 describe("private payment and email setup checks", () => {
+  test("standard and restricted server keys retain the same credential, trim, length and mode contracts", async () => {
+    for (const family of ["sk", "rk"])
+      for (const mode of ["test", "live"]) {
+        for (const length of [16, 32, 512]) {
+          const key = `${family}_${mode}_${"aZ09".repeat(length / 4)}`;
+          const runtime = {
+            ...env,
+            MEALDECK_STRIPE_SECRET_KEY: ` \t${key}\n`,
+            MEALDECK_STRIPE_MODE: mode,
+          };
+          expect(readMealDeckStripeSettingIssues(runtime)).toEqual([]);
+          expect(readMealDeckStripeConfig(runtime)).toMatchObject({
+            secretKey: key,
+            webhookSecret: env.MEALDECK_STRIPE_WEBHOOK_SECRET,
+            accountId: env.MEALDECK_STRIPE_ACCOUNT_ID,
+            livemode: mode === "live",
+          });
+        }
+        const key = `${family}_${mode}_${"aZ09".repeat(8)}`;
+        const f = fixture();
+        f.state.locationMode = mode === "live";
+        const { report, check } = await inspect(f, {
+          ...env,
+          MEALDECK_STRIPE_SECRET_KEY: key,
+          MEALDECK_STRIPE_MODE: mode,
+        });
+        expect(check("stripe").state).toBe("checked");
+        expect(check("stripe").settings).toEqual([]);
+        expect(report.mode).toBe(mode);
+        expect(report.acceptingOnlineOrders).toBe(mode === "live");
+        expect(JSON.stringify(report)).not.toContain(key);
+      }
+  });
+  test("both server key families reject malformed values and either cross-mode pairing", () => {
+    for (const family of ["sk", "rk"])
+      for (const mode of ["test", "live"]) {
+        const prefix = `${family}_${mode}_`;
+        for (const key of [
+          prefix,
+          prefix + "a".repeat(15),
+          prefix + "a".repeat(513),
+          prefix + "a".repeat(16) + "_extra",
+          prefix + "a".repeat(16) + "-extra",
+          prefix + "a".repeat(16) + " internal whitespace",
+          prefix + "a".repeat(16) + "\nsecondline",
+          `"${prefix}${"a".repeat(32)}"`,
+          `${family.toUpperCase()}_${mode}_${"a".repeat(32)}`,
+          `${family}_${mode.toUpperCase()}_${"a".repeat(32)}`,
+          `pk_${mode}_${"a".repeat(32)}`,
+        ]) {
+          const runtime = { ...env, MEALDECK_STRIPE_SECRET_KEY: key, MEALDECK_STRIPE_MODE: mode };
+          expect(readMealDeckStripeConfig(runtime)).toBeNull();
+          expect(readMealDeckStripeSettingIssues(runtime)).toEqual([
+            { setting: "MEALDECK_STRIPE_SECRET_KEY", status: "invalid" },
+          ]);
+        }
+        const mismatch = {
+          ...env,
+          MEALDECK_STRIPE_SECRET_KEY: prefix + "a".repeat(32),
+          MEALDECK_STRIPE_MODE: mode === "live" ? "test" : "live",
+        };
+        expect(readMealDeckStripeConfig(mismatch)).toBeNull();
+        expect(readMealDeckStripeSettingIssues(mismatch)).toEqual([
+          { setting: "MEALDECK_STRIPE_SECRET_KEY", status: "mode_mismatch" },
+          { setting: "MEALDECK_STRIPE_MODE", status: "mode_mismatch" },
+        ]);
+      }
+  });
+  test("restricted-key permission rejection remains unavailable and redacts the provider response", async () => {
+    const key = "rk_live_" + "aZ09".repeat(16);
+    const f = fixture();
+    f.state.accountPermissionDenied = true;
+    const { report, check } = await inspect(f, {
+      ...env,
+      MEALDECK_STRIPE_SECRET_KEY: key,
+      MEALDECK_STRIPE_MODE: "live",
+    });
+    expect(check("stripe").state).toBe("needs_setup");
+    expect(report.acceptingOnlineOrders).toBe(false);
+    expect(JSON.stringify(report)).not.toContain(key);
+    expect(JSON.stringify(report)).not.toContain("Permission denied for");
+    expect(f.calls.filter((call) => call.host === "api.stripe.com")).toEqual([
+      { host: "api.stripe.com", path: "/v1/account", method: "GET", body: "" },
+    ]);
+  });
   test("public acceptance requires live mode while sandbox diagnostics remain readable", async () => {
     const f = fixture();
     expect((await inspect(f)).report.acceptingOnlineOrders).toBe(false);
@@ -274,6 +365,7 @@ describe("private payment and email setup checks", () => {
   test("invalid Stripe settings report fixed names and statuses without echoing values", async () => {
     for (const [setting, value] of [
       ["MEALDECK_STRIPE_SECRET_KEY", "pk_live_fixture_value_must_not_be_echoed"],
+      ["MEALDECK_STRIPE_SECRET_KEY", "rk_live_invalid_fixture_value_must_not_be_echoed"],
       ["MEALDECK_STRIPE_WEBHOOK_SECRET", "wrong_webhook_value_must_not_be_echoed"],
       ["MEALDECK_STRIPE_ACCOUNT_ID", "wrong_account_value_must_not_be_echoed"],
       ["MEALDECK_STRIPE_MODE", "wrong_mode_value_must_not_be_echoed"],
