@@ -304,7 +304,7 @@ export async function handleGroupOrdersRequest(
 ) {
   try {
     if (request.method === "GET") {
-      const available = await readSharedPaymentCapabilities(env, fetcher);
+      const available = await readSharedPaymentCapabilities(env, fetcher, request);
       const existing = readOrderingActor(request);
       const actor = existing ?? randomBytes(32).toString("base64url");
       return Response.json(
@@ -392,7 +392,7 @@ export async function handleGroupOrdersRequest(
     }
     const hasIdentity = Boolean(identity.customerId || identity.guestTokenHash);
     const stripe = readMealDeckStripeConfig(env);
-    const capabilities = await readSharedPaymentCapabilities(env, fetcher);
+    const capabilities = await readSharedPaymentCapabilities(env, fetcher, request);
     const scope = (roomId: string) => ({ p_room: roomId, p_actor_hash: actorHash });
     const financialScope = (roomId: string) => ({
       ...scope(roomId),

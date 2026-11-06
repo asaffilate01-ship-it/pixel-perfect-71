@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Clock3,
   Copy,
-  Link2,
   Loader2,
   LockKeyhole,
   RefreshCw,
@@ -416,6 +415,12 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
       requestController.current?.abort();
     };
   }, [refreshCapabilities]);
+
+  const availabilityAccountId =
+    identity.account?.status === "signed_in" ? identity.account.profile.userId : null;
+  useEffect(() => {
+    if (!identity.loading) void refreshCapabilities();
+  }, [availabilityAccountId, identity.loading, refreshCapabilities]);
 
   useEffect(() => {
     // A confirmed create/join/recovery has already installed this room. Navigation
@@ -1514,10 +1519,6 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             />
           </div>
         )}
-        <p className="md-room-footer-note">
-          <Link2 size={16} aria-hidden="true" /> One room for choices, payment and progress. No
-          replies to collect.
-        </p>
       </main>
       <SiteFooter />
       <Dialog
