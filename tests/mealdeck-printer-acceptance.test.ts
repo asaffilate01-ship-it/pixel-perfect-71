@@ -279,12 +279,55 @@ describe("explicit printer acceptance transport", () => {
 });
 
 describe("printer acceptance presentation and arrivals", () => {
+  test("pending meal contents remain visible and canonical without constructing a receipt", () => {
+    const order = pending();
+    order.items[0]!.mealComponents = [
+      { slot: "side", name: "Loaded tots", quantityPerParent: 1, replacement: true },
+      { slot: "drink", name: "Pepsi", quantityPerParent: 1, replacement: false },
+    ];
+    const parsed = parsePrinterAcceptanceBoard(
+      { schemaVersion: 1, ...scope, generatedAt: time, orders: [order], remainingOrderCount: 0 },
+      scope,
+    );
+    expect(parsed.orders[0]!.items[0]!.mealComponents).toEqual(order.items[0]!.mealComponents);
+    const markup = renderToStaticMarkup(
+      createElement(PrinterPendingOrderCard, {
+        order: parsed.orders[0]!,
+        fresh: true,
+        paired: false,
+        automatic: false,
+        busy: false,
+        accepting: false,
+        onAccept: () => {},
+      }),
+    );
+    const visible = markup.slice(0, markup.indexOf("<details"));
+    expect(visible).toContain("Meal includes");
+    expect(visible).toContain("totals for 2 items");
+    expect(visible).toContain("<strong>2×</strong> Loaded tots");
+    expect(visible).toContain("Replaces the standard side");
+    expect(visible).toContain("<strong>2×</strong> Pepsi");
+    expect(visible).not.toContain("Fries");
+    expect(markup).toContain("Accept &amp; queue receipt");
+    expect(markup).not.toContain("Receipt printed");
+    Object.assign(order.items[0]!, {
+      mealComponents: [{ slot: "side", name: "Fries", quantityPerParent: 0, replacement: false }],
+    });
+    expect(() =>
+      parsePrinterAcceptanceBoard(
+        { schemaVersion: 1, ...scope, generatedAt: time, orders: [order], remainingOrderCount: 0 },
+        scope,
+      ),
+    ).toThrow();
+  });
+
   test("paid-order arrivals do not claim a receipt already exists and KDS wording stays unchanged", () => {
     const alerts = {
       enabled: false,
       volume: 0.8,
       notice: 1,
       audioError: "",
+      waitingForGesture: false,
       toggle: async () => {},
       setVolume: () => {},
       observe: () => {},
@@ -308,6 +351,15 @@ describe("printer acceptance presentation and arrivals", () => {
     );
     expect(enabledPrinter).toContain("Test printer sound");
     expect(enabledPrinter).toContain("Mute sound");
+    const waitingPrinter = renderToStaticMarkup(
+      createElement(StaffAlertControls, {
+        alerts: { ...alerts, waitingForGesture: true },
+        kind: "printer",
+      }),
+    );
+    expect(waitingPrinter).toContain("Sound is waiting for your first interaction");
+    expect(waitingPrinter).toContain('aria-pressed="false"');
+    expect(waitingPrinter).not.toContain("Test printer sound");
     const kitchen = renderToStaticMarkup(
       createElement(StaffAlertControls, { alerts, kind: "kds" }),
     );

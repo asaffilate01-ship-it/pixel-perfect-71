@@ -23,6 +23,7 @@ import {
 } from "@/lib/mealdeck-printer-browser";
 import { confirmReceiptPaper } from "@/lib/mealdeck-printer-recovery";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
+import { preloadReceiptLogo, waitForReceiptLogo } from "@/lib/mealdeck-receipt-logo";
 import { MealDeckBackendSetupError } from "@/lib/mealdeck-backend-client-cache";
 import { PrinterSignInError, signInPrinterWithPassword } from "@/lib/mealdeck-printer-auth";
 import {
@@ -41,7 +42,7 @@ import {
   type PrinterJob,
   type PrinterScope,
 } from "@/lib/mealdeck-printer";
-import { StaffAlertControls, useStaffAlerts } from "./staff-alerts";
+import { StaffAlertControls, StaffSoundUnlock, useStaffAlerts } from "./staff-alerts";
 import { ReceiptPreview } from "./receipt-preview";
 import { PrinterConnectionStatus, PrinterPendingOrderCard } from "./printer-pending-orders";
 import { StaffMobileNav } from "./staff-mobile-navigation";
@@ -703,11 +704,22 @@ function ReceiptTerminal({
     setNotice("");
     let claim: string | null = null;
     try {
+      if (mode === "dialog") await preloadReceiptLogo();
+      if (!mounted.current) throw new Error("printer screen unavailable");
       const claimed = parseClaim(
         await call("claim_job", { p_job: job.jobId, p_terminal: terminal.current }),
         job.jobId,
       );
       claim = claimed.claimToken;
+      if (mode === "dialog") {
+        flushSync(() => setPrintJob(claimed));
+        const logo = document.querySelector<HTMLImageElement>(
+          ".md-printer-print-only [data-receipt-logo]",
+        );
+        if (!logo) throw new Error("receipt logo unavailable");
+        await waitForReceiptLogo(logo);
+        if (!mounted.current) throw new Error("printer screen unavailable");
+      }
       const begun = (await call("begin_send", { p_job: job.jobId, p_claim: claim })) as {
         ok?: boolean;
         replayed?: boolean;
@@ -728,7 +740,6 @@ function ReceiptTerminal({
         if (result["status"] !== "sent_unconfirmed")
           throw new Error("printer delivery unconfirmed");
       } else {
-        flushSync(() => setPrintJob(claimed));
         window.print();
       }
       await call("send_result", {
@@ -981,6 +992,7 @@ function ReceiptTerminal({
           {paired ? "Setup" : "Connect printer"}
         </button>
       </div>
+      <StaffSoundUnlock alerts={alerts} />
       {paperCheckCount > 0 && mobileView !== "queue" && (
         <button
           type="button"

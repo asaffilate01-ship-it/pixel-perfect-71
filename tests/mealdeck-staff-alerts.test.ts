@@ -40,7 +40,7 @@ describe("staff audio alerts", () => {
   });
   test("both alerts are sustained, repeat clearly and keep non-overlapping peaks below one", () => {
     for (const kind of ["kds", "printer"] as const) {
-      expect(staffAlertAudio[kind].defaultVolume).toBe(0.9);
+      expect(staffAlertAudio[kind].defaultVolume).toBe(1);
       expect(staffAlertAudio[kind].peakGain).toBeGreaterThan(0.5);
       expect(staffAlertAudio[kind].peakGain).toBeLessThan(1);
       expect(staffAlertAudio[kind].sustainSeconds).toBeGreaterThanOrEqual(0.1);

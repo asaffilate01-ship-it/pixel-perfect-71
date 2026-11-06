@@ -16,8 +16,8 @@ export const staffAlertTones = {
   ],
 } as const;
 export const staffAlertAudio = {
-  kds: { defaultVolume: 0.9, peakGain: 0.85, sustainSeconds: 0.16 },
-  printer: { defaultVolume: 0.9, peakGain: 0.85, sustainSeconds: 0.16 },
+  kds: { defaultVolume: 1, peakGain: 0.98, sustainSeconds: 0.16 },
+  printer: { defaultVolume: 1, peakGain: 0.98, sustainSeconds: 0.16 },
 } as const;
 
 export function staffAlertDurationMs(kind: StaffAlertKind) {

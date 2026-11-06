@@ -67,10 +67,8 @@ export function normalizeCustomerPhone(value: string): string | null {
 
 export function normalizeCustomerName(value: string): string | null {
   const name = value.trim().replace(/\s+/g, " ");
-  const hasControl = Array.from(value).some((character) => {
-    const code = character.charCodeAt(0);
-    return code < 32 || code === 127;
-  });
+  // New contact names must also be safe on the canonical kitchen receipt.
+  const hasControl = /[\p{Cc}\p{Cf}]/u.test(value);
   return name.length >= 1 && name.length <= 120 && !hasControl ? name : null;
 }
 

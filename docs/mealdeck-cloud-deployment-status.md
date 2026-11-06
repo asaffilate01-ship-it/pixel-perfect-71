@@ -1,5 +1,17 @@
 # Independent MealDeck Cloud deployment
 
+## Public trading and kitchen follow-up — 6 November 2026, 20:11 UK
+
+The real approved test payment completed at 18:22 UK and its order was handed over at 18:28. The owner then authorised public collection and kerbside ordering. Anonymous checkout verified public availability at 18:41 and again after the releases below. Historical private-test and pending-approval instructions further down this document are superseded by this completed acceptance and owner approval.
+
+| Release | Verified outcome |
+| --- | --- |
+| [PR107](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/107) | Normal merge `4b3279b60106c271076612481aae401a39924400`; all 22 checks passed. Deployment `b3a6ec00-e4ab-47fa-b2d8-05b95b5a009e` served the intended numbered-order assets at 19:24 UK. Permanent paid numbering installed atomically, with the first seven paid orders mapped 0001–0007; pending attempts remained unnumbered. |
+| [PR108](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/108) | Normal merge `129dfbd52d6aa404fa1afbb8b718cea0c7f50baf`; all 24 checks passed, including native builds and PostgreSQL stock/notes. Included-drink stock and special-request extensions installed atomically. Deployment `01d36125-6dce-415d-b6b6-4245904ba33e` verified on canonical pages/assets at 19:54 UK. Public checkout available; guests eligible; kitchen Online with a 30-minute estimate. Rubicon remained unavailable through linked stock. |
+| [PR109](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/109) | Normal merge `c669c3cb33a30faee277a10ff44a74bef3b28cdd`; reviewed receipt-archive extension installed. Fresh terminal status was reviewed before retiring the six handed-over originals. Readback at 20:11 UK: six archived, zero of those six active, two newer receipt entries preserved. Orders, payments and print history remained unchanged. |
+
+These releases retain the original random collection code as handover proof, distinct from the sequential order number. Card orders require verified provider payment before KDS release; staff acceptance from either KDS or printer creates one receipt. Delivery tracking remains Coming soon. The Senraise terminal now has operator paper-confirmation records for 0002–0006, but the transport and automatic built-in-printer connection have not been independently commissioned. See the dedicated [receipt retirement record](./mealdeck-receipt-retirement.md) and [printer status](./mealdeck-senraise-printer-status.md).
+
 ## Private live-test continuation — 6 November 2026, after 15:00 UTC
 
 The owner again requested **one real test order, then public opening** after the

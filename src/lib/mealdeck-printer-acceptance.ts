@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { printerPackingSchema, type PrinterJob, type PrinterScope } from "./mealdeck-printer";
 import { orderNumberSchema } from "./mealdeck-order-number";
+import { mealComponentsSchema } from "./mealdeck-meal-components";
 
 const uuid = z.string().uuid();
 const stamp = z.string().datetime({ offset: true });
@@ -14,6 +15,7 @@ const itemSchema = z.object({
   quantity: z.number().int().min(1).max(999),
   unitPence: money,
   modifiers: z.array(z.string().min(1).max(1000)).max(100),
+  mealComponents: mealComponentsSchema.optional(),
   notes: z.string().max(20000).nullable(),
   bags: z
     .array(

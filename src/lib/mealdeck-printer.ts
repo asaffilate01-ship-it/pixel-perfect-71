@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
 import { orderNumberSchema } from "./mealdeck-order-number";
+import { mealComponentsSchema } from "./mealdeck-meal-components";
 const uuid = z.string().uuid(),
   stamp = z.string().datetime({ offset: true });
 const money = z.number().int().min(0).max(10000000);
@@ -36,6 +37,7 @@ export const receiptSchema = z
     reprintReason: z.string().max(300).nullable(),
     displayCode: z.string().regex(/^\d{4}$/),
     orderNumber: orderNumberSchema.nullable().optional(),
+    paymentMethod: z.enum(["card", "cash"]).optional(),
     brand: z.literal("MealDeck"),
     tradingName: z.literal("313 Brands Ltd"),
     locationName: z.string().min(1).max(140),
@@ -65,6 +67,7 @@ export const receiptSchema = z
           unitPence: money,
           linePence: money,
           notes: z.string().max(20000).nullable(),
+          mealComponents: mealComponentsSchema.optional(),
           modifiers: z
             .array(
               z.object({

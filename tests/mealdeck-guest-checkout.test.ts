@@ -219,6 +219,65 @@ const pay = {
 };
 
 describe("guest checkout private browser capability", () => {
+  test("missing, blank and invalid contact cannot create a guest session or reach payment", async () => {
+    for (const invalid of [
+      { ...contact, name: undefined },
+      { ...contact, name: "" },
+      { ...contact, name: "   " },
+      { ...contact, name: "Sam\nAdmin" },
+      { ...contact, name: "Sam\u202e" },
+      { ...contact, name: "\u200b" },
+      { ...contact, phone: undefined },
+      { ...contact, phone: "" },
+      { ...contact, phone: "   " },
+      { ...contact, phone: "not a number" },
+      { ...contact, phone: "123" },
+    ]) {
+      const f = fixture();
+      expect((await f.post(invalid)).status).toBe(400);
+      expect(
+        f.calls.some((call) =>
+          /begin_guest_session|create_.*quote|prepare.*order|sessions/.test(call.name),
+        ),
+      ).toBe(false);
+    }
+  });
+
+  test("member and guest kerbside quotes require make, colour and exactly four registration characters", async () => {
+    const valid = { make: "Volkswagen", colour: "Blue", registrationLast4: "4ABC" };
+    for (const member of [false, true]) {
+      const f = fixture();
+      const cookie = await f.start();
+      const headers = member
+        ? { Authorization: "Bearer fixture_member_token_that_is_long_enough" }
+        : {};
+      for (const vehicle of [
+        undefined,
+        { ...valid, make: undefined },
+        { ...valid, make: "  " },
+        { ...valid, colour: undefined },
+        { ...valid, colour: "  " },
+        { ...valid, registrationLast4: undefined },
+        { ...valid, registrationLast4: "" },
+        { ...valid, registrationLast4: "ABC" },
+        { ...valid, registrationLast4: "AB12CDE" },
+        { ...valid, registrationLast4: "!ABC" },
+      ]) {
+        expect(
+          (await f.post({ ...selection(), fulfilment: "curbside", vehicle }, cookie, headers))
+            .status,
+        ).toBe(400);
+      }
+      expect(f.calls.some((call) => /create_.*quote|prepare.*order/.test(call.name))).toBe(false);
+      expect(
+        (await f.post({ ...selection(), fulfilment: "curbside", vehicle: valid }, cookie, headers))
+          .status,
+      ).toBe(200);
+      const quote = f.calls.find((call) => /create_.*quote/.test(call.name));
+      expect(quote?.args.p_vehicle).toEqual(valid);
+    }
+  });
+
   test("uses high-entropy host-only HttpOnly cookies, persists only a digest and creates no Auth account", async () => {
     const f = fixture();
     const response = await f.post(contact);

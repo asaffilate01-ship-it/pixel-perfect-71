@@ -269,6 +269,62 @@ test("Done tickets show their canonical number and saved pickup contact as read-
 });
 
 describe("ticket alignment retains every kitchen instruction", () => {
+  test("current and Done tickets spell out frozen meal quantities and side/drink replacements", () => {
+    const meal = item({
+      quantity: 2,
+      unit_pence: 699,
+      modifiers: ["Make it a meal", "Selected drink: Mango Mirage"],
+      mealComponents: [
+        { slot: "side", name: "Loaded tots", quantityPerParent: 1, replacement: true },
+        { slot: "drink", name: "Mango & <mint>", quantityPerParent: 1, replacement: true },
+      ],
+    });
+    for (const html of [
+      ticketMarkup(order({ items: [meal] })),
+      renderToStaticMarkup(
+        createElement(KdsCompletedCard, { order: completed({ items: [meal] }) }),
+      ),
+    ]) {
+      const contents = html.match(
+        /<section class="md-kds-meal-components"[\s\S]*?<\/section>/,
+      )?.[0];
+      expect(contents).toContain("Meal includes");
+      expect(contents).toContain("totals for 2 items");
+      expect(contents).toContain("<strong>2×</strong><span>Loaded tots");
+      expect(contents).toContain("<strong>2×</strong><span>Mango &amp; &lt;mint&gt;");
+      expect(contents).toContain("Replaces the standard side");
+      expect(contents).toContain("Replaces the standard drink");
+      expect(contents).not.toContain("Fries");
+      expect(html).toContain("Make it a meal");
+      expect(html).toContain("Amer · Bag 1");
+    }
+    expect(ticketMarkup(order({ items: [meal] }))).toContain("£6.99 each");
+    expect(matchesKdsOrderSearch(order({ items: [meal] }), "loaded tots")).toBe(true);
+  });
+
+  test("only canonical included components appear; legacy labels and paid extras add no invented fries", () => {
+    const legacy = item({ modifiers: ["Make it a meal"] });
+    expect(ticketMarkup(order({ items: [legacy] }))).not.toContain("Meal includes");
+    const side = item({
+      item_name: "Chicken box",
+      checkout_line_id: "main",
+      mealComponents: [{ slot: "side", name: "Rice", quantityPerParent: 1, replacement: false }],
+    });
+    const extra = item({
+      order_item_id: "extra",
+      item_name: "Extra onion rings",
+      checkout_line_id: "extra",
+      parent_checkout_line_id: "main",
+    });
+    const html = ticketMarkup(order({ items: [side, extra] }));
+    expect(html.match(/aria-label="Meal contents"/g)).toHaveLength(1);
+    expect(html).toContain("<strong>2×</strong><span>Rice</span>");
+    expect(html).not.toContain("Fries");
+    expect(html).not.toContain("standard drink");
+    expect(html).toContain("Extra onion rings");
+    expect(html).toContain("with the item above");
+  });
+
   test("canonical order numbers are prominent while collection codes remain separate", () => {
     const html = ticketMarkup(order({ order_number: "0001", display_code: "4601" }));
     expect(html).toMatch(/<h3[^>]*>0001<\/h3>/);

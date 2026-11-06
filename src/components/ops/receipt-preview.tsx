@@ -5,6 +5,7 @@ import {
 } from "@/lib/mealdeck-printer";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
+import { receiptLogoSource } from "@/lib/mealdeck-receipt-logo";
 export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
   const number = orderDisplayNumber(r.orderNumber, "");
   const ordered = r.items
@@ -13,17 +14,31 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
   return (
     <section
       className="md-receipt-preview space-y-3 bg-white p-5 text-black"
-      aria-label={number ? `Receipt for order ${number}` : `Receipt with collection code ${r.displayCode}`}
+      aria-label={
+        number ? `Receipt for order ${number}` : `Receipt with collection code ${r.displayCode}`
+      }
     >
       <header className="border-b border-dashed border-black pb-3 text-center">
+        <img
+          data-receipt-logo
+          src={receiptLogoSource}
+          alt="MealDeck"
+          width={1106}
+          height={1116}
+          loading="eager"
+          className="mx-auto mb-2 block h-auto w-36 max-w-full"
+        />
         <h3 className="text-2xl font-black">MEALDECK</h3>
         <p className="text-sm">{r.locationName}</p>
-        {number && <p className="my-2 break-words text-3xl font-black tabular-nums">ORDER {number}</p>}
+        {number && (
+          <p className="my-2 break-words text-3xl font-black tabular-nums">ORDER {number}</p>
+        )}
         <p className="my-2 text-sm font-bold">
           Collection code <strong className="tabular-nums">{r.displayCode}</strong>
         </p>
         <p className="font-bold">
-          {r.fulfilment === "curbside" ? "KERBSIDE" : "COLLECTION"} · PAID
+          {r.fulfilment === "curbside" ? "KERBSIDE" : "COLLECTION"} ·{" "}
+          {r.paymentMethod === "cash" ? "CASH PAID" : "PAID"}
         </p>
         {r.copyNumber > 1 && (
           <p className="mt-2 border-2 border-black p-2 font-black">
@@ -64,6 +79,21 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
                 .map((b) => `${formatPackingBagName(b)}: ${b.quantity}×`)
                 .join(" · ")}
             </p>
+            {!!item.mealComponents?.length && (
+              <div className="mt-2 border-l-2 border-black pl-2 text-xs">
+                <p className="font-bold">Meal includes</p>
+                <ul>
+                  {item.mealComponents.map((component) => (
+                    <li key={component.slot}>
+                      {item.quantity * component.quantityPerParent}× {component.name}
+                      {component.replacement
+                        ? ` — replaces standard ${component.slot === "drink" ? "drink" : "side"}`
+                        : ""}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {item.modifiers.length > 0 && (
               <ul className="mt-1 space-y-1 text-xs">
                 {item.modifiers.map((m, n) => (
@@ -99,7 +129,7 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
           </div>
         )}
         <div className="flex justify-between text-lg font-black">
-          <dt>PAID</dt>
+          <dt>{r.paymentMethod === "cash" ? "CASH PAID" : "PAID"}</dt>
           <dd>{money(r.totalPence)}</dd>
         </div>
       </dl>
