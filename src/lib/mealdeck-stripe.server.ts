@@ -108,7 +108,9 @@ export async function stripeRequest(
 ): Promise<Json> {
   const response = await fetcher("https://api.stripe.com/v1/" + path, {
     method: options ? "POST" : "GET",
-    redirect: "error",
+    // Workers rejects `error` before sending. Return redirects without following
+    // them so the non-success check below rejects them without forwarding the key.
+    redirect: "manual",
     signal: AbortSignal.timeout(15_000),
     headers: {
       Authorization: "Bearer " + config.secretKey,
@@ -122,7 +124,8 @@ export async function stripeRequest(
     },
     ...(options ? { body: options.body.toString() } : {}),
   });
-  // Do not read, retain or expose provider error bodies, headers or requests.
+  // Reject every non-2xx response, including redirects. Never follow Location or
+  // read, retain or expose provider error bodies, headers or requests.
   if (!response.ok) throw new StripeProviderHttpProblem(response.status);
   const result: unknown = await response.json();
   if (!result || typeof result !== "object" || Array.isArray(result))

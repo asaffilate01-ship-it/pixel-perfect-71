@@ -358,6 +358,61 @@ const fetchFixture = (change?: (value: typeof session) => unknown) =>
   }) as typeof fetch;
 
 describe("Stripe server boundaries", () => {
+  test("provider reads and writes cannot follow redirects or forward the payment key", async () => {
+    for (const options of [
+      undefined,
+      { body: new URLSearchParams({ mode: "payment" }), idempotencyKey: "fixture-attempt" },
+    ]) {
+      for (const providerStatus of [200, 301, 302, 303, 307, 308]) {
+        const path = options ? "checkout/sessions" : "account";
+        const providerResponse = Response.json(
+          { id: "fixture-provider-result" },
+          {
+            status: providerStatus,
+            headers: { Location: "https://untrusted.example.invalid/collect" },
+          },
+        );
+        const requests: Request[] = [];
+        const fetcher = (async (input, init) => {
+          const request = new Request(input, init);
+          requests.push(request);
+          // This is the supported Workers mode that returns 3xx without any
+          // automatic second request, even when Location changes the origin.
+          expect(request.redirect).toBe("manual");
+          return providerResponse;
+        }) as typeof fetch;
+        let result: unknown;
+        let failure: unknown;
+        try {
+          result = await stripeRequest(config, path, fetcher, options);
+        } catch (error) {
+          failure = error;
+        }
+        expect(requests).toHaveLength(1);
+        const request = requests[0]!;
+        expect(request.url).toBe("https://api.stripe.com/v1/" + path);
+        expect(request.method).toBe(options ? "POST" : "GET");
+        expect(request.headers.get("Authorization")).toBe("Bearer " + config.secretKey);
+        expect(request.headers.get("Idempotency-Key")).toBe(options?.idempotencyKey ?? null);
+        expect(await request.text()).toBe(options?.body.toString() ?? "");
+        if (providerStatus === 200) {
+          expect(failure).toBeUndefined();
+          expect(result).toEqual({ id: "fixture-provider-result" });
+        } else {
+          expect(result).toBeUndefined();
+          expect(failure).toBeInstanceOf(StripeProviderHttpProblem);
+          expect((failure as StripeProviderHttpProblem).providerStatus).toBe(providerStatus);
+          expect(providerResponse.bodyUsed).toBe(false);
+          const customerResponse = paymentErrorResponse(failure);
+          expect(customerResponse.status).toBe(503);
+          expect(await customerResponse.json()).toEqual({
+            error: "payment_service_unavailable",
+            message: "Secure payment is temporarily unavailable. Please try again.",
+          });
+        }
+      }
+    }
+  });
   test("provider HTTP status stays server-only, error bodies stay unread and customer errors stay generic", async () => {
     for (const providerStatus of [401, 403, 429, 500, 503]) {
       const providerResponse = Response.json(

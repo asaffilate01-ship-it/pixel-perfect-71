@@ -182,7 +182,7 @@ describe("Signed Resend Auth delivery", () => {
     expect(f.accepted.size).toBe(1);
     expect(f.calls[0]!.key).toBe(f.calls[1]!.key);
     expect(f.calls[0]!.url).toBe("https://api.resend.com/emails/batch");
-    expect(f.calls[0]!.options.redirect).toBe("error");
+    expect(f.calls[0]!.options.redirect).toBe("manual");
     expect(f.calls[0]!.options.cache).toBe("no-store");
     expect(f.calls[0]!.key).not.toContain(event.user.email);
     expect(f.calls[0]!.key).not.toContain(event.email_data.token);
@@ -190,6 +190,36 @@ describe("Signed Resend Auth delivery", () => {
     expect(results[0]!.headers.get("cache-control")).toContain("no-store");
     expect(JSON.stringify(f.calls[0]!.messages)).not.toContain("untrusted");
     expect(JSON.stringify(f.calls[0]!.messages)).not.toContain("ignored-user-field");
+  });
+  test("provider redirects fail without following, reading the body or exposing email credentials", async () => {
+    for (const status of [301, 302, 303, 307, 308]) {
+      const destination = "https://unexpected-provider.example.test/emails";
+      const providerResponse = Response.json(
+        {
+          data: [{ id: "00000000-0000-4000-8000-000000000001" }],
+          private: `${env.RESEND_API_KEY} ${event.user.email} ${event.email_data.token_hash}`,
+        },
+        { status, headers: { Location: destination } },
+      );
+      const calls: { url: string; options: RequestInit | undefined }[] = [];
+      const response = await handleMealDeckAuthEmail(signed(), env, async (input, options) => {
+        calls.push({ url: String(input), options });
+        return providerResponse;
+      });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]!.url).toBe("https://api.resend.com/emails/batch");
+      expect(calls[0]!.options?.redirect).toBe("manual");
+      expect(calls[0]!.options?.credentials).toBe("omit");
+      expect(providerResponse.bodyUsed).toBe(false);
+      expect(response.status).toBe(503);
+      expect(response.headers.get("cache-control")).toContain("no-store");
+      expect(await response.json()).toEqual({
+        error: {
+          http_code: 503,
+          message: "MealDeck account email could not be sent. Please try again shortly.",
+        },
+      });
+    }
   });
   test("a reused event ID with changed content fails without a second accepted email", async () => {
     const f = provider();
