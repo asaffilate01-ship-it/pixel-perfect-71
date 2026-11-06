@@ -14,6 +14,21 @@ export const staffPasswordSchema = z.strictObject({
   confirmEmailOwnership: z.boolean(),
 });
 
+/**
+ * Cheap pre-check used before any privileged account lookup: the caller must hold
+ * an enabled global owner row. The tenant binding in passwordOwnerAllowed still
+ * decides which MealDeck tenant that ownership applies to.
+ */
+export function hasGlobalOwner(accesses: unknown): boolean {
+  const result = z.array(z.object({
+    tenant_id: z.string(), location_id: z.string().nullable(), role: z.string(),
+    deny_permissions: z.array(z.string()),
+  })).safeParse(accesses);
+  return result.success &&
+    result.data.some((a) => a.location_id === null && a.role === "owner") &&
+    !result.data.some((a) => a.deny_permissions.includes("staff.manage"));
+}
+
 export function passwordOwnerAllowed(accesses: unknown, tenantId: string): boolean {
   const result = z.array(z.object({
     tenant_id: z.string(), location_id: z.string().nullable(), role: z.string(),

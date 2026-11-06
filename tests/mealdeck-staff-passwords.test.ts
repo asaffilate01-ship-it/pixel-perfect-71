@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { passwordOwnerAllowed, STAFF_PASSWORD_ACCOUNTS, staffPasswordSchema } from "../src/lib/mealdeck-staff-passwords";
+import {
+  hasGlobalOwner,
+  passwordOwnerAllowed,
+  STAFF_PASSWORD_ACCOUNTS,
+  staffPasswordSchema,
+} from "../src/lib/mealdeck-staff-passwords";
 
 describe("internal password setup", () => {
   const owner = { tenant_id: "mealdeck", location_id: null, role: "owner", deny_permissions: [] };
@@ -9,6 +14,13 @@ describe("internal password setup", () => {
     expect(passwordOwnerAllowed([{ ...owner, location_id: "luton" }], "mealdeck")).toBe(false);
     expect(passwordOwnerAllowed([owner], "other")).toBe(false);
     expect(passwordOwnerAllowed([owner, { ...owner, deny_permissions: ["staff.manage"] }], "mealdeck")).toBe(false);
+  });
+  test("the pre-check accepts only an enabled global owner row", () => {
+    expect(hasGlobalOwner([owner])).toBe(true);
+    expect(hasGlobalOwner([{ ...owner, role: "kitchen" }])).toBe(false);
+    expect(hasGlobalOwner([{ ...owner, location_id: "luton" }])).toBe(false);
+    expect(hasGlobalOwner([{ ...owner, deny_permissions: ["staff.manage"] }])).toBe(false);
+    expect(hasGlobalOwner(null)).toBe(false);
   });
   for (const email of ["superadmin@mealdeck.co.uk", "kitchen@mealdeck.co.uk", "menu@mealdeck.co.uk", "printer@mealdeck.co.uk", "test@mealdeck.co.uk"]) {
     test(`allows only the approved ${email} account`, () => {
