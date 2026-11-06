@@ -1,5 +1,38 @@
 # Independent MealDeck Cloud deployment
 
+## Private live-test continuation — 6 November 2026, after 15:00 UTC
+
+The owner again requested **one real test order, then public opening** after the
+original 15:00 private-access cutoff. At **15:03:01 UTC**, the database correctly
+reported that original allowance expired, while the ordinary public opening
+schedule had begun. The deployed server also restricted its private readiness
+exception to the earlier window and skipped the private lookup once the public
+schedule opened. Extending a database timestamp alone would not restore access.
+
+This release prepares a guarded continuation for the same singleton
+`test@mealdeck.co.uk` identity through **23:00 UTC on 6 November**, exclusively.
+It preserves ordinary public opening hours and the separate integration signoff.
+The service-only customer status returns explicit, bounded `liveVerification`
+evidence. The server accepts it only for a currently verified customer, from the
+successful service RPC, within the approved same-day bounds and database clock.
+Public schedule availability alone, guest contact details and an ordinary
+customer status cannot authorise that exception. Provider readiness, the
+operator's kitchen state, canonical pricing, payment verification and the
+second availability check before payment preparation remain mandatory.
+
+At **15:07:59 UTC**, the actual public checkout response began returning the
+active offer and Luton **Online / 30 minutes**, with `available:false`. This
+establishes working public scope/status configuration; it does not establish the
+privileged checkout key, Stripe credentials or webhook-secret match. At
+**15:14:56 UTC**, the approved test account was verified, active and already had
+its registered customer profile. No account/profile change is required.
+
+Keep `MEALDECK_CHECKOUT_INTEGRATION_APPROVED=pending` during private acceptance.
+The owner has authorised public opening after the real payment and matching KDS
+arrival are verified. That outcome, actual receipt output, application of this
+guarded migration and publication remain distinct from these source changes.
+No paid order, payment event or print evidence may be fabricated to satisfy it.
+
 ## Live-payment commissioning — 6 November 2026, 14:26 UTC
 
 The owner prioritised one real `test@mealdeck.co.uk` payment reaching KDS before
@@ -47,13 +80,14 @@ Stripe, so the correct authenticated webhook is necessary for this test path.
 This section records the live review after the following releases were merged and
 published. The earlier time-stamped records below remain historical evidence.
 
-| Release | Merge commit | Verified release state |
-| --- | --- | --- |
-| [PR #88](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/88) | `86ce81b` | Merged and published |
-| [PR #89](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/89) | `5b83813` | Merged and published |
-| [PR #90](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/90) | `ad987396` | Merged and published; all 15 web/PostgreSQL jobs passed |
-| [PR #91](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/91) | `5bcf463` | Merged and published; compact KDS toolbar, printer sign-in recovery and 9–13 November loyalty wording verified live |
-| [PR #92](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/92) | `a79d34c` | Merged and published; delivered KDS bundle verified at 12:37:56 UTC with stage tabs outside the hidden tools panel |
+| Release                                                                    | Merge commit | Verified release state                                                                                                                                                |
+| -------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [PR #88](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/88) | `86ce81b`    | Merged and published                                                                                                                                                  |
+| [PR #89](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/89) | `5b83813`    | Merged and published                                                                                                                                                  |
+| [PR #90](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/90) | `ad987396`   | Merged and published; all 15 web/PostgreSQL jobs passed                                                                                                               |
+| [PR #91](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/91) | `5bcf463`    | Merged and published; compact KDS toolbar, printer sign-in recovery and 9–13 November loyalty wording verified live                                                   |
+| [PR #92](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/92) | `a79d34c`    | Merged and published; delivered KDS bundle verified at 12:37:56 UTC with stage tabs outside the hidden tools panel                                                    |
+| [PR #96](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/96) | `0ef752c`    | Merged and published; all 16 web/PostgreSQL gates passed, and the new staff navigation and aligned KDS ticket assets were served on the actual domain at 14:39:53 UTC |
 
 Native Android/iPhone compilation remains a separate verification outcome. The
 15 web/PostgreSQL results do not establish a native build, signed installation,

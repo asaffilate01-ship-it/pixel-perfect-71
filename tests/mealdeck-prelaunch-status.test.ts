@@ -27,6 +27,10 @@ const env = {
   MEALDECK_GROUP_LINK_SECRET: "g".repeat(64),
 };
 const token = "fixture_prelaunch_bearer_long_enough";
+const verificationWindow = {
+  startsAt: "2026-11-06T08:00:00Z",
+  expiresAt: "2026-11-06T23:00:00Z",
+};
 
 // HTTP contract tests with simulated Auth and database. No provider call, email,
 // production login or financial action is made by this fixture.
@@ -42,17 +46,22 @@ function fixture() {
     configured: true,
     missingRpc: false,
     providerCrossesCutoff: false,
+    publicStatusOverrides: {} as Record<string, unknown>,
+    privateStatusOverrides: {} as Record<string, unknown>,
   };
   function status(privateCustomer?: unknown) {
     const at = Date.parse(state.at);
-    const publicOpen = at >= Date.parse("2026-11-06T15:00:00Z");
+    const publicOpen =
+      at >= Date.parse("2026-11-06T15:00:00Z") && at < Date.parse("2026-11-06T23:00:00Z");
     const testOpen =
-      privateCustomer === tester && at >= Date.parse("2026-11-06T08:00:00Z") && !publicOpen;
+      privateCustomer === tester &&
+      at >= Date.parse(verificationWindow.startsAt) &&
+      at < Date.parse(verificationWindow.expiresAt);
     const open =
       (publicOpen || testOpen) && state.configured && ["online", "busy"].includes(state.kitchen);
     return {
       channelOpen: open,
-      guestCheckoutEligible: open && publicOpen,
+      guestCheckoutEligible: open && publicOpen && !testOpen,
       kitchen: { state: state.kitchen, collectionEstimateMinutes: 30 },
       openingOffer: {
         status: publicOpen || testOpen ? "active" : "upcoming",
@@ -61,6 +70,14 @@ function fixture() {
         timezone: "Europe/London",
         serverNow: state.at,
       },
+      ...(privateCustomer === undefined
+        ? state.publicStatusOverrides
+        : {
+            liveVerification: testOpen
+              ? { eligible: true, ...verificationWindow }
+              : { eligible: false },
+            ...state.privateStatusOverrides,
+          }),
     };
   }
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -90,7 +107,7 @@ function fixture() {
     if (name === "mealdeck_create_checkout_quote")
       return Response.json({ quoteId: id(5), totalPence: 279 });
     if (name === "account" && url.hostname === "api.stripe.com") {
-      if (state.providerCrossesCutoff) state.at = "2026-11-06T15:00:00Z";
+      if (state.providerCrossesCutoff) state.at = verificationWindow.expiresAt;
       return Response.json({ id: "acct_fixture", charges_enabled: true });
     }
     if (name === "mealdeck_prepare_stripe_order")
@@ -163,10 +180,12 @@ describe("identity-bound prelaunch availability", () => {
 
   test("another valid account cannot borrow the test account via request parameters", async () => {
     const f = fixture();
+    f.state.at = "2026-11-06T15:30:00Z";
     f.state.userId = other;
+    const runtime = { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" };
     const response = await handleOnlineCheckoutRequest(
       f.request("/api/checkout?email=test%40mealdeck.co.uk&customerId=" + tester),
-      env,
+      runtime,
       f.fetcher,
     );
     expect((await response.json()).available).toBe(false);
@@ -176,7 +195,7 @@ describe("identity-bound prelaunch availability", () => {
     f.calls.length = 0;
     const anonymous = await handleOnlineCheckoutRequest(
       f.request("/api/checkout?email=test%40mealdeck.co.uk", false),
-      env,
+      runtime,
       f.fetcher,
     );
     expect((await anonymous.json()).available).toBe(false);
@@ -186,14 +205,19 @@ describe("identity-bound prelaunch availability", () => {
   test("invalid, unverified and anonymous Auth identities do not gain early access", async () => {
     for (const change of [{ badToken: true }, { verified: false }, { anonymous: true }]) {
       const f = fixture();
+      f.state.at = "2026-11-06T15:30:00Z";
       Object.assign(f.state, change);
-      const response = await handleOnlineCheckoutRequest(f.request(), env, f.fetcher);
+      const response = await handleOnlineCheckoutRequest(
+        f.request(),
+        { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" },
+        f.fetcher,
+      );
       expect(response.status).toBe(401);
       expect(f.calls.some((c) => c.name === "mealdeck_checkout_status_for_customer")).toBe(false);
     }
   });
 
-  test("the server's 08:00–14:59:59 window hands back to public eligibility at 15:00", async () => {
+  test("public signoff uses normal public eligibility from the scheduled opening", async () => {
     const f = fixture();
     for (const [at, allowed, guest] of [
       ["2026-11-06T07:59:59Z", false, false],
@@ -216,34 +240,145 @@ describe("identity-bound prelaunch availability", () => {
   });
 
   test("operator pause/closed, missing RPC and incomplete payment configuration still close checkout", async () => {
+    const runtime = { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" };
     for (const kitchen of ["paused", "closed"]) {
       const f = fixture();
+      f.state.at = "2026-11-06T15:30:00Z";
       f.state.kitchen = kitchen;
-      const response = await handleOnlineCheckoutRequest(f.request(), env, f.fetcher);
+      const response = await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher);
       const data = await response.json();
       expect(data.available).toBe(false);
       expect(data.kitchen.state).toBe(kitchen);
       expect(f.calls.some((c) => c.name === "mealdeck_checkout_status_for_customer")).toBe(false);
     }
     const missing = fixture();
+    missing.state.at = "2026-11-06T15:30:00Z";
     missing.state.missingRpc = true;
     expect(
-      (await (await handleOnlineCheckoutRequest(missing.request(), env, missing.fetcher)).json())
-        .available,
-    ).toBe(false);
+      await (await handleOnlineCheckoutRequest(missing.request(), runtime, missing.fetcher)).json(),
+    ).toMatchObject({
+      available: false,
+      prelaunchVerification: false,
+      kitchen: { state: "online", collectionEstimateMinutes: 30 },
+      openingOffer: { status: "active" },
+    });
     for (const setting of [
       "MEALDECK_ONLINE_CHECKOUT_ENABLED",
       "MEALDECK_STRIPE_SECRET_KEY",
+      "MEALDECK_STRIPE_WEBHOOK_SECRET",
+      "MEALDECK_STRIPE_ACCOUNT_ID",
       "MEALDECK_CHECKOUT_SERVER_KEY",
     ]) {
       const f = fixture();
+      f.state.at = "2026-11-06T15:30:00Z";
       const response = await handleOnlineCheckoutRequest(
         f.request(),
-        { ...env, [setting]: "" },
+        { ...runtime, [setting]: "" },
         f.fetcher,
       );
       expect((await response.json()).available).toBe(false);
     }
+  });
+
+  test("private admission follows the database clock until its exclusive expiry", async () => {
+    const f = fixture();
+    const runtime = { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" };
+    for (const [at, admitted] of [
+      ["2026-11-06T07:59:59Z", false],
+      ["2026-11-06T08:00:00Z", true],
+      ["2026-11-06T14:59:59Z", true],
+      ["2026-11-06T15:00:00Z", true],
+      ["2026-11-06T22:59:59Z", true],
+      ["2026-11-06T23:00:00Z", false],
+    ] as const) {
+      f.state.at = at;
+      const response = await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher);
+      expect(await response.json()).toMatchObject({
+        available: admitted,
+        prelaunchVerification: admitted,
+        guestCheckout: { eligible: false },
+      });
+    }
+  });
+
+  test("an open schedule and missing, malformed or expired private evidence cannot waive signoff", async () => {
+    const runtime = { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" };
+    for (const evidence of [
+      undefined,
+      null,
+      {},
+      { eligible: false },
+      { eligible: "true", ...verificationWindow },
+      { eligible: true, expiresAt: verificationWindow.expiresAt },
+      { eligible: true, startsAt: verificationWindow.startsAt },
+      { eligible: true, ...verificationWindow, startsAt: "not-a-date" },
+      { eligible: true, ...verificationWindow, expiresAt: "not-a-date" },
+      { eligible: true, ...verificationWindow, startsAt: "2026-11-06T16:00:00Z" },
+      { eligible: true, ...verificationWindow, expiresAt: "2026-11-06T15:30:00Z" },
+      { eligible: true, ...verificationWindow, startsAt: "2026-11-06T07:00:00Z" },
+      { eligible: true, ...verificationWindow, expiresAt: "2026-11-07T00:00:00Z" },
+    ]) {
+      const f = fixture();
+      f.state.at = "2026-11-06T15:30:00Z";
+      f.state.privateStatusOverrides = { liveVerification: evidence };
+      const response = await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher);
+      expect(await response.json()).toMatchObject({
+        available: false,
+        prelaunchVerification: false,
+        guestCheckout: { eligible: false },
+        kitchen: { state: "online" },
+      });
+    }
+  });
+
+  test("verification evidence is private-only and never permits guest checkout", async () => {
+    const runtime = { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" };
+    const f = fixture();
+    f.state.at = "2026-11-06T15:30:00Z";
+    f.state.publicStatusOverrides = {
+      liveVerification: { eligible: true, ...verificationWindow },
+      guestCheckoutEligible: false,
+    };
+    const publicResponse = await handleOnlineCheckoutRequest(
+      f.request("/api/checkout", false),
+      runtime,
+      f.fetcher,
+    );
+    expect(await publicResponse.json()).toMatchObject({
+      available: false,
+      prelaunchVerification: false,
+    });
+    expect(f.calls.some((call) => call.name === "mealdeck_checkout_status_for_customer")).toBe(
+      false,
+    );
+    f.state.privateStatusOverrides = { guestCheckoutEligible: true };
+    const privateResponse = await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher);
+    expect(await privateResponse.json()).toMatchObject({
+      available: false,
+      prelaunchVerification: false,
+      guestCheckout: { eligible: false },
+    });
+  });
+
+  test("signed-off public ordering does not depend on the private verification extension", async () => {
+    const f = fixture();
+    f.state.at = "2026-11-06T15:30:00Z";
+    f.state.missingRpc = true;
+    for (const authenticated of [true, false]) {
+      const response = await handleOnlineCheckoutRequest(
+        f.request("/api/checkout", authenticated),
+        env,
+        f.fetcher,
+      );
+      expect(await response.json()).toMatchObject({
+        available: true,
+        prelaunchVerification: false,
+        guestCheckout: { eligible: true },
+      });
+    }
+    expect(f.calls.some((call) => call.name === "mealdeck_checkout_status_for_customer")).toBe(
+      false,
+    );
   });
 
   test("ordinary quote requests use the verified account, not public-only availability", async () => {
@@ -295,9 +430,10 @@ describe("identity-bound prelaunch availability", () => {
     }
   });
 
-  test("only the admitted live verification may run before public integration signoff", async () => {
+  test("only the admitted live verification may run after scheduled opening while signoff is pending", async () => {
     const runtime = { ...env, MEALDECK_CHECKOUT_INTEGRATION_APPROVED: "" };
     const f = fixture();
+    f.state.at = "2026-11-06T15:30:00Z";
     let response = await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher);
     expect(await response.json()).toMatchObject({ available: true, prelaunchVerification: true });
     const payment = { action: "pay", quoteId: id(5), attemptId: id(9), reviewConfirmed: true };
@@ -317,7 +453,7 @@ describe("identity-bound prelaunch availability", () => {
       (await (await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher)).json()).available,
     ).toBe(false);
     f.state.userId = tester;
-    f.state.at = "2026-11-06T15:00:00Z";
+    f.state.at = verificationWindow.expiresAt;
     expect(
       await (await handleOnlineCheckoutRequest(f.request(), runtime, f.fetcher)).json(),
     ).toMatchObject({ available: false, prelaunchVerification: false });
@@ -330,8 +466,9 @@ describe("identity-bound prelaunch availability", () => {
     ).toBe(false);
   });
 
-  test("provider checks crossing 15:00 cannot prepare a payment without public signoff", async () => {
+  test("provider checks crossing the private expiry cannot prepare a payment without public signoff", async () => {
     const f = fixture();
+    f.state.at = "2026-11-06T22:59:59Z";
     f.state.providerCrossesCutoff = true;
     const response = await handleOnlineCheckoutRequest(
       f.request("/api/checkout", true, {

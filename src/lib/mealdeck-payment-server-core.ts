@@ -46,7 +46,7 @@ export function paymentDatabaseError(error: unknown): CheckoutProblem {
     [
       /prelaunch_test_account_required/,
       "prelaunch_test_account_required",
-      "Public ordering opens at 3pm UK time on 6 November. Before then, use the approved test account.",
+      "This live order check is available only to the approved, verified test account.",
       403,
     ],
     [
