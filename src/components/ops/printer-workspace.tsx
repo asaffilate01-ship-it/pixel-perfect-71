@@ -892,10 +892,24 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
         </summary>
         <div className="mt-4 space-y-3">
           <p className="text-sm leading-6 md-ops-muted">
-            Install and configure the MealDeck local printer bridge on the device connected to your
-            supported receipt printer. It sends one bounded receipt and stops. Paper cutting is
-            enabled only for a configured, supported model.
+            The MealDeck local bridge connects a supported network receipt printer to a Linux or
+            macOS computer. Pair it from this app on that same computer. It sends one receipt and
+            stops; paper cutting depends on the configured printer.
           </p>
+          <details className="rounded-lg border p-3">
+            <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold">
+              Using a Senraise Android terminal?
+            </summary>
+            <p className="mt-2 text-sm leading-6 md-ops-muted">
+              Install MealDeck Printer from this page in Chrome. The PWA gives you this queue and
+              its order controls; installation alone does not connect the built-in printer.
+            </p>
+            <p className="mt-2 text-sm leading-6 md-ops-muted">
+              For manual printing, use Browser print dialog if Android lists your receipt printer.
+              Select one copy and check the paper. Automatic printing on Senraise still needs a
+              supported connection for your exact model.
+            </p>
+          </details>
           {!paired && (
             <form
               className="flex flex-wrap items-end gap-2"
@@ -905,7 +919,7 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
               }}
             >
               <label className="min-w-0 flex-1 text-sm font-bold">
-                Pairing code
+                Local bridge pairing code
                 <input
                   className="md-ops-field mt-2 w-full"
                   autoComplete="off"
@@ -920,7 +934,7 @@ function ReceiptTerminal({ scope }: { scope: PrinterScope }) {
                 type="submit"
                 disabled={busy || !pairCode.trim()}
               >
-                Pair this device
+                Pair local bridge
               </button>
             </form>
           )}

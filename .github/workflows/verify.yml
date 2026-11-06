@@ -18,7 +18,7 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - name: Launch menu prices, basket arithmetic and cross-brand choices
-        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
+        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/launch-basket-feedback.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
       - name: Launch menu and approved logo implementation lint
         run: >-
           bunx eslint src/lib/launch-menu-catalogue.ts src/lib/launch-menu-picks.ts
@@ -36,6 +36,7 @@ jobs:
           tests/launch-menu-upsells.test.ts
           tests/launch-menu-navigation.test.ts
           tests/launch-menu-display-prices.test.ts
+          tests/launch-basket-feedback.test.ts
           deploy/mealdeck/public-menu-read.mjs tests/postgres/public-menu-read-behavior.mjs
           --rule 'prettier/prettier: off'
       - name: Installable app cache isolation and offline behavior

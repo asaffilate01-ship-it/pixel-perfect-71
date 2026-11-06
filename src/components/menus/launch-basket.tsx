@@ -360,18 +360,27 @@ export function LaunchBasket({
   );
 }
 
-export function LaunchBasketDock({ count, onOpen }: { count: number; onOpen: () => void }) {
+export function LaunchBasketDock({
+  count,
+  dialogOpen,
+  onOpen,
+}: {
+  count: number;
+  dialogOpen: boolean;
+  onOpen: () => void;
+}) {
   const countLabel = count + (count === 1 ? " selection" : " selections");
 
   return (
     <>
       <div className="lmb-dock-clearance" aria-hidden="true" />
-      <div className="lmb-dock">
+      <div className="lmb-dock" hidden={dialogOpen}>
         <button
           className="lmb-dock-button"
           type="button"
           aria-label={"View basket, " + countLabel}
           aria-haspopup="dialog"
+          aria-expanded={dialogOpen}
           onClick={onOpen}
         >
           <span className="lmb-dock-icon" aria-hidden="true">
