@@ -30,6 +30,6 @@ export function receiptPromotionIndex(
   orderId: string,
 ): number;
 export function receiptPromotionForOrder(order: {
-  orderNumber?: string | null;
+  orderNumber?: string | null | undefined;
   orderId: string;
 }): ReceiptPromotion;
