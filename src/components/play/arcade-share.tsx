@@ -15,7 +15,11 @@ import {
   buildArcadeShareContent,
   type ArcadeShareRequest,
 } from "@/lib/mealdeck-arcade-sharing";
-import { createArcadeShareCard } from "@/lib/mealdeck-arcade-share-card";
+import {
+  arcadeShareCardDimensions,
+  arcadeShareCardFilename,
+  createArcadeShareCard,
+} from "@/lib/mealdeck-arcade-share-card";
 import "@/styles.mealdeck-arcade-share.css";
 
 type ShareDialogProps = {
@@ -46,7 +50,10 @@ function ShareContents({
   const id = useId();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const manualRef = useRef<HTMLTextAreaElement>(null);
-  const [card, setCard] = useState<{ file: File; url: string } | null>(null);
+  const [format, setFormat] = useState<"square" | "story">("square");
+  const [card, setCard] = useState<{ file: File; url: string; format: "square" | "story" } | null>(
+    null,
+  );
   const [cardError, setCardError] = useState(false);
   const [nativeAvailable, setNativeAvailable] = useState(false);
   const [fileShareAvailable, setFileShareAvailable] = useState(false);
@@ -57,6 +64,8 @@ function ShareContents({
   const [viewportStyle, setViewportStyle] = useState<CSSProperties>({});
   const alive = useRef(true);
   const sharing = useRef(false);
+  const currentCard = card?.format === format ? card : null;
+  const dimensions = arcadeShareCardDimensions(format);
 
   useEffect(() => {
     alive.current = true;
@@ -80,12 +89,14 @@ function ShareContents({
     setCard(null);
     setCardError(false);
     setFileShareAvailable(false);
-    void createArcadeShareCard(content, { signal: controller.signal })
+    void createArcadeShareCard(content, { signal: controller.signal, format })
       .then((blob) => {
         if (controller.signal.aborted) return;
-        const file = new File([blob], content.filename, { type: "image/png" });
+        const file = new File([blob], arcadeShareCardFilename(content, format), {
+          type: "image/png",
+        });
         objectUrl = URL.createObjectURL(blob);
-        setCard({ file, url: objectUrl });
+        setCard({ file, url: objectUrl, format });
         try {
           setFileShareAvailable(
             typeof navigator.share === "function" &&
@@ -103,7 +114,7 @@ function ShareContents({
       controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [content]);
+  }, [content, format]);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -144,15 +155,15 @@ function ShareContents({
   }
 
   async function share(withCard: boolean) {
-    if (sharing.current || (withCard && !card)) return;
+    if (sharing.current || (withCard && !currentCard)) return;
     sharing.current = true;
     setBusy(true);
     setStatus("");
     try {
       // Keep this call directly in the click handler. The card is prepared beforehand.
       await navigator.share(
-        withCard && card
-          ? { files: [card.file], title: content.title }
+        withCard && currentCard
+          ? { files: [currentCard.file], title: content.title }
           : { title: content.title, text: content.text, url: content.url },
       );
       if (alive.current) setStatus("Share options opened. Your chosen app handles the post.");
@@ -194,26 +205,53 @@ function ShareContents({
         </DialogDescription>
       </header>
       <div className="md-arcade-share__body">
-        <div className="md-arcade-share__preview" aria-busy={!card && !cardError}>
-          {card ? (
-            <img
-              src={card.url}
-              alt={`${content.gameName}. ${content.headline}. ${content.detail} ${content.context}`}
-              width={1200}
-              height={1200}
-            />
-          ) : (
+        <div className="md-arcade-share__picture">
+          <fieldset className="md-arcade-share__formats">
+            <legend>Picture format</legend>
             <div>
-              <span>MEALDECK PLAY</span>
-              <strong>{content.gameName}</strong>
-              <p>{content.headline}</p>
-              <small>
-                {cardError
-                  ? "The picture is unavailable. You can still share the message and link."
-                  : "Preparing your card…"}
-              </small>
+              <button
+                type="button"
+                aria-pressed={format === "square"}
+                disabled={busy}
+                onClick={() => setFormat("square")}
+              >
+                Square post
+              </button>
+              <button
+                type="button"
+                aria-pressed={format === "story"}
+                disabled={busy}
+                onClick={() => setFormat("story")}
+              >
+                Vertical Story
+              </button>
             </div>
-          )}
+          </fieldset>
+          <div
+            className="md-arcade-share__preview"
+            data-format={format}
+            aria-busy={!currentCard && !cardError}
+          >
+            {currentCard ? (
+              <img
+                src={currentCard.url}
+                alt={`${content.gameName}. ${content.headline}. ${content.detail} ${content.context}`}
+                width={dimensions.width}
+                height={dimensions.height}
+              />
+            ) : (
+              <div>
+                <span>MEALDECK PLAY</span>
+                <strong>{content.gameName}</strong>
+                <p>{content.headline}</p>
+                <small>
+                  {cardError
+                    ? "The picture is unavailable. You can still share the message and link."
+                    : "Preparing your card…"}
+                </small>
+              </div>
+            )}
+          </div>
         </div>
         <div className="md-arcade-share__choices">
           <div className="md-arcade-share__actions">
@@ -240,12 +278,16 @@ function ShareContents({
               <MessageCircle size={18} aria-hidden="true" /> WhatsApp
             </a>
             {fileShareAvailable && (
-              <button type="button" disabled={busy || !card} onClick={() => void share(true)}>
+              <button
+                type="button"
+                disabled={busy || !currentCard}
+                onClick={() => void share(true)}
+              >
                 <Share2 size={18} aria-hidden="true" /> Share picture
               </button>
             )}
-            {card && (
-              <a href={card.url} download={content.filename}>
+            {currentCard && (
+              <a href={currentCard.url} download={currentCard.file.name}>
                 <Download size={18} aria-hidden="true" /> Download card
               </a>
             )}
@@ -267,7 +309,10 @@ function ShareContents({
             {status}
           </p>
           <p className="md-arcade-share__tip">
-            For a Story or Status, save the card and add the copied game link in your chosen app.
+            {format === "story"
+              ? "Your Story card includes a QR code. "
+              : "Choose Vertical Story for a tall card with a QR code. "}
+            Add the copied game link in your chosen app.
           </p>
           <details
             open={showMessage}

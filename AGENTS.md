@@ -11,6 +11,13 @@
 
 <!-- LOVABLE:END -->
 
+## Games promotion and receipt QR — 7 November 2026
+
+- The owner requested the games QR immediately before the receipt footer or below the logo. The implementation uses the footer position after all purchased and packing information. Keep the fixed public destination `https://mealdeck.co.uk/play/receipt`; no order/customer data or expiring daily link belongs in that QR. Browser SVG and thermal raster are generated from the same trusted grid without changing canonical receipt payloads, fingerprints or one-copy delivery behavior.
+- `/play/<gameId>` provides the 19 allowlisted game pages; preserve old query links, validated daily date/size setup and unique canonical/social metadata. `/play/daily` is an evergreen entry whose resolved UTC puzzle stays stable during a visit. `/play/promote` prepares branded posts, Stories, QR print layouts and three captioned game-preview clips for the visitor to share manually.
+- Game sharing creates no prizes, discounts, loyalty entitlements or server-verified achievements. A completed result uses its frozen date/variant rather than borrowing the surrounding page's setup. Keep private/customer data out of public links and artwork, and keep mobile dialogs scrollable with a reachable close control.
+- Website publication updates browser receipts. A separately installed Node/TCP bridge needs its own rollout with the existing journal preserved. The offline H10S setup APK is unaffected and is not a customer receipt consumer. See `docs/mealdeck-games-growth-and-receipt-qr-20261107.md` for usage, validation, analytics limits and device acceptance.
+
 ## Customer mobile order alerts and offers — 7 November 2026
 
 - Customer web push follows verified staff acceptance, preparation, all-items-ready plus sealed packing, and confirmed handover. Payment alone must not generate “accepted”; current collection/kerbside scope remains unchanged. Driver stages have reserved display support but no active delivery event adapter.

@@ -4,6 +4,7 @@ import {
   findArcadeGames,
   parseArcadeFavourites,
   parseArcadeSearch,
+  parseArcadeSetupSearch,
   pickArcadeGame,
 } from "../src/lib/mealdeck-arcade-library";
 
@@ -45,15 +46,11 @@ describe("Arcade discovery and device preferences", () => {
   });
 
   test("sharing includes only a public game ID and an allowlisted relevant deck", () => {
-    expect(arcadeGameLink("menu-quest", "skorch")).toBe(
-      "https://mealdeck.co.uk/play?game=menu-quest",
-    );
+    expect(arcadeGameLink("menu-quest", "skorch")).toBe("https://mealdeck.co.uk/play/menu-quest");
     expect(arcadeGameLink("pairs", "skorch")).toBe(
-      "https://mealdeck.co.uk/play?game=pairs&brand=skorch",
+      "https://mealdeck.co.uk/play/pairs?brand=skorch",
     );
-    expect(arcadeGameLink("pairs", "evil&token=private")).toBe(
-      "https://mealdeck.co.uk/play?game=pairs",
-    );
+    expect(arcadeGameLink("pairs", "evil&token=private")).toBe("https://mealdeck.co.uk/play/pairs");
   });
 
   test("daily launch accepts real calendar dates only for the supported puzzle games", () => {
@@ -162,21 +159,21 @@ describe("Safe puzzle-size and daily deep links", () => {
   });
 
   test("serializes only canonical setup parameters and preserves old calls", () => {
-    expect(arcadeGameLink("pairs")).toBe("https://mealdeck.co.uk/play?game=pairs&brand=mealdeck");
+    expect(arcadeGameLink("pairs")).toBe("https://mealdeck.co.uk/play/pairs?brand=mealdeck");
     expect(arcadeGameLink("pairs", "tavo", { daily: "2026-11-07", size: 4 })).toBe(
-      "https://mealdeck.co.uk/play?game=pairs&brand=tavo",
+      "https://mealdeck.co.uk/play/pairs?brand=tavo",
     );
     expect(arcadeGameLink("bento-sudoku", "skorch", { daily: "2026-11-07", size: 6 })).toBe(
-      "https://mealdeck.co.uk/play?game=bento-sudoku&daily=2026-11-07&size=6",
+      "https://mealdeck.co.uk/play/bento-sudoku?daily=2026-11-07&size=6",
     );
     expect(arcadeGameLink("sauce-switch", undefined, { size: 3 })).toBe(
-      "https://mealdeck.co.uk/play?game=sauce-switch&size=3",
+      "https://mealdeck.co.uk/play/sauce-switch?size=3",
     );
     expect(arcadeGameLink("menu-quest", undefined, { daily: "2026-11-07", size: 8 })).toBe(
-      "https://mealdeck.co.uk/play?game=menu-quest&daily=2026-11-07",
+      "https://mealdeck.co.uk/play/menu-quest?daily=2026-11-07",
     );
     expect(arcadeGameLink("snack-trail", "mealdeck", { daily: "2026-11-07", size: 4 })).toBe(
-      "https://mealdeck.co.uk/play?game=snack-trail",
+      "https://mealdeck.co.uk/play/snack-trail",
     );
   });
 
@@ -189,12 +186,53 @@ describe("Safe puzzle-size and daily deep links", () => {
       "private-person",
     ]) {
       expect(arcadeGameLink("bento-sudoku", "mealdeck", { daily, size: 6 })).toBe(
-        "https://mealdeck.co.uk/play?game=bento-sudoku&size=6",
+        "https://mealdeck.co.uk/play/bento-sudoku?size=6",
       );
     }
     expect(arcadeGameLink("sauce-switch", undefined, { daily: "2026-11-07", size: 6 })).toBe(
-      "https://mealdeck.co.uk/play?game=sauce-switch&daily=2026-11-07",
+      "https://mealdeck.co.uk/play/sauce-switch?daily=2026-11-07",
     );
     expect(arcadeGameLink("private&token=secret" as never)).toBe("https://mealdeck.co.uk/play");
+  });
+});
+
+describe("Canonical game pages and legacy incoming links", () => {
+  test("the public path selects the game without accepting a query-string override", () => {
+    const setup = parseArcadeSetupSearch({
+      game: "snack-trail",
+      daily: "2028-02-29",
+      size: "6",
+      token: "private",
+    });
+    expect(setup).toEqual({ daily: "2028-02-29", size: 6 });
+    expect(parseArcadeSearch({ ...setup, game: "bento-sudoku" })).toEqual({
+      game: "bento-sudoku",
+      daily: "2028-02-29",
+      size: 6,
+    });
+    expect(parseArcadeSearch({ ...setup, game: "sauce-switch" })).toEqual({
+      game: "sauce-switch",
+      daily: "2028-02-29",
+    });
+  });
+
+  test("old game/date/size URLs resolve to the same public setup as canonical links", () => {
+    for (const [game, size] of [
+      ["sauce-switch", 3],
+      ["sauce-switch", 4],
+      ["bento-sudoku", 4],
+      ["bento-sudoku", 6],
+    ] as const) {
+      const old = new URL(`https://mealdeck.co.uk/play?game=${game}&daily=2026-11-07&size=${size}`);
+      const canonical = new URL(arcadeGameLink(game, undefined, { daily: "2026-11-07", size }));
+      expect(parseArcadeSearch(Object.fromEntries(old.searchParams))).toEqual(
+        parseArcadeSearch({
+          ...Object.fromEntries(canonical.searchParams),
+          game: canonical.pathname.split("/").at(-1),
+        }),
+      );
+      expect(canonical.pathname).toBe(`/play/${game}`);
+      expect(canonical.searchParams.has("game")).toBe(false);
+    }
   });
 });

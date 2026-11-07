@@ -1,4 +1,5 @@
 import { posts } from "./blog";
+import { ARCADE_GAME_PAGES } from "./mealdeck-arcade-pages";
 import { FRANCHISE_BRAND_IDS } from "./franchise-selection";
 import { canonicalUrl, isPrivateSeoPath } from "./seo";
 
@@ -14,6 +15,10 @@ export const MEALDECK_PUBLIC_PATHS = [
   "/opening-offer",
   "/meta-ad",
   "/play",
+  "/play/daily",
+  "/play/receipt",
+  "/play/promote",
+  ...ARCADE_GAME_PAGES.map((game) => game.path),
   "/privacy",
   "/franchise",
   ...FRANCHISE_BRAND_IDS.map((id) => `/franchise/${id}`),

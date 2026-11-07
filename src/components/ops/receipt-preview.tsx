@@ -6,6 +6,7 @@ import {
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { receiptLogoSource } from "@/lib/mealdeck-receipt-logo";
+import { receiptGamesQr } from "@/lib/mealdeck-receipt-games";
 export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
   const number = orderDisplayNumber(r.orderNumber, "");
   const ordered = r.items
@@ -133,6 +134,28 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
           <dd>{money(r.totalPence)}</dd>
         </div>
       </dl>
+      <section className="md-receipt-games" aria-label="Free MealDeck games">
+        <p className="md-receipt-games__heading">{receiptGamesQr.heading}</p>
+        <p className="md-receipt-games__copy">{receiptGamesQr.subtitle}</p>
+        <svg
+          className="md-receipt-games__qr"
+          data-receipt-games-qr
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox={`0 0 ${receiptGamesQr.gridSize} ${receiptGamesQr.gridSize}`}
+          width={164}
+          height={164}
+          role="img"
+          aria-label="QR code for free food games at mealdeck.co.uk/play"
+          focusable="false"
+          shapeRendering="crispEdges"
+        >
+          <rect width={receiptGamesQr.gridSize} height={receiptGamesQr.gridSize} fill="#fff" />
+          <path d={receiptGamesQr.svgPath} fill="#000" />
+        </svg>
+        <a className="md-receipt-games__url" href={receiptGamesQr.targetUrl}>
+          {receiptGamesQr.displayUrl}
+        </a>
+      </section>
       <footer className="border-t border-dashed border-black pt-3 text-center text-xs">
         <p>MealDeck is a trading name of 313 Brands Ltd.</p>
         <p>mealdeck.co.uk · Powered by Dishbee</p>

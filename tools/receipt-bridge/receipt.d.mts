@@ -73,6 +73,7 @@ export class ReceiptError extends Error {
 }
 export function validateReceipt(input: unknown): MealDeckReceipt;
 export function encodeReceiptLogo(): Uint8Array;
+export function encodeReceiptGamesQr(): Uint8Array;
 export function encodeReceipt(
   input: unknown,
   profile?: PrinterProfile,

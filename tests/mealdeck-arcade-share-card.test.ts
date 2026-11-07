@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
   ARCADE_SHARE_CARD_SIZE,
+  arcadeShareCardDimensions,
+  arcadeShareCardFilename,
   containArcadeShareArtwork,
   createArcadeShareCard,
   wrapArcadeShareText,
@@ -103,6 +105,18 @@ describe("Arcade share-card bounded text", () => {
 });
 
 describe("Arcade share-card artwork bounds", () => {
+  test("square, Story and print exports have fixed bounded dimensions and distinct download names", () => {
+    expect(arcadeShareCardDimensions()).toEqual({ width: 1200, height: 1200 });
+    expect(arcadeShareCardDimensions("story")).toEqual({ width: 1080, height: 1920 });
+    expect(arcadeShareCardDimensions("poster")).toEqual({ width: 1240, height: 1754 });
+    expect(arcadeShareCardFilename(content)).toBe(content.filename);
+    expect(arcadeShareCardFilename(content, "story")).toBe("mealdeck-snack-trail-story.png");
+    expect(arcadeShareCardFilename(content, "poster")).toBe("mealdeck-snack-trail-poster.png");
+    expect(() => arcadeShareCardDimensions("arbitrary" as "story")).toThrow(
+      "supported picture format",
+    );
+  });
+
   test("uses a square post size and contains the full approved logo ratio", () => {
     expect(ARCADE_SHARE_CARD_SIZE).toBe(1200);
     const box = { x: 78, y: 64, width: 188, height: 190 };

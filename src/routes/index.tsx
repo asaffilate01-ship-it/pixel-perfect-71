@@ -30,6 +30,7 @@ import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { ldScript, orgJsonLd, seo, SITE_DESCRIPTION } from "@/lib/seo";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
+import { GAME_CATALOGUE } from "@/lib/dishbee-play";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -67,7 +68,11 @@ const directBenefits = [
     title: "Double points offer",
     copy: "Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive.",
   },
-  { icon: MapPin, title: "Delivery tracking · Coming soon", copy: "Collection progress is on your order confirmation page." },
+  {
+    icon: MapPin,
+    title: "Delivery tracking · Coming soon",
+    copy: "Collection progress is on your order confirmation page.",
+  },
 ];
 
 const steps = [
@@ -126,7 +131,9 @@ function LandingPage() {
                   See all brands
                 </Link>
               </div>
-              <p className="md-hero-soon">Luton collection and kerbside, from our kitchen to you.</p>
+              <p className="md-hero-soon">
+                Luton collection and kerbside, from our kitchen to you.
+              </p>
               <div className="md-hero-proof">
                 <span>
                   <Check /> Mix brands
@@ -488,10 +495,14 @@ function LandingPage() {
             <Link to="/account" className="md-btn md-btn-yellow">
               Get your account ready <Crown />
             </Link>
-            <Link to="/play" className="md-btn md-btn-outline-light">
-              Play free games
+            <Link to="/play/daily" className="md-btn md-btn-outline-light">
+              Try today’s free puzzle <Gamepad2 aria-hidden="true" />
             </Link>
           </div>
+          <p>
+            A fresh challenge every day.{" "}
+            <Link to="/play">Explore all {GAME_CATALOGUE.length} free food games</Link>.
+          </p>
         </section>
       </main>
       <SiteFooter />

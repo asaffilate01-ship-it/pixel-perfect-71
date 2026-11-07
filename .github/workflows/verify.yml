@@ -76,7 +76,9 @@ jobs:
           tests/mealdeck-staff-alert-delivery.test.ts
           tests/mealdeck-staff-alert-controls.test.tsx
       - name: Receipt bridge one-copy delivery, pairing and canonical order verification
-        run: node --test tools/receipt-bridge/test/*.test.mjs
+        run: |
+          node tools/receipt-bridge/build-games-qr.mjs --check
+          node --test tools/receipt-bridge/test/*.test.mjs
       - name: Receipt bridge and printer terminal implementation lint
         run: >-
           bunx eslint tools/receipt-bridge src/routes/printer.tsx
@@ -93,6 +95,7 @@ jobs:
           src/lib/mealdeck-staff-vibration.ts tests/mealdeck-staff-vibration.test.ts
           tests/mealdeck-staff-alert-delivery.test.ts tests/mealdeck-staff-alert-controls.test.tsx
           src/lib/mealdeck-receipt-logo.ts src/lib/mealdeck-meal-components.ts
+          src/lib/mealdeck-receipt-games.ts
           tests/mealdeck-staff-alerts.test.ts
           --rule 'prettier/prettier: off'
       - name: Customer launch implementation lint
@@ -135,7 +138,7 @@ jobs:
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - name: MealDeck Play game regressions
-        run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts tests/bento-sudoku.test.ts tests/tray-lines.test.ts tests/mealdeck-play-progress.test.ts tests/snack-trail.test.ts tests/skewer-sort.test.ts tests/pantry-sweep.test.ts tests/mealdeck-arcade-sharing.test.ts tests/mealdeck-arcade-share-card.test.ts tests/hero-food-deck.test.ts
+        run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts tests/bento-sudoku.test.ts tests/tray-lines.test.ts tests/mealdeck-play-progress.test.ts tests/snack-trail.test.ts tests/skewer-sort.test.ts tests/pantry-sweep.test.ts tests/mealdeck-arcade-sharing.test.ts tests/mealdeck-arcade-share-card.test.ts tests/mealdeck-arcade-pages.test.ts tests/mealdeck-arcade-promotion.test.ts tests/mealdeck-arcade-qr.test.ts tests/hero-food-deck.test.ts
       - name: Homepage motion, native zoom and lifecycle cleanup
         run: |
           bun test tests/deck-motion.test.ts
@@ -215,6 +218,11 @@ jobs:
           tests/snack-trail.test.ts tests/skewer-sort.test.ts tests/pantry-sweep.test.ts
           src/lib/mealdeck-arcade-sharing.ts src/lib/mealdeck-arcade-share-card.ts src/components/play/arcade-share.tsx
           tests/mealdeck-arcade-sharing.test.ts tests/mealdeck-arcade-share-card.test.ts
+          src/components/play/arcade-page.tsx src/components/play/arcade-promotion-kit.tsx
+          src/lib/mealdeck-arcade-pages.ts src/lib/mealdeck-arcade-promotion.ts src/lib/mealdeck-arcade-qr.ts
+          'src/routes/play_.$gameId.tsx' src/routes/play_.daily.tsx src/routes/play_.receipt.tsx src/routes/play_.promote.tsx
+          tests/mealdeck-arcade-pages.test.ts tests/mealdeck-arcade-promotion.test.ts tests/mealdeck-arcade-qr.test.ts
+          tools/games-promotion/create-manifest.ts
           --rule 'prettier/prettier: off'
 
       - name: Marketplace ordering lint
