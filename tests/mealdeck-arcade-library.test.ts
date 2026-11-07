@@ -10,8 +10,14 @@ import {
 describe("Arcade discovery and device preferences", () => {
   test("combines collection, category and all search words", () => {
     expect(findArcadeGames("", "All games", "new").map((game) => game.id)).toEqual([
-      "bento-sudoku",
-      "tray-lines",
+      "snack-trail",
+      "skewer-sort",
+      "pantry-sweep",
+    ]);
+    expect(findArcadeGames("", "Quick play").map((game) => game.id)).toEqual(["snack-trail"]);
+    expect(findArcadeGames("", "Puzzles", "new").map((game) => game.id)).toEqual([
+      "skewer-sort",
+      "pantry-sweep",
     ]);
     expect(findArcadeGames("chef friend", "Strategy", "two-player").map((game) => game.id)).toEqual(
       ["tray-lines", "tray-tactics", "four-to-feast"],
@@ -84,10 +90,10 @@ describe("Arcade discovery and device preferences", () => {
 
   test("pick-for-me stays within the filtered collection and offers another game", () => {
     const games = findArcadeGames("", "All games", "new");
-    expect(pickArcadeGame(games, "bento-sudoku", () => 0)).toBe("tray-lines");
-    expect(pickArcadeGame(games, "tray-lines", () => 0.99)).toBe("bento-sudoku");
-    expect(pickArcadeGame(games, "pairs", () => 0)).toBe("bento-sudoku");
-    expect(pickArcadeGame(games, "pairs", () => 1)).toBe("tray-lines");
+    expect(pickArcadeGame(games, "snack-trail", () => 0)).toBe("skewer-sort");
+    expect(pickArcadeGame(games, "skewer-sort", () => 0.99)).toBe("pantry-sweep");
+    expect(pickArcadeGame(games, "pairs", () => 0)).toBe("snack-trail");
+    expect(pickArcadeGame(games, "pairs", () => 1)).toBe("pantry-sweep");
     expect(pickArcadeGame([], "pairs")).toBeNull();
     expect(pickArcadeGame([{ id: "pairs" }], "pairs")).toBe("pairs");
   });

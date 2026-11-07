@@ -3,6 +3,7 @@ import { GAME_CATALOGUE, isBrandTheme, type BrandTheme, type SuitArt } from "@/l
 export type ArcadeGameId = (typeof GAME_CATALOGUE)[number]["id"];
 export const ARCADE_CATEGORIES = [
   "All games",
+  "Quick play",
   "Strategy",
   "Memory",
   "Puzzles",
@@ -18,7 +19,11 @@ export const ARCADE_COLLECTIONS = [
   { id: "daily", label: "Daily puzzles" },
 ] as const;
 export type ArcadeCollection = (typeof ARCADE_COLLECTIONS)[number]["id"];
-export const NEW_ARCADE_GAMES: readonly ArcadeGameId[] = ["bento-sudoku", "tray-lines"];
+export const NEW_ARCADE_GAMES: readonly ArcadeGameId[] = [
+  "snack-trail",
+  "skewer-sort",
+  "pantry-sweep",
+];
 const TWO_PLAYER_GAMES: readonly ArcadeGameId[] = ["four-to-feast", "tray-tactics", "tray-lines"];
 const DAILY_GAMES: readonly ArcadeGameId[] = [
   "kitchen-shuffle",
@@ -36,6 +41,9 @@ const gameDetails: Record<
     art: SuitArt;
   }
 > = {
+  "snack-trail": { category: "Quick play", players: "Solo", art: "burger" },
+  "skewer-sort": { category: "Puzzles", players: "Solo", art: "chicken" },
+  "pantry-sweep": { category: "Puzzles", players: "Solo", art: "fries" },
   "bento-sudoku": { category: "Puzzles", players: "Solo", art: "chicken" },
   "tray-lines": { category: "Strategy", players: "1–2 players", art: "burger" },
   "sauce-switch": { category: "Puzzles", players: "Solo", art: "fries" },

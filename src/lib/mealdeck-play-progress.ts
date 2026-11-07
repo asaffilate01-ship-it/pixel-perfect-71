@@ -12,6 +12,9 @@ export const ARCADE_TRACKED_GAMES = [
   { id: "tray-tactics", name: "Tray Tactics" },
   { id: "bento-sudoku", name: "Bento Sudoku" },
   { id: "tray-lines", name: "Tray Lines" },
+  { id: "snack-trail", name: "Snack Trail" },
+  { id: "skewer-sort", name: "Skewer Sort" },
+  { id: "pantry-sweep", name: "Pantry Sweep" },
 ] as const;
 export type TrackedArcadeGame = (typeof ARCADE_TRACKED_GAMES)[number]["id"];
 
@@ -29,6 +32,8 @@ export type ArcadeCompletion = {
   result: ArcadeResult;
   moves?: number;
   hints?: number;
+  /** Food collected in Snack Trail; this is a local game score only. */
+  score?: number;
   /** The UTC puzzle date frozen when the player starts, not the completion date. */
   dailyDate?: string;
   variant?: string;
@@ -104,7 +109,15 @@ export function parseArcadeCompletion(value: unknown): ArcadeCompletion | null {
   )
     return null;
   if (isDailyGame(value["game"]) && value["result"] !== "completed") return null;
-  for (const key of ["moves", "hints"] as const) {
+  if (value["game"] === "skewer-sort" && value["result"] !== "completed") return null;
+  if (
+    (value["game"] === "snack-trail" || value["game"] === "pantry-sweep") &&
+    value["result"] !== "win" &&
+    value["result"] !== "loss"
+  )
+    return null;
+  if (value["score"] !== undefined && value["game"] !== "snack-trail") return null;
+  for (const key of ["moves", "hints", "score"] as const) {
     if (
       value[key] !== undefined &&
       (typeof value[key] !== "number" ||
@@ -130,9 +143,22 @@ export function parseArcadeCompletion(value: unknown): ArcadeCompletion | null {
     result: value["result"] as ArcadeResult,
     ...(value["moves"] !== undefined ? { moves: value["moves"] as number } : {}),
     ...(value["hints"] !== undefined ? { hints: value["hints"] as number } : {}),
+    ...(value["score"] !== undefined ? { score: value["score"] as number } : {}),
     ...(value["dailyDate"] !== undefined ? { dailyDate: value["dailyDate"] as string } : {}),
     ...(value["variant"] !== undefined ? { variant: value["variant"] as string } : {}),
   };
+}
+
+export function arcadeCompletionLabel(round: Pick<ArcadeCompletion, "game" | "result">): string {
+  if (round.game === "snack-trail")
+    return round.result === "win" ? "Tray filled" : "Round finished";
+  if (round.game === "pantry-sweep")
+    return round.result === "win" ? "Pantry cleared" : "Chilli found";
+  if (round.game === "skewer-sort") return "Skewers sorted";
+  if (round.result === "win") return "Win";
+  if (round.result === "loss") return "Chef won";
+  if (round.result === "draw") return "Draw";
+  return "Completed";
 }
 
 function compareRounds(a: ArcadeRoundRecord, b: ArcadeRoundRecord): number {
