@@ -4,14 +4,8 @@
 .md-receipt-preview {
   overflow-wrap: anywhere;
 }
-.md-receipt-summary {
-  /* Keep the paid total and QR on the same printed fragment. */
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-.md-receipt-games {
-  break-inside: avoid;
-  page-break-inside: avoid;
+.md-receipt-promotion {
+  /* Let this section follow PAID instead of jumping as a block to the next page. */
   border-top: 1px dashed #000;
   margin-top: 2px;
   padding-top: 0;
@@ -19,18 +13,20 @@
   background: #fff;
   text-align: center;
 }
-.md-receipt-games__heading {
+.md-receipt-promotion__heading {
   font-size: 0.875rem;
   font-weight: 800;
   line-height: 1.4;
 }
-.md-receipt-games__copy {
+.md-receipt-promotion__copy {
   margin-top: 0;
   font-size: 0.75rem;
   line-height: 1.45;
 }
-.md-receipt-games__qr {
+.md-receipt-promotion__art {
   display: block;
+  break-inside: avoid;
+  page-break-inside: avoid;
   width: 164px;
   max-width: 100%;
   height: auto;
@@ -39,14 +35,22 @@
   print-color-adjust: exact;
   forced-color-adjust: none;
 }
-.md-receipt-games__url {
+.md-receipt-promotion__art--brand {
+  width: 224px;
+}
+.md-receipt-promotion__url {
   display: block;
   color: #000;
   font-size: 0.75rem;
   line-height: 1.45;
   text-decoration: none;
 }
-.md-receipt-games__url:focus-visible {
+.md-receipt-promotion__link {
+  color: inherit;
+  text-decoration: none;
+}
+.md-receipt-promotion__url:focus-visible,
+.md-receipt-promotion__link:focus-visible {
   outline: 2px solid #000;
   outline-offset: 3px;
 }
@@ -330,16 +334,19 @@
   .md-printer-print-only li {
     break-inside: avoid;
   }
-  .md-printer-print-only .md-receipt-games__qr {
+  .md-printer-print-only .md-receipt-promotion__art--qr {
     /* One millimetre per module, including the full four-module quiet zone.
        Fits the 48mm printable area common to 58mm receipt rolls. */
     width: 41mm;
   }
-  .md-printer-print-only .md-receipt-games__heading {
+  .md-printer-print-only .md-receipt-promotion__art--brand {
+    width: 42mm;
+  }
+  .md-printer-print-only .md-receipt-promotion__heading {
     font-size: 9pt;
   }
-  .md-printer-print-only .md-receipt-games__copy,
-  .md-printer-print-only .md-receipt-games__url {
+  .md-printer-print-only .md-receipt-promotion__copy,
+  .md-printer-print-only .md-receipt-promotion__url {
     font-size: 8pt;
   }
   @page {

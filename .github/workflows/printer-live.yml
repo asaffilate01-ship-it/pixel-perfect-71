@@ -5,9 +5,14 @@ on:
     paths:
       - "apps/mealdeck-printer/**"
       - "tools/receipt-bridge/receipt.mjs"
+      - "tools/receipt-bridge/receipt-games-qr.mjs"
+      - "tools/receipt-bridge/receipt-promotion*.mjs"
+      - "tools/receipt-bridge/build-receipt-promotions.mjs"
+      - "tools/receipt-bridge/build-promotion-logos.py"
+      - "tools/receipt-bridge/assets/receipt-promo-*.png"
       - "tools/receipt-bridge/test/fixtures.mjs"
       - "tools/receipt-bridge/assets/mealdeck-thermal-logo.png"
-      - "src/assets/approved-logos/mealdeck.webp"
+      - "src/assets/approved-logos/**"
       - ".github/workflows/printer-live.yml"
   workflow_dispatch:
 
@@ -18,7 +23,7 @@ jobs:
   printer-live-android:
     name: H10S receipt companion Android build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: apps/mealdeck-printer
@@ -44,6 +49,7 @@ jobs:
           npm run test:web
           npm run test:native-core
           node native/generate-receipt-fixtures.mjs --check
+          node native/generate-receipt-games-qr.mjs --check
       - name: Bundle the local operator screen and verify boundaries
         run: |
           npm run sync:android
@@ -53,18 +59,53 @@ jobs:
       - name: Compile the non-debuggable release APK
         working-directory: apps/mealdeck-printer/android
         run: ./gradlew :app:testDebugUnitTest :app:assembleRelease --no-daemon --stacktrace
+      - name: Enable emulator hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify all receipt promotions and bitmap plus final feed on Android 13
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          working-directory: apps/mealdeck-printer/android
+          # A single shell invocation retains the test failure while collecting
+          # synthetic receipt PNGs. Keep APKs installed until cache is pulled.
+          script: >-
+            receipt_test_status=0;
+            ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace
+            -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true || receipt_test_status=$?;
+            mkdir -p ../dist/receipt-render-tests;
+            adb root && adb wait-for-device &&
+            adb pull /data/user/0/uk.co.mealdeck.printer/cache/receipt-render-tests/. ../dist/receipt-render-tests/
+            || receipt_test_status=1;
+            exit "$receipt_test_status"
+      - name: Upload Android receipt evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-printer-android-receipt-tests
+          path: |
+            apps/mealdeck-printer/dist/receipt-render-tests/
+            apps/mealdeck-printer/android/app/build/reports/androidTests/connected/
+            apps/mealdeck-printer/android/app/build/outputs/androidTest-results/connected/
+          retention-days: 30
+          if-no-files-found: warn
       - name: Prepare the unsigned release for private signing
         run: |
           mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk dist/mealdeck-printer-h10s-0.2.0-unsigned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions dist/mealdeck-printer-h10s-0.2.0-unsigned.apk > dist/permissions.txt
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/mealdeck-printer-h10s-0.2.0-unsigned.apk > dist/package.txt
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk dist/mealdeck-printer-h10s-0.2.2-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions dist/mealdeck-printer-h10s-0.2.2-unsigned.apk > dist/permissions.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/mealdeck-printer-h10s-0.2.2-unsigned.apk > dist/package.txt
           if rg 'application-debuggable' dist/package.txt; then
             echo "Release APK must not be debuggable"
             exit 1
           fi
           cd dist
-          sha256sum mealdeck-printer-h10s-0.2.0-unsigned.apk > SHA256SUMS.txt
+          sha256sum mealdeck-printer-h10s-0.2.2-unsigned.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: mealdeck-printer-h10s-release-unsigned

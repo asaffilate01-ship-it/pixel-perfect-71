@@ -1318,7 +1318,7 @@ function ReceiptTerminal({
       {printJob &&
         createPortal(
           <div className="md-printer-print-only">
-            <ReceiptPreview receipt={printJob.receipt} />
+            <ReceiptPreview receipt={printJob.receipt} customerPhone={printJob.receiptContact?.customerPhone ?? null} />
           </div>,
           document.body,
         )}
@@ -1390,7 +1390,7 @@ function ReceiptJobCard({
         <button type="button" onClick={onPreview} className="min-h-11 text-sm font-bold underline">
           {showing ? "Hide itemised receipt" : "View items, extras and bag numbers"}
         </button>
-        {showing && <ReceiptPreview receipt={job.receipt} />}
+        {showing && <ReceiptPreview receipt={job.receipt} customerPhone={job.receiptContact?.customerPhone ?? null} />}
         {job.status === "queued" && (
           <div className="flex flex-wrap gap-2">
             <button

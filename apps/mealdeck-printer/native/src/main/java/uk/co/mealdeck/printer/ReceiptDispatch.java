@@ -10,7 +10,10 @@ final class ReceiptDispatch {
         void finish(String jobId, String outcome);
     }
     interface Permit { boolean begin(); boolean continuing(); }
-    interface Transport { void send(Permit permit) throws Exception; }
+    interface Transport extends AutoCloseable {
+        void send(Permit permit) throws Exception;
+        @Override default void close() {}
+    }
     interface Cancellation { void cancel(); }
     interface Deadlines { Cancellation schedule(Runnable work, long delayMs); }
     private final Journal journal;
@@ -39,7 +42,10 @@ final class ReceiptDispatch {
         try {
             attempt.deadline = deadlines.schedule(() -> expire(attempt), 30_000);
             worker.execute(() -> run(attempt, transport));
-        } catch (RuntimeException ignored) { finish(attempt, false); }
+        } catch (RuntimeException ignored) {
+            // No worker owns the prepared receipt if scheduling was rejected.
+            try { transport.close(); } finally { finish(attempt, false); }
+        }
         return attempt.result;
     }
 
@@ -66,7 +72,10 @@ final class ReceiptDispatch {
             returned = true;
         } catch (Exception | LinkageError | OutOfMemoryError ignored) {
             // Vendor exception strings and receipt details never leave native code.
-        } finally { finish(attempt, returned); }
+        } finally {
+            // A timeout must not recycle a bitmap/parcel still used by Binder.
+            try { transport.close(); } finally { finish(attempt, returned); }
+        }
     }
 
     private synchronized void expire(Active attempt) {

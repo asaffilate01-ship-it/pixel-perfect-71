@@ -15,7 +15,7 @@ final class PrinterApi {
     static final String ORIGIN = "https://srsxybepwujuawyutnbs.supabase.co";
     static final String CONFIG = "https://mealdeck.co.uk/api/printer/config";
     private static final Set<String> RPCS = Set.of("mealdeck_printer_my_access", "mealdeck_printer_board",
-        "mealdeck_printer_claim_job", "mealdeck_printer_begin_send", "mealdeck_printer_claim_receipt",
+        "mealdeck_printer_claim_job", "mealdeck_printer_begin_send", "mealdeck_printer_claim_receipt", "mealdeck_printer_claim_contact",
         "mealdeck_printer_send_result", "mealdeck_printer_confirm_paper");
     private final SessionVault vault;
     private String publicKey;

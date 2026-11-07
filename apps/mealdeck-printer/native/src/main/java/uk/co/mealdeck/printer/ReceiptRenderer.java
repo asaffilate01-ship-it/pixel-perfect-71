@@ -7,85 +7,145 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import java.util.EnumMap;
+import java.util.Map;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-/** Renders one validated receipt into bounded Binder-safe monochrome strips.
- * There is no remote image, caller-provided raster or printer opcode input. */
+/** Renders the complete validated receipt before one shared-memory Bitmap IPC.
+ * Only the bundled approved logo and fixed public games grid are accepted. */
 public final class ReceiptRenderer {
-    public static final int WIDTH = 384;
-    public static final int MAX_STRIP_HEIGHT = 384;
-    public static final int MAX_HEIGHT = 16_000;
-    private static final int LINE_HEIGHT = 24;
-    private static final int TOP = 8;
-    private static final int LOGO_HEIGHT = 258;
-    private static final int TEXT_TOP = TOP + LOGO_HEIGHT + 12;
-    private static final int FINAL_BLANK_LINES = 3;
-
+    public static final int WIDTH = ReceiptLayout.WIDTH;
+    public static final int MAX_HEIGHT = ReceiptLayout.MAX_HEIGHT;
     private ReceiptRenderer() {}
 
     public static final class RenderedReceipt {
-        public final List<Bitmap> strips;
+        public final Bitmap bitmap;
         public final int width;
         public final int totalHeight;
         public final int lineCount;
-
-        private RenderedReceipt(List<Bitmap> strips, int height, int lineCount) {
-            this.strips = Collections.unmodifiableList(new ArrayList<>(strips));
-            this.width = WIDTH;
-            this.totalHeight = height;
-            this.lineCount = lineCount;
+        private RenderedReceipt(Bitmap bitmap, ReceiptLayout layout) {
+            this.bitmap = bitmap;
+            width = layout.width;
+            totalHeight = layout.totalHeight;
+            lineCount = layout.lineCount;
         }
-        public void recycle() {
-            for (Bitmap strip : strips) if (!strip.isRecycled()) strip.recycle();
-        }
+        public void recycle() { if (!bitmap.isRecycled()) bitmap.recycle(); }
     }
 
-    /** Finishes all validation and allocation before returning any strip to dispatch. */
-    public static RenderedReceipt render(Context context, ReceiptModel model) {
-        List<String> lines = ReceiptText.layout(model);
-        int height = TEXT_TOP + (lines.size() + FINAL_BLANK_LINES) * LINE_HEIGHT;
-        if (height > MAX_HEIGHT) throw new IllegalArgumentException("receipt_too_long");
-        Paint text = new Paint();
-        text.setColor(Color.BLACK);
-        text.setTypeface(Typeface.MONOSPACE);
-        text.setTextSize(18f);
-        text.setAntiAlias(false);
-        text.setDither(false);
-        // Typeface metrics are verified before dispatch rather than clipping a long line.
-        for (String line : lines) if (text.measureText(line) > WIDTH - 24) throw new IllegalArgumentException("receipt_layout_unavailable");
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inScaled = false;
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        Bitmap logo = BitmapFactory.decodeResource(context.getResources(), R.drawable.mealdeck_thermal_logo, options);
-        if (logo == null || logo.getWidth() != 256 || logo.getHeight() != LOGO_HEIGHT) {
-            if (logo != null) logo.recycle();
-            throw new IllegalArgumentException("invalid_fixed_receipt_logo");
+    private static Map<ReceiptLayout.Style, Paint> paints() {
+        Map<ReceiptLayout.Style, Paint> paints = new EnumMap<>(ReceiptLayout.Style.class);
+        for (ReceiptLayout.Style style : ReceiptLayout.Style.values()) {
+            Paint paint = new Paint();
+            paint.setColor(Color.BLACK);
+            paint.setTypeface(Typeface.create(Typeface.MONOSPACE, style.bold ? Typeface.BOLD : Typeface.NORMAL));
+            paint.setTextSize(style.textSize);
+            paint.setAntiAlias(false);
+            paint.setDither(false);
+            paints.put(style, paint);
         }
-        List<Bitmap> strips = new ArrayList<>();
-        try {
-            Paint bitmapPaint = new Paint();
-            bitmapPaint.setFilterBitmap(false);
-            bitmapPaint.setDither(false);
-            for (int y = 0; y < height; y += MAX_STRIP_HEIGHT) {
-                int stripHeight = Math.min(MAX_STRIP_HEIGHT, height - y);
-                Bitmap strip = Bitmap.createBitmap(WIDTH, stripHeight, Bitmap.Config.ARGB_8888);
-                strips.add(strip);
-                Canvas canvas = new Canvas(strip);
-                canvas.drawColor(Color.WHITE);
-                canvas.translate(0, -y);
-                if (y < TOP + LOGO_HEIGHT) canvas.drawBitmap(logo, (WIDTH - logo.getWidth()) / 2f, TOP, bitmapPaint);
-                int first = Math.max(0, (y - TEXT_TOP) / LINE_HEIGHT - 1);
-                int last = Math.min(lines.size(), (y + stripHeight - TEXT_TOP) / LINE_HEIGHT + 2);
-                for (int n = first; n < last; n++) canvas.drawText(lines.get(n), 12, TEXT_TOP + n * LINE_HEIGHT + 18, text);
-                if (strip.getByteCount() > 589_824) throw new IllegalArgumentException("receipt_strip_too_large");
+        return paints;
+    }
+
+    /** The same measured display list is available to Android raster acceptance tests. */
+    static ReceiptLayout layout(ReceiptModel model) { return layout(model, paints(), null); }
+
+    static ReceiptLayout layout(ReceiptModel model, String customerPhone) { return layout(model, paints(), customerPhone); }
+
+    private static ReceiptLayout layout(ReceiptModel model, Map<ReceiptLayout.Style, Paint> paints, String customerPhone) {
+        return ReceiptLayout.build(model, new ReceiptLayout.TextMeasurer() {
+            @Override public float width(String text, ReceiptLayout.Style style) {
+                return paints.get(style).measureText(text);
             }
-            return new RenderedReceipt(strips, height, lines.size());
+            @Override public int lineHeight(ReceiptLayout.Style style) {
+                Paint.FontMetricsInt metrics = paints.get(style).getFontMetricsInt();
+                return Math.max(style.minimumLineHeight, metrics.bottom - metrics.top + 2);
+            }
+        }, customerPhone);
+    }
+
+    /** Validation, full allocation, drawing and sharing all complete before dispatch. */
+    public static RenderedReceipt render(Context context, ReceiptModel model) {
+        return render(context, model, null);
+    }
+
+    public static RenderedReceipt render(Context context, ReceiptModel model, String customerPhone) {
+        Bitmap logo = null;
+        Bitmap promotion = null;
+        Bitmap raster = null;
+        Bitmap shared = null;
+        try {
+            Map<ReceiptLayout.Style, Paint> paints = paints();
+            ReceiptLayout layout = layout(model, paints, customerPhone);
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inScaled = false;
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            logo = BitmapFactory.decodeResource(context.getResources(), R.drawable.mealdeck_thermal_logo, options);
+            if (logo == null || logo.getWidth() != ReceiptLayout.LOGO_WIDTH || logo.getHeight() != ReceiptLayout.LOGO_HEIGHT)
+                throw new IllegalArgumentException("invalid_fixed_receipt_logo");
+            // The resource name and dimensions come only from the generated,
+            // sealed eight-slot catalogue; no receipt supplies image data.
+            int resource = context.getResources().getIdentifier(layout.promotion.resourceName, "drawable", context.getPackageName());
+            if (resource == 0) throw new IllegalArgumentException("invalid_fixed_receipt_promotion");
+            promotion = BitmapFactory.decodeResource(context.getResources(), resource, options);
+            if (promotion == null || promotion.getWidth() != layout.promotion.width || promotion.getHeight() != layout.promotion.height)
+                throw new IllegalArgumentException("invalid_fixed_receipt_promotion");
+
+            raster = Bitmap.createBitmap(WIDTH, layout.totalHeight, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(raster);
+            canvas.drawColor(Color.WHITE);
+            Paint ink = new Paint();
+            ink.setColor(Color.BLACK);
+            ink.setAntiAlias(false);
+            ink.setDither(false);
+            ink.setFilterBitmap(false);
+            for (ReceiptLayout.Element element : layout.elements) {
+                switch (element.kind) {
+                    case TEXT:
+                        Paint text = paints.get(element.style);
+                        Paint.FontMetricsInt metrics = text.getFontMetricsInt();
+                        float baseline = element.y + (element.height - (metrics.bottom - metrics.top)) / 2f - metrics.top;
+                        canvas.drawText(element.text, element.x, baseline, text);
+                        break;
+                    case LOGO:
+                        canvas.drawBitmap(logo, element.x, element.y, ink);
+                        break;
+                    case PROMOTION_IMAGE:
+                        canvas.drawBitmap(promotion, element.x, element.y, ink);
+                        break;
+                    case DASHED_RULE:
+                        for (int x = element.x; x < element.x + element.width; x += 6)
+                            canvas.drawRect(x, element.y, Math.min(x + 3, element.x + element.width), element.bottom(), ink);
+                        break;
+                    case VERTICAL_RULE:
+                        canvas.drawRect(element.x, element.y, element.x + element.width, element.bottom(), ink);
+                        break;
+                    case BOX:
+                        canvas.drawRect(element.x, element.y, element.x + element.width, element.y + 2, ink);
+                        canvas.drawRect(element.x, element.bottom() - 2, element.x + element.width, element.bottom(), ink);
+                        canvas.drawRect(element.x, element.y, element.x + 2, element.bottom(), ink);
+                        canvas.drawRect(element.x + element.width - 2, element.y, element.x + element.width, element.bottom(), ink);
+                        break;
+                }
+            }
+            // API 31+ provides immutable shared-memory backing; this app requires
+            // API 33. A complete receipt is never divided into independent sends.
+            shared = raster.asShared();
+            if (shared == null || shared.isMutable() || shared.getConfig() != Bitmap.Config.ARGB_8888
+                || shared.getWidth() != WIDTH || shared.getHeight() != layout.totalHeight)
+                throw new IllegalArgumentException("receipt_shared_bitmap_unavailable");
+            if (shared != raster) raster.recycle();
+            raster = null;
+            RenderedReceipt result = new RenderedReceipt(shared, layout);
+            shared = null;
+            return result;
+        } catch (IllegalArgumentException failure) {
+            throw failure;
         } catch (RuntimeException | OutOfMemoryError failure) {
-            for (Bitmap strip : strips) if (!strip.isRecycled()) strip.recycle();
             throw new IllegalArgumentException("receipt_render_failed");
-        } finally { logo.recycle(); }
+        } finally {
+            if (shared != null && !shared.isRecycled()) shared.recycle();
+            if (raster != null && !raster.isRecycled()) raster.recycle();
+            if (logo != null && !logo.isRecycled()) logo.recycle();
+            if (promotion != null && !promotion.isRecycled()) promotion.recycle();
+        }
     }
 }

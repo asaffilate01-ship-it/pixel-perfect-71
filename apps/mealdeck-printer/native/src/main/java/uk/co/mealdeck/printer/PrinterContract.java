@@ -3,7 +3,7 @@ package uk.co.mealdeck.printer;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-/** Only the two reviewed, non-firmware Binder operations used by this probe. */
+/** Only the reviewed, non-firmware Binder operations used by this companion. */
 final class PrinterContract {
     static final String SERVICE_PACKAGE = "recieptservice.com.recieptservice";
     static final String SERVICE_CLASS = SERVICE_PACKAGE + ".service.PrinterService";
@@ -11,6 +11,10 @@ final class PrinterContract {
     // FIRST_CALL_TRANSACTION is 1. The reviewed generated interface adds 1 / 3.
     static final int GET_SERVICE_VERSION = 2;
     static final int PRINT_BITMAP = 4;
+    static final int NEXT_LINE = 9;
+    // Fixed end-of-receipt advance from the pinned protocol's receipt example.
+    // This is never supplied by the WebView, a receipt or a remote setting.
+    static final int RECEIPT_FEED_LINES = 4;
     static final int BITMAP_WIDTH = 256;
     static final int BITMAP_HEIGHT = 600;
     static final long CONNECTION_TIMEOUT_MS = 5_000;
