@@ -6,8 +6,11 @@ export type StaffVibrationState = {
   unavailable: boolean;
 };
 
-export const KDS_VIBRATION_PATTERN = [120, 80, 120] as const;
-const durationMs = KDS_VIBRATION_PATTERN.reduce((total, part) => total + part, 0);
+export const KDS_VIBRATION_PATTERN = [800, 250, 800, 250, 800] as const;
+export const KDS_VIBRATION_DURATION_MS = KDS_VIBRATION_PATTERN.reduce(
+  (total, part) => total + part,
+  0,
+);
 
 /** Device preference only. No order identifiers or customer data are stored. */
 export function readStaffVibrationPreferences(saved: string | null): StaffVibrationPreferences {
@@ -93,7 +96,7 @@ export function createStaffVibrationController({
     }
     if (accepted) {
       active = true;
-      playingUntil = current + durationMs;
+      playingUntil = current + KDS_VIBRATION_DURATION_MS;
     }
     const nextUnavailable = !accepted;
     if (unavailable !== nextUnavailable) {
@@ -116,10 +119,11 @@ export function createStaffVibrationController({
     },
     play,
     prepareAlert: () => {
-      const eligibleAtArrival = canPlay();
+      const eligibleAtArrival = canPlay() && now() >= playingUntil;
       const expectedGeneration = generation;
       // A Web Lock may deliver its callback later. Enabling, unlocking or
-      // returning to this page must not turn an old arrival into a new pulse.
+      // returning to this page or waiting out an active cue must not turn an
+      // old arrival into a new pulse.
       return () => eligibleAtArrival && expectedGeneration === generation && play();
     },
     test: (trusted: boolean) => {

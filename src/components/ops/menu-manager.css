@@ -142,7 +142,9 @@
 }
 .md-menu-product-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 9px;
+  min-width: 0;
   list-style: none;
   margin: 0;
   padding: 1px 4px 1px 1px;
@@ -152,6 +154,7 @@
 }
 .md-menu-product {
   display: flex;
+  min-width: 0;
   justify-content: space-between;
   align-items: center;
   gap: 14px;
@@ -642,6 +645,54 @@
     grid-template-columns: minmax(0, 1.35fr) minmax(330px, 1fr);
   }
 }
+@media (max-width: 767px) {
+  .md-menu-heading-actions,
+  .md-menu-filter-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .md-menu-heading-actions > *,
+  .md-menu-status-filter {
+    min-width: 0;
+  }
+  .md-menu-status-filter {
+    justify-content: space-between;
+  }
+  .md-menu-status-filter span {
+    flex-shrink: 0;
+  }
+  .md-menu-product {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+  }
+  .md-menu-product-select {
+    grid-column: 1;
+    grid-row: 1;
+    width: 44px;
+  }
+  .md-menu-product-body {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .md-menu-product-select + .md-menu-product-body {
+    grid-column: 2;
+  }
+  .md-menu-product-actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--ops-divider);
+  }
+  .md-menu-product-actions .md-ops-button {
+    flex: 1;
+    min-width: 0;
+    padding: 10px;
+  }
+}
 @media (max-width: 479px) {
   .md-menu-heading,
   .md-menu-browser,
@@ -649,12 +700,6 @@
   .md-menu-create,
   .md-menu-structure {
     padding: 16px;
-  }
-  .md-menu-heading-actions {
-    width: 100%;
-  }
-  .md-menu-heading-actions .md-ops-button {
-    flex: 1;
   }
   .md-menu-selects {
     grid-template-columns: 1fr;
@@ -666,18 +711,7 @@
     gap: 8px;
     padding: 10px;
   }
-  .md-menu-product-select {
-    width: 20px;
-  }
   .md-menu-product h3 {
     font-size: 16px;
-  }
-  .md-menu-product-actions .md-ops-button {
-    min-width: 66px;
-    padding: 8px;
-  }
-  .md-menu-status-filter {
-    flex: 1 1 calc(50% - 7px);
-    justify-content: space-between;
   }
 }

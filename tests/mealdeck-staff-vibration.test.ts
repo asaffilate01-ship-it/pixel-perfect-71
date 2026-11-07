@@ -39,7 +39,7 @@ describe("optional foreground KDS vibration", () => {
     expect(f.controller.state().waitingForGesture).toBe(false);
     expect(f.calls).toEqual([]);
     expect(f.controller.play()).toBe(true);
-    expect(f.calls).toEqual([[120, 80, 120]]);
+    expect(f.calls).toEqual([[800, 250, 800, 250, 800]]);
     f.controller.dispose();
   });
 
@@ -87,7 +87,7 @@ describe("optional foreground KDS vibration", () => {
     expect(f.changes.at(-1)?.waitingForGesture).toBe(false);
     expect(f.calls).toEqual([]);
     expect(f.controller.prepareAlert()()).toBe(true);
-    expect(f.calls).toEqual([[120, 80, 120]]);
+    expect(f.calls).toEqual([[800, 250, 800, 250, 800]]);
     f.controller.dispose();
   });
 
@@ -96,7 +96,7 @@ describe("optional foreground KDS vibration", () => {
     expect(f.controller.test(false)).toBe(false);
     expect(f.calls).toEqual([]);
     expect(f.controller.test(true)).toBe(true);
-    expect(f.calls).toEqual([[120, 80, 120]]);
+    expect(f.calls).toEqual([[800, 250, 800, 250, 800]]);
     f.controller.dispose();
   });
 
@@ -123,22 +123,25 @@ describe("optional foreground KDS vibration", () => {
     f.controller.dispose();
   });
 
-  test("the bounded 320 ms cue cannot overlap another arrival or Test request", () => {
+  test("the bounded 2,900 ms cue cannot overlap or queue another arrival or Test request", () => {
     const f = fixture({ browserActive: true });
-    expect(KDS_VIBRATION_PATTERN).toEqual([120, 80, 120]);
+    expect(KDS_VIBRATION_PATTERN).toEqual([800, 250, 800, 250, 800]);
     expect(f.controller.play()).toBe(true);
     expect(f.controller.play()).toBe(false);
     expect(f.controller.test(true)).toBe(false);
-    f.advance(319);
+    const arrivalDuringCue = f.controller.prepareAlert();
+    f.advance(2_899);
     expect(f.controller.play()).toBe(false);
-    expect(f.calls).toEqual([[120, 80, 120]]);
+    expect(f.calls).toEqual([[800, 250, 800, 250, 800]]);
 
     f.advance(1);
     expect(f.calls).toHaveLength(1); // Expiry never dispatches a pending queue.
+    expect(arrivalDuringCue()).toBe(false); // A delayed lock cannot revive it.
+    expect(f.calls).toHaveLength(1);
     expect(f.controller.play()).toBe(true);
     expect(f.calls).toEqual([
-      [120, 80, 120],
-      [120, 80, 120],
+      [800, 250, 800, 250, 800],
+      [800, 250, 800, 250, 800],
     ]);
     f.controller.dispose();
   });
@@ -162,7 +165,7 @@ describe("optional foreground KDS vibration", () => {
     expect(f.controller.play()).toBe(true);
     f.setVisible(false);
     f.controller.visibilityChanged();
-    expect(f.calls).toEqual([[120, 80, 120], 0]);
+    expect(f.calls).toEqual([[800, 250, 800, 250, 800], 0]);
     expect(f.controller.play()).toBe(false);
     f.setVisible(true);
     f.controller.visibilityChanged();
@@ -170,7 +173,7 @@ describe("optional foreground KDS vibration", () => {
     expect(f.controller.play()).toBe(true);
 
     f.controller.setEnabled(false);
-    expect(f.calls).toEqual([[120, 80, 120], 0, [120, 80, 120], 0]);
+    expect(f.calls).toEqual([[800, 250, 800, 250, 800], 0, [800, 250, 800, 250, 800], 0]);
     expect(f.controller.play()).toBe(false);
     f.controller.setEnabled(true);
     expect(f.calls).toHaveLength(4);
@@ -189,7 +192,7 @@ describe("optional foreground KDS vibration", () => {
         } else if (stop === "disable") f.controller.setEnabled(false);
         else f.controller.dispose();
       }).not.toThrow();
-      expect(f.calls).toEqual([[120, 80, 120], 0]);
+      expect(f.calls).toEqual([[800, 250, 800, 250, 800], 0]);
       expect(f.controller.play()).toBe(false);
       f.controller.dispose();
     }
@@ -200,9 +203,9 @@ describe("optional foreground KDS vibration", () => {
     const pending = f.controller.prepareAlert();
     expect(f.controller.play()).toBe(true);
     f.controller.dispose();
-    expect(f.calls).toEqual([[120, 80, 120], 0]);
+    expect(f.calls).toEqual([[800, 250, 800, 250, 800], 0]);
     const changesAtDisposal = f.changes.length;
-    f.advance(1_000);
+    f.advance(3_000);
     f.controller.setEnabled(true);
     f.controller.activateFromGesture(true);
     f.controller.visibilityChanged();
@@ -211,7 +214,7 @@ describe("optional foreground KDS vibration", () => {
     expect(pending()).toBe(false);
     expect(f.controller.prepareAlert()()).toBe(false);
     f.controller.dispose();
-    expect(f.calls).toEqual([[120, 80, 120], 0]);
+    expect(f.calls).toEqual([[800, 250, 800, 250, 800], 0]);
     expect(f.changes).toHaveLength(changesAtDisposal);
   });
 
@@ -233,7 +236,7 @@ describe("optional foreground KDS vibration", () => {
       expect(pending()).toBe(false);
       expect(f.calls).toEqual([]);
       expect(f.controller.prepareAlert()()).toBe(true);
-      expect(f.calls).toEqual([[120, 80, 120]]);
+      expect(f.calls).toEqual([[800, 250, 800, 250, 800]]);
       f.controller.dispose();
     });
   }

@@ -35,7 +35,9 @@ describe("KDS vibration controls", () => {
     expect(html).toContain("Volume 0%");
     expect(html).not.toContain("Test vibration");
     expect(html).toContain("even with sound muted");
-    expect(html).toContain("open and visible");
+    expect(html).toContain("Three longer pulses over about 3 seconds");
+    expect(html).toContain("while the KDS is visible");
+    expect(html).toContain("Your phone controls vibration strength");
   });
 
   test("exposes disable and test actions for a saved preference that needs activation", () => {
