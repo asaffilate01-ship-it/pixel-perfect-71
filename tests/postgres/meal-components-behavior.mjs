@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { uuid_ossp } from "@electric-sql/pglite/contrib/uuid_ossp";
 import { asActor, createDatabase, id } from "./harness.mjs";
 import { setupStaffCashOrdersFixture } from "./staff-cash-orders-fixture.mjs";
@@ -23,15 +24,12 @@ async function check(label, action) {
 try {
   const f = await setupStaffCashOrdersFixture(db);
   await db.exec(buildStaffCashOrdersSql());
-  // Exercise the installed 6 November contract, not a re-render from a later
-  // catalogue. The two Skorch Coke choices added on 7 November deliberately
-  // remain outside this frozen projection until a separate additive review.
-  const frozenSql = buildMealComponentsSql();
-  const frozenSource = frozenSql.match(/declare manifest constant jsonb:='((?:[^']|'')*)'::jsonb;/);
-  assert.ok(frozenSource, "Frozen meal inclusion manifest must be present");
-  const manifest = JSON.parse(frozenSource[1].replaceAll("''", "'"));
-  const reviewedOptions = new Set(manifest.options.map((binding) => binding.option));
-  const addedCokeOptions = [
+  const manifest = buildMealComponentsManifest();
+  const cokeOperation = readFileSync(
+    new URL("../../deploy/mealdeck/operations/20261107_coke_meal_components.sql", import.meta.url),
+    "utf8",
+  );
+  const cokeOptions = [
     "skorch-burgers-included-meal-drink-coke",
     "skorch-burgers-kids-included-drink-coke",
   ];
@@ -56,10 +54,9 @@ try {
         return [
           selection(
             group.id,
+            // Keep the pre-Coke default selection explicit in historical cases.
             group.options.find(
-              (option) =>
-                option.available !== false &&
-                (sourceId !== definition.drinkGroup || reviewedOptions.has(option.id)),
+              (option) => option.available !== false && !cokeOptions.includes(option.id),
             ).id,
             group.importKind === "price-variant" ? "variant" : "source",
           ),
@@ -109,58 +106,34 @@ try {
     "frozen reviewed identities, atomic install/replay and no historical row or receipt changes",
     async () => {
       assert.equal(manifest.items.length, 16);
-      assert.equal(manifest.options.length, 73);
-      // Fixed hashes were verified against the unchanged historical migration;
-      // do not regenerate either digest from the current menu to make this pass.
+      assert.equal(manifest.options.length, 75);
+      const frozenSql = buildMealComponentsSql();
       assert.equal(
         createHash("sha256").update(frozenSql).digest("hex"),
         "7ab065a28d6cfab9fe5cd3b1ab44b5e9fcb3b6309acd1f6725f94382d58b510e",
+        "The historical meal-components migration remains byte-for-byte unchanged",
       );
-      assert.equal(
-        createHash("sha256").update(JSON.stringify(manifest)).digest("hex"),
-        "19eba51ff903ecc59b7ed958d146a00e93a4c0f55672eddf192e613274475f77",
-      );
-      const parentGroups = new Set(
-        manifest.items.flatMap((item) =>
-          [item.mealGroup, item.drinkGroup, item.sideGroup].filter(Boolean),
-        ),
+      const sourceManifest = (sql) =>
+        JSON.parse(sql.match(/manifest constant jsonb:='(.*?)'::jsonb;/s)[1]);
+      assert.deepEqual(sourceManifest(renderMealComponentsSql()), manifest);
+      assert.deepEqual(
+        {
+          ...manifest,
+          options: manifest.options.filter((option) => !cokeOptions.includes(option.option)),
+        },
+        sourceManifest(frozenSql),
+        "Only the two reviewed Coke identities extend the historical manifest",
       );
       assert.deepEqual(
-        sourceItems
-          .filter((item) => item.canonicalOptionGroupIds.some((group) => parentGroups.has(group)))
-          .map((item) => item.id)
-          .sort(),
-        manifest.items.map((item) => item.sku).sort(),
+        manifest.options.filter((option) => cokeOptions.includes(option.option)),
+        cokeOptions.map((option) => ({
+          group: option.slice(0, -"-coke".length),
+          option,
+          role: "drink",
+          replacement: false,
+          kind: "source",
+        })),
       );
-      const reviewedGroups = new Set(manifest.options.map((binding) => binding.group));
-      const currentBindings = f.data.modifierGroups
-        .filter((group) => reviewedGroups.has(group.id))
-        .flatMap((group) =>
-          group.options.map((option) => ({
-            group: group.id,
-            option: option.id,
-            kind: group.importKind === "cross-replacement" ? "cross" : "source",
-          })),
-        );
-      const byOption = (left, right) => left.option.localeCompare(right.option);
-      assert.deepEqual(
-        currentBindings
-          .filter((binding) => !addedCokeOptions.includes(binding.option))
-          .sort(byOption),
-        manifest.options.map(({ group, option, kind }) => ({ group, option, kind })).sort(byOption),
-      );
-      assert.deepEqual(
-        currentBindings
-          .filter((binding) => addedCokeOptions.includes(binding.option))
-          .sort(byOption),
-        addedCokeOptions
-          .map((option) => ({ group: option.replace(/-coke$/, ""), option, kind: "source" }))
-          .sort(byOption),
-      );
-      // Keep the production generator's explicit approval gate visible. The
-      // current 75-option catalogue must not silently rewrite the frozen 73.
-      assert.throws(buildMealComponentsManifest, /Review changes to the meal inclusion manifest/);
-      assert.throws(renderMealComponentsSql, /Review changes to the meal inclusion manifest/);
       assert.throws(
         () => buildManagedMealComponentsSql({ runnerOwnsTransaction: true }),
         /one runner-owned/,
@@ -188,34 +161,87 @@ try {
     },
   );
   await check(
-    "later Skorch Coke choices retain purchased text without an inferred historical meal summary",
+    "additive Coke identities preserve historical data and permissions, replay safely and project adult/kids meals",
     async () => {
-      const line = structuredClone(main);
-      line.modifiers = line.modifiers.filter(
-        (modifier) => modifier.groupId !== groupId(definition.drinkGroup),
+      const helper = async () =>
+        (
+          await rows(`select md5(prosrc) as hash,proacl::text as acl,proowner,
+          proconfig,provolatile,prosecdef,proparallel,proleakproof,proisstrict
+          from pg_proc where oid='mealdeck_private.meal_components(uuid,jsonb)'::regprocedure`)
+        )[0];
+      const originalHelper = await helper();
+      const historical = await digest();
+      const auditCount = () =>
+        scalar(`select count(*)::int from public.mealdeck_ops_audit_log
+        where action='catalogue.coke_meal_components'`);
+      assert.equal(originalHelper.hash, "5f46ada643542e03e8b56fd8fe8d6205");
+      assert.equal(await auditCount(), 0);
+      for (const role of ["anon", "authenticated", "service_role"])
+        await assert.rejects(
+          () =>
+            asActor(
+              db,
+              role === "authenticated" ? f.owner : null,
+              () => db.exec(cokeOperation),
+              role,
+            ),
+          /permission denied|database_owner_required/,
+        );
+      await db.exec("begin");
+      await db.exec(cokeOperation);
+      await db.exec("rollback");
+      assert.deepEqual(await helper(), originalHelper);
+      assert.equal(await auditCount(), 0);
+      await db.exec(cokeOperation);
+      await db.exec(cokeOperation);
+      assert.equal(await auditCount(), 1);
+      assert.deepEqual(await helper(), {
+        ...originalHelper,
+        hash: "0b7cb68775502267606c64ffaf064a83",
+      });
+      assert.equal(await digest(), historical);
+      assert.deepEqual(
+        await scalar("select receipt from mealdeck_private.receipt_jobs where order_id=$1", [
+          legacy.orderId,
+        ]),
+        legacyReceipt,
       );
-      line.modifiers.push(selection(definition.drinkGroup, addedCokeOptions[0]));
-      const quote = await quoted(line);
-      const priced = quote.lines[0];
-      assert.equal(
-        priced.modifiers.find((modifier) => modifier.id === optionId(addedCokeOptions[0])).name,
-        "Coke",
+      await db.exec("begin");
+      await db.exec(
+        "create or replace function mealdeck_private.meal_components(p_tenant uuid,p_line jsonb) returns jsonb language sql immutable security definer set search_path='' as 'select null::jsonb'",
       );
-      assert.deepEqual(await components(priced), []);
-      assert.equal(priced.line_pence, priced.unit_pence * line.quantity);
-      await f.ageQuotes();
-      const order = await f.ordinary({ lines: [line] });
-      const card = await f.card(order.orderId);
-      assert.deepEqual(card.items[0].mealComponents, []);
-      assert.ok(card.items[0].modifiers.some((name) => name.includes("Coke")));
-      await f.accept(order.orderId);
-      const receipt = await scalar(
-        "select receipt from mealdeck_private.receipt_jobs where order_id=$1",
-        [order.orderId],
-      );
-      assert.deepEqual(receipt.items[0].mealComponents, []);
-      assert.ok(receipt.items[0].modifiers.some((modifier) => modifier.name === "Coke"));
-      assert.equal(receipt.totalPence, order.totalPence);
+      await assert.rejects(() => db.exec(cokeOperation), /reviewed_function_required/);
+      await db.exec("rollback");
+      assert.equal((await helper()).hash, "0b7cb68775502267606c64ffaf064a83");
+      for (const sku of [
+        "skorch-burgers-beef-smash-deck-the-ace",
+        "skorch-burgers-kids-meal-little-jacks-nuggets-meal",
+      ]) {
+        const item = manifest.items.find((entry) => entry.sku === sku);
+        const line = mealLine(item);
+        line.modifiers = line.modifiers.filter(
+          (modifier) => modifier.groupId !== groupId(item.drinkGroup),
+        );
+        line.modifiers.push(selection(item.drinkGroup, `${item.drinkGroup}-coke`));
+        const expected = [
+          ...(item.kind === "kids"
+            ? [{ slot: "main", name: "6 nuggets", quantityPerParent: 1, replacement: false }]
+            : []),
+          { slot: "side", name: "Fries", quantityPerParent: 1, replacement: false },
+          { slot: "drink", name: "Coke", quantityPerParent: 1, replacement: false },
+        ];
+        const quote = await quoted(line);
+        assert.deepEqual(await components(quote.lines[0]), expected);
+        await f.ageQuotes();
+        const order = await f.ordinary({ lines: [line] });
+        assert.deepEqual((await f.card(order.orderId)).items[0].mealComponents, expected);
+        await f.accept(order.orderId);
+        const receipt = await scalar(
+          "select receipt from mealdeck_private.receipt_jobs where order_id=$1",
+          [order.orderId],
+        );
+        assert.deepEqual(receipt.items[0].mealComponents, expected);
+      }
     },
   );
   await check(

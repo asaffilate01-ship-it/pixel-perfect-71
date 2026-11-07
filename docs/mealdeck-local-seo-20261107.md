@@ -64,8 +64,8 @@ Exit `0` means the tested responses passed; `1` means a response or SEO assertio
 - The integrated source passed 1,561 non-PostgreSQL unit tests across 141 files (73,715 assertions). PostgreSQL behavior remains a separate CI check.
 - A locally running production Node build passed all 177 public-response audit assertions. The production Cloudflare build, TypeScript and scoped ESLint also passed.
 - Browser interaction review could not run because the browser connection timed out. These results establish source and HTTP output checks, not a completed visual/mobile browser review.
-- The latest menu update adds two Coke products, bringing the source catalogue to 91 items. Two stale product-count test expectations were updated accordingly.
-- The historical meal-components test now verifies the unchanged migration and manifest hashes against its original 16 parents and 73 options, while checking the two later Skorch Coke additions explicitly. Production generation still requires review before expanding that frozen projection. Purchased Coke text is preserved; the historical helper's empty summary for an unknown identity is tested. This change does not update the database, frozen receipts or production approval gates.
+- The latest menu update adds two Coke products, bringing the source catalogue to 91 items. Main's matching product-count test corrections are preserved.
+- Main's subsequent Coke meal-summary completion is also preserved, including its reviewed additive operation and historical migration checks. Its PostgreSQL test supersedes the temporary compatibility test developed during this SEO change. The SEO diff does not modify catalogue, receipt, payment or database behavior; no live database operation was run for this work.
 
 See [PR #137](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/137) for CI, merge and publication evidence. A live public audit remains necessary after deployment.
 

@@ -28,6 +28,8 @@ Coke, Pepsi Max, Tango Apple and Water Bottle are the current in-stock cans/wate
 
 The additive reviewed operations are `20261107_loadd_names.sql`, `20261107_coke_public_manifest.sql`, then `20261107_owner_drink_stock.sql` under `deploy/mealdeck/operations`. They were applied to the independent Luton catalogue and read back on 7 November. The public menu returned all eight renamed products, twelve available standalone drinks and sixteen distinct available included-drink choices. Existing product fields changed only for the requested names and Barr Limeade’s local visibility; existing prices were preserved. The stock operation’s completion audit prevents reruns from overriding later staff stock decisions.
 
+After the original meal-components extension is installed, also apply `20261107_coke_meal_components.sql` so Skorch adult/kids Coke selections retain their included-food summaries on KDS and future receipts. For a new rollout, apply the Coke public manifest, this meal-components operation, then the owner drink-stock operation. The meal-components operation accepts only the reviewed old or new helper body, preserves its permissions and all historical order/receipt rows, and records its audit once; a completed replay changes nothing. Keep the frozen historical migration unchanged.
+
 ## Exact Tavo portion/flavour pricing
 
 These are full dish prices, not a flat portion surcharge. The same fried table applies to both fried wings and fried tenders.

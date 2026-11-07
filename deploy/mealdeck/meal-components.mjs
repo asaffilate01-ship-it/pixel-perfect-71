@@ -82,9 +82,9 @@ export function buildMealComponentsManifest() {
   }
   if (
     items.length !== 16 ||
-    options.length !== 73 ||
+    options.length !== 75 ||
     new Set(items.map((item) => item.sku)).size !== 16 ||
-    new Set(options.map((option) => option.option)).size !== 73
+    new Set(options.map((option) => option.option)).size !== 75
   )
     throw new Error("Review changes to the meal inclusion manifest before generating SQL");
   return { version: 1, items, options };
