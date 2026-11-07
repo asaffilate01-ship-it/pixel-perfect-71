@@ -89,9 +89,9 @@ try {
     assert.deepEqual(launchCatalogueCounts(data), {
       brands: 5,
       categories: 25,
-      items: 89,
+      items: 91,
       modifierGroups: 24,
-      modifierOptions: 133,
+      modifierOptions: 135,
       itemGroupLinks: 62,
     });
     const items = data.brands.flatMap((brand) =>
@@ -103,7 +103,7 @@ try {
           Number.isSafeInteger(item.pricePence) && item.pricePence > 0 && item.pricePence < 2000,
       ),
     );
-    assert.equal(new Set(items.map((item) => item.id)).size, 89);
+    assert.equal(new Set(items.map((item) => item.id)).size, 91);
     assert.equal(
       data.modifierGroups
         .filter((group) => group.importKind === "cross-replacement")
@@ -267,7 +267,7 @@ try {
     await runImport();
     const state = await snapshot();
     assert.equal(state.menu_categories.length, 30); // 25 source categories plus the five untouched bootstrap placeholders.
-    assert.equal(state.menu_items.length, 89);
+    assert.equal(state.menu_items.length, 91);
     assert.ok(
       state.menu_items.every(
         (item) =>
@@ -280,16 +280,16 @@ try {
       ),
     );
     assert.equal(state.modifier_groups.length, 24);
-    assert.equal(state.modifier_options.length, 133);
+    assert.equal(state.modifier_options.length, 135);
     assert.ok(state.modifier_options.every((option) => option.active === false));
     assert.equal(state.menu_item_modifier_groups.length, 62);
-    assert.equal(state.menu_item_station_routes.length, 89);
+    assert.equal(state.menu_item_station_routes.length, 91);
     assert.ok(
       state.menu_item_station_routes.every(
         (route) => route.station_id === binding.stationId && route.prep_seconds === null,
       ),
     );
-    assert.equal(state.menu_item_channel_rules.length, 89);
+    assert.equal(state.menu_item_channel_rules.length, 91);
     assert.ok(
       state.menu_item_channel_rules.every(
         (rule) => rule.visible === false && rule.price_override_pence === null,

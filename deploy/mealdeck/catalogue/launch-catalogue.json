@@ -1132,7 +1132,7 @@
           "items": [
             {
               "id": "loadd-loaded-fries-king-of-hearts",
-              "name": "King of Hearts",
+              "name": "Royal Flush",
               "description": "Fried chicken",
               "pricePence": 550,
               "optionGroupIds": [],
@@ -1146,7 +1146,7 @@
             },
             {
               "id": "loadd-loaded-fries-queen-of-hearts",
-              "name": "Queen of Hearts",
+              "name": "Double Deck",
               "description": "Grilled chicken",
               "pricePence": 550,
               "optionGroupIds": [],
@@ -1160,7 +1160,7 @@
             },
             {
               "id": "loadd-loaded-fries-jack-of-diamonds",
-              "name": "Jack of Diamonds",
+              "name": "All In",
               "description": "Chicken shawarma",
               "pricePence": 550,
               "optionGroupIds": [],
@@ -1174,7 +1174,7 @@
             },
             {
               "id": "loadd-loaded-fries-king-of-spades",
-              "name": "King of Spades",
+              "name": "The Jackpot",
               "description": "Smash beef",
               "pricePence": 550,
               "optionGroupIds": [],
@@ -1279,7 +1279,7 @@
           "items": [
             {
               "id": "loadd-full-house-king-of-hearts",
-              "name": "King of Hearts",
+              "name": "Royal Flush",
               "description": "Fried chicken, loaded fries and mac ’n cheese.",
               "pricePence": 699,
               "optionGroupIds": [],
@@ -1293,7 +1293,7 @@
             },
             {
               "id": "loadd-full-house-queen-of-hearts",
-              "name": "Queen of Hearts",
+              "name": "Double Deck",
               "description": "Grilled chicken, loaded fries and mac ’n cheese.",
               "pricePence": 699,
               "optionGroupIds": [],
@@ -1307,7 +1307,7 @@
             },
             {
               "id": "loadd-full-house-jack-of-diamonds",
-              "name": "Jack of Diamonds",
+              "name": "All In",
               "description": "Chicken shawarma, loaded fries and mac ’n cheese.",
               "pricePence": 699,
               "optionGroupIds": [],
@@ -1321,7 +1321,7 @@
             },
             {
               "id": "loadd-full-house-king-of-spades",
-              "name": "King of Spades",
+              "name": "The Jackpot",
               "description": "Smashed beef, loaded fries and mac ’n cheese.",
               "pricePence": 699,
               "optionGroupIds": [],
@@ -1424,6 +1424,19 @@
             "owner-menu-20261105-v2#loadd"
           ],
           "items": [
+            {
+              "id": "loadd-cans-drinks-coke",
+              "name": "Coke",
+              "pricePence": 100,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "loadd-menu#cans-drinks",
+                "owner-menu-20261105-v2#loadd"
+              ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "drink"
+            },
             {
               "id": "loadd-cans-drinks-pepsi",
               "name": "Pepsi",
@@ -1829,6 +1842,19 @@
             "owner-menu-20261105-v2#skorch-burgers"
           ],
           "items": [
+            {
+              "id": "skorch-burgers-cans-drinks-coke",
+              "name": "Coke",
+              "pricePence": 100,
+              "optionGroupIds": [],
+              "sourceRefs": [
+                "skorch-menu#cans-drinks",
+                "owner-menu-20261105-v2#skorch-burgers"
+              ],
+              "canonicalOptionGroupIds": [],
+              "importDescription": "",
+              "prepKind": "drink"
+            },
             {
               "id": "skorch-burgers-cans-drinks-pepsi",
               "name": "Pepsi",
@@ -3491,6 +3517,14 @@
       ],
       "options": [
         {
+          "id": "skorch-burgers-included-meal-drink-coke",
+          "label": "Coke",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
+        {
           "id": "skorch-burgers-included-meal-drink-pepsi",
           "label": "Pepsi",
           "pricePence": 0,
@@ -3570,6 +3604,14 @@
         "owner-menu-20261105-v2#skorch-burgers"
       ],
       "options": [
+        {
+          "id": "skorch-burgers-kids-included-drink-coke",
+          "label": "Coke",
+          "pricePence": 0,
+          "sourceRefs": [
+            "owner-menu-20261105-v2#skorch-burgers"
+          ]
+        },
         {
           "id": "skorch-burgers-kids-included-drink-pepsi",
           "label": "Pepsi",
@@ -3790,7 +3832,7 @@
       "options": [
         {
           "id": "cross-side-replacement-loadd-loaded-fries-king-of-hearts",
-          "label": "King of Hearts · Loaded Fries",
+          "label": "Royal Flush · Loaded Fries",
           "pricePence": 299,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-fries-king-of-hearts",
@@ -3801,7 +3843,7 @@
         },
         {
           "id": "cross-side-replacement-loadd-loaded-fries-queen-of-hearts",
-          "label": "Queen of Hearts · Loaded Fries",
+          "label": "Double Deck · Loaded Fries",
           "pricePence": 299,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-fries-queen-of-hearts",
@@ -3812,7 +3854,7 @@
         },
         {
           "id": "cross-side-replacement-loadd-loaded-fries-jack-of-diamonds",
-          "label": "Jack of Diamonds · Loaded Fries",
+          "label": "All In · Loaded Fries",
           "pricePence": 299,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-fries-jack-of-diamonds",
@@ -3823,7 +3865,7 @@
         },
         {
           "id": "cross-side-replacement-loadd-loaded-fries-king-of-spades",
-          "label": "King of Spades · Loaded Fries",
+          "label": "The Jackpot · Loaded Fries",
           "pricePence": 299,
           "targetBrandId": "loadd",
           "targetItemId": "loadd-loaded-fries-king-of-spades",

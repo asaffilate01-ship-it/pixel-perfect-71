@@ -8,7 +8,6 @@ import {
   buildManagedPublicMenuReadSql,
   buildPublicMenuReadManifest,
   buildPublicMenuReadSql,
-  renderPublicMenuReadSql,
 } from "../../deploy/mealdeck/public-menu-read.mjs";
 
 const db = await createDatabase(process.argv.includes("--native"), { uuid_ossp });
@@ -31,7 +30,13 @@ try {
   await db.exec('create schema extensions; create extension "uuid-ossp" with schema extensions');
   const f = await setupStripeCheckoutFixture(db);
   await db.exec(buildPublicMenuSql());
-  const manifest = buildPublicMenuReadManifest();
+  const currentManifest = buildPublicMenuReadManifest();
+  // This suite exercises the frozen base; the Coke operation is covered with linked stock.
+  const frozenSource = buildPublicMenuReadSql().match(
+    /v_source constant jsonb := '((?:[^']|'')*)'::jsonb;/,
+  );
+  assert.ok(frozenSource, "Frozen public-menu manifest must be present");
+  const manifest = JSON.parse(frozenSource[1].replaceAll("''", "'"));
   const definition = () =>
     rows(`select n.nspname,p.proname,p.oid::regprocedure::text signature,
     md5(p.prosrc) hash,p.proacl::text acl from pg_proc p join pg_namespace n on n.oid=p.pronamespace
@@ -46,7 +51,35 @@ try {
   await check(
     "frozen source mapping, atomic installation and existing authority remain unchanged",
     async () => {
-      assert.equal(buildPublicMenuReadSql(), renderPublicMenuReadSql());
+      const cokeSkus = ["loadd-cans-drinks-coke", "skorch-burgers-cans-drinks-coke"];
+      const cokeOptions = [
+        "skorch-burgers-included-meal-drink-coke",
+        "skorch-burgers-kids-included-drink-coke",
+      ];
+      assert.deepEqual(
+        currentManifest.items.filter((item) => cokeSkus.includes(item.sku)),
+        [
+          { sku: cokeSkus[0], brand: "loadd", groups: [] },
+          { sku: cokeSkus[1], brand: "skorch-burgers", groups: [] },
+        ],
+      );
+      assert.deepEqual(
+        currentManifest.groups.flatMap((group) =>
+          group.options.filter((option) => cokeOptions.includes(option.id)),
+        ),
+        cokeOptions.map((id) => ({ id, allowed: true })),
+      );
+      assert.deepEqual(
+        {
+          ...currentManifest,
+          items: currentManifest.items.filter((item) => !cokeSkus.includes(item.sku)),
+          groups: currentManifest.groups.map((group) => ({
+            ...group,
+            options: group.options.filter((option) => !cokeOptions.includes(option.id)),
+          })),
+        },
+        manifest,
+      );
       for (const options of [
         null,
         {},

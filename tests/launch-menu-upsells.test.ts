@@ -108,7 +108,7 @@ describe("Owner-approved Load’d and Moktl planning choices", () => {
           (entry) => entry.label,
         ),
       ).toEqual([
-        "Meal fries replaced with Load’d · Loaded Fries: King of Hearts",
+        "Meal fries replaced with Load’d · Loaded Fries: Royal Flush",
         "Meal drink replaced with Moktl · Blue Wave",
       ]);
     }

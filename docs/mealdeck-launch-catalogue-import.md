@@ -14,11 +14,19 @@ On 6 November, the owner added **Biscoff Milkcake £3.99** and **Oreo Milkcake �
 | Tavo | Cruncher £4.49; Twin Crunch £5.99; Flame £5.50; Big Flame £6.50 | Buttermilk/spicy grilled descriptions updated; caramelised onion removed from Tavo's common burger description. Nuggets Meal £5. A selected burger dip costs £1.50 once. |
 | Souvano | Stir-Fry Doner £6.50; Heatwave £6.99; Lamb Chops £9.99 | Each includes one mandatory fries/rice/naan selection. Doner also requires a flavour. No extra meal charge or unapproved Souvano drinks. |
 
-Skorch/Load’d use Pepsi, Pepsi Max, Tango Orange, Tango Apple, Rubicon Mango, 7up and Water Bottle at £1. Tavo uses Coke, Pepsi Max, Tango Apple, Miranda Orange, Miranda Strawberry, Barr Limeade and Water Bottle at £1. Red Bull is £2.20 in all three menus. Tavo's six chicken nuggets are £3.50; Skorch/Load’d's are £4. Other corresponding sides retain the owner's supplied prices.
+The original 5 November source lists were: Skorch/Load’d used Pepsi, Pepsi Max, Tango Orange, Tango Apple, Rubicon Mango, 7up and Water Bottle at £1. Tavo used Coke, Pepsi Max, Tango Apple, Miranda Orange, Miranda Strawberry, Barr Limeade and Water Bottle at £1. Red Bull’s retained source price is £2.20 in all three menus. Current stock is described in the 7 November update below. Tavo's six chicken nuggets are £3.50; Skorch/Load’d's are £4. Other corresponding sides retain the owner's supplied prices.
 
 For Skorch/Tavo, a meal adds £2.50. Peri salt is £0.50, a Load’d fries replacement £2.99, a Load’d mac replacement £3.99, and mocktail/milkshake replacement £2.99. Named replacements remove the corresponding generic choice before pricing, so the same component is charged once. Standalone cross-brand extras use their full item price. Souvano's cross-brand additions are full-priced extras; its latest three-dish menu did not specify replacement surcharges.
 
 The included standard meal-drink selector uses the brand's listed £1 cans/water. Red Bull is not an included can. A Moktl replacement removes that included drink selection. Kids meals follow the same rule without a paid meal toggle. Milkshake upgrades retain the supplied £2.99 display price but are unavailable until actual flavour choices are supplied. Their options have `available: false` and `unavailableReason: "Flavours coming soon"`; stale selections cannot be quoted and their database options stay inactive. No flavours or serving sizes are invented.
+
+## 7 November names and current drink stock
+
+The owner renamed only Load’d’s King of Hearts → Royal Flush, Queen of Hearts → Double Deck, Jack of Diamonds → All In and King of Spades → The Jackpot. This covers the four Loaded Fries products, four Full House products and four corresponding named side replacements. Existing SKUs, modifier IDs, descriptions and prices remain unchanged.
+
+Coke, Pepsi Max, Tango Apple and Water Bottle are the current in-stock cans/water choices across Tavo, Load’d and Skorch. Coke is newly added to the Load’d and Skorch menus at the existing £1 can price; Skorch also has the corresponding £0 adult/kids included-drink options. Other drink identities and prices are retained, with local visibility controlling restocking.
+
+The additive reviewed operations are `20261107_loadd_names.sql`, `20261107_coke_public_manifest.sql`, then `20261107_owner_drink_stock.sql` under `deploy/mealdeck/operations`. They were applied to the independent Luton catalogue and read back on 7 November. The public menu returned all eight renamed products, twelve available standalone drinks and sixteen distinct available included-drink choices. Existing product fields changed only for the requested names and Barr Limeade’s local visibility; existing prices were preserved. The stock operation’s completion audit prevents reruns from overriding later staff stock decisions.
 
 ## Exact Tavo portion/flavour pricing
 
@@ -45,14 +53,14 @@ The database import creates one hidden required `price-variant` modifier group p
 | --- | ---: | --- |
 | Approved brands | 5 | Existing bootstrap brand UUIDs resolved by stable slug |
 | Menu sections | 25 | New sections inactive |
-| Standalone items | 89 | Reviewed prices; new items inactive |
-| Source modifier groups/options | 19 / 80 | Includes standard meal drinks and Souvano sides |
+| Standalone items | 91 | Reviewed prices; new items inactive |
+| Source modifier groups/options | 19 / 82 | Includes standard meal drinks and Souvano sides |
 | Hidden price-variant groups/options | 3 / 36 | Twelve exact combinations for each Tavo wings/tenders item |
 | Named cross-brand replacement groups/options | 2 / 17 | Nine Load’d sides and eight Moktl drinks; inactive and unattached |
-| All modifier groups/options | 24 / 133 | New options inactive |
+| All modifier groups/options | 24 / 135 | New options inactive |
 | Item/group associations | 62 | Includes hidden variant groups; replacement groups need the server adapter |
-| Shared station routes | 89 | Actual existing `SHARED` station only |
-| MealDeck visibility rules | 89 | New rules hidden |
+| Shared station routes | 91 | Actual existing `SHARED` station only |
+| MealDeck visibility rules | 91 | New rules hidden |
 
 Stable source item IDs remain the canonical `menu_items.sku`. Renamed kids meals and Souvano Doner retain their prior SKU. Modifier UUIDs use the existing tenant-scoped UUIDv5 scheme in `launchModifierDatabaseId`; public display names are never identifiers.
 
@@ -122,3 +130,4 @@ node tests/postgres/catalogue-import-behavior.mjs
 # Only against a fresh disposable localhost test database:
 node tests/postgres/catalogue-import-behavior.mjs --native
 ```
+
