@@ -84,6 +84,15 @@ const BentoSudoku = lazy(() =>
 const TrayLines = lazy(() =>
   import("@/components/play/tray-lines").then((module) => ({ default: module.TrayLines })),
 );
+const SnackTrail = lazy(() =>
+  import("@/components/play/snack-trail").then((module) => ({ default: module.SnackTrail })),
+);
+const SkewerSort = lazy(() =>
+  import("@/components/play/skewer-sort").then((module) => ({ default: module.SkewerSort })),
+);
+const PantrySweep = lazy(() =>
+  import("@/components/play/pantry-sweep").then((module) => ({ default: module.PantrySweep })),
+);
 const FAVOURITES_KEY = "mealdeck-play-favourites-v1";
 
 export const Route = createFileRoute("/play")({
@@ -812,6 +821,9 @@ function PlayArcade() {
   }
 
   const panels: Record<ArcadeGameId, ReactNode> = {
+    "snack-trail": <SnackTrail suspended={pickerOpen} />,
+    "skewer-sort": <SkewerSort />,
+    "pantry-sweep": <PantrySweep />,
     "bento-sudoku": <BentoSudoku dailyDate={daily} />,
     "tray-lines": <TrayLines />,
     "sauce-switch": <SauceSwitch dailyDate={daily} />,

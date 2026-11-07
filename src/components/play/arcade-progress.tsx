@@ -22,6 +22,7 @@ import {
   ARCADE_PLAYBOOK_KEY,
   ARCADE_TRACKED_GAMES,
   MAX_ARCADE_ROUNDS,
+  arcadeCompletionLabel,
   arcadeDailyStatus,
   arcadeUtcDate,
   clearArcadeProgress,
@@ -35,7 +36,6 @@ import {
   type ArcadeProgress,
   type ArcadeProgressSnapshot,
   type ArcadeProgressStorage,
-  type ArcadeRoundRecord,
   type ArcadeStorageIssue,
   type DailyArcadeGame,
 } from "@/lib/mealdeck-play-progress";
@@ -149,13 +149,6 @@ export function useArcadeProgress(): ProgressContextValue {
   return context;
 }
 
-function completionLabel(round: ArcadeRoundRecord): string {
-  if (round.result === "win") return "Win";
-  if (round.result === "loss") return "Chef won";
-  if (round.result === "draw") return "Draw";
-  return "Completed";
-}
-
 function roundTime(timestamp: number): string {
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
@@ -207,9 +200,8 @@ export function ArcadePlaybook({ onDailyGame }: { onDailyGame: (game: DailyArcad
       </summary>
       <div className="md-playbook__body">
         <p className="md-playbook__scope">
-          Tracks finished rounds in Sauce Switch, Menu Quest, Tray Tactics, Bento Sudoku and Tray
-          Lines. Your playbook keeps the latest {MAX_ARCADE_ROUNDS} rounds; boards are not saved or
-          resumed.
+          Tracks finished rounds in {ARCADE_TRACKED_GAMES.map((game) => game.name).join(", ")}. Your
+          playbook keeps the latest {MAX_ARCADE_ROUNDS} rounds; boards are not saved or resumed.
         </p>
         <p
           className={`md-playbook__storage${storageMode === "session" ? " is-session" : ""}`}
@@ -230,7 +222,9 @@ export function ArcadePlaybook({ onDailyGame }: { onDailyGame: (game: DailyArcad
             <h3 id={`${id}-daily`}>
               <CalendarDays size={18} aria-hidden="true" /> Today's daily puzzles
             </h3>
-            <span>{completedDaily} of 3 completed</span>
+            <span>
+              {completedDaily} of {daily.length} completed
+            </span>
           </div>
           <p className="md-playbook__date">
             {today ? <time dateTime={today}>{today}</time> : "Loading today's date"} · UTC
@@ -274,7 +268,10 @@ export function ArcadePlaybook({ onDailyGame }: { onDailyGame: (game: DailyArcad
                       {ARCADE_TRACKED_GAMES.find((game) => game.id === round.game)?.name}
                     </strong>
                     <span>
-                      {completionLabel(round)}
+                      {arcadeCompletionLabel(round)}
+                      {round.score !== undefined
+                        ? ` · ${round.score} ${round.score === 1 ? "snack" : "snacks"}`
+                        : ""}
                       {round.moves !== undefined
                         ? ` · ${round.moves} ${round.moves === 1 ? "move" : "moves"}`
                         : ""}
@@ -292,7 +289,7 @@ export function ArcadePlaybook({ onDailyGame }: { onDailyGame: (game: DailyArcad
             </ol>
           ) : (
             <p className="md-playbook__empty">
-              Finish one of the five tracked games to start your playbook.
+              Finish one of the {ARCADE_TRACKED_GAMES.length} tracked games to start your playbook.
             </p>
           )}
         </section>

@@ -4,6 +4,7 @@ import {
   MAX_ARCADE_PLAYBOOK_BYTES,
   MAX_ARCADE_ROUNDS,
   appendArcadeCompletion,
+  arcadeCompletionLabel,
   arcadeDailyStatus,
   arcadeUtcDate,
   clearArcadeProgress,
@@ -112,6 +113,43 @@ describe("playbook validation and bounded history", () => {
     ]) {
       expect(parseArcadeCompletion({ ...completion(), ...invalid })).toBeNull();
     }
+  });
+
+  test("stores new game results alongside existing history with accurate result labels", () => {
+    let progress = appendArcadeCompletion(emptyArcadeProgress(), completion(), NOW);
+    const rounds: ArcadeCompletion[] = [
+      {
+        id: "round-snack",
+        game: "snack-trail",
+        result: "loss",
+        score: 0,
+        moves: 5,
+        variant: "step",
+      },
+      { id: "round-sort", game: "skewer-sort", result: "completed", moves: 17, variant: "small" },
+      { id: "round-pantry", game: "pantry-sweep", result: "win", moves: 8, variant: "small" },
+    ];
+    for (const [index, round] of rounds.entries()) {
+      expect(parseArcadeCompletion(round)).toEqual(round);
+      progress = appendArcadeCompletion(progress, round, NOW + index + 1);
+      expect(parseArcadeCompletion({ ...round, dailyDate: "2026-11-07" })).toBeNull();
+    }
+    expect(progress.rounds).toHaveLength(4);
+    expect(parseArcadeProgress(JSON.stringify(progress), NOW + 3)).toEqual(progress);
+    expect(progress.rounds.some((round) => round.game === "sauce-switch")).toBe(true);
+    expect(arcadeCompletionLabel(rounds[0]!)).toBe("Round finished");
+    expect(arcadeCompletionLabel(rounds[1]!)).toBe("Skewers sorted");
+    expect(arcadeCompletionLabel(rounds[2]!)).toBe("Pantry cleared");
+    expect(arcadeCompletionLabel({ game: "pantry-sweep", result: "loss" })).toBe("Chilli found");
+    expect(arcadeCompletionLabel({ game: "snack-trail", result: "win" })).toBe("Tray filled");
+    expect(arcadeCompletionLabel({ game: "tray-lines", result: "loss" })).toBe("Chef won");
+    for (const score of [-1, 0.5, Infinity, NaN, 100_001, "4", null]) {
+      expect(parseArcadeCompletion({ ...rounds[0], score })).toBeNull();
+    }
+    expect(parseArcadeCompletion({ ...rounds[1], score: 12 })).toBeNull();
+    expect(parseArcadeCompletion({ ...rounds[1], result: "loss" })).toBeNull();
+    expect(parseArcadeCompletion({ ...rounds[0], result: "draw" })).toBeNull();
+    expect(parseArcadeCompletion({ ...rounds[2], result: "completed" })).toBeNull();
   });
 
   test("retains the latest 100 distinct finished rounds in a deterministic order", () => {
