@@ -1,5 +1,6 @@
 /** Browser-safe receipt validation and bounded ESC/POS rendering. No raw bytes from callers. */
 import { receiptLogo } from "./receipt-logo.mjs";
+import { receiptGamesQr } from "./receipt-games-qr.mjs";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const lineId = /^[a-zA-Z0-9][a-zA-Z0-9:_-]{0,99}$/;
 export const RECEIPT_LIMITS = Object.freeze({
@@ -343,8 +344,8 @@ export function validateReceipt(input) {
 }
 
 const money = (pence) => "GBP " + (pence / 100).toFixed(2);
-/** Epson ESC/POS graphics functions 112 and 50. The only graphic is the fixed
- * reviewed logo. There is no caller-supplied raster, address or command. */
+/** Epson ESC/POS graphics functions 112 and 50. This is the fixed reviewed logo.
+ * There is no caller-supplied raster, address or command. */
 export function encodeReceiptLogo() {
   const pixels = Uint8Array.from(atob(receiptLogo.rasterBase64), (value) => value.charCodeAt(0));
   requireValue(
@@ -373,6 +374,54 @@ export function encodeReceiptLogo() {
     receiptLogo.width >> 8,
     receiptLogo.height & 255,
     receiptLogo.height >> 8,
+    ...pixels,
+    0x1d,
+    0x28,
+    0x4c,
+    2,
+    0,
+    48,
+    50,
+    0x1b,
+    0x61,
+    0,
+  ]);
+}
+/** Fixed public games QR, using the same bounded framing as the approved logo.
+ * Six printer dots per module, including a complete four-module quiet zone.
+ * No runtime QR library, network request, caller URL or order data is involved. */
+export function encodeReceiptGamesQr() {
+  const pixels = Uint8Array.from(atob(receiptGamesQr.rasterBase64), (value) => value.charCodeAt(0));
+  requireValue(
+    receiptGamesQr.targetUrl === "https://mealdeck.co.uk/play/receipt" &&
+      receiptGamesQr.width === 246 &&
+      receiptGamesQr.height === 246 &&
+      receiptGamesQr.rowBytes === 31 &&
+      receiptGamesQr.quietZone === 4 &&
+      receiptGamesQr.scale === 6 &&
+      pixels.length === receiptGamesQr.rowBytes * receiptGamesQr.height,
+    "invalid_fixed_receipt_games_qr",
+  );
+  const length = pixels.length + 10;
+  return Uint8Array.from([
+    0x1b,
+    0x61,
+    1,
+    0x1d,
+    0x28,
+    0x4c,
+    length & 255,
+    length >> 8,
+    48,
+    112,
+    48,
+    1,
+    1,
+    49,
+    receiptGamesQr.width & 255,
+    receiptGamesQr.width >> 8,
+    receiptGamesQr.height & 255,
+    receiptGamesQr.height >> 8,
     ...pixels,
     0x1d,
     0x28,
@@ -561,14 +610,36 @@ export function encodeReceipt(input, profile = {}) {
   }
   if (replacedCharacters) write("Some characters shown as ?. Check the order screen.");
   write(rule);
+  // Presentation-only invitation comes after every order/packing instruction.
+  // Neither the canonical snapshot nor its journal fingerprint contains this art.
+  for (const label of [receiptGamesQr.heading, receiptGamesQr.subtitle])
+    write(label, " ".repeat(Math.max(0, Math.floor((columns - label.length) / 2))));
+  const gamesQrAfterLine = lines.length;
+  write(
+    receiptGamesQr.displayUrl,
+    " ".repeat(Math.max(0, Math.floor((columns - receiptGamesQr.displayUrl.length) / 2))),
+  );
+  write(rule);
   write("MealDeck is a trading name of");
   write("313 Brands Ltd");
   write("Powered by Dishbee");
   write("mealdeck.co.uk");
   write("END OF RECEIPT");
-  const body = new TextEncoder().encode(lines.join("\n") + "\n" + "\n".repeat(feedLines));
+  const encoder = new TextEncoder();
+  const beforeQr = encoder.encode(lines.slice(0, gamesQrAfterLine).join("\n") + "\n");
+  const afterQr = encoder.encode(
+    lines.slice(gamesQrAfterLine).join("\n") + "\n" + "\n".repeat(feedLines),
+  );
   const ending = cut === "none" ? [] : [0x1d, 0x56, cut === "partial" ? 1 : 0];
-  const bytes = Uint8Array.from([0x1b, 0x40, ...encodeReceiptLogo(), ...body, ...ending]);
+  const bytes = Uint8Array.from([
+    0x1b,
+    0x40,
+    ...encodeReceiptLogo(),
+    ...beforeQr,
+    ...encodeReceiptGamesQr(),
+    ...afterQr,
+    ...ending,
+  ]);
   requireValue(bytes.length <= RECEIPT_LIMITS.bytes, "receipt_too_long");
   return {
     bytes,

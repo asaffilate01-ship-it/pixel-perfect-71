@@ -1,13 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { validateReceipt, encodeReceipt, encodeReceiptLogo, RECEIPT_LIMITS } from "../receipt.mjs";
+import {
+  validateReceipt,
+  encodeReceipt,
+  encodeReceiptLogo,
+  encodeReceiptGamesQr,
+  RECEIPT_LIMITS,
+} from "../receipt.mjs";
 import { receiptLogo } from "../receipt-logo.mjs";
 import { fixture, JOB } from "./fixtures.mjs";
 
-const receiptBodyBytes = (result) => result.bytes.slice(2 + encodeReceiptLogo().length);
+// Printer commands are checked outside the two trusted, length-framed graphics.
+// Pixel bytes can contain every byte value without becoming ESC/POS commands.
+const receiptBodyBytes = (result) => {
+  const body = Buffer.from(result.bytes.slice(2 + encodeReceiptLogo().length));
+  const qr = Buffer.from(encodeReceiptGamesQr());
+  const position = body.indexOf(qr);
+  assert.ok(position > 0, "the fixed games QR is present after the order");
+  assert.equal(body.indexOf(qr, position + 1), -1, "exactly one fixed games QR");
+  return Buffer.concat([body.subarray(0, position), body.subarray(position + qr.length)]);
+};
 
-test("one fixed approved logo uses bounded graphics framing before the unchanged text receipt", () => {
+test("one approved logo retains its exact fixed raster before the receipt body", () => {
   const logo = encodeReceiptLogo();
   assert.deepEqual([...logo.slice(0, 3)], [27, 97, 1]);
   assert.deepEqual([...logo.slice(3, 18)], [29, 40, 76, 74, 32, 48, 112, 48, 1, 1, 49, 0, 1, 2, 1]);

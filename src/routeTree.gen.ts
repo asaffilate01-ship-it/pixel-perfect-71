@@ -41,6 +41,10 @@ import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
+import { Route as PlayGameIdRouteImport } from './routes/play_.$gameId'
+import { Route as PlayDailyRouteImport } from './routes/play_.daily'
+import { Route as PlayPromoteRouteImport } from './routes/play_.promote'
+import { Route as PlayReceiptRouteImport } from './routes/play_.receipt'
 import { Route as WhatsappCheckoutRouteImport } from './routes/whatsapp.checkout'
 import { Route as ApiAuthEmailRouteImport } from './routes/api.auth.email'
 import { Route as ApiNotificationsWorkerRouteImport } from './routes/api.notifications.worker'
@@ -215,6 +219,26 @@ const FranchiseBrandIdRoute = FranchiseBrandIdRouteImport.update({
   path: '/franchise/$brandId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlayGameIdRoute = PlayGameIdRouteImport.update({
+  id: '/play_/$gameId',
+  path: '/play/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlayDailyRoute = PlayDailyRouteImport.update({
+  id: '/play_/daily',
+  path: '/play/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlayPromoteRoute = PlayPromoteRouteImport.update({
+  id: '/play_/promote',
+  path: '/play/promote',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlayReceiptRoute = PlayReceiptRouteImport.update({
+  id: '/play_/receipt',
+  path: '/play/receipt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WhatsappCheckoutRoute = WhatsappCheckoutRouteImport.update({
   id: '/whatsapp/checkout',
   path: '/whatsapp/checkout',
@@ -313,6 +337,10 @@ export interface FileRoutesByFullPath {
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
+  '/play/$gameId': typeof PlayGameIdRoute
+  '/play/daily': typeof PlayDailyRoute
+  '/play/promote': typeof PlayPromoteRoute
+  '/play/receipt': typeof PlayReceiptRoute
   '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
@@ -360,6 +388,10 @@ export interface FileRoutesByTo {
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
+  '/play/$gameId': typeof PlayGameIdRoute
+  '/play/daily': typeof PlayDailyRoute
+  '/play/promote': typeof PlayPromoteRoute
+  '/play/receipt': typeof PlayReceiptRoute
   '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
@@ -408,6 +440,10 @@ export interface FileRoutesById {
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise_/$brandId': typeof FranchiseBrandIdRoute
+  '/play_/$gameId': typeof PlayGameIdRoute
+  '/play_/daily': typeof PlayDailyRoute
+  '/play_/promote': typeof PlayPromoteRoute
+  '/play_/receipt': typeof PlayReceiptRoute
   '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
@@ -457,6 +493,10 @@ export interface FileRouteTypes {
     | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
+    | '/play/$gameId'
+    | '/play/daily'
+    | '/play/promote'
+    | '/play/receipt'
     | '/whatsapp/checkout'
     | '/blog/'
     | '/api/auth/email'
@@ -504,6 +544,10 @@ export interface FileRouteTypes {
     | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
+    | '/play/$gameId'
+    | '/play/daily'
+    | '/play/promote'
+    | '/play/receipt'
     | '/whatsapp/checkout'
     | '/blog'
     | '/api/auth/email'
@@ -551,6 +595,10 @@ export interface FileRouteTypes {
     | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise_/$brandId'
+    | '/play_/$gameId'
+    | '/play_/daily'
+    | '/play_/promote'
+    | '/play_/receipt'
     | '/whatsapp/checkout'
     | '/blog/'
     | '/api/auth/email'
@@ -599,6 +647,10 @@ export interface RootRouteChildren {
   AuthConfirmRoute: typeof AuthConfirmRoute
   BlogSlugRoute: typeof BlogSlugRoute
   FranchiseBrandIdRoute: typeof FranchiseBrandIdRoute
+  PlayGameIdRoute: typeof PlayGameIdRoute
+  PlayDailyRoute: typeof PlayDailyRoute
+  PlayPromoteRoute: typeof PlayPromoteRoute
+  PlayReceiptRoute: typeof PlayReceiptRoute
   WhatsappCheckoutRoute: typeof WhatsappCheckoutRoute
   BlogIndexRoute: typeof BlogIndexRoute
   ApiAuthEmailRoute: typeof ApiAuthEmailRoute
@@ -840,6 +892,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FranchiseBrandIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/play_/$gameId': {
+      id: '/play_/$gameId'
+      path: '/play/$gameId'
+      fullPath: '/play/$gameId'
+      preLoaderRoute: typeof PlayGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/play_/daily': {
+      id: '/play_/daily'
+      path: '/play/daily'
+      fullPath: '/play/daily'
+      preLoaderRoute: typeof PlayDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/play_/promote': {
+      id: '/play_/promote'
+      path: '/play/promote'
+      fullPath: '/play/promote'
+      preLoaderRoute: typeof PlayPromoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/play_/receipt': {
+      id: '/play_/receipt'
+      path: '/play/receipt'
+      fullPath: '/play/receipt'
+      preLoaderRoute: typeof PlayReceiptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/whatsapp/checkout': {
       id: '/whatsapp/checkout'
       path: '/whatsapp/checkout'
@@ -977,6 +1057,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthConfirmRoute: AuthConfirmRoute,
   BlogSlugRoute: BlogSlugRoute,
   FranchiseBrandIdRoute: FranchiseBrandIdRoute,
+  PlayGameIdRoute: PlayGameIdRoute,
+  PlayDailyRoute: PlayDailyRoute,
+  PlayPromoteRoute: PlayPromoteRoute,
+  PlayReceiptRoute: PlayReceiptRoute,
   WhatsappCheckoutRoute: WhatsappCheckoutRoute,
   BlogIndexRoute: BlogIndexRoute,
   ApiAuthEmailRoute: ApiAuthEmailRoute,

@@ -90,11 +90,9 @@ describe("Public game invites", () => {
       expect(content.context.length).toBeLessThan(90);
       expect(content.filename).toBe(`mealdeck-${game.id}-invite.png`);
       expect(url.origin).toBe("https://mealdeck.co.uk");
-      expect(url.pathname).toBe("/play");
-      expect(url.searchParams.get("game")).toBe(game.id);
-      expect([...url.searchParams.keys()].every((key) => ["game", "brand"].includes(key))).toBe(
-        true,
-      );
+      expect(url.pathname).toBe(`/play/${game.id}`);
+      expect(url.searchParams.has("game")).toBe(false);
+      expect([...url.searchParams.keys()].every((key) => ["brand"].includes(key))).toBe(true);
       expect(url.hash).toBe("");
     }
   });
@@ -107,9 +105,9 @@ describe("Public game invites", () => {
     ).toBe("skorch");
     expect(
       buildArcadeShareContent({ game: "pairs", brand: "person@example.com&token=private" }).url,
-    ).toBe("https://mealdeck.co.uk/play?game=pairs");
+    ).toBe("https://mealdeck.co.uk/play/pairs");
     expect(buildArcadeShareContent({ game: "menu-quest", brand: "skorch" }).url).toBe(
-      "https://mealdeck.co.uk/play?game=menu-quest",
+      "https://mealdeck.co.uk/play/menu-quest",
     );
   });
 
@@ -135,6 +133,62 @@ describe("Public game invites", () => {
     expect(buildArcadeShareContent({ game: "snack-trail", dailyDate: "2026-11-07" }).context).toBe(
       "MealDeck Play",
     );
+  });
+
+  test("daily invitations preserve each supported public board size and date", () => {
+    for (const [game, size] of [
+      ["sauce-switch", 3],
+      ["sauce-switch", 4],
+      ["bento-sudoku", 4],
+      ["bento-sudoku", 6],
+    ] as const) {
+      const content = buildArcadeShareContent({ game, dailyDate: "2026-11-07", size });
+      expect(content.isResult).toBe(false);
+      expect(content.url).toBe(`https://mealdeck.co.uk/play/${game}?daily=2026-11-07&size=${size}`);
+      expect(content.context).toBe(`${size} × ${size} tray · Daily · 2026-11-07 UTC`);
+      expect(content.text).toContain("daily puzzle for 2026-11-07 UTC");
+    }
+    const menu = buildArcadeShareContent({
+      game: "menu-quest",
+      dailyDate: "2026-11-07",
+      size: 6,
+    });
+    expect(menu.url).toBe("https://mealdeck.co.uk/play/menu-quest?daily=2026-11-07");
+    expect(menu.context).toBe("Daily · 2026-11-07 UTC");
+  });
+
+  test("invitation setup is allowlisted independently of malformed dates or sizes", () => {
+    for (const [game, invalidSize] of [
+      ["sauce-switch", 6],
+      ["bento-sudoku", 3],
+      ["bento-sudoku", 8],
+      ["bento-sudoku", Number.NaN],
+      ["bento-sudoku", Number.POSITIVE_INFINITY],
+      ["bento-sudoku", -4],
+      ["bento-sudoku", 4.5],
+    ] as const) {
+      const content = buildArcadeShareContent({
+        game,
+        dailyDate: "2026-11-07",
+        size: invalidSize,
+      });
+      expect(content.url).toBe(`https://mealdeck.co.uk/play/${game}?daily=2026-11-07`);
+      expect(content.context).toBe("Daily · 2026-11-07 UTC");
+    }
+    for (const dailyDate of [undefined, "2026-02-29"]) {
+      const content = buildArcadeShareContent({ game: "bento-sudoku", dailyDate, size: 6 });
+      expect(content.url).toBe("https://mealdeck.co.uk/play/bento-sudoku?size=6");
+      expect(content.context).toBe("6 × 6 tray");
+      expect(content.text).not.toContain("daily");
+      expect(content.text).not.toContain("same");
+    }
+    const unsupported = buildArcadeShareContent({
+      game: "snack-trail",
+      dailyDate: "2026-11-07",
+      size: 4,
+    });
+    expect(unsupported.url).toBe("https://mealdeck.co.uk/play/snack-trail");
+    expect(unsupported.context).toBe("MealDeck Play");
   });
 
   test("a runtime unknown game cannot become arbitrary public text or a link parameter", () => {
@@ -286,10 +340,16 @@ describe("Result links reproduce only public daily setup", () => {
       const content = buildArcadeShareContent({
         game,
         dailyDate: "2026-11-09",
+        size: size === 4 ? (game === "sauce-switch" ? 3 : 6) : 4,
         completion: finished(game, { dailyDate: "2026-11-08", variant, moves: 15, hints: 0 }),
       });
       const url = new URL(content.url);
-      expect(parseArcadeSearch(Object.fromEntries(url.searchParams))).toEqual({
+      expect(
+        parseArcadeSearch({
+          ...Object.fromEntries(url.searchParams),
+          game: url.pathname.split("/").at(-1),
+        }),
+      ).toEqual({
         game,
         daily: "2026-11-08",
         size,
@@ -307,15 +367,16 @@ describe("Result links reproduce only public daily setup", () => {
       completion: finished("menu-quest", { dailyDate: "2026-11-08", hints: 1 }),
     });
     expect(content.context).toContain("8 × 8");
-    expect(content.url).toBe("https://mealdeck.co.uk/play?game=menu-quest&daily=2026-11-08");
+    expect(content.url).toBe("https://mealdeck.co.uk/play/menu-quest?daily=2026-11-08");
     expect(content.text).toContain("try the same daily puzzle");
   });
 
-  test("fresh results never inherit a page date or claim to reproduce the played board", () => {
+  test("fresh results never inherit page setup or claim to reproduce the played board", () => {
     for (const fixture of resultFixtures) {
       const content = buildArcadeShareContent({
         game: fixture.game,
         dailyDate: "2026-11-08",
+        size: 3,
         completion: finished(fixture.game, fixture),
       });
       expect(new URL(content.url).searchParams.has("daily")).toBe(false);
@@ -323,6 +384,15 @@ describe("Result links reproduce only public daily setup", () => {
       expect(content.text).not.toContain("same");
       expect(content.context).not.toContain("Daily");
     }
+    const bento = buildArcadeShareContent({
+      game: "bento-sudoku",
+      dailyDate: "2026-11-09",
+      size: 4,
+      completion: finished("bento-sudoku", { variant: "6x6", moves: 15 }),
+    });
+    expect(bento.url).toBe("https://mealdeck.co.uk/play/bento-sudoku?size=6");
+    expect(bento.context).toBe("6 × 6 tray");
+    expect(bento.text).toContain("Your turn: try the game.");
   });
 
   test("a legacy daily result with missing or unknown size cannot promise the same puzzle", () => {
@@ -332,11 +402,18 @@ describe("Result links reproduce only public daily setup", () => {
           dailyDate: "2026-11-08",
           ...(variant ? { variant } : {}),
         });
-        const content = buildArcadeShareContent({ game, completion });
+        const content = buildArcadeShareContent({
+          game,
+          dailyDate: "2026-11-09",
+          size: game === "sauce-switch" ? 4 : 6,
+          completion,
+        });
         expect(content.isResult).toBe(true);
         expect(content.context).toContain("2026-11-08 UTC");
-        expect(content.url).toBe(`https://mealdeck.co.uk/play?game=${game}`);
+        expect(content.url).toBe(`https://mealdeck.co.uk/play/${game}`);
         expect(content.text).not.toContain("same daily puzzle");
+        expect(content.context).not.toContain("tray");
+        expect(JSON.stringify(content)).not.toContain("2026-11-09");
       }
     }
   });
@@ -394,7 +471,7 @@ describe("Privacy and malformed inputs", () => {
         "isResult",
       ].sort(),
     );
-    expect([...new URL(content.url).searchParams.keys()]).toEqual(["game", "daily", "size"]);
+    expect([...new URL(content.url).searchParams.keys()]).toEqual(["daily", "size"]);
   });
 
   test("invalid, mismatched or unsupported completion records become game invites", () => {
@@ -426,7 +503,7 @@ describe("Privacy and malformed inputs", () => {
       expect(content.headline).toBe("Your turn");
       expect(content.detail).toBe("Free to play · No sign-in needed");
       expect(content.filename).toBe("mealdeck-bento-sudoku-invite.png");
-      expect(content.url).toBe("https://mealdeck.co.uk/play?game=bento-sudoku");
+      expect(content.url).toBe("https://mealdeck.co.uk/play/bento-sudoku");
     }
     expect(
       buildArcadeShareContent({

@@ -36,6 +36,7 @@ import launchBasketCss from "../styles.launch-basket.css?url";
 import launchCustomiserCss from "../styles.launch-customiser.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { ArcadeProgressProvider } from "@/components/play/arcade-progress";
 
 function NotFoundComponent() {
   return (
@@ -202,6 +203,7 @@ function RootComponent() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const internal = isMealDeckStaffPath(pathname);
   const basketPage = isLaunchMenuRoute(pathname);
+  const arcadePage = pathname === "/play" || pathname.startsWith("/play/");
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -211,7 +213,13 @@ function RootComponent() {
         {!internal && !basketPage && <ComingSoonBanner />}
         {!internal && <PwaConnectionNotice />}
         <div id="mealdeck-main" tabIndex={-1}>
-          <Outlet />
+          {arcadePage ? (
+            <ArcadeProgressProvider>
+              <Outlet />
+            </ArcadeProgressProvider>
+          ) : (
+            <Outlet />
+          )}
         </div>
         {!internal && !basketPage && <BackToTop />}
         {!internal && <MobileTabBar />}

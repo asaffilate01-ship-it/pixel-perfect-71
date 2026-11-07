@@ -11,6 +11,8 @@ export type ArcadeShareRequest = {
   game: ArcadeGameId;
   brand?: string | undefined;
   dailyDate?: string | undefined;
+  /** Public setup only: Sauce Switch accepts 3/4 and Bento Sudoku accepts 4/6. */
+  size?: number | undefined;
   completion?: ArcadeCompletion | undefined;
 };
 
@@ -112,20 +114,24 @@ export function buildArcadeShareContent(request: ArcadeShareRequest): ArcadeShar
   const parsed = parseArcadeCompletion(request.completion);
   const completion = parsed?.game === game ? parsed : null;
   const variant = completion ? shareVariant(completion) : undefined;
-  // A result's frozen puzzle date takes precedence over the surrounding page.
-  // Fresh results must never inherit a daily date from the page they were shared on.
-  const date = parseArcadeSearch({
+  // A result's frozen setup takes precedence over the surrounding page. Even a
+  // missing result date or size must not inherit an unrelated page's setup.
+  const publicSetup = parseArcadeSearch({
     game,
     daily: completion ? completion.dailyDate : request.dailyDate,
-  }).daily;
+    size: completion ? variant?.size : request.size,
+  });
+  const date = publicSetup.daily;
   const sameDaily =
     !!completion && !!date && (game === "menu-quest" || variant?.size !== undefined);
   const linkedDate = completion ? (sameDaily ? date : undefined) : date;
-  const url = arcadeGameLink(game, request.brand, { daily: linkedDate, size: variant?.size });
+  const url = arcadeGameLink(game, request.brand, { daily: linkedDate, size: publicSetup.size });
   const headline = completion ? resultHeadline(completion) : "Your turn";
   const detail = completion ? resultDetail(completion) : "Free to play · No sign-in needed";
   const contextParts: string[] = [];
   if (variant?.label) contextParts.push(variant.label);
+  else if (!completion && publicSetup.size)
+    contextParts.push(`${publicSetup.size} × ${publicSetup.size} tray`);
   if (date) contextParts.push(`Daily · ${date} UTC`);
   const context = contextParts.join(" · ") || "MealDeck Play";
   const invitation = sameDaily
