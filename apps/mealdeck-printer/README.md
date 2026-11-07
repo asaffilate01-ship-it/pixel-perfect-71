@@ -5,6 +5,12 @@ uses the H10S built-in printer service. Its application ID is
 `uk.co.mealdeck.printer`, version `0.2.0` (code `2`). The separate setup utility in
 `../mealdeck-printer-probe` and its published setup APK remain unchanged.
 
+`release-certificate.pem` contains only the public release certificate. Its
+SHA-256 fingerprint is
+`0AA18A66B01CECBE0AA86C07A6EFA8693B5F01138278488D7DCE4A296B992EC8`.
+Future signed updates must match this identity. The private keystore and its
+password are retained separately and must never enter this repository.
+
 ## Operator flow
 
 1. Install the signed companion and sign in with a verified account assigned to

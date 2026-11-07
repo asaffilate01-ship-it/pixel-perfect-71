@@ -32,6 +32,13 @@ app uses those functions without a database migration or a second ordering path.
    companion or `/printer`. A returned printer call alone is labelled sent,
    awaiting paper confirmation.
 
+Before requesting a numbered replacement, confirm the preceding receipt in the
+companion as well. If it was already confirmed on the website, repeat that same
+observed outcome in the app; the server confirmation is idempotent. The app keeps
+that preceding receipt visible for this check, and leaves the new copy queued
+until local receipt history is resolved. A new installation cannot print a copy
+whose earlier attempts are absent from its local history.
+
 The native foreground service performs the queue work. Its ongoing notification
 and app status communicate whether automatic printing is running or paused.
 Device firmware, battery management and network connectivity can affect operation;

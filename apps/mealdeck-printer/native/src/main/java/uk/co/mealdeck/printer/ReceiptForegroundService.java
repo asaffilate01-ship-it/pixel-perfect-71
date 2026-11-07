@@ -30,7 +30,7 @@ public final class ReceiptForegroundService extends Service {
         manager.createNotificationChannel(alerts);
         Notification notification = notification("Starting the receipt service…");
         if (Build.VERSION.SDK_INT >= 34) startForeground(NOTICE, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-        else startForeground(NOTICE, notification);
+        else startForeground(NOTICE, notification, 0);
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
