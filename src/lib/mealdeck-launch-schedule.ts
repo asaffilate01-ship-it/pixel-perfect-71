@@ -14,17 +14,17 @@ export const MEALDECK_LAUNCH_DAYS = Object.freeze([
     date: "2026-11-07",
     label: "Saturday 7 November",
     shortLabel: "Sat 7 Nov",
-    opensAt: "2026-11-07T13:00:00Z",
+    opensAt: "2026-11-07T15:00:00Z",
     closesAt: "2026-11-08T00:00:00Z",
-    hoursLabel: "1pm–midnight",
+    hoursLabel: "3pm–midnight",
   }),
   Object.freeze({
     date: "2026-11-08",
     label: "Sunday 8 November",
     shortLabel: "Sun 8 Nov",
-    opensAt: "2026-11-08T13:00:00Z",
+    opensAt: "2026-11-08T15:00:00Z",
     closesAt: "2026-11-08T23:00:00Z",
-    hoursLabel: "1pm–11pm",
+    hoursLabel: "3pm–11pm",
   }),
 ] as const);
 

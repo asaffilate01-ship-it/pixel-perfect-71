@@ -113,20 +113,26 @@ remain an operational responsibility.
 
 ## Notification readiness
 
-The account shows app notifications as **coming soon** until both:
+The 7 November customer-push extension now supplies the sender, durable order
+event queue, per-order guest/member controls and owner/admin campaign drafts.
+Its authoritative runbook is
+[`mealdeck-customer-mobile-notifications.md`](mealdeck-customer-mobile-notifications.md).
+The membership extension by itself still does not activate that delivery path
+or supply an email marketing provider.
 
-1. `MEALDECK_WEB_PUSH_PUBLIC_KEY` is a valid uncompressed P-256 VAPID public key
-   in the MealDeck server environment; and
-2. `mealdeck_private.customer_features.push_enabled` is intentionally enabled
-   after a sender and withdrawal handling have been accepted.
+The account shows app notifications as **coming soon** until the server can
+resolve a complete matching VAPID credential pair, valid sender contact and
+worker secret, and `mealdeck_private.customer_features.push_enabled` is enabled.
+The secure server environment or the reviewed private Supabase Vault path may
+supply the bundle. An explicit environment OFF overrides Vault. A public key
+alone is insufficient; availability is not evidence of a working physical phone.
 
-The private VAPID key must never be public. No push sender, outbound marketing
-campaign or email marketing provider is fabricated by this extension. A
-sender must re-read the canonical verified customer preferences before **every
-send**, including the bound email for email marketing, honour withdrawals,
-include an easy unsubscribe in every promotional email, handle expired
-subscriptions and record delivery failures without logging sensitive payloads.
-Do not use raw preference booleans without the current Auth/registration check.
+The private VAPID key and worker secret must never be public. The sender
+re-reads current verified membership and applicable order/promotion choices
+before each send, honours withdrawals and retires expired subscriptions.
+Delivery failures contain no sensitive payloads. Any future promotional email
+sender must likewise check the currently consented email address and provide
+an easy unsubscribe; raw preference booleans are not current Auth authority.
 
 After customers save a notification type, they can explicitly press **Allow
 notifications**. Browser permission is requested only from that action. iPhone
@@ -136,11 +142,16 @@ subscription; an accepted browser prompt is not enough. Disabling the device
 unsubscribes locally even if server removal is interrupted. Sign-out attempts
 device removal to avoid messages on a shared device.
 
-Only supported HTTPS push-service hosts can be stored. Other accounts cannot
-read or reassign an endpoint. Notifications use fixed generic text without
-names, addresses, vehicle details, basket contents or payment information.
-Notification clicks open only the local `/account` or `/menus` page. Customer
-authentication, profile data and API responses are never cached by the PWA.
+Only supported HTTPS push-service hosts can be stored. Other identities cannot
+read or reassign an active endpoint. Order notifications use fixed stage text
+without names, addresses, vehicle details, basket contents, payment information
+or the actual handover code. Their clicks open the authorised order receipt;
+the validated guest/member URL hint does not grant access. Offers use the
+explicitly reviewed campaign text and only the local `/offers` or `/menus`
+destination, with account preferences available separately. Customer
+authentication, profile data, receipts and API responses are never cached by
+the PWA. The complete runtime and physical-device acceptance record belongs in
+the linked runbook and deployment record.
 
 ## Loyalty readiness
 

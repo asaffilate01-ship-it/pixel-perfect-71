@@ -24,7 +24,13 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { dailySeed, seededRandom } from "@/lib/arcade-games";
+import { seededRandom } from "@/lib/arcade-games";
+import { useArcadeProgress } from "@/components/play/arcade-progress";
+import {
+  arcadeUtcDate,
+  createArcadeRoundId,
+  isArcadeDailyDate,
+} from "@/lib/mealdeck-play-progress";
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import {
   QUEST_SIZE,
@@ -124,8 +130,8 @@ function PuzzleFrame({
       </details>
       {children}
       <p className="md-game-footnote">
-        Free, untimed play. Your current round stays here until you leave or change games. Games
-        never award food, money, discounts or loyalty points.
+        Free, untimed play. Finished rounds can be kept in My playbook on this browser; boards are
+        not saved or resumed. Games never award food, money, discounts or loyalty points.
       </p>
     </section>
   );
@@ -192,42 +198,74 @@ function PuzzleStart({
   );
 }
 
-function DailyLabel({ date }: { date: number }) {
+function DailyLabel({ date }: { date: string | null }) {
   return date ? (
     <p className="md-puzzle-daily">
       <CalendarDays size={16} aria-hidden="true" />
-      Daily puzzle · {String(date).replace(/^(\d{4})(\d{2})(\d{2})$/, "$1-$2-$3")} (UTC)
+      Daily puzzle · {date} (UTC)
     </p>
   ) : null;
 }
 
 type SauceRound = {
+  id: string;
   initial: boolean[];
   board: boolean[];
   history: boolean[][];
-  date: number;
+  date: string | null;
   message: string;
   hint: number | null;
   hints: number;
 };
 
-export function SauceSwitch() {
+export function SauceSwitch({ dailyDate }: { dailyDate?: string | undefined }) {
+  const requestedDate = isArcadeDailyDate(dailyDate) ? dailyDate : undefined;
+  const lastRequestedDate = useRef(requestedDate);
+  const { recordCompletion } = useArcadeProgress();
+  const recordedRound = useRef<string | null>(null);
   const [size, setSize] = useState<SauceSize>(3);
-  const [daily, setDaily] = useState(false);
+  const [daily, setDaily] = useState(Boolean(requestedDate));
+  const [selectedDailyDate, setSelectedDailyDate] = useState(requestedDate);
   const [round, setRound] = useState<SauceRound | null>(null);
   const grid = usePuzzleFocus(size);
+  const setActiveCell = grid.setActive;
   const instructionsId = useId();
   const nextPuzzleRef = useRef<HTMLButtonElement>(null);
   const complete = round !== null && sauceCleared(round.board, size);
   useCompletionFocus(complete, nextPuzzleRef);
 
+  useEffect(() => {
+    if (lastRequestedDate.current === requestedDate) return;
+    lastRequestedDate.current = requestedDate;
+    setSelectedDailyDate(requestedDate);
+    setDaily(Boolean(requestedDate));
+    setRound(null);
+    setActiveCell(0);
+  }, [requestedDate, setActiveCell]);
+
+  useEffect(() => {
+    if (!complete || !round || recordedRound.current === round.id) return;
+    recordedRound.current = round.id;
+    recordCompletion({
+      id: round.id,
+      game: "sauce-switch",
+      result: "completed",
+      moves: round.history.length,
+      hints: round.hints,
+      variant: `${size}x${size}`,
+      ...(round.date ? { dailyDate: round.date } : {}),
+    });
+  }, [complete, round, size, recordCompletion]);
+
   function start(asDaily = daily) {
-    const date = asDaily ? dailySeed() : 0;
+    const date = asDaily ? (selectedDailyDate ?? arcadeUtcDate()) : null;
+    const seed = date ? Number(date.replaceAll("-", "")) : 0;
     const board = createSaucePuzzle(
       size,
-      asDaily ? seededRandom(date + size * 101 + 7301) : Math.random,
+      asDaily ? seededRandom(seed + size * 101 + 7301) : Math.random,
     );
     setRound({
+      id: createArcadeRoundId(),
       initial: [...board],
       board,
       history: [],
@@ -241,10 +279,12 @@ export function SauceSwitch() {
   }
 
   function restart() {
+    const id = createArcadeRoundId();
     setRound((current) =>
       current
         ? {
             ...current,
+            id,
             board: [...current.initial],
             history: [],
             hint: null,
@@ -335,6 +375,7 @@ export function SauceSwitch() {
             value={daily ? "daily" : "fresh"}
             onChange={(event) => {
               setDaily(event.target.value === "daily");
+              setSelectedDailyDate(undefined);
               setRound(null);
               grid.setActive(0);
             }}
@@ -344,6 +385,7 @@ export function SauceSwitch() {
           </select>
         </label>
       </div>
+      {!round && daily && selectedDailyDate && <DailyLabel date={selectedDailyDate} />}
       {!round ? (
         <PuzzleStart
           art="sauce"
@@ -435,6 +477,7 @@ export function SauceSwitch() {
               className={`md-game-button${complete ? " is-primary" : ""}`}
               onClick={() => {
                 setDaily(false);
+                setSelectedDailyDate(undefined);
                 start(false);
               }}
             >
@@ -450,20 +493,27 @@ export function SauceSwitch() {
 }
 
 type QuestRound = {
+  id: string;
   puzzle: QuestPuzzle;
   found: QuestMatch[];
   start: number | null;
-  date: number;
+  date: string | null;
   hint: QuestWord | null;
   hints: number;
   message: string;
 };
 
-export function MenuQuest() {
-  const [daily, setDaily] = useState(false);
+export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
+  const requestedDate = isArcadeDailyDate(dailyDate) ? dailyDate : undefined;
+  const lastRequestedDate = useRef(requestedDate);
+  const { recordCompletion } = useArcadeProgress();
+  const recordedRound = useRef<string | null>(null);
+  const [daily, setDaily] = useState(Boolean(requestedDate));
+  const [selectedDailyDate, setSelectedDailyDate] = useState(requestedDate);
   const [round, setRound] = useState<QuestRound | null>(null);
   const [largeLetters, setLargeLetters] = useState(false);
   const grid = usePuzzleFocus(QUEST_SIZE);
+  const setActiveCell = grid.setActive;
   const instructionsId = useId();
   const nextPuzzleRef = useRef<HTMLButtonElement>(null);
   const complete = round !== null && round.found.length === round.puzzle.words.length;
@@ -472,10 +522,34 @@ export function MenuQuest() {
   const hintCell = round?.puzzle.words.find((match) => match.word === round.hint)?.cells[0];
   useCompletionFocus(complete, nextPuzzleRef);
 
+  useEffect(() => {
+    if (lastRequestedDate.current === requestedDate) return;
+    lastRequestedDate.current = requestedDate;
+    setSelectedDailyDate(requestedDate);
+    setDaily(Boolean(requestedDate));
+    setRound(null);
+    setActiveCell(0);
+  }, [requestedDate, setActiveCell]);
+
+  useEffect(() => {
+    if (!complete || !round || recordedRound.current === round.id) return;
+    recordedRound.current = round.id;
+    recordCompletion({
+      id: round.id,
+      game: "menu-quest",
+      result: "completed",
+      hints: round.hints,
+      variant: "8x8",
+      ...(round.date ? { dailyDate: round.date } : {}),
+    });
+  }, [complete, round, recordCompletion]);
+
   function start(asDaily = daily) {
-    const date = asDaily ? dailySeed() : 0;
-    const puzzle = createQuestPuzzle(asDaily ? seededRandom(date + 8101) : Math.random);
+    const date = asDaily ? (selectedDailyDate ?? arcadeUtcDate()) : null;
+    const seed = date ? Number(date.replaceAll("-", "")) : 0;
+    const puzzle = createQuestPuzzle(asDaily ? seededRandom(seed + 8101) : Math.random);
     setRound({
+      id: createArcadeRoundId(),
       puzzle,
       found: [],
       start: null,
@@ -489,10 +563,12 @@ export function MenuQuest() {
   }
 
   function restart() {
+    const id = createArcadeRoundId();
     setRound((current) =>
       current
         ? {
             ...current,
+            id,
             found: [],
             start: null,
             hint: null,
@@ -608,6 +684,7 @@ export function MenuQuest() {
             value={daily ? "daily" : "fresh"}
             onChange={(event) => {
               setDaily(event.target.value === "daily");
+              setSelectedDailyDate(undefined);
               setRound(null);
               grid.setActive(0);
             }}
@@ -617,6 +694,7 @@ export function MenuQuest() {
           </select>
         </label>
       </div>
+      {!round && daily && selectedDailyDate && <DailyLabel date={selectedDailyDate} />}
       {!round ? (
         <PuzzleStart
           art="fries"
@@ -741,6 +819,7 @@ export function MenuQuest() {
               className={`md-game-button${complete ? " is-primary" : ""}`}
               onClick={() => {
                 setDaily(false);
+                setSelectedDailyDate(undefined);
                 start(false);
               }}
             >

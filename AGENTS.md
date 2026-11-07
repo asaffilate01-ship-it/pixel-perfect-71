@@ -11,6 +11,14 @@
 
 <!-- LOVABLE:END -->
 
+## Customer mobile order alerts and offers — 7 November 2026
+
+- Customer web push follows verified staff acceptance, preparation, all-items-ready plus sealed packing, and confirmed handover. Payment alone must not generate “accepted”; current collection/kerbside scope remains unchanged. Driver stages have reserved display support but no active delivery event adapter.
+- Guests may explicitly subscribe to their own active order through the existing private guest cookie; members use verified account authority. Per-order alerts create no member account or marketing consent. Preserve current consent checks, endpoint ownership, expiry, deduplication and per-order withdrawal overrides across the account subscription path.
+- Notification clicks may select a validated guest/member receipt transport for a valid order UUID, but never confer access. Keep the actual handover code and customer details on the authorised private receipt, out of lock-screen copy, URLs, logs and caches. An iPhone Home Screen installation must not be assumed to inherit an existing guest browser session.
+- Operations owner/admin offer campaigns require current scoped finance permissions and the enrolled-MFA check. Save a frozen draft, show its preview/audience/expiry and require the operator's explicit send action. Recheck marketing consent before every send. A migration, worker activation or draft creation must never broadcast a campaign.
+- Use `docs/mealdeck-customer-mobile-notifications.md` for the two additive independent-database migrations, environment/Vault configuration, worker commissioning and validation. Explicit environment OFF overrides Vault. Configuration, hosted publication, worker health, push-service acceptance and physical-phone display are different evidence; preserve truthful availability and withdrawal controls.
+
 ## WhatsApp ordering implementation — 7 November 2026
 
 - `/api/whatsapp/webhook` accepts exact-account/number signed Meta Cloud API events into a durable scoped inbox. The supervised worker executes deterministic live-menu intake and optional strict AI menu proposals. No model/payment screenshot/chat text grants order, payment or staff authority.
@@ -64,7 +72,7 @@ The following records the earlier local flow and its compatibility requirements.
 ## Confirmed opening hours and guest ordering — hours updated 7 November 2026
 
 - The owner requested easy **Online / Busy / Pause / Closed** controls on admin. Show the saved state on Overview and Finance, apply changes through verified owner/admin RPCs, and retain tenant/kitchen scope. Online and Busy may accept new orders only when every payment/menu/opening gate passes; Busy uses the explicitly configured pickup estimate, without an invented delay. Paused and Closed stop new checkout but preserve already-started payment reconciliation and existing order/receipt/KDS progress. They never resume automatically. Stopping orders must remain possible even if a pickup-estimate edit is unfinished.
-- Confirmed Luton opening: **Friday 6 November 2026, 15:00–midnight (00:00 Saturday); Saturday 7 November, 13:00–midnight (00:00 Sunday); Sunday 8 November, 13:00–23:00**, Europe/London. The owner's extended Friday and Saturday hours supersede their earlier 23:00 closing times below and in historical documents.
+- Confirmed Luton opening: **Friday 6 November 2026, 15:00–midnight (00:00 Saturday); Saturday 7 November, 15:00–midnight (00:00 Sunday); Sunday 8 November, 15:00–23:00**, Europe/London. The owner's 7 November update moves Saturday and Sunday opening to 15:00, superseding their earlier 13:00 starts; Friday and Saturday retain the approved midnight closing times.
 - During those exact daily windows, customers may order **without registering**. The 30% opening offer has no minimum and includes eligible guest and member collection/kerbside orders. The kitchen closes between the daily windows; this is not a rolling three-day window from signup.
 - Guest orders earn **no loyalty points**, create no Auth/member account and never opt the customer into marketing. Registered, verified membership is required for member-only offers; promotional email and push preferences remain separate and optional. Do not invent loyalty earning rules or enable notification delivery before configured.
 - Guest contact details do not prove identity. Receipt access uses a scoped, high-entropy, HttpOnly, Secure, SameSite cookie, with only its hash stored in the private database. Keep guest and member orders separate even if their email addresses match. Existing guest receipts remain readable after launch closes until session expiry; no fresh guest checkout after Sunday 23:00.

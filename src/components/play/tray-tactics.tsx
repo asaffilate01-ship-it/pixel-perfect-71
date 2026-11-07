@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { ChefHat, RotateCcw, Trophy, Undo2, Users } from "lucide-react";
 
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
+import { useArcadeProgress } from "@/components/play/arcade-progress";
+import { createArcadeRoundId } from "@/lib/mealdeck-play-progress";
 import {
   TRAY_SIZE,
   countTrayPieces,
@@ -30,6 +32,9 @@ function pieceName(player: TrayPlayer): string {
 
 export function TrayTactics() {
   const id = useId();
+  const { recordCompletion } = useArcadeProgress();
+  const [roundId, setRoundId] = useState<string | null>(null);
+  const recordedRound = useRef<string | null>(null);
   const [started, setStarted] = useState(false);
   const [mode, setMode] = useState<TrayMode>("solo");
   const [difficulty, setDifficulty] = useState<TrayDifficulty>("casual");
@@ -74,8 +79,22 @@ export function TrayTactics() {
     return () => window.cancelAnimationFrame(frame);
   }, [started, game.over]);
 
+  useEffect(() => {
+    if (!started || !game.over || !roundId || recordedRound.current === roundId) return;
+    recordedRound.current = roundId;
+    recordCompletion({
+      id: roundId,
+      game: "tray-tactics",
+      result:
+        mode === "local" ? "completed" : winner === null ? "draw" : winner === 1 ? "win" : "loss",
+      moves: game.moveCount,
+      variant: `${mode}-${difficulty}`,
+    });
+  }, [started, game.over, game.moveCount, roundId, mode, difficulty, winner, recordCompletion]);
+
   function startRound() {
     const next = createTrayGame();
+    setRoundId(createArcadeRoundId());
     setGame(next);
     setHistory([]);
     setNotice("Burger moves first. Choose a dotted square.");
@@ -415,7 +434,8 @@ export function TrayTactics() {
                 {mode === "solo"
                   ? `${difficulty === "clever" ? "Clever" : "Casual"} chef`
                   : "Two players, one screen"}{" "}
-                · Local play. Your round resets when you leave or reload.
+                · Finished rounds can be kept in My playbook on this browser. The board resets when
+                you leave or reload.
               </p>
             </div>
           </div>

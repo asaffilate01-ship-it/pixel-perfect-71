@@ -1,6 +1,6 @@
 /** UI TEST ONLY. Synthetic local state, no auth, backend, or real orders.
  * Keep this fixture outside public/build output. See README.md for approved preview setup. */
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   KdsOrderCollection,
@@ -10,6 +10,11 @@ import {
 import { KdsCompletedCard } from "../../../src/components/ops/kds-completed-card";
 import { KdsOrderNavigator } from "../../../src/components/ops/kds-order-navigator";
 import { KdsTicketGrid } from "../../../src/components/ops/kds-ticket-grid";
+import {
+  StaffAlertControls,
+  StaffSoundUnlock,
+  useStaffAlerts,
+} from "../../../src/components/ops/staff-alerts";
 import type { KdsOrder, KdsOrderItem } from "../../../src/lib/mealdeck-kds";
 import type { KdsCompletedOrder } from "../../../src/lib/mealdeck-kds-workflow";
 import {
@@ -318,6 +323,14 @@ function Fixture() {
   const [geometry, setGeometry] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const nextNumber = useRef(9109);
+  const alerts = useStaffAlerts("kds", "synthetic-local-kds-layout-qa");
+  const { observe: observeAlerts } = alerts;
+  useEffect(() => {
+    observeAlerts(
+      orders.map((order) => order.order_id),
+      true,
+    );
+  }, [orders, observeAlerts]);
   const counts = useMemo(() => {
     const value: Record<KdsOrderStage, number> = {
       queued: 0,
@@ -609,12 +622,23 @@ function Fixture() {
           refreshing={false}
           refreshDisabled={false}
           onRefresh={() => log({ handler: "onRefresh", localOnly: true })}
+          soundEnabled={alerts.enabled}
+          extraTools={<StaffAlertControls alerts={alerts} kind="kds" />}
           onClear={() => {
             setFilter("all");
             setQuery("");
             setFulfilment("all");
           }}
         />
+        <StaffSoundUnlock alerts={alerts} />
+        {alerts.notice > 0 && (
+          <div className="md-kds-new-orders" role="status">
+            {alerts.notice} new synthetic {alerts.notice === 1 ? "order" : "orders"}
+            <button type="button" className="md-kds-clear" onClick={alerts.clearNotice}>
+              Dismiss alert
+            </button>
+          </div>
+        )}
         {filter === "done" ? (
           <>
             <p className="md-ops-muted">Synthetic completed orders · read-only UI check.</p>

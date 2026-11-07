@@ -1,0 +1,315 @@
+.md-bento-game {
+  overflow: hidden;
+}
+.md-bento-game .md-game-heading > div {
+  min-width: 0;
+}
+.md-bento-game .md-game-heading > .md-game-button {
+  flex-shrink: 0;
+}
+.md-bento-options select {
+  font-size: 16px;
+}
+.md-bento-start h3,
+.md-bento-result h3 {
+  margin: 0 0 12px;
+  font-family: var(--md-heading, "Outfit", sans-serif);
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.15;
+}
+.md-bento-start p:not(.md-bento-eyebrow),
+.md-bento-result > p:not(.md-bento-eyebrow) {
+  color: var(--game-muted);
+  line-height: 1.65;
+}
+.md-bento-eyebrow {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--game-red);
+}
+.md-bento-round-label {
+  margin: 20px 0 12px;
+  color: var(--game-muted);
+  font-size: 13px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.md-bento-stat-total {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--game-muted);
+  white-space: nowrap;
+}
+.md-bento-play-area {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(200px, 0.9fr);
+  align-items: center;
+  gap: 28px;
+  margin-top: 24px;
+}
+.md-bento-tray-wrap,
+.md-bento-controls {
+  min-width: 0;
+}
+.md-bento-board-help {
+  margin: 0 0 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--game-muted);
+  line-height: 1.5;
+}
+.md-bento-board-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px 4px 9px;
+  overscroll-behavior-x: contain;
+}
+.md-bento-board {
+  --bento-columns: 4;
+  display: grid;
+  width: 100%;
+  max-width: 368px;
+  min-width: calc(var(--bento-columns) * 44px + 4px);
+  margin-inline: auto;
+  border: 2px solid var(--game-ink);
+  border-radius: 8px;
+  background: var(--game-paper);
+  overflow: hidden;
+}
+.md-bento-board.is-size-6 {
+  --bento-columns: 6;
+  max-width: 414px;
+}
+.md-bento-row {
+  display: grid;
+  grid-template-columns: repeat(var(--bento-columns), minmax(44px, 1fr));
+}
+.md-bento-row > [role="gridcell"] {
+  min-width: 0;
+}
+.md-bento-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--game-line);
+  border-bottom: 1px solid var(--game-line);
+  border-radius: 0;
+  background: var(--game-paper);
+  color: var(--game-red);
+  cursor: pointer;
+  isolation: isolate;
+}
+.md-bento-row > :last-child .md-bento-cell {
+  border-right: 0;
+}
+.md-bento-row:last-child .md-bento-cell {
+  border-bottom: 0;
+}
+.md-bento-cell.is-box-right {
+  border-right: 2px solid var(--game-ink);
+}
+.md-bento-cell.is-box-bottom {
+  border-bottom: 2px solid var(--game-ink);
+}
+.md-bento-cell.is-related {
+  background: #fff1dc;
+}
+.md-bento-cell.is-given {
+  background: #eee7da;
+  color: var(--game-ink);
+}
+.md-bento-cell.is-selected {
+  background: #fff0c2;
+  box-shadow: inset 0 0 0 3px var(--game-red);
+}
+.md-bento-cell.is-conflict {
+  background: #ffe4e1;
+}
+.md-bento-game .md-bento-cell:focus-visible {
+  outline: 0;
+  box-shadow:
+    inset 0 0 0 3px var(--game-red),
+    inset 0 0 0 5px var(--game-paper);
+  z-index: 1;
+}
+.md-bento-cell img {
+  width: 55%;
+  height: 55%;
+  position: absolute;
+  object-fit: contain;
+  opacity: 0.16;
+  z-index: -1;
+}
+.md-bento-digit {
+  font: 800 clamp(23px, 3vw, 33px)/1 var(--md-heading, "Outfit", sans-serif);
+}
+.md-bento-lock {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  color: #625746;
+}
+.md-bento-conflict-mark {
+  position: absolute;
+  right: 3px;
+  top: 1px;
+  color: #a30b17;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+}
+.md-bento-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 9px 0 0;
+  color: var(--game-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.md-bento-legend span {
+  white-space: nowrap;
+}
+.md-bento-selection {
+  margin: 0 0 13px;
+  font-size: 14px;
+  font-weight: 750;
+  text-align: center;
+}
+.md-bento-selection > span {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--game-muted);
+}
+.md-bento-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(44px, 1fr));
+  gap: 8px;
+  max-width: 288px;
+  margin: 0 auto;
+}
+.md-bento-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 56px;
+  min-width: 44px;
+  padding: 8px 4px;
+  border: 1px solid var(--game-line);
+  border-radius: 11px;
+  background: var(--game-paper);
+  color: var(--game-ink);
+  font: 800 23px/1 var(--md-heading, "Outfit", sans-serif);
+  cursor: pointer;
+}
+.md-bento-number img {
+  object-fit: contain;
+  width: 31px;
+  height: 31px;
+}
+.md-bento-number:hover:not(:disabled) {
+  border-color: var(--game-red);
+  background: var(--game-cream);
+}
+.md-bento-number:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.md-bento-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 288px;
+  margin: 14px auto 0;
+  gap: 8px;
+}
+.md-bento-tools .md-game-button {
+  min-width: 0;
+  padding-inline: 8px;
+}
+.md-bento-tools .md-bento-hint-button {
+  grid-column: 1 / -1;
+}
+.md-bento-controls > .md-game-footnote {
+  max-width: 280px;
+  margin: 10px auto 0;
+  text-align: center;
+}
+.md-bento-result {
+  border: 1px solid var(--game-line);
+  border-radius: 14px;
+  padding: 23px;
+  background: var(--game-cream);
+}
+.md-bento-result h3:focus {
+  outline: 3px solid var(--game-red);
+  outline-offset: 5px;
+}
+.md-bento-conflict-status {
+  margin-top: 18px;
+}
+@media (max-width: 680px) {
+  .md-bento-play-area {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+  .md-bento-game .md-game-heading {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .md-bento-controls {
+    width: 100%;
+    max-width: 414px;
+    margin-inline: auto;
+  }
+  .md-bento-keypad {
+    grid-template-columns: repeat(3, minmax(44px, 1fr));
+    max-width: 100%;
+  }
+  .md-bento-tools {
+    max-width: 100%;
+  }
+}
+@media (max-width: 360px) {
+  .md-bento-game .md-game-stats {
+    gap: 6px;
+  }
+  .md-bento-game .md-game-stats > div {
+    padding: 10px 8px;
+  }
+  .md-bento-game .md-game-stats dt {
+    font-size: 10px;
+  }
+  .md-bento-start {
+    padding: 16px;
+  }
+  .md-bento-start img {
+    max-height: 105px;
+  }
+  .md-bento-number {
+    min-height: 48px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .md-bento-game *,
+  .md-bento-game *::before,
+  .md-bento-game *::after {
+    scroll-behavior: auto;
+    transition: none;
+    animation: none;
+  }
+}

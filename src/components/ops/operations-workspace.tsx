@@ -89,6 +89,7 @@ import { OpsKdsPanel } from "@/components/ops/kds-panel";
 import { CashOrderPanel } from "@/components/ops/cash-order-panel";
 import { CheckoutLaunchSettings } from "@/components/ops/checkout-launch-settings";
 import { IntegrationStatusPanel } from "@/components/ops/integration-status-panel";
+import { NotificationCampaignPanel } from "@/components/ops/notification-campaign-panel";
 import { WhatsAppInboxPanel } from "@/components/ops/whatsapp-inbox-panel";
 import { StaffPasswordPanel } from "@/components/ops/staff-password-panel";
 import {
@@ -1171,6 +1172,11 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                         <div className="space-y-5" key={tenant + ":" + location + ":" + user.id}>
                           <CheckoutLaunchSettings tenantId={tenant} locationId={location} />
                           <IntegrationStatusPanel tenantId={tenant} locationId={location} />
+                          <NotificationCampaignPanel
+                            tenantId={tenant}
+                            locationId={location}
+                            staffUserId={user.id}
+                          />
                         </div>
                       )}
                     <PaidOrdersGoalPanel locations={data.paidGoalLocations} />

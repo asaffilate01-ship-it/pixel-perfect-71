@@ -1,4 +1,25 @@
 export type StaffAlertKind = "kds" | "printer";
+
+/** Optional feedback channels are independent; either failure leaves the other usable. */
+export function playStaffAlertChannels(
+  playSound: () => boolean,
+  playVibration?: () => boolean,
+): boolean {
+  let sounded = false;
+  let vibrated = false;
+  try {
+    sounded = playSound();
+  } catch {
+    // Visual notices remain available even when a browser rejects sound.
+  }
+  try {
+    vibrated = playVibration?.() ?? false;
+  } catch {
+    // Vibration is always optional and cannot suppress a successful chime.
+  }
+  return sounded || vibrated;
+}
+
 export const staffAlertTones = {
   kds: [
     { frequency: 660, at: 0, duration: 0.32 },

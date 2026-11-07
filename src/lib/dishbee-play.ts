@@ -23,6 +23,11 @@ export const FOOD_SUITS = [
 ] as const;
 
 export const GAME_CATALOGUE = [
+  { id: "snack-trail", name: "Snack Trail", description: "Collect bites, avoid your tail and choose moving or step-by-step play.", state: "playable" },
+  { id: "skewer-sort", name: "Skewer Sort", description: "Move one bite at a time until every skewer holds a matching food.", state: "playable" },
+  { id: "pantry-sweep", name: "Pantry Sweep", description: "Follow the number clues, flag hidden chillies and uncover the safe pantry shelves.", state: "playable" },
+  { id: "bento-sudoku", name: "Bento Sudoku", description: "Give every food its place in a fresh or daily number puzzle, with two tray sizes.", state: "playable" },
+  { id: "tray-lines", name: "Tray Lines", description: "Join the dots, close the boxes and outplay the chef or a friend.", state: "playable" },
   { id: "sauce-switch", name: "Sauce Switch", description: "Flip neighbouring tiles and clear the tray in a fresh daily logic puzzle.", state: "playable" },
   { id: "menu-quest", name: "Menu Quest", description: "Find the hidden food words. Tap the first and last letters to join them.", state: "playable" },
   { id: "tray-tactics", name: "Tray Tactics", description: "Capture the tray with clever food flips against the chef or a friend.", state: "playable" },

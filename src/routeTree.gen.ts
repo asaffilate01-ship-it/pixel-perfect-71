@@ -35,6 +35,7 @@ import { Route as ApiCheckoutRouteImport } from './routes/api.checkout'
 import { Route as ApiFranchiseRouteImport } from './routes/api.franchise'
 import { Route as ApiGroupOrdersRouteImport } from './routes/api.group-orders'
 import { Route as ApiGroupPaymentsRouteImport } from './routes/api.group-payments'
+import { Route as ApiNotificationsRouteImport } from './routes/api.notifications'
 import { Route as ApiTerminalRouteImport } from './routes/api.terminal'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
@@ -42,8 +43,10 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
 import { Route as WhatsappCheckoutRouteImport } from './routes/whatsapp.checkout'
 import { Route as ApiAuthEmailRouteImport } from './routes/api.auth.email'
+import { Route as ApiNotificationsWorkerRouteImport } from './routes/api.notifications.worker'
 import { Route as ApiOpsCashRouteImport } from './routes/api.ops.cash'
 import { Route as ApiOpsIntegrationsRouteImport } from './routes/api.ops.integrations'
+import { Route as ApiOpsNotificationsRouteImport } from './routes/api.ops.notifications'
 import { Route as ApiOpsWhatsappRouteImport } from './routes/api.ops.whatsapp'
 import { Route as ApiPublicMenuRouteImport } from './routes/api.public.menu'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
@@ -182,6 +185,11 @@ const ApiGroupPaymentsRoute = ApiGroupPaymentsRouteImport.update({
   path: '/api/group-payments',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiNotificationsRoute = ApiNotificationsRouteImport.update({
+  id: '/api/notifications',
+  path: '/api/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTerminalRoute = ApiTerminalRouteImport.update({
   id: '/api/terminal',
   path: '/api/terminal',
@@ -217,6 +225,11 @@ const ApiAuthEmailRoute = ApiAuthEmailRouteImport.update({
   path: '/api/auth/email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiNotificationsWorkerRoute = ApiNotificationsWorkerRouteImport.update({
+  id: '/worker',
+  path: '/worker',
+  getParentRoute: () => ApiNotificationsRoute,
+} as any)
 const ApiOpsCashRoute = ApiOpsCashRouteImport.update({
   id: '/api/ops/cash',
   path: '/api/ops/cash',
@@ -225,6 +238,11 @@ const ApiOpsCashRoute = ApiOpsCashRouteImport.update({
 const ApiOpsIntegrationsRoute = ApiOpsIntegrationsRouteImport.update({
   id: '/api/ops/integrations',
   path: '/api/ops/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOpsNotificationsRoute = ApiOpsNotificationsRouteImport.update({
+  id: '/api/ops/notifications',
+  path: '/api/ops/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOpsWhatsappRoute = ApiOpsWhatsappRouteImport.update({
@@ -290,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/api/franchise': typeof ApiFranchiseRoute
   '/api/group-orders': typeof ApiGroupOrdersRoute
   '/api/group-payments': typeof ApiGroupPaymentsRoute
+  '/api/notifications': typeof ApiNotificationsRouteWithChildren
   '/api/terminal': typeof ApiTerminalRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -297,8 +316,10 @@ export interface FileRoutesByFullPath {
   '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/notifications/worker': typeof ApiNotificationsWorkerRoute
   '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
+  '/api/ops/notifications': typeof ApiOpsNotificationsRoute
   '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -334,6 +355,7 @@ export interface FileRoutesByTo {
   '/api/franchise': typeof ApiFranchiseRoute
   '/api/group-orders': typeof ApiGroupOrdersRoute
   '/api/group-payments': typeof ApiGroupPaymentsRoute
+  '/api/notifications': typeof ApiNotificationsRouteWithChildren
   '/api/terminal': typeof ApiTerminalRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -341,8 +363,10 @@ export interface FileRoutesByTo {
   '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/notifications/worker': typeof ApiNotificationsWorkerRoute
   '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
+  '/api/ops/notifications': typeof ApiOpsNotificationsRoute
   '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -379,6 +403,7 @@ export interface FileRoutesById {
   '/api/franchise': typeof ApiFranchiseRoute
   '/api/group-orders': typeof ApiGroupOrdersRoute
   '/api/group-payments': typeof ApiGroupPaymentsRoute
+  '/api/notifications': typeof ApiNotificationsRouteWithChildren
   '/api/terminal': typeof ApiTerminalRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -386,8 +411,10 @@ export interface FileRoutesById {
   '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/notifications/worker': typeof ApiNotificationsWorkerRoute
   '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
+  '/api/ops/notifications': typeof ApiOpsNotificationsRoute
   '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -425,6 +452,7 @@ export interface FileRouteTypes {
     | '/api/franchise'
     | '/api/group-orders'
     | '/api/group-payments'
+    | '/api/notifications'
     | '/api/terminal'
     | '/auth/confirm'
     | '/blog/$slug'
@@ -432,8 +460,10 @@ export interface FileRouteTypes {
     | '/whatsapp/checkout'
     | '/blog/'
     | '/api/auth/email'
+    | '/api/notifications/worker'
     | '/api/ops/cash'
     | '/api/ops/integrations'
+    | '/api/ops/notifications'
     | '/api/ops/whatsapp'
     | '/api/public/menu'
     | '/api/stripe/webhook'
@@ -469,6 +499,7 @@ export interface FileRouteTypes {
     | '/api/franchise'
     | '/api/group-orders'
     | '/api/group-payments'
+    | '/api/notifications'
     | '/api/terminal'
     | '/auth/confirm'
     | '/blog/$slug'
@@ -476,8 +507,10 @@ export interface FileRouteTypes {
     | '/whatsapp/checkout'
     | '/blog'
     | '/api/auth/email'
+    | '/api/notifications/worker'
     | '/api/ops/cash'
     | '/api/ops/integrations'
+    | '/api/ops/notifications'
     | '/api/ops/whatsapp'
     | '/api/public/menu'
     | '/api/stripe/webhook'
@@ -513,6 +546,7 @@ export interface FileRouteTypes {
     | '/api/franchise'
     | '/api/group-orders'
     | '/api/group-payments'
+    | '/api/notifications'
     | '/api/terminal'
     | '/auth/confirm'
     | '/blog/$slug'
@@ -520,8 +554,10 @@ export interface FileRouteTypes {
     | '/whatsapp/checkout'
     | '/blog/'
     | '/api/auth/email'
+    | '/api/notifications/worker'
     | '/api/ops/cash'
     | '/api/ops/integrations'
+    | '/api/ops/notifications'
     | '/api/ops/whatsapp'
     | '/api/public/menu'
     | '/api/stripe/webhook'
@@ -558,6 +594,7 @@ export interface RootRouteChildren {
   ApiFranchiseRoute: typeof ApiFranchiseRoute
   ApiGroupOrdersRoute: typeof ApiGroupOrdersRoute
   ApiGroupPaymentsRoute: typeof ApiGroupPaymentsRoute
+  ApiNotificationsRoute: typeof ApiNotificationsRouteWithChildren
   ApiTerminalRoute: typeof ApiTerminalRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   BlogSlugRoute: typeof BlogSlugRoute
@@ -567,6 +604,7 @@ export interface RootRouteChildren {
   ApiAuthEmailRoute: typeof ApiAuthEmailRoute
   ApiOpsCashRoute: typeof ApiOpsCashRoute
   ApiOpsIntegrationsRoute: typeof ApiOpsIntegrationsRoute
+  ApiOpsNotificationsRoute: typeof ApiOpsNotificationsRoute
   ApiOpsWhatsappRoute: typeof ApiOpsWhatsappRoute
   ApiPublicMenuRoute: typeof ApiPublicMenuRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -760,6 +798,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGroupPaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/notifications': {
+      id: '/api/notifications'
+      path: '/api/notifications'
+      fullPath: '/api/notifications'
+      preLoaderRoute: typeof ApiNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/terminal': {
       id: '/api/terminal'
       path: '/api/terminal'
@@ -809,6 +854,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/notifications/worker': {
+      id: '/api/notifications/worker'
+      path: '/worker'
+      fullPath: '/api/notifications/worker'
+      preLoaderRoute: typeof ApiNotificationsWorkerRouteImport
+      parentRoute: typeof ApiNotificationsRoute
+    }
     '/api/ops/cash': {
       id: '/api/ops/cash'
       path: '/api/ops/cash'
@@ -821,6 +873,13 @@ declare module '@tanstack/react-router' {
       path: '/api/ops/integrations'
       fullPath: '/api/ops/integrations'
       preLoaderRoute: typeof ApiOpsIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ops/notifications': {
+      id: '/api/ops/notifications'
+      path: '/api/ops/notifications'
+      fullPath: '/api/ops/notifications'
+      preLoaderRoute: typeof ApiOpsNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ops/whatsapp': {
@@ -875,6 +934,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ApiNotificationsRouteChildren {
+  ApiNotificationsWorkerRoute: typeof ApiNotificationsWorkerRoute
+}
+
+const ApiNotificationsRouteChildren: ApiNotificationsRouteChildren = {
+  ApiNotificationsWorkerRoute: ApiNotificationsWorkerRoute,
+}
+
+const ApiNotificationsRouteWithChildren =
+  ApiNotificationsRoute._addFileChildren(ApiNotificationsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
@@ -902,6 +972,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFranchiseRoute: ApiFranchiseRoute,
   ApiGroupOrdersRoute: ApiGroupOrdersRoute,
   ApiGroupPaymentsRoute: ApiGroupPaymentsRoute,
+  ApiNotificationsRoute: ApiNotificationsRouteWithChildren,
   ApiTerminalRoute: ApiTerminalRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   BlogSlugRoute: BlogSlugRoute,
@@ -911,6 +982,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthEmailRoute: ApiAuthEmailRoute,
   ApiOpsCashRoute: ApiOpsCashRoute,
   ApiOpsIntegrationsRoute: ApiOpsIntegrationsRoute,
+  ApiOpsNotificationsRoute: ApiOpsNotificationsRoute,
   ApiOpsWhatsappRoute: ApiOpsWhatsappRoute,
   ApiPublicMenuRoute: ApiPublicMenuRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,

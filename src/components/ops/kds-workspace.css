@@ -1,6 +1,7 @@
 /* Kitchen-only layout. Keep the public theme and other operations panels intact. */
 .md-kds-workspace {
   --kds-stage: var(--ops-ink);
+  --kds-scroll-offset: 84px;
   min-width: 0;
 }
 
@@ -416,11 +417,13 @@
 }
 
 .md-kds-workspace .md-kds-ticket {
+  /* Keep absolute screen-reader labels inside horizontally scrolling lanes. */
+  position: relative;
   container: kds-ticket / inline-size;
   border-top-color: var(--kds-stage);
   border-radius: 11px;
   box-shadow: 0 3px 10px #38210b08;
-  scroll-margin-top: calc(84px + env(safe-area-inset-top, 0px));
+  scroll-margin-top: calc(var(--kds-scroll-offset) + env(safe-area-inset-top, 0px));
 }
 
 .md-kds-workspace .md-kds-ticket:focus-visible {
@@ -429,7 +432,7 @@
 }
 
 .md-kds-workspace .md-kds-ticket :is(button, input) {
-  scroll-margin-top: calc(84px + env(safe-area-inset-top, 0px));
+  scroll-margin-top: calc(var(--kds-scroll-offset) + env(safe-area-inset-top, 0px));
 }
 
 .md-kds-workspace .md-kds-ticket-heading {
@@ -1016,6 +1019,16 @@
   }
 }
 
+@media (max-width: 360px) {
+  .md-kds-workspace {
+    --kds-scroll-offset: 110px;
+  }
+  .md-kds-workspace .md-kds-order-navigator {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+}
+
 @media (max-width: 399px) {
   .md-kds-workspace .md-kds-ticket-heading {
     padding-inline: 12px;
@@ -1097,7 +1110,7 @@
 
   .md-kds-workspace[data-mobile-navigation="true"]
     :is(.md-kds-ticket, .md-ops-ticket-footer button, .md-ops-ticket-footer input) {
-    scroll-margin-block: calc(84px + env(safe-area-inset-top, 0px))
+    scroll-margin-block: calc(var(--kds-scroll-offset) + env(safe-area-inset-top, 0px))
       calc(96px + env(safe-area-inset-bottom, 0px));
   }
 }

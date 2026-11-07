@@ -23,6 +23,7 @@ import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 import { MealDeckLogo } from "./mealdeck-logo";
 import { GroupPaymentChoice } from "./group-payments/payment-choice";
+import { OrderNotificationsCard } from "./order-notifications-card";
 import {
   sharedPaymentRoomPath,
   type SharedPaymentCapabilities,
@@ -79,6 +80,7 @@ import {
   requestMealDeckCheckout,
   type MealDeckCheckoutMode,
 } from "@/lib/mealdeck-checkout-browser";
+import { notificationReceiptMode } from "@/lib/mealdeck-order-notifications-browser";
 import {
   GUEST_PRIVACY_VERSION,
   normaliseGuestInput,
@@ -533,6 +535,7 @@ export function CheckoutSpecialRequestsReview({ notes }: { notes?: string | null
 
 type LaunchCheckoutProps = {
   orderId?: string;
+  notificationMode?: MealDeckCheckoutMode;
   cancelled?: boolean;
   groupExpected?: boolean;
   whatsAppCheckout?: WhatsAppCheckoutContext;
@@ -588,7 +591,13 @@ export function LaunchCheckout(props: LaunchCheckoutProps) {
     props.whatsAppCheckout ?? (recovered?.orderId === props.orderId ? recovered?.context : null);
   return (
     <LaunchCheckoutView
-      key={(context?.handoffId ?? "website") + ":" + (props.orderId ?? "new")}
+      key={
+        (context?.handoffId ?? "website") +
+        ":" +
+        (props.orderId ?? "new") +
+        ":" +
+        (props.notificationMode ?? "saved")
+      }
       {...props}
       {...(context ? { whatsAppCheckout: context } : {})}
     />
@@ -597,10 +606,14 @@ export function LaunchCheckout(props: LaunchCheckoutProps) {
 
 function LaunchCheckoutView({
   orderId,
+  notificationMode,
   cancelled = false,
   groupExpected = false,
   whatsAppCheckout,
 }: LaunchCheckoutProps) {
+  // The push link chooses the receipt's existing identity transport only.
+  // It never supplies a guest token, grants access or changes checkout eligibility.
+  const receiptMode = notificationReceiptMode(orderId, notificationMode);
   const whatsAppDraft = whatsAppCheckout?.draft;
   const [whatsAppBoundMode, setWhatsAppBoundMode] = useState<MealDeckCheckoutMode | null>(
     whatsAppCheckout?.quoteId ? whatsAppCheckout.checkoutMode : null,
@@ -642,6 +655,7 @@ function LaunchCheckoutView({
   const [selectedCheckoutMode, setCheckoutMode] = useState<MealDeckCheckoutMode>(
     whatsAppCheckout?.checkoutMode ??
       whatsAppPaymentAttempt?.checkoutMode ??
+      receiptMode ??
       (orderId ? "member" : "guest"),
   );
   const [guestDetails, setGuestDetails] = useState({
@@ -844,6 +858,7 @@ function LaunchCheckoutView({
         if (saved === "pickup" || saved === "curbside") setFulfilment(saved);
       }
       if (
+        !receiptMode &&
         !whatsAppCheckout?.checkoutMode &&
         !whatsAppPaymentAttempt &&
         sessionStorage.getItem(checkoutModeKey) === "guest"
@@ -852,7 +867,13 @@ function LaunchCheckoutView({
     } catch {
       /* Optional restoration. */
     }
-  }, [checkoutModeKey, whatsAppCheckout?.checkoutMode, whatsAppDraft, whatsAppPaymentAttempt]);
+  }, [
+    checkoutModeKey,
+    receiptMode,
+    whatsAppCheckout?.checkoutMode,
+    whatsAppDraft,
+    whatsAppPaymentAttempt,
+  ]);
 
   useEffect(() => {
     alive.current = true;
@@ -1734,6 +1755,16 @@ function LaunchCheckoutView({
                     )}
                   </section>
                   {receipt.verifiedPaid && <ReceiptProgress receipt={receipt} />}
+                  {receipt.verifiedPaid &&
+                    !receipt.completedAt &&
+                    !receipt.held &&
+                    receipt.paymentStatus !== "refunded" && (
+                      <OrderNotificationsCard
+                        key={checkoutMode + ":" + receipt.orderId}
+                        orderId={receipt.orderId}
+                        mode={checkoutMode}
+                      />
+                    )}
                 </div>
                 <aside className="md-checkout-card md-checkout-summary">
                   <h2>Your order</h2>
