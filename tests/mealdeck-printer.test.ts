@@ -2,15 +2,18 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ReceiptPreview } from "../src/components/ops/receipt-preview";
+import { ReceiptQueueList } from "../src/components/ops/printer-receipt-list";
 import { validateReceipt } from "../tools/receipt-bridge/receipt.mjs";
 import { receiptLogoSource, waitForReceiptLogo } from "../src/lib/mealdeck-receipt-logo";
 import { receiptGamesQr } from "../src/lib/mealdeck-receipt-games";
+import { printerQueueView } from "../src/lib/mealdeck-printer-queue";
 import {
   receiptSchema,
   parsePrinterBoard,
   parseClaim,
   receiptItemBags,
   type MealDeckReceipt,
+  type PrinterJob,
 } from "../src/lib/mealdeck-printer";
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const time = "2026-11-05T12:00:00Z";
@@ -446,6 +449,167 @@ describe("canonical receipt presentation", () => {
     expect(() =>
       parseClaim({ ...job(), status: "claimed", claimToken: id(3), replayed: false }, id(9)),
     ).toThrow();
+  });
+});
+
+describe("printer queue and completed history", () => {
+  function queueJob(number: number, status: PrinterJob["status"]): PrinterJob {
+    const value = job();
+    const orderId = id(3000 + number);
+    return {
+      ...value,
+      jobId: id(2000 + number),
+      orderId,
+      status,
+      receipt: {
+        ...value.receipt,
+        orderId,
+        orderNumber: String(number).padStart(4, "0"),
+      },
+    };
+  }
+
+  function queueMarkup(view: ReturnType<typeof printerQueueView>, fresh = true) {
+    return renderToStaticMarkup(
+      createElement(ReceiptQueueList, {
+        view,
+        fresh,
+        renderJob: (entry) =>
+          createElement(
+            "article",
+            { key: entry.jobId, "data-receipt-job": entry.jobId },
+            `Order ${entry.receipt.orderNumber} · ${entry.status} · copy ${entry.copyNumber}`,
+          ),
+      }),
+    );
+  }
+
+  test("a confirmed replacement leaves the active queue and remains in closed printed history", () => {
+    const printed = queueJob(18, "printed");
+    printed.copyNumber = 3;
+    printed.receipt = {
+      ...printed.receipt,
+      copyNumber: 3,
+      reprintOf: id(2017),
+      reprintReason: "Replacement requested after inspecting the paper.",
+    };
+    const view = printerQueueView([printed], []);
+    expect(view.activeJobs).toEqual([]);
+    expect(view.printedJobs).toEqual([printed]);
+    expect(view.actionCount).toBe(0);
+    expect(view.hasLocalHolds).toBe(false);
+
+    const html = queueMarkup(view);
+    const historyPosition = html.indexOf("<details");
+    expect(historyPosition).toBeGreaterThan(-1);
+    expect(html.slice(0, historyPosition)).toContain("Receipt queue clear");
+    expect(html.slice(0, historyPosition)).not.toContain(printed.jobId);
+    expect(html.slice(historyPosition)).toContain("Recently printed");
+    expect(html.slice(historyPosition)).toContain("Order 0018 · printed · copy 3");
+    expect(html.match(/<details\b/g)).toHaveLength(1);
+    expect(html.match(/<details\b[^>]*>/)?.[0]).not.toMatch(/\bopen(?:=|\s|>)/);
+  });
+
+  test("an empty or completed-only stale board never claims the queue is clear", () => {
+    for (const jobs of [[], [queueJob(18, "printed")]]) {
+      const view = printerQueueView(jobs, []);
+      expect(view.actionCount).toBe(0);
+      expect(queueMarkup(view, false)).not.toContain("Receipt queue clear");
+      expect(queueMarkup(view, true)).toContain("Receipt queue clear");
+      if (jobs.length) expect(queueMarkup(view, false)).toContain("Recently printed");
+    }
+  });
+
+  test("printed paper with a local hold stays active until the local record is resolved", () => {
+    const printed = queueJob(18, "printed");
+    const jobs = Object.freeze([printed]);
+    const holds = Object.freeze([{ jobId: printed.jobId }]);
+    const view = printerQueueView(jobs, holds);
+    expect(view.activeJobs).toEqual([printed]);
+    expect(view.printedJobs).toEqual([]);
+    expect(view.actionCount).toBe(1);
+    expect(view.hasLocalHolds).toBe(true);
+    const html = queueMarkup(view);
+    expect(html).toContain('aria-label="Receipts needing attention"');
+    expect(html).toContain(printed.jobId);
+    expect(html).not.toContain("Receipt queue clear");
+    expect(html).not.toContain("Recently printed");
+
+    const resolved = printerQueueView(jobs, []);
+    expect(resolved.activeJobs).toEqual([]);
+    expect(resolved.printedJobs).toEqual([printed]);
+    expect(resolved.actionCount).toBe(0);
+    expect(resolved.hasLocalHolds).toBe(false);
+    expect(view.activeJobs).toEqual([printed]);
+    expect(holds).toEqual([{ jobId: printed.jobId }]);
+  });
+
+  test("failed and unfinished receipts retain their order while the full auto-print input remains intact", () => {
+    const statuses: PrinterJob["status"][] = [
+      "printed",
+      "queued",
+      "failed",
+      "claimed",
+      "sending",
+      "sent_unconfirmed",
+      "held",
+      "printed",
+    ];
+    const jobs = Object.freeze(statuses.map((status, index) => queueJob(index + 20, status)));
+    const snapshot = JSON.stringify(jobs);
+    const nextQueued = jobs.find((entry) => entry.status === "queued");
+    const view = printerQueueView(jobs, []);
+    expect(view.activeJobs).toEqual(jobs.slice(1, 7));
+    expect(view.printedJobs).toEqual([jobs[0]!, jobs[7]!]);
+    expect(view.actionCount).toBe(6);
+    expect(view.hasLocalHolds).toBe(false);
+    for (let index = 0; index < view.activeJobs.length; index++)
+      expect(view.activeJobs[index]).toBe(jobs[index + 1]);
+    expect(jobs.find((entry) => entry.status === "queued")).toBe(nextQueued);
+    expect(JSON.stringify(jobs)).toBe(snapshot);
+
+    const html = queueMarkup(view);
+    const activeMarkup = html.slice(0, html.indexOf("<details"));
+    expect(activeMarkup).toContain(jobs[2]!.jobId);
+    expect(activeMarkup).toContain("Order 0022 · failed · copy 1");
+    expect(html).not.toContain("Receipt queue clear");
+    for (const entry of jobs)
+      expect(html.match(new RegExp(`data-receipt-job="${entry.jobId}"`, "g"))).toHaveLength(1);
+  });
+
+  test("the action count deduplicates active jobs and local holds without dropping orphan recovery", () => {
+    const queued = queueJob(30, "queued");
+    const failed = queueJob(31, "failed");
+    const printed = queueJob(32, "printed");
+    const orphanId = id(2999);
+    const holds = Object.freeze([
+      { jobId: queued.jobId },
+      { jobId: queued.jobId },
+      { jobId: printed.jobId },
+      { jobId: orphanId },
+      { jobId: orphanId },
+    ]);
+    const snapshot = JSON.stringify(holds);
+    const view = printerQueueView([queued, failed, printed], holds);
+    expect(view.activeJobs).toEqual([queued, failed, printed]);
+    expect(view.printedJobs).toEqual([]);
+    expect(view.actionCount).toBe(4);
+    expect(view.hasLocalHolds).toBe(true);
+    expect(JSON.stringify(holds)).toBe(snapshot);
+    expect(queueMarkup(view)).not.toContain("Receipt queue clear");
+  });
+
+  test("an unresolved local receipt prevents a clear message even when every server receipt is printed", () => {
+    const printed = queueJob(18, "printed");
+    const view = printerQueueView([printed], [{ jobId: id(2999) }]);
+    expect(view.activeJobs).toEqual([]);
+    expect(view.printedJobs).toEqual([printed]);
+    expect(view.actionCount).toBe(1);
+    expect(view.hasLocalHolds).toBe(true);
+    const html = queueMarkup(view);
+    expect(html).toContain("Recently printed");
+    expect(html).toContain(printed.jobId);
+    expect(html).not.toContain("Receipt queue clear");
   });
 });
 
