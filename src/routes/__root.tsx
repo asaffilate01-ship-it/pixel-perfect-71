@@ -203,7 +203,6 @@ function RootComponent() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const internal = isMealDeckStaffPath(pathname);
   const basketPage = isLaunchMenuRoute(pathname);
-  const arcadePage = pathname === "/play" || pathname.startsWith("/play/");
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -213,13 +212,11 @@ function RootComponent() {
         {!internal && !basketPage && <ComingSoonBanner />}
         {!internal && <PwaConnectionNotice />}
         <div id="mealdeck-main" tabIndex={-1}>
-          {arcadePage ? (
-            <ArcadeProgressProvider>
-              <Outlet />
-            </ArcadeProgressProvider>
-          ) : (
+          {/* The URL can change before the outgoing route unmounts. Keep its
+              context in place throughout navigation, including delayed loads. */}
+          <ArcadeProgressProvider>
             <Outlet />
-          )}
+          </ArcadeProgressProvider>
         </div>
         {!internal && !basketPage && <BackToTop />}
         {!internal && <MobileTabBar />}
