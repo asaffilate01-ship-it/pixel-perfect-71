@@ -22,6 +22,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
+import { LocalMenuDiscovery } from "@/components/marketing/local-menu-discovery";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import { OfferDiscovery } from "@/components/marketing/offer-discovery";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
@@ -35,11 +36,9 @@ import { GAME_CATALOGUE } from "@/lib/dishbee-play";
 export const Route = createFileRoute("/")({
   head: () => ({
     ...seo({
-      title: `Food in Luton | MealDeck — ${MEALDECK_BUSINESS.tagline}`,
+      title: "MealDeck Luton | Smash Burgers, Wings & Loaded Fries",
       description: SITE_DESCRIPTION,
       path: "/",
-      keywords:
-        "MealDeck, food in Luton, burgers in Luton, Skorch burgers Luton, Tavo chicken Luton, Moktl mocktail lounge Luton, Souvano Greek and Turkish food, Load’d loaded fries, mac and cheese",
     }),
     scripts: [ldScript(orgJsonLd)],
   }),
@@ -107,20 +106,19 @@ function LandingPage() {
           <div className="md-hero-pattern" aria-hidden="true" />
           <div className="md-hero-inner">
             <div className="md-hero-copy">
-              <p className="md-kicker">MealDeck · Luton launches 6 November</p>
+              <p className="md-kicker">MealDeck · Luton collection &amp; kerbside</p>
               <h1>
                 Food in Luton.
                 <br />
                 <span>Every craving.</span>
               </h1>
               <p className="md-hero-lead">
-                Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries
-                and mac and cheese, and Moktl mocktails. Five launch menus, one basket for
-                collection or kerbside.
+                Skorch smash burgers, Tavo chicken wings and tenders, Souvano Greek and Turkish
+                food, Load’d loaded fries and mac and cheese, and Moktl mocktails. Five menus, one
+                basket for collection or kerbside.
               </p>
               <p className="md-hero-foods">
-                Smash burgers · Chicken · Greek &amp; Turkish food · Loaded fries · Mac and cheese ·
-                Mocktails
+                Smash burgers · Chicken wings · Loaded fries · Doner · Mocktails · Milk cake
               </p>
               <p className="md-hero-tagline">{MEALDECK_BUSINESS.tagline}</p>
               <div className="md-hero-actions">
@@ -178,14 +176,16 @@ function LandingPage() {
               <p className="md-kicker md-kicker-red">Our brands. Your cravings.</p>
               <h2>Your first five menus are here.</h2>
               <p>
-                Discover burgers in Luton and every side of your craving: five launch brands, with
-                more menus in the next deck. Mix your picks and order for collection or kerbside.
+                Find your Luton takeaway favourites, from beef smash burgers and chicken wings to
+                loaded fries, doner and mocktails. Mix your picks and order for collection or
+                kerbside.
               </p>
             </div>
             <Link to="/menus" className="md-btn md-btn-red">
               Explore our menus <ArrowRight />
             </Link>
           </div>
+          <LocalMenuDiscovery />
           <BrandLogoGrid />
         </section>
 

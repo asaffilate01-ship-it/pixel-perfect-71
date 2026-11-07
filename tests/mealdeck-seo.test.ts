@@ -3,12 +3,14 @@ import { readFileSync } from "node:fs";
 import { MEALDECK_BUSINESS } from "../src/lib/business-identity";
 import { ARCADE_GAME_PAGES } from "../src/lib/mealdeck-arcade-pages";
 import { MEALDECK_PUBLIC_PATHS, mealDeckSitemap } from "../src/lib/mealdeck-sitemap";
+import { MEALDECK_MENU_PAGES, getMealDeckMenuPage } from "../src/lib/mealdeck-menu-seo";
 import {
   SITE_URL,
   canonicalUrl,
   isPrivateSeoPath,
   ldScript,
   lutonBusiness,
+  menuPageJsonLd,
   orgJsonLd,
   seo,
   stAlbansPageJsonLd,
@@ -102,6 +104,7 @@ describe("private routes stay out of search discovery", () => {
       "/play/promote",
       "/luton",
       "/menus",
+      ...MEALDECK_MENU_PAGES.map((page) => page.path),
       ...ARCADE_GAME_PAGES.map((game) => game.path),
     ])
       expect(MEALDECK_PUBLIC_PATHS).toContain(path);
@@ -112,6 +115,71 @@ describe("private routes stay out of search discovery", () => {
     expect(urls.every((url) => new URL(url).origin === SITE_URL)).toBe(true);
     expect(urls.every((url) => !new URL(url).search && !new URL(url).hash)).toBe(true);
     expect(urls.some((url) => url.includes("/auth/confirm"))).toBe(false);
+  });
+});
+
+describe("distinct crawlable brand menus", () => {
+  test("only the five real menus have local landing pages, with unique search identities", () => {
+    expect(MEALDECK_MENU_PAGES).toHaveLength(5);
+    for (const field of ["brandId", "path", "title", "heading", "description"] as const)
+      expect(new Set(MEALDECK_MENU_PAGES.map((page) => page[field])).size).toBe(5);
+    for (const page of MEALDECK_MENU_PAGES) {
+      expect(getMealDeckMenuPage(page.brandId)).toBe(page);
+      expect(page.title).toContain("Luton");
+      expect(page.heading).toContain("Luton");
+      expect(seo(page).links).toEqual([{ rel: "canonical", href: SITE_URL + page.path }]);
+      expect(lutonBusiness.hasMenu).toContain(SITE_URL + page.path);
+      expect(mealDeckSitemap()).toContain(`<loc>${SITE_URL}${page.path}</loc>`);
+      expect(page.title).not.toContain("Wingstop");
+    }
+    for (const unknown of [
+      undefined,
+      "wingstop",
+      "paratique",
+      "__proto__",
+      "loadd/orders",
+      "LOAdd",
+    ])
+      expect(getMealDeckMenuPage(unknown)).toBeUndefined();
+    expect(MEALDECK_PUBLIC_PATHS).not.toContain("/order");
+  });
+
+  test("menu and breadcrumb markup describe the same canonical page without price or affiliation claims", () => {
+    for (const page of MEALDECK_MENU_PAGES) {
+      const graph = menuPageJsonLd(page)["@graph"];
+      const menu = graph.find((entry) => entry["@type"] === "Menu")!;
+      const webpage = graph.find((entry) => entry["@type"] === "WebPage")!;
+      const breadcrumb = graph.find((entry) => entry["@type"] === "BreadcrumbList")!;
+      expect(menu.url).toBe(SITE_URL + page.path);
+      expect(webpage.mainEntity).toEqual({ "@id": menu["@id"] });
+      expect(breadcrumb.itemListElement?.at(-1)).toEqual({
+        "@type": "ListItem",
+        position: 3,
+        name: page.brandName,
+        item: menu.url,
+      });
+      const text = JSON.stringify(graph);
+      for (const absent of [
+        "Wingstop",
+        "aggregateRating",
+        "OrderAction",
+        "priceCurrency",
+        "InStock",
+      ])
+        expect(text).not.toContain(absent);
+    }
+  });
+
+  test("space-separated brand alias and public social profiles identify the real business", () => {
+    const organisation = orgJsonLd["@graph"].find((entry) => entry["@type"] === "Organization")!;
+    const website = orgJsonLd["@graph"].find((entry) => entry["@type"] === "WebSite")!;
+    expect(organisation.alternateName).toBe("Meal Deck");
+    expect(website.alternateName).toBe("Meal Deck");
+    expect(lutonBusiness.alternateName).toBe("Meal Deck Luton");
+    expect(organisation.sameAs).toEqual([
+      "https://www.instagram.com/mealdeckofficial/",
+      "https://www.tiktok.com/@mealdeckofficial",
+    ]);
   });
 });
 

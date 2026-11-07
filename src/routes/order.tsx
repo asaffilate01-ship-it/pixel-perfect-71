@@ -1,6 +1,7 @@
 import { COMING_SOON } from "@/lib/launch-status";
 import { createServiceabilityGeneration } from "@/lib/mealdeck-serviceability-generation";
 import { LaunchMenuBrowser } from "@/components/menus/launch-menu-browser";
+import { getMealDeckMenuPage } from "@/lib/mealdeck-menu-seo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -110,12 +111,13 @@ export const Route = createFileRoute("/order")({
     }
     return next;
   },
-  head: () =>
+  loaderDeps: ({ search }) => ({ brand: search.brand }),
+  head: ({ match }) =>
     seo({
       title: "Luton menus, prices & basket | MealDeck",
       description:
         "Explore MealDeck’s five Luton menus and prices. Build your basket with meal upgrades and extras and order for collection or kerbside during kitchen opening hours.",
-      path: "/order",
+      path: COMING_SOON ? (getMealDeckMenuPage(match.loaderDeps.brand)?.path ?? "/menus") : "/order",
     }),
   component: OrderRoute,
 });

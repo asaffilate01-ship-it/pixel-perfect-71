@@ -124,7 +124,7 @@
   gap: 12px;
   scroll-margin-top: 104px;
 }
-.lm-brand-selector > button {
+.lm-brand-selector > :is(button, a) {
   min-width: 0;
   position: relative;
   border: 1px solid var(--lm-line);
@@ -136,11 +136,11 @@
     border-color 0.15s,
     transform 0.15s;
 }
-.lm-brand-selector > button:hover {
+.lm-brand-selector > :is(button, a):hover {
   border-color: var(--lm-accent);
   transform: translateY(-2px);
 }
-.lm-brand-selector > button.is-active {
+.lm-brand-selector > :is(button, a).is-active {
   outline: 2px solid var(--lm-bright);
   border-color: transparent;
   background: #fff;
@@ -1205,7 +1205,7 @@ h2.lm-basket-title-brand {
   .lm-brand-selector {
     gap: 9px;
   }
-  .lm-brand-selector > button {
+  .lm-brand-selector > :is(button, a) {
     padding: 10px 6px;
     border-radius: 11px;
   }
@@ -1311,7 +1311,7 @@ h2.lm-basket-title-brand {
     padding: 4px 4px 10px;
     scrollbar-width: thin;
   }
-  .lm-brand-selector > button {
+  .lm-brand-selector > :is(button, a) {
     flex: 0 0 114px;
   }
   .lm-brand-selector img {
@@ -1563,7 +1563,7 @@ h2.lm-basket-title-brand {
     overflow: visible;
     scroll-margin-top: 72px;
   }
-  .lm-brand-selector > button {
+  .lm-brand-selector > :is(button, a) {
     min-width: 0;
     padding: 8px 3px;
     border-radius: 10px;
@@ -1762,7 +1762,7 @@ h2.lm-basket-title-brand {
   .lm-page-heading {
     display: none;
   }
-  .lm-brand-selector > button {
+  .lm-brand-selector > :is(button, a) {
     padding-block: 5px;
   }
   .lm-brand-selector img {
@@ -1818,4 +1818,69 @@ h2.lm-basket-title-brand {
   .lm-shell:has(.lm-mobile-controls[data-search-open="true"]) .lm-menu-content {
     scroll-margin-top: 72px;
   }
+}
+
+/* Crawlable brand menus retain the compact existing ordering layout. */
+.lm-brand-selector > a {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+.lm-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 10px;
+  min-height: 44px;
+  margin: -12px 0 10px;
+  color: #625b52;
+  font-size: 13px;
+}
+.lm-breadcrumbs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #951018;
+  text-underline-offset: 3px;
+}
+.lm-local-guide {
+  margin: 32px 0;
+  padding: 24px 0;
+  border-top: 1px solid var(--lm-line);
+}
+.lm-local-guide h2 {
+  margin: 8px 0;
+  font-family: var(--md-display);
+  font-size: clamp(24px, 3vw, 34px);
+}
+.lm-local-guide > p,
+.lm-local-faqs p {
+  max-width: 78ch;
+  line-height: 1.65;
+  color: #544e46;
+}
+.lm-local-guide a {
+  color: #951018;
+  text-underline-offset: 3px;
+}
+.lm-local-faqs {
+  margin-top: 16px;
+  border-top: 1px solid var(--lm-line);
+}
+.lm-local-faqs details {
+  border-bottom: 1px solid var(--lm-line);
+}
+.lm-local-faqs summary {
+  min-height: 44px;
+  padding: 16px 4px;
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.lm-local-faqs summary:focus-visible {
+  outline: 3px solid #075c93;
+  outline-offset: 2px;
+}
+.lm-local-faqs p {
+  margin: 0 4px 18px;
 }

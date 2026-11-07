@@ -33,6 +33,8 @@ import {
 } from "@/lib/launch-menu-desserts";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
+import { getMealDeckMenuPage } from "@/lib/mealdeck-menu-seo";
+import type { MealDeckPublicMenuSnapshot } from "@/lib/mealdeck-public-menu";
 import {
   getLaunchMenuBrand,
   isLaunchBrandPriceApproved,
@@ -59,14 +61,6 @@ import {
 } from "@/lib/launch-menu-picks";
 
 const brandOrder = ["skorch-burgers", "tavo-chicken", "souvano", "loadd", "moktl"];
-const brandHeadlines: Record<string, string> = {
-  "skorch-burgers": "Stacked. Seared.",
-  "tavo-chicken": "Turn up the flavour.",
-  souvano: "Mediterranean grill.",
-  loadd: "Fries, taken further.",
-  moktl: "Zero alcohol. Full vibe.",
-};
-
 function logoFor(id: string) {
   return approvedBrandLogos[(id === "skorch-burgers" ? "skorch" : id) as ApprovedBrandId];
 }
@@ -137,18 +131,21 @@ function LaunchDessertUpsells({
 export function LaunchMenuBrowser({
   requestedBrandId,
   requestedSectionId,
+  initialMenu,
 }: {
   requestedBrandId?: string | undefined;
   requestedSectionId?: string | undefined;
+  initialMenu?: MealDeckPublicMenuSnapshot | null | undefined;
 }) {
   const navigate = useNavigate();
   const entryPolicy = useCustomerEntryPolicy();
   const groupOrderingOpen =
     !!entryPolicy &&
     Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
-  const publicMenu = usePublicMenu();
+  const publicMenu = usePublicMenu(initialMenu);
   const { catalogue } = publicMenu;
   const brand = getLaunchMenuBrand(requestedBrandId ?? "skorch-burgers", catalogue);
+  const menuPage = getMealDeckMenuPage(brand?.id);
   const pendingBrand = marketingBrands.find((entry) => entry.id === requestedBrandId);
   const [search, setSearch] = useState("");
   const [picks, setPicks] = useState<LaunchMenuPick[]>([]);
@@ -222,11 +219,20 @@ export function LaunchMenuBrowser({
 
   function browse(brandId: string, sectionId?: string, target: "brand" | "items" = "brand") {
     setSearch("");
-    void navigate({
-      to: "/menus",
-      search: { brand: brandId, ...(sectionId ? { section: sectionId } : {}) },
-      resetScroll: false,
-    }).then(() => {
+    const page = getMealDeckMenuPage(brandId);
+    const navigation = page
+      ? navigate({
+          to: "/menus/$brandId",
+          params: { brandId: page.brandId },
+          search: sectionId ? { section: sectionId } : {},
+          resetScroll: false,
+        })
+      : navigate({
+          to: "/menus",
+          search: { brand: brandId, ...(sectionId ? { section: sectionId } : {}) },
+          resetScroll: false,
+        });
+    void navigation.then(() => {
       const mobile = window.matchMedia("(max-width: 800px)").matches;
       const destination =
         mobile || target === "items" || sectionId ? "launch-menu-items" : "launch-brand-selector";
@@ -413,6 +419,15 @@ export function LaunchMenuBrowser({
       <SiteHeader />
       <PublicMenuStatus />
       <main className="lm-main">
+        {menuPage && (
+          <nav className="lm-breadcrumbs" aria-label="Breadcrumb">
+            <Link to="/">MealDeck</Link>
+            <span aria-hidden="true">/</span>
+            <Link to="/menus">Luton menus</Link>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">{menuPage.brandName}</span>
+          </nav>
+        )}
         <div className="lm-page-heading">
           <span className="lm-eyebrow">The Luton launch deck</span>
           <p>Five menus. Every craving.</p>
@@ -449,11 +464,24 @@ export function LaunchMenuBrowser({
           {brandOrder.map((id) => {
             const entry = getLaunchMenuBrand(id, catalogue);
             return entry ? (
-              <button
+              <Link
                 key={id}
-                type="button"
-                aria-pressed={brand?.id === id}
-                onClick={() => browse(id)}
+                to="/menus/$brandId"
+                params={{ brandId: id }}
+                search={{}}
+                aria-current={brand?.id === id ? "page" : undefined}
+                onClick={(event) => {
+                  if (
+                    event.button !== 0 ||
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey
+                  )
+                    return;
+                  event.preventDefault();
+                  browse(id);
+                }}
                 className={brand?.id === id ? "is-active" : ""}
               >
                 <img src={logoFor(id)} alt="" width="165" height="110" />
@@ -465,7 +493,7 @@ export function LaunchMenuBrowser({
                       ? "On the menu"
                       : "View menu"}
                 </small>
-              </button>
+              </Link>
             ) : null;
           })}
         </nav>
@@ -474,9 +502,9 @@ export function LaunchMenuBrowser({
           <>
             <header className="lm-brand-heading">
               <div>
-                <span className="lm-eyebrow">{brand.name} / Launch menu</span>
-                <h1>{brandHeadlines[brand.id]}</h1>
-                <p>{brand.description}</p>
+                <span className="lm-eyebrow">{brand.name} by MealDeck / Luton menu</span>
+                <h1>{menuPage?.heading ?? brand.name}</h1>
+                <p>{menuPage?.intro ?? brand.description}</p>
               </div>
               <div className="lm-heading-note">
                 <Layers3 aria-hidden="true" />
@@ -773,6 +801,24 @@ export function LaunchMenuBrowser({
           </section>
         )}
 
+        {menuPage && (
+          <section className="lm-local-guide" aria-labelledby="menu-local-guide-title">
+            <span className="lm-eyebrow">{menuPage.brandName} at MealDeck Luton</span>
+            <h2 id="menu-local-guide-title">Useful before you order</h2>
+            <p>
+              Collection and kerbside pickup from 314–318 Selbourne Road, Luton, LU4 8NU.{" "}
+              <Link to="/luton">See the Luton kitchen and opening hours</Link>.
+            </p>
+            <div className="lm-local-faqs">
+              {menuPage.faqs.map((faq) => (
+                <details key={faq.q}>
+                  <summary>{faq.q}</summary>
+                  <p>{faq.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
         <section className="lm-next-deck" aria-labelledby="menu-next-deck-title">
           <span className="lm-eyebrow">More cravings on the way</span>
           <h2 id="menu-next-deck-title">Coming in the next deck.</h2>

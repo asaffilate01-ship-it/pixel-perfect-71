@@ -3,6 +3,7 @@ import { ArrowRight, Bike, Clock3, MapPin, Package, Store } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
+import { LocalMenuDiscovery } from "@/components/marketing/local-menu-discovery";
 import { marketingBrands, cafe1Brand } from "@/lib/marketing-brands";
 import { getLaunchMenuBrand } from "@/lib/launch-menu-catalogue";
 import cafe1Logo from "@/assets/cafe1-logo.png";
@@ -93,11 +94,12 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <h2>{isLuton ? "Five brands. One kitchen." : "More flavours to come."}</h2>
               <p>
                 {isLuton
-                  ? "Order Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails for Luton collection or kerbside. More brands join a future deck."
+                  ? "Order Skorch smash burgers, Tavo chicken wings and tenders, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails for Luton collection or kerbside. More brands join a future deck."
                   : `Luton launches first. The ${town} line-up and opening date will be confirmed separately; this is the wider brand collection.`}
               </p>
             </div>
           </div>
+          {isLuton ? <LocalMenuDiscovery /> : null}
           <BrandLogoGrid brands={displayedBrands} />
 
           {includeCafe1 ? (

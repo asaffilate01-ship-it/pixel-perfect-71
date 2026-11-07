@@ -1,9 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { isLaunchMenuRoute, validateLaunchMenuSearch } from "../src/lib/launch-menu-navigation";
+import { MEALDECK_MENU_PAGES } from "../src/lib/mealdeck-menu-seo";
 
 describe("launch menu navigation", () => {
   test("uses one basket control on every menu entry path, including trailing slashes", () => {
-    for (const path of ["/menu", "/menus", "/order"]) {
+    for (const path of [
+      "/menu",
+      "/menus",
+      "/order",
+      "/Menus/tavo-chicken",
+      ...MEALDECK_MENU_PAGES.map((page) => page.path),
+    ]) {
       expect(isLaunchMenuRoute(path)).toBe(true);
       expect(isLaunchMenuRoute(path + "/")).toBe(true);
     }
@@ -15,6 +22,9 @@ describe("launch menu navigation", () => {
       "/franchise",
       "/menu-preview",
       "/menus-other",
+      "/menus/not-a-brand",
+      "/menus/paratique",
+      "/menus/loadd/orders",
       "/order/history",
       "/play",
       "//menus",
@@ -31,6 +41,7 @@ describe("launch menu navigation", () => {
     });
     expect(validateLaunchMenuSearch({ brand: "moktl" })).toEqual({ brand: "moktl" });
     expect(validateLaunchMenuSearch({})).toEqual({});
+    expect(validateLaunchMenuSearch({ brand: "", section: "  " })).toEqual({});
   });
 
   test("does not forward unrelated query state or malformed menu choices", () => {
