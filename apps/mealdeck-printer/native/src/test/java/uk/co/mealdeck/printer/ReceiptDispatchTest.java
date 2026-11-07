@@ -24,7 +24,7 @@ public final class ReceiptDispatchTest {
 
         Fixture timeout = new Fixture();
         var held = timeout.dispatch.send("b", permit -> {
-            check(permit.begin()); timeout.events.add("first-strip:b"); timeout.timeout.run();
+            check(permit.begin()); timeout.events.add("ipc-start:b"); timeout.timeout.run();
             check(timeout.dispatch.active()); check(!permit.continuing());
             boolean blocked = false; try { timeout.dispatch.send("c", p -> {}); } catch (PrinterFailure expected) { blocked = true; }
             check(blocked);
@@ -42,8 +42,35 @@ public final class ReceiptDispatchTest {
         failed.worker.run(); check(disk.join().equals("held")); check(!failed.events.contains("ipc:e"));
 
         Fixture partial = new Fixture();
-        var uncertain = partial.dispatch.send("f", permit -> { check(permit.begin()); partial.events.add("first-strip:f"); throw new IllegalStateException(); });
+        var uncertain = partial.dispatch.send("f", permit -> { check(permit.begin()); partial.events.add("ipc-start:f"); throw new IllegalStateException(); });
         partial.worker.run(); check(uncertain.join().equals("held")); check(!partial.events.contains("sent_unconfirmed:f"));
-        System.out.println("Receipt dispatch: durable-before-IPC, no overlap, timeout retention, interruption and partial-send checks passed.");
+
+        Fixture resources = new Fixture();
+        resources.dispatch.send("g", new ReceiptDispatch.Transport() {
+            public void send(ReceiptDispatch.Permit permit) {
+                check(permit.begin()); resources.timeout.run();
+                check(!resources.events.contains("closed:g"));
+                check(resources.dispatch.active());
+                resources.events.add("binder-return:g");
+            }
+            public void close() { resources.events.add("closed:g"); }
+        });
+        resources.worker.run();
+        check(resources.events.indexOf("closed:g") > resources.events.indexOf("binder-return:g"));
+        check(resources.events.stream().filter(e -> e.equals("closed:g")).count() == 1);
+
+        List<String> rejected = new ArrayList<>();
+        ReceiptDispatch unavailable = new ReceiptDispatch(new ReceiptDispatch.Journal() {
+            public void begin(String id) { throw new AssertionError("No IPC after worker rejection"); }
+            public void finish(String id, String outcome) { rejected.add(outcome); }
+        }, action -> { throw new java.util.concurrent.RejectedExecutionException(); }, (action, delay) -> () -> {});
+        var rejectedResult = unavailable.send("h", new ReceiptDispatch.Transport() {
+            public void send(ReceiptDispatch.Permit permit) { throw new AssertionError("No worker available"); }
+            public void close() { rejected.add("closed"); }
+        });
+        check(rejectedResult.join().equals("held"));
+        check(rejected.equals(List.of("closed", "held")));
+        check(!unavailable.active());
+        System.out.println("Receipt dispatch: durable-before-IPC, no overlap, timeout retention, interruption, uncertain-send and resource ownership checks passed.");
     }
 }

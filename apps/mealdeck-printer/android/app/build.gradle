@@ -8,8 +8,8 @@ android {
         applicationId "uk.co.mealdeck.printer"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "0.2.0"
+        versionCode 3
+        versionName "0.2.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -25,6 +25,8 @@ android {
         main.java.srcDirs += '../../native/src/main/java'
         test.java.srcDirs += '../../native/src/test/java'
         test.resources.srcDirs += '../../native/src/test/resources'
+        androidTest.java.srcDirs += '../../native/src/androidTest/java'
+        androidTest.assets.srcDirs += '../../native/src/test/resources'
     }
     buildTypes {
         release {
@@ -50,6 +52,7 @@ dependencies {
     testImplementation "org.json:json:20240303"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    androidTestImplementation "com.google.zxing:core:3.5.3"
     implementation project(':capacitor-cordova-android-plugins')
 }
 

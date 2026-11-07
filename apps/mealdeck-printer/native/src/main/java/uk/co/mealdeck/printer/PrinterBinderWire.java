@@ -25,27 +25,53 @@ final class PrinterBinderWire {
         }
     }
 
-    static void printReceiptStrip(IBinder binder, Bitmap bitmap) throws RemoteException {
-        if (bitmap == null || bitmap.getWidth() > 384 || bitmap.getHeight() > 384 ||
-            bitmap.getConfig() != Bitmap.Config.ARGB_8888) {
-            throw new IllegalArgumentException("The receipt strip is outside the reviewed bitmap limits.");
+    /** Prepare the complete immutable receipt before the server enters sending.
+     * Bitmap.asShared() uses Android's ordinary Bitmap Parcelable wire format;
+     * its pixels travel through shared memory, not an oversized Binder payload. */
+    static PreparedReceipt prepareReceipt(Bitmap bitmap) {
+        if (bitmap == null || bitmap.isRecycled() || bitmap.isMutable()
+            || bitmap.getWidth() != ReceiptRenderer.WIDTH || bitmap.getHeight() > ReceiptRenderer.MAX_HEIGHT
+            || bitmap.getConfig() != Bitmap.Config.ARGB_8888
+            || bitmap.getAllocationByteCount() > (long) ReceiptRenderer.WIDTH * ReceiptRenderer.MAX_HEIGHT * 4) {
+            throw new IllegalArgumentException("The receipt is outside the reviewed bitmap limits.");
         }
         Parcel request = Parcel.obtain();
-        Parcel reply = Parcel.obtain();
         try {
             request.writeInterfaceToken(PrinterContract.DESCRIPTOR);
             // Matches generated AIDL writeTypedObject: presence word, then Bitmap.
             request.writeInt(1);
             bitmap.writeToParcel(request, 0);
-            if (request.dataSize() > 750_000) throw new IllegalStateException("The receipt strip is too large for one bounded send.");
-            if (!binder.transact(PrinterContract.PRINT_BITMAP, request, reply, 0)) {
-                throw new RemoteException("Printer bitmap operation unavailable.");
+            if (request.dataSize() > 750_000 || !request.hasFileDescriptors()) {
+                throw new IllegalStateException("The complete receipt could not be prepared for one bounded send.");
             }
-            reply.readException();
-            // This means the Binder call returned. It never proves physical paper.
-        } finally {
-            reply.recycle();
+            return new PreparedReceipt(request);
+        } catch (RuntimeException | OutOfMemoryError failure) {
             request.recycle();
+            throw failure;
+        }
+    }
+
+    static final class PreparedReceipt implements AutoCloseable {
+        private Parcel request;
+        private boolean sent;
+
+        private PreparedReceipt(Parcel request) { this.request = request; }
+
+        synchronized void send(IBinder binder) throws RemoteException {
+            if (request == null || sent) throw new IllegalStateException("A receipt send cannot be repeated.");
+            sent = true; // An exception can still mean paper moved: never retry this parcel.
+            Parcel reply = Parcel.obtain();
+            try {
+                if (!binder.transact(PrinterContract.PRINT_BITMAP, request, reply, 0)) {
+                    throw new RemoteException("Printer bitmap operation unavailable.");
+                }
+                reply.readException();
+                // A returned Binder call never proves physical paper.
+            } finally { reply.recycle(); }
+        }
+
+        @Override public synchronized void close() {
+            if (request != null) { request.recycle(); request = null; }
         }
     }
 }

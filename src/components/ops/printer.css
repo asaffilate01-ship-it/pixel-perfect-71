@@ -4,14 +4,8 @@
 .md-receipt-preview {
   overflow-wrap: anywhere;
 }
-.md-receipt-summary {
-  /* Keep the paid total and QR on the same printed fragment. */
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
 .md-receipt-games {
-  break-inside: avoid;
-  page-break-inside: avoid;
+  /* Let this section follow PAID instead of jumping as a block to the next page. */
   border-top: 1px dashed #000;
   margin-top: 2px;
   padding-top: 0;
@@ -31,6 +25,8 @@
 }
 .md-receipt-games__qr {
   display: block;
+  break-inside: avoid;
+  page-break-inside: avoid;
   width: 164px;
   max-width: 100%;
   height: auto;

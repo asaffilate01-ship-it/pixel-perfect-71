@@ -136,6 +136,8 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
           </div>
         </dl>
         <section className="md-receipt-games" aria-label="Free MealDeck games">
+          <p className="md-receipt-games__heading">{receiptGamesQr.heading}</p>
+          <p className="md-receipt-games__copy">{receiptGamesQr.subtitle}</p>
           <svg
             className="md-receipt-games__qr"
             data-receipt-games-qr
@@ -151,8 +153,6 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
             <rect width={receiptGamesQr.gridSize} height={receiptGamesQr.gridSize} fill="#fff" />
             <path d={receiptGamesQr.svgPath} fill="#000" />
           </svg>
-          <p className="md-receipt-games__heading">{receiptGamesQr.heading}</p>
-          <p className="md-receipt-games__copy">{receiptGamesQr.subtitle}</p>
           <a className="md-receipt-games__url" href={receiptGamesQr.targetUrl}>
             {receiptGamesQr.displayUrl}
           </a>

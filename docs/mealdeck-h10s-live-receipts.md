@@ -106,6 +106,26 @@ these checks. Keep the service paused if an uncertain result cannot be resolved.
 Publication evidence and the actual-device acceptance result must be recorded
 separately when observed; this implementation document is not itself that evidence.
 
+## Version 0.2.1 receipt layout update
+
+The owner subsequently reported a short/incomplete receipt with no games QR and
+asked to retain the earlier full browser layout, changing only the large blank
+space between PAID and the games promotion. The supplied video shows that earlier
+full layout, including an intact QR; it does not identify the cause of the newer
+incomplete native output.
+
+Version 0.2.1 source restores that visual hierarchy in the native renderer and
+includes the fixed games QR. It submits one bounded shared-memory bitmap rather
+than multiple strips, with a 180-pixel white tail after the footer. Canonical
+receipt validation, fingerprints, existing journal records, claim checks and
+explicit paper confirmation remain intact. Browser receipts retain the original
+promotion order and tight spacing; removing whole-section page-break avoidance
+prevents that rule from pushing the promotion to a later page. The selected print
+driver's page size remains authoritative.
+
+Publication of 0.2.1 and physical H10S acceptance are separate evidence. The 0.2.0
+artifact and its historical build evidence below remain immutable.
+
 ## Version 0.2.0 signed build evidence
 
 ### Compatibility with the later games receipt release
