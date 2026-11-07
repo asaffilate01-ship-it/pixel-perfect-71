@@ -1,4 +1,4 @@
-import { GAME_CATALOGUE, isBrandTheme, type SuitArt } from "@/lib/dishbee-play";
+import { GAME_CATALOGUE, isBrandTheme, type BrandTheme, type SuitArt } from "@/lib/dishbee-play";
 
 export type ArcadeGameId = (typeof GAME_CATALOGUE)[number]["id"];
 export const ARCADE_CATEGORIES = [
@@ -18,13 +18,15 @@ export const ARCADE_COLLECTIONS = [
   { id: "daily", label: "Daily puzzles" },
 ] as const;
 export type ArcadeCollection = (typeof ARCADE_COLLECTIONS)[number]["id"];
-export const NEW_ARCADE_GAMES: readonly ArcadeGameId[] = [
+export const NEW_ARCADE_GAMES: readonly ArcadeGameId[] = ["bento-sudoku", "tray-lines"];
+const TWO_PLAYER_GAMES: readonly ArcadeGameId[] = ["four-to-feast", "tray-tactics", "tray-lines"];
+const DAILY_GAMES: readonly ArcadeGameId[] = [
+  "kitchen-shuffle",
   "sauce-switch",
   "menu-quest",
-  "tray-tactics",
+  "bento-sudoku",
 ];
-const TWO_PLAYER_GAMES: readonly ArcadeGameId[] = ["four-to-feast", "tray-tactics"];
-const DAILY_GAMES: readonly ArcadeGameId[] = ["kitchen-shuffle", "sauce-switch", "menu-quest"];
+const DAILY_LAUNCH_GAMES: readonly ArcadeGameId[] = ["sauce-switch", "menu-quest", "bento-sudoku"];
 
 const gameDetails: Record<
   ArcadeGameId,
@@ -34,6 +36,8 @@ const gameDetails: Record<
     art: SuitArt;
   }
 > = {
+  "bento-sudoku": { category: "Puzzles", players: "Solo", art: "chicken" },
+  "tray-lines": { category: "Strategy", players: "1–2 players", art: "burger" },
   "sauce-switch": { category: "Puzzles", players: "Solo", art: "fries" },
   "menu-quest": { category: "Puzzles", players: "Solo", art: "french-taco" },
   "tray-tactics": { category: "Strategy", players: "1–2 players", art: "cake" },
@@ -54,6 +58,38 @@ export const ARCADE_GAMES = GAME_CATALOGUE.map((game) => ({ ...game, ...gameDeta
 
 export function isArcadeGameId(value: unknown): value is ArcadeGameId {
   return typeof value === "string" && GAME_CATALOGUE.some((game) => game.id === value);
+}
+
+export type ArcadeSearch = { brand?: BrandTheme; game?: ArcadeGameId; daily?: string };
+
+/** A public daily link carries a calendar date, never a board or personal history. */
+export function parseArcadeSearch(search: Record<string, unknown>): ArcadeSearch {
+  const game = isArcadeGameId(search["game"]) ? search["game"] : undefined;
+  const daily = search["daily"];
+  const validDate =
+    typeof daily === "string" &&
+    /^20\d{2}-\d{2}-\d{2}$/.test(daily) &&
+    Number.isFinite(Date.parse(`${daily}T00:00:00Z`)) &&
+    new Date(`${daily}T00:00:00Z`).toISOString().slice(0, 10) === daily;
+  return {
+    ...(isBrandTheme(search["brand"]) ? { brand: search["brand"] } : {}),
+    ...(game ? { game } : {}),
+    ...(game && DAILY_LAUNCH_GAMES.includes(game) && validDate ? { daily } : {}),
+  };
+}
+
+/** A suggestion uses the visible results and avoids the current game when possible. */
+export function pickArcadeGame(
+  games: readonly { id: ArcadeGameId }[],
+  current: ArcadeGameId,
+  random: () => number = Math.random,
+): ArcadeGameId | null {
+  if (!games.length) return null;
+  const alternatives = games.filter((item) => item.id !== current);
+  const choices = alternatives.length ? alternatives : games;
+  const sample = random();
+  const fraction = Number.isFinite(sample) ? Math.max(0, Math.min(1, sample)) : 0;
+  return choices[Math.min(choices.length - 1, Math.floor(fraction * choices.length))]!.id;
 }
 
 export function findArcadeGames(

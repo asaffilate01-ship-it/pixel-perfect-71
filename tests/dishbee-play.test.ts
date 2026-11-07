@@ -10,7 +10,7 @@ describe("Dishbee Play entertainment-only games", () => {
     expect(FOOD_SUITS.map((item) => item.art)).toEqual(["burger", "chicken", "french-taco", "cake"]);
     expect(new Set(FOOD_SUITS.map((item) => item.id)).size).toBe(4);
     expect(GAME_CATALOGUE.filter((game) => game.state === "playable").map((game) => game.id))
-      .toEqual(["sauce-switch", "menu-quest", "tray-tactics", "feast-2048", "four-to-feast", "order-echo", "kitchen-shuffle", "pairs", "recipe", "kitchen-chaos", "snap", "go-dish", "full-house", "solitaire"]);
+      .toEqual(["bento-sudoku", "tray-lines", "sauce-switch", "menu-quest", "tray-tactics", "feast-2048", "four-to-feast", "order-echo", "kitchen-shuffle", "pairs", "recipe", "kitchen-chaos", "snap", "go-dish", "full-house", "solitaire"]);
     expect(JSON.stringify(GAME_CATALOGUE)).not.toMatch(/wager|stake|cash_prize|jackpot|redeemable/);
   });
   test("memory games contain exactly six matching pairs and unique card IDs", () => {
