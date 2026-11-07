@@ -7,7 +7,12 @@ import {
 } from "../src/lib/mealdeck-launch-schedule";
 
 describe("MealDeck's confirmed Luton launch hours", () => {
-  test("opens at the confirmed instant and closes at 11pm on each day", () => {
+  test("opens at the confirmed instant and closes at midnight Friday/Saturday and 11pm Sunday", () => {
+    expect(MEALDECK_LAUNCH_DAYS.map((day) => [day.date, day.opensAt, day.closesAt])).toEqual([
+      ["2026-11-06", "2026-11-06T15:00:00Z", "2026-11-07T00:00:00Z"],
+      ["2026-11-07", "2026-11-07T13:00:00Z", "2026-11-08T00:00:00Z"],
+      ["2026-11-08", "2026-11-08T13:00:00Z", "2026-11-08T23:00:00Z"],
+    ]);
     for (const day of MEALDECK_LAUNCH_DAYS) {
       const opening = Date.parse(day.opensAt);
       const closing = Date.parse(day.closesAt);
@@ -22,11 +27,17 @@ describe("MealDeck's confirmed Luton launch hours", () => {
     expect(isMealDeckGuestCheckoutWindow("2026-11-06T13:00:00Z")).toBe(false);
     expect(isMealDeckGuestCheckoutWindow("2026-11-06T14:59:59.999Z")).toBe(false);
     expect(isMealDeckGuestCheckoutWindow("2026-11-06T15:00:00Z")).toBe(true);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-06T23:00:00Z")).toBe(true);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-06T23:59:59.999Z")).toBe(true);
     expect(isMealDeckGuestCheckoutWindow("2026-11-07T00:00:00Z")).toBe(false);
     expect(isMealDeckGuestCheckoutWindow("2026-11-07T12:59:59.999Z")).toBe(false);
     expect(isMealDeckGuestCheckoutWindow("2026-11-07T13:00:00Z")).toBe(true);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-07T23:00:00Z")).toBe(true);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-07T23:59:59.999Z")).toBe(true);
     expect(isMealDeckGuestCheckoutWindow("2026-11-08T00:00:00Z")).toBe(false);
     expect(isMealDeckGuestCheckoutWindow("2026-11-08T13:00:00Z")).toBe(true);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-08T22:59:59.999Z")).toBe(true);
+    expect(isMealDeckGuestCheckoutWindow("2026-11-08T23:00:00Z")).toBe(false);
     expect(isMealDeckGuestCheckoutWindow("2026-11-09T13:00:00Z")).toBe(false);
   });
 

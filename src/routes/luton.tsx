@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LocationPage } from "@/components/location-page";
 import { ldScript, lutonBusiness, seo } from "@/lib/seo";
-import { MEALDECK_LAUNCH_HOURS_LABEL } from "@/lib/mealdeck-launch-schedule";
+import {
+  MEALDECK_LAUNCH_HOURS_LABEL,
+  MEALDECK_LAUNCH_HOURS_PROSE,
+} from "@/lib/mealdeck-launch-schedule";
 
 export const Route = createFileRoute("/luton")({
   head: () => ({
@@ -29,7 +32,7 @@ export const Route = createFileRoute("/luton")({
       faqs={[
         {
           q: "When is MealDeck opening in Luton?",
-          a: "Our opening weekend is 6–8 November 2026: Friday 6 November, 3pm–11pm; Saturday 7 November and Sunday 8 November, 1pm–11pm. All times are UK local time. Order online for Luton collection or kerbside during kitchen opening hours.",
+          a: `Our opening weekend is 6–8 November 2026. ${MEALDECK_LAUNCH_HOURS_PROSE} Order online for Luton collection or kerbside during kitchen opening hours.`,
         },
         {
           q: "Which brands are in the first launch?",

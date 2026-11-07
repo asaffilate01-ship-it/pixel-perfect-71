@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
+import { MEALDECK_LAUNCH_HOURS_PROSE } from "@/lib/mealdeck-launch-schedule";
 import { seo } from "@/lib/seo";
 import "@/styles.launch-opening.css";
 
@@ -9,8 +10,7 @@ export const Route = createFileRoute("/opening-offer")({
   head: () =>
     seo({
       title: "Luton opening weekend — 30% off | MealDeck",
-      description:
-        "6–8 November 2026: 30% off everything, no minimum. Friday 3pm–11pm, Saturday and Sunday 1pm–11pm. Guests and members welcome. Luton collection or kerbside only.",
+      description: `6–8 November 2026: 30% off everything, no minimum. ${MEALDECK_LAUNCH_HOURS_PROSE} Guests and members welcome. Luton collection or kerbside only.`,
       path: "/opening-offer",
     }),
   component: OpeningOfferPage,
@@ -48,10 +48,9 @@ function OpeningOfferPage() {
           </p>
           <h2>Where and when?</h2>
           <p>
-            MealDeck Luton opens on Friday 6 November 2026 from 3pm to 11pm, Saturday 7 November
-            from 1pm to 11pm, and Sunday 8 November from 1pm to 11pm. All times are UK local time.
-            The opening offer and guest checkout apply during these hours; both pause when we close
-            each night. The offer does not restart when you visit or register.
+            MealDeck Luton opening weekend, 6–8 November 2026: {MEALDECK_LAUNCH_HOURS_PROSE} The
+            opening offer and guest checkout apply during these hours; both pause when we close each
+            night. The offer does not restart when you visit or register.
           </p>
           <p>
             Start secure payment while the offer is active, then complete payment before that

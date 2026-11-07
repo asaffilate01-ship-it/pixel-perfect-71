@@ -1,4 +1,5 @@
 import { MEALDECK_OFFERS } from "./mealdeck-offers";
+import { MEALDECK_LAUNCH_HOURS_PROSE } from "./mealdeck-launch-schedule";
 
 export type Post = {
   slug: string;
@@ -69,7 +70,7 @@ export const posts: Post[] = [
       })),
       {
         h: "Opening hours",
-        p: "Friday 6 November: 3pm–11pm. Saturday 7 and Sunday 8 November: 1pm–11pm. All times are UK local time. Check the Offers page for the full details and checkout for current ordering availability.",
+        p: `${MEALDECK_LAUNCH_HOURS_PROSE} Check the Offers page for the full details and checkout for current ordering availability.`,
       },
     ],
   },

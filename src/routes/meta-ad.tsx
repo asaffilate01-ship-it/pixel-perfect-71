@@ -17,6 +17,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { LaunchOpeningHours, OpeningWeekendOffer } from "@/components/opening-weekend-offer";
 import { PwaInstallCard } from "@/components/pwa-install-card";
 import { approvedBrandLogos } from "@/lib/brand-logos";
+import { MEALDECK_LAUNCH_HOURS_PROSE } from "@/lib/mealdeck-launch-schedule";
 import { seo } from "@/lib/seo";
 import "@/styles.first-order.css";
 
@@ -24,8 +25,7 @@ export const Route = createFileRoute("/meta-ad")({
   head: () =>
     seo({
       title: "Your first MealDeck order — how it works",
-      description:
-        "MealDeck Luton opens 6–8 November 2026: Friday 3pm–11pm, Saturday and Sunday 1pm–11pm. 30% off, no minimum. Guests welcome; collection or kerbside only.",
+      description: `MealDeck Luton opens 6–8 November 2026. ${MEALDECK_LAUNCH_HOURS_PROSE} 30% off, no minimum. Guests welcome; collection or kerbside only.`,
       path: "/meta-ad",
     }),
   component: FirstOrderExplainer,
