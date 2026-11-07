@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { uuid_ossp } from "@electric-sql/pglite/contrib/uuid_ossp";
 import { asActor, createDatabase, id } from "./harness.mjs";
 import { setupStaffCashOrdersFixture } from "./staff-cash-orders-fixture.mjs";
@@ -23,6 +25,14 @@ try {
   const f = await setupStaffCashOrdersFixture(db);
   await db.exec(buildStaffCashOrdersSql());
   const manifest = buildMealComponentsManifest();
+  const cokeOperation = readFileSync(
+    new URL("../../deploy/mealdeck/operations/20261107_coke_meal_components.sql", import.meta.url),
+    "utf8",
+  );
+  const cokeOptions = [
+    "skorch-burgers-included-meal-drink-coke",
+    "skorch-burgers-kids-included-drink-coke",
+  ];
   const sourceItems = f.data.brands.flatMap((brand) =>
     brand.sections.flatMap((section) => section.items),
   );
@@ -44,7 +54,10 @@ try {
         return [
           selection(
             group.id,
-            group.options.find((option) => option.available !== false).id,
+            // Keep the pre-Coke default selection explicit in historical cases.
+            group.options.find(
+              (option) => option.available !== false && !cokeOptions.includes(option.id),
+            ).id,
             group.importKind === "price-variant" ? "variant" : "source",
           ),
         ];
@@ -93,8 +106,34 @@ try {
     "frozen reviewed identities, atomic install/replay and no historical row or receipt changes",
     async () => {
       assert.equal(manifest.items.length, 16);
-      assert.equal(manifest.options.length, 73);
-      assert.equal(buildMealComponentsSql(), renderMealComponentsSql());
+      assert.equal(manifest.options.length, 75);
+      const frozenSql = buildMealComponentsSql();
+      assert.equal(
+        createHash("sha256").update(frozenSql).digest("hex"),
+        "7ab065a28d6cfab9fe5cd3b1ab44b5e9fcb3b6309acd1f6725f94382d58b510e",
+        "The historical meal-components migration remains byte-for-byte unchanged",
+      );
+      const sourceManifest = (sql) =>
+        JSON.parse(sql.match(/manifest constant jsonb:='(.*?)'::jsonb;/s)[1]);
+      assert.deepEqual(sourceManifest(renderMealComponentsSql()), manifest);
+      assert.deepEqual(
+        {
+          ...manifest,
+          options: manifest.options.filter((option) => !cokeOptions.includes(option.option)),
+        },
+        sourceManifest(frozenSql),
+        "Only the two reviewed Coke identities extend the historical manifest",
+      );
+      assert.deepEqual(
+        manifest.options.filter((option) => cokeOptions.includes(option.option)),
+        cokeOptions.map((option) => ({
+          group: option.slice(0, -"-coke".length),
+          option,
+          role: "drink",
+          replacement: false,
+          kind: "source",
+        })),
+      );
       assert.throws(
         () => buildManagedMealComponentsSql({ runnerOwnsTransaction: true }),
         /one runner-owned/,
@@ -119,6 +158,90 @@ try {
       );
       assert.equal(Object.hasOwn(legacyReceipt.items[0], "mealComponents"), false);
       assert.deepEqual((await f.card(legacy.orderId)).items[0].mealComponents, expectedStandard);
+    },
+  );
+  await check(
+    "additive Coke identities preserve historical data and permissions, replay safely and project adult/kids meals",
+    async () => {
+      const helper = async () =>
+        (
+          await rows(`select md5(prosrc) as hash,proacl::text as acl,proowner,
+          proconfig,provolatile,prosecdef,proparallel,proleakproof,proisstrict
+          from pg_proc where oid='mealdeck_private.meal_components(uuid,jsonb)'::regprocedure`)
+        )[0];
+      const originalHelper = await helper();
+      const historical = await digest();
+      const auditCount = () =>
+        scalar(`select count(*)::int from public.mealdeck_ops_audit_log
+        where action='catalogue.coke_meal_components'`);
+      assert.equal(originalHelper.hash, "5f46ada643542e03e8b56fd8fe8d6205");
+      assert.equal(await auditCount(), 0);
+      for (const role of ["anon", "authenticated", "service_role"])
+        await assert.rejects(
+          () =>
+            asActor(
+              db,
+              role === "authenticated" ? f.owner : null,
+              () => db.exec(cokeOperation),
+              role,
+            ),
+          /permission denied|database_owner_required/,
+        );
+      await db.exec("begin");
+      await db.exec(cokeOperation);
+      await db.exec("rollback");
+      assert.deepEqual(await helper(), originalHelper);
+      assert.equal(await auditCount(), 0);
+      await db.exec(cokeOperation);
+      await db.exec(cokeOperation);
+      assert.equal(await auditCount(), 1);
+      assert.deepEqual(await helper(), {
+        ...originalHelper,
+        hash: "0b7cb68775502267606c64ffaf064a83",
+      });
+      assert.equal(await digest(), historical);
+      assert.deepEqual(
+        await scalar("select receipt from mealdeck_private.receipt_jobs where order_id=$1", [
+          legacy.orderId,
+        ]),
+        legacyReceipt,
+      );
+      await db.exec("begin");
+      await db.exec(
+        "create or replace function mealdeck_private.meal_components(p_tenant uuid,p_line jsonb) returns jsonb language sql immutable security definer set search_path='' as 'select null::jsonb'",
+      );
+      await assert.rejects(() => db.exec(cokeOperation), /reviewed_function_required/);
+      await db.exec("rollback");
+      assert.equal((await helper()).hash, "0b7cb68775502267606c64ffaf064a83");
+      for (const sku of [
+        "skorch-burgers-beef-smash-deck-the-ace",
+        "skorch-burgers-kids-meal-little-jacks-nuggets-meal",
+      ]) {
+        const item = manifest.items.find((entry) => entry.sku === sku);
+        const line = mealLine(item);
+        line.modifiers = line.modifiers.filter(
+          (modifier) => modifier.groupId !== groupId(item.drinkGroup),
+        );
+        line.modifiers.push(selection(item.drinkGroup, `${item.drinkGroup}-coke`));
+        const expected = [
+          ...(item.kind === "kids"
+            ? [{ slot: "main", name: "6 nuggets", quantityPerParent: 1, replacement: false }]
+            : []),
+          { slot: "side", name: "Fries", quantityPerParent: 1, replacement: false },
+          { slot: "drink", name: "Coke", quantityPerParent: 1, replacement: false },
+        ];
+        const quote = await quoted(line);
+        assert.deepEqual(await components(quote.lines[0]), expected);
+        await f.ageQuotes();
+        const order = await f.ordinary({ lines: [line] });
+        assert.deepEqual((await f.card(order.orderId)).items[0].mealComponents, expected);
+        await f.accept(order.orderId);
+        const receipt = await scalar(
+          "select receipt from mealdeck_private.receipt_jobs where order_id=$1",
+          [order.orderId],
+        );
+        assert.deepEqual(receipt.items[0].mealComponents, expected);
+      }
     },
   );
   await check(
