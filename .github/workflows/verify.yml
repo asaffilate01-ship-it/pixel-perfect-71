@@ -72,6 +72,9 @@ jobs:
           tests/mealdeck-kds-toolbar.test.ts
           tests/mealdeck-staff-alerts.test.ts
           tests/mealdeck-staff-audio.test.ts
+          tests/mealdeck-staff-vibration.test.ts
+          tests/mealdeck-staff-alert-delivery.test.ts
+          tests/mealdeck-staff-alert-controls.test.tsx
       - name: Receipt bridge one-copy delivery, pairing and canonical order verification
         run: node --test tools/receipt-bridge/test/*.test.mjs
       - name: Receipt bridge and printer terminal implementation lint
@@ -87,6 +90,8 @@ jobs:
           deploy/mealdeck/receipt-archive.mjs tests/postgres/receipt-archive-behavior.mjs
           src/lib/mealdeck-staff-alerts.ts tests/mealdeck-printer.test.ts
           src/lib/mealdeck-staff-audio.ts tests/mealdeck-staff-audio.test.ts
+          src/lib/mealdeck-staff-vibration.ts tests/mealdeck-staff-vibration.test.ts
+          tests/mealdeck-staff-alert-delivery.test.ts tests/mealdeck-staff-alert-controls.test.tsx
           src/lib/mealdeck-receipt-logo.ts src/lib/mealdeck-meal-components.ts
           tests/mealdeck-staff-alerts.test.ts
           --rule 'prettier/prettier: off'
@@ -232,6 +237,7 @@ jobs:
           bunx eslint src/routes/ops.tsx src/routes/kds.tsx
           src/components/ops/operations-workspace.tsx src/components/ops/kds-panel.tsx
           src/components/ops/kds-completed-card.tsx src/components/ops/kds-pickup-details.tsx
+          src/components/ops/kds-ticket-grid.tsx src/components/ops/kds-order-navigator.tsx
           src/components/ops/kds-meal-components.tsx
           src/lib/mealdeck-kds.ts src/lib/mealdeck-kds-presentation.ts
           tests/mealdeck-kds*.test.ts
