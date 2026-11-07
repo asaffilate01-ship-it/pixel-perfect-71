@@ -68,6 +68,7 @@ jobs:
           tests/mealdeck-checkout-feedback.test.ts
           tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts
           tests/mealdeck-printer-auth.test.ts
+          tests/mealdeck-printer-config.test.ts
           tests/mealdeck-printer-acceptance.test.ts
           tests/mealdeck-kds-toolbar.test.ts
           tests/mealdeck-staff-alerts.test.ts

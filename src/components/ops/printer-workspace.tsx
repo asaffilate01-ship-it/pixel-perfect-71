@@ -653,7 +653,7 @@ function ReceiptTerminal({
       setNotice(
         result.replayed
           ? `Order ${orderDisplayNumber(order.orderNumber, order.orderId.slice(0, 8).toUpperCase())} was already accepted. Its existing receipt is unchanged; no extra copy was requested.`
-          : `Order ${orderDisplayNumber(order.orderNumber, order.orderId.slice(0, 8).toUpperCase())} accepted. One receipt is queued.${paired && automatic ? " Automatic printing will send it when the live queue refreshes; check the paper afterwards." : " Enable automatic printing on a paired device, or print it from Receipt queue."}`,
+          : `Order ${orderDisplayNumber(order.orderNumber, order.orderId.slice(0, 8).toUpperCase())} accepted. One receipt is queued.${paired && automatic ? " Automatic printing will send it when the live queue refreshes; check the paper afterwards." : " On the H10S, check that MealDeck Printer shows auto-print running. A network printer uses this browser’s paired bridge."}`,
       );
     } catch (reason) {
       if (mounted.current)

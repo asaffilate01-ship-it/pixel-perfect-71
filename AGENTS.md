@@ -11,6 +11,15 @@
 
 <!-- LOVABLE:END -->
 
+## H10S live receipt companion — owner direction, 7 November 2026
+
+- The owner reports that the physical setup ticket from the published H10S diagnostic APK printed successfully and now requests live ordering and automatic receipts. That observation authorises building the full receipt companion using the proven service protocol; it supersedes the earlier proposal-only prerequisite below. It does not establish that a live customer receipt, recovery case or background lifecycle has yet been accepted.
+- Keep `apps/mealdeck-printer-probe` and its versioned setup download unchanged. `apps/mealdeck-printer` is the separate networked companion with its own application ID, bundled local screen, fixed MealDeck backend, normal verified printer sign-in and platform-protected session storage. Never give the WebView arbitrary destinations, RPCs, print text, byte commands or service credentials.
+- Accepting a paid order on KDS or `/printer` already queues the original receipt. The companion consumes that same queue and independently verifies each claimed immutable receipt. It never accepts orders automatically, creates payments, changes purchased content or grants staff permissions.
+- Persist identity, job/order/copy ownership, fingerprint and send state before dispatch. Preserve stable claimed-attempt recovery, current kitchen authorisation, explicit numbered reprints and held outcomes after uncertainty. A completed native send remains `sent_unconfirmed`; physical paper confirmation is an explicit operator action. It need not block the next distinct receipt, but an uncertain dispatch pauses automatic work until inspected.
+- First activation uses the server board's current time as its persisted start point. Older queued receipts require an explicit one-receipt action. Ordinary pause/resume keeps the original start point so newly accepted receipts are not silently skipped. No startup, reboot, sign-in, timeout or reinstallation may replay a possibly sent receipt automatically.
+- Use a stable privately retained release signing key for the networked app, never a key committed to source or a fresh debug certificate for each update. Publish versioned immutable APK/checksum files only after native compilation and signature verification. Installation and a real accepted-order paper check on the H10S remain separate from successful compilation/publication. See `docs/mealdeck-h10s-live-receipts.md`.
+
 ## Customer mobile order alerts and offers — 7 November 2026
 
 - Customer web push follows verified staff acceptance, preparation, all-items-ready plus sealed packing, and confirmed handover. Payment alone must not generate “accepted”; current collection/kerbside scope remains unchanged. Driver stages have reserved display support but no active delivery event adapter.

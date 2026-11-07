@@ -48,6 +48,7 @@ import { Route as ApiOpsCashRouteImport } from './routes/api.ops.cash'
 import { Route as ApiOpsIntegrationsRouteImport } from './routes/api.ops.integrations'
 import { Route as ApiOpsNotificationsRouteImport } from './routes/api.ops.notifications'
 import { Route as ApiOpsWhatsappRouteImport } from './routes/api.ops.whatsapp'
+import { Route as ApiPrinterConfigRouteImport } from './routes/api.printer.config'
 import { Route as ApiPublicMenuRouteImport } from './routes/api.public.menu'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ApiWhatsappChannelRouteImport } from './routes/api.whatsapp.channel'
@@ -250,6 +251,11 @@ const ApiOpsWhatsappRoute = ApiOpsWhatsappRouteImport.update({
   path: '/api/ops/whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPrinterConfigRoute = ApiPrinterConfigRouteImport.update({
+  id: '/api/printer/config',
+  path: '/api/printer/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMenuRoute = ApiPublicMenuRouteImport.update({
   id: '/api/public/menu',
   path: '/api/public/menu',
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
   '/api/ops/notifications': typeof ApiOpsNotificationsRoute
   '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
+  '/api/printer/config': typeof ApiPrinterConfigRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/whatsapp/channel': typeof ApiWhatsappChannelRoute
@@ -368,6 +375,7 @@ export interface FileRoutesByTo {
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
   '/api/ops/notifications': typeof ApiOpsNotificationsRoute
   '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
+  '/api/printer/config': typeof ApiPrinterConfigRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/whatsapp/channel': typeof ApiWhatsappChannelRoute
@@ -416,6 +424,7 @@ export interface FileRoutesById {
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
   '/api/ops/notifications': typeof ApiOpsNotificationsRoute
   '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
+  '/api/printer/config': typeof ApiPrinterConfigRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/whatsapp/channel': typeof ApiWhatsappChannelRoute
@@ -465,6 +474,7 @@ export interface FileRouteTypes {
     | '/api/ops/integrations'
     | '/api/ops/notifications'
     | '/api/ops/whatsapp'
+    | '/api/printer/config'
     | '/api/public/menu'
     | '/api/stripe/webhook'
     | '/api/whatsapp/channel'
@@ -512,6 +522,7 @@ export interface FileRouteTypes {
     | '/api/ops/integrations'
     | '/api/ops/notifications'
     | '/api/ops/whatsapp'
+    | '/api/printer/config'
     | '/api/public/menu'
     | '/api/stripe/webhook'
     | '/api/whatsapp/channel'
@@ -559,6 +570,7 @@ export interface FileRouteTypes {
     | '/api/ops/integrations'
     | '/api/ops/notifications'
     | '/api/ops/whatsapp'
+    | '/api/printer/config'
     | '/api/public/menu'
     | '/api/stripe/webhook'
     | '/api/whatsapp/channel'
@@ -606,6 +618,7 @@ export interface RootRouteChildren {
   ApiOpsIntegrationsRoute: typeof ApiOpsIntegrationsRoute
   ApiOpsNotificationsRoute: typeof ApiOpsNotificationsRoute
   ApiOpsWhatsappRoute: typeof ApiOpsWhatsappRoute
+  ApiPrinterConfigRoute: typeof ApiPrinterConfigRoute
   ApiPublicMenuRoute: typeof ApiPublicMenuRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiWhatsappChannelRoute: typeof ApiWhatsappChannelRoute
@@ -889,6 +902,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOpsWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/printer/config': {
+      id: '/api/printer/config'
+      path: '/api/printer/config'
+      fullPath: '/api/printer/config'
+      preLoaderRoute: typeof ApiPrinterConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/menu': {
       id: '/api/public/menu'
       path: '/api/public/menu'
@@ -984,6 +1004,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOpsIntegrationsRoute: ApiOpsIntegrationsRoute,
   ApiOpsNotificationsRoute: ApiOpsNotificationsRoute,
   ApiOpsWhatsappRoute: ApiOpsWhatsappRoute,
+  ApiPrinterConfigRoute: ApiPrinterConfigRoute,
   ApiPublicMenuRoute: ApiPublicMenuRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiWhatsappChannelRoute: ApiWhatsappChannelRoute,

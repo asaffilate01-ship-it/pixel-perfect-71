@@ -25,7 +25,7 @@ export function PrinterConnectionStatus({
     <section className="md-ops-card md-printer-connection" aria-label="Receipt printing status">
       <div className="md-printer-connection-copy">
         <p className="text-xs font-bold uppercase tracking-[.14em] md-ops-muted">
-          Receipt delivery
+          This browser’s printer bridge
         </p>
         <h3 className="mt-1 text-lg font-black">
           {ready
@@ -45,6 +45,12 @@ export function PrinterConnectionStatus({
                 ? "Waiting for a verified live queue. Acceptance and printing resume when the connection is restored."
                 : "Accepted orders keep their place in the receipt queue. Turn on automatic printing or print a waiting receipt manually."}
         </p>
+        {!paired && (
+          <p className="mt-2 text-sm leading-6 md-ops-muted">
+            For the H10S, start auto-print in the MealDeck Printer APK. Its running status is shown
+            in the app; this browser’s switch controls only a paired network-printer bridge.
+          </p>
+        )}
       </div>
       <div className="md-printer-connection-controls">
         <div className="md-printer-status-chips" aria-label="Connection checks">
@@ -229,7 +235,7 @@ export function PrinterPendingOrderCard({
             ? "Refresh the live queue before accepting this order."
             : action === "Accept & print"
               ? "Queues one receipt for automatic printing. Confirm the actual paper after it is sent."
-              : "Queues one receipt. Automatic printing is off or the local bridge is not paired."}
+              : "Queues one receipt for the kitchen printer. On the H10S, check that MealDeck Printer shows auto-print running."}
         </p>
       </div>
     </article>

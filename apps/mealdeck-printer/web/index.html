@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#111111" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; media-src 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <title>MealDeck Printer</title>
+    <link rel="stylesheet" href="./app.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-inner">
+        <img src="./assets/mealdeck.webp" alt="MealDeck" width="64" height="65" />
+        <div>
+          <p class="eyebrow">H10S · Live receipts</p>
+          <h1>Receipt printer</h1>
+        </div>
+        <span class="version">v0.2.0</span>
+      </div>
+    </header>
+    <main class="shell">
+      <div id="browser-notice" class="notice" hidden>
+        <strong>Open the MealDeck Printer Android app</strong>
+        <p>This screen controls the H10S built-in printer when opened inside its installed APK.</p>
+      </div>
+      <p id="error" class="notice notice-error" role="alert" tabindex="-1" hidden></p>
+      <p id="status-notice" class="notice" role="status" hidden>
+        Printer status is unavailable. Printing may still be running in the app. Refresh the status
+        before taking another receipt action.
+      </p>
+      <p id="loading" class="loading" role="status">Checking the printer…</p>
+
+      <section id="signin-card" class="card" aria-labelledby="signin-heading" hidden>
+        <p class="eyebrow accent">Connect your kitchen</p>
+        <h2 id="signin-heading">Printer sign-in</h2>
+        <p class="muted">Use the verified account you use on MealDeck’s Printer screen.</p>
+        <form id="signin-form">
+          <label
+            >Email<input
+              id="email"
+              type="email"
+              autocomplete="username"
+              inputmode="email"
+              required
+              maxlength="254"
+          /></label>
+          <label
+            >Password<input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              maxlength="1000"
+          /></label>
+          <button id="signin" class="button primary" type="submit">Sign in</button>
+        </form>
+      </section>
+
+      <section id="mfa-card" class="card" aria-labelledby="mfa-heading" hidden>
+        <p class="eyebrow accent">One more check</p>
+        <h2 id="mfa-heading">Authenticator code</h2>
+        <form id="mfa-form">
+          <label id="factor-label">Authenticator<select id="factor"></select></label>
+          <label
+            >Six-digit code<input
+              id="mfa-code"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              pattern="[0-9]{6}"
+              minlength="6"
+              maxlength="6"
+              required
+          /></label>
+          <button id="verify-mfa" class="button primary" type="submit">Verify and continue</button>
+        </form>
+      </section>
+
+      <section id="service-card" class="card service-card" aria-labelledby="service-heading" hidden>
+        <div class="heading-row">
+          <p class="eyebrow accent">Automatic receipts</p>
+          <span id="service-badge" class="badge">Paused</span>
+        </div>
+        <h2 id="service-heading">Ready for the next order</h2>
+        <p id="service-message" class="muted" aria-live="polite"></p>
+        <label class="kitchen-label">Kitchen<select id="kitchen"></select></label>
+        <p id="no-access" class="notice" hidden>
+          This account has no assigned printer kitchen. Ask your administrator to check its printer
+          access.
+        </p>
+        <div class="connection-line">
+          <span id="connection-dot" class="dot"></span>
+          <p id="connection-message" class="muted">Printer connection has not been checked.</p>
+        </div>
+        <div class="button-row">
+          <button id="check-connection" class="button secondary" type="button">
+            Check connection
+          </button>
+          <button id="start" class="button primary" type="button">Start auto-print</button>
+          <button id="stop" class="button stop" type="button" hidden>Pause auto-print</button>
+        </div>
+        <p id="baseline-message" class="help">
+          First start receives new receipts from now. Review older waiting receipts individually
+          below.
+        </p>
+        <div class="preferences">
+          <label class="switch"><input id="sound" type="checkbox" checked /> Sound alerts</label>
+          <span id="last-sync" class="help">Waiting for the queue</span>
+        </div>
+        <div id="notification-notice" class="notice notice-small" hidden>
+          <p>
+            Allow notifications to see the printer’s running or paused status while using other
+            screens.
+          </p>
+          <button id="notifications" class="button secondary" type="button">
+            Allow status notifications
+          </button>
+        </div>
+      </section>
+
+      <section id="jobs-card" class="card jobs-card" aria-labelledby="jobs-heading" hidden>
+        <div class="heading-row">
+          <h2 id="jobs-heading" tabindex="-1">Receipts</h2>
+          <span id="job-count" class="count">0</span>
+        </div>
+        <p id="queue-scope" class="help"></p>
+        <p id="scope-notice" class="notice notice-small" hidden>
+          Start the selected kitchen to load its receipts. The queue below still belongs to the
+          kitchen named above.
+        </p>
+        <div class="filters" role="group" aria-label="Filter receipts">
+          <button type="button" data-filter="all" class="filter selected" aria-pressed="true">
+            All
+          </button>
+          <button type="button" data-filter="check" class="filter" aria-pressed="false">
+            Check paper
+          </button>
+          <button type="button" data-filter="waiting" class="filter" aria-pressed="false">
+            Waiting
+          </button>
+        </div>
+        <p id="empty-jobs" class="empty">New accepted orders will appear here.</p>
+        <ul id="jobs" class="jobs-list"></ul>
+      </section>
+
+      <section id="tools-card" class="tools" hidden aria-label="Printer actions">
+        <button id="open-orders" class="button secondary" type="button">Open order screen</button>
+        <button id="refresh" class="button secondary" type="button">Refresh status</button>
+        <button id="signout" class="button quiet" type="button">Sign out</button>
+      </section>
+      <footer>
+        Accept orders on KDS or the Printer screen.<br />MealDeck Printer sends their receipts to
+        this H10S.
+      </footer>
+    </main>
+    <dialog id="receipt-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-copy">
+      <form method="dialog" class="dialog-inner">
+        <p class="eyebrow accent" id="dialog-order"></p>
+        <h2 id="dialog-title" tabindex="-1">Check this receipt</h2>
+        <p id="dialog-copy" class="muted"></p>
+        <div class="dialog-actions">
+          <button id="dialog-print" class="button primary" type="button" hidden>
+            Print this receipt once
+          </button>
+          <button id="dialog-printed" class="button primary" type="button" hidden>
+            Yes, one complete receipt
+          </button>
+          <button id="dialog-not-printed" class="button secondary" type="button" hidden>
+            No complete receipt printed
+          </button>
+          <button id="dialog-cancel" class="button quiet" value="cancel">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+    <noscript
+      >JavaScript must be enabled inside the installed app. No printing has started.</noscript
+    >
+  </body>
+</html>
