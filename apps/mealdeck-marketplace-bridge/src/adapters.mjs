@@ -283,7 +283,7 @@ export class MerchantUiAdapter {
 export class UberEatsAdapter extends MerchantUiAdapter {
   constructor(transport, profile, externalStoreId, options) {
     requireThat(
-      profile.platform === "uber_eats" && profile.transport === "playwright",
+      profile.platform === "uber_eats" && ["playwright", "appium"].includes(profile.transport),
       "profile_mismatch",
     );
     super(transport, profile, externalStoreId, options);

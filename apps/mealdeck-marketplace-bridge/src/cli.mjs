@@ -5,7 +5,7 @@ import { loadConfig } from "./profile.mjs";
 import { Journal, readHealth } from "./journal.mjs";
 import { BridgeClient } from "./client.mjs";
 import { openUberBrowser } from "./playwright-transport.mjs";
-import { openJustEatDevice } from "./appium-transport.mjs";
+import { openAndroidDevice } from "./appium-transport.mjs";
 import { JustEatAdapter, UberEatsAdapter } from "./adapters.mjs";
 import { BridgeWorker } from "./worker.mjs";
 
@@ -66,9 +66,9 @@ export async function main(argv = process.argv.slice(2)) {
   try {
     const client = new BridgeClient(config);
     transport =
-      config.profile.platform === "uber_eats"
+      config.profile.transport === "playwright"
         ? await openUberBrowser(config)
-        : await openJustEatDevice(config);
+        : await openAndroidDevice(config);
     const Adapter = config.profile.platform === "uber_eats" ? UberEatsAdapter : JustEatAdapter;
     const adapter = new Adapter(transport, config.profile, config.externalStoreId, {
       now: () => client.serverNow(),

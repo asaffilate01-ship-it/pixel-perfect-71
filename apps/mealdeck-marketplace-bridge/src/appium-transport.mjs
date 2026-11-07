@@ -1,5 +1,10 @@
 import { BridgeError, requireThat, text } from "./contracts.mjs";
-import { isScopedXPath, loopbackUrl } from "./profile.mjs";
+import {
+  isScopedXPath,
+  loopbackUrl,
+  validAndroidPackage,
+  validateAndroidConnection,
+} from "./profile.mjs";
 
 const ELEMENT = "element-6066-11e4-a52e-4f735466cecf";
 
@@ -10,6 +15,7 @@ export class AppiumTransport {
     this.profile = profile;
     this.fetch = fetchImpl;
     this.sessionId = null;
+    this.connecting = false;
   }
   async request(method, path, body, timeoutMs = 10_000) {
     let response;
@@ -31,32 +37,91 @@ export class AppiumTransport {
       throw error instanceof BridgeError ? error : new BridgeError("device_unavailable");
     }
   }
-  async connect(deviceId) {
+  async connect(deviceId, systemPort) {
+    requireThat(this.sessionId === null && !this.connecting, "device_unavailable");
+    requireThat(
+      typeof deviceId === "string" && deviceId.trim().length > 0 && deviceId === deviceId.trim(),
+      "profile_mismatch",
+    );
     text(deviceId, 200);
-    const session = await this.request(
-      "POST",
-      "/session",
-      {
-        capabilities: {
-          alwaysMatch: {
-            platformName: "Android",
-            "appium:automationName": "UiAutomator2",
-            "appium:udid": deviceId,
-            "appium:appPackage": this.profile.appPackage,
-            "appium:noReset": true,
-            "appium:fullReset": false,
-            "appium:autoLaunch": false,
-            "appium:newCommandTimeout": 120,
+    validateAndroidConnection({
+      appiumUrl: this.baseUrl,
+      deviceIdEnvironment: "MEALDECK_DEVICE_CHECK",
+      systemPort,
+    });
+    requireThat(
+      this.profile.transport === "appium" && validAndroidPackage(this.profile.appPackage),
+      "profile_mismatch",
+    );
+    this.connecting = true;
+    try {
+      const session = await this.request(
+        "POST",
+        "/session",
+        {
+          capabilities: {
+            alwaysMatch: {
+              platformName: "Android",
+              "appium:automationName": "UiAutomator2",
+              "appium:udid": deviceId,
+              "appium:systemPort": systemPort,
+              "appium:appPackage": this.profile.appPackage,
+              "appium:noReset": true,
+              "appium:fullReset": false,
+              "appium:autoLaunch": false,
+              "appium:forceAppLaunch": false,
+              "appium:shouldTerminateApp": false,
+              "appium:dontStopAppOnReset": true,
+              "appium:skipServerInstallation": true,
+              "appium:skipDeviceInitialization": true,
+              "appium:skipSettingsAppReinstall": true,
+              "appium:skipUnlock": true,
+              "appium:autoGrantPermissions": false,
+              "appium:mockLocationApp": "",
+              "appium:skipLogcatCapture": true,
+              "appium:suppressKillServer": true,
+              "appium:autoWebview": false,
+              "appium:newCommandTimeout": 120,
+            },
           },
         },
-      },
-      60_000,
-    );
-    requireThat(
-      typeof session?.sessionId === "string" && /^[\w-]{1,200}$/.test(session.sessionId),
-      "device_unavailable",
-    );
-    this.sessionId = session.sessionId;
+        60_000,
+      );
+      requireThat(
+        typeof session?.sessionId === "string" && /^[\w-]{1,200}$/.test(session.sessionId),
+        "device_unavailable",
+      );
+      this.sessionId = session.sessionId;
+      const capabilities = session.capabilities;
+      requireThat(capabilities && capabilities.platformName === "Android", "identity_mismatch");
+      // Drivers may return extension capabilities with or without the Appium prefix.
+      // Reject a missing/conflicting selection; never accept a fallback to the first attached tablet.
+      for (const [name, expected] of [
+        ["udid", deviceId],
+        ["systemPort", systemPort],
+        ["appPackage", this.profile.appPackage],
+      ]) {
+        const values = [capabilities[`appium:${name}`], capabilities[name]].filter(
+          (value) => value !== undefined,
+        );
+        requireThat(
+          values.length > 0 && values.every((value) => value === expected),
+          "identity_mismatch",
+        );
+      }
+      if (capabilities.deviceUDID !== undefined)
+        requireThat(capabilities.deviceUDID === deviceId, "identity_mismatch");
+    } catch (error) {
+      // A rejected selection is never used for reads/clicks. Delete only this newly created session.
+      try {
+        await this.close();
+      } catch {
+        /* Its bounded server timeout remains the fallback. */
+      }
+      throw error;
+    } finally {
+      this.connecting = false;
+    }
   }
   path(suffix) {
     requireThat(this.sessionId !== null, "device_unavailable");
@@ -121,8 +186,9 @@ export class AppiumTransport {
   }
 }
 
-export async function openJustEatDevice(config, environment = process.env) {
+export async function openAndroidDevice(config, environment = process.env) {
+  validateAndroidConnection(config.android);
   const driver = new AppiumTransport(config.android.appiumUrl, config.profile);
-  await driver.connect(environment[config.android.deviceIdEnvironment]);
+  await driver.connect(environment[config.android.deviceIdEnvironment], config.android.systemPort);
   return driver;
 }

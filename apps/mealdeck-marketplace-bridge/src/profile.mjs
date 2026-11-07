@@ -40,6 +40,30 @@ export function loopbackUrl(value) {
   );
   return url;
 }
+export function validAndroidPackage(value) {
+  return (
+    typeof value === "string" &&
+    value.length <= 200 &&
+    /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+$/.test(value)
+  );
+}
+export function validateAndroidConnection(android) {
+  requireThat(
+    android &&
+      typeof android.deviceIdEnvironment === "string" &&
+      /^MEALDECK_[A-Z0-9_]+$/.test(android.deviceIdEnvironment),
+    "profile_mismatch",
+  );
+  const url = loopbackUrl(android.appiumUrl);
+  requireThat(
+    Number.isInteger(android.systemPort) &&
+      android.systemPort >= 1024 &&
+      android.systemPort <= 65535 &&
+      android.systemPort !== Number(url.port || 80),
+    "profile_mismatch",
+  );
+  return android;
+}
 function selector(value, transport) {
   requireThat(value && typeof value === "object", "profile_mismatch");
   requireThat(
@@ -122,8 +146,11 @@ export function validateProfile(profile, { fixture = false, now = Date.now() } =
       requireThat(expiresAt > now && expiresAt > verifiedAt, "profile_mismatch");
     }
   }
-  const transport = profile.platform === "uber_eats" ? "playwright" : "appium";
-  requireThat(profile.transport === transport, "profile_mismatch");
+  const transport = profile.transport;
+  requireThat(
+    (profile.platform === "uber_eats" ? ["playwright", "appium"] : ["appium"]).includes(transport),
+    "profile_mismatch",
+  );
   if (transport === "playwright") {
     const url = new URL(profile.pageUrl);
     if (fixture) loopbackUrl(profile.pageUrl);
@@ -139,8 +166,11 @@ export function validateProfile(profile, { fixture = false, now = Date.now() } =
         "profile_mismatch",
       );
   } else {
-    text(profile.appPackage, 200);
-    if (!fixture) requireThat(profile.appPackage === "com.justeat.orderpad", "profile_mismatch");
+    requireThat(validAndroidPackage(profile.appPackage), "profile_mismatch");
+    // Uber's installed merchant package is deliberately unknown until the actual Sunmi is inspected.
+    // Whatever is commissioned is matched exactly against the session and foreground package.
+    if (!fixture && profile.platform === "just_eat")
+      requireThat(profile.appPackage === "com.justeat.orderpad", "profile_mismatch");
   }
   const screen = profile.screen;
   requireThat(screen && typeof screen === "object", "profile_mismatch");
@@ -289,13 +319,7 @@ export async function loadConfig(path, { permitDisabled = false } = {}) {
     config.browser.userDataDirectory = resolve(base, config.browser.userDataDirectory);
     requireThat(config.browser.userDataDirectory !== config.stateDirectory, "profile_mismatch");
   } else {
-    requireThat(
-      config.android &&
-        typeof config.android.deviceIdEnvironment === "string" &&
-        /^MEALDECK_[A-Z0-9_]+$/.test(config.android.deviceIdEnvironment),
-      "profile_mismatch",
-    );
-    loopbackUrl(config.android.appiumUrl);
+    validateAndroidConnection(config.android);
   }
   return config;
 }

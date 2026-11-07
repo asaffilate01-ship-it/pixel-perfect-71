@@ -4,9 +4,9 @@
 
 This source implements MealDeck-owned order ingestion, a separate marketplace order ledger, the shared KDS presentation and actions, a durable command queue, a scoped bridge endpoint, and two local UI adapters. There is no UrbanPiper, Otter or HubRise dependency and no model call in normal order processing.
 
-**Source implementation and fixture verification do not establish a live connection.** No Uber Eats account, Just Eat account or Sunmi device was connected during development. No real order was imported, accepted, changed, charged or handed over. Both shipped connection examples are disabled and have no store ID, credentials or production selectors.
+**Source implementation and fixture verification do not establish a live connection.** No Uber Eats account, Just Eat account or Sunmi device was connected during development. No real order was imported, accepted, changed, charged or handed over. All shipped connection examples are disabled and have no store ID, credentials or production selectors.
 
-The remaining commissioning inputs are the actual Uber Eats Orders environment, the Just Eat Sunmi model/Android version and permitted device access, exact storefront identifiers, reviewed screen selectors and status mappings, and observed acceptance on those actual screens. A browser login or Android hardware brand alone is not proof that automation is permitted or compatible.
+The owner has confirmed two separate Sunmi terminals: one running Uber Eats and one running Just Eat. The remaining commissioning inputs are each terminal's model, Android version, merchant app version and permitted device access, exact storefront identifiers, reviewed screen selectors and status mappings, and observed acceptance on those actual screens. A browser login or Android hardware brand alone is not proof that automation is permitted or compatible.
 
 ## What is implemented
 
@@ -28,8 +28,8 @@ Only the marketplace can decide how its customer app describes those events. A M
 
 ```mermaid
 flowchart TD
-  U["Uber Eats Orders in Chrome"] <--> UB["Uber browser adapter"]
-  J["Just Eat Orderpad on Sunmi"] <--> JB["Just Eat Android adapter"]
+  U["Uber Eats on its Sunmi"] <--> UB["Uber Android adapter"]
+  J["Just Eat on its Sunmi"] <--> JB["Just Eat Android adapter"]
   UB <--> H["Authenticated MealDeck bridge endpoint"]
   JB <--> H
   H <--> L["Private order ledger and command queue"]
@@ -37,9 +37,11 @@ flowchart TD
   D["Direct MealDeck paid orders"] --> K
 ```
 
-The local package is `apps/mealdeck-marketplace-bridge`. It runs on an always-on local computer using Node 24 or later. Uber uses a dedicated visible Chrome profile, with staff signing in through the normal merchant flow. Just Eat uses a loopback Appium server and a specifically selected, authorised Android device. It does not install, root, reset, unlock or change the terminal firmware through this connector.
+The local package is `apps/mealdeck-marketplace-bridge`. It runs on an always-on local computer using Node 24 or later. Both Sunmi connections use a loopback Appium server and specifically selected, authorised Android devices. Each has its own device ID, reviewed app package, UiAutomator2 system port, server connector credential and durable journal. The example system ports are 8201 for Uber and 8202 for Just Eat; both may use the same loopback Appium endpoint on port 4723. The merchant app package must be verified on the actual terminal before activation.
 
-The Just Eat path is an Android UI bridge controlled from that local computer, not a claim that a standalone Sunmi APK has been installed. Device administration may prevent the required access. If it does, the connector remains unavailable; the implementation does not bypass management controls.
+These are Android UI bridges controlled from that local computer, not a claim that standalone Sunmi APKs have been installed. Device administration may prevent the required access. The compatible Appium/UiAutomator2 toolchain and its on-device helpers must be provisioned through authorised setup; routine connection startup must not install helpers, reset or unlock a terminal. If the required access is unavailable, the connector remains unavailable.
+
+The existing Uber Chrome transport remains an optional alternative using a dedicated visible browser profile and normal staff sign-in. Choose one Uber transport per server connection; do not run browser and Android workers against the same connection at once.
 
 ### Order identity and money
 
@@ -84,10 +86,10 @@ Appium is loopback-only. Chrome sessions use a dedicated local profile. Login, s
 
 1. **Install the additive database extension in the independent MealDeck project.** Follow `docs/mealdeck-marketplace-database.md`. The migration verifies the expected existing KDS definition before wrapping it. Do not apply the independent foundation again or install it into Dishbee/Café1. Use the managed migration builder only when the runner guarantees one complete transaction.
 2. **Run the local package checks and offline demo.** From `apps/mealdeck-marketplace-bridge`, use `npm ci --ignore-scripts`, `npm test` and `npm run demo`. These use explicit fixtures and make no real platform updates. See the package README for required browser-test setup.
-3. **Inspect actual access and screens.** Record the Uber browser/app environment and Sunmi model, Android version, Orderpad version, permitted administration and relevant order views. The reviewed UI must expose a stable order identity, original display reference, explicit platform payment responsibility, complete lines/choices and actionable states. If a list is virtualised or paginated, prove completeness for the configured navigation; missing items must hold import.
+3. **Inspect actual access and screens on both Sunmi terminals.** Record each model, Android version, merchant app name/version, exact package, permitted administration and relevant order views. Select a compatible Appium/UiAutomator2 toolchain after those versions are known. The reviewed UI must expose a stable order identity, original display reference, explicit platform payment responsibility, complete lines/choices and actionable states. If a list is virtualised or paginated, prove completeness for the configured navigation; missing items must hold import.
 4. **Review a profile per platform/store environment.** The shipped `profiles/*.unconfigured.json` files deliberately contain no guessed live selectors. Profile identity/version, store identity, selectors, view navigation, raw label mappings, capability set and verification expiry must match the independently commissioned database connection. Validate each supported fulfilment type and every status control independently. Do not enable a handover capability solely because a similarly named button exists elsewhere.
 5. **Provision each exact store mapping and its separate credential.** Generate the local secret securely and install only its hash in the database. Never paste it into chat, source control, browser storage or a public URL. Keep local Chrome state and SQLite journals in the ignored private runtime directory. Record the actual permission and device acceptance evidence; placeholder text is not acceptance.
-6. **Check the configuration, then commission actual observations.** `npm run check -- --config config.uber-eats.example.json` and the corresponding Just Eat example report unconfigured until real values are supplied. A successful configuration check verifies file shape only. `observe` mode imports actual marketplace orders into the KDS but does not claim outbound commands; it is not a no-write sandbox. Use disposable fixtures for a fully offline rehearsal.
+6. **Check the configuration, then commission actual observations.** For the two Sunmi devices, use `npm run check -- --config config.uber-eats-android.example.json` and `config.just-eat.example.json`. The optional Uber Chrome example is `config.uber-eats.example.json`. All report unconfigured until real values are supplied. A successful configuration check verifies file shape only. `observe` mode imports actual marketplace orders into the KDS but does not claim outbound commands; it is not a no-write sandbox. Use disposable fixtures for a fully offline rehearsal.
 7. **Verify one controlled real lifecycle on each platform.** Observe the exact order reference, every item/choice/note, one KDS card, acceptance readback, readiness after sealing, and the supported handover/courier behavior. Observe what the actual customer and courier views show; do not infer it from a KDS toast. Only then enable the reviewed outbound capability set.
 8. **Keep supervision and fallback available.** Operations Overview and Finance show the read-only Uber Eats & Just Eat connection panel. A responding bridge is a health check, not a new device certification. Staff use the original merchant interface when a ticket says needs checking, and compare the same order before continuing.
 

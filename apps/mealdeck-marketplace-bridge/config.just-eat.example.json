@@ -10,6 +10,7 @@
   "pollIntervalMs": 2000,
   "android": {
     "appiumUrl": "http://127.0.0.1:4723",
-    "deviceIdEnvironment": "MEALDECK_JUST_EAT_DEVICE_ID"
+    "deviceIdEnvironment": "MEALDECK_JUST_EAT_DEVICE_ID",
+    "systemPort": 8202
   }
 }

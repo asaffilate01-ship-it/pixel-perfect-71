@@ -4,9 +4,13 @@ import { BridgeError } from "../src/contracts.mjs";
 import { validateProfile } from "../src/profile.mjs";
 
 /** Synthetic fixtures only. These selectors and labels are not claims about either merchant application. */
-export function fixtureProfile(platform, pageUrl = "http://127.0.0.1:1/fixture") {
+export function fixtureProfile(
+  platform,
+  pageUrl = "http://127.0.0.1:1/fixture",
+  { transport = platform === "uber_eats" ? "playwright" : "appium" } = {},
+) {
   const select = (key) =>
-    platform === "uber_eats"
+    transport === "playwright"
       ? { using: "css", value: `[data-key="${key}"]` }
       : { using: "id", value: `fixture:${key}` };
   const field = (key, extra = {}) => ({ selector: select(key), ...extra });
@@ -14,12 +18,15 @@ export function fixtureProfile(platform, pageUrl = "http://127.0.0.1:1/fixture")
     schemaVersion: 1,
     environment: "fixture",
     platform,
-    profileId: `offline-${platform}-fixture`,
+    profileId: `offline-${platform}${platform === "uber_eats" && transport === "appium" ? "-android" : ""}-fixture`,
     profileVersion: "1",
     commissioning: { status: "verified" },
-    transport: platform === "uber_eats" ? "playwright" : "appium",
+    transport,
     pageUrl,
-    appPackage: "uk.co.mealdeck.fixture",
+    appPackage:
+      platform === "uber_eats" && transport === "appium"
+        ? "uk.co.mealdeck.fixture.uber"
+        : "uk.co.mealdeck.fixture",
     screen: {
       storeId: field("store"),
       guards: [{ field: field("guard"), equals: "OFFLINE FIXTURE" }],
@@ -221,45 +228,87 @@ export async function startFixtureWeb(fixture) {
   };
 }
 
-export async function startFixtureAppium(fixture, { loseClickResponse = false } = {}) {
+export async function startFixtureAppium(
+  fixtureOrDevices,
+  { loseClickResponse = false, returnedCapabilities = (caps) => caps } = {},
+) {
+  const devices = Array.isArray(fixtureOrDevices)
+    ? fixtureOrDevices
+    : [
+        {
+          deviceId: "fixture-device",
+          appPackage: "uk.co.mealdeck.fixture",
+          fixture: fixtureOrDevices,
+        },
+      ];
   const requests = [];
+  const sessions = new Map();
+  let nextSession = 1;
   const server = createServer(async (request, response) => {
     const path = new URL(request.url, "http://127.0.0.1").pathname;
-    requests.push({ method: request.method, path });
     let value;
     try {
       let raw = "";
       for await (const chunk of request) raw += chunk;
       const body = raw ? JSON.parse(raw) : {};
-      if (path === "/session" && request.method === "POST")
-        value = { sessionId: "fixture-session", capabilities: body.capabilities.alwaysMatch };
-      else if (path === "/session/fixture-session" && request.method === "DELETE") value = null;
-      else if (path.endsWith("/appium/device/current_package")) value = "uk.co.mealdeck.fixture";
-      else {
-        const match =
-          /^\/session\/fixture-session(?:\/element\/([^/]+))?\/(elements|text|displayed|enabled|click|attribute\/(.+))$/.exec(
-            path,
-          );
-        if (!match) throw new Error("fixture route");
-        const element = match[1]
-          ? fixture.all().find((node) => node.id === decodeURIComponent(match[1]))
-          : null;
-        if (match[1] && !element) throw new Error("fixture element");
-        if (match[2] === "elements")
-          value = (await fixture.find(body, element)).map((node) => ({
-            "element-6066-11e4-a52e-4f735466cecf": node.id,
-          }));
-        else if (match[2] === "text") value = await fixture.text(element);
-        else if (["displayed", "enabled"].includes(match[2])) value = true;
-        else if (match[2] === "click") {
-          await fixture.click(element);
-          if (loseClickResponse) {
-            loseClickResponse = false;
-            response.destroy();
-            return;
-          }
+      requests.push({ method: request.method, path, body });
+      if (path === "/session" && request.method === "POST") {
+        const caps = body.capabilities.alwaysMatch;
+        const device = devices.find((entry) => entry.deviceId === caps["appium:udid"]);
+        if (
+          !device ||
+          device.appPackage !== caps["appium:appPackage"] ||
+          [...sessions.values()].some(
+            (entry) =>
+              entry.device.deviceId === device.deviceId ||
+              entry.systemPort === caps["appium:systemPort"],
+          )
+        ) {
+          throw new Error("fixture selection conflict");
+        }
+        const sessionId = `fixture-session-${nextSession++}`;
+        sessions.set(sessionId, { device, systemPort: caps["appium:systemPort"] });
+        value = {
+          sessionId,
+          capabilities: returnedCapabilities({ ...caps, deviceUDID: device.deviceId }),
+        };
+      } else {
+        const sessionPath = /^\/session\/([^/]+)(.*)$/.exec(path);
+        const entry = sessionPath ? sessions.get(sessionPath[1]) : null;
+        if (!entry) throw new Error("fixture session");
+        const fixture = entry.device.fixture;
+        const suffix = sessionPath[2];
+        if (suffix === "" && request.method === "DELETE") {
+          sessions.delete(sessionPath[1]);
           value = null;
-        } else value = await fixture.attribute(element, decodeURIComponent(match[3]));
+        } else if (suffix === "/appium/device/current_package") {
+          value = entry.device.foregroundPackage ?? entry.device.appPackage;
+        } else {
+          const match =
+            /^(?:\/element\/([^/]+))?\/(elements|text|displayed|enabled|click|attribute\/(.+))$/.exec(
+              suffix,
+            );
+          if (!match) throw new Error("fixture route");
+          const element = match[1]
+            ? fixture.all().find((node) => node.id === decodeURIComponent(match[1]))
+            : null;
+          if (match[1] && !element) throw new Error("fixture element");
+          if (match[2] === "elements")
+            value = (await fixture.find(body, element)).map((node) => ({
+              "element-6066-11e4-a52e-4f735466cecf": node.id,
+            }));
+          else if (match[2] === "text") value = await fixture.text(element);
+          else if (["displayed", "enabled"].includes(match[2])) value = true;
+          else if (match[2] === "click") {
+            await fixture.click(element);
+            if (loseClickResponse) {
+              loseClickResponse = false;
+              response.destroy();
+              return;
+            }
+            value = null;
+          } else value = await fixture.attribute(element, decodeURIComponent(match[3]));
+        }
       }
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify({ value }));
@@ -275,6 +324,7 @@ export async function startFixtureAppium(fixture, { loseClickResponse = false } 
   return {
     url: `http://127.0.0.1:${server.address().port}`,
     requests,
+    sessions,
     close: async () => {
       server.closeAllConnections();
       server.close();

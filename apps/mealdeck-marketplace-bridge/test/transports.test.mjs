@@ -9,7 +9,7 @@ import {
   startFixtureAppium,
   startFixtureWeb,
 } from "../demo/fixture.mjs";
-import { AppiumTransport } from "../src/appium-transport.mjs";
+import { AppiumTransport, openAndroidDevice } from "../src/appium-transport.mjs";
 import { PlaywrightTransport } from "../src/playwright-transport.mjs";
 import { JustEatAdapter, UberEatsAdapter } from "../src/adapters.mjs";
 import { CommandEngine } from "../src/engine.mjs";
@@ -40,7 +40,7 @@ test("Appium W3C fixture imports full order and verifies an accepted state throu
   const profile = fixtureProfile("just_eat");
   const transport = new AppiumTransport(server.url, profile);
   try {
-    await transport.connect("fixture-device");
+    await transport.connect("fixture-device", 8202);
     const adapter = new JustEatAdapter(transport, profile, "fixture-store");
     const [order] = await adapter.scan();
     const result = await engine(adapter).run(command(order));
@@ -63,7 +63,7 @@ test("lost Appium click reply reconciles from native readback without another cl
   const profile = fixtureProfile("just_eat");
   const transport = new AppiumTransport(server.url, profile);
   try {
-    await transport.connect("fixture-device");
+    await transport.connect("fixture-device", 8202);
     const adapter = new JustEatAdapter(transport, profile, "fixture-store");
     const [order] = await adapter.scan();
     const instruction = command(order);
