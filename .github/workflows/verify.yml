@@ -53,7 +53,7 @@ jobs:
       - name: Installable app cache isolation and offline behavior
         run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
       - name: Page loading and failed-route recovery
-        run: node --import tsx --test tests/mealdeck-route-recovery.test.tsx
+        run: node --conditions=development --import tsx --test tests/mealdeck-route-recovery.test.tsx tests/mealdeck-arcade-navigation.test.tsx
       - name: Installable app implementation checks
         run: |
           node --check public/sw.js
