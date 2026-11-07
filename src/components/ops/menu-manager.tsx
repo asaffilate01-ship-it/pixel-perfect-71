@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowDown,
   CheckCircle2,
   ChevronDown,
@@ -95,6 +96,7 @@ function MenuManager({
   const [loadError, setLoadError] = useState(initial.error);
   const [actionError, setActionError] = useState("");
   const [success, setSuccess] = useState("");
+  const [feedbackArea, setFeedbackArea] = useState<"menu" | "editor" | "create">("menu");
   const [pending, setPending] = useState("");
   const [routingBusy, setRoutingBusy] = useState(false);
   const [structureBusy, setStructureBusy] = useState(false);
@@ -122,6 +124,9 @@ function MenuManager({
   const localWrite = can("menu.write");
   const busy = !!pending || routingBusy || structureBusy;
   const writable = !busy && !loadError;
+  // A failed refresh blocks writes, not the local draft. Keep the form usable
+  // while staff recover their connection; save still requires a verified menu.
+  const draftEditable = globalWrite && !busy;
   const current = rows.find((item) => item.item_id === selected?.item_id);
   const dirty = !!selected && menuDraftHasChanges(draft, selected);
   const changedElsewhere = !!current && !!selected && menuMasterChanged(selected, current);
@@ -151,7 +156,9 @@ function MenuManager({
   useEffect(() => {
     if (!focusEditor || !editorHeading.current) return;
     editorHeading.current.focus({ preventScroll: true });
-    editorHeading.current.scrollIntoView({ block: "nearest", behavior: "auto" });
+    // On a single-column screen, "nearest" leaves only the heading at the
+    // bottom edge, with every editable field still below the viewport.
+    editorHeading.current.scrollIntoView({ block: "start", behavior: "auto" });
   }, [focusEditor]);
   useEffect(() => {
     if (bulkAction) bulkReview.current?.focus({ preventScroll: true });
@@ -186,6 +193,7 @@ function MenuManager({
 
   function choose(item: OpsMenuItem) {
     if (busy) return;
+    setFeedbackArea("editor");
     if (selected?.item_id === item.item_id) {
       setFocusEditor((value) => value + 1);
       return;
@@ -248,8 +256,9 @@ function MenuManager({
     }
   }
 
-  async function refresh() {
+  async function refresh(area: "menu" | "editor" | "create" = "menu") {
     if (actionLock.current || routingBusy) return;
+    setFeedbackArea(area);
     actionLock.current = true;
     const cycle = generation.current;
     setPending("refresh");
@@ -281,6 +290,7 @@ function MenuManager({
     actionLock.current = true;
     const cycle = generation.current;
     let confirmed = false;
+    setFeedbackArea(action === "save" ? "editor" : action === "create" ? "create" : "menu");
     setPending(action);
     setActionError("");
     setSuccess("");
@@ -297,6 +307,7 @@ function MenuManager({
       if (newItemId && !dirty) {
         const added = next.find((item) => item.item_id === newItemId);
         if (added) {
+          setFeedbackArea("editor");
           setFilters({
             query: "",
             brand: added.brand_id ?? UNASSIGNED_MENU_BRAND,
@@ -353,6 +364,7 @@ function MenuManager({
 
   async function saveProduct(deactivationConfirmed = false) {
     if (!globalWrite || !selected || !current || !writable || changedElsewhere || !dirty) return;
+    setFeedbackArea("editor");
     const checked = validateMenuProductDraft(draft);
     if (!checked.valid) {
       setActionError(checked.message);
@@ -422,6 +434,7 @@ function MenuManager({
   async function applyBulk() {
     if (!bulkAction || !writable || actionLock.current) return;
     if (bulkAction === "deactivate" ? !globalWrite : !localWrite) return;
+    setFeedbackArea("menu");
     const action = bulkAction;
     const requested = new Set(selectedIds);
     const cycle = generation.current;
@@ -498,6 +511,7 @@ function MenuManager({
   async function createProduct(event: FormEvent) {
     event.preventDefault();
     if (!globalWrite || !writable) return;
+    setFeedbackArea("create");
     const category = taxonomy.find((entry) => entry.category_id === categoryId);
     if (!category) {
       setActionError("Choose an approved brand and category for the new product.");
@@ -533,11 +547,50 @@ function MenuManager({
 
   function openCreate() {
     setCreating(true);
+    setFeedbackArea("create");
     window.requestAnimationFrame(() => {
       createHeading.current?.focus({ preventScroll: true });
-      createHeading.current?.scrollIntoView({ block: "nearest", behavior: "auto" });
+      createHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
     });
   }
+
+  const feedback = (
+    <>
+      {success && (
+        <p role="status" className="md-menu-success">
+          <CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />
+          {success}
+        </p>
+      )}
+      {loadError && (
+        <div role="alert" className="md-menu-error">
+          <AlertCircle className="size-5 shrink-0" aria-hidden="true" />
+          <div>
+            <p>{loadError}</p>
+            {feedbackArea === "editor" && current && globalWrite && (
+              <p className="mt-2">
+                You can keep editing your draft. Reload the saved menu before saving changes.
+              </p>
+            )}
+            <button
+              type="button"
+              className="md-ops-button md-ops-secondary mt-3"
+              disabled={busy}
+              onClick={() => void refresh(feedbackArea)}
+            >
+              {pending === "refresh" ? "Reloading…" : "Reload saved menu"}
+            </button>
+          </div>
+        </div>
+      )}
+      {actionError && (
+        <p role="alert" className="md-menu-error">
+          <AlertCircle className="size-5 shrink-0" aria-hidden="true" />
+          {actionError}
+        </p>
+      )}
+    </>
+  );
 
   return (
     <div className="md-menu-manager">
@@ -581,34 +634,9 @@ function MenuManager({
         </div>
       </section>
 
-      {success && (
-        <p role="status" className="md-menu-success">
-          <CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />
-          {success}
-        </p>
-      )}
-      {loadError && (
-        <div role="alert" className="md-menu-error">
-          <AlertCircle className="size-5 shrink-0" aria-hidden="true" />
-          <div>
-            <p>{loadError}</p>
-            <button
-              type="button"
-              className="md-ops-button md-ops-secondary mt-3"
-              disabled={busy}
-              onClick={() => void refresh()}
-            >
-              Reload saved menu
-            </button>
-          </div>
-        </div>
-      )}
-      {actionError && (
-        <p role="alert" className="md-menu-error">
-          <AlertCircle className="size-5 shrink-0" aria-hidden="true" />
-          {actionError}
-        </p>
-      )}
+      {!(feedbackArea === "editor" && current) &&
+        !(feedbackArea === "create" && creating) &&
+        feedback}
 
       <div className="md-menu-layout">
         <section
@@ -956,6 +984,19 @@ function MenuManager({
             <div className="md-menu-editor-top">
               <p className="md-menu-eyebrow">Product details</p>
               {dirty && <span className="md-menu-unsaved">Unsaved changes</span>}
+              {current && (
+                <button
+                  type="button"
+                  className="md-ops-button md-ops-secondary md-menu-editor-back"
+                  onClick={() => {
+                    setFeedbackArea("menu");
+                    resultHeading.current?.focus({ preventScroll: true });
+                    resultHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
+                  }}
+                >
+                  <ArrowLeft className="size-4" aria-hidden="true" /> Back to products
+                </button>
+              )}
             </div>
             <h2 ref={editorHeading} tabIndex={-1} id={id + "-editor-heading"}>
               {current
@@ -1044,7 +1085,7 @@ function MenuManager({
                   }}
                   className="md-menu-product-form"
                 >
-                  <fieldset disabled={!globalWrite || !writable}>
+                  <fieldset disabled={!draftEditable}>
                     <label htmlFor={id + "-name"}>
                       Product name
                       <input
@@ -1123,6 +1164,9 @@ function MenuManager({
                         </button>
                       )}
                     </div>
+                  )}
+                  {feedbackArea === "editor" && (success || loadError || actionError) && (
+                    <div className="md-menu-editor-feedback">{feedback}</div>
                   )}
                   {confirmDeactivation && !draft.active && current.active && (
                     <div className="md-menu-review" role="alert">
@@ -1265,6 +1309,9 @@ function MenuManager({
                     <Plus className="size-4" aria-hidden="true" />
                     {pending === "create" ? "Creating…" : "Save inactive draft"}
                   </button>
+                  {feedbackArea === "create" && (success || loadError || actionError) && (
+                    <div className="md-menu-editor-feedback">{feedback}</div>
+                  )}
                 </form>
               )}
             </section>
