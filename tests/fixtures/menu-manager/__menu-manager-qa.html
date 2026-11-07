@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="referrer" content="no-referrer" />
+    <title>UI TEST ONLY — MealDeck Brand menus</title>
+    <script>
+      // Block application requests before production components are imported.
+      // Module and stylesheet loading, and Vite's own HMR, remain available.
+      window.__MENU_QA_BLOCKED_REQUESTS__ = [];
+      const refuseApplicationRequest = (request) => {
+        let label = "application request";
+        try {
+          const url = new URL(
+            request instanceof Request ? request.url : String(request),
+            location.href,
+          );
+          label = url.origin + url.pathname;
+        } catch {}
+        window.__MENU_QA_BLOCKED_REQUESTS__.push(label);
+        document.documentElement.dataset.blockedRequests = String(
+          window.__MENU_QA_BLOCKED_REQUESTS__.length,
+        );
+        window.dispatchEvent(new CustomEvent("menu-qa-request-blocked", { detail: label }));
+        throw new Error("UI TEST ONLY: application network requests are disabled");
+      };
+      window.fetch = async (request) => refuseApplicationRequest(request);
+      XMLHttpRequest.prototype.open = function (method, url) {
+        refuseApplicationRequest(url);
+      };
+    </script>
+    <script type="module">
+      import RefreshRuntime from "/@react-refresh";
+      RefreshRuntime.injectIntoGlobalHook(window);
+      window.$RefreshReg$ = () => {};
+      window.$RefreshSig$ = () => (type) => type;
+      window.__vite_plugin_react_preamble_installed__ = true;
+      await import("/tests/fixtures/menu-manager/fixture.tsx");
+    </script>
+  </head>
+  <body>
+    <div id="root">Loading synthetic Menu Manager UI fixture…</div>
+  </body>
+</html>

@@ -47,8 +47,9 @@ The owner subsequently requested vibration for mobile KDS alerts. **Tools** now
 offers **Enable vibration**, **Disable vibration** and **Test vibration** when
 the browser exposes the Vibration API. The device-local preference defaults off
 and is separate from the existing sound/volume setting. Enabling it gives an
-immediate short sample; fresh eligible order arrivals use two 120ms pulses with
-an 80ms gap. Muted or zero-volume sound does not disable vibration.
+immediate sample; fresh eligible order arrivals use three 800ms pulses with
+250ms gaps (2.9 seconds total), following the owner’s request for a longer,
+call-like cue. The web API controls timing; the phone controls motor strength. Muted or zero-volume sound does not disable vibration.
 
 The controller requires the enabled preference, a visible document and prior
 trusted/browser user activation. It has no backlog or repeating timer, guards
@@ -76,7 +77,7 @@ were checked on 7 November 2026. A successful API return is not physical-device
 evidence; this feature does not promise iPhone vibration, lock-screen delivery,
 or a pulse in every tab when another tab claims the shared alert.
 
-## Observed browser verification
+## Observed browser verification of the initial release
 
 After the owner approved local preview access, the supported managed browser
 loaded the synthetic fixture and completed these checks. All order interactions
@@ -101,7 +102,7 @@ no alternate browser, raw CDP or shell-browser route was used. The last narrow
 shortcut/hidden-label adjustments and newly added vibration controls therefore
 have **not** received final rendered-browser acceptance in this environment.
 
-## Automated verification and remaining acceptance
+## Initial release verification and remaining acceptance
 
 - Combined final local suite: **173 tests passed, 1,177 assertions**, across KDS view/toolbar/presentation/workflow/parsing/readiness/outbox, existing sound/ledger, printer/acceptance, and new vibration/channel/control tests.
 - New tests cover rejected/throwing or absent vibration, independent muted sound, native touch activation changing after pointerdown, cancellation, delayed-arrival invalidation, unsupported UI fallback and printer exclusion.
@@ -116,3 +117,37 @@ fix, the new vibration controls, enlarged-text reflow, and a real mobile keyboar
 with the bottom navigation. Physical vibration can only be confirmed on a
 supported phone. The desktop responsive fixture is not a physical phone test.
 No live order needs to be mutated for any of these checks.
+
+## Longer vibration and mobile Brand menus follow-up
+
+The owner approved another visual test, requested a longer call-like vibration,
+and reported misaligned cards in the mobile Menu Manager. The follow-up keeps
+the same alert preference and order workflow. Its changes are:
+
+- Three 800ms vibration pulses separated by 250ms gaps: 2.9 seconds total.
+- The existing shared alert lock now covers the longer accepted vibration;
+  rejected/unsupported vibration and printer sound keep their original timing.
+- An arrival received during an active vibration cannot become a delayed pulse
+  after the cooldown. Hiding, disabling or disposing still cancels immediately.
+- In Operations **Brand menus**, phone product cards have a consistent selection
+  column and top-aligned details, with equal flexible action buttons in a separate
+  full-width row. Permission states without selection use the entire detail row.
+  Heading actions and status filters use equal-width columns. Desktop card
+  composition, editing handlers, permissions and backend requests are unchanged.
+- A synthetic fixture under `tests/fixtures/menu-manager/` mounts the actual
+  `OpsMenuPanel` with long names, several brands and permission variants. It
+  blocks application requests before imports and is excluded from production.
+
+The supported managed preview was restarted after the owner's new permission.
+The exact preview URL timed out during navigation, and the documented tab-state
+check then timed out in `Page.getFrameTree`. No new rendered layout or physical
+vibration result was obtained. The preview was stopped and temporary public
+fixture entries were removed. No alternate browser-control path was used.
+
+Follow-up alert checks passed: **52 tests, 320 assertions**. They cover the new
+2,900ms boundary, delayed busy-arrival rejection, cancellation, independent
+channels, activation, saved preferences and unsupported browser controls.
+Application TypeScript and scoped lint passed (the existing mixed-export Fast
+Refresh warning remains). Source review found no blocker in the longer alert or
+the mobile card rules. Final visual acceptance and physical phone testing remain
+outstanding.

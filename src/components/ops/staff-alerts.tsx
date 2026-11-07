@@ -10,6 +10,7 @@ import {
 import { createStaffAudioController, readStaffSoundPreferences } from "@/lib/mealdeck-staff-audio";
 import {
   createStaffVibrationController,
+  KDS_VIBRATION_DURATION_MS,
   readStaffVibrationPreferences,
   type StaffVibrationState,
 } from "@/lib/mealdeck-staff-vibration";
@@ -210,12 +211,26 @@ export function useStaffAlerts(kind: StaffAlertKind, scope: string) {
         if (controller.current !== audio || vibrationController.current !== vibration) return;
         const unheard = next.filter((id) => !claimed.current.has(id));
         if (!unheard.length) return;
-        if (!playStaffAlertChannels(() => audio?.play() ?? false, vibrateForArrival)) return;
+        let vibrationAccepted = false;
+        if (
+          !playStaffAlertChannels(
+            () => audio?.play() ?? false,
+            () => {
+              vibrationAccepted = vibrateForArrival?.() ?? false;
+              return vibrationAccepted;
+            },
+          )
+        )
+          return;
         for (const id of unheard) claimed.current.add(id);
         channel.current?.postMessage({ type: "heard", ids: unheard });
-        // Keep the optional cross-window lock through the chime, so simultaneous
-        // polls cannot produce overlapping copies before the broadcast arrives.
-        await new Promise<void>((resolve) => setTimeout(resolve, staffAlertDurationMs(kind)));
+        // Hold the shared lock through the longest accepted cue. A rejected
+        // vibration must not lengthen the existing sound-only lock.
+        const holdMs = Math.max(
+          staffAlertDurationMs(kind),
+          vibrationAccepted ? KDS_VIBRATION_DURATION_MS : 0,
+        );
+        await new Promise<void>((resolve) => setTimeout(resolve, holdMs));
       };
       if (navigator.locks)
         void navigator.locks.request(`mealdeck-chime:${key}`, { ifAvailable: true }, (lock) =>
@@ -352,8 +367,9 @@ export function StaffAlertControls({
                 </button>
               )}
               <p className="basis-full text-xs md-ops-muted">
-                Two short pulses for new paid orders, even with sound muted. Works on supported
-                phones while the KDS is open and visible. Test it on this device.
+                Three longer pulses over about 3 seconds for new paid orders, even with sound muted.
+                Works on supported phones while the KDS is visible. Your phone controls vibration
+                strength.
               </p>
               {alerts.vibration.waitingForGesture && (
                 <p role="status" className="basis-full text-xs md-ops-muted">
