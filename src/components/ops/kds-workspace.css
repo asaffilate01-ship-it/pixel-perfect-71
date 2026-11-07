@@ -452,6 +452,55 @@
   line-height: 1.35;
 }
 
+.md-kds-workspace .md-kds-marketplace-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  padding: 3px 6px;
+  color: var(--ops-ink);
+  background: var(--ops-paper);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.md-kds-workspace .md-kds-marketplace-status {
+  display: grid;
+  gap: 3px;
+  margin-top: 9px;
+  border-top: 1px solid var(--ops-line);
+  padding-top: 8px;
+  color: var(--ops-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.md-kds-workspace .md-kds-marketplace-status-heading {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ops-text);
+}
+
+.md-kds-workspace
+  .md-kds-marketplace-status[data-tone="warning"]
+  .md-kds-marketplace-status-heading,
+.md-kds-workspace
+  .md-kds-marketplace-status[data-tone="pending"]
+  .md-kds-marketplace-status-heading {
+  color: #835500;
+}
+
+.md-kds-workspace
+  .md-kds-marketplace-status[data-tone="confirmed"]
+  .md-kds-marketplace-status-heading {
+  color: #076a43;
+}
+
 .md-kds-workspace .md-kds-ticket-identity {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

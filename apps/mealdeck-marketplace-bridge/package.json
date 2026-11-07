@@ -1,0 +1,18 @@
+{
+  "name": "@mealdeck/marketplace-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "start": "node src/cli.mjs run",
+    "check": "node src/cli.mjs check",
+    "demo": "node demo/run.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.65.0"
+  }
+}

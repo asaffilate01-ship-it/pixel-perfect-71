@@ -11,6 +11,14 @@
 
 <!-- LOVABLE:END -->
 
+## Owned marketplace connectors — 7 November 2026
+
+- The owner requested MealDeck-owned Uber Eats and Just Eat connections without paid aggregator middleware. Just Eat uses a Sunmi terminal, but its model/Android version, permitted device access and the Uber environment are not yet verified. Source, fixtures, hosted deployment, actual device access and live marketplace acceptance are separate outcomes. Both shipped local profiles are unconfigured/disabled.
+- Use the additive private marketplace ledger and exact provisioned platform/store-to-kitchen mapping. Preserve the stable platform order ID and original customer/courier display reference separately; never coerce letters or leading zeroes, guess product mappings, reprice with direct MealDeck offers, fabricate Stripe/cash authority or book a second courier. These cards share the existing KDS but do not rewrite direct orders, their sequential numbers, collection codes or receipt authority.
+- Local kitchen state and last confirmed platform state must remain distinct. KDS acceptance queues once, and preparation waits for confirmed platform acceptance. Platform Ready follows all-item readiness and sealed packing. Local handover is not customer delivery. Unsupported controls and uncertain clicks remain visible; a new lease/restart never retries a possible dispatch. Confirmed cancellations stop work until explicit scoped acknowledgement; changed food snapshots hold the original complete card.
+- `/api/marketplace/bridge` requires a per-connector secret, trusted server scope and independently commissioned profile. Never expose machine credentials, browser cookies, Appium or service keys to KDS clients. Preserve current staff/MFA permissions, RLS, immutable snapshots, command leases and the persistent local dispatch journal. No model participates in order/payment authority or routine live clicking.
+- The local bridge uses Chrome for Uber and authorised Appium/Android access for Just Eat. Do not invent production selectors, root/reset/unlock a managed device, automate login or bypass access controls. Keep activation off until actual authorised screens and supported capabilities are verified. See `docs/mealdeck-marketplace-connectors.md` and the database/package runbooks.
+
 ## Customer mobile order alerts and offers — 7 November 2026
 
 - Customer web push follows verified staff acceptance, preparation, all-items-ready plus sealed packing, and confirmed handover. Payment alone must not generate “accepted”; current collection/kerbside scope remains unchanged. Driver stages have reserved display support but no active delivery event adapter.

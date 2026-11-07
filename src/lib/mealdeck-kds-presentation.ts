@@ -35,7 +35,7 @@ export function kdsOrderStage(order: KdsOrder): KdsOrderStage {
 }
 
 export function nextKdsOrderAction(order: KdsOrder): KdsOrderAction | null {
-  if (!order.routing_complete) return null;
+  if (!order.routing_complete || order.blocked_reason) return null;
   if (!order.accepted_at) return { target: "accept", status: "accepted", label: "Accept order" };
   if (order.pass?.status === "sealed" || order.pass?.status === "ready_for_handoff") return null;
   if (order.pass?.status === "packing" || order.pass?.status === "ready_to_pack") {

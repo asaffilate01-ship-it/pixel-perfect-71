@@ -43,9 +43,11 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
 import { Route as WhatsappCheckoutRouteImport } from './routes/whatsapp.checkout'
 import { Route as ApiAuthEmailRouteImport } from './routes/api.auth.email'
+import { Route as ApiMarketplaceBridgeRouteImport } from './routes/api.marketplace.bridge'
 import { Route as ApiNotificationsWorkerRouteImport } from './routes/api.notifications.worker'
 import { Route as ApiOpsCashRouteImport } from './routes/api.ops.cash'
 import { Route as ApiOpsIntegrationsRouteImport } from './routes/api.ops.integrations'
+import { Route as ApiOpsMarketplacesRouteImport } from './routes/api.ops.marketplaces'
 import { Route as ApiOpsNotificationsRouteImport } from './routes/api.ops.notifications'
 import { Route as ApiOpsWhatsappRouteImport } from './routes/api.ops.whatsapp'
 import { Route as ApiPublicMenuRouteImport } from './routes/api.public.menu'
@@ -225,6 +227,11 @@ const ApiAuthEmailRoute = ApiAuthEmailRouteImport.update({
   path: '/api/auth/email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMarketplaceBridgeRoute = ApiMarketplaceBridgeRouteImport.update({
+  id: '/api/marketplace/bridge',
+  path: '/api/marketplace/bridge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiNotificationsWorkerRoute = ApiNotificationsWorkerRouteImport.update({
   id: '/worker',
   path: '/worker',
@@ -238,6 +245,11 @@ const ApiOpsCashRoute = ApiOpsCashRouteImport.update({
 const ApiOpsIntegrationsRoute = ApiOpsIntegrationsRouteImport.update({
   id: '/api/ops/integrations',
   path: '/api/ops/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOpsMarketplacesRoute = ApiOpsMarketplacesRouteImport.update({
+  id: '/api/ops/marketplaces',
+  path: '/api/ops/marketplaces',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOpsNotificationsRoute = ApiOpsNotificationsRouteImport.update({
@@ -316,9 +328,11 @@ export interface FileRoutesByFullPath {
   '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/marketplace/bridge': typeof ApiMarketplaceBridgeRoute
   '/api/notifications/worker': typeof ApiNotificationsWorkerRoute
   '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
+  '/api/ops/marketplaces': typeof ApiOpsMarketplacesRoute
   '/api/ops/notifications': typeof ApiOpsNotificationsRoute
   '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
@@ -363,9 +377,11 @@ export interface FileRoutesByTo {
   '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/marketplace/bridge': typeof ApiMarketplaceBridgeRoute
   '/api/notifications/worker': typeof ApiNotificationsWorkerRoute
   '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
+  '/api/ops/marketplaces': typeof ApiOpsMarketplacesRoute
   '/api/ops/notifications': typeof ApiOpsNotificationsRoute
   '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
@@ -411,9 +427,11 @@ export interface FileRoutesById {
   '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
+  '/api/marketplace/bridge': typeof ApiMarketplaceBridgeRoute
   '/api/notifications/worker': typeof ApiNotificationsWorkerRoute
   '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
+  '/api/ops/marketplaces': typeof ApiOpsMarketplacesRoute
   '/api/ops/notifications': typeof ApiOpsNotificationsRoute
   '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
@@ -460,9 +478,11 @@ export interface FileRouteTypes {
     | '/whatsapp/checkout'
     | '/blog/'
     | '/api/auth/email'
+    | '/api/marketplace/bridge'
     | '/api/notifications/worker'
     | '/api/ops/cash'
     | '/api/ops/integrations'
+    | '/api/ops/marketplaces'
     | '/api/ops/notifications'
     | '/api/ops/whatsapp'
     | '/api/public/menu'
@@ -507,9 +527,11 @@ export interface FileRouteTypes {
     | '/whatsapp/checkout'
     | '/blog'
     | '/api/auth/email'
+    | '/api/marketplace/bridge'
     | '/api/notifications/worker'
     | '/api/ops/cash'
     | '/api/ops/integrations'
+    | '/api/ops/marketplaces'
     | '/api/ops/notifications'
     | '/api/ops/whatsapp'
     | '/api/public/menu'
@@ -554,9 +576,11 @@ export interface FileRouteTypes {
     | '/whatsapp/checkout'
     | '/blog/'
     | '/api/auth/email'
+    | '/api/marketplace/bridge'
     | '/api/notifications/worker'
     | '/api/ops/cash'
     | '/api/ops/integrations'
+    | '/api/ops/marketplaces'
     | '/api/ops/notifications'
     | '/api/ops/whatsapp'
     | '/api/public/menu'
@@ -602,8 +626,10 @@ export interface RootRouteChildren {
   WhatsappCheckoutRoute: typeof WhatsappCheckoutRoute
   BlogIndexRoute: typeof BlogIndexRoute
   ApiAuthEmailRoute: typeof ApiAuthEmailRoute
+  ApiMarketplaceBridgeRoute: typeof ApiMarketplaceBridgeRoute
   ApiOpsCashRoute: typeof ApiOpsCashRoute
   ApiOpsIntegrationsRoute: typeof ApiOpsIntegrationsRoute
+  ApiOpsMarketplacesRoute: typeof ApiOpsMarketplacesRoute
   ApiOpsNotificationsRoute: typeof ApiOpsNotificationsRoute
   ApiOpsWhatsappRoute: typeof ApiOpsWhatsappRoute
   ApiPublicMenuRoute: typeof ApiPublicMenuRoute
@@ -854,6 +880,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/marketplace/bridge': {
+      id: '/api/marketplace/bridge'
+      path: '/api/marketplace/bridge'
+      fullPath: '/api/marketplace/bridge'
+      preLoaderRoute: typeof ApiMarketplaceBridgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/notifications/worker': {
       id: '/api/notifications/worker'
       path: '/worker'
@@ -873,6 +906,13 @@ declare module '@tanstack/react-router' {
       path: '/api/ops/integrations'
       fullPath: '/api/ops/integrations'
       preLoaderRoute: typeof ApiOpsIntegrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ops/marketplaces': {
+      id: '/api/ops/marketplaces'
+      path: '/api/ops/marketplaces'
+      fullPath: '/api/ops/marketplaces'
+      preLoaderRoute: typeof ApiOpsMarketplacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ops/notifications': {
@@ -980,8 +1020,10 @@ const rootRouteChildren: RootRouteChildren = {
   WhatsappCheckoutRoute: WhatsappCheckoutRoute,
   BlogIndexRoute: BlogIndexRoute,
   ApiAuthEmailRoute: ApiAuthEmailRoute,
+  ApiMarketplaceBridgeRoute: ApiMarketplaceBridgeRoute,
   ApiOpsCashRoute: ApiOpsCashRoute,
   ApiOpsIntegrationsRoute: ApiOpsIntegrationsRoute,
+  ApiOpsMarketplacesRoute: ApiOpsMarketplacesRoute,
   ApiOpsNotificationsRoute: ApiOpsNotificationsRoute,
   ApiOpsWhatsappRoute: ApiOpsWhatsappRoute,
   ApiPublicMenuRoute: ApiPublicMenuRoute,

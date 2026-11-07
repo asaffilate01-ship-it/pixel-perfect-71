@@ -1,6 +1,7 @@
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
 import { isOrderNumber } from "./mealdeck-order-number";
 import { mealComponentsSchema, type MealComponent } from "./mealdeck-meal-components";
+import { marketplaceProjectionSchema, type MarketplaceProjection } from "./mealdeck-marketplace";
 
 /**
  * The staff KDS consumes a privacy-minimised projection of canonical MealDeck
@@ -69,6 +70,7 @@ export type KdsOrder = {
   preparation_status: KdsTicketStatus;
   display_code: string;
   order_number?: string | null;
+  marketplace?: MarketplaceProjection | null;
   created_at: string;
   released_at: string;
   order_status: "accepted" | "preparing" | "ready";
@@ -76,7 +78,7 @@ export type KdsOrder = {
   notes: string | null;
   group_order: boolean;
   routing_complete: boolean;
-  blocked_reason: "routing_incomplete" | null;
+  blocked_reason: "routing_incomplete" | "snapshot_hold" | null;
   items: KdsOrderItem[];
   tickets: KdsTicket[];
   pass: KdsPass | null;
@@ -103,6 +105,7 @@ export type KdsMutation = {
   replayed: boolean;
   order_id: string;
   status: "accepted" | "preparing" | "ready" | "packing" | "sealed" | "completed";
+  marketplace?: MarketplaceProjection | null;
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -306,6 +309,9 @@ function parsePass(value: unknown): KdsPass {
 
 function parseOrder(value: unknown): KdsOrder {
   const v = record(value);
+  const marketplace =
+    v["marketplace"] == null ? null : marketplaceProjectionSchema.safeParse(v["marketplace"]);
+  if (marketplace && !marketplace.success) invalid();
   const fulfilment = choice(v["fulfilment"], [
     "delivery",
     "pickup",
@@ -320,8 +326,8 @@ function parseOrder(value: unknown): KdsOrder {
   const blockedReason =
     v["blocked_reason"] === null
       ? null
-      : choice(v["blocked_reason"], ["routing_incomplete"] as const);
-  if (routingComplete !== (blockedReason === null)) invalid();
+      : choice(v["blocked_reason"], ["routing_incomplete", "snapshot_hold"] as const);
+  if (routingComplete !== (blockedReason !== "routing_incomplete")) invalid();
   if (
     routingComplete &&
     (!items.length || !tickets.length || tickets.some((ticket) => !ticket.items.length))
@@ -369,15 +375,22 @@ function parseOrder(value: unknown): KdsOrder {
         ticket.items.length > 0 &&
         ticket.items.every((item) => item.status === "ready"),
     );
-  if (preparationStatus === "ready" && (!routingComplete || !allReady)) invalid();
   if (
-    routingComplete &&
+    preparationStatus === "ready" &&
+    (!allReady ||
+      (!routingComplete && !marketplace?.success) ||
+      (marketplace?.success && items.some((item) => item.status !== "ready")))
+  )
+    invalid();
+  if (
+    (routingComplete || marketplace?.success) &&
     pass &&
     pass.status !== "waiting_for_kitchen" &&
     (preparationStatus !== "ready" || !allReady)
   )
     invalid();
   if (v["order_number"] != null && !isOrderNumber(v["order_number"])) invalid();
+  if (blockedReason === "snapshot_hold" && !marketplace?.success) invalid();
   return {
     order_id: id(v["order_id"]),
     version: version(v["version"]),
@@ -386,6 +399,9 @@ function parseOrder(value: unknown): KdsOrder {
     ...(v["order_number"] === undefined
       ? {}
       : { order_number: v["order_number"] as string | null }),
+    ...(v["marketplace"] === undefined
+      ? {}
+      : { marketplace: marketplace?.success ? marketplace.data : null }),
     created_at: timestamp(v["created_at"]),
     released_at: timestamp(v["released_at"]),
     order_status: choice(v["order_status"], ["accepted", "preparing", "ready"] as const),
@@ -466,10 +482,24 @@ export function parseKdsBoard(
 
 export function parseKdsMutation(
   value: unknown,
-  expected: { orderId: string; status: KdsMutation["status"] },
+  expected: {
+    orderId: string;
+    status: KdsMutation["status"];
+    marketplace?: Pick<MarketplaceProjection, "platform" | "display_reference">;
+  },
 ): KdsMutation {
   const v = record(value);
   if (v["ok"] !== true || v["order_id"] !== expected.orderId || v["status"] !== expected.status)
+    invalid();
+  const marketplace =
+    v["marketplace"] == null ? null : marketplaceProjectionSchema.safeParse(v["marketplace"]);
+  if (marketplace && !marketplace.success) invalid();
+  if (
+    expected.marketplace &&
+    (!marketplace?.success ||
+      marketplace.data.platform !== expected.marketplace.platform ||
+      marketplace.data.display_reference !== expected.marketplace.display_reference)
+  )
     invalid();
   return {
     ok: true,
@@ -483,6 +513,9 @@ export function parseKdsMutation(
       "sealed",
       "completed",
     ] as const),
+    ...(v["marketplace"] === undefined
+      ? {}
+      : { marketplace: marketplace?.success ? marketplace.data : null }),
   };
 }
 
