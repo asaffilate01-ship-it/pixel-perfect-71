@@ -36,14 +36,32 @@ const foods = [
   { image: gameFoodArtwork.paratha, name: "Paratha" },
 ];
 
-export function BentoSudoku({ dailyDate }: { dailyDate?: string | undefined }) {
+export function BentoSudoku({
+  dailyDate,
+  initialSize = 4,
+}: {
+  dailyDate?: string | undefined;
+  initialSize?: BentoSize;
+}) {
   const date = dailyDate && validBentoDate(dailyDate) ? dailyDate : undefined;
-  return <BentoSudokuSession key={date ?? "fresh-setup"} {...(date ? { dailyDate: date } : {})} />;
+  return (
+    <BentoSudokuSession
+      key={`${date ?? "fresh-setup"}:${initialSize}`}
+      initialSize={initialSize}
+      {...(date ? { dailyDate: date } : {})}
+    />
+  );
 }
 
-function BentoSudokuSession({ dailyDate }: { dailyDate?: string }) {
+function BentoSudokuSession({
+  dailyDate,
+  initialSize,
+}: {
+  dailyDate?: string;
+  initialSize: BentoSize;
+}) {
   const { recordCompletion, today } = useArcadeProgress();
-  const [size, setSize] = useState<BentoSize>(4);
+  const [size, setSize] = useState<BentoSize>(initialSize);
   const [challenge, setChallenge] = useState<Challenge>(dailyDate ? "daily" : "fresh");
   const [round, setRound] = useState<Round | null>(null);
   const [selected, setSelected] = useState(0);

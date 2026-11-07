@@ -68,12 +68,29 @@ export function isArcadeGameId(value: unknown): value is ArcadeGameId {
   return typeof value === "string" && GAME_CATALOGUE.some((game) => game.id === value);
 }
 
-export type ArcadeSearch = { brand?: BrandTheme; game?: ArcadeGameId; daily?: string };
+export type ArcadeSearch = {
+  brand?: BrandTheme;
+  game?: ArcadeGameId;
+  daily?: string;
+  size?: 3 | 4 | 6;
+};
 
 /** A public daily link carries a calendar date, never a board or personal history. */
 export function parseArcadeSearch(search: Record<string, unknown>): ArcadeSearch {
   const game = isArcadeGameId(search["game"]) ? search["game"] : undefined;
   const daily = search["daily"];
+  const rawSize = search["size"];
+  const size =
+    rawSize === 3 || rawSize === "3"
+      ? 3
+      : rawSize === 4 || rawSize === "4"
+        ? 4
+        : rawSize === 6 || rawSize === "6"
+          ? 6
+          : undefined;
+  const validSize =
+    (game === "sauce-switch" && (size === 3 || size === 4)) ||
+    (game === "bento-sudoku" && (size === 4 || size === 6));
   const validDate =
     typeof daily === "string" &&
     /^20\d{2}-\d{2}-\d{2}$/.test(daily) &&
@@ -83,6 +100,7 @@ export function parseArcadeSearch(search: Record<string, unknown>): ArcadeSearch
     ...(isBrandTheme(search["brand"]) ? { brand: search["brand"] } : {}),
     ...(game ? { game } : {}),
     ...(game && DAILY_LAUNCH_GAMES.includes(game) && validDate ? { daily } : {}),
+    ...(validSize && size !== undefined ? { size } : {}),
   };
 }
 
@@ -132,9 +150,17 @@ export function parseArcadeFavourites(raw: string | null): ArcadeGameId[] {
   }
 }
 
-export function arcadeGameLink(game: ArcadeGameId, brand = "mealdeck") {
-  const params = new URLSearchParams({ game });
-  // Only the selected Food Pairs skin affects the shared round's starting options.
-  if (game === "pairs" && isBrandTheme(brand)) params.set("brand", brand);
+export function arcadeGameLink(
+  game: ArcadeGameId,
+  brand = "mealdeck",
+  options: { daily?: string | undefined; size?: number | undefined } = {},
+) {
+  const search = parseArcadeSearch({ game, brand, daily: options.daily, size: options.size });
+  if (!search.game) return "https://mealdeck.co.uk/play";
+  const params = new URLSearchParams({ game: search.game });
+  // Only Food Pairs uses a brand skin; puzzle links carry public setup choices only.
+  if (search.game === "pairs" && search.brand) params.set("brand", search.brand);
+  if (search.daily) params.set("daily", search.daily);
+  if (search.size !== undefined) params.set("size", String(search.size));
   return `https://mealdeck.co.uk/play?${params.toString()}`;
 }

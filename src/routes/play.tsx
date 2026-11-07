@@ -13,9 +13,9 @@ import {
 } from "react";
 import {
   ArrowRight,
+  CalendarDays,
   Check,
   CheckCircle2,
-  Copy,
   Gamepad2,
   Grid2X2,
   Lightbulb,
@@ -23,13 +23,20 @@ import {
   Minimize2,
   RotateCcw,
   Search,
+  Share2,
   Shuffle,
   Star,
   X,
 } from "lucide-react";
 import { Feast2048, FourToFeast, OrderEcho, KitchenShuffle } from "@/components/play/arcade-games";
 import { GamePanelBoundary } from "@/components/play/game-panel-boundary";
-import { ArcadePlaybook, ArcadeProgressProvider } from "@/components/play/arcade-progress";
+import {
+  ArcadePlaybook,
+  ArcadeProgressProvider,
+  useArcadeProgress,
+} from "@/components/play/arcade-progress";
+import { ArcadeShareDialog } from "@/components/play/arcade-share";
+import type { ArcadeShareRequest } from "@/lib/mealdeck-arcade-sharing";
 import {
   KitchenChaos,
   BrandSnap,
@@ -55,7 +62,6 @@ import {
   ARCADE_COLLECTIONS,
   ARCADE_GAMES,
   NEW_ARCADE_GAMES,
-  arcadeGameLink,
   findArcadeGames,
   parseArcadeSearch,
   parseArcadeFavourites,
@@ -661,7 +667,8 @@ function PlayPage() {
 }
 
 function PlayArcade() {
-  const { brand = "mealdeck", game = "feast-2048", daily } = Route.useSearch();
+  const { brand = "mealdeck", game = "feast-2048", daily, size } = Route.useSearch();
+  const { progress, today } = useArcadeProgress();
   const navigate = Route.useNavigate();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ArcadeFilter>("All games");
@@ -669,7 +676,8 @@ function PlayArcade() {
   const [favourites, setFavourites] = useState<ArcadeGameId[]>([]);
   const [preferenceReady, setPreferenceReady] = useState(false);
   const [toolbarMessage, setToolbarMessage] = useState("");
-  const [showGameLink, setShowGameLink] = useState(false);
+  const [shareRequest, setShareRequest] = useState<ArcadeShareRequest | null>(null);
+  const shareTriggerRef = useRef<HTMLElement | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerViewport, setPickerViewport] = useState<CSSProperties>({});
   const [focusMode, setFocusMode] = useState(false);
@@ -684,7 +692,8 @@ function PlayArcade() {
   const selectedInPicker = useRef(false);
   const activeGame = ARCADE_GAMES.find((item) => item.id === game) ?? ARCADE_GAMES[0]!;
   const favourite = favourites.includes(game);
-  const shareLink = arcadeGameLink(game, brand);
+  const latestRound = progress.rounds.find((round) => round.game === game);
+  const gameInterrupted = pickerOpen || shareRequest !== null;
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -726,8 +735,8 @@ function PlayArcade() {
 
   useEffect(() => {
     setToolbarMessage("");
-    setShowGameLink(false);
-  }, [game, brand]);
+    setShareRequest(null);
+  }, [game, brand, daily, size]);
 
   function toggleFavourite() {
     const next = favourite ? favourites.filter((id) => id !== game) : [...favourites, game];
@@ -748,15 +757,9 @@ function PlayArcade() {
     }
   }
 
-  async function copyGameLink() {
-    try {
-      await navigator.clipboard.writeText(shareLink);
-      setToolbarMessage(`Link to ${activeGame.name} copied. It opens a fresh game.`);
-      setShowGameLink(false);
-    } catch {
-      setShowGameLink(true);
-      setToolbarMessage("Select and copy the game link below. It opens a fresh game.");
-    }
+  function openShare(request: ArcadeShareRequest, trigger: HTMLButtonElement) {
+    shareTriggerRef.current = trigger;
+    setShareRequest(request);
   }
 
   const focusGame = useCallback(() => {
@@ -776,7 +779,7 @@ function PlayArcade() {
       pendingFocus.current = false;
     });
     return () => cancelAnimationFrame(frame);
-  }, [game, brand, daily, dailyLaunchSequence, focusGame]);
+  }, [game, brand, daily, size, dailyLaunchSequence, focusGame]);
 
   function selectGame(id: ArcadeGameId) {
     selectedInPicker.current = pickerOpen;
@@ -821,17 +824,17 @@ function PlayArcade() {
   }
 
   const panels: Record<ArcadeGameId, ReactNode> = {
-    "snack-trail": <SnackTrail suspended={pickerOpen} />,
+    "snack-trail": <SnackTrail suspended={gameInterrupted} />,
     "skewer-sort": <SkewerSort />,
     "pantry-sweep": <PantrySweep />,
-    "bento-sudoku": <BentoSudoku dailyDate={daily} />,
+    "bento-sudoku": <BentoSudoku dailyDate={daily} initialSize={size === 6 ? 6 : 4} />,
     "tray-lines": <TrayLines />,
-    "sauce-switch": <SauceSwitch dailyDate={daily} />,
+    "sauce-switch": <SauceSwitch dailyDate={daily} initialSize={size === 4 ? 4 : 3} />,
     "menu-quest": <MenuQuest dailyDate={daily} />,
     "tray-tactics": <TrayTactics />,
     "feast-2048": <Feast2048 />,
     "four-to-feast": <FourToFeast />,
-    "order-echo": <OrderEcho suspended={pickerOpen} />,
+    "order-echo": <OrderEcho suspended={gameInterrupted} />,
     "kitchen-shuffle": <KitchenShuffle />,
     pairs: <FoodPairs key={brand} brand={brand} />,
     recipe: <RecipeRush />,
@@ -892,6 +895,14 @@ function PlayArcade() {
                   Try {NEW_ARCADE_GAMES.length} new games{" "}
                   <ArrowRight size={17} aria-hidden="true" />
                 </button>
+                <button
+                  type="button"
+                  className="md-play-button md-play-button--quiet"
+                  disabled={!today}
+                  onClick={() => selectDailyGame("bento-sudoku")}
+                >
+                  <CalendarDays size={17} aria-hidden="true" /> Daily puzzle
+                </button>
                 <span>Always free. No sign-in needed.</span>
               </div>
             </div>
@@ -905,7 +916,7 @@ function PlayArcade() {
             </div>
           </header>
           <div className="md-play-playbook">
-            <ArcadePlaybook onDailyGame={selectDailyGame} />
+            <ArcadePlaybook onDailyGame={selectDailyGame} onShare={openShare} />
           </div>
           <div
             className="md-play-workspace"
@@ -954,10 +965,10 @@ function PlayArcade() {
                   <button
                     type="button"
                     className="md-play-button md-play-button--quiet md-play-share-button"
-                    aria-label="Copy game link"
-                    onClick={() => void copyGameLink()}
+                    aria-label={`Share ${activeGame.name}`}
+                    onClick={(event) => openShare({ game, brand }, event.currentTarget)}
                   >
-                    <Copy size={17} aria-hidden="true" /> <span>Link</span>
+                    <Share2 size={17} aria-hidden="true" /> <span>Share</span>
                   </button>
                   <button
                     type="button"
@@ -987,12 +998,6 @@ function PlayArcade() {
               <p className="md-play-toolbar-message" role="status" aria-atomic="true">
                 {toolbarMessage}
               </p>
-              {showGameLink && (
-                <label className="md-play-share-link">
-                  Game link
-                  <input readOnly value={shareLink} onFocus={(event) => event.target.select()} />
-                </label>
-              )}
               {game === "pairs" && (
                 <div className="md-play-deck">
                   <label htmlFor="pairs-deck">Food Pairs deck</label>
@@ -1024,7 +1029,7 @@ function PlayArcade() {
                 aria-label={activeGame.name}
               >
                 <GamePanelBoundary
-                  key={`${game}:${daily ?? "fresh"}:${dailyLaunchSequence}`}
+                  key={`${game}:${daily ?? "fresh"}:${size ?? "default"}:${dailyLaunchSequence}`}
                   onChooseGame={showLibrary}
                 >
                   <Suspense
@@ -1038,6 +1043,23 @@ function PlayArcade() {
                   </Suspense>
                 </GamePanelBoundary>
               </div>
+              {latestRound && (
+                <aside className="md-play-share-round" aria-label="Share your latest result">
+                  <div>
+                    <strong>Give a friend their next challenge.</strong>
+                    <p>Share your latest finished {activeGame.name} round from your playbook.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="md-play-button md-play-button--quiet"
+                    onClick={(event) =>
+                      openShare({ game, completion: latestRound }, event.currentTarget)
+                    }
+                  >
+                    <Share2 size={17} aria-hidden="true" /> Share latest result
+                  </button>
+                </aside>
+              )}
               {focusMode && (
                 <p className="md-play-focus-note">
                   More room to play. Use “Exit focus view” or press Escape to return to the full
@@ -1063,6 +1085,11 @@ function PlayArcade() {
         </div>
       </main>
       <SiteFooter />
+      <ArcadeShareDialog
+        request={shareRequest}
+        onClose={() => setShareRequest(null)}
+        returnFocusRef={shareTriggerRef}
+      />
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
         <DialogContent
           className="md-play-picker"
