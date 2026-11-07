@@ -7,16 +7,16 @@ export const MEALDECK_LAUNCH_DAYS = Object.freeze([
     label: "Friday 6 November",
     shortLabel: "Fri 6 Nov",
     opensAt: "2026-11-06T15:00:00Z",
-    closesAt: "2026-11-06T23:00:00Z",
-    hoursLabel: "3pm–11pm",
+    closesAt: "2026-11-07T00:00:00Z",
+    hoursLabel: "3pm–midnight",
   }),
   Object.freeze({
     date: "2026-11-07",
     label: "Saturday 7 November",
     shortLabel: "Sat 7 Nov",
     opensAt: "2026-11-07T13:00:00Z",
-    closesAt: "2026-11-07T23:00:00Z",
-    hoursLabel: "1pm–11pm",
+    closesAt: "2026-11-08T00:00:00Z",
+    hoursLabel: "1pm–midnight",
   }),
   Object.freeze({
     date: "2026-11-08",
@@ -33,6 +33,10 @@ export type MealDeckLaunchDay = (typeof MEALDECK_LAUNCH_DAYS)[number];
 export const MEALDECK_LAUNCH_HOURS_LABEL =
   MEALDECK_LAUNCH_DAYS.map((day) => `${day.shortLabel} ${day.hoursLabel}`).join(" · ") +
   " · 2026 · UK time";
+
+export const MEALDECK_LAUNCH_HOURS_PROSE =
+  MEALDECK_LAUNCH_DAYS.map((day) => `${day.label}, ${day.hoursLabel}`).join("; ") +
+  ". All times are UK local time.";
 
 /** Exact launch windows, including the nightly closure. No browser-local dates. */
 export function mealDeckLaunchWindowAt(now: Date | string | number): MealDeckLaunchDay | null {
