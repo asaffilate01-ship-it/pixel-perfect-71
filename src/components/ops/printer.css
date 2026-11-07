@@ -4,11 +4,17 @@
 .md-receipt-preview {
   overflow-wrap: anywhere;
 }
+.md-receipt-summary {
+  /* Keep the paid total and QR on the same printed fragment. */
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
 .md-receipt-games {
   break-inside: avoid;
   page-break-inside: avoid;
   border-top: 1px dashed #000;
-  padding-top: 0.75rem;
+  margin-top: 2px;
+  padding-top: 0;
   color: #000;
   background: #fff;
   text-align: center;
@@ -19,7 +25,7 @@
   line-height: 1.4;
 }
 .md-receipt-games__copy {
-  margin-top: 0.2rem;
+  margin-top: 0;
   font-size: 0.75rem;
   line-height: 1.45;
 }
@@ -28,7 +34,7 @@
   width: 164px;
   max-width: 100%;
   height: auto;
-  margin: 0.5rem auto;
+  margin: 0 auto;
   background: #fff;
   print-color-adjust: exact;
   forced-color-adjust: none;

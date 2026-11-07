@@ -118,44 +118,46 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
           Order note: {r.orderNotes}
         </p>
       )}
-      <dl className="space-y-1 border-t border-dashed border-black pt-3 text-sm">
-        <div className="flex justify-between">
-          <dt>Subtotal</dt>
-          <dd>{money(r.subtotalPence)}</dd>
-        </div>
-        {r.discountPence > 0 && (
+      <div className="md-receipt-summary">
+        <dl className="space-y-1 border-t border-dashed border-black pt-3 text-sm">
           <div className="flex justify-between">
-            <dt>Opening offer</dt>
-            <dd>−{money(r.discountPence)}</dd>
+            <dt>Subtotal</dt>
+            <dd>{money(r.subtotalPence)}</dd>
           </div>
-        )}
-        <div className="flex justify-between text-lg font-black">
-          <dt>{r.paymentMethod === "cash" ? "CASH PAID" : "PAID"}</dt>
-          <dd>{money(r.totalPence)}</dd>
-        </div>
-      </dl>
-      <section className="md-receipt-games" aria-label="Free MealDeck games">
-        <p className="md-receipt-games__heading">{receiptGamesQr.heading}</p>
-        <p className="md-receipt-games__copy">{receiptGamesQr.subtitle}</p>
-        <svg
-          className="md-receipt-games__qr"
-          data-receipt-games-qr
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox={`0 0 ${receiptGamesQr.gridSize} ${receiptGamesQr.gridSize}`}
-          width={164}
-          height={164}
-          role="img"
-          aria-label="QR code for free food games at mealdeck.co.uk/play"
-          focusable="false"
-          shapeRendering="crispEdges"
-        >
-          <rect width={receiptGamesQr.gridSize} height={receiptGamesQr.gridSize} fill="#fff" />
-          <path d={receiptGamesQr.svgPath} fill="#000" />
-        </svg>
-        <a className="md-receipt-games__url" href={receiptGamesQr.targetUrl}>
-          {receiptGamesQr.displayUrl}
-        </a>
-      </section>
+          {r.discountPence > 0 && (
+            <div className="flex justify-between">
+              <dt>Opening offer</dt>
+              <dd>−{money(r.discountPence)}</dd>
+            </div>
+          )}
+          <div className="flex justify-between text-lg font-black">
+            <dt>{r.paymentMethod === "cash" ? "CASH PAID" : "PAID"}</dt>
+            <dd>{money(r.totalPence)}</dd>
+          </div>
+        </dl>
+        <section className="md-receipt-games" aria-label="Free MealDeck games">
+          <svg
+            className="md-receipt-games__qr"
+            data-receipt-games-qr
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox={`0 0 ${receiptGamesQr.gridSize} ${receiptGamesQr.gridSize}`}
+            width={164}
+            height={164}
+            role="img"
+            aria-label="QR code for free food games at mealdeck.co.uk/play"
+            focusable="false"
+            shapeRendering="crispEdges"
+          >
+            <rect width={receiptGamesQr.gridSize} height={receiptGamesQr.gridSize} fill="#fff" />
+            <path d={receiptGamesQr.svgPath} fill="#000" />
+          </svg>
+          <p className="md-receipt-games__heading">{receiptGamesQr.heading}</p>
+          <p className="md-receipt-games__copy">{receiptGamesQr.subtitle}</p>
+          <a className="md-receipt-games__url" href={receiptGamesQr.targetUrl}>
+            {receiptGamesQr.displayUrl}
+          </a>
+        </section>
+      </div>
       <footer className="border-t border-dashed border-black pt-3 text-center text-xs">
         <p>MealDeck is a trading name of 313 Brands Ltd.</p>
         <p>mealdeck.co.uk · Powered by Dishbee</p>
