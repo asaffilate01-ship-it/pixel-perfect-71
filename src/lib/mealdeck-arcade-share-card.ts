@@ -1,7 +1,30 @@
 import { ARCADE_GAMES } from "@/lib/mealdeck-arcade-library";
 import type { ArcadeShareContent } from "@/lib/mealdeck-arcade-sharing";
+import { createArcadeQr, drawArcadeQr, type ArcadeQrCode } from "@/lib/mealdeck-arcade-qr";
 
 export const ARCADE_SHARE_CARD_SIZE = 1200;
+export const ARCADE_SHARE_CARD_FORMATS = {
+  square: { width: 1200, height: 1200 },
+  story: { width: 1080, height: 1920 },
+  poster: { width: 1240, height: 1754 },
+} as const;
+export type ArcadeShareCardFormat = keyof typeof ARCADE_SHARE_CARD_FORMATS;
+
+export function arcadeShareCardDimensions(format: ArcadeShareCardFormat = "square") {
+  if (!Object.hasOwn(ARCADE_SHARE_CARD_FORMATS, format))
+    throw new Error("Choose a supported picture format.");
+  return ARCADE_SHARE_CARD_FORMATS[format];
+}
+
+export function arcadeShareCardFilename(
+  content: Pick<ArcadeShareContent, "filename">,
+  format: ArcadeShareCardFormat = "square",
+): string {
+  arcadeShareCardDimensions(format);
+  return format === "square"
+    ? content.filename
+    : content.filename.replace(/\.png$/, `-${format}.png`);
+}
 const COLORS = {
   cream: "#fff6e8",
   paper: "#fffdf7",
@@ -322,18 +345,134 @@ function canvasPng(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<Blo
   });
 }
 
-/** Browser-only, local PNG export. This renderer does not read storage, boards, account data or content.url. */
+function drawVerticalCard(
+  context: CanvasRenderingContext2D,
+  content: ArcadeShareContent,
+  format: "story" | "poster",
+  qr: ArcadeQrCode,
+  logoImage: HTMLImageElement | null,
+  foodImage: HTMLImageElement | null,
+): void {
+  const { width, height } = ARCADE_SHARE_CARD_FORMATS[format];
+  const story = format === "story";
+  context.fillStyle = COLORS.cream;
+  context.fillRect(0, 0, width, height);
+  roundedRectangle(context, { x: 34, y: 34, width: width - 68, height: height - 68 }, 32);
+  context.strokeStyle = COLORS.red;
+  context.lineWidth = 3;
+  context.stroke();
+
+  if (logoImage)
+    drawContained(context, logoImage, { x: 72, y: story ? 116 : 82, width: 188, height: 190 });
+  else
+    drawTextBox(
+      context,
+      "MEALDECK",
+      { x: 72, y: story ? 180 : 136, width: 205, height: 64 },
+      { maxSize: 34, minSize: 26, maxLines: 1, color: COLORS.deepRed, display: true, weight: 900 },
+    );
+  drawTextBox(
+    context,
+    "MEALDECK PLAY",
+    { x: 292, y: story ? 128 : 92, width: width - 370, height: 48 },
+    { maxSize: 28, minSize: 26, maxLines: 1, color: COLORS.deepRed, weight: 800 },
+  );
+  drawTextBox(
+    context,
+    content.gameName,
+    { x: 290, y: story ? 189 : 156, width: width - 376, height: 148 },
+    { maxSize: 64, minSize: 46, maxLines: 2, color: COLORS.ink, display: true, weight: 800 },
+  );
+
+  const panelTop = story ? 370 : 340;
+  roundedRectangle(
+    context,
+    { x: 66, y: panelTop, width: width - 132, height: story ? 716 : 440 },
+    28,
+  );
+  context.fillStyle = COLORS.paper;
+  context.fill();
+  context.strokeStyle = COLORS.line;
+  context.lineWidth = 2;
+  context.stroke();
+  drawTextBox(
+    context,
+    content.isResult ? "ROUND FINISHED" : "COME & PLAY",
+    { x: 104, y: panelTop + 38, width: width - 208, height: 44 },
+    { maxSize: 26, minSize: 24, maxLines: 1, color: COLORS.muted, weight: 800 },
+  );
+  const foodX = width - 208;
+  context.beginPath();
+  context.arc(foodX, panelTop + 218, 94, 0, Math.PI * 2);
+  context.fillStyle = COLORS.yellow;
+  context.fill();
+  if (foodImage)
+    drawContained(context, foodImage, {
+      x: foodX - 82,
+      y: panelTop + 136,
+      width: 164,
+      height: 164,
+    });
+  drawTextBox(
+    context,
+    content.headline,
+    { x: 104, y: panelTop + 104, width: width - 430, height: story ? 245 : 190 },
+    {
+      maxSize: story ? 98 : 92,
+      minSize: story ? 66 : 62,
+      maxLines: story ? 3 : 2,
+      color: COLORS.red,
+      display: true,
+      weight: 800,
+      centeredVertically: true,
+    },
+  );
+  drawTextBox(
+    context,
+    content.detail,
+    { x: 104, y: story ? 760 : 650, width: width - 208, height: story ? 112 : 78 },
+    { maxSize: 36, minSize: 28, maxLines: 2, color: COLORS.ink, weight: 650 },
+  );
+  drawTextBox(
+    context,
+    content.context,
+    { x: 104, y: story ? 924 : 812, width: width - 208, height: 94 },
+    { maxSize: 30, minSize: 26, maxLines: 2, color: COLORS.muted, weight: 650 },
+  );
+  drawTextBox(
+    context,
+    "Scan to play",
+    { x: 102, y: story ? 1140 : 930, width: width - 204, height: 91 },
+    { maxSize: 66, minSize: 58, maxLines: 1, color: COLORS.ink, display: true, weight: 800 },
+  );
+  drawArcadeQr(context, qr, (width - qr.width) / 2, story ? 1272 : 1048);
+  drawTextBox(
+    context,
+    content.url.replace(/^https:\/\//, ""),
+    { x: 102, y: story ? 1684 : 1512, width: width - 204, height: 106 },
+    { maxSize: 27, minSize: 24, maxLines: 3, color: COLORS.deepRed, weight: 750 },
+  );
+  drawTextBox(
+    context,
+    "Free to play · No sign-in needed",
+    { x: 102, y: story ? 1804 : 1654, width: width - 204, height: 48 },
+    { maxSize: 30, minSize: 27, maxLines: 1, color: COLORS.muted, weight: 650 },
+  );
+}
+
+/** Local PNG export. Only Story/poster QR codes use the strictly validated public URL. */
 export async function createArcadeShareCard(
   content: ArcadeShareContent,
-  options: { signal?: AbortSignal } = {},
+  options: { signal?: AbortSignal; format?: ArcadeShareCardFormat } = {},
 ): Promise<Blob> {
-  const { signal } = options;
+  const { signal, format = "square" } = options;
   checkAbort(signal);
   if (typeof document === "undefined" || typeof window === "undefined")
     throw new Error("Share images can only be created in a browser.");
+  const dimensions = arcadeShareCardDimensions(format);
   const canvas = document.createElement("canvas");
-  canvas.width = ARCADE_SHARE_CARD_SIZE;
-  canvas.height = ARCADE_SHARE_CARD_SIZE;
+  canvas.width = dimensions.width;
+  canvas.height = dimensions.height;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("This browser does not support share images.");
   try {
@@ -353,6 +492,16 @@ export async function createArcadeShareCard(
       waitForAvailableFonts(signal),
     ]);
     checkAbort(signal);
+
+    if (format !== "square") {
+      const qr = await createArcadeQr(content.url, {
+        width: format === "story" ? 380 : 440,
+        ...(signal ? { signal } : {}),
+      });
+      checkAbort(signal);
+      drawVerticalCard(context, content, format, qr, logoImage, foodImage);
+      return await canvasPng(canvas, signal);
+    }
 
     context.fillStyle = COLORS.cream;
     context.fillRect(0, 0, 1200, 1200);

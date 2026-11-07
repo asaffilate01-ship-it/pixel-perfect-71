@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { MEALDECK_BUSINESS } from "../src/lib/business-identity";
+import { ARCADE_GAME_PAGES } from "../src/lib/mealdeck-arcade-pages";
 import { MEALDECK_PUBLIC_PATHS, mealDeckSitemap } from "../src/lib/mealdeck-sitemap";
 import {
   SITE_URL,
@@ -91,7 +92,18 @@ describe("private routes stay out of search discovery", () => {
   });
 
   test("sitemap includes public offers and games, with unique canonical URLs and no private destinations", () => {
-    for (const path of ["/offers", "/opening-offer", "/meta-ad", "/play", "/luton", "/menus"])
+    for (const path of [
+      "/offers",
+      "/opening-offer",
+      "/meta-ad",
+      "/play",
+      "/play/daily",
+      "/play/receipt",
+      "/play/promote",
+      "/luton",
+      "/menus",
+      ...ARCADE_GAME_PAGES.map((game) => game.path),
+    ])
       expect(MEALDECK_PUBLIC_PATHS).toContain(path);
     expect(MEALDECK_PUBLIC_PATHS.some(isPrivateSeoPath)).toBe(false);
     const urls = [...mealDeckSitemap().matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]!);

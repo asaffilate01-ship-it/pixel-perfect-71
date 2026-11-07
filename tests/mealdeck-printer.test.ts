@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { ReceiptPreview } from "../src/components/ops/receipt-preview";
 import { validateReceipt } from "../tools/receipt-bridge/receipt.mjs";
 import { receiptLogoSource, waitForReceiptLogo } from "../src/lib/mealdeck-receipt-logo";
+import { receiptGamesQr } from "../src/lib/mealdeck-receipt-games";
 import {
   receiptSchema,
   parsePrinterBoard,
@@ -103,6 +104,41 @@ const job = () => ({
   receipt: receipt(),
 });
 describe("canonical receipt presentation", () => {
+  test("places one fixed games QR after the full order and before the footer without changing the snapshot", () => {
+    const value = receipt();
+    value.orderNotes = "Keep the labelled bags together.";
+    value.packingPlan.bags[0]!.name = "Amer";
+    value.packingPlan.bags[1]!.name = "Jay";
+    const snapshot = JSON.stringify(validateReceipt(value));
+    const original = JSON.stringify(value);
+    const html = renderToStaticMarkup(createElement(ReceiptPreview, { receipt: value }));
+    const qrPosition = html.indexOf("data-receipt-games-qr");
+    expect(qrPosition).toBeGreaterThan(html.indexOf("£14.67"));
+    expect(qrPosition).toBeGreaterThan(html.indexOf(value.orderNotes));
+    expect(qrPosition).toBeGreaterThan(html.indexOf("Amer · Bag 1"));
+    expect(qrPosition).toBeGreaterThan(html.indexOf("Jay · Bag 2"));
+    expect(html).toContain("Amer · Bag 1");
+    expect(html).toContain("Jay · Bag 2");
+    expect(qrPosition).toBeLessThan(html.indexOf("<footer"));
+    expect(html.match(/data-receipt-games-qr/g)).toHaveLength(1);
+    expect(html).toContain("Got a minute? Play MealDeck");
+    expect(html).toContain("Scan for free food games");
+    expect(html).toContain('href="https://mealdeck.co.uk/play/receipt"');
+    expect(html).toContain(">mealdeck.co.uk/play</a>");
+    expect(html).toContain('viewBox="0 0 41 41"');
+    expect(html).toContain('shape-rendering="crispEdges"');
+    expect(html).toContain(`<path d="${receiptGamesQr.svgPath}" fill="#000"`);
+    expect(html).toContain(`src="${receiptLogoSource}"`);
+    expect(html).toContain("313 Brands Ltd.");
+    expect(html).toContain("Powered by Dishbee");
+    expect(html).toContain("INCLUDE CUTLERY");
+    expect(html).toContain("Mango Mirage");
+    expect(JSON.stringify(validateReceipt(value))).toBe(snapshot);
+    expect(JSON.stringify(value)).toBe(original);
+    const untrusted = { ...value, qrUrl: "https://untrusted.invalid/private", qrBytes: "abc" };
+    expect(renderToStaticMarkup(createElement(ReceiptPreview, { receipt: untrusted }))).toBe(html);
+  });
+
   test("prints the approved fixed logo and canonical meal contents without changing money or extras", () => {
     const legacy = receipt();
     expect(receiptSchema.parse(legacy).items[0]).not.toHaveProperty("mealComponents");

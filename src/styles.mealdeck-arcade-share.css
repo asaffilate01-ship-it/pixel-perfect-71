@@ -68,6 +68,50 @@
   border-radius: 14px;
   background: #fff6e8;
 }
+.md-arcade-share__picture {
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
+  min-width: 0;
+  gap: 12px;
+}
+.md-arcade-share__formats {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.md-arcade-share__formats legend {
+  padding: 0;
+  margin-bottom: 7px;
+  font-size: 12px;
+  font-weight: 750;
+}
+.md-arcade-share__formats > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.md-arcade-share__formats button {
+  min-height: 44px;
+  padding: 9px 8px;
+  border: 1px solid #cabb9f;
+  border-radius: 9px;
+  background: #fffdf7;
+  color: #402d21;
+  font:
+    750 12px/1.3 "DM Sans",
+    sans-serif;
+  cursor: pointer;
+}
+.md-arcade-share__formats button[aria-pressed="true"] {
+  border-color: #951018;
+  background: #fce8e4;
+  color: #7d121b;
+}
+.md-arcade-share__preview[data-format="story"] {
+  aspect-ratio: 9 / 16;
+}
 .md-arcade-share__preview img {
   display: block;
   width: 100%;
@@ -233,6 +277,9 @@
   .md-arcade-share__preview {
     max-width: 250px;
     margin-inline: auto;
+  }
+  .md-arcade-share__preview[data-format="story"] {
+    max-width: 195px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

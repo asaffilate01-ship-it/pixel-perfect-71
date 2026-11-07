@@ -108,6 +108,20 @@ separately when observed; this implementation document is not itself that eviden
 
 ## Version 0.2.0 signed build evidence
 
+### Compatibility with the later games receipt release
+
+The signed 0.2.0 APK retains its original complete order receipt layout. It does
+not include the games promotional QR added later to browser and Node/TCP receipts.
+Its native golden fixtures explicitly select `includeGamesQr: false` on the shared
+JavaScript renderer; the existing golden file, native code and APK remain unchanged.
+The ordinary bridge default remains QR-enabled. Regression checks compare every
+valid native fixture's full text, normalized data and fingerprint, and verify that
+the compatibility profile omits only the fixed promotion. Adding the promotional
+QR to the native app requires a later version built and signed with the retained
+release identity.
+
+### Signed artifact
+
 - Native source: `b3959346e28a0b8c9cf1662177e6469c94c13023`.
 - Successful Android workflow: [42374402495](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42374402495); artifact `13574394028`.
 - Artifact ZIP SHA-256: `831670470838dc18971520b98675c48f34f00c78cabeab695c5080ac09ebb265`.
