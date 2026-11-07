@@ -48,6 +48,7 @@ export function LaunchMenuAppNav({
     Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
   const [sheet, setSheet] = useState<MenuSheet>("brands");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const navigatingAway = useRef(false);
   const sheetId = useId();
@@ -148,6 +149,10 @@ export function LaunchMenuAppNav({
           id={sheetId}
           className="lma-sheet translate-x-0 translate-y-0"
           overlayClassName="lma-sheet-overlay"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            headingRef.current?.focus({ preventScroll: true });
+          }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             if (navigatingAway.current || dialogOpen) return;
@@ -167,88 +172,90 @@ export function LaunchMenuAppNav({
             }
           }}
         >
-          <div className="lma-sheet-handle" aria-hidden="true" />
-          <div className="lma-sheet-heading">
-            <p className="lma-sheet-eyebrow">MealDeck</p>
-            <DialogTitle className="lma-sheet-title">
-              {sheet === "brands" ? "Pick your craving." : "More from the deck."}
-            </DialogTitle>
-            <DialogDescription className="lma-sheet-description">
-              {sheet === "brands"
-                ? "Five brands, one basket. Your choices stay with you when you switch menus."
-                : "Explore MealDeck and keep your favourites within reach."}
-            </DialogDescription>
-          </div>
+          <div className="lma-sheet-content">
+            <div className="lma-sheet-handle" aria-hidden="true" />
+            <div className="lma-sheet-heading">
+              <p className="lma-sheet-eyebrow">MealDeck</p>
+              <DialogTitle className="lma-sheet-title" ref={headingRef} tabIndex={-1}>
+                {sheet === "brands" ? "Pick your craving." : "More from the deck."}
+              </DialogTitle>
+              <DialogDescription className="lma-sheet-description">
+                {sheet === "brands"
+                  ? "Five brands, one basket. Your choices stay with you when you switch menus."
+                  : "Explore MealDeck and keep your favourites within reach."}
+              </DialogDescription>
+            </div>
 
-          {sheet === "brands" ? (
-            <div className="lma-brand-list">
-              {brands.map((brand) => (
-                <button
-                  key={brand.id}
-                  type="button"
-                  className="lma-brand-choice"
-                  aria-pressed={brand.id === brandId}
-                  onClick={() => {
-                    setSheetOpen(false);
-                    onBrand(brand.id);
-                  }}
-                >
-                  <img src={brand.logo} alt="" width={78} height={54} />
-                  <span>
-                    <strong>{brand.name}</strong>
-                    <small>{brand.id === brandId ? "Viewing now" : "View menu"}</small>
-                  </span>
-                  {brand.id === brandId ? (
-                    <Check size={20} aria-hidden="true" />
-                  ) : (
-                    <ArrowUpRight size={19} aria-hidden="true" />
-                  )}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="lma-more-content">
-              <nav className="lma-more-links" aria-label="Explore MealDeck">
-                <Link to="/group-order" onClick={followLink}>
-                  <Users size={21} aria-hidden="true" />
-                  <span>
-                    {groupOrderingOpen
-                      ? "Group order · Choose together"
-                      : "Group ordering · Starting 9 November"}
-                  </span>
-                  <ArrowUpRight size={18} aria-hidden="true" />
+            {sheet === "brands" ? (
+              <div className="lma-brand-list">
+                {brands.map((brand) => (
+                  <button
+                    key={brand.id}
+                    type="button"
+                    className="lma-brand-choice"
+                    aria-pressed={brand.id === brandId}
+                    onClick={() => {
+                      setSheetOpen(false);
+                      onBrand(brand.id);
+                    }}
+                  >
+                    <img src={brand.logo} alt="" width={78} height={54} />
+                    <span>
+                      <strong>{brand.name}</strong>
+                      <small>{brand.id === brandId ? "Viewing now" : "View menu"}</small>
+                    </span>
+                    {brand.id === brandId ? (
+                      <Check size={20} aria-hidden="true" />
+                    ) : (
+                      <ArrowUpRight size={19} aria-hidden="true" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="lma-more-content">
+                <nav className="lma-more-links" aria-label="Explore MealDeck">
+                  <Link to="/group-order" onClick={followLink}>
+                    <Users size={21} aria-hidden="true" />
+                    <span>
+                      {groupOrderingOpen
+                        ? "Group order · Choose together"
+                        : "Group ordering · Starting 9 November"}
+                    </span>
+                    <ArrowUpRight size={18} aria-hidden="true" />
+                  </Link>
+                  <Link to="/account" onClick={followLink}>
+                    <UserRound size={21} aria-hidden="true" />
+                    <span>My account &amp; rewards</span>
+                    <ArrowUpRight size={18} aria-hidden="true" />
+                  </Link>
+                  <Link to="/" onClick={followLink}>
+                    <Home size={21} aria-hidden="true" />
+                    <span>Home</span>
+                    <ArrowUpRight size={18} aria-hidden="true" />
+                  </Link>
+                  <Link to="/" hash="locations" onClick={followLink}>
+                    <MapPin size={21} aria-hidden="true" />
+                    <span>Locations</span>
+                    <ArrowUpRight size={18} aria-hidden="true" />
+                  </Link>
+                  <Link to="/play" onClick={followLink}>
+                    <Gamepad2 size={21} aria-hidden="true" />
+                    <span>Play &amp; rewards</span>
+                    <ArrowUpRight size={18} aria-hidden="true" />
+                  </Link>
+                </nav>
+                <PwaInstallCard />
+                <Link to="/offers" onClick={followLink} className="lma-more-note">
+                  Offers · 30% off, 99p milk cake &amp; double points
                 </Link>
-                <Link to="/account" onClick={followLink}>
-                  <UserRound size={21} aria-hidden="true" />
-                  <span>My account &amp; rewards</span>
-                  <ArrowUpRight size={18} aria-hidden="true" />
-                </Link>
-                <Link to="/" onClick={followLink}>
-                  <Home size={21} aria-hidden="true" />
-                  <span>Home</span>
-                  <ArrowUpRight size={18} aria-hidden="true" />
-                </Link>
-                <Link to="/" hash="locations" onClick={followLink}>
-                  <MapPin size={21} aria-hidden="true" />
-                  <span>Locations</span>
-                  <ArrowUpRight size={18} aria-hidden="true" />
-                </Link>
-                <Link to="/play" onClick={followLink}>
-                  <Gamepad2 size={21} aria-hidden="true" />
-                  <span>Play &amp; rewards</span>
-                  <ArrowUpRight size={18} aria-hidden="true" />
-                </Link>
-              </nav>
-              <PwaInstallCard />
-              <Link to="/offers" onClick={followLink} className="lma-more-note">
-                Offers · 30% off, 99p milk cake &amp; double points
-              </Link>
-              <p className="lma-more-note">
-                Order for Luton collection or kerbside during kitchen opening hours.
-              </p>
-              <WhatsAppOrderLink className="lma-more-note" onClick={followLink} />
-            </div>
-          )}
+                <p className="lma-more-note">
+                  Order for Luton collection or kerbside during kitchen opening hours.
+                </p>
+                <WhatsAppOrderLink className="lma-more-note" onClick={followLink} />
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>

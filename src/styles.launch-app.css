@@ -35,7 +35,8 @@
 }
 
 .lma-sheet {
-  display: block;
+  display: flex;
+  flex-direction: column;
   z-index: 120;
   top: auto;
   right: 0;
@@ -43,21 +44,30 @@
   left: 0;
   width: 100%;
   max-width: 800px;
-  max-height: calc(100dvh - 20px);
+  max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)));
   margin: 0 auto;
-  padding: 12px max(16px, env(safe-area-inset-right, 0px))
-    calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  padding: 0;
+  overflow: hidden;
   border: 1px solid var(--lma-line);
   border-bottom: 0;
   border-radius: 24px 24px 0 0;
   background: var(--lma-paper);
   color: var(--lma-ink);
   box-shadow: 0 -12px 50px #11111126;
+  --tw-translate-x: 0px;
+  --tw-translate-y: 0px;
   transform: none;
   translate: none;
   animation: none;
+}
+.lma-sheet-content {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 16px;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px))
+    max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
 }
 
 .lma-sheet > button:last-child {
@@ -72,6 +82,7 @@
   background: var(--lma-paper);
   color: var(--lma-ink);
   opacity: 1;
+  z-index: 1;
 }
 
 .lma-sheet > button:last-child svg {
@@ -104,6 +115,9 @@
   font-weight: 800;
   line-height: 1.12;
   letter-spacing: -0.025em;
+}
+.lma-sheet-title:focus {
+  outline: none;
 }
 .lma-sheet .lma-sheet-description {
   margin-top: 9px;

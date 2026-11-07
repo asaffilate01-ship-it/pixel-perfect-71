@@ -1,6 +1,8 @@
 # MealDeck Play — Premium Games & Brand Integrity
 Version: October 2026 · PR branch: `feature/dishbee-play-food-cards`
 
+7 November 2026 update: see the [arcade expansion and mobile popup review](mealdeck-arcade-expansion-20261107.md) for the current fourteen-game release record.
+
 ## Product boundary
 
 All MealDeck Play games are **free entertainment**, separate from paid orders and rewards. Nothing in the games writes loyalty points, cards with cash value, vouchers, free-food grants, payments, order state, betting stakes or payouts. Results are intentionally session-local. **Full House Rewards** is displayed as a locked purchase-loyalty concept until verified Dishbee server fulfilment and redemption are implemented.
