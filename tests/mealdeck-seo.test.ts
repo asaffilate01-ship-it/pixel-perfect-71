@@ -17,10 +17,10 @@ import {
 const metadata = (path: string) => seo({ title: "MealDeck", description: "Food in Luton", path });
 
 describe("public MealDeck search identity", () => {
-  test("uses the supplied domain, tagline and deliberately exact social handle", () => {
+  test("uses the supplied domain, tagline and confirmed social handle", () => {
     expect(SITE_URL).toBe("https://mealdeck.co.uk");
     expect(MEALDECK_BUSINESS.tagline).toBe("One order, every craving");
-    expect(MEALDECK_BUSINESS.socialHandle).toBe("@mealdeckoffical");
+    expect(MEALDECK_BUSINESS.socialHandle).toBe("@mealdeckofficial");
   });
 
   test("canonical and social URLs discard private and campaign URL data", () => {
