@@ -8,6 +8,17 @@ This app checks the installed built-in printer service and offers one fixed, cle
 
 The **H10S printer setup APK** GitHub Actions workflow builds `mealdeck-printer-setup-h10s-debug.apk`, a signed debug APK for supervised hardware setup. The artifact contains its SHA-256 checksum and certificate/permission report. This is an internal setup build, not a production distribution/signing channel. Use the verified build linked in the release handoff, not a similarly named third-party APK.
 
+The verified setup build is also distributed from the MealDeck website: open
+[`/printer`](https://mealdeck.co.uk/printer) on the H10S and choose **Download H10S APK**.
+The download is available before sign-in and in the signed-in terminal's **Setup** panel.
+The versioned asset is `/downloads/mealdeck-printer-setup-h10s-0.1.0.apk`, with an
+adjacent `.sha256` file. It is the unchanged 10,361,500-byte APK from successful
+[Android workflow run 42299047156](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42299047156)
+at source commit `bec2c6a599a3e7bdc6ee26fa2fc0257d2c28e81f` (version `0.1.0-setup`, code 1).
+Its SHA-256 is `7d99f1c324b123b6af06a0e0e8aadd10d1a9d3995ffa1a8ae20bac89f46b54cb`.
+Keep this URL's bytes immutable; distribute future builds under a new versioned filename.
+The download does not grant printer account access or activate live receipt printing.
+
 1. On the H10S, first use **Hardware Settings → Print test** with a paper roll loaded. Leave **Flash firmware** untouched.
 2. Download and install the MealDeck setup APK, granting installation permission to the download app only if Android requests it. Open **MealDeck Printer Setup**.
 3. Tap **Check printer connection**. This does not print. If unavailable, copy the selectable device/printer details; no serial, IMEI, network address or customer data is included.

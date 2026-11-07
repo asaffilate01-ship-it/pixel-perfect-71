@@ -44,6 +44,7 @@ import {
 } from "@/lib/mealdeck-printer";
 import { StaffAlertControls, StaffSoundUnlock, useStaffAlerts } from "./staff-alerts";
 import { ReceiptPreview } from "./receipt-preview";
+import { PrinterApkDownload } from "./printer-apk-download";
 import { PrinterConnectionStatus, PrinterPendingOrderCard } from "./printer-pending-orders";
 import { StaffMobileNav } from "./staff-mobile-navigation";
 import "./ops-theme.css";
@@ -263,6 +264,7 @@ export function PrinterWorkspace() {
       <main
         className={`md-printer-main mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6 ${signedIn && scope ? "md-staff-has-mobile-nav" : ""}`}
       >
+        {(!signedIn || !scope) && <PrinterApkDownload />}
         {error && (
           <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-950">
             {error}
@@ -1020,6 +1022,7 @@ function ReceiptTerminal({
           </h2>
           <p className="mt-1 text-sm md-ops-muted">Connection, sound and receipt delivery.</p>
         </div>
+        <PrinterApkDownload headingLevel="h3" />
         <PrinterConnectionStatus
           fresh={fresh}
           paired={paired}
@@ -1042,22 +1045,6 @@ function ReceiptTerminal({
               macOS computer. Pair it from this app on that same computer. It sends one receipt and
               stops; paper cutting depends on the configured printer.
             </p>
-            <section
-              className="rounded-lg border p-3"
-              aria-label="Built-in Android printer connection"
-            >
-              <h3 className="text-sm font-bold">Using a Senraise Android terminal?</h3>
-              <p className="mt-2 text-sm leading-6 md-ops-muted">
-                Install MealDeck Printer from this page in Chrome. The PWA gives you this queue and
-                its order controls; installation alone does not connect the built-in printer.
-              </p>
-              <p className="mt-2 text-sm leading-6 md-ops-muted">
-                A built-in printer needs a compatible connection for your exact model. If its
-                Android print service is already configured, Browser print dialog can send one
-                manual copy; check the paper afterwards. Automatic printing needs that supported
-                device connection before it can be switched on.
-              </p>
-            </section>
             {!paired && (
               <form
                 className="flex flex-wrap items-end gap-2"
