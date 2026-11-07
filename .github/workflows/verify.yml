@@ -38,6 +38,7 @@ jobs:
           src/components/menus/launch-basket.tsx src/components/menus/launch-item-customiser.tsx
           src/components/menus/launch-menu-mobile-nav.tsx src/lib/launch-menu-navigation.ts src/routes/menu.tsx
           src/components/menus/launch-menu-app-nav.tsx
+          src/components/ui/dialog.tsx src/components/ui/sheet.tsx
           src/components/menus/launch-basket-feedback.tsx
           tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts
           tests/launch-menu-upsells.test.ts
@@ -129,7 +130,7 @@ jobs:
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - name: MealDeck Play game regressions
-        run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/hero-food-deck.test.ts
+        run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts tests/hero-food-deck.test.ts
       - name: Homepage motion, native zoom and lifecycle cleanup
         run: |
           bun test tests/deck-motion.test.ts
@@ -197,6 +198,10 @@ jobs:
           src/lib/mealdeck-collection-games.ts src/lib/game-brand-artwork.ts src/lib/arcade-games.ts
           src/components/play/premium-games.tsx src/components/play/arcade-games.tsx src/routes/play.tsx
           tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts
+          src/lib/mealdeck-arcade-library.ts src/lib/mealdeck-puzzle-games.ts src/lib/tray-tactics.ts
+          src/components/play/puzzle-games.tsx src/components/play/tray-tactics.tsx
+          src/components/play/game-panel-boundary.tsx
+          tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts
           --rule 'prettier/prettier: off'
 
       - name: Marketplace ordering lint

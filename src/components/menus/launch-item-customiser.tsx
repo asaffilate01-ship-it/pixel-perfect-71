@@ -126,10 +126,12 @@ export function LaunchItemCustomiser({
   const [step, setStep] = useState<Step>(steps[0]!);
   const [pickerId, setPickerId] = useState<string | null>(null);
   const [pickerSection, setPickerSection] = useState("");
+  const contentRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const offerButtons = useRef<Record<string, HTMLButtonElement | null>>({});
   const previousPicker = useRef<string | null>(null);
+  const pickerScroll = useRef({ content: 0, body: 0 });
   const picker = offers.find((offer) => offer.id === pickerId);
   const missing = missingLaunchChoices(brand, item, selections, crossSelections);
   const currentMissing = missing.filter((group) =>
@@ -157,11 +159,16 @@ export function LaunchItemCustomiser({
   const stepLabels: Record<Step, string> = { food: "Food", extras: "Extras", review: "Review" };
 
   useEffect(() => {
-    if (bodyRef.current) bodyRef.current.scrollTop = 0;
     const returnButton =
       !pickerId && previousPicker.current ? offerButtons.current[previousPicker.current] : null;
-    if (returnButton) returnButton.focus();
-    else headingRef.current?.focus();
+    if (contentRef.current) {
+      contentRef.current.scrollTop = returnButton ? pickerScroll.current.content : 0;
+    }
+    if (bodyRef.current) {
+      bodyRef.current.scrollTop = returnButton ? pickerScroll.current.body : 0;
+    }
+    if (returnButton) returnButton.focus({ preventScroll: true });
+    else headingRef.current?.focus({ preventScroll: true });
     previousPicker.current = pickerId;
   }, [step, pickerId]);
 
@@ -188,6 +195,10 @@ export function LaunchItemCustomiser({
   }
 
   function openPicker(offer: LaunchCrossOffer) {
+    pickerScroll.current = {
+      content: contentRef.current?.scrollTop ?? 0,
+      body: bodyRef.current?.scrollTop ?? 0,
+    };
     const selected = crossSelections.find((choice) => choice.slot === offer.slot);
     const choice = offer.choices.find((entry) => entry.itemId === selected?.itemId);
     setPickerSection(choice?.sectionId ?? offer.choices[0]?.sectionId ?? "");
@@ -305,11 +316,12 @@ export function LaunchItemCustomiser({
     ) ?? [];
 
   return (
-    <>
-      <header
-        className="lmc-header"
-        data-customiser-layout={steps.length === 1 ? "compact" : "steps"}
-      >
+    <div
+      className="lmc-content"
+      ref={contentRef}
+      data-customiser-layout={steps.length === 1 ? "compact" : "steps"}
+    >
+      <header className="lmc-header">
         <img src={logoFor(brand.id)} alt={brand.name} width="62" height="48" />
         <div>
           <span className="lmc-eyebrow">{section.title}</span>
@@ -636,6 +648,6 @@ export function LaunchItemCustomiser({
             : "Current menu prices · Final total checked before payment"}
         </p>
       </footer>
-    </>
+    </div>
   );
 }

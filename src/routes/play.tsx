@@ -5,6 +5,9 @@ import {
   useId,
   useRef,
   useState,
+  lazy,
+  Suspense,
+  type CSSProperties,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -12,6 +15,7 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Copy,
   Gamepad2,
   Grid2X2,
   Lightbulb,
@@ -19,9 +23,11 @@ import {
   Minimize2,
   RotateCcw,
   Search,
+  Star,
   X,
 } from "lucide-react";
 import { Feast2048, FourToFeast, OrderEcho, KitchenShuffle } from "@/components/play/arcade-games";
+import { GamePanelBoundary } from "@/components/play/game-panel-boundary";
 import {
   KitchenChaos,
   BrandSnap,
@@ -44,9 +50,14 @@ import {
 } from "@/lib/dishbee-play";
 import {
   ARCADE_CATEGORIES,
+  ARCADE_COLLECTIONS,
   ARCADE_GAMES,
+  NEW_ARCADE_GAMES,
+  arcadeGameLink,
   findArcadeGames,
   isArcadeGameId,
+  parseArcadeFavourites,
+  type ArcadeCollection,
   type ArcadeFilter,
   type ArcadeGameId,
 } from "@/lib/mealdeck-arcade-library";
@@ -54,6 +65,17 @@ import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import { seo } from "@/lib/seo";
 import cardBack from "@/assets/mealdeck-card-back.png";
 import "@/styles.mealdeck-arcade-shell.css";
+
+const SauceSwitch = lazy(() =>
+  import("@/components/play/puzzle-games").then((module) => ({ default: module.SauceSwitch })),
+);
+const MenuQuest = lazy(() =>
+  import("@/components/play/puzzle-games").then((module) => ({ default: module.MenuQuest })),
+);
+const TrayTactics = lazy(() =>
+  import("@/components/play/tray-tactics").then((module) => ({ default: module.TrayTactics })),
+);
+const FAVOURITES_KEY = "mealdeck-play-favourites-v1";
 
 export const Route = createFileRoute("/play")({
   validateSearch: (
@@ -65,8 +87,7 @@ export const Route = createFileRoute("/play")({
   head: () =>
     seo({
       title: "MealDeck Play — Free Food Games",
-      description:
-        "Pick from eleven free food-themed games. Play solo, challenge the chef or share a round with a friend. No sign-in needed. Games are just for fun.",
+      description: `Pick from ${ARCADE_GAMES.length} free food-themed games, including word searches, daily puzzles and strategy games. Play solo or with a friend. No sign-in needed.`,
       path: "/play",
     }),
   component: PlayPage,
@@ -449,8 +470,11 @@ type LibraryProps = {
   game: ArcadeGameId;
   query: string;
   filter: ArcadeFilter;
+  collection: ArcadeCollection;
+  favourites: readonly ArcadeGameId[];
   setQuery: (query: string) => void;
   setFilter: (filter: ArcadeFilter) => void;
+  setCollection: (collection: ArcadeCollection) => void;
   onSelect: (game: ArcadeGameId) => void;
   searchInputRef?: RefObject<HTMLInputElement | null>;
 };
@@ -459,16 +483,20 @@ function GameLibrary({
   game,
   query,
   filter,
+  collection,
+  favourites,
   setQuery,
   setFilter,
+  setCollection,
   onSelect,
   searchInputRef,
 }: LibraryProps) {
   const searchId = useId();
-  const games = findArcadeGames(query, filter);
+  const games = findArcadeGames(query, filter, collection, favourites);
   function clear() {
     setQuery("");
     setFilter("All games");
+    setCollection("all");
   }
   return (
     <div className="md-play-library-content">
@@ -499,6 +527,23 @@ function GameLibrary({
           </button>
         )}
       </div>
+      <label className="md-play-collection" htmlFor={`${searchId}-collection`}>
+        <span>Browse collection</span>
+        <select
+          id={`${searchId}-collection`}
+          value={collection}
+          onChange={(event) => {
+            const next = ARCADE_COLLECTIONS.find((item) => item.id === event.target.value);
+            if (next) setCollection(next.id);
+          }}
+        >
+          {ARCADE_COLLECTIONS.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="md-play-filters" role="group" aria-label="Game categories">
         {ARCADE_CATEGORIES.map((category) => (
           <button
@@ -535,6 +580,16 @@ function GameLibrary({
                   <small>
                     {item.category} · {item.players}
                   </small>
+                  {(NEW_ARCADE_GAMES.includes(item.id) || favourites.includes(item.id)) && (
+                    <span className="md-play-game-badges">
+                      {NEW_ARCADE_GAMES.includes(item.id) && <b>New</b>}
+                      {favourites.includes(item.id) && (
+                        <span>
+                          <Star size={12} aria-hidden="true" /> Saved
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </span>
                 <span className="md-play-game-action" aria-hidden="true">
                   {game === item.id ? <CheckCircle2 size={20} /> : <ArrowRight size={18} />}
@@ -547,8 +602,16 @@ function GameLibrary({
       ) : (
         <div className="md-play-empty">
           <Search size={26} aria-hidden="true" />
-          <h3>No games found</h3>
-          <p>Try another name or choose a different category.</p>
+          <h3>
+            {collection === "favourites" && favourites.length === 0
+              ? "Make it your game shelf"
+              : "No games found"}
+          </h3>
+          <p>
+            {collection === "favourites" && favourites.length === 0
+              ? "Open a game and tap Save favourite above the board. Your choices stay on this device."
+              : "Try another name, collection or category."}
+          </p>
           <button type="button" className="md-play-button md-play-button--quiet" onClick={clear}>
             Show all games
           </button>
@@ -566,16 +629,98 @@ function PlayPage() {
   const navigate = Route.useNavigate();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ArcadeFilter>("All games");
+  const [collection, setCollection] = useState<ArcadeCollection>("all");
+  const [favourites, setFavourites] = useState<ArcadeGameId[]>([]);
+  const [preferenceReady, setPreferenceReady] = useState(false);
+  const [toolbarMessage, setToolbarMessage] = useState("");
+  const [showGameLink, setShowGameLink] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerViewport, setPickerViewport] = useState<CSSProperties>({});
   const [focusMode, setFocusMode] = useState(false);
   const gamePanelRef = useRef<HTMLDivElement>(null);
   const libraryRef = useRef<HTMLElement>(null);
   const desktopSearchRef = useRef<HTMLInputElement>(null);
   const pickerSearchRef = useRef<HTMLInputElement>(null);
+  const pickerTitleRef = useRef<HTMLHeadingElement>(null);
   const pickerTriggerRef = useRef<HTMLButtonElement | null>(null);
   const pendingFocus = useRef(false);
   const selectedInPicker = useRef(false);
   const activeGame = ARCADE_GAMES.find((item) => item.id === game) ?? ARCADE_GAMES[0]!;
+  const favourite = favourites.includes(game);
+  const shareLink = arcadeGameLink(game, brand);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!pickerOpen || !viewport) {
+      setPickerViewport({});
+      return;
+    }
+    const update = () => {
+      // Mobile keyboards can shrink the visual viewport without changing 100dvh.
+      setPickerViewport({
+        "--md-picker-viewport-height": `${Math.min(viewport.height, window.innerHeight)}px`,
+        "--md-picker-bottom": `${Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)}px`,
+      } as CSSProperties);
+    };
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [pickerOpen]);
+
+  useEffect(() => {
+    try {
+      setFavourites(parseArcadeFavourites(localStorage.getItem(FAVOURITES_KEY)));
+    } catch {
+      // Optional storage must not prevent play or saving for the current visit.
+    }
+    setPreferenceReady(true);
+    function sync(event: StorageEvent) {
+      if (event.key === FAVOURITES_KEY) setFavourites(parseArcadeFavourites(event.newValue));
+    }
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
+  useEffect(() => {
+    setToolbarMessage("");
+    setShowGameLink(false);
+  }, [game, brand]);
+
+  function toggleFavourite() {
+    const next = favourite ? favourites.filter((id) => id !== game) : [...favourites, game];
+    setFavourites(next);
+    try {
+      localStorage.setItem(FAVOURITES_KEY, JSON.stringify(next));
+      setToolbarMessage(
+        favourite
+          ? `${activeGame.name} removed from favourites.`
+          : `${activeGame.name} saved to favourites on this device.`,
+      );
+    } catch {
+      setToolbarMessage(
+        favourite
+          ? "Favourite removed for this visit."
+          : "Favourite saved for this visit. Device storage is unavailable.",
+      );
+    }
+  }
+
+  async function copyGameLink() {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setToolbarMessage(`Link to ${activeGame.name} copied. It opens a fresh game.`);
+      setShowGameLink(false);
+    } catch {
+      setShowGameLink(true);
+      setToolbarMessage("Select and copy the game link below. It opens a fresh game.");
+    }
+  }
 
   const focusGame = useCallback(() => {
     gamePanelRef.current?.focus({ preventScroll: true });
@@ -627,6 +772,9 @@ function PlayPage() {
   }
 
   const panels: Record<ArcadeGameId, ReactNode> = {
+    "sauce-switch": <SauceSwitch />,
+    "menu-quest": <MenuQuest />,
+    "tray-tactics": <TrayTactics />,
     "feast-2048": <Feast2048 />,
     "four-to-feast": <FourToFeast />,
     "order-echo": <OrderEcho suspended={pickerOpen} />,
@@ -639,7 +787,17 @@ function PlayPage() {
     "full-house": <FullHouse />,
     solitaire: <KitchenStacks />,
   };
-  const libraryProps = { game, query, filter, setQuery, setFilter, onSelect: selectGame };
+  const libraryProps = {
+    game,
+    query,
+    filter,
+    collection,
+    favourites,
+    setQuery,
+    setFilter,
+    setCollection,
+    onSelect: selectGame,
+  };
 
   return (
     <div
@@ -660,12 +818,25 @@ function PlayPage() {
                 <em>served up.</em>
               </h1>
               <p>
-                Eleven food-themed games. Play solo, challenge the chef or share a round with a
-                friend.
+                {ARCADE_GAMES.length} food-themed games. Play solo, challenge the chef or share a
+                round with a friend.
               </p>
               <div className="md-play-hero-actions">
                 <button type="button" className="md-play-button" onClick={showLibrary}>
                   <Grid2X2 size={18} aria-hidden="true" /> Choose a game
+                </button>
+                <button
+                  type="button"
+                  className="md-play-button md-play-button--quiet"
+                  onClick={() => {
+                    setCollection("new");
+                    setFilter("All games");
+                    setQuery("");
+                    showLibrary();
+                  }}
+                >
+                  Try {NEW_ARCADE_GAMES.length} new games{" "}
+                  <ArrowRight size={17} aria-hidden="true" />
                 </button>
                 <span>Always free. No sign-in needed.</span>
               </div>
@@ -673,7 +844,7 @@ function PlayPage() {
             <div className="md-play-hero-art" aria-hidden="true">
               <img className="md-play-hero-back" src={cardBack} alt="" />
               <div className="md-play-hero-front">
-                <span>11</span>
+                <span>{ARCADE_GAMES.length}</span>
                 <img src={gameFoodArtwork.burger} alt="" />
                 <strong>ONE MORE ROUND</strong>
               </div>
@@ -714,6 +885,25 @@ function PlayPage() {
                 <div>
                   <button
                     type="button"
+                    className="md-play-button md-play-button--quiet md-play-save-button"
+                    aria-pressed={favourite}
+                    aria-label={favourite ? "Remove favourite" : "Save favourite"}
+                    disabled={!preferenceReady}
+                    onClick={toggleFavourite}
+                  >
+                    <Star size={17} fill={favourite ? "currentColor" : "none"} aria-hidden="true" />
+                    <span>{favourite ? "Saved" : "Save"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="md-play-button md-play-button--quiet md-play-share-button"
+                    aria-label="Copy game link"
+                    onClick={() => void copyGameLink()}
+                  >
+                    <Copy size={17} aria-hidden="true" /> <span>Link</span>
+                  </button>
+                  <button
+                    type="button"
                     className="md-play-button md-play-button--quiet md-play-picker-button"
                     onClick={showLibrary}
                   >
@@ -723,7 +913,10 @@ function PlayPage() {
                     type="button"
                     className="md-play-button md-play-button--quiet"
                     aria-pressed={focusMode}
-                    onClick={() => setFocusMode((value) => !value)}
+                    onClick={() => {
+                      setFocusMode((value) => !value);
+                      requestAnimationFrame(focusGame);
+                    }}
                   >
                     {focusMode ? (
                       <Minimize2 size={17} aria-hidden="true" />
@@ -734,6 +927,15 @@ function PlayPage() {
                   </button>
                 </div>
               </div>
+              <p className="md-play-toolbar-message" role="status" aria-atomic="true">
+                {toolbarMessage}
+              </p>
+              {showGameLink && (
+                <label className="md-play-share-link">
+                  Game link
+                  <input readOnly value={shareLink} onFocus={(event) => event.target.select()} />
+                </label>
+              )}
               {game === "pairs" && (
                 <div className="md-play-deck">
                   <label htmlFor="pairs-deck">Food Pairs deck</label>
@@ -764,7 +966,17 @@ function PlayPage() {
                 role="region"
                 aria-label={activeGame.name}
               >
-                {panels[game]}
+                <GamePanelBoundary key={game} onChooseGame={showLibrary}>
+                  <Suspense
+                    fallback={
+                      <p className="md-quick-loading" role="status">
+                        Getting your game ready…
+                      </p>
+                    }
+                  >
+                    {panels[game]}
+                  </Suspense>
+                </GamePanelBoundary>
               </div>
               {focusMode && (
                 <p className="md-play-focus-note">
@@ -795,9 +1007,11 @@ function PlayPage() {
         <DialogContent
           className="md-play-picker"
           overlayClassName="md-play-picker-overlay"
+          style={pickerViewport}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
-            pickerSearchRef.current?.focus();
+            // Opening the picker must not summon the phone keyboard and cover its games.
+            pickerTitleRef.current?.focus({ preventScroll: true });
           }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
@@ -809,7 +1023,9 @@ function PlayPage() {
           }}
         >
           <div className="md-play-picker-heading">
-            <DialogTitle>Choose your game</DialogTitle>
+            <DialogTitle ref={pickerTitleRef} tabIndex={-1}>
+              Choose your game
+            </DialogTitle>
             <DialogDescription>
               Find a new challenge or return to your current round.
             </DialogDescription>

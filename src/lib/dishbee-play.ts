@@ -23,6 +23,9 @@ export const FOOD_SUITS = [
 ] as const;
 
 export const GAME_CATALOGUE = [
+  { id: "sauce-switch", name: "Sauce Switch", description: "Flip neighbouring tiles and clear the tray in a fresh daily logic puzzle.", state: "playable" },
+  { id: "menu-quest", name: "Menu Quest", description: "Find the hidden food words. Tap the first and last letters to join them.", state: "playable" },
+  { id: "tray-tactics", name: "Tray Tactics", description: "Capture the tray with clever food flips against the chef or a friend.", state: "playable" },
   { id: "feast-2048", name: "Feast 2048", description: "Merge matching food tiles into a record-breaking feast.", state: "playable" },
   { id: "four-to-feast", name: "Four to Feast", description: "Outthink the house chef or challenge a friend to connect four.", state: "playable" },
   { id: "order-echo", name: "Order Echo", description: "Remember a growing order sequence across three challenge levels.", state: "playable" },

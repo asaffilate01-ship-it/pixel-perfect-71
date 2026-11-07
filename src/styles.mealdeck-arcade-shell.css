@@ -1,6 +1,7 @@
 /* MealDeck arcade: a compact library and a clear, playable table. */
 .md-arcade-shell {
   background: #fff6e8;
+  color-scheme: light;
 }
 .md-arcade-shell .md-play-main {
   background: #fff6e8;
@@ -17,11 +18,11 @@
   padding: 30px 24px 64px;
 }
 .md-play-main :where(button, input, select, summary),
-.md-play-picker :where(button, input, summary) {
+.md-play-picker :where(button, input, select, summary) {
   font: inherit;
 }
 .md-arcade-shell .md-play-main :where(button, a, input, select, summary):focus-visible,
-.md-play-picker :where(button, input, summary):focus-visible {
+.md-play-picker :where(button, input, select, summary):focus-visible {
   outline: 3px solid #a70e19;
   outline-offset: 3px;
 }
@@ -267,6 +268,80 @@
 .md-play-search input::-webkit-search-cancel-button {
   display: none;
 }
+.md-play-collection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5d5041;
+}
+.md-play-collection select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 8px;
+  border: 1px solid #cbbba6;
+  border-radius: 9px;
+  background: #fffdf7;
+  color: #302820;
+  font: inherit;
+  font-size: 12px;
+}
+.md-play-game-copy > .md-play-game-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+.md-play-game-badges b {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f6d779;
+  color: #574012;
+  font-size: 10px;
+  font-weight: 800;
+}
+.md-play-game-badges > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: #9f1420;
+}
+.md-play-toolbar-message {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #73503c;
+  margin: 0 3px 12px;
+}
+.md-play-toolbar-message:empty {
+  margin: 0;
+}
+.md-play-share-link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #53493e;
+}
+.md-play-share-link input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #cbbba6;
+  border-radius: 8px;
+  background: #fffdf7;
+  color: #302820;
+  font-size: 12px;
+}
 .md-play-search button {
   display: grid;
   place-items: center;
@@ -467,6 +542,8 @@
 }
 .md-play-toolbar > div {
   display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 8px;
 }
 .md-play-toolbar .md-play-button {
@@ -550,8 +627,21 @@
 }
 .md-arcade-shell[data-focus="on"] .md-play-intro,
 .md-arcade-shell[data-focus="on"] .md-play-library,
-.md-arcade-shell[data-focus="on"] .md-play-footnote {
+.md-arcade-shell[data-focus="on"] .md-play-footnote,
+.md-arcade-shell[data-focus="on"] .md-play-toolbar > p,
+.md-arcade-shell[data-focus="on"] .md-play-save-button,
+.md-arcade-shell[data-focus="on"] .md-play-share-button,
+.md-arcade-shell[data-focus="on"] > .md-site-header,
+.md-arcade-shell[data-focus="on"] > .md-site-footer,
+body:has(.md-arcade-shell[data-focus="on"]) nav[aria-label="Primary"],
+body:has(.md-arcade-shell[data-focus="on"]) button[aria-label="Back to top"] {
   display: none;
+}
+.md-arcade-shell[data-focus="on"] .md-play-toolbar {
+  position: sticky;
+  top: max(8px, env(safe-area-inset-top, 0px));
+  z-index: 30;
+  box-shadow: 0 4px 18px #21150c14;
 }
 .md-arcade-shell[data-focus="on"] .md-play-workspace {
   grid-template-columns: minmax(0, 1fr);
@@ -574,14 +664,23 @@
   background: #1c130cb3;
 }
 .md-play-picker[role="dialog"] {
+  color-scheme: light;
   z-index: 121;
   top: auto;
-  bottom: 0;
+  bottom: var(--md-picker-bottom, 0px);
   left: 0;
+  --tw-translate-x: 0px;
+  --tw-translate-y: 0px;
   transform: none;
+  translate: none;
+  animation: none;
   width: 100%;
   max-width: none;
-  max-height: calc(100dvh - 12px);
+  max-height: calc(
+    var(--md-picker-viewport-height, 100dvh) - max(12px, env(safe-area-inset-top, 0px))
+  );
+  overflow: hidden;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -623,10 +722,17 @@
   line-height: 1.5;
 }
 .md-play-picker .md-play-library-content {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #b7a58e transparent;
+  padding: 3px;
 }
 .md-play-picker .md-play-game-list {
   padding: 4px;
+  overflow: visible;
+  flex: 0 0 auto;
 }
 .md-play-picker .md-play-game-card {
   grid-template-columns: 50px minmax(0, 1fr) 22px;
@@ -1081,6 +1187,11 @@
   }
 }
 @media (max-width: 900px) {
+  .md-arcade-shell .md-play-main :where(input, select),
+  .md-play-picker .md-play-search input,
+  .md-play-picker .md-play-collection select {
+    font-size: 16px;
+  }
   .md-play-layout {
     padding: 22px 16px 40px;
   }

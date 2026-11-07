@@ -7,12 +7,20 @@
   overflow: hidden;
   color: #211b16;
 }
+.lmc-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
 /* Plain drinks and other one-step items need only their content height.
    Keep the same bounded scroll area when a small viewport requires it. */
-.lm-dialog.lm-customise-dialog:has(> .lmc-header[data-customiser-layout="compact"]) {
+.lm-dialog.lm-customise-dialog:has(> .lmc-content[data-customiser-layout="compact"]) {
   height: auto;
 }
-.lm-dialog.lm-customise-dialog:has(> .lmc-header[data-customiser-layout="compact"]) > .lmc-body {
+.lmc-content[data-customiser-layout="compact"] > .lmc-body {
   flex: 0 1 auto;
 }
 .lmc-header {
@@ -194,6 +202,7 @@
   font-size: 13px;
   font-weight: 600;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 .lmc-option strong {
   font-size: inherit;
@@ -251,6 +260,7 @@
 .lmc-offer > span {
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .lmc-offer strong {
   display: block;
@@ -315,6 +325,7 @@
   padding-right: 13px;
   font-size: 13px;
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 .lmc-product small {
   display: block;
@@ -423,6 +434,14 @@
   justify-content: space-between;
   gap: 10px;
 }
+.lmc-actions > button {
+  min-width: 0;
+  line-height: 1.35;
+  text-align: center;
+}
+.lmc-actions > button > svg {
+  flex-shrink: 0;
+}
 .lmc-back {
   display: inline-flex;
   gap: 7px;
@@ -495,15 +514,49 @@
   position: sticky;
   bottom: 0;
 }
-@media (max-width: 479px) {
+@media (max-width: 800px) {
   .lm-dialog.lm-customise-dialog {
-    width: calc(100vw - 16px);
-    height: min(720px, calc(100dvh - 16px));
-    max-height: calc(100dvh - 16px);
-    border-radius: 16px;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    --tw-translate-x: 0px;
+    --tw-translate-y: 0px;
+    width: 100%;
+    max-width: 800px;
+    height: min(760px, calc(100dvh - max(12px, env(safe-area-inset-top, 0px))));
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)));
+    margin: 0 auto;
+    border-bottom: 0;
+    border-radius: 24px 24px 0 0;
+    transform: none;
+    translate: none;
+    animation: none;
   }
   .lmc-header {
-    padding: 17px 47px 12px 14px;
+    padding: 18px max(64px, env(safe-area-inset-right, 0px)) 14px
+      max(16px, env(safe-area-inset-left, 0px));
+  }
+  .lmc-steps {
+    padding-inline: max(16px, env(safe-area-inset-left, 0px))
+      max(16px, env(safe-area-inset-right, 0px));
+  }
+  .lmc-body {
+    padding-inline: max(16px, env(safe-area-inset-left, 0px))
+      max(16px, env(safe-area-inset-right, 0px));
+    scroll-padding-block: 16px;
+  }
+  .lmc-footer {
+    padding: 12px max(16px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .lm-dialog.lm-customise-dialog > button:last-child {
+    top: 12px;
+    right: max(12px, env(safe-area-inset-right, 0px));
+  }
+}
+@media (max-width: 479px) {
+  .lmc-header {
     gap: 10px;
   }
   .lmc-header > img {
@@ -514,13 +567,13 @@
     font-size: 22px;
   }
   .lmc-eyebrow {
-    font-size: 9px;
-  }
-  .lmc-description {
     font-size: 10px;
   }
+  .lmc-description {
+    font-size: 12px;
+  }
   .lmc-steps {
-    padding: 0 14px 11px;
+    padding-bottom: 11px;
     gap: 5px;
   }
   .lmc-steps button {
@@ -528,7 +581,7 @@
     gap: 5px;
   }
   .lmc-body {
-    padding: 15px 14px 18px;
+    padding-block: 15px 18px;
   }
   .lmc-step-heading {
     font-size: 21px;
@@ -551,9 +604,6 @@
   .lmc-offer strong {
     font-size: 12px;
   }
-  .lmc-footer {
-    padding: 12px 14px 10px;
-  }
   .lmc-back {
     padding: 9px 11px;
     font-size: 12px;
@@ -565,8 +615,42 @@
     font-size: 12px;
   }
 }
+@media (max-width: 359px) {
+  .lmc-option-grid,
+  .lmc-product-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* In landscape or at browser zoom, scroll the whole card instead of squeezing
+   the choices between an unshrinkable heading and footer. The close control
+   stays outside this wrapper and remains reachable throughout the scroll. */
+@media (max-height: 480px) {
+  .lm-dialog.lm-customise-dialog {
+    height: auto;
+  }
+  .lmc-content {
+    display: block;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: 16px;
+  }
+  .lmc-body {
+    overflow: visible;
+  }
+  .lmc-header {
+    padding-block: 12px;
+  }
+  .lmc-header > img {
+    width: 42px;
+    height: 36px;
+  }
+  .lmc-title {
+    font-size: 22px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .lm-customise-dialog,
+  .lmc-content,
   .lmc-body {
     animation: none !important;
     scroll-behavior: auto !important;
