@@ -1,0 +1,112 @@
+.md-order-notifications {
+  margin-block: 1rem;
+  padding: clamp(1rem, 3vw, 1.4rem);
+  border: 1px solid rgb(17 17 17 / 16%);
+  border-radius: 18px;
+  background: var(--md-paper, #fffdf7);
+  color: var(--md-ink, #111);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.md-order-notifications-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.md-order-notifications-heading > svg {
+  flex-shrink: 0;
+  color: var(--md-red, #d5141d);
+}
+.md-order-notifications-heading h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.md-order-notifications p {
+  margin: 0.65rem 0 0;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+.md-order-notifications .md-order-notifications-note {
+  color: #5a5049;
+  font-size: 0.82rem;
+}
+.md-order-notifications-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+.md-order-notifications-actions:empty {
+  display: none;
+}
+.md-order-notifications button,
+.md-order-notifications summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.md-order-notifications button > svg,
+.md-order-notifications summary > svg {
+  flex-shrink: 0;
+}
+.md-order-notifications-primary {
+  border: 1px solid var(--md-red, #d5141d);
+  background: var(--md-red, #d5141d);
+  color: white;
+}
+.md-order-notifications-secondary {
+  border: 1px solid rgb(17 17 17 / 24%);
+  background: transparent;
+  color: var(--md-ink, #111);
+}
+.md-order-notifications button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.md-order-notifications :is(button, summary, a):focus-visible {
+  outline: 3px solid var(--md-red, #d5141d);
+  outline-offset: 3px;
+}
+.md-order-notifications a {
+  color: #951018;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.md-order-notifications-install {
+  margin-top: 0.6rem;
+}
+.md-order-notifications-install summary {
+  justify-content: start;
+  padding-inline: 0;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.md-order-notifications-install ol {
+  padding-left: 1.25rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+.md-order-notifications .md-order-notifications-error {
+  color: #951018;
+  font-weight: 600;
+}
+.md-order-notifications .md-order-notifications-message {
+  color: #25522b;
+  font-weight: 600;
+}
+@media (max-width: 400px) {
+  .md-order-notifications-actions > button {
+    width: 100%;
+  }
+}

@@ -1,22 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LaunchCheckout } from "@/components/launch-checkout";
 import { seo } from "@/lib/seo";
+import { notificationReceiptMode } from "@/lib/mealdeck-order-notifications-browser";
 import checkoutCss from "../styles.launch-checkout.css?url";
 
 export const Route = createFileRoute("/checkout")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { order?: string; cancelled?: boolean; group?: boolean } => ({
-    ...(typeof search["order"] === "string" && /^[a-f0-9-]{36}$/i.test(search["order"])
-      ? { order: search["order"] }
-      : {}),
-    ...(search["cancelled"] === "1" || search["cancelled"] === 1 || search["cancelled"] === true
-      ? { cancelled: true }
-      : {}),
-    ...(search["group"] === "1" || search["group"] === 1 || search["group"] === true
-      ? { group: true }
-      : {}),
-  }),
+  ): {
+    order?: string;
+    cancelled?: boolean;
+    group?: boolean;
+    notificationMode?: "guest" | "member";
+  } => {
+    const order =
+      typeof search["order"] === "string" && /^[a-f0-9-]{36}$/i.test(search["order"])
+        ? search["order"]
+        : undefined;
+    const notificationMode = notificationReceiptMode(order, search["notificationMode"]);
+    return {
+      ...(order ? { order } : {}),
+      ...(notificationMode ? { notificationMode } : {}),
+      ...(search["cancelled"] === "1" || search["cancelled"] === 1 || search["cancelled"] === true
+        ? { cancelled: true }
+        : {}),
+      ...(search["group"] === "1" || search["group"] === 1 || search["group"] === true
+        ? { group: true }
+        : {}),
+    };
+  },
   head: () => {
     const metadata = seo({
       title: "Secure collection checkout | MealDeck",
@@ -34,10 +46,11 @@ export const Route = createFileRoute("/checkout")({
 });
 
 function CheckoutPage() {
-  const { order, cancelled, group } = Route.useSearch();
+  const { order, cancelled, group, notificationMode } = Route.useSearch();
   return (
     <LaunchCheckout
       {...(order ? { orderId: order } : {})}
+      {...(notificationMode ? { notificationMode } : {})}
       {...(cancelled ? { cancelled } : {})}
       groupExpected={group === true}
     />

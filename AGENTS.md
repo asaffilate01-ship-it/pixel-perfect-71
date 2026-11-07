@@ -11,6 +11,14 @@
 
 <!-- LOVABLE:END -->
 
+## Customer mobile order alerts and offers — 7 November 2026
+
+- Customer web push follows verified staff acceptance, preparation, all-items-ready plus sealed packing, and confirmed handover. Payment alone must not generate “accepted”; current collection/kerbside scope remains unchanged. Driver stages have reserved display support but no active delivery event adapter.
+- Guests may explicitly subscribe to their own active order through the existing private guest cookie; members use verified account authority. Per-order alerts create no member account or marketing consent. Preserve current consent checks, endpoint ownership, expiry, deduplication and per-order withdrawal overrides across the account subscription path.
+- Notification clicks may select a validated guest/member receipt transport for a valid order UUID, but never confer access. Keep the actual handover code and customer details on the authorised private receipt, out of lock-screen copy, URLs, logs and caches. An iPhone Home Screen installation must not be assumed to inherit an existing guest browser session.
+- Operations owner/admin offer campaigns require current scoped finance permissions and the enrolled-MFA check. Save a frozen draft, show its preview/audience/expiry and require the operator's explicit send action. Recheck marketing consent before every send. A migration, worker activation or draft creation must never broadcast a campaign.
+- Use `docs/mealdeck-customer-mobile-notifications.md` for the two additive independent-database migrations, environment/Vault configuration, worker commissioning and validation. Explicit environment OFF overrides Vault. Configuration, hosted publication, worker health, push-service acceptance and physical-phone display are different evidence; preserve truthful availability and withdrawal controls.
+
 ## WhatsApp ordering implementation — 7 November 2026
 
 - `/api/whatsapp/webhook` accepts exact-account/number signed Meta Cloud API events into a durable scoped inbox. The supervised worker executes deterministic live-menu intake and optional strict AI menu proposals. No model/payment screenshot/chat text grants order, payment or staff authority.

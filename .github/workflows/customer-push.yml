@@ -1,0 +1,240 @@
+name: Verify customer mobile notifications
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/customer-push.yml"
+      - "package.json"
+      - "bun.lock"
+      - "public/sw.js"
+      - "src/lib/mealdeck-*notification*.ts"
+      - "src/lib/mealdeck-*push*.ts"
+      - "src/lib/mealdeck-customer.ts"
+      - "src/lib/mealdeck-customer-browser.ts"
+      - "src/lib/mealdeck-customer.functions.ts"
+      - "src/lib/mealdeck-customer-return.ts"
+      - "src/lib/mealdeck-checkout-browser.ts"
+      - "src/lib/mealdeck-checkout-selection.ts"
+      - "src/lib/mealdeck-payment-server-core.ts"
+      - "src/lib/mealdeck-guest-session.server.ts"
+      - "src/lib/mealdeck-runtime-config.ts"
+      - "src/lib/launch-menu-catalogue.ts"
+      - "src/routes/api*notifications*.ts"
+      - "src/routes/checkout.tsx"
+      - "src/components/order-notifications-card.*"
+      - "src/components/ops/notification-campaign-panel.*"
+      - "src/components/ops/operations-workspace.tsx"
+      - "src/components/launch-checkout.tsx"
+      - "src/components/customer-account.tsx"
+      - "src/components/customer-orders.tsx"
+      - "tests/mealdeck-*notification*.test.ts"
+      - "tests/mealdeck-*push*.test.ts"
+      - "tests/mealdeck-customer.test.ts"
+      - "tests/mealdeck-customer-return.test.ts"
+      - "tests/mealdeck-checkout-browser.test.ts"
+      - "tests/mealdeck-pwa*.test.ts"
+      - "tests/postgres/*push*-behavior.mjs"
+      - "tests/postgres/package*.json"
+      - "tests/postgres/harness.mjs"
+      - "tests/postgres/standalone-auth-fixture.sql"
+      - "tests/postgres/paid-order-numbers-fixture.mjs"
+      - "tests/postgres/ordering-rooms-fixture.mjs"
+      - "tests/postgres/shared-terminal-payments-fixture.mjs"
+      - "tests/postgres/stripe-checkout-fixture.mjs"
+      - "tests/postgres/guest-checkout-fixture.mjs"
+      - "deploy/mealdeck/customer-*.mjs"
+      - "deploy/mealdeck/*checkout*.mjs"
+      - "deploy/mealdeck/*printer*.mjs"
+      - "deploy/mealdeck/paid-order-numbers.mjs"
+      - "deploy/mealdeck/kds-workflow.mjs"
+      - "deploy/mealdeck/kitchen-availability.mjs"
+      - "deploy/mealdeck/kerbside-contact.mjs"
+      - "deploy/mealdeck/shared-terminal-payments.mjs"
+      - "deploy/mealdeck/ordering-rooms.mjs"
+      - "deploy/mealdeck/build.mjs"
+      - "deploy/mealdeck/manifest.json"
+      - "deploy/mealdeck/source-migrations/*.sql"
+      - "deploy/mealdeck/catalogue-import.mjs"
+      - "deploy/mealdeck/catalogue*.template.sql"
+      - "deploy/mealdeck/catalogue/placeholder-price-baseline.json"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_customer_*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_push_*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_*checkout*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_*printer*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_kds_*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_kitchen_availability.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_kerbside_pickup_contact.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_shared_terminal_payments.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_ordering_rooms.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_paid_order_numbers.sql"
+      - "supabase/migrations/*_mealdeck_ops_*.sql"
+      - "supabase/migrations/*_mealdeck_group_invite_foundation.sql"
+      - "supabase/migrations/*_mealdeck_fulfilment_foundation.sql"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/customer-push.yml"
+      - "package.json"
+      - "bun.lock"
+      - "public/sw.js"
+      - "src/lib/mealdeck-*notification*.ts"
+      - "src/lib/mealdeck-*push*.ts"
+      - "src/lib/mealdeck-customer.ts"
+      - "src/lib/mealdeck-customer-browser.ts"
+      - "src/lib/mealdeck-customer.functions.ts"
+      - "src/lib/mealdeck-customer-return.ts"
+      - "src/lib/mealdeck-checkout-browser.ts"
+      - "src/lib/mealdeck-checkout-selection.ts"
+      - "src/lib/mealdeck-payment-server-core.ts"
+      - "src/lib/mealdeck-guest-session.server.ts"
+      - "src/lib/mealdeck-runtime-config.ts"
+      - "src/lib/launch-menu-catalogue.ts"
+      - "src/routes/api*notifications*.ts"
+      - "src/routes/checkout.tsx"
+      - "src/components/order-notifications-card.*"
+      - "src/components/ops/notification-campaign-panel.*"
+      - "src/components/ops/operations-workspace.tsx"
+      - "src/components/launch-checkout.tsx"
+      - "src/components/customer-account.tsx"
+      - "src/components/customer-orders.tsx"
+      - "tests/mealdeck-*notification*.test.ts"
+      - "tests/mealdeck-*push*.test.ts"
+      - "tests/mealdeck-customer.test.ts"
+      - "tests/mealdeck-customer-return.test.ts"
+      - "tests/mealdeck-checkout-browser.test.ts"
+      - "tests/mealdeck-pwa*.test.ts"
+      - "tests/postgres/*push*-behavior.mjs"
+      - "tests/postgres/package*.json"
+      - "tests/postgres/harness.mjs"
+      - "tests/postgres/standalone-auth-fixture.sql"
+      - "tests/postgres/paid-order-numbers-fixture.mjs"
+      - "tests/postgres/ordering-rooms-fixture.mjs"
+      - "tests/postgres/shared-terminal-payments-fixture.mjs"
+      - "tests/postgres/stripe-checkout-fixture.mjs"
+      - "tests/postgres/guest-checkout-fixture.mjs"
+      - "deploy/mealdeck/customer-*.mjs"
+      - "deploy/mealdeck/*checkout*.mjs"
+      - "deploy/mealdeck/*printer*.mjs"
+      - "deploy/mealdeck/paid-order-numbers.mjs"
+      - "deploy/mealdeck/kds-workflow.mjs"
+      - "deploy/mealdeck/kitchen-availability.mjs"
+      - "deploy/mealdeck/kerbside-contact.mjs"
+      - "deploy/mealdeck/shared-terminal-payments.mjs"
+      - "deploy/mealdeck/ordering-rooms.mjs"
+      - "deploy/mealdeck/build.mjs"
+      - "deploy/mealdeck/manifest.json"
+      - "deploy/mealdeck/source-migrations/*.sql"
+      - "deploy/mealdeck/catalogue-import.mjs"
+      - "deploy/mealdeck/catalogue*.template.sql"
+      - "deploy/mealdeck/catalogue/placeholder-price-baseline.json"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_customer_*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_push_*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_*checkout*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_*printer*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_kds_*.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_kitchen_availability.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_kerbside_pickup_contact.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_shared_terminal_payments.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_ordering_rooms.sql"
+      - "deploy/mealdeck/post-install-migrations/*_mealdeck_paid_order_numbers.sql"
+      - "supabase/migrations/*_mealdeck_ops_*.sql"
+      - "supabase/migrations/*_mealdeck_group_invite_foundation.sql"
+      - "supabase/migrations/*_mealdeck_fulfilment_foundation.sql"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: customer-push-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  customer-push:
+    name: Browser, server, service worker and encrypted transport
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install locked application dependencies
+        run: bun install --frozen-lockfile
+      - name: Exercise consent, identity, delivery outcomes and safe notification navigation
+        run: >-
+          bun test
+          tests/mealdeck-order-notifications-browser.test.ts
+          tests/mealdeck-notification-campaigns-browser.test.ts
+          tests/mealdeck-notifications-server.test.ts
+          tests/mealdeck-web-push.test.ts
+          tests/mealdeck-push-service-worker.test.ts
+          tests/mealdeck-customer.test.ts
+          tests/mealdeck-customer-return.test.ts
+          tests/mealdeck-checkout-browser.test.ts
+          tests/mealdeck-pwa.test.ts
+          tests/mealdeck-pwa-provider.test.ts
+      - name: Lint notification implementation and isolated tests
+        run: >-
+          bunx --no-install eslint
+          public/sw.js
+          src/lib/mealdeck-customer-notifications.ts
+          src/lib/mealdeck-order-notifications-browser.ts
+          src/lib/mealdeck-notification-campaigns-browser.ts
+          src/lib/mealdeck-notifications.server.ts
+          src/lib/mealdeck-web-push.server.ts
+          src/lib/mealdeck-push-runtime.server.ts
+          src/routes/api.notifications.ts
+          src/routes/api.notifications.worker.ts
+          src/routes/api.ops.notifications.ts
+          src/components/order-notifications-card.tsx
+          src/components/ops/notification-campaign-panel.tsx
+          tests/mealdeck-order-notifications-browser.test.ts
+          tests/mealdeck-notification-campaigns-browser.test.ts
+          tests/mealdeck-notifications-server.test.ts
+          tests/mealdeck-web-push.test.ts
+          tests/mealdeck-push-service-worker.test.ts
+
+  customer-push-postgres17:
+    name: PostgreSQL 17 — ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [customer-push, push-hosted-dispatch]
+    # Each matrix job receives an empty database. The harness intentionally
+    # refuses to reuse a populated database or connect to a remote project.
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_customer_push
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_customer_push"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated locked PostgreSQL test dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Exercise scoped consent, queue transitions and hosted dispatch boundaries
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_customer_push
+          MEALDECK_TEST_SUITE: ${{ matrix.suite }}
+        run: node "tests/postgres/${MEALDECK_TEST_SUITE}-behavior.mjs" --native
