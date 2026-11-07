@@ -52,6 +52,8 @@ jobs:
           --rule 'prettier/prettier: off'
       - name: Installable app cache isolation and offline behavior
         run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
+      - name: Page loading and failed-route recovery
+        run: node --import tsx --test tests/mealdeck-route-recovery.test.tsx
       - name: Installable app implementation checks
         run: |
           node --check public/sw.js
@@ -129,6 +131,10 @@ jobs:
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - name: MealDeck Play game regressions
         run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts tests/hero-food-deck.test.ts
+      - name: Homepage motion, native zoom and lifecycle cleanup
+        run: |
+          bun test tests/deck-motion.test.ts
+          bunx eslint src/hooks/use-deck-motion.ts src/components/marketing/rotating-brand-deck.tsx src/components/mobile-tab-bar.tsx tests/deck-motion.test.ts --rule 'prettier/prettier: off'
       - name: Marketplace discovery, saved basket and category regressions
         run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts tests/mealdeck-preview-basket.test.ts
       - name: Sample-deck arithmetic and accessibility implementation lint

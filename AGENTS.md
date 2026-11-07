@@ -100,7 +100,7 @@ The following records the earlier local flow and its compatibility requirements.
 - SEO head tags come from the shared `seo()` helper with mealdeck.co.uk as the canonical base — keeps canonical/og consistent per page.
 - Blog posts live in a static list and render as playing-card tiles — no backend needed for content yet.
 - Global light/dark appearance is controlled by the shared theme provider and semantic CSS tokens — keeps every route and overlay synchronized.
-- The homepage card showcase uses a brief all-brand fan-to-deck intro before its repeating brand reveal — keeps food primary while retaining the playing-card identity.
+- The homepage card showcase uses a brief all-brand fan-to-deck intro on visible desktop screens before its repeating brand reveal. Following the 7 November iPhone zoom crash report, keep only one cycling card face mounted; phones/coarse pointers skip the fan. Pause timers and decorative motion off-screen, while hidden or zoomed, and for reduced-motion users. Keep native pinch zoom enabled. See `docs/mealdeck-iphone-zoom.md`.
 - Hero card ranks and suit counts come from a separate browser-safe deck definition, leaving restaurant availability untouched; corner emblems are extracted from the approved card artwork.
 - Hero and offer cards import the same food-suit artwork map so their corner emblems stay consistent.
 - Play uses a separate realistic food artwork map so game imagery can improve without changing approved logo and marketing card emblems.

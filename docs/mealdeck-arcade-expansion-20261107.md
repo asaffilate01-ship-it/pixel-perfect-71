@@ -1,7 +1,7 @@
 # MealDeck arcade expansion and mobile popup review
 
 Date: 7 November 2026  
-Status: source implementation and local review; release verification and publication pending.
+Status: source implementation and local review completed. Release checks, publication and live acceptance are recorded in [PR #118](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/118).
 
 ## Scope and product decisions
 
@@ -78,7 +78,7 @@ Scoped formatting, lint for the four changed popup TSX components, and `git diff
 
 ## Integrated source acceptance
 
-The existing main-branch updates were merged normally, preserving the runtime-gated WhatsApp link and revised opening hours. The following results describe this integrated source. GitHub checks and publication are separate release steps and are recorded with the associated pull request.
+The existing main-branch updates were merged normally, preserving the runtime-gated WhatsApp link, revised opening hours, route-loading recovery and the concurrent iPhone homepage rendering repair. The following results describe this integrated source. GitHub checks and publication are separate release steps and are recorded with the associated pull request.
 
 | Gate                                             | Final result                                                                                                                     |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |

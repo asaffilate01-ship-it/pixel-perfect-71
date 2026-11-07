@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import cardBack from "@/assets/mealdeck-card-back.png";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { mealDeckArtwork, logoDimensionsBySrc } from "@/lib/brand-logos";
@@ -6,13 +6,21 @@ import { marketingBrands } from "@/lib/marketing-brands";
 import { chefTitles, heroFoodDeck } from "@/lib/hero-food-deck";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
+import { useDeckMotion } from "@/hooks/use-deck-motion";
 const stepSeconds = 3;
 const introDuration = 4600;
 
 function CardBack({ side }: { side: "left" | "right" }) {
   return (
     <div className={`md-deck-shadow md-deck-shadow-${side}`} aria-hidden="true">
-      <img src={cardBack} alt="" className="md-deck-back-art" />
+      <img
+        src={cardBack}
+        alt=""
+        className="md-deck-back-art"
+        width={896}
+        height={1200}
+        decoding="async"
+      />
     </div>
   );
 }
@@ -31,7 +39,11 @@ function shuffleBrands<T>(items: T[]): T[] {
 }
 
 export function RotatingBrandDeck() {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const { canAnimate, simplifiedMotion } = useDeckMotion(stageRef);
   const [introComplete, setIntroComplete] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
   // Random starting order each load — shuffled after mount so SSR and the
   // first client render stay identical (no hydration mismatch).
   const [brandOrder, setBrandOrder] = useState(marketingBrands);
@@ -53,36 +65,76 @@ export function RotatingBrandDeck() {
       logo: brand?.logo ?? mealDeckArtwork.src,
     };
   });
-  // Show every restaurant once in the opening fan; the full four-suit deck
-  // follows, with the MealDeck artwork as a separate title card.
-  const cards = [
-    logoCard,
-    ...(introComplete ? brandCards : brandCards.slice(0, brandOrder.length)),
-  ];
+  // The full food deck is data, not 53 permanently animated DOM surfaces.
+  // Keep the brief all-brand fan on desktops, then mount only the visible
+  // card. Phones, zoomed pages and reduced-motion visitors start with one.
+  const deck = [logoCard, ...brandCards];
+  const animate = canAnimate && !paused;
+  const gathering = animate && !simplifiedMotion && !introComplete;
+  const cards = gathering
+    ? [logoCard, ...brandCards.slice(0, brandOrder.length)]
+    : [deck[activeIndex] ?? logoCard];
+  const nextIndex = (activeIndex + 1) % deck.length;
+  const nextLogo = deck[nextIndex]?.logo ?? mealDeckArtwork.src;
 
   useEffect(() => {
     setBrandOrder(shuffleBrands(marketingBrands));
-    const timer = window.setTimeout(() => setIntroComplete(true), introDuration);
-    return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!animate) return;
+    if (!introComplete) {
+      const timer = window.setTimeout(
+        () => setIntroComplete(true),
+        simplifiedMotion ? 0 : introDuration,
+      );
+      return () => window.clearTimeout(timer);
+    }
+    // Warm only the next logo. Slow/failed downloads leave the current face
+    // visible instead of showing empty cards or eagerly loading the full deck.
+    const image = new Image();
+    image.decoding = "async";
+    let elapsed = false;
+    let loaded = false;
+    let cancelled = false;
+    const advance = () => {
+      if (!cancelled && elapsed && loaded) setActiveIndex(nextIndex);
+    };
+    image.onload = () => {
+      loaded = true;
+      advance();
+    };
+    image.src = nextLogo;
+    loaded = image.complete && image.naturalWidth > 0;
+    const timer = window.setTimeout(() => {
+      elapsed = true;
+      advance();
+    }, stepSeconds * 1000);
+    return () => {
+      cancelled = true;
+      image.onload = null;
+      window.clearTimeout(timer);
+    };
+  }, [animate, introComplete, simplifiedMotion, nextIndex, nextLogo]);
 
   return (
     <div
-      className={`md-deck-stage ${introComplete ? "is-cycling" : "is-gathering"}`}
-      aria-label="Restaurant brand cards gathering into one MealDeck order"
+      ref={stageRef}
+      className={`md-deck-stage ${gathering ? "is-gathering" : animate && introComplete ? "is-cycling" : "is-static"}${simplifiedMotion ? " is-simple" : ""}`}
+      aria-label="MealDeck restaurant brand showcase"
     >
       <CardBack side="left" />
       <CardBack side="right" />
       {cards.map((card, index) => {
-        const isMealDeck = index === 0;
+        const isMealDeck = card.id === "mealdeck";
         const centeredIndex = index - (cards.length - 1) / 2;
         return (
           <div
-            key={`${introComplete ? "cycle" : "intro"}-${card.id}`}
+            key={`${gathering ? "intro" : "cycle"}-${card.id}`}
             className="md-deck-card"
+            aria-hidden="true"
             style={
               {
-                "--card-delay": `${index * stepSeconds}s`,
                 "--fan-x": `${centeredIndex * 15}px`,
                 "--fan-y": `${Math.abs(centeredIndex) * 3.2}px`,
                 "--fan-rotate": `${centeredIndex * 4.2}deg`,
@@ -95,7 +147,7 @@ export function RotatingBrandDeck() {
               aria-label={`${card.name}${isMealDeck ? "" : `, ${chefTitles[card.rank] ?? card.rank} of ${card.suit}`}`}
             >
               {isMealDeck ? (
-                <MealDeckLogo className="md-deck-card-art" />
+                <MealDeckLogo className="md-deck-card-art" decorative />
               ) : (
                 <>
                   <span className="md-deck-corner md-deck-corner-tl" aria-hidden="true">
@@ -124,6 +176,17 @@ export function RotatingBrandDeck() {
           </div>
         );
       })}
+      <button
+        type="button"
+        className="md-deck-motion-control"
+        aria-pressed={paused}
+        onClick={() => {
+          setIntroComplete(true);
+          setPaused((value) => !value);
+        }}
+      >
+        {paused ? "Resume cards" : "Pause cards"}
+      </button>
     </div>
   );
 }

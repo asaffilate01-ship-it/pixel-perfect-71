@@ -3,6 +3,7 @@ import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BackToTop } from "@/components/back-to-top";
 import { SkipToMainContent } from "@/components/skip-to-main-content";
 import { ThemeProvider } from "@/components/theme-provider";
+import { MealDeckPageLoading } from "@/components/mealdeck-page-loading";
 import { PwaConnectionNotice, PwaProvider } from "@/components/pwa-provider";
 import { isLaunchMenuRoute } from "@/lib/launch-menu-navigation";
 import { isMealDeckStaffPath, mealDeckPwaSurface } from "@/lib/mealdeck-pwa-surface";
@@ -19,7 +20,8 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { isRouteAssetError, recoverMealDeckRoute } from "@/lib/mealdeck-route-recovery";
 
 import appCss from "../styles.css?url";
 import marketingCss from "../styles.mealdeck-rebuild.css?url";
@@ -60,28 +62,57 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
+  const [retrying, setRetrying] = useState(false);
+  const retryInFlight = useRef(false);
+  const assetError = isRouteAssetError(error);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
+  async function retry() {
+    if (retryInFlight.current) return;
+    retryInFlight.current = true;
+    setRetrying(true);
+    let reloading = false;
+    try {
+      await recoverMealDeckRoute(error, {
+        invalidate: () => router.invalidate({ sync: true }),
+        reset,
+        reload: () => {
+          window.location.reload();
+          reloading = true;
+        },
+      });
+    } catch (retryError) {
+      reportLovableError(retryError, { boundary: "tanstack_root_retry" });
+    } finally {
+      if (!reloading) {
+        retryInFlight.current = false;
+        setRetrying(false);
+      }
+    }
+  }
+
+  if (retrying) return <MealDeckPageLoading />;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          {assetError ? "This page needs a refresh" : "This page didn't load"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          {assetError
+            ? "Check your connection, then reload to get the latest page."
+            : "Something went wrong on our end. You can try again or head back home."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
+            type="button"
+            onClick={() => void retry()}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            {assetError ? "Reload page" : "Try again"}
           </button>
           <a
             href="/"
