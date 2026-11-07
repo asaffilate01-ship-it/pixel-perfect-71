@@ -1,0 +1,104 @@
+name: Publish MealDeck Printer v0.2.2 Direct
+
+on:
+  push:
+    branches:
+      - "release/printer-v0.2.2-direct-20261107"
+    paths:
+      - ".github/workflows/publish-printer-v022-direct.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/mealdeck-printer/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Install printer dependencies
+        working-directory: apps/mealdeck-printer
+        run: |
+          npm ci --ignore-scripts
+          npm run sync:android
+
+      - name: Install Android build tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build unsigned release
+        working-directory: apps/mealdeck-printer/android
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Generate permanent MealDeck signing identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          STORE_PASS="$(openssl rand -hex 24)"
+          printf '%s' "$STORE_PASS" > "$RUNNER_TEMP/mealdeck-printer-storepass.txt"
+          chmod 600 "$RUNNER_TEMP/mealdeck-printer-storepass.txt"
+          keytool -genkeypair             -keystore "$RUNNER_TEMP/mealdeck-printer-release.p12"             -storetype PKCS12             -storepass "$STORE_PASS"             -keypass "$STORE_PASS"             -alias mealdeck-printer-release             -keyalg RSA             -keysize 4096             -validity 10000             -dname "CN=MealDeck Printer, OU=Operations, O=313 Brands Ltd, L=Luton, ST=England, C=GB"
+
+      - name: Sign, verify and stage v0.2.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/36.0.0"
+          UNSIGNED="apps/mealdeck-printer/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          ALIGNED="$RUNNER_TEMP/mealdeck-printer-h10s-0.2.2-aligned.apk"
+          OUTPUT="public/downloads/mealdeck-printer-h10s-0.2.2.apk"
+          mkdir -p public/downloads
+          "$BUILD_TOOLS/zipalign" -f -p 4 "$UNSIGNED" "$ALIGNED"
+          "$BUILD_TOOLS/apksigner" sign             --ks "$RUNNER_TEMP/mealdeck-printer-release.p12"             --ks-key-alias mealdeck-printer-release             --ks-pass "file:$RUNNER_TEMP/mealdeck-printer-storepass.txt"             --key-pass "file:$RUNNER_TEMP/mealdeck-printer-storepass.txt"             --out "$OUTPUT"             "$ALIGNED"
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$OUTPUT" | tee "$RUNNER_TEMP/signature.txt"
+          "$BUILD_TOOLS/aapt" dump badging "$OUTPUT" | tee "$RUNNER_TEMP/package.txt"
+          grep -q "package: name='uk.co.mealdeck.printer' versionCode='4' versionName='0.2.2'" "$RUNNER_TEMP/package.txt"
+          sha256sum "$OUTPUT" | tee "public/downloads/mealdeck-printer-h10s-0.2.2.apk.sha256"
+
+      - name: Encrypt signing backup
+        shell: bash
+        env:
+          RECOVERY_CERT_B64: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUZlekNDQTJPZ0F3SUJBZ0lVU3d6emJFU0RPY0psVHNrL0ozL3JyT0JTUWRzd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1RURWxNQ01HQTFVRUF3d2NUV1ZoYkVSbFkyc2dVSEpwYm5SbGNpQkRTU0JTWldOdmRtVnllVEVYTUJVRwpBMVVFQ2d3T016RXpJRUp5WVc1a2N5Qk1kR1F4Q3pBSkJnTlZCQVlUQWtkQ01CNFhEVEkyTVRFd056SXpNVGMxCk1Wb1hEVE0yTVRFd05ESXpNVGMxTVZvd1RURWxNQ01HQTFVRUF3d2NUV1ZoYkVSbFkyc2dVSEpwYm5SbGNpQkQKU1NCU1pXTnZkbVZ5ZVRFWE1CVUdBMVVFQ2d3T016RXpJRUp5WVc1a2N5Qk1kR1F4Q3pBSkJnTlZCQVlUQWtkQwpNSUlDSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQWc4QU1JSUNDZ0tDQWdFQXVodTYzVGZjWENETGFkWUNER2dDCjk3b1B2ZmF6SzUwU2xjMCtDaTlKdGtYMGtIcEdpYTIzRjFaZ3crRXdzTnVuUnVaUkJCc3dRU2hPS1JGbjV0dVIKMUJYMThaTXlVNERlN3M5MnpKTzV2dlE1VFlwbGpkdmE5VXpjZGpIakdGTE5kcnY0NVczNXh6eWxQMVlVQmFkWApKSDc3eml5L3pOYkNtMlh1TUpJOEJBbzZmNDlFb3JkeS9pNjByT3I1dUJwUHNncHExVVZ4Y0lqMFVISUtIVnJLCmV1TVFsN3Y5ZFBMb3hjOTJuajlwbnZmRm1aampnWWU2UHpiVnp2RlpoZ2JjamxBU0ZzRkdoSXVrQ3Q3UVhDZlUKZklEc0IySU1iYTFRemdxV0Q4WEJaZ2FiUVFmeEVsZFV5U2JMQjhOMlJaZTdObVZJVGNsV1pLc0N2aTIvaUR0LwpUczRpTkk3UkdoRWNBMWYrL2I5bTFiR3RlMGpPSGdJc2Zvb0lZcVR5RTF0MHNRVTZJdUhYaG9DR291TUM3bHVyCmp2N3E1WUxMdDZ2U2VIYTY4Ymw4TWdIeERUemZxbkgvWDVXQjdEcjV3R0h6MjgvbzMxbUNRKzdWZVFIU0pKUDgKVzlHTHEzb1hCZGVFRy82MXdzSit4MXBybWdvUDE3cldIRk1lREV4Q29Ja1JwQk5vcDlkR1hqYzYyQXdENWxqSwpSV0ZpbGIyajh4bUYyMktBOHY3SmhDb0xxU2wwWWI4UVQwSlRPa0E4MEhHd3J1WnQ5eCtUN0hlSnF1Z2dBa01ZCnhuRHozS0I2UkdqNHMwRXJiU2FvTkFMN3kvb294MVhpNE5McGpJVmJhdmdmOE9YS1E0WUI2UElhcGIwazRnY1MKTjJER1d3YmJFZzlRcVllcCt5R0MrZHNDQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFRkFUeWo3Qkp1UE1nUmUxMgpVVjVWMXM5VFZZV1JNQjhHQTFVZEl3UVlNQmFBRkFUeWo3Qkp1UE1nUmUxMlVWNVYxczlUVllXUk1BOEdBMVVkCkV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnSUJBSDg1dW91K2RTSGp5clZ2TkdsK216VUIKN2JoUzF1VmphRFI2cjFKb3cxVVBwdm5TaU1oTTJXWWxzNXY1R2ZJSXhQc1I4ZVM4bDBPUFlpTkh4SUs2OUpaaApiVzhtaVlvd2ltWVEvZ0tKdDR5MCtuemxySnNycWpIenRDZG81TWlmc3NPaEZHRDB2QXo2QnBoQ3dZV1BlYjdNCkhZNkFIQUU1ZXdnNEEyYVd1dU04cWFuZ292NFI5QzFmUnJoaFp1ODVPTFhoaXptWkhrc0ZianRVcUw2TmFDbk0KZkJ1aU9UdjV6NWt1Sm1HdzJLSEFDV3ZmU1lBaXZCeWNCekhubE13UnRNcUp0SEJ1ak9aODY0SS8zTnNjNjZxMgp0VUF4bk5OZUozZExmMmlQWWMzSmcwU3FxZU9heHpja3FONlJtam9FWWVxSUY0Z0RtbU9Hd2JLYkt1M01HSE5kCjNZN2dEZG52d2l4SDV2QWc2U2p1MHZjdXdEcEZBVXBDVXE5RTIyNWZUYkVGV3ZtMGwyOWhwcTYzZ1ExT1dwdm8KT1BVMUp1MitQM2tPTXF2cHBjUUdaa25KNExKVHdSd1d5Wmoralhmd1dvSWRHR3ZKdHJJdmF6em5QTm1zb01XcApROGF0dVdIQzFzMGhncmxHeFNDV0NhKzdmck9QazRFV1Nid0tCd0p2Y3E4UzlsbkRCaHZoc1YwUzNYbUxiQTF2CnRCM1lXL1A1VlR3bXhXQnkrdk9odWlQZFVvSnFLejRMSUhpc3VtblFBVjJXdklaVmpRMy85YUUzc004US94UGYKN2xPdUxTS2JJcldRL3JIS3RLNEF6K0llaDVjWjFXRFpkYjNoUHVDamFYdEpNY3ZEN1BadEVrRWgzRGoxdGNKSQpOcjJ2Slo1N3JTMjZPSEE4bFBRNgotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg=="
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/signing-backup"
+          cp "$RUNNER_TEMP/mealdeck-printer-release.p12" "$RUNNER_TEMP/signing-backup/"
+          cp "$RUNNER_TEMP/mealdeck-printer-storepass.txt" "$RUNNER_TEMP/signing-backup/store-password.txt"
+          cp "$RUNNER_TEMP/signature.txt" "$RUNNER_TEMP/signing-backup/signature.txt"
+          tar -C "$RUNNER_TEMP/signing-backup" -czf "$RUNNER_TEMP/mealdeck-printer-signing-backup.tar.gz" .
+          printf '%s' "$RECOVERY_CERT_B64" | base64 -d > "$RUNNER_TEMP/recovery-cert.pem"
+          openssl cms -encrypt -binary -aes256             -in "$RUNNER_TEMP/mealdeck-printer-signing-backup.tar.gz"             -out "$RUNNER_TEMP/mealdeck-printer-signing-backup.cms"             -outform DER             "$RUNNER_TEMP/recovery-cert.pem"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-printer-v0.2.2-signing-backup-encrypted
+          path: ${{ runner.temp }}/mealdeck-printer-signing-backup.cms
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Commit signed APK and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "MealDeck Release Bot"
+          git config user.email "release-bot@mealdeck.co.uk"
+          git add public/downloads/mealdeck-printer-h10s-0.2.2.apk public/downloads/mealdeck-printer-h10s-0.2.2.apk.sha256
+          git commit -m "Publish signed MealDeck Printer v0.2.2 [skip ci]"
+          git push origin "HEAD:$GITHUB_REF_NAME"
