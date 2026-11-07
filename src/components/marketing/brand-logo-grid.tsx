@@ -6,8 +6,9 @@ function BrandTile({ brand }: { brand: MarketingBrand }) {
   const hasMenu = !!getLaunchMenuBrand(brand.id);
   return (
     <Link
-      to="/menus"
-      search={{ brand: brand.id }}
+      {...(hasMenu
+        ? { to: "/menus/$brandId" as const, params: { brandId: brand.id }, search: {} }
+        : { to: "/menus" as const, search: { brand: brand.id } })}
       className="md-brand-tile"
       aria-label={
         hasMenu

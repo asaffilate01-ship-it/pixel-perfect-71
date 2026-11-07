@@ -370,7 +370,9 @@ jobs:
           --rule 'prettier/prettier: off'
 
       - name: Branded authentication email and public search metadata
-        run: bun test tests/mealdeck-auth-email.test.ts tests/mealdeck-seo.test.ts
+        run: |
+          bun test tests/mealdeck-auth-email.test.ts tests/mealdeck-seo.test.ts tests/mealdeck-menu-render.test.ts
+          node --check scripts/audit-mealdeck-seo.mjs
 
       - name: Authentication email and search metadata implementation lint
         run: >-
@@ -379,7 +381,12 @@ jobs:
           src/components/auth-email-confirmation.tsx src/routes/api.auth.email.ts
           src/routes/auth.confirm.tsx scripts/build-auth-email-templates.ts
           src/lib/mealdeck-sitemap.ts 'src/routes/sitemap[.]xml.tsx'
+          src/lib/mealdeck-menu-seo.ts src/lib/mealdeck-menu-render.functions.ts
+          src/lib/mealdeck-menu-render.server.ts 'src/routes/menus.$brandId.tsx'
+          src/components/marketing/local-menu-discovery.tsx
+          src/components/marketing/brand-logo-grid.tsx
           tests/mealdeck-auth-email.test.ts tests/mealdeck-seo.test.ts
+          tests/mealdeck-menu-render.test.ts
           --rule 'prettier/prettier: off'
 
       - name: Shared and Terminal server and payment UI lint

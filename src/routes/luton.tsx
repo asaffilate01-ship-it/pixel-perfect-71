@@ -9,19 +9,17 @@ import {
 export const Route = createFileRoute("/luton")({
   head: () => ({
     ...seo({
-      title: "Food and burgers in Luton — Five launch menus | MealDeck",
+      title: "MealDeck Luton | Takeaway Menus & Kerbside Collection",
       description:
-        "Explore Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries, mac and cheese and Moktl mocktails. Luton opening: 6–8 November 2026.",
+        "Find MealDeck at 314–318 Selbourne Road, LU4 8NU. Browse smash burgers, wings, loaded fries, mocktails and milk cake for collection or kerbside.",
       path: "/luton",
-      keywords:
-        "MealDeck Luton, food in Luton, burgers in Luton, Skorch burgers Luton, Tavo chicken Luton, Moktl mocktail lounge Luton, Souvano Greek and Turkish food, Load’d loaded fries, mac and cheese",
     }),
     scripts: [ldScript({ "@context": "https://schema.org", ...lutonBusiness })],
   }),
   component: () => (
     <LocationPage
       town="Luton"
-      intro="Food in Luton for every craving: Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails. Opening 6–8 November 2026, with one basket for collection or kerbside. Guests can order without registering during our first three days’ opening hours, with no loyalty points on guest orders."
+      intro="Our five Luton menus bring Skorch smash burgers, Tavo chicken wings and tenders, Souvano doner and lamb chops, Load’d loaded fries and mac and cheese, and Moktl mocktails into one takeaway order. Collect from Selbourne Road or choose kerbside pickup."
       hours={MEALDECK_LAUNCH_HOURS_LABEL}
       fulfilment="Collection · Kerbside · Delivery unavailable"
       areas={[
@@ -30,6 +28,10 @@ export const Route = createFileRoute("/luton")({
       ]}
       includeCafe1={false}
       faqs={[
+        {
+          q: "Is Meal Deck the same as MealDeck?",
+          a: "Yes. Our name is written MealDeck, and this is the official MealDeck Luton website. Our collection kitchen is at 314–318 Selbourne Road, Luton, LU4 8NU. Browse the five menus and place one order for collection or kerbside during kitchen opening hours.",
+        },
         {
           q: "When is MealDeck opening in Luton?",
           a: `Our opening weekend is 6–8 November 2026. ${MEALDECK_LAUNCH_HOURS_PROSE} Order online for Luton collection or kerbside during kitchen opening hours.`,
@@ -41,6 +43,14 @@ export const Route = createFileRoute("/luton")({
         {
           q: "Where can I find burgers in Luton?",
           a: "Explore Skorch burgers in Luton for smash burgers, or browse Tavo chicken for chicken burgers, wings and tenders. Both are part of MealDeck’s first five menus, with the exact choices and current prices shown on the menu page.",
+        },
+        {
+          q: "Can I order loaded fries and mac and cheese in Luton?",
+          a: "Load’d has loaded fries, loaded mac and cheese, and Full House boxes combining both. Choose from fried chicken, grilled chicken, chicken shawarma and smash beef toppings. Add dishes from the other MealDeck menus to the same basket for one collection.",
+        },
+        {
+          q: "Does MealDeck have milk cake and desserts?",
+          a: "Biscoff Milkcake and Oreo Milkcake are listed in the Desserts section of every launch menu. Browse the menu for current prices and availability, then add dessert to your food or mocktail order.",
         },
         {
           q: "What is on the Moktl mocktail lounge menu in Luton?",

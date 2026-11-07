@@ -2,6 +2,8 @@ import { posts } from "./blog";
 import { ARCADE_GAME_PAGES } from "./mealdeck-arcade-pages";
 import { FRANCHISE_BRAND_IDS } from "./franchise-selection";
 import { canonicalUrl, isPrivateSeoPath } from "./seo";
+import { MEALDECK_MENU_PAGES } from "./mealdeck-menu-seo";
+import { COMING_SOON } from "./launch-status";
 
 /** Public discovery pages only. Private rooms and auth links never enter the sitemap. */
 export const MEALDECK_PUBLIC_PATHS = [
@@ -10,7 +12,9 @@ export const MEALDECK_PUBLIC_PATHS = [
   "/st-albans",
   "/bedford",
   "/menus",
-  "/order",
+  ...MEALDECK_MENU_PAGES.map((page) => page.path),
+  // /order currently renders the same launch menu and canonicalises to /menus.
+  ...(!COMING_SOON ? ["/order"] : []),
   "/offers",
   "/opening-offer",
   "/meta-ad",

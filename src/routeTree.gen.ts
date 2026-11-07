@@ -41,6 +41,7 @@ import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
+import { Route as MenusBrandIdRouteImport } from './routes/menus.$brandId'
 import { Route as PlayGameIdRouteImport } from './routes/play_.$gameId'
 import { Route as PlayDailyRouteImport } from './routes/play_.daily'
 import { Route as PlayPromoteRouteImport } from './routes/play_.promote'
@@ -220,6 +221,11 @@ const FranchiseBrandIdRoute = FranchiseBrandIdRouteImport.update({
   path: '/franchise/$brandId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MenusBrandIdRoute = MenusBrandIdRouteImport.update({
+  id: '/$brandId',
+  path: '/$brandId',
+  getParentRoute: () => MenusRoute,
+} as any)
 const PlayGameIdRoute = PlayGameIdRouteImport.update({
   id: '/play_/$gameId',
   path: '/play/$gameId',
@@ -322,7 +328,7 @@ export interface FileRoutesByFullPath {
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
-  '/menus': typeof MenusRoute
+  '/menus': typeof MenusRouteWithChildren
   '/meta-ad': typeof MetaAdRoute
   '/offers': typeof OffersRoute
   '/opening-offer': typeof OpeningOfferRoute
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
+  '/menus/$brandId': typeof MenusBrandIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
   '/play/daily': typeof PlayDailyRoute
   '/play/promote': typeof PlayPromoteRoute
@@ -374,7 +381,7 @@ export interface FileRoutesByTo {
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
-  '/menus': typeof MenusRoute
+  '/menus': typeof MenusRouteWithChildren
   '/meta-ad': typeof MetaAdRoute
   '/offers': typeof OffersRoute
   '/opening-offer': typeof OpeningOfferRoute
@@ -395,6 +402,7 @@ export interface FileRoutesByTo {
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
+  '/menus/$brandId': typeof MenusBrandIdRoute
   '/play/$gameId': typeof PlayGameIdRoute
   '/play/daily': typeof PlayDailyRoute
   '/play/promote': typeof PlayPromoteRoute
@@ -427,7 +435,7 @@ export interface FileRoutesById {
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
-  '/menus': typeof MenusRoute
+  '/menus': typeof MenusRouteWithChildren
   '/meta-ad': typeof MetaAdRoute
   '/offers': typeof OffersRoute
   '/opening-offer': typeof OpeningOfferRoute
@@ -448,6 +456,7 @@ export interface FileRoutesById {
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise_/$brandId': typeof FranchiseBrandIdRoute
+  '/menus/$brandId': typeof MenusBrandIdRoute
   '/play_/$gameId': typeof PlayGameIdRoute
   '/play_/daily': typeof PlayDailyRoute
   '/play_/promote': typeof PlayPromoteRoute
@@ -502,6 +511,7 @@ export interface FileRouteTypes {
     | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
+    | '/menus/$brandId'
     | '/play/$gameId'
     | '/play/daily'
     | '/play/promote'
@@ -554,6 +564,7 @@ export interface FileRouteTypes {
     | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
+    | '/menus/$brandId'
     | '/play/$gameId'
     | '/play/daily'
     | '/play/promote'
@@ -606,6 +617,7 @@ export interface FileRouteTypes {
     | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise_/$brandId'
+    | '/menus/$brandId'
     | '/play_/$gameId'
     | '/play_/daily'
     | '/play_/promote'
@@ -638,7 +650,7 @@ export interface RootRouteChildren {
   KdsRoute: typeof KdsRoute
   LutonRoute: typeof LutonRoute
   MenuRoute: typeof MenuRoute
-  MenusRoute: typeof MenusRoute
+  MenusRoute: typeof MenusRouteWithChildren
   MetaAdRoute: typeof MetaAdRoute
   OffersRoute: typeof OffersRoute
   OpeningOfferRoute: typeof OpeningOfferRoute
@@ -905,6 +917,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FranchiseBrandIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/menus/$brandId': {
+      id: '/menus/$brandId'
+      path: '/$brandId'
+      fullPath: '/menus/$brandId'
+      preLoaderRoute: typeof MenusBrandIdRouteImport
+      parentRoute: typeof MenusRoute
+    }
     '/play_/$gameId': {
       id: '/play_/$gameId'
       path: '/play/$gameId'
@@ -1034,6 +1053,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MenusRouteChildren {
+  MenusBrandIdRoute: typeof MenusBrandIdRoute
+}
+
+const MenusRouteChildren: MenusRouteChildren = {
+  MenusBrandIdRoute: MenusBrandIdRoute,
+}
+
+const MenusRouteWithChildren = MenusRoute._addFileChildren(MenusRouteChildren)
+
 interface ApiNotificationsRouteChildren {
   ApiNotificationsWorkerRoute: typeof ApiNotificationsWorkerRoute
 }
@@ -1056,7 +1085,7 @@ const rootRouteChildren: RootRouteChildren = {
   KdsRoute: KdsRoute,
   LutonRoute: LutonRoute,
   MenuRoute: MenuRoute,
-  MenusRoute: MenusRoute,
+  MenusRoute: MenusRouteWithChildren,
   MetaAdRoute: MetaAdRoute,
   OffersRoute: OffersRoute,
   OpeningOfferRoute: OpeningOfferRoute,

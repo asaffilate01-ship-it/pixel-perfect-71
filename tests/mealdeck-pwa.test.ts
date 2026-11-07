@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync, existsSync } from "node:fs";
 import { Script, createContext } from "node:vm";
 import { resolve } from "node:path";
+import { MEALDECK_MENU_PAGES } from "../src/lib/mealdeck-menu-seo";
 
 const workerSource = readFileSync(new URL("../public/sw.js", import.meta.url), "utf8");
 const origin = "https://mealdeck.example.test";
@@ -136,7 +137,14 @@ describe("MealDeck PWA privacy and offline operation", () => {
     const w = worker();
     await w.event("install");
     w.failNetwork();
-    for (const path of ["/", "/menu", "/menus/", "/order?preview=sample", "/play"]) {
+    for (const path of [
+      "/",
+      "/menu",
+      "/menus/",
+      "/order?preview=sample",
+      "/play",
+      ...MEALDECK_MENU_PAGES.map((page) => page.path),
+    ]) {
       expect(await (await w.request(path))?.text()).toBe("STATIC OFFLINE SCREEN");
     }
   });
