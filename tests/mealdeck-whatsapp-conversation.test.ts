@@ -393,13 +393,7 @@ describe("choices, extras, quantities and packing", () => {
     expect(result.draft.stage).toBe("quantity");
     result = step(result.draft, "2");
     expect(result.draft.stage).toBe("item_review");
-    for (const label of [
-      "Korean BBQ",
-      "Cheese Slice",
-      "2 Rashers",
-      "King of Hearts",
-      "Mango Mirage",
-    ])
+    for (const label of ["Korean BBQ", "Cheese Slice", "2 Rashers", "Royal Flush", "Mango Mirage"])
       expect(content(result)).toContain(label);
     result = tap(result, "save_item");
     const pick = result.draft.picks[0]!;
@@ -431,7 +425,7 @@ describe("choices, extras, quantities and packing", () => {
       "Korean BBQ",
       "Cheese Slice",
       "2 Rashers",
-      "King of Hearts",
+      "Royal Flush",
       "Mango Mirage",
       "Cutlery: Requested",
       "Bag 1: 1 × item 1",

@@ -16,12 +16,12 @@ The marketing brand ID **skorch** resolves to **skorch-burgers**; catalogue reco
 
 Only Load’d’s **Loaded Fries** and **The Full House** dish names change:
 
-| Previous name | Current name |
-| --- | --- |
-| King of Hearts | Royal Flush |
-| Queen of Hearts | Double Deck |
-| Jack of Diamonds | All In |
-| King of Spades | The Jackpot |
+| Previous name    | Current name |
+| ---------------- | ------------ |
+| King of Hearts   | Royal Flush  |
+| Queen of Hearts  | Double Deck  |
+| Jack of Diamonds | All In       |
+| King of Spades   | The Jackpot  |
 
 The eight distinct products keep their existing SKU, price, description and options. Named Load’d replacement choices use the corresponding new display names while retaining their existing option IDs.
 
