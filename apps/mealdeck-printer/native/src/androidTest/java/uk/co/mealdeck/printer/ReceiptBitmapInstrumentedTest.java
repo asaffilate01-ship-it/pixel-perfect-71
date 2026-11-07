@@ -39,7 +39,7 @@ public final class ReceiptBitmapInstrumentedTest {
 
     @Test public void representativeReceiptsSurviveOneBitmapSendWithQrAndFooter() throws Exception {
         Context target = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        for (String name : new String[] { "numbered-reprint", "long-note-preserved", "legacy-curbside" }) {
+        for (String name : new String[] { "numbered-reprint", "numbered-cash-meal-named-bags", "long-note-preserved", "legacy-curbside" }) {
             ReceiptModel model = fixture(name);
             String originalFingerprint = model.fingerprint;
             ReceiptLayout layout = ReceiptRenderer.layout(model);

@@ -126,6 +126,22 @@ driver's page size remains authoritative.
 Publication of 0.2.1 and physical H10S acceptance are separate evidence. The 0.2.0
 artifact and its historical build evidence below remain immutable.
 
+### Version 0.2.1 signed build evidence
+
+- Production source: `0e0ef88681fcf05f2bbfdb69532f234d74b39954`, tree `8171a3ab1e7f1e82849f6e14ce704d28996363bd`.
+- Successful Android build and four API 33 instrumentation tests: [42387109073](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42387109073); unsigned artifact `13580500022`, raster/test evidence `13580475303`.
+- Unsigned APK SHA-256: `0c214537d2a4fb237574d76c6f5d131f3f328e79a20d15997aa6327a50ff877c`.
+- Signed APK: `/downloads/mealdeck-printer-h10s-0.2.1.apk`, 8,664,664 bytes, SHA-256 `8fde9dbaa399d8987563ddbf049f59e720657b9227d64fd37291b94cf846ad69`.
+- Package `uk.co.mealdeck.printer`, version `0.2.1`, version code `3`, minimum API `33`, target API `36`, non-debuggable.
+- APK v3 verified with exactly one RSA-3072 signer. Its certificate SHA-256 matches the retained v0.2.0 release identity: `0aa18a66b01cecbe0aa86c07a6efa8693b5f01138278488d7dce4a296b992ec8`.
+- All 413 uncompressed payload entries match the tested unsigned APK; all 202 stored entries are four-byte aligned. This APK contains no native `.so` libraries.
+- Actual Android renderings were inspected for full content, the approved logo, tight promotion spacing, QR and footer. The independent decoder reads the fixed public URL from the complete raster. A 384 × 16,000 bitmap round-trip preserves both ends in one bounded shared-memory parcel.
+
+These checks establish the built artifact and Android rendering/parcel behavior.
+They do not record an H10S paper result. Install as an update over the existing
+companion to preserve its journal; inspect the next genuine accepted-order receipt
+through the final footer before reporting physical acceptance.
+
 ## Version 0.2.0 signed build evidence
 
 ### Compatibility with the later games receipt release
