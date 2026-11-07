@@ -6,9 +6,13 @@ on:
       - "apps/mealdeck-printer/**"
       - "tools/receipt-bridge/receipt.mjs"
       - "tools/receipt-bridge/receipt-games-qr.mjs"
+      - "tools/receipt-bridge/receipt-promotion*.mjs"
+      - "tools/receipt-bridge/build-receipt-promotions.mjs"
+      - "tools/receipt-bridge/build-promotion-logos.py"
+      - "tools/receipt-bridge/assets/receipt-promo-*.png"
       - "tools/receipt-bridge/test/fixtures.mjs"
       - "tools/receipt-bridge/assets/mealdeck-thermal-logo.png"
-      - "src/assets/approved-logos/mealdeck.webp"
+      - "src/assets/approved-logos/**"
       - ".github/workflows/printer-live.yml"
   workflow_dispatch:
 
@@ -60,7 +64,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Verify full receipt raster and one-send Binder contract on Android 13
+      - name: Verify all receipt promotions and bitmap plus final feed on Android 13
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33
@@ -93,15 +97,15 @@ jobs:
       - name: Prepare the unsigned release for private signing
         run: |
           mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk dist/mealdeck-printer-h10s-0.2.1-unsigned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions dist/mealdeck-printer-h10s-0.2.1-unsigned.apk > dist/permissions.txt
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/mealdeck-printer-h10s-0.2.1-unsigned.apk > dist/package.txt
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk dist/mealdeck-printer-h10s-0.2.2-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions dist/mealdeck-printer-h10s-0.2.2-unsigned.apk > dist/permissions.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/mealdeck-printer-h10s-0.2.2-unsigned.apk > dist/package.txt
           if rg 'application-debuggable' dist/package.txt; then
             echo "Release APK must not be debuggable"
             exit 1
           fi
           cd dist
-          sha256sum mealdeck-printer-h10s-0.2.1-unsigned.apk > SHA256SUMS.txt
+          sha256sum mealdeck-printer-h10s-0.2.2-unsigned.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: mealdeck-printer-h10s-release-unsigned

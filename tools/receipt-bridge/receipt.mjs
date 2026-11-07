@@ -1,6 +1,7 @@
 /** Browser-safe receipt validation and bounded ESC/POS rendering. No raw bytes from callers. */
 import { receiptLogo } from "./receipt-logo.mjs";
 import { receiptGamesQr } from "./receipt-games-qr.mjs";
+import { receiptPromotions, receiptPromotionForOrder } from "./receipt-promotions.mjs";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const lineId = /^[a-zA-Z0-9][a-zA-Z0-9:_-]{0,99}$/;
 export const RECEIPT_LIMITS = Object.freeze({
@@ -435,6 +436,57 @@ export function encodeReceiptGamesQr() {
     0,
   ]);
 }
+
+/** The order identity selects one of eight committed public images. Callers
+ * cannot provide pixels, commands, customer links or a remote image address. */
+export function encodeReceiptPromotion(order) {
+  const promotion = receiptPromotionForOrder(order);
+  const pixels = Uint8Array.from(atob(promotion.rasterBase64), (value) => value.charCodeAt(0));
+  requireValue(
+    receiptPromotions.includes(promotion) &&
+      Number.isInteger(promotion.width) &&
+      promotion.width > 0 &&
+      promotion.width <= 384 &&
+      Number.isInteger(promotion.height) &&
+      promotion.height > 0 &&
+      promotion.height <= 384 &&
+      promotion.rowBytes === Math.ceil(promotion.width / 8) &&
+      pixels.length === promotion.rowBytes * promotion.height,
+    "invalid_fixed_receipt_promotion",
+  );
+  const length = pixels.length + 10;
+  return Uint8Array.from([
+    0x1b,
+    0x61,
+    1,
+    0x1d,
+    0x28,
+    0x4c,
+    length & 255,
+    length >> 8,
+    48,
+    112,
+    48,
+    1,
+    1,
+    49,
+    promotion.width & 255,
+    promotion.width >> 8,
+    promotion.height & 255,
+    promotion.height >> 8,
+    ...pixels,
+    0x1d,
+    0x28,
+    0x4c,
+    2,
+    0,
+    48,
+    50,
+    0x1b,
+    0x61,
+    0,
+  ]);
+}
 function ascii(value) {
   return value
     .replace(/[‘’]/g, "'")
@@ -454,14 +506,16 @@ export function encodeReceipt(input, profile = {}) {
   const columns = profile.columns ?? 42;
   const cut = profile.cut ?? "none";
   const feedLines = profile.feedLines ?? 3;
-  const includeGamesQr = profile.includeGamesQr ?? true;
+  // Preserve the signed 0.2.0 legacy profile. The normal receipt now uses the
+  // order's stable rotation slot rather than always selecting the games QR.
+  const includePromotion = profile.includeGamesQr ?? true;
   requireValue(
     [32, 42, 48].includes(columns) &&
       ["none", "partial", "full"].includes(cut) &&
       Number.isInteger(feedLines) &&
       feedLines >= 0 &&
       feedLines <= 5 &&
-      typeof includeGamesQr === "boolean",
+      typeof includePromotion === "boolean",
     "invalid_printer_profile",
   );
   const lines = [];
@@ -505,6 +559,11 @@ export function encodeReceipt(input, profile = {}) {
       write(label);
       write(value, "  ");
     }
+  }
+  function totals() {
+    pair("Subtotal", money(receipt.subtotalPence));
+    if (receipt.discountPence) pair("Discount", "-" + money(receipt.discountPence));
+    pair("TOTAL", money(receipt.totalPence));
   }
   const date = (iso) =>
     new Intl.DateTimeFormat("en-GB", {
@@ -587,10 +646,11 @@ export function encodeReceipt(input, profile = {}) {
     write();
   }
   write(rule);
-  pair("Subtotal", money(receipt.subtotalPence));
-  if (receipt.discountPence) pair("Discount", "-" + money(receipt.discountPence));
-  pair("TOTAL", money(receipt.totalPence));
-  write(rule);
+  if (!includePromotion) {
+    // Original signed-native text fixtures retain their exact historic order.
+    totals();
+    write(rule);
+  }
   write(
     "PACKING - " +
       receipt.packingPlan.bags.length +
@@ -612,20 +672,22 @@ export function encodeReceipt(input, profile = {}) {
   }
   if (replacedCharacters) write("Some characters shown as ?. Check the order screen.");
   write(rule);
-  // Presentation-only invitation comes after every order/packing instruction.
-  // Neither the canonical snapshot nor its journal fingerprint contains this art.
-  // The already-signed H10S 0.2.0 renderer predates this fixed promotion.
-  // Its contract fixtures select the earlier layout; ordinary bridge output
-  // keeps the QR enabled. Receipt data cannot select a rendering profile.
-  let gamesQrAfterLine = null;
-  if (includeGamesQr) {
-    for (const label of [receiptGamesQr.heading, receiptGamesQr.subtitle])
-      write(label, " ".repeat(Math.max(0, Math.floor((columns - label.length) / 2))));
-    gamesQrAfterLine = lines.length;
-    write(
-      receiptGamesQr.displayUrl,
-      " ".repeat(Math.max(0, Math.floor((columns - receiptGamesQr.displayUrl.length) / 2))),
-    );
+  // Keep every order/packing instruction before the totals, then one compact
+  // promotion and the complete legal footer. Selection never changes a stored
+  // receipt, its fingerprint, copy identity or journal delivery behavior.
+  let promotionAfterLine = null;
+  if (includePromotion) {
+    totals();
+    const promotion = receiptPromotionForOrder(receipt);
+    for (const label of [promotion.heading, promotion.subtitle]) {
+      if (label) write(label, " ".repeat(Math.max(0, Math.floor((columns - label.length) / 2))));
+    }
+    promotionAfterLine = lines.length;
+    if (promotion.displayUrl)
+      write(
+        promotion.displayUrl,
+        " ".repeat(Math.max(0, Math.floor((columns - promotion.displayUrl.length) / 2))),
+      );
     write(rule);
   }
   write("MealDeck is a trading name of");
@@ -634,11 +696,11 @@ export function encodeReceipt(input, profile = {}) {
   write("mealdeck.co.uk");
   write("END OF RECEIPT");
   const encoder = new TextEncoder();
-  const beforeQr = encoder.encode(
-    lines.slice(0, gamesQrAfterLine ?? lines.length).join("\n") + "\n",
+  const beforePromotion = encoder.encode(
+    lines.slice(0, promotionAfterLine ?? lines.length).join("\n") + "\n",
   );
-  const afterQr = encoder.encode(
-    (gamesQrAfterLine === null ? "" : lines.slice(gamesQrAfterLine).join("\n") + "\n") +
+  const afterPromotion = encoder.encode(
+    (promotionAfterLine === null ? "" : lines.slice(promotionAfterLine).join("\n") + "\n") +
       "\n".repeat(feedLines),
   );
   const ending = cut === "none" ? [] : [0x1d, 0x56, cut === "partial" ? 1 : 0];
@@ -646,9 +708,9 @@ export function encodeReceipt(input, profile = {}) {
     0x1b,
     0x40,
     ...encodeReceiptLogo(),
-    ...beforeQr,
-    ...(includeGamesQr ? encodeReceiptGamesQr() : []),
-    ...afterQr,
+    ...beforePromotion,
+    ...(includePromotion ? encodeReceiptPromotion(receipt) : []),
+    ...afterPromotion,
     ...ending,
   ]);
   requireValue(bytes.length <= RECEIPT_LIMITS.bytes, "receipt_too_long");

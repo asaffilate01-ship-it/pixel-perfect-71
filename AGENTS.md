@@ -11,6 +11,13 @@
 
 <!-- LOVABLE:END -->
 
+## H10S receipt completion and rotating promotions — owner update, 7 November 2026
+
+- Preserve the owner's full receipt style: large approved MealDeck logo, large sequential order number and separate large collection code, customer name and saved order phone, all purchased items/options/notes/packing, totals, one promotion and the legal footer. Keep the gap after PAID compact. Never replace a full customer receipt with the diagnostic sample or a shortened ticket.
+- The current eight-slot receipt promotion supersedes the earlier always-games footer for newly rendered receipts: `/play` QR, TikTok QR, Instagram QR, then approved Skorch, Tavo Chicken, Load’d, Moktl and Souvano logos with their relevant copy. Use only the fixed public MealDeck/domain/social destinations and approved logo derivatives. No private order/customer information belongs in a QR. Select by the canonical order number, with a stable order-ID fallback for historical receipts; reprints keep the same slot and do not advance the rotation. Keep the original fixed games asset for historical compatibility.
+- A single complete immutable bitmap must be followed by the pinned Senraise `nextLine(4)` operation inside the same one-shot native dispatch. Keep the dispatch slot until both calls have returned; any exception, timeout, pause or lost connection remains held without automatic replay. A successful command sequence remains `sent_unconfirmed`; no undocumented cut/flush/transaction command or arbitrary delay establishes physical completion.
+- Saved phone data is an optional, authenticated, order-bound presentation extension outside the immutable receipt payload/fingerprint. Retain legacy strict clients and the exact canonical-claim response shape. Never fetch a mutable profile phone, rewrite historical receipt snapshots, expose contact data in public promos or clear the print journal as an upgrade step.
+
 ## H10S live receipt companion — owner direction, 7 November 2026
 
 - The owner reports that the physical setup ticket from the published H10S diagnostic APK printed successfully and now requests live ordering and automatic receipts. That observation authorises building the full receipt companion using the proven service protocol; it supersedes the earlier proposal-only prerequisite below. It does not establish that a live customer receipt, recovery case or background lifecycle has yet been accepted.

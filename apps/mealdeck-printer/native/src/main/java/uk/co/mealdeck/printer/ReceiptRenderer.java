@@ -46,9 +46,11 @@ public final class ReceiptRenderer {
     }
 
     /** The same measured display list is available to Android raster acceptance tests. */
-    static ReceiptLayout layout(ReceiptModel model) { return layout(model, paints()); }
+    static ReceiptLayout layout(ReceiptModel model) { return layout(model, paints(), null); }
 
-    private static ReceiptLayout layout(ReceiptModel model, Map<ReceiptLayout.Style, Paint> paints) {
+    static ReceiptLayout layout(ReceiptModel model, String customerPhone) { return layout(model, paints(), customerPhone); }
+
+    private static ReceiptLayout layout(ReceiptModel model, Map<ReceiptLayout.Style, Paint> paints, String customerPhone) {
         return ReceiptLayout.build(model, new ReceiptLayout.TextMeasurer() {
             @Override public float width(String text, ReceiptLayout.Style style) {
                 return paints.get(style).measureText(text);
@@ -57,23 +59,35 @@ public final class ReceiptRenderer {
                 Paint.FontMetricsInt metrics = paints.get(style).getFontMetricsInt();
                 return Math.max(style.minimumLineHeight, metrics.bottom - metrics.top + 2);
             }
-        });
+        }, customerPhone);
     }
 
     /** Validation, full allocation, drawing and sharing all complete before dispatch. */
     public static RenderedReceipt render(Context context, ReceiptModel model) {
+        return render(context, model, null);
+    }
+
+    public static RenderedReceipt render(Context context, ReceiptModel model, String customerPhone) {
         Bitmap logo = null;
+        Bitmap promotion = null;
         Bitmap raster = null;
         Bitmap shared = null;
         try {
             Map<ReceiptLayout.Style, Paint> paints = paints();
-            ReceiptLayout layout = layout(model, paints);
+            ReceiptLayout layout = layout(model, paints, customerPhone);
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
             logo = BitmapFactory.decodeResource(context.getResources(), R.drawable.mealdeck_thermal_logo, options);
             if (logo == null || logo.getWidth() != ReceiptLayout.LOGO_WIDTH || logo.getHeight() != ReceiptLayout.LOGO_HEIGHT)
                 throw new IllegalArgumentException("invalid_fixed_receipt_logo");
+            // The resource name and dimensions come only from the generated,
+            // sealed eight-slot catalogue; no receipt supplies image data.
+            int resource = context.getResources().getIdentifier(layout.promotion.resourceName, "drawable", context.getPackageName());
+            if (resource == 0) throw new IllegalArgumentException("invalid_fixed_receipt_promotion");
+            promotion = BitmapFactory.decodeResource(context.getResources(), resource, options);
+            if (promotion == null || promotion.getWidth() != layout.promotion.width || promotion.getHeight() != layout.promotion.height)
+                throw new IllegalArgumentException("invalid_fixed_receipt_promotion");
 
             raster = Bitmap.createBitmap(WIDTH, layout.totalHeight, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(raster);
@@ -94,15 +108,8 @@ public final class ReceiptRenderer {
                     case LOGO:
                         canvas.drawBitmap(logo, element.x, element.y, ink);
                         break;
-                    case QR:
-                        for (int row = 0; row < ReceiptGamesQr.MODULE_COUNT; row++) {
-                            for (int column = 0; column < ReceiptGamesQr.MODULE_COUNT; column++) {
-                                if (!ReceiptGamesQr.darkAt(row, column)) continue;
-                                int x = element.x + (column + ReceiptGamesQr.QUIET_ZONE) * ReceiptGamesQr.MODULE_PIXELS;
-                                int y = element.y + (row + ReceiptGamesQr.QUIET_ZONE) * ReceiptGamesQr.MODULE_PIXELS;
-                                canvas.drawRect(x, y, x + ReceiptGamesQr.MODULE_PIXELS, y + ReceiptGamesQr.MODULE_PIXELS, ink);
-                            }
-                        }
+                    case PROMOTION_IMAGE:
+                        canvas.drawBitmap(promotion, element.x, element.y, ink);
                         break;
                     case DASHED_RULE:
                         for (int x = element.x; x < element.x + element.width; x += 6)
@@ -138,6 +145,7 @@ public final class ReceiptRenderer {
             if (shared != null && !shared.isRecycled()) shared.recycle();
             if (raster != null && !raster.isRecycled()) raster.recycle();
             if (logo != null && !logo.isRecycled()) logo.recycle();
+            if (promotion != null && !promotion.isRecycled()) promotion.recycle();
         }
     }
 }

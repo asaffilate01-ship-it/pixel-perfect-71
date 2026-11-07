@@ -24,7 +24,10 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -34,7 +37,6 @@ import org.junit.runner.RunWith;
  * local recording Binder only. No activity, vendor service or order API runs. */
 @RunWith(AndroidJUnit4.class)
 public final class ReceiptBitmapInstrumentedTest {
-    private static final String GAMES_URL = "https://mealdeck.co.uk/play/receipt";
     private static final int PAPER_TAIL = 180;
 
     @Test public void representativeReceiptsSurviveOneBitmapSendWithQrAndFooter() throws Exception {
@@ -42,8 +44,9 @@ public final class ReceiptBitmapInstrumentedTest {
         for (String name : new String[] { "numbered-reprint", "numbered-cash-meal-named-bags", "long-note-preserved", "legacy-curbside" }) {
             ReceiptModel model = fixture(name);
             String originalFingerprint = model.fingerprint;
-            ReceiptLayout layout = ReceiptRenderer.layout(model);
-            ReceiptRenderer.RenderedReceipt rendered = ReceiptRenderer.render(target, model);
+            String phone = "numbered-cash-meal-named-bags".equals(name) ? "+447700900123" : null;
+            ReceiptLayout layout = ReceiptRenderer.layout(model, phone);
+            ReceiptRenderer.RenderedReceipt rendered = ReceiptRenderer.render(target, model, phone);
             try (RecordingBinder receiver = new RecordingBinder(Failure.NONE);
                  PrinterBinderWire.PreparedReceipt prepared = PrinterBinderWire.prepareReceipt(rendered.bitmap)) {
                 savePng(target, name, rendered.bitmap);
@@ -53,12 +56,14 @@ public final class ReceiptBitmapInstrumentedTest {
                 assertEquals(layout.lineCount, rendered.lineCount);
                 assertFalse(rendered.bitmap.isMutable());
 
-                prepared.send(receiver);
+                prepared.send(receiver, () -> true);
                 assertWholeRoundTrip(rendered.bitmap, receiver);
+                assertEquals(List.of(4, 9), receiver.operations);
+                assertEquals(1, receiver.feedCalls);
                 assertReceiptRaster(target, receiver.received, layout);
                 assertEquals(originalFingerprint, model.fingerprint);
 
-                assertThrows(IllegalStateException.class, () -> prepared.send(receiver));
+                assertThrows(IllegalStateException.class, () -> prepared.send(receiver, () -> true));
                 assertEquals(name + ": a prepared receipt has only one send", 1, receiver.calls);
             } finally {
                 rendered.recycle();
@@ -72,14 +77,35 @@ public final class ReceiptBitmapInstrumentedTest {
         try (RecordingBinder receiver = new RecordingBinder(Failure.NONE);
              PrinterBinderWire.PreparedReceipt prepared = PrinterBinderWire.prepareReceipt(bitmap)) {
             assertEquals(0, receiver.calls);
-            prepared.send(receiver);
+            prepared.send(receiver, () -> true);
             assertWholeRoundTrip(bitmap, receiver);
+            assertEquals(List.of(4, 9), receiver.operations);
             assertEquals(Color.BLACK, receiver.received.getPixel(0, 0));
             assertEquals(Color.BLACK, receiver.received.getPixel(383, 15_999));
             assertEquals(Color.WHITE, receiver.received.getPixel(192, 8_000));
-            assertThrows(IllegalStateException.class, () -> prepared.send(receiver));
+            assertThrows(IllegalStateException.class, () -> prepared.send(receiver, () -> true));
             assertEquals(1, receiver.calls);
         } finally { bitmap.recycle(); }
+    }
+
+    @Test public void allEightPromotionsRetainTheLargeHeaderTheirArtworkAndTheCompleteFooter() throws Exception {
+        Context target = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        for (int sequence = 1; sequence <= 8; sequence++) {
+            JSONObject raw = fixture("numbered-cash-meal-named-bags").toJson();
+            raw.put("orderNumber", String.format(java.util.Locale.ROOT, "%04d", sequence));
+            ReceiptModel model = ReceiptModel.parse(raw);
+            String fingerprint = model.fingerprint;
+            ReceiptLayout layout = ReceiptRenderer.layout(model, "+447700900123");
+            ReceiptRenderer.RenderedReceipt rendered = ReceiptRenderer.render(target, model, "+447700900123");
+            try {
+                assertEquals(36, element(layout, "order").style.textSize);
+                assertEquals(36, element(layout, "collection").style.textSize);
+                assertEquals("+447700900123", element(layout, "customer.phone").text);
+                assertReceiptRaster(target, rendered.bitmap, layout);
+                assertEquals(fingerprint, model.fingerprint);
+                savePng(target, "promotion-" + sequence + "-" + layout.promotion.id, rendered.bitmap);
+            } finally { rendered.recycle(); }
+        }
     }
 
     @Test public void unsupportedBitmapsAreRejectedBeforeAnySend() {
@@ -103,11 +129,13 @@ public final class ReceiptBitmapInstrumentedTest {
                 try (RecordingBinder receiver = new RecordingBinder(failure);
                      PrinterBinderWire.PreparedReceipt prepared = PrinterBinderWire.prepareReceipt(bitmap)) {
                     if (failure == Failure.UNAVAILABLE)
-                        assertThrows(RemoteException.class, () -> prepared.send(receiver));
+                        assertThrows(RemoteException.class, () -> prepared.send(receiver, () -> true));
                     else
-                        assertThrows(SecurityException.class, () -> prepared.send(receiver));
+                        assertThrows(SecurityException.class, () -> prepared.send(receiver, () -> true));
                     assertWholeRoundTrip(bitmap, receiver);
-                    assertThrows(IllegalStateException.class, () -> prepared.send(receiver));
+                    assertEquals(List.of(4), receiver.operations);
+                    assertEquals(0, receiver.feedCalls);
+                    assertThrows(IllegalStateException.class, () -> prepared.send(receiver, () -> true));
                     assertEquals("An uncertain return cannot resend pixels", 1, receiver.calls);
                 }
             }
@@ -115,10 +143,69 @@ public final class ReceiptBitmapInstrumentedTest {
                 PrinterBinderWire.PreparedReceipt prepared = PrinterBinderWire.prepareReceipt(bitmap);
                 prepared.close();
                 prepared.close();
-                assertThrows(IllegalStateException.class, () -> prepared.send(receiver));
+                assertThrows(IllegalStateException.class, () -> prepared.send(receiver, () -> true));
                 assertEquals("A discarded preflight must not send", 0, receiver.calls);
             }
         } finally { bitmap.recycle(); }
+    }
+
+    @Test public void finalFeedIsPartOfTheOneShotSendAndCannotBeRetried() throws Exception {
+        Bitmap bitmap = sharedBitmap(384, 100, Bitmap.Config.ARGB_8888);
+        try {
+            for (Failure failure : new Failure[] { Failure.FEED_UNAVAILABLE, Failure.FEED_EXCEPTION }) {
+                try (RecordingBinder receiver = new RecordingBinder(failure);
+                     PrinterBinderWire.PreparedReceipt prepared = PrinterBinderWire.prepareReceipt(bitmap)) {
+                    if (failure == Failure.FEED_UNAVAILABLE)
+                        assertThrows(RemoteException.class, () -> prepared.send(receiver, () -> true));
+                    else
+                        assertThrows(SecurityException.class, () -> prepared.send(receiver, () -> true));
+                    assertWholeRoundTrip(bitmap, receiver);
+                    assertEquals(List.of(4, 9), receiver.operations);
+                    assertEquals(1, receiver.feedCalls);
+                    assertThrows(IllegalStateException.class, () -> prepared.send(receiver, () -> true));
+                    assertEquals("Neither pixels nor uncertain feed may be retried", List.of(4, 9), receiver.operations);
+                }
+            }
+        } finally { bitmap.recycle(); }
+    }
+
+    @Test public void pauseOrTimeoutBetweenBitmapAndFeedStopsFurtherOutput() throws Exception {
+        Bitmap bitmap = sharedBitmap(384, 100, Bitmap.Config.ARGB_8888);
+        try {
+            AtomicBoolean continuing = new AtomicBoolean(true);
+            try (RecordingBinder receiver = new RecordingBinder(Failure.NONE);
+                 PrinterBinderWire.PreparedReceipt prepared = PrinterBinderWire.prepareReceipt(bitmap)) {
+                receiver.afterBitmap = () -> continuing.set(false);
+                assertThrows(RemoteException.class, () -> prepared.send(receiver, continuing::get));
+                assertWholeRoundTrip(bitmap, receiver);
+                assertEquals(List.of(4), receiver.operations);
+                assertEquals(0, receiver.feedCalls);
+                continuing.set(true);
+                assertThrows(IllegalStateException.class, () -> prepared.send(receiver, continuing::get));
+                assertEquals(List.of(4), receiver.operations);
+            }
+            try (RecordingBinder receiver = new RecordingBinder(Failure.NONE);
+                 PrinterBinderWire.PreparedReceipt prepared = PrinterBinderWire.prepareReceipt(bitmap)) {
+                assertThrows(RemoteException.class, () -> prepared.send(receiver, () -> false));
+                assertTrue(receiver.operations.isEmpty());
+            }
+        } finally { bitmap.recycle(); }
+    }
+
+    @Test public void twoReceiptsDrainTheirOwnBufferedOutputBeforeTheNextHeader() throws Exception {
+        Bitmap first = sharedBitmap(384, 2_600, Bitmap.Config.ARGB_8888);
+        Bitmap second = sharedBitmap(384, 400, Bitmap.Config.ARGB_8888);
+        try (RecordingBinder receiver = new RecordingBinder(Failure.NONE);
+             PrinterBinderWire.PreparedReceipt firstSend = PrinterBinderWire.prepareReceipt(first);
+             PrinterBinderWire.PreparedReceipt secondSend = PrinterBinderWire.prepareReceipt(second)) {
+            firstSend.send(receiver, () -> true);
+            assertFalse("First receipt leaves no unfinished buffer", receiver.pending);
+            assertEquals(List.of(2_600), receiver.completedHeights);
+            secondSend.send(receiver, () -> true);
+            assertFalse("Second receipt leaves no unfinished buffer", receiver.pending);
+            assertEquals(List.of(2_600, 400), receiver.completedHeights);
+            assertEquals(List.of(4, 9, 4, 9), receiver.operations);
+        } finally { first.recycle(); second.recycle(); }
     }
 
     private static void assertReceiptRaster(Context context, Bitmap bitmap, ReceiptLayout layout) throws Exception {
@@ -158,35 +245,49 @@ public final class ReceiptBitmapInstrumentedTest {
                 assertHasInk(pixels, bitmap.getWidth(), item);
         }
         ReceiptLayout.Element paid = element(layout, "paid");
-        ReceiptLayout.Element heading = element(layout, "games.heading");
+        ReceiptLayout.Element heading = element(layout, "promotion.heading");
         int gap = heading.y - paid.bottom();
-        assertTrue("PAID to games heading stays compact: " + gap, gap >= 0 && gap <= 8);
+        assertTrue("PAID to promotion stays compact: " + gap, gap >= 0 && gap <= 8);
 
-        ReceiptLayout.Element qr = element(layout, "games.qr");
-        assertEquals(246, qr.width);
-        assertEquals(246, qr.height);
-        assertTrue("QR follows the paid total", qr.y > paid.bottom());
-        assertTrue("QR stays at the receipt footer", bitmap.getHeight() - qr.bottom() < 600);
-        // The four-module (24px) white border is part of the fixed QR asset.
-        for (int y = 0; y < qr.height; y++) {
-            for (int x = 0; x < qr.width; x++) {
-                if (x < 24 || x >= qr.width - 24 || y < 24 || y >= qr.height - 24)
-                    assertEquals("QR quiet zone", Color.WHITE, pixels[(qr.y + y) * bitmap.getWidth() + qr.x + x]);
+        ReceiptLayout.Element artwork = element(layout, "promotion.image");
+        assertEquals(layout.promotion.width, artwork.width);
+        assertEquals(layout.promotion.height, artwork.height);
+        assertTrue("Promotion follows the paid total", artwork.y > paid.bottom());
+        assertTrue("Promotion stays at the receipt footer", bitmap.getHeight() - artwork.bottom() < 600);
+        int resource = context.getResources().getIdentifier(layout.promotion.resourceName, "drawable", context.getPackageName());
+        Bitmap fixed = BitmapFactory.decodeResource(context.getResources(), resource, options);
+        assertNotNull(fixed);
+        try {
+            int[] expected = new int[artwork.width];
+            int[] actual = new int[artwork.width];
+            for (int y = 0; y < artwork.height; y++) {
+                fixed.getPixels(expected, 0, artwork.width, 0, y, artwork.width, 1);
+                System.arraycopy(pixels, (artwork.y + y) * bitmap.getWidth() + artwork.x, actual, 0, artwork.width);
+                assertArrayEquals("Fixed complete promotion image row " + y, expected, actual);
             }
-        }
-        Map<DecodeHintType, Object> hints = new EnumMap<>(DecodeHintType.class);
-        hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
-        Result decoded = new QRCodeReader().decode(new BinaryBitmap(new HybridBinarizer(
-            new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), pixels))), hints);
-        assertEquals(GAMES_URL, decoded.getText());
-        assertTrue(decoded.getResultPoints().length >= 3);
-        for (ResultPoint point : decoded.getResultPoints()) {
-            assertTrue("Decoded QR belongs in the footer", point.getX() >= qr.x && point.getX() < qr.x + qr.width
-                && point.getY() >= qr.y && point.getY() < qr.bottom());
+        } finally { fixed.recycle(); }
+        if ("qr".equals(layout.promotion.kind)) {
+            // Every generated QR has the full four-module (24px) white border.
+            for (int y = 0; y < artwork.height; y++) {
+                for (int x = 0; x < artwork.width; x++) {
+                    if (x < 24 || x >= artwork.width - 24 || y < 24 || y >= artwork.height - 24)
+                        assertEquals("QR quiet zone", Color.WHITE, pixels[(artwork.y + y) * bitmap.getWidth() + artwork.x + x]);
+                }
+            }
+            Map<DecodeHintType, Object> hints = new EnumMap<>(DecodeHintType.class);
+            hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+            Result decoded = new QRCodeReader().decode(new BinaryBitmap(new HybridBinarizer(
+                new RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), pixels))), hints);
+            assertEquals(layout.promotion.targetUrl, decoded.getText());
+            assertTrue(decoded.getResultPoints().length >= 3);
+            for (ResultPoint point : decoded.getResultPoints()) {
+                assertTrue("Decoded QR belongs in the footer", point.getX() >= artwork.x && point.getX() < artwork.x + artwork.width
+                    && point.getY() >= artwork.y && point.getY() < artwork.bottom());
+            }
         }
         for (String role : new String[] { "footer.trading", "footer.technology", "footer.slogan" }) {
             ReceiptLayout.Element footer = element(layout, role);
-            assertTrue("Footer follows the QR", footer.y >= qr.bottom());
+            assertTrue("Footer follows the promotion", footer.y >= artwork.bottom());
             assertHasInk(pixels, bitmap.getWidth(), footer);
         }
         for (int index = layout.contentHeight * bitmap.getWidth(); index < pixels.length; index++)
@@ -253,12 +354,17 @@ public final class ReceiptBitmapInstrumentedTest {
         }
     }
 
-    private enum Failure { NONE, UNAVAILABLE, REPLY_EXCEPTION }
+    private enum Failure { NONE, UNAVAILABLE, REPLY_EXCEPTION, FEED_UNAVAILABLE, FEED_EXCEPTION }
 
     /** Decodes Android's real Bitmap parcel, but never binds a vendor service. */
     private static final class RecordingBinder extends Binder implements AutoCloseable {
         final Failure failure;
         int calls;
+        int feedCalls;
+        final List<Integer> operations = new ArrayList<>();
+        final List<Integer> completedHeights = new ArrayList<>();
+        boolean pending;
+        Runnable afterBitmap = () -> {};
         int dataSize;
         boolean hasFileDescriptors;
         Bitmap received;
@@ -266,19 +372,37 @@ public final class ReceiptBitmapInstrumentedTest {
         RecordingBinder(Failure failure) { this.failure = failure; }
 
         @Override protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) {
-            calls++;
-            assertEquals("Only the reviewed bitmap opcode may be sent", 4, code);
+            operations.add(code);
             assertEquals("Print is a synchronous transaction", 0, flags);
+            data.enforceInterface("recieptservice.com.recieptservice.PrinterInterface");
+            assertNotNull(reply);
+            if (code == 9) {
+                feedCalls++;
+                assertTrue("Final feed follows its own bitmap", pending);
+                assertEquals("Only the fixed four-line final advance is allowed", 4, data.readInt());
+                assertEquals("No arbitrary trailing feed arguments", 0, data.dataAvail());
+                if (failure == Failure.FEED_UNAVAILABLE) return false;
+                if (failure == Failure.FEED_EXCEPTION) reply.writeException(new SecurityException("Synthetic feed failure"));
+                else {
+                    completedHeights.add(received.getHeight());
+                    pending = false;
+                    reply.writeNoException();
+                }
+                return true;
+            }
+            calls++;
+            assertEquals("Only the reviewed bitmap or fixed feed may be sent", 4, code);
+            assertFalse("A new header cannot overtake unfinished receipt output", pending);
             dataSize = data.dataSize();
             hasFileDescriptors = data.hasFileDescriptors();
-            data.enforceInterface("recieptservice.com.recieptservice.PrinterInterface");
             assertEquals("Bitmap presence marker", 1, data.readInt());
+            if (received != null && !received.isRecycled()) received.recycle();
             received = Bitmap.CREATOR.createFromParcel(data);
-            assertEquals("No feed/cut or trailing arguments", 0, data.dataAvail());
-            assertNotNull(reply);
+            pending = true;
+            assertEquals("No trailing bitmap arguments", 0, data.dataAvail());
             if (failure == Failure.UNAVAILABLE) return false;
             if (failure == Failure.REPLY_EXCEPTION) reply.writeException(new SecurityException("Synthetic receiver failure"));
-            else reply.writeNoException();
+            else { reply.writeNoException(); afterBitmap.run(); }
             return true;
         }
 

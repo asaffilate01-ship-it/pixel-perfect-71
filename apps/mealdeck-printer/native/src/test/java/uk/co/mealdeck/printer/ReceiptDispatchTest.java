@@ -3,6 +3,7 @@ package uk.co.mealdeck.printer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
 
 /** Runs without Android: proves the actual global dispatch/recovery boundary. */
 public final class ReceiptDispatchTest {
@@ -71,6 +72,128 @@ public final class ReceiptDispatchTest {
         check(rejectedResult.join().equals("held"));
         check(rejected.equals(List.of("closed", "held")));
         check(!unavailable.active());
-        System.out.println("Receipt dispatch: durable-before-IPC, no overlap, timeout retention, interruption, uncertain-send and resource ownership checks passed.");
+
+        bitmapAndFeedShareOneDispatch();
+        feedFailureHoldsTheOriginalAttempt();
+        deadlineDuringFeedRetainsSlotAndResources();
+        deadlineAfterBitmapSkipsFeed();
+        System.out.println("Receipt dispatch: durable-before-IPC, bitmap/feed ordering, no overlap, finalization failures, timeout retention, interruption, uncertain-send and resource ownership checks passed.");
+    }
+
+    /** The Binder protocol is checked on Android; these transports exercise the
+     * actual dispatcher while the bitmap and final feed settle independently. */
+    private static void bitmapAndFeedShareOneDispatch() {
+        Fixture fixture = new Fixture();
+        CompletableFuture<String> result = fixture.dispatch.send("complete", new ReceiptDispatch.Transport() {
+            @Override public void send(ReceiptDispatch.Permit permit) {
+                check(permit.begin());
+                fixture.events.add("bitmap-return:complete");
+                check(fixture.dispatch.active());
+                rejectNextReceipt(fixture);
+                check(permit.continuing());
+                fixture.events.add("feed-start:complete");
+                rejectNextReceipt(fixture);
+                check(!fixture.events.contains("sent_unconfirmed:complete"));
+                fixture.events.add("feed-return:complete");
+            }
+            @Override public void close() { fixture.events.add("closed:complete"); }
+        });
+        result.thenAccept(outcome -> fixture.events.add("result:" + outcome));
+        check(!result.isDone());
+        fixture.worker.run();
+        check(result.join().equals("sent_unconfirmed"));
+        check(fixture.events.equals(List.of("begin:complete", "bitmap-return:complete", "feed-start:complete",
+            "feed-return:complete", "closed:complete", "sent_unconfirmed:complete", "result:sent_unconfirmed")));
+        check(!fixture.dispatch.active());
+
+        // A different job is admitted only after the full first transport exits.
+        CompletableFuture<String> next = fixture.dispatch.send("next", permit -> {
+            check(permit.begin());
+            check(permit.continuing());
+            fixture.events.add("bitmap-return:next");
+            fixture.events.add("feed-return:next");
+        });
+        fixture.worker.run();
+        check(next.join().equals("sent_unconfirmed"));
+        check(fixture.events.indexOf("begin:next") > fixture.events.indexOf("feed-return:complete"));
+    }
+
+    private static void feedFailureHoldsTheOriginalAttempt() {
+        Fixture fixture = new Fixture();
+        CompletableFuture<String> result = fixture.dispatch.send("feed-failed", new ReceiptDispatch.Transport() {
+            @Override public void send(ReceiptDispatch.Permit permit) {
+                check(permit.begin());
+                fixture.events.add("bitmap-return:feed-failed");
+                check(permit.continuing());
+                fixture.events.add("feed-start:feed-failed");
+                rejectNextReceipt(fixture);
+                throw new IllegalStateException("The final feed did not return successfully.");
+            }
+            @Override public void close() { fixture.events.add("closed:feed-failed"); }
+        });
+        fixture.worker.run();
+        check(result.join().equals("held"));
+        check(fixture.events.equals(List.of("begin:feed-failed", "bitmap-return:feed-failed", "feed-start:feed-failed",
+            "closed:feed-failed", "held:feed-failed")));
+        check(!fixture.dispatch.active());
+    }
+
+    private static void deadlineDuringFeedRetainsSlotAndResources() {
+        Fixture fixture = new Fixture();
+        CompletableFuture<String> result = fixture.dispatch.send("feed-timeout", new ReceiptDispatch.Transport() {
+            @Override public void send(ReceiptDispatch.Permit permit) {
+                check(permit.begin());
+                fixture.events.add("bitmap-return:feed-timeout");
+                check(permit.continuing());
+                fixture.events.add("feed-start:feed-timeout");
+                fixture.timeout.run();
+                check(fixture.events.contains("result:held"));
+                check(fixture.dispatch.active());
+                check(!permit.continuing());
+                check(!fixture.events.contains("closed:feed-timeout"));
+                rejectNextReceipt(fixture);
+                fixture.events.add("feed-return:feed-timeout");
+            }
+            @Override public void close() { fixture.events.add("closed:feed-timeout"); }
+        });
+        result.thenAccept(outcome -> fixture.events.add("result:" + outcome));
+        fixture.worker.run();
+        check(result.join().equals("held"));
+        check(fixture.events.equals(List.of("begin:feed-timeout", "bitmap-return:feed-timeout", "feed-start:feed-timeout",
+            "held:feed-timeout", "result:held", "feed-return:feed-timeout", "closed:feed-timeout", "held:feed-timeout")));
+        check(!fixture.dispatch.active());
+    }
+
+    private static void deadlineAfterBitmapSkipsFeed() {
+        Fixture fixture = new Fixture();
+        CompletableFuture<String> result = fixture.dispatch.send("between-stages", new ReceiptDispatch.Transport() {
+            @Override public void send(ReceiptDispatch.Permit permit) {
+                check(permit.begin());
+                BooleanSupplier continuing = permit::continuing;
+                fixture.events.add("bitmap-return:between-stages");
+                fixture.timeout.run();
+                check(fixture.dispatch.active());
+                check(!fixture.events.contains("closed:between-stages"));
+                rejectNextReceipt(fixture);
+                if (!continuing.getAsBoolean()) throw new IllegalStateException("Dispatch expired before its final feed.");
+                fixture.events.add("feed-start:between-stages");
+            }
+            @Override public void close() { fixture.events.add("closed:between-stages"); }
+        });
+        fixture.worker.run();
+        check(result.join().equals("held"));
+        check(fixture.events.equals(List.of("begin:between-stages", "bitmap-return:between-stages", "held:between-stages",
+            "closed:between-stages", "held:between-stages")));
+        check(!fixture.dispatch.active());
+    }
+
+    private static void rejectNextReceipt(Fixture fixture) {
+        try {
+            fixture.dispatch.send("must-wait", permit -> { throw new AssertionError("A second receipt reached the worker."); });
+        } catch (PrinterFailure expected) {
+            check("operation_in_progress".equals(expected.code));
+            return;
+        }
+        throw new AssertionError("A second receipt was admitted before finalization returned.");
     }
 }

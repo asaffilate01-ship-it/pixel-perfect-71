@@ -23,7 +23,7 @@ public final class ReceiptLayout {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern(
         "dd/MM/yyyy, HH:mm:ss", Locale.UK).withZone(ZoneId.of("Europe/London"));
 
-    public enum Kind { TEXT, DASHED_RULE, BOX, VERTICAL_RULE, LOGO, QR }
+    public enum Kind { TEXT, DASHED_RULE, BOX, VERTICAL_RULE, LOGO, PROMOTION_IMAGE }
     public enum Style {
         BRAND(34, 44, true), ORDER(36, 46, true), BODY(20, 28, false),
         BODY_BOLD(20, 28, true), HEADER_DETAIL(18, 25, false),
@@ -68,15 +68,20 @@ public final class ReceiptLayout {
     public final int contentHeight;
     public final int totalHeight;
     public final int lineCount;
+    public final ReceiptPromotion.Slot promotion;
     private ReceiptLayout(Builder builder) {
         elements = Collections.unmodifiableList(new ArrayList<>(builder.elements));
         contentHeight = builder.y;
         totalHeight = contentHeight + FINAL_PAPER_TAIL;
         lineCount = builder.lineCount;
+        promotion = builder.promotion;
     }
     public static ReceiptLayout build(ReceiptModel model, TextMeasurer measurer) {
+        return build(model, measurer, null);
+    }
+    public static ReceiptLayout build(ReceiptModel model, TextMeasurer measurer, String customerPhone) {
         if (model == null || measurer == null) throw unavailable();
-        return new Builder(measurer).build(model.toJson());
+        return new Builder(measurer).build(model.toJson(), customerPhone);
     }
 
     private static final class Builder {
@@ -84,9 +89,11 @@ public final class ReceiptLayout {
         private final List<Element> elements = new ArrayList<>();
         private int y;
         private int lineCount;
+        private ReceiptPromotion.Slot promotion;
         Builder(TextMeasurer measurer) { this.measurer = measurer; }
 
-        ReceiptLayout build(JSONObject receipt) {
+        ReceiptLayout build(JSONObject receipt, String customerPhone) {
+            promotion = ReceiptPromotion.forOrder(nullable(receipt, "orderNumber"), receipt.optString("orderId"));
             gap(8);
             block(Kind.LOGO, "logo", (WIDTH - LOGO_WIDTH) / 2, LOGO_WIDTH, LOGO_HEIGHT);
             gap(8);
@@ -98,7 +105,8 @@ public final class ReceiptLayout {
                 center("order", "ORDER " + order, Style.ORDER);
             }
             gap(6);
-            center("collection", "Collection code " + receipt.optString("displayCode"), Style.BODY_BOLD);
+            center("collection.label", "COLLECTION CODE", Style.HEADER_DETAIL_BOLD);
+            center("collection", receipt.optString("displayCode"), Style.ORDER);
             gap(6);
             String paid = "cash".equals(receipt.optString("paymentMethod")) ? "CASH PAID" : "PAID";
             center("fulfilment", ("curbside".equals(receipt.optString("fulfilment")) ? "KERBSIDE" : "COLLECTION")
@@ -108,8 +116,9 @@ public final class ReceiptLayout {
                 box("copy", "COPY " + receipt.optInt("copyNumber") + " — " + receipt.optString("reprintReason"));
             }
             gap(10);
-            center("customer", receipt.optString("customerName") + " · "
-                + DATE.format(Instant.parse(receipt.optString("paidAt"))), Style.HEADER_DETAIL);
+            center("customer", receipt.optString("customerName"), Style.BODY_BOLD);
+            if (customerPhone != null) center("customer.phone", customerPhone, Style.BODY_BOLD);
+            center("paid-at", DATE.format(Instant.parse(receipt.optString("paidAt"))), Style.HEADER_DETAIL);
             JSONObject car = receipt.optJSONObject("car");
             if (car != null) {
                 gap(4);
@@ -156,13 +165,13 @@ public final class ReceiptLayout {
             // A tight seven-pixel separation precedes the original promotion.
             // The QR's own quiet zone is separate and remains untouched.
             gap(2);
-            rule("games.rule");
+            rule("promotion.rule");
             gap(4);
-            center("games.heading", ReceiptGamesQr.HEADING, Style.PROMOTION);
-            center("games.subtitle", ReceiptGamesQr.SUBTITLE, Style.SMALL);
-            block(Kind.QR, "games.qr", (WIDTH - ReceiptGamesQr.SIZE_PX) / 2,
-                ReceiptGamesQr.SIZE_PX, ReceiptGamesQr.SIZE_PX);
-            center("games.url", ReceiptGamesQr.DISPLAY_URL, Style.FOOTER);
+            center("promotion.heading", promotion.heading, Style.PROMOTION);
+            if (!promotion.subtitle.isEmpty()) center("promotion.subtitle", promotion.subtitle, Style.SMALL);
+            block(Kind.PROMOTION_IMAGE, "promotion.image", (WIDTH - promotion.width) / 2,
+                promotion.width, promotion.height);
+            if (!promotion.displayUrl.isEmpty()) center("promotion.url", promotion.displayUrl, Style.FOOTER);
             gap(8);
             rule("footer.rule");
             gap(10);

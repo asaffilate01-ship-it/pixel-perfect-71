@@ -41,7 +41,7 @@ assert.equal(await digest(source), await digest(packaged));
 const lock = JSON.parse(await read("package-lock.json"));
 assert.equal(lock.packages["node_modules/@capacitor/android"].version, "8.6.0");
 const gradle = await read("android/app/build.gradle");
-assert.match(gradle, /versionCode 3/); assert.match(gradle, /versionName "0\.2\.1"/);
+assert.match(gradle, /versionCode 4/); assert.match(gradle, /versionName "0\.2\.2"/);
 assert.doesNotMatch(gradle, /signingConfig|storePassword|keyPassword/);
 const binder = await read("native/src/main/java/uk/co/mealdeck/printer/PrinterBinderWire.java");
 assert.match(binder, /bitmap\.getWidth\(\) != ReceiptRenderer\.WIDTH/);

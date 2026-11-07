@@ -42,6 +42,17 @@ public final class ReceiptLayoutTest {
         require(detailed != null, "Detailed fixture missing");
         checkHierarchyAndLastItem(detailed);
         checkHeightBoundary(detailed);
+        for (int sequence = 1; sequence <= 16; sequence++) {
+            JSONObject raw = new JSONObject(detailed.toString());
+            raw.put("orderNumber", String.format(java.util.Locale.ROOT, "%04d", sequence));
+            ReceiptModel original = ReceiptModel.parse(raw);
+            ReceiptLayout layout = ReceiptLayout.build(original, MONOSPACE, "+447700900123");
+            checkPromotionAndTail(layout);
+            checkBounds(layout, MONOSPACE);
+            raw.put("copyNumber", 2).put("reprintOf", "aaaaaaaa-1111-4111-8111-111111111111").put("reprintReason", "Inspect full receipt copy");
+            ReceiptLayout copy = ReceiptLayout.build(ReceiptModel.parse(raw), MONOSPACE, "+447700900123");
+            equal(layout.promotion.id, copy.promotion.id, "Reprints keep the same promotion");
+        }
         ReceiptModel model = ReceiptModel.parse(detailed);
         fails(() -> ReceiptLayout.build(model, (text, style) -> Float.NaN), "receipt_layout_unavailable");
         fails(() -> ReceiptLayout.build(model, (text, style) -> text.isEmpty() ? 0 : 500), "receipt_layout_unavailable");
@@ -70,7 +81,7 @@ public final class ReceiptLayoutTest {
         raw.put("totalPence", raw.getLong("totalPence") + 123);
         raw.put("orderNotes", "Keep the named bags separate. " + "Every note remains visible. ".repeat(30) + "LAST ORDER NOTE SENTINEL");
         ReceiptModel model = ReceiptModel.parse(raw);
-        ReceiptLayout layout = ReceiptLayout.build(model, MONOSPACE);
+        ReceiptLayout layout = ReceiptLayout.build(model, MONOSPACE, "+447700900123");
         assertPurchasedContent(layout, model.toJson());
         checkBounds(layout, MONOSPACE);
         checkPromotionAndTail(layout);
@@ -79,7 +90,12 @@ public final class ReceiptLayoutTest {
         require(order.style.textSize > brand.style.textSize, "Prominent order number");
         require(first(layout, "logo").width == 256 && first(layout, "logo").height == 258, "Full approved logo");
         preserved("ORDER " + raw.getString("orderNumber"), text(layout, "order"), "Long order number");
-        equal("Collection code 0427", text(layout, "collection"), "Collection code is separate");
+        equal("COLLECTION CODE", text(layout, "collection.label"), "Collection label is separate");
+        equal("0427", text(layout, "collection"), "Whole collection code is separate");
+        require(first(layout, "collection").style.textSize == order.style.textSize, "Collection code as large as order number");
+        equal(raw.getString("customerName"), text(layout, "customer"), "Customer name on its own line");
+        equal("+447700900123", text(layout, "customer.phone"), "Saved contact on its own line");
+        require(first(layout, "customer.phone").y >= last(layout, "customer").bottom(), "Phone follows the whole customer name");
         equal("KERBSIDE · CASH PAID", text(layout, "fulfilment"), "Fulfilment/payment label");
         equal("CASH PAID", text(layout, "paid"), "Cash total label");
         equal("Opening offer", text(layout, "discount"), "Discount label");
@@ -118,7 +134,8 @@ public final class ReceiptLayoutTest {
         ReceiptLayout wrapped = ReceiptLayout.build(ReceiptModel.parse(wide), variable);
         checkBounds(wrapped, variable);
         require(role(wrapped, "customer").size() > 1, "Measured long header wraps");
-        preserved(wide.getString("customerName") + " · 05/11/2026, 16:05:00", text(wrapped, "customer"), "Wide Unicode header preserved");
+        preserved(wide.getString("customerName"), text(wrapped, "customer"), "Wide Unicode header preserved");
+        equal("05/11/2026, 16:05:00", text(wrapped, "paid-at"), "Date remains on its own line");
         for (ReceiptLayout.Element element : role(wrapped, "customer")) {
             require(element.text.isEmpty() || !Character.isLowSurrogate(element.text.charAt(0)), "No split leading surrogate");
             require(element.text.isEmpty() || !Character.isHighSurrogate(element.text.charAt(element.text.length() - 1)), "No split trailing surrogate");
@@ -214,18 +231,24 @@ public final class ReceiptLayoutTest {
     }
     private static void checkPromotionAndTail(ReceiptLayout layout) {
         int paidBottom = Math.max(last(layout, "paid").bottom(), last(layout, "paid.amount").bottom());
-        ReceiptLayout.Element heading = first(layout, "games.heading"), qr = first(layout, "games.qr");
+        ReceiptLayout.Element heading = first(layout, "promotion.heading"), artwork = first(layout, "promotion.image");
         require(heading.y - paidBottom == 7, "Paid-to-promotion gap remains tight");
-        equal(ReceiptGamesQr.HEADING, text(layout, "games.heading"), "Original games heading");
-        equal(ReceiptGamesQr.SUBTITLE, text(layout, "games.subtitle"), "Original games subtitle");
-        require(qr.y == last(layout, "games.subtitle").bottom(), "QR immediately follows promotion text");
-        require(qr.width == 246 && qr.height == 246 && qr.x == 69, "Centered whole QR including quiet border");
-        require(first(layout, "games.url").y == qr.bottom(), "Public URL directly below QR");
-        require(first(layout, "footer.trading").y > qr.bottom(), "Full footer follows QR");
+        equal(layout.promotion.heading, text(layout, "promotion.heading"), "Relevant promotion text retained");
+        int textBottom = last(layout, "promotion.heading").bottom();
+        if (!layout.promotion.subtitle.isEmpty()) {
+            equal(layout.promotion.subtitle, text(layout, "promotion.subtitle"), "Relevant subtitle retained");
+            textBottom = last(layout, "promotion.subtitle").bottom();
+        }
+        require(artwork.y == textBottom, "One promotion image immediately follows its text");
+        require(artwork.width == layout.promotion.width && artwork.height == layout.promotion.height
+            && artwork.x == (384 - artwork.width) / 2, "Complete approved artwork is centered");
+        if (!layout.promotion.displayUrl.isEmpty())
+            require(first(layout, "promotion.url").y == artwork.bottom(), "Public URL directly below image");
+        require(first(layout, "footer.trading").y > artwork.bottom(), "Full footer follows the promotion");
         equal("ONE ORDER. EVERY CRAVING.", text(layout, "footer.slogan"), "Original final footer");
         require(layout.contentHeight == last(layout, "footer.slogan").bottom(), "No content after final footer");
         require(layout.totalHeight - layout.contentHeight == 180, "Final blank paper tail exactly 180 pixels");
-        require(role(layout, "games.qr").size() == 1, "One games QR per receipt");
+        require(role(layout, "promotion.image").size() == 1, "Exactly one rotation slot per receipt");
     }
     private static List<ReceiptLayout.Element> role(ReceiptLayout layout, String name) {
         return layout.elements.stream().filter(element -> element.role.equals(name)).toList();

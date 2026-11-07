@@ -8,14 +8,14 @@ export function PrinterApkDownload({ headingLevel = "h2" }: { headingLevel?: "h2
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <p className="text-xs font-bold uppercase tracking-[.12em] md-ops-accent">
-            Version 0.2.1 · receipt app
+            Version 0.2.2 · receipt app
           </p>
           <Heading className="text-xl font-black">H10S automatic receipts</Heading>
           <p className="text-sm md-ops-muted">Android 13 · sign in with your printer account</p>
         </div>
         <a
-          href="/downloads/mealdeck-printer-h10s-0.2.1.apk"
-          download="mealdeck-printer-h10s-0.2.1.apk"
+          href="/downloads/mealdeck-printer-h10s-0.2.2.apk"
+          download="mealdeck-printer-h10s-0.2.2.apk"
           className="md-ops-button md-ops-primary w-full sm:w-auto"
         >
           <Download className="size-4 shrink-0" aria-hidden="true" />
