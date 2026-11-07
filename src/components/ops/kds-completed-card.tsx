@@ -2,17 +2,18 @@ import { Check, LockKeyhole, ShoppingBag, StickyNote, Users, Utensils } from "lu
 import type { KdsCompletedOrder } from "@/lib/mealdeck-kds-workflow";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { KDS_FULFILMENT_LABELS, kdsClockTime } from "@/lib/mealdeck-kds-view";
-import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
+import { isOrderNumber } from "@/lib/mealdeck-order-number";
+import { kdsOrderReference } from "@/lib/mealdeck-marketplace";
 import { KdsPickupDetails } from "./kds-pickup-details";
 import { KdsMealComponents } from "./kds-meal-components";
+import { KdsMarketplaceSource, KdsMarketplaceStatus } from "./kds-marketplace-status";
 
 /** Read-only durable history. No checklist, mutation, payment or print action. */
 export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
   const quantity = order.items.reduce((total, item) => total + item.quantity, 0);
   const bags = new Set(order.items.flatMap((item) => item.bags?.map((bag) => bag.number) ?? []));
-  const orderNumber = orderDisplayNumber(order.order_number, order.display_code);
+  const { value: orderNumber, label: referenceLabel } = kdsOrderReference(order);
   const hasOrderNumber = isOrderNumber(order.order_number);
-  const referenceLabel = hasOrderNumber ? "Order" : "Collection code";
   return (
     <article
       tabIndex={-1}
@@ -24,7 +25,10 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
     >
       <header className="md-ops-ticket-heading md-kds-ticket-heading border-b md-ops-divider">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="md-kds-fulfilment">{KDS_FULFILMENT_LABELS[order.fulfilment]}</span>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {order.marketplace && <KdsMarketplaceSource marketplace={order.marketplace} />}
+            <span className="md-kds-fulfilment">{KDS_FULFILMENT_LABELS[order.fulfilment]}</span>
+          </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-900">
             <Check size={16} aria-hidden="true" />
             Done
@@ -44,12 +48,20 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
             </strong>
           </div>
         </div>
-        {hasOrderNumber && (order.fulfilment === "pickup" || order.fulfilment === "curbside") && (
+        {order.marketplace && hasOrderNumber && (
           <p className="md-kds-collection-code">
-            <span>Collection code</span>
-            <strong>{order.display_code}</strong>
+            <span>MealDeck order</span>
+            <strong>{order.order_number}</strong>
           </p>
         )}
+        {!order.marketplace &&
+          hasOrderNumber &&
+          (order.fulfilment === "pickup" || order.fulfilment === "curbside") && (
+            <p className="md-kds-collection-code">
+              <span>Collection code</span>
+              <strong>{order.display_code}</strong>
+            </p>
+          )}
         <div className="md-kds-ticket-meta">
           <span>
             {quantity} {quantity === 1 ? "item" : "items"}
@@ -67,7 +79,7 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
           )}
         </div>
         <p className="mt-2 text-xs md-ops-muted">
-          Handover confirmed ·{" "}
+          {order.marketplace ? "Kitchen handover recorded" : "Handover confirmed"} ·{" "}
           {new Date(order.completed_at).toLocaleDateString("en-GB", {
             timeZone: "Europe/London",
             weekday: "short",
@@ -76,6 +88,7 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
           })}{" "}
           · UK time
         </p>
+        {order.marketplace && <KdsMarketplaceStatus marketplace={order.marketplace} completed />}
       </header>
       <div className="md-kds-ticket-body">
         <KdsPickupDetails
@@ -116,9 +129,13 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
               </div>
               {item.unit_pence != null && (
                 <p className="md-kds-line-price">
-                  <strong>£{(item.unit_pence / 100).toFixed(2)} each</strong>
-                  <span> · selected choices included</span>
-                  {item.quantity > 1 && (
+                  <strong>
+                    {order.marketplace ? "Platform unit price: " : ""}£
+                    {(item.unit_pence / 100).toFixed(2)}
+                    {!order.marketplace && " each"}
+                  </strong>
+                  {!order.marketplace && <span> · selected choices included</span>}
+                  {!order.marketplace && item.quantity > 1 && (
                     <span>
                       {" "}
                       · £{((item.quantity * item.unit_pence) / 100).toFixed(2)} line total

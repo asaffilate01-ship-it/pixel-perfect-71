@@ -35,10 +35,19 @@ import {
 import { KdsCompletedCard } from "./kds-completed-card";
 import { KdsPickupDetails } from "./kds-pickup-details";
 import { KdsMealComponents } from "./kds-meal-components";
+import { KdsMarketplaceSource, KdsMarketplaceStatus } from "./kds-marketplace-status";
 import { KdsTicketGrid } from "./kds-ticket-grid";
 import { KdsOrderNavigator } from "./kds-order-navigator";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
-import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
+import { isOrderNumber } from "@/lib/mealdeck-order-number";
+import {
+  MARKETPLACE_LABELS,
+  kdsOrderReference,
+  marketplaceKitchenBlockReason,
+  marketplaceSyncPresentation,
+  marketplaceTransitionParameters,
+  parseMarketplaceCancellationAcknowledgement,
+} from "@/lib/mealdeck-marketplace";
 import {
   KDS_STAGE_LABELS,
   groupKdsItems,
@@ -306,6 +315,11 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
 
   async function updateOrder(order: KdsOrder, action: Action) {
     if (!canChange || mutating.current || !order.routing_complete) return;
+    const marketplaceBlock = marketplaceKitchenBlockReason(order);
+    if (marketplaceBlock) {
+      setActionError(marketplaceBlock);
+      return;
+    }
     const currentOrder = boardRef.current?.orders.find(
       (candidate) => candidate.order_id === order.order_id,
     );
@@ -314,10 +328,11 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
       void refresh();
       return;
     }
-    const expectedVersion = action.target === "pass" ? order.pass?.version : order.version;
+    const expectedVersion =
+      !order.marketplace && action.target === "pass" ? order.pass?.version : order.version;
     if (!expectedVersion) return;
-    const orderNumber = orderDisplayNumber(order.order_number, order.display_code);
-    const reference = `${isOrderNumber(order.order_number) ? "Order" : "Collection code"} ${orderNumber}`;
+    const identity = kdsOrderReference(order);
+    const reference = `${identity.label} ${identity.value}`;
     mutating.current = true;
     invalidateRead();
     reading.current = false;
@@ -335,23 +350,54 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
         item: "mealdeck_ops_kds_set_item_ready",
         handoff: "mealdeck_ops_kds_complete_handoff",
       };
-      const raw = await opsRpc<unknown>(names[action.target], {
-        p_tenant: tenantId,
-        p_location: locationId,
-        p_order: order.order_id,
-        p_expected_version: expectedVersion,
-        ...(action.target === "order" || action.target === "pass"
-          ? { p_status: action.status }
-          : {}),
-        ...(action.target === "item" ? { p_item: action.itemId, p_ready: action.ready } : {}),
-        ...(action.target === "handoff" ? { p_code: action.code } : {}),
+      const raw = order.marketplace
+        ? await opsRpc<unknown>(
+            "mealdeck_ops_marketplace_transition",
+            marketplaceTransitionParameters(
+              { tenantId, locationId, orderId: order.order_id, version: expectedVersion },
+              action,
+            ),
+          )
+        : await opsRpc<unknown>(names[action.target], {
+            p_tenant: tenantId,
+            p_location: locationId,
+            p_order: order.order_id,
+            p_expected_version: expectedVersion,
+            ...(action.target === "order" || action.target === "pass"
+              ? { p_status: action.status }
+              : {}),
+            ...(action.target === "item" ? { p_item: action.itemId, p_ready: action.ready } : {}),
+            ...(action.target === "handoff" ? { p_code: action.code } : {}),
+          });
+      const result = parseKdsMutation(raw, {
+        orderId: order.order_id,
+        status: action.status,
+        ...(order.marketplace ? { marketplace: order.marketplace } : {}),
       });
-      parseKdsMutation(raw, { orderId: order.order_id, status: action.status });
       saved = true;
       if (!mounted.current) return;
-      setNotice(
-        `${reference} · ${action.status === "accepted" ? "Accepted · receipt queued" : action.status === "completed" ? "Done · handover confirmed" : action.target === "item" ? "Item checklist updated" : action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Ready for handover"}.`,
-      );
+      if (order.marketplace && result.marketplace) {
+        const sync = marketplaceSyncPresentation(result.marketplace);
+        const local =
+          action.status === "accepted"
+            ? "Kitchen acceptance recorded"
+            : action.status === "completed"
+              ? "Kitchen handover recorded"
+              : action.target === "item"
+                ? "Item checklist updated"
+                : action.status === "preparing"
+                  ? "Kitchen preparation started"
+                  : action.status === "packing"
+                    ? "Packing started"
+                    : "Packed for handover";
+        setNotice(
+          `${reference} · ${local}. ${sync.headline}.${sync.detail ? ` ${sync.detail}` : ""}`,
+        );
+      } else {
+        setNotice(
+          `${reference} · ${action.status === "accepted" ? "Accepted · receipt queued" : action.status === "completed" ? "Done · handover confirmed" : action.target === "item" ? "Item checklist updated" : action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Ready for handover"}.`,
+        );
+      }
     } catch (reason) {
       if (!mounted.current) return;
       setActionError(
@@ -383,7 +429,11 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
         if (mounted.current) {
           setPendingOrder(null);
           if (saved && !synced && !accessBlocked.current)
-            setNotice(`${reference} was updated. Reconnect to see its latest stage.`);
+            setNotice(
+              order.marketplace
+                ? `${reference} was updated in the kitchen. Reconnect to check the platform status.`
+                : `${reference} was updated. Reconnect to see its latest stage.`,
+            );
           window.requestAnimationFrame(() => {
             const focusTarget =
               actionButtons.current.get(order.order_id) ??
@@ -391,6 +441,71 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
               toolbarControl.current;
             focusTarget?.focus();
           });
+        }
+      }
+    }
+  }
+
+  async function acknowledgeMarketplaceCancellation(order: KdsOrder) {
+    if (!canChange || mutating.current || order.marketplace?.platform_state !== "cancelled") return;
+    const currentOrder = boardRef.current?.orders.find(
+      (candidate) => candidate.order_id === order.order_id,
+    );
+    if (!currentOrder || currentOrder.version !== order.version) {
+      setActionError("This order has changed. Refresh and check its current platform status.");
+      void refresh();
+      return;
+    }
+    const identity = kdsOrderReference(order);
+    const reference = `${identity.label} ${identity.value}`;
+    mutating.current = true;
+    invalidateRead();
+    reading.current = false;
+    setRefreshing(false);
+    setPendingOrder(order.order_id);
+    setActionError("");
+    setNotice("");
+    setSealConfirmation(null);
+    let saved = false;
+    try {
+      const raw = await opsRpc<unknown>("mealdeck_ops_marketplace_acknowledge_cancelled", {
+        p_tenant: tenantId,
+        p_location: locationId,
+        p_order: order.order_id,
+        p_expected_version: order.version,
+      });
+      parseMarketplaceCancellationAcknowledgement(raw, order.order_id);
+      saved = true;
+      if (mounted.current) setNotice(`${reference} · Cancellation acknowledged in the kitchen.`);
+    } catch (reason) {
+      if (!mounted.current) return;
+      setActionError(
+        safeMessage(reason, "The acknowledgement was not confirmed. Refresh to check the ticket."),
+      );
+      if (isAccessError(reason)) {
+        accessBlocked.current = true;
+        boardRef.current = null;
+        setBoard(null);
+        setLastSync(null);
+        setNotice("");
+        setActionError("");
+        setQuery("");
+        setFilter("all");
+        setFulfilment("all");
+        setFeedState("access_blocked");
+        setFeedError(safeMessage(reason, "Your kitchen access needs to be checked."));
+      } else setFeedState("stale");
+    } finally {
+      mutating.current = false;
+      if (mounted.current) {
+        const synced = !accessBlocked.current && (await refresh());
+        if (mounted.current) {
+          setPendingOrder(null);
+          if (saved && !synced && !accessBlocked.current)
+            setNotice(
+              `${reference} · Cancellation acknowledged. Reconnect to check the order list.`,
+            );
+          window.requestAnimationFrame(() => toolbarControl.current?.focus());
         }
       }
     }
@@ -542,8 +657,8 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
       )}
       {board?.readiness === "ready" && board.held_order_count > 0 && (
         <p className="rounded-xl border md-ops-border md-ops-paper p-3 text-sm md-ops-muted">
-          {board.held_order_count} {board.held_order_count === 1 ? "order is" : "orders are"}{" "}
-          waiting to be released to the kitchen.
+          {board.held_order_count} {board.held_order_count === 1 ? "order needs" : "orders need"}{" "}
+          verification or an operations check before kitchen work can continue.
         </p>
       )}
       {board?.readiness === "ready" && filter !== "done" && board.remaining_order_count > 0 && (
@@ -627,13 +742,16 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
           {completedOrders.length ? (
             <>
               <KdsOrderNavigator
-                orders={completedOrders.map((order) => ({
-                  id: order.order_id,
-                  headingId: `kds-completed-${order.order_id}`,
-                  reference: `${isOrderNumber(order.order_number) ? "Order" : "Collection code"} ${orderDisplayNumber(order.order_number, order.display_code)}`,
-                  stage: "Done",
-                  quantity: order.items.reduce((total, item) => total + item.quantity, 0),
-                }))}
+                orders={completedOrders.map((order) => {
+                  const reference = kdsOrderReference(order);
+                  return {
+                    id: order.order_id,
+                    headingId: `kds-completed-${order.order_id}`,
+                    reference: `${reference.label} ${reference.value}`,
+                    stage: "Done",
+                    quantity: order.items.reduce((total, item) => total + item.quantity, 0),
+                  };
+                })}
               />
               <KdsTicketGrid label="Completed kitchen orders">
                 {completedOrders.map((order) => (
@@ -707,6 +825,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
                     label: "Mark done",
                   })
                 }
+                onAcknowledgeCancellation={() => void acknowledgeMarketplaceCancellation(order)}
                 onAction={() => {
                   if (!action) return;
                   if (action.status === "sealed")
@@ -1165,13 +1284,16 @@ export function KdsOrderCollection({
 }) {
   const navigator = (
     <KdsOrderNavigator
-      orders={orders.map((order) => ({
-        id: order.order_id,
-        headingId: `kds-order-${order.order_id}`,
-        reference: `${isOrderNumber(order.order_number) ? "Order" : "Collection code"} ${orderDisplayNumber(order.order_number, order.display_code)}`,
-        stage: stageLabels[kdsOrderStage(order)],
-        quantity: order.items.reduce((total, item) => total + item.quantity, 0),
-      }))}
+      orders={orders.map((order) => {
+        const reference = kdsOrderReference(order);
+        return {
+          id: order.order_id,
+          headingId: `kds-order-${order.order_id}`,
+          reference: `${reference.label} ${reference.value}`,
+          stage: stageLabels[kdsOrderStage(order)],
+          quantity: order.items.reduce((total, item) => total + item.quantity, 0),
+        };
+      })}
     />
   );
   if (view === "tickets") {
@@ -1266,6 +1388,7 @@ export function KitchenOrderCard({
   onCancelSeal,
   onItemReady,
   onHandoff,
+  onAcknowledgeCancellation,
 }: {
   order: KdsOrder;
   stage: Stage;
@@ -1281,6 +1404,7 @@ export function KitchenOrderCard({
   onCancelSeal: () => void;
   onItemReady: (itemId: string, ready: boolean) => void;
   onHandoff: (code: string) => void;
+  onAcknowledgeCancellation?: () => void;
 }) {
   const [handoffCode, setHandoffCode] = useState("");
   const confirmButton = useRef<HTMLButtonElement>(null);
@@ -1289,10 +1413,14 @@ export function KitchenOrderCard({
   }, [confirmingSeal]);
   const groups = groupKdsItems(order);
   const progress = kdsTicketProgress(order);
-  const orderNumber = orderDisplayNumber(order.order_number, order.display_code);
+  const { value: orderNumber, label: referenceLabel } = kdsOrderReference(order);
   const hasOrderNumber = isOrderNumber(order.order_number);
-  const referenceLabel = hasOrderNumber ? "Order" : "Collection code";
   const collection = order.fulfilment === "pickup" || order.fulfilment === "curbside";
+  const marketplaceBlock = marketplaceKitchenBlockReason(order);
+  const actionsDisabled = disabled || !!marketplaceBlock || !order.routing_complete;
+  const handoffMatches = order.marketplace
+    ? handoffCode === order.marketplace.display_reference
+    : /^\d{4}$/.test(handoffCode);
   return (
     <article
       ref={cardRef}
@@ -1306,7 +1434,10 @@ export function KitchenOrderCard({
     >
       <header className="md-ops-ticket-heading md-kds-ticket-heading border-b md-ops-divider">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="md-kds-fulfilment">{fulfilmentLabels[order.fulfilment]}</span>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {order.marketplace && <KdsMarketplaceSource marketplace={order.marketplace} />}
+            <span className="md-kds-fulfilment">{fulfilmentLabels[order.fulfilment]}</span>
+          </div>
           <span
             className={`md-kds-status rounded-full px-2.5 py-1 text-xs font-bold ${stageStyles[stage].badge}`}
           >
@@ -1327,12 +1458,20 @@ export function KitchenOrderCard({
             </strong>
           </div>
         </div>
-        {hasOrderNumber && (collection || order.pass?.status === "ready_for_handoff") && (
+        {order.marketplace && hasOrderNumber && (
           <p className="md-kds-collection-code">
-            <span>Collection code</span>
-            <strong>{order.display_code}</strong>
+            <span>MealDeck order</span>
+            <strong>{order.order_number}</strong>
           </p>
         )}
+        {!order.marketplace &&
+          hasOrderNumber &&
+          (collection || order.pass?.status === "ready_for_handoff") && (
+            <p className="md-kds-collection-code">
+              <span>Collection code</span>
+              <strong>{order.display_code}</strong>
+            </p>
+          )}
         <div className="md-kds-ticket-meta">
           <span className="inline-flex items-center gap-1">
             <Clock3 className="size-3.5" aria-hidden="true" />
@@ -1354,6 +1493,7 @@ export function KitchenOrderCard({
             </span>
           )}
         </div>
+        {order.marketplace && <KdsMarketplaceStatus marketplace={order.marketplace} />}
       </header>
       <div className="md-kds-ticket-body">
         <KdsPickupDetails
@@ -1416,7 +1556,7 @@ export function KitchenOrderCard({
                         checked={item.status === "ready"}
                         aria-label={`Ready: ${item.quantity} ${item.item_name}${item.bags?.length ? ` · ${item.bags.map(formatPackingBagName).join(", ")}` : item.participant_name ? ` · ${item.participant_name}` : ""}`}
                         disabled={
-                          disabled ||
+                          actionsDisabled ||
                           !order.accepted_at ||
                           order.preparation_status === "queued" ||
                           order.pass?.status === "packing" ||
@@ -1462,9 +1602,13 @@ export function KitchenOrderCard({
                         />
                         {item.unit_pence != null && (
                           <p className="md-kds-line-price">
-                            <strong>£{(item.unit_pence / 100).toFixed(2)} each</strong>
-                            <span> · selected choices included</span>
-                            {item.quantity > 1 && (
+                            <strong>
+                              {order.marketplace ? "Platform unit price: " : ""}£
+                              {(item.unit_pence / 100).toFixed(2)}
+                              {!order.marketplace && " each"}
+                            </strong>
+                            {!order.marketplace && <span> · selected choices included</span>}
+                            {!order.marketplace && item.quantity > 1 && (
                               <span>
                                 {" "}
                                 · £{((item.quantity * item.unit_pence) / 100).toFixed(2)} line total
@@ -1504,7 +1648,9 @@ export function KitchenOrderCard({
                                     {detail && !priceVariant && (
                                       <span className="md-kds-choice-detail">
                                         {detail.quantity_per_parent}× each
-                                        {item.unit_pence != null && " · included in item price"}
+                                        {!order.marketplace &&
+                                          item.unit_pence != null &&
+                                          " · included in item price"}
                                       </span>
                                     )}
                                   </span>
@@ -1533,45 +1679,90 @@ export function KitchenOrderCard({
         )}
       </div>
       <footer className="md-ops-ticket-footer border-t md-ops-divider px-4 py-3">
-        {!order.accepted_at && order.routing_complete && (
-          <p className="md-kds-action-hint">Accepting queues the kitchen receipt once.</p>
+        {marketplaceBlock && (
+          <p className="md-kds-action-hint" role="status">
+            {marketplaceBlock}
+          </p>
+        )}
+        {!order.accepted_at && order.routing_complete && !marketplaceBlock && (
+          <p className="md-kds-action-hint">
+            {order.marketplace
+              ? `Record kitchen acceptance and check the ${MARKETPLACE_LABELS[order.marketplace.platform]} confirmation above.`
+              : "Accepting queues the kitchen receipt once."}
+          </p>
         )}
         {order.pass?.status === "packing" && (
           <p className="mb-2 text-sm font-semibold md-ops-muted">
             Packing in progress · check all named bags before handover.
           </p>
         )}
-        {order.pass?.status === "ready_for_handoff" ? (
+        {order.marketplace?.platform_state === "cancelled" ? (
+          <div className="space-y-2">
+            <p className="text-sm md-ops-muted">
+              Confirm the kitchen has seen the cancellation to remove this ticket from active
+              orders.
+            </p>
+            <button
+              ref={actionRef}
+              type="button"
+              className={`${button} md-ops-primary w-full`}
+              disabled={disabled || saving || !onAcknowledgeCancellation}
+              onClick={onAcknowledgeCancellation}
+              aria-label={`Acknowledge cancellation · ${referenceLabel} ${orderNumber}`}
+            >
+              {saving ? "Confirming…" : "Acknowledge cancellation"}
+            </button>
+          </div>
+        ) : order.pass?.status === "ready_for_handoff" ||
+          (order.marketplace && stage === "sealed") ? (
           <form
             className="md-kds-handoff-form space-y-2"
             onSubmit={(event) => {
               event.preventDefault();
-              if (/^\d{4}$/.test(handoffCode) && !disabled) onHandoff(handoffCode);
+              if (handoffMatches && !actionsDisabled) onHandoff(handoffCode);
             }}
           >
             <label className="block text-sm font-semibold md-ops-text">
-              Enter the customer’s four-digit collection code
+              {order.marketplace
+                ? `Check the ${MARKETPLACE_LABELS[order.marketplace.platform]} order reference with the courier or customer, then enter it here`
+                : "Enter the customer’s four-digit collection code"}
               <input
                 className="md-ops-field mt-2 w-full text-center text-xl tracking-[.3em]"
                 aria-label={
-                  hasOrderNumber ? `Collection code for order ${orderNumber}` : "Collection code"
+                  order.marketplace
+                    ? `${MARKETPLACE_LABELS[order.marketplace.platform]} order reference for handover`
+                    : hasOrderNumber
+                      ? `Collection code for order ${orderNumber}`
+                      : "Collection code"
                 }
-                inputMode="numeric"
+                inputMode={order.marketplace ? "text" : "numeric"}
                 autoComplete="off"
-                pattern="[0-9]{4}"
-                maxLength={4}
+                autoCapitalize="off"
+                spellCheck={false}
+                {...(!order.marketplace ? { pattern: "[0-9]{4}" } : {})}
+                maxLength={order.marketplace ? 160 : 4}
                 value={handoffCode}
-                onChange={(event) => setHandoffCode(event.target.value.replace(/\D/g, ""))}
-                disabled={disabled}
+                onChange={(event) =>
+                  setHandoffCode(
+                    order.marketplace ? event.target.value : event.target.value.replace(/\D/g, ""),
+                  )
+                }
+                disabled={actionsDisabled}
               />
             </label>
             <button
               type="submit"
               className={`${button} md-ops-primary w-full`}
-              disabled={disabled || !/^\d{4}$/.test(handoffCode)}
+              disabled={actionsDisabled || !handoffMatches}
             >
               {saving ? "Confirming…" : "Confirm handover · Mark done"}
             </button>
+            {order.marketplace && (
+              <p className="text-xs md-ops-muted">
+                Records the kitchen handover. The platform confirms courier pickup and customer
+                delivery.
+              </p>
+            )}
           </form>
         ) : confirmingSeal ? (
           <div
@@ -1593,7 +1784,7 @@ export function KitchenOrderCard({
               <button
                 ref={confirmButton}
                 type="button"
-                disabled={disabled}
+                disabled={actionsDisabled}
                 onClick={onConfirmSeal}
                 className={`${button} md-ops-primary`}
               >
@@ -1606,7 +1797,7 @@ export function KitchenOrderCard({
           <button
             ref={actionRef}
             type="button"
-            disabled={disabled || !order.routing_complete}
+            disabled={actionsDisabled || !order.routing_complete}
             onClick={onAction}
             className={`${button} md-ops-primary w-full`}
             aria-label={`${action.label} · ${referenceLabel} ${orderNumber}`}
@@ -1627,6 +1818,8 @@ export function KitchenOrderCard({
                 <PackageCheck className="size-5 shrink-0" aria-hidden="true" />
                 Ready for handover
               </>
+            ) : marketplaceBlock ? (
+              "Kitchen actions paused"
             ) : order.routing_complete ? (
               order.preparation_status === "preparing" ? (
                 "Tick each item when ready"

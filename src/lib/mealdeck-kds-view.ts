@@ -3,6 +3,7 @@ import type { KdsCompletedOrder } from "./mealdeck-kds-workflow";
 import { kdsOrderStage, type KdsOrderStage } from "./mealdeck-kds-presentation";
 import { formatPackingBagName } from "./mealdeck-packing-name";
 import { orderDisplayNumber } from "./mealdeck-order-number";
+import { MARKETPLACE_LABELS } from "./mealdeck-marketplace";
 
 export type KdsView = "tickets" | "stages";
 export type KdsSort = "oldest" | "newest";
@@ -24,6 +25,13 @@ export function matchesKdsOrderSearch(order: KdsOrder | KdsCompletedOrder, query
   const values = [
     orderDisplayNumber(order.order_number, order.display_code),
     order.display_code,
+    ...(order.marketplace
+      ? [
+          order.marketplace.display_reference,
+          MARKETPLACE_LABELS[order.marketplace.platform],
+          MARKETPLACE_LABELS[order.marketplace.platform].replace(/\s/g, ""),
+        ]
+      : []),
     KDS_FULFILMENT_LABELS[order.fulfilment],
     order.notes ?? "",
     ...order.items.flatMap((item) => [

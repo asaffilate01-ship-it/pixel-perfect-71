@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "mode": "disabled",
+  "serverUrl": "https://mealdeck.co.uk/",
+  "connectorId": null,
+  "externalStoreId": null,
+  "tokenEnvironment": "MEALDECK_UBER_BRIDGE_TOKEN",
+  "stateDirectory": ".runtime/uber-eats-android",
+  "profilePath": "profiles/uber-eats-android.unconfigured.json",
+  "pollIntervalMs": 2000,
+  "android": {
+    "appiumUrl": "http://127.0.0.1:4723",
+    "deviceIdEnvironment": "MEALDECK_UBER_DEVICE_ID",
+    "systemPort": 8201
+  }
+}

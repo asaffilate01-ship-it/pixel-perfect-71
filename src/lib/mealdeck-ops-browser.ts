@@ -176,6 +176,72 @@ export async function opsRpc<T>(
         );
       }
     }
+    if (
+      name === "mealdeck_ops_marketplace_transition" ||
+      name === "mealdeck_ops_marketplace_acknowledge_cancelled"
+    ) {
+      if (error.code === "PGRST202")
+        throw new OpsRequestError(
+          "unconfigured",
+          "Marketplace controls are not installed yet. Continue using the platform app and ask your administrator to finish the connector setup.",
+        );
+      if (/mealdeck_marketplace_(conflict|stale|version_mismatch)/i.test(error.message))
+        throw new OpsRequestError(
+          "conflict",
+          "This marketplace ticket changed. Refresh and check its latest kitchen and platform status.",
+        );
+      if (/mealdeck_marketplace_accept_confirmation_required/i.test(error.message))
+        throw new OpsRequestError(
+          "invalid_transition",
+          "The platform has not confirmed acceptance. Check the order in the platform app before preparing.",
+        );
+      if (/mealdeck_marketplace_accept_unavailable/i.test(error.message))
+        throw new OpsRequestError(
+          "invalid_transition",
+          "Acceptance is unavailable through this connection. Accept the order in the platform app, then refresh this ticket.",
+        );
+      if (/mealdeck_marketplace_cancel_confirmation_required/i.test(error.message))
+        throw new OpsRequestError(
+          "invalid_transition",
+          "Platform cancellation has not been verified. Refresh the ticket and check the order in the platform app.",
+        );
+      if (/mealdeck_marketplace_order_unavailable/i.test(error.message))
+        throw new OpsRequestError(
+          "unavailable",
+          "This marketplace ticket is no longer available in this kitchen. Refresh the order list.",
+        );
+      if (
+        /mealdeck_marketplace_(handover_reference_required|reference_mismatch)/i.test(error.message)
+      )
+        throw new OpsRequestError(
+          "invalid_transition",
+          "Check the exact platform order reference with the courier or customer, then enter it unchanged.",
+        );
+      if (/mealdeck_marketplace_cancelled/i.test(error.message))
+        throw new OpsRequestError(
+          "invalid_transition",
+          "The platform cancelled this order. Check it in the platform app before continuing.",
+        );
+      if (/mealdeck_marketplace_snapshot_hold/i.test(error.message))
+        throw new OpsRequestError(
+          "invalid_transition",
+          "The platform order changed. Check the full order in the platform app before continuing in the kitchen.",
+        );
+      if (
+        /mealdeck_marketplace_(invalid_transition|all_items_required|packing_locked|not_ready)/i.test(
+          error.message,
+        )
+      )
+        throw new OpsRequestError(
+          "invalid_transition",
+          "Check the current stage, every item and the packing confirmation before handing over this order.",
+        );
+      if (/mealdeck_marketplace_(disabled|unconfigured|connector_unavailable)/i.test(error.message))
+        throw new OpsRequestError(
+          "unavailable",
+          "The marketplace connection needs checking. Use the platform app and refresh this ticket before trying again.",
+        );
+    }
     if (name.startsWith("mealdeck_ops_kds_")) {
       if (/mealdeck_kds_handoff_code_required/.test(error.message))
         throw new OpsRequestError(

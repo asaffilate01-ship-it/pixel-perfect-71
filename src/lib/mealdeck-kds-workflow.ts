@@ -3,6 +3,7 @@ import { parseKdsBoard, parseKdsPickupContact, type KdsBoard } from "./mealdeck-
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
 import { orderNumberSchema } from "./mealdeck-order-number";
 import { mealComponentsSchema } from "./mealdeck-meal-components";
+import { marketplaceProjectionSchema } from "./mealdeck-marketplace";
 
 const timestamp = z
   .string()
@@ -34,6 +35,7 @@ const completedOrder = z
     order_id: z.string().uuid(),
     display_code: z.string().min(1).max(40),
     order_number: orderNumberSchema.nullable().optional(),
+    marketplace: marketplaceProjectionSchema.nullable().optional(),
     order_status: z.literal("fulfilled"),
     handoff_status: z.literal("handed_off"),
     accepted_at: timestamp,
