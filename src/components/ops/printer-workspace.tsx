@@ -22,6 +22,7 @@ import {
   PrinterBridgeError,
 } from "@/lib/mealdeck-printer-browser";
 import { confirmReceiptPaper } from "@/lib/mealdeck-printer-recovery";
+import { printerQueueView } from "@/lib/mealdeck-printer-queue";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { preloadReceiptLogo, waitForReceiptLogo } from "@/lib/mealdeck-receipt-logo";
 import { MealDeckBackendSetupError } from "@/lib/mealdeck-backend-client-cache";
@@ -44,6 +45,7 @@ import {
 } from "@/lib/mealdeck-printer";
 import { StaffAlertControls, StaffSoundUnlock, useStaffAlerts } from "./staff-alerts";
 import { ReceiptPreview } from "./receipt-preview";
+import { ReceiptQueueList } from "./printer-receipt-list";
 import { PrinterApkDownload } from "./printer-apk-download";
 import { PrinterConnectionStatus, PrinterPendingOrderCard } from "./printer-pending-orders";
 import { StaffMobileNav } from "./staff-mobile-navigation";
@@ -811,6 +813,7 @@ function ReceiptTerminal({
         outcome: job.status === "printed" ? "printed" : "not_printed",
         reason: job.resolution ?? "Synchronised prior operator paper inspection.",
       });
+      setLocalHolds((previous) => previous.filter((hold) => hold.jobId !== job.jobId));
       setNotice(
         "Local printer record resolved from the recorded paper inspection. Nothing was resent.",
       );
@@ -897,6 +900,9 @@ function ReceiptTerminal({
           call("confirm_paper", { p_job: job.jobId, p_outcome: outcome, p_reason: reason }),
       });
       setPrintJob(null);
+      if (token.current) {
+        setLocalHolds((previous) => previous.filter((hold) => hold.jobId !== job.jobId));
+      }
       setNotice(
         outcome === "printed"
           ? "Paper receipt confirmed. No further copy will print."
@@ -933,12 +939,8 @@ function ReceiptTerminal({
       await refresh();
     }
   }
-  const queueActionCount = new Set([
-    ...jobs
-      .filter((job) => job.status !== "printed" && job.status !== "failed")
-      .map((job) => job.jobId),
-    ...localHolds.map((hold) => hold.jobId),
-  ]).size;
+  const queueView = printerQueueView(jobs, localHolds);
+  const queueActionCount = queueView.actionCount;
   const paperCheckCount = new Set([
     ...jobs
       .filter((job) => ["sending", "sent_unconfirmed", "held"].includes(job.status))
@@ -1236,8 +1238,10 @@ function ReceiptTerminal({
             ))}
           </section>
         )}
-        <div className="grid items-start gap-4 lg:grid-cols-2">
-          {jobs.map((job) => (
+        <ReceiptQueueList
+          view={queueView}
+          fresh={fresh}
+          renderJob={(job) => (
             <ReceiptJobCard
               key={job.jobId}
               job={job}
@@ -1251,17 +1255,8 @@ function ReceiptTerminal({
               onConfirm={(outcome, reason) => void confirm(job, outcome, reason)}
               onReprint={(reason) => void reprint(job, reason)}
             />
-          ))}
-        </div>
-        {fresh && !jobs.length && !localHolds.length && (
-          <div className="md-ops-card p-8 text-center">
-            <Printer className="mx-auto size-8 md-ops-muted" />
-            <h3 className="mt-3 text-xl font-black">Receipt queue clear</h3>
-            <p className="mt-2 text-sm md-ops-muted">
-              The next accepted, paid order will appear here.
-            </p>
-          </div>
-        )}
+          )}
+        />
       </section>
       <section
         id="printer-account"

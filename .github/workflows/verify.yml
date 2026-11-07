@@ -88,6 +88,7 @@ jobs:
           src/lib/mealdeck-printer-browser.ts src/lib/mealdeck-printer-recovery.ts
           src/lib/mealdeck-printer-auth.ts tests/mealdeck-printer-auth.test.ts
           src/components/ops/printer-pending-orders.tsx src/lib/mealdeck-printer-acceptance.ts
+          src/components/ops/printer-receipt-list.tsx src/lib/mealdeck-printer-queue.ts
           tests/mealdeck-printer-acceptance.test.ts
           deploy/mealdeck/printer-acceptance.mjs tests/postgres/printer-acceptance-behavior.mjs
           deploy/mealdeck/receipt-archive.mjs tests/postgres/receipt-archive-behavior.mjs
