@@ -43,6 +43,9 @@ describe("The three approved November MealDeck offers", () => {
     const cake = MEALDECK_OFFERS.find((offer) => offer.id === "sunday-milk-cake")!;
     expect(cake.startsOn).toBe(cake.throughDate);
     expect(cake.description).toContain("with every order");
+    expect(cake.terms).toContain(
+      "Available during Sunday's opening hours, 3pm–11pm, for Luton collection or kerbside pickup.",
+    );
     expect("flavour" in MILK_CAKE_CAMPAIGN).toBe(false);
     expect("maximumPerOrder" in MILK_CAKE_CAMPAIGN).toBe(false);
   });
