@@ -11,6 +11,12 @@
 
 <!-- LOVABLE:END -->
 
+## Load’d names and current drinks — owner direction, 7 November 2026
+
+- Rename only Load’d’s King of Hearts → Royal Flush, Queen of Hearts → Double Deck, Jack of Diamonds → All In, and King of Spades → The Jackpot in Loaded Fries and Full House, including the same products’ named replacement labels. Preserve stable product/modifier IDs, descriptions, prices and historical purchased snapshots.
+- The owner confirmed Coke, Pepsi Max, Tango Apple and water in stock. The existing Tavo, Load’d and Skorch cans/drinks menus offer those four at the existing £1 price; adult/kids included drinks follow the exact corresponding stock SKU at no extra charge. Keep the existing Water Bottle label/identity. Other drink identities remain available for later restocking and historical references, with current Luton visibility off.
+- Coke has new standalone source IDs under Load’d and Skorch and two new Skorch included-drink option IDs. Do not rename a Pepsi identity into Coke. Preserve the frozen historical migrations; the reviewed additive manifest and once-only audited live stock operations are under `deploy/mealdeck/operations/20261107_*`. Later staff stock changes remain authoritative.
+
 ## H10S live receipt companion — owner direction, 7 November 2026
 
 - The owner reports that the physical setup ticket from the published H10S diagnostic APK printed successfully and now requests live ordering and automatic receipts. That observation authorises building the full receipt companion using the proven service protocol; it supersedes the earlier proposal-only prerequisite below. It does not establish that a live customer receipt, recovery case or background lifecycle has yet been accepted.

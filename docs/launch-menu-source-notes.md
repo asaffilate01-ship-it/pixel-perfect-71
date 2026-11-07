@@ -1,16 +1,31 @@
 # Supplied launch menu sources
 
-`src/lib/launch-menu-catalogue.ts` combines the five supplied menu sheets with the owner's detailed replacement menus and prices dated **5 November 2026**. Revision `owner-menu-20261105-v2` contains **79 products in 20 sections**. It supersedes the earlier 77-item transcription and blanket £20 placeholders. Flavours and portions remain choices on their parent products, not extra products. MealDeck's independent backend remains the authority for live availability, canonical prices, modifiers and orders.
+`src/lib/launch-menu-catalogue.ts` combines the five supplied menu sheets with the owner's detailed replacement menus and prices dated **5 November 2026**. Revision `owner-menu-20261105-v2`, with the 6 November milkcakes and 7 November Coke additions, contains **91 products in 25 sections**. It supersedes the earlier 77-item transcription and blanket £20 placeholders. Flavours and portions remain choices on their parent products, not extra products. MealDeck's independent backend remains the authority for live availability, canonical prices, modifiers and orders.
 
 | Operational brand ID | Display name | Sections | Products |
 | -------------------- | ------------ | -------: | -------: |
-| `tavo-chicken`       | Tavo Chicken |        7 |       22 |
-| `moktl`              | Moktl        |        1 |        8 |
-| `loadd`              | Load’d       |        5 |       27 |
-| `skorch-burgers`     | Skorch       |        4 |       19 |
-| `souvano`            | Souvano      |        3 |        3 |
+| `tavo-chicken`       | Tavo Chicken |        8 |       24 |
+| `moktl`              | Moktl        |        2 |       10 |
+| `loadd`              | Load’d       |        6 |       30 |
+| `skorch-burgers`     | Skorch       |        5 |       22 |
+| `souvano`            | Souvano      |        4 |        5 |
 
 The marketing brand ID **skorch** resolves to **skorch-burgers**; catalogue records retain the canonical operational ID.
+
+## Owner update — 7 November 2026
+
+Only Load’d’s **Loaded Fries** and **The Full House** dish names change:
+
+| Previous name    | Current name |
+| ---------------- | ------------ |
+| King of Hearts   | Royal Flush  |
+| Queen of Hearts  | Double Deck  |
+| Jack of Diamonds | All In       |
+| King of Spades   | The Jackpot  |
+
+The eight distinct products keep their existing SKU, price, description and options. Named Load’d replacement choices use the corresponding new display names while retaining their existing option IDs.
+
+The owner confirmed **Coke, Pepsi Max, Tango Apple and water** in stock. Coke is added to the Skorch/Load’d catalogue at the existing £1 can price and to Skorch’s included meal/kids drink choices. Tavo already lists Coke. Water retains its existing **Water Bottle** display name and SKU. Other drink identities and prices remain in the catalogue; current per-kitchen stock determines whether they can be selected, including in meals. The database public-menu allowlist and included-drink stock mapping require the additive Coke entries before they are offered live.
 
 ## Provenance
 

@@ -31,7 +31,7 @@ export function buildIncludedDrinkStockManifest() {
       }
     }
   }
-  if (bindings.length !== 28 || new Set(bindings.map((row) => row.option)).size !== bindings.length)
+  if (bindings.length !== 30 || new Set(bindings.map((row) => row.option)).size !== bindings.length)
     throw new Error("Review changes to included drink stock bindings before generating SQL");
   return { version: 1, bindings };
 }
