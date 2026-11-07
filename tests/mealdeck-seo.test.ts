@@ -127,13 +127,13 @@ describe("structured data reflects confirmed launch facts", () => {
       {
         validFrom: "2026-11-07",
         validThrough: "2026-11-07",
-        opens: "13:00:00",
+        opens: "15:00:00",
         closes: "00:00:00",
       },
       {
         validFrom: "2026-11-08",
         validThrough: "2026-11-08",
-        opens: "13:00:00",
+        opens: "15:00:00",
         closes: "23:00:00",
       },
     ]);

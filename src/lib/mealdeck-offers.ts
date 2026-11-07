@@ -1,11 +1,12 @@
 import { OPENING_OFFER_PERCENT } from "./mealdeck-opening-offer";
+import { MEALDECK_LAUNCH_DAYS } from "./mealdeck-launch-schedule";
 
 /**
- * Owner-approved public terms, updated 6 November 2026. This catalogue publishes offers;
+ * Owner-approved public terms, updated 7 November 2026. This catalogue publishes offers;
  * it cannot grant discounts, issue points or enable a payment channel.
  * Pricing and membership evidence remain the independent MealDeck server's job.
  */
-export const MEALDECK_OFFERS_TERMS_VERSION = "mealdeck-offers-20261106-v3";
+export const MEALDECK_OFFERS_TERMS_VERSION = "mealdeck-offers-20261107-v4";
 export const MEALDECK_OFFERS_TIME_ZONE = "Europe/London";
 
 export const MILK_CAKE_CAMPAIGN = Object.freeze({
@@ -17,6 +18,8 @@ export const MILK_CAKE_CAMPAIGN = Object.freeze({
   canonicalItemId: null,
   automaticPricingEnabled: false,
 } as const);
+
+const milkCakeLaunchDay = MEALDECK_LAUNCH_DAYS.find((day) => day.date === MILK_CAKE_CAMPAIGN.date);
 
 export const DOUBLE_POINTS_CAMPAIGN = Object.freeze({
   minimumSpendPence: 1_500,
@@ -80,7 +83,7 @@ export const MEALDECK_OFFERS: readonly MealDeckOffer[] = [
     audience: "Guests and members",
     terms: [
       "Milk cake for 99p with every order on Sunday 8 November 2026.",
-      "Available during Sunday's opening hours, 1pm–11pm, for Luton collection or kerbside pickup.",
+      `Available during Sunday's opening hours${milkCakeLaunchDay ? `, ${milkCakeLaunchDay.hoursLabel},` : ""} for Luton collection or kerbside pickup.`,
     ],
   },
   {
