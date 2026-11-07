@@ -105,3 +105,16 @@ these checks. Keep the service paused if an uncertain result cannot be resolved.
 
 Publication evidence and the actual-device acceptance result must be recorded
 separately when observed; this implementation document is not itself that evidence.
+
+## Version 0.2.0 signed build evidence
+
+- Native source: `b3959346e28a0b8c9cf1662177e6469c94c13023`.
+- Successful Android workflow: [42374402495](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42374402495); artifact `13574394028`.
+- Artifact ZIP SHA-256: `831670470838dc18971520b98675c48f34f00c78cabeab695c5080ac09ebb265`.
+- Native validation: 14 valid and 32 invalid golden receipt cases, exact normalized JSON/fingerprint/text parity, plus dispatch durability/interruption/overlap checks.
+- Signed APK: `public/downloads/mealdeck-printer-h10s-0.2.0.apk`, 8685343 bytes.
+- APK SHA-256: `9738bad20f8c4dcd996ac9f98159f6355ea7c7fd9f14ee9f387cbb737991b3f0`.
+- Release certificate SHA-256: `0aa18a66b01cecbe0aa86c07a6efa8693b5f01138278488d7dce4a296b992ec8`; public certificate is checked in, private signing material is not.
+- Verified APK signature v3, one RSA3072 signer, 16 KiB page alignment, package `uk.co.mealdeck.printer`, version code 2, minimum Android API33, target36, and non-debuggable release.
+- Website validation: 25 focused config/auth/acceptance tests and the main website build passed; bundled screen typecheck and five status-boundary tests passed.
+- Physical setup ticket: owner-confirmed. Full customer receipt and background/recovery behaviour: awaiting the actual H10S installation and paper check.
