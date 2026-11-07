@@ -45,6 +45,12 @@ import {
 } from "./mealdeck-stripe.server";
 import { readMealDeckStripeCheckoutDomain } from "./mealdeck-stripe-checkout-domain.server";
 import { ORDER_NOTES_ERROR_MESSAGE, orderNotesMatch } from "./mealdeck-order-notes";
+import {
+  bindWhatsAppCheckoutOrder,
+  readWhatsAppCheckoutBinding,
+  registerWhatsAppCheckoutQuote,
+} from "./mealdeck-whatsapp-checkout.server";
+import { readWhatsAppConfig } from "./mealdeck-whatsapp-transport.server";
 
 type Json = Record<string, unknown>;
 const object = (value: unknown): Json =>
@@ -526,13 +532,40 @@ export async function handleOnlineCheckoutRequest(
       );
       return Response.json({ receipt }, { headers: NO_STORE });
     }
+    const whatsapp = await readWhatsAppCheckoutBinding(request, env, fetcher);
+    const whatsappActor = customerId
+      ? { customerId }
+      : { guestTokenHash: guestTokenHash(guestToken!) };
+    const whatsappPay = checkoutPayInput.safeParse(input);
+    const whatsappRecovery = !!(
+      whatsapp?.handoff.orderId &&
+      whatsapp.handoff.attemptId &&
+      whatsappPay.success &&
+      whatsappPay.data.quoteId === whatsapp.handoff.quoteId &&
+      whatsappPay.data.attemptId === whatsapp.handoff.attemptId
+    );
+    if (whatsapp && !whatsappRecovery && !readWhatsAppConfig(env)?.orderingEnabled)
+      throw new CheckoutProblem(
+        "whatsapp_ordering_paused",
+        "New WhatsApp ordering is paused. An existing payment or receipt remains available through its original checkout.",
+        503,
+      );
     const stripe = readMealDeckStripeConfig(env);
-    if (!stripe?.livemode || env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] !== "true")
+    if (
+      !stripe?.livemode ||
+      (env["MEALDECK_ONLINE_CHECKOUT_ENABLED"] !== "true" && !whatsappRecovery)
+    )
       throw backendProblem({});
     const status = await readOnlineCheckoutStatus(env, fetcher, customerId);
-    if (!status.available) throw newOrderingUnavailable(status);
+    if (!status.available && !whatsappRecovery) throw newOrderingUnavailable(status);
     if (action === "quote") {
       const selection = normaliseCheckoutSelection(input, clients.config.tenantId);
+      if (whatsapp && selection.requestHash !== whatsapp.requestHash)
+        throw new CheckoutProblem(
+          "whatsapp_order_changed",
+          "The order differs from your WhatsApp review. Return to WhatsApp to change it.",
+          409,
+        );
       const quoteRpc = customerId
         ? "mealdeck_create_checkout_quote"
         : "mealdeck_create_guest_checkout_quote";
@@ -559,15 +592,32 @@ export async function handleOnlineCheckoutRequest(
           "We couldn't save your special requests. Please review your order again before paying.",
           503,
         );
+      if (whatsapp)
+        await registerWhatsAppCheckoutQuote(
+          whatsapp,
+          quote["quoteId"],
+          selection.requestHash,
+          whatsappActor,
+        );
       return Response.json({ quote }, { headers: NO_STORE });
     }
     const parsed = checkoutPayInput.safeParse(input);
     if (!parsed.success)
       throw new CheckoutProblem("invalid_request", "Please review your order before paying.");
+    if (
+      whatsapp &&
+      (whatsapp.handoff.quoteId !== parsed.data.quoteId ||
+        (whatsapp.handoff.attemptId && whatsapp.handoff.attemptId !== parsed.data.attemptId))
+    )
+      throw new CheckoutProblem(
+        "whatsapp_attempt_conflict",
+        "Resume the original WhatsApp payment attempt.",
+        409,
+      );
     await verifyStripeAccount(stripe, fetcher);
     // Provider verification may take time. Recheck the scoped clock/readiness
     // immediately before preparing a real payment when public signoff is absent.
-    if (env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off") {
+    if (env["MEALDECK_CHECKOUT_INTEGRATION_APPROVED"] !== "signed-off" && !whatsappRecovery) {
       const current = await readOnlineCheckoutStatus(env, fetcher, customerId);
       if (!current.available || !current.prelaunchVerification)
         throw newOrderingUnavailable(current);
@@ -586,6 +636,18 @@ export async function handleOnlineCheckoutRequest(
     if (!z.uuid().safeParse(prepared["orderId"]).success || !Array.isArray(prepared["lines"]))
       throw backendProblem({});
     const order = prepared as unknown as PreparedStripeOrder;
+    // Bind the verified actor and original canonical order before any provider
+    // session can be created. Chat messages cannot supply this authority.
+    if (whatsapp)
+      await bindWhatsAppCheckoutOrder(
+        whatsapp,
+        {
+          quoteId: parsed.data.quoteId,
+          attemptId: parsed.data.attemptId,
+          orderId: order.orderId,
+        },
+        whatsappActor,
+      );
     const { sessionId, url } = await resolveStripeCheckoutSession(stripe, order, fetcher);
     if (!order.sessionId) {
       const { error } = await clients.service.rpc("mealdeck_bind_stripe_session", {

@@ -89,6 +89,7 @@ import { OpsKdsPanel } from "@/components/ops/kds-panel";
 import { CashOrderPanel } from "@/components/ops/cash-order-panel";
 import { CheckoutLaunchSettings } from "@/components/ops/checkout-launch-settings";
 import { IntegrationStatusPanel } from "@/components/ops/integration-status-panel";
+import { WhatsAppInboxPanel } from "@/components/ops/whatsapp-inbox-panel";
 import { StaffPasswordPanel } from "@/components/ops/staff-password-panel";
 import {
   StaffMobileNav,
@@ -1137,13 +1138,21 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
               <div>
                 {kitchenSelected &&
                   (can("orders.read") ? (
-                    <OpsKdsPanel
-                      key={tenant + ":" + location + ":" + user.id}
-                      tenantId={tenant}
-                      locationId={location}
-                      can={can}
-                      mobileNavigation={kitchenMode}
-                    />
+                    <div className="space-y-5">
+                      <OpsKdsPanel
+                        key={tenant + ":" + location + ":" + user.id}
+                        tenantId={tenant}
+                        locationId={location}
+                        can={can}
+                        mobileNavigation={kitchenMode}
+                      />
+                      <WhatsAppInboxPanel
+                        tenantId={tenant}
+                        locationId={location}
+                        staffUserId={user.id}
+                        canControl={can("orders.status")}
+                      />
+                    </div>
                   ) : (
                     <p role="alert" className={columns}>
                       Your staff role does not have access to the kitchen display.
@@ -1173,6 +1182,15 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                 )}
                 {selectedSection === "orders" && (
                   <div className="space-y-5">
+                    {!!location && can("orders.read") && (
+                      <WhatsAppInboxPanel
+                        key={tenant + ":" + location + ":" + user.id}
+                        tenantId={tenant}
+                        locationId={location}
+                        staffUserId={user.id}
+                        canControl={can("orders.status")}
+                      />
+                    )}
                     {!!location && can("payments.collect") && (
                       <CashOrderPanel
                         key={tenant + ":" + location + ":" + user.id}

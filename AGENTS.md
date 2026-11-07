@@ -11,6 +11,14 @@
 
 <!-- LOVABLE:END -->
 
+## WhatsApp ordering implementation — 7 November 2026
+
+- `/api/whatsapp/webhook` accepts exact-account/number signed Meta Cloud API events into a durable scoped inbox. The supervised worker executes deterministic live-menu intake and optional strict AI menu proposals. No model/payment screenshot/chat text grants order, payment or staff authority.
+- Initial scope is one Luton pickup/kerbside basket. Group rooms and delivery remain later channel phases. Use MealDeck's independent database and the existing canonical checkout, verified Stripe payment, separate staff acceptance, packing/KDS and printer rules.
+- `/whatsapp/checkout` exchanges a one-use fragment capability for an HttpOnly claim, freezes the reviewed selection, and keeps ordinary/group baskets untouched. Queued private links are encrypted; the handoff ledger stores hashes. Existing guest eligibility, explicit privacy acknowledgement and member authentication apply.
+- Exact canonical quote, actor, original order and attempt are verified before provider-session creation. Unknown payments remain bound. Help/allergen/staff takeover pauses new checkout, while receipts and payment reconciliation remain available. Never imply pausing chat cancels a provider payment.
+- Website WhatsApp links are runtime-gated by complete verified configuration and channel approval; source alone must continue to show coming soon. Use `docs/mealdeck-whatsapp-ordering.md` for the independent post-install migration, worker, secrets, provider-version fixture checks and actual activation acceptance.
+
 ## Server group ordering rooms — current direction, 6 November 2026
 
 - `/group-order` now uses one server-backed room for an organiser and up to nine invitees. People explicitly accept their private invitation, join, choose their own food and mark their choices ready. This replaces the local invitation/return-link workflow below; no reply-link review or messaging thread belongs in the current room flow.
@@ -160,7 +168,6 @@ The following records the earlier local flow and its compatibility requirements.
 - The payment and privacy secrets must not go in public environment
   variables or public client modules. Never use unsigned browser status to
   publish kitchen tickets.
-
 
 ## 6 November 2026 kitchen release and live acceptance
 

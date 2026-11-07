@@ -38,8 +38,13 @@ export async function requestMealDeckCheckout<T>(
   getAccessToken: () => Promise<string | null>,
   signal?: AbortSignal,
   request: typeof fetch = fetch,
+  context?: { source: "whatsapp" },
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
+  // Receipt/contact identity still uses the existing verified account or guest cookie.
+  // Only an explicitly selected WhatsApp quote/payment opts into the claim binding.
+  if (context?.source === "whatsapp" && (input["action"] === "quote" || input["action"] === "pay"))
+    headers["X-Mealdeck-WhatsApp"] = "1";
   if (mode === "member") {
     const token = await getAccessToken();
     if (!token) throw new Error("Sign in and verify your email to continue.");

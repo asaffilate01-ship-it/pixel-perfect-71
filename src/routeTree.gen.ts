@@ -40,11 +40,17 @@ import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as FranchiseBrandIdRouteImport } from './routes/franchise_.$brandId'
+import { Route as WhatsappCheckoutRouteImport } from './routes/whatsapp.checkout'
 import { Route as ApiAuthEmailRouteImport } from './routes/api.auth.email'
 import { Route as ApiOpsCashRouteImport } from './routes/api.ops.cash'
 import { Route as ApiOpsIntegrationsRouteImport } from './routes/api.ops.integrations'
+import { Route as ApiOpsWhatsappRouteImport } from './routes/api.ops.whatsapp'
 import { Route as ApiPublicMenuRouteImport } from './routes/api.public.menu'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as ApiWhatsappChannelRouteImport } from './routes/api.whatsapp.channel'
+import { Route as ApiWhatsappCheckoutRouteImport } from './routes/api.whatsapp.checkout'
+import { Route as ApiWhatsappWebhookRouteImport } from './routes/api.whatsapp.webhook'
+import { Route as ApiWhatsappWorkerRouteImport } from './routes/api.whatsapp.worker'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -201,6 +207,11 @@ const FranchiseBrandIdRoute = FranchiseBrandIdRouteImport.update({
   path: '/franchise/$brandId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WhatsappCheckoutRoute = WhatsappCheckoutRouteImport.update({
+  id: '/whatsapp/checkout',
+  path: '/whatsapp/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthEmailRoute = ApiAuthEmailRouteImport.update({
   id: '/api/auth/email',
   path: '/api/auth/email',
@@ -216,6 +227,11 @@ const ApiOpsIntegrationsRoute = ApiOpsIntegrationsRouteImport.update({
   path: '/api/ops/integrations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOpsWhatsappRoute = ApiOpsWhatsappRouteImport.update({
+  id: '/api/ops/whatsapp',
+  path: '/api/ops/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMenuRoute = ApiPublicMenuRouteImport.update({
   id: '/api/public/menu',
   path: '/api/public/menu',
@@ -224,6 +240,26 @@ const ApiPublicMenuRoute = ApiPublicMenuRouteImport.update({
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappChannelRoute = ApiWhatsappChannelRouteImport.update({
+  id: '/api/whatsapp/channel',
+  path: '/api/whatsapp/channel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappCheckoutRoute = ApiWhatsappCheckoutRouteImport.update({
+  id: '/api/whatsapp/checkout',
+  path: '/api/whatsapp/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappWebhookRoute = ApiWhatsappWebhookRouteImport.update({
+  id: '/api/whatsapp/webhook',
+  path: '/api/whatsapp/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappWorkerRoute = ApiWhatsappWorkerRouteImport.update({
+  id: '/api/whatsapp/worker',
+  path: '/api/whatsapp/worker',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -258,12 +294,18 @@ export interface FileRoutesByFullPath {
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
+  '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
   '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
+  '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/whatsapp/channel': typeof ApiWhatsappChannelRoute
+  '/api/whatsapp/checkout': typeof ApiWhatsappCheckoutRoute
+  '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
+  '/api/whatsapp/worker': typeof ApiWhatsappWorkerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -296,12 +338,18 @@ export interface FileRoutesByTo {
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise/$brandId': typeof FranchiseBrandIdRoute
+  '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
   '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
+  '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/whatsapp/channel': typeof ApiWhatsappChannelRoute
+  '/api/whatsapp/checkout': typeof ApiWhatsappCheckoutRoute
+  '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
+  '/api/whatsapp/worker': typeof ApiWhatsappWorkerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -335,12 +383,18 @@ export interface FileRoutesById {
   '/auth/confirm': typeof AuthConfirmRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/franchise_/$brandId': typeof FranchiseBrandIdRoute
+  '/whatsapp/checkout': typeof WhatsappCheckoutRoute
   '/blog/': typeof BlogIndexRoute
   '/api/auth/email': typeof ApiAuthEmailRoute
   '/api/ops/cash': typeof ApiOpsCashRoute
   '/api/ops/integrations': typeof ApiOpsIntegrationsRoute
+  '/api/ops/whatsapp': typeof ApiOpsWhatsappRoute
   '/api/public/menu': typeof ApiPublicMenuRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/whatsapp/channel': typeof ApiWhatsappChannelRoute
+  '/api/whatsapp/checkout': typeof ApiWhatsappCheckoutRoute
+  '/api/whatsapp/webhook': typeof ApiWhatsappWebhookRoute
+  '/api/whatsapp/worker': typeof ApiWhatsappWorkerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -375,12 +429,18 @@ export interface FileRouteTypes {
     | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
+    | '/whatsapp/checkout'
     | '/blog/'
     | '/api/auth/email'
     | '/api/ops/cash'
     | '/api/ops/integrations'
+    | '/api/ops/whatsapp'
     | '/api/public/menu'
     | '/api/stripe/webhook'
+    | '/api/whatsapp/channel'
+    | '/api/whatsapp/checkout'
+    | '/api/whatsapp/webhook'
+    | '/api/whatsapp/worker'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -413,12 +473,18 @@ export interface FileRouteTypes {
     | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise/$brandId'
+    | '/whatsapp/checkout'
     | '/blog'
     | '/api/auth/email'
     | '/api/ops/cash'
     | '/api/ops/integrations'
+    | '/api/ops/whatsapp'
     | '/api/public/menu'
     | '/api/stripe/webhook'
+    | '/api/whatsapp/channel'
+    | '/api/whatsapp/checkout'
+    | '/api/whatsapp/webhook'
+    | '/api/whatsapp/worker'
   id:
     | '__root__'
     | '/'
@@ -451,12 +517,18 @@ export interface FileRouteTypes {
     | '/auth/confirm'
     | '/blog/$slug'
     | '/franchise_/$brandId'
+    | '/whatsapp/checkout'
     | '/blog/'
     | '/api/auth/email'
     | '/api/ops/cash'
     | '/api/ops/integrations'
+    | '/api/ops/whatsapp'
     | '/api/public/menu'
     | '/api/stripe/webhook'
+    | '/api/whatsapp/channel'
+    | '/api/whatsapp/checkout'
+    | '/api/whatsapp/webhook'
+    | '/api/whatsapp/worker'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -490,12 +562,18 @@ export interface RootRouteChildren {
   AuthConfirmRoute: typeof AuthConfirmRoute
   BlogSlugRoute: typeof BlogSlugRoute
   FranchiseBrandIdRoute: typeof FranchiseBrandIdRoute
+  WhatsappCheckoutRoute: typeof WhatsappCheckoutRoute
   BlogIndexRoute: typeof BlogIndexRoute
   ApiAuthEmailRoute: typeof ApiAuthEmailRoute
   ApiOpsCashRoute: typeof ApiOpsCashRoute
   ApiOpsIntegrationsRoute: typeof ApiOpsIntegrationsRoute
+  ApiOpsWhatsappRoute: typeof ApiOpsWhatsappRoute
   ApiPublicMenuRoute: typeof ApiPublicMenuRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ApiWhatsappChannelRoute: typeof ApiWhatsappChannelRoute
+  ApiWhatsappCheckoutRoute: typeof ApiWhatsappCheckoutRoute
+  ApiWhatsappWebhookRoute: typeof ApiWhatsappWebhookRoute
+  ApiWhatsappWorkerRoute: typeof ApiWhatsappWorkerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -717,6 +795,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FranchiseBrandIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/whatsapp/checkout': {
+      id: '/whatsapp/checkout'
+      path: '/whatsapp/checkout'
+      fullPath: '/whatsapp/checkout'
+      preLoaderRoute: typeof WhatsappCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/email': {
       id: '/api/auth/email'
       path: '/api/auth/email'
@@ -738,6 +823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOpsIntegrationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ops/whatsapp': {
+      id: '/api/ops/whatsapp'
+      path: '/api/ops/whatsapp'
+      fullPath: '/api/ops/whatsapp'
+      preLoaderRoute: typeof ApiOpsWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/menu': {
       id: '/api/public/menu'
       path: '/api/public/menu'
@@ -750,6 +842,34 @@ declare module '@tanstack/react-router' {
       path: '/api/stripe/webhook'
       fullPath: '/api/stripe/webhook'
       preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp/channel': {
+      id: '/api/whatsapp/channel'
+      path: '/api/whatsapp/channel'
+      fullPath: '/api/whatsapp/channel'
+      preLoaderRoute: typeof ApiWhatsappChannelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp/checkout': {
+      id: '/api/whatsapp/checkout'
+      path: '/api/whatsapp/checkout'
+      fullPath: '/api/whatsapp/checkout'
+      preLoaderRoute: typeof ApiWhatsappCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp/webhook': {
+      id: '/api/whatsapp/webhook'
+      path: '/api/whatsapp/webhook'
+      fullPath: '/api/whatsapp/webhook'
+      preLoaderRoute: typeof ApiWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp/worker': {
+      id: '/api/whatsapp/worker'
+      path: '/api/whatsapp/worker'
+      fullPath: '/api/whatsapp/worker'
+      preLoaderRoute: typeof ApiWhatsappWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -786,12 +906,18 @@ const rootRouteChildren: RootRouteChildren = {
   AuthConfirmRoute: AuthConfirmRoute,
   BlogSlugRoute: BlogSlugRoute,
   FranchiseBrandIdRoute: FranchiseBrandIdRoute,
+  WhatsappCheckoutRoute: WhatsappCheckoutRoute,
   BlogIndexRoute: BlogIndexRoute,
   ApiAuthEmailRoute: ApiAuthEmailRoute,
   ApiOpsCashRoute: ApiOpsCashRoute,
   ApiOpsIntegrationsRoute: ApiOpsIntegrationsRoute,
+  ApiOpsWhatsappRoute: ApiOpsWhatsappRoute,
   ApiPublicMenuRoute: ApiPublicMenuRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ApiWhatsappChannelRoute: ApiWhatsappChannelRoute,
+  ApiWhatsappCheckoutRoute: ApiWhatsappCheckoutRoute,
+  ApiWhatsappWebhookRoute: ApiWhatsappWebhookRoute,
+  ApiWhatsappWorkerRoute: ApiWhatsappWorkerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

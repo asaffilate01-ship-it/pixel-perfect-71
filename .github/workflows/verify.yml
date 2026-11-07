@@ -17,6 +17,12 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+      - name: WhatsApp conversation, transport and private checkout boundaries
+        run: bun test tests/mealdeck-whatsapp-*.test.ts tests/mealdeck-customer-return.test.ts
+      - name: WhatsApp implementation lint and worker syntax
+        run: |
+          node --check apps/mealdeck-whatsapp-worker/worker.mjs
+          bunx eslint src/lib/mealdeck-whatsapp*.ts src/routes/api.whatsapp*.ts src/routes/api.ops.whatsapp.ts src/routes/whatsapp.checkout.tsx src/components/whatsapp*.tsx src/components/ops/whatsapp-inbox-panel.tsx tests/mealdeck-whatsapp*.test.ts deploy/mealdeck/whatsapp-ordering.mjs tests/postgres/whatsapp-ordering-behavior.mjs --rule 'prettier/prettier: off'
       - name: Launch menu prices, basket arithmetic and cross-brand choices
         run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-desserts.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/launch-basket-feedback.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
       - name: Launch menu and approved logo implementation lint
@@ -733,6 +739,7 @@ jobs:
             staff-cash-orders,
             meal-components,
             live-verification,
+            whatsapp-ordering,
           ]
     services:
       postgres:

@@ -1,12 +1,18 @@
 /** Fixed same-site destinations only. Never accept an arbitrary post-auth redirect. */
 export type CustomerReturnTarget =
-  "/menus" | "/checkout" | "/checkout?group=1" | "/group-pay" | "/group-order";
+  | "/menus"
+  | "/checkout"
+  | "/checkout?group=1"
+  | "/group-pay"
+  | "/group-order"
+  | "/whatsapp/checkout";
 
 export function customerReturnTarget(value: unknown): CustomerReturnTarget {
   return value === "/checkout" ||
     value === "/checkout?group=1" ||
     value === "/group-pay" ||
-    value === "/group-order"
+    value === "/group-order" ||
+    value === "/whatsapp/checkout"
     ? value
     : "/menus";
 }

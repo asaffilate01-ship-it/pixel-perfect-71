@@ -90,6 +90,19 @@ import {
   parseKitchenAvailability,
   type KitchenAvailability,
 } from "@/lib/mealdeck-kitchen-availability";
+import {
+  requestWhatsAppCheckout,
+  matchingWhatsAppReceiptContext,
+  readWhatsAppPaymentAttempt,
+  rememberWhatsAppPaymentAttempt,
+  whatsAppCheckoutStorageKey,
+  whatsAppDraftBagQuantities,
+  whatsAppGuestContactMatches,
+  whatsAppPaymentRecovery,
+  whatsAppQuoteInput,
+  type WhatsAppCheckoutContext,
+  type WhatsAppPaymentAttempt,
+} from "@/lib/mealdeck-whatsapp-checkout-browser";
 
 const FULFILMENT_KEY = "mealdeck-checkout-fulfilment-v1";
 const ATTEMPT_KEY = "mealdeck-checkout-attempt-v2";
@@ -183,8 +196,16 @@ async function checkoutRequest(
   mode: MealDeckCheckoutMode,
   input: Record<string, unknown>,
   signal?: AbortSignal,
+  whatsApp = false,
 ): Promise<ApiResult> {
-  return requestMealDeckCheckout<ApiResult>(mode, input, getMealDeckCustomerAccessToken, signal);
+  return requestMealDeckCheckout<ApiResult>(
+    mode,
+    input,
+    getMealDeckCustomerAccessToken,
+    signal,
+    fetch,
+    whatsApp ? { source: "whatsapp" } : undefined,
+  );
 }
 
 function KitchenAvailabilityNotice({
@@ -510,15 +531,104 @@ export function CheckoutSpecialRequestsReview({ notes }: { notes?: string | null
   );
 }
 
-export function LaunchCheckout({
-  orderId,
-  cancelled = false,
-  groupExpected = false,
-}: {
+type LaunchCheckoutProps = {
   orderId?: string;
   cancelled?: boolean;
   groupExpected?: boolean;
-}) {
+  whatsAppCheckout?: WhatsAppCheckoutContext;
+};
+
+/** Stripe keeps its canonical /checkout?order return. Only this exact bound order restores chat context. */
+export function LaunchCheckout(props: LaunchCheckoutProps) {
+  const [recovered, setRecovered] = useState<{
+    orderId: string;
+    context: WhatsAppCheckoutContext | null;
+  } | null>(null);
+  useEffect(() => {
+    if (!props.orderId || props.whatsAppCheckout) return;
+    const expected = props.orderId;
+    let mounted = true;
+    let settled = false;
+    const controller = new AbortController();
+    const complete = (context: WhatsAppCheckoutContext | null) => {
+      if (!mounted || settled) return;
+      settled = true;
+      clearTimeout(timer);
+      setRecovered({ orderId: expected, context });
+    };
+    // An optional channel outage must never block an ordinary order receipt.
+    const timer = setTimeout(() => {
+      complete(null);
+      controller.abort();
+    }, 2_000);
+    void requestWhatsAppCheckout({ action: "current" }, fetch, { signal: controller.signal })
+      .then((context) => complete(matchingWhatsAppReceiptContext(context, expected)))
+      .catch(() => complete(null));
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [props.orderId, props.whatsAppCheckout]);
+  if (props.orderId && !props.whatsAppCheckout && recovered?.orderId !== props.orderId)
+    return (
+      <div className="md-checkout-shell">
+        <SiteHeader />
+        <main className="md-checkout" id="main-content">
+          <section className="md-checkout-card" role="status">
+            <Loader2 className="md-checkout-spin" aria-hidden="true" />
+            <h1>Checking private order access</h1>
+            <p>Restoring the checkout used for this order…</p>
+          </section>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  const context =
+    props.whatsAppCheckout ?? (recovered?.orderId === props.orderId ? recovered?.context : null);
+  return (
+    <LaunchCheckoutView
+      key={(context?.handoffId ?? "website") + ":" + (props.orderId ?? "new")}
+      {...props}
+      {...(context ? { whatsAppCheckout: context } : {})}
+    />
+  );
+}
+
+function LaunchCheckoutView({
+  orderId,
+  cancelled = false,
+  groupExpected = false,
+  whatsAppCheckout,
+}: LaunchCheckoutProps) {
+  const whatsAppDraft = whatsAppCheckout?.draft;
+  const [whatsAppBoundMode, setWhatsAppBoundMode] = useState<MealDeckCheckoutMode | null>(
+    whatsAppCheckout?.quoteId ? whatsAppCheckout.checkoutMode : null,
+  );
+  const checkoutHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (whatsAppDraft) checkoutHeading.current?.focus();
+  }, [whatsAppDraft]);
+  const checkoutModeKey = whatsAppCheckout
+    ? whatsAppCheckoutStorageKey(whatsAppCheckout.handoffId, "mode")
+    : CHECKOUT_MODE_KEY;
+  const [whatsAppPrivacyAcknowledged, setWhatsAppPrivacyAcknowledged] = useState(false);
+  const [whatsAppPaymentAttempt, setWhatsAppPaymentAttempt] =
+    useState<WhatsAppPaymentAttempt | null>(() => {
+      if (!whatsAppCheckout) return null;
+      if (whatsAppCheckout.quoteId && whatsAppCheckout.attemptId && whatsAppCheckout.checkoutMode)
+        return {
+          quoteId: whatsAppCheckout.quoteId,
+          attemptId: whatsAppCheckout.attemptId,
+          checkoutMode: whatsAppCheckout.checkoutMode,
+          ...(whatsAppCheckout.orderId ? { orderId: whatsAppCheckout.orderId } : {}),
+        };
+      try {
+        return readWhatsAppPaymentAttempt(sessionStorage, whatsAppCheckout.handoffId);
+      } catch {
+        return null;
+      }
+    });
   const entryPolicy = useCustomerEntryPolicy();
   const modeChosen = useRef(false);
   const [picks, setPicks] = useState<LaunchMenuPick[]>([]);
@@ -530,13 +640,26 @@ export function LaunchCheckout({
   const [status, setStatus] = useState<CheckoutStatus | null>(null);
   const [statusCurrent, setStatusCurrent] = useState(false);
   const [selectedCheckoutMode, setCheckoutMode] = useState<MealDeckCheckoutMode>(
-    orderId ? "member" : "guest",
+    whatsAppCheckout?.checkoutMode ??
+      whatsAppPaymentAttempt?.checkoutMode ??
+      (orderId ? "member" : "guest"),
   );
-  const [guestDetails, setGuestDetails] = useState({ name: "", email: "", phone: "" });
+  const [guestDetails, setGuestDetails] = useState({
+    name: whatsAppDraft?.customer.name ?? "",
+    email: "",
+    phone: whatsAppDraft?.customer.phone ?? "",
+  });
   useEffect(() => {
-    if (!entryPolicy || orderId || modeChosen.current) return;
+    if (
+      !entryPolicy ||
+      orderId ||
+      whatsAppBoundMode ||
+      whatsAppPaymentAttempt ||
+      modeChosen.current
+    )
+      return;
     try {
-      const saved = sessionStorage.getItem(CHECKOUT_MODE_KEY);
+      const saved = sessionStorage.getItem(checkoutModeKey);
       if (saved === "member" || saved === "guest") {
         setCheckoutMode(saved);
         modeChosen.current = true;
@@ -546,7 +669,7 @@ export function LaunchCheckout({
       /* No stored choice. */
     }
     setCheckoutMode(entryPolicy.emailRegistrationDeferred ? "guest" : "member");
-  }, [entryPolicy, orderId]);
+  }, [entryPolicy, orderId, checkoutModeKey, whatsAppPaymentAttempt, whatsAppBoundMode]);
   const [guestIssue, setGuestIssue] = useState<string | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -579,17 +702,27 @@ export function LaunchCheckout({
   const guestStateVersion = useRef(0);
   const registered = account?.status === "signed_in" && account.profile.registered;
   const checkoutMode = checkoutModeForEntry(selectedCheckoutMode, {
-    hasOrder: !!orderId,
+    hasOrder: !!orderId || !!whatsAppPaymentAttempt || !!whatsAppBoundMode,
     registrationDeferred: entryPolicy?.emailRegistrationDeferred,
     registered,
   });
   const memberEntryVisible = entryPolicy?.emailRegistrationDeferred === false || registered;
   useEffect(() => {
-    if (orderId) return;
+    if (orderId || whatsAppPaymentAttempt || whatsAppBoundMode) return;
     if (registered && status?.prelaunchVerification) setCheckoutMode("member");
     else if (!memberEntryVisible) setCheckoutMode("guest");
-  }, [orderId, registered, status?.prelaunchVerification, memberEntryVisible]);
+  }, [
+    orderId,
+    registered,
+    status?.prelaunchVerification,
+    memberEntryVisible,
+    whatsAppPaymentAttempt,
+    whatsAppBoundMode,
+  ]);
   const guestSession = status?.guestCheckout.session ?? null;
+  const whatsAppGuestMismatch = Boolean(
+    whatsAppDraft && guestSession && !whatsAppGuestContactMatches(whatsAppDraft, guestSession),
+  );
   const pickupContact =
     checkoutMode === "guest"
       ? guestSession
@@ -607,10 +740,15 @@ export function LaunchCheckout({
   const guestEligible = orderingAvailable && status?.guestCheckout.eligible === true;
   const canViewReceipt = checkoutMode === "guest" ? Boolean(guestSession) : registered;
   const canCheckout =
+    !whatsAppCheckout?.paused &&
     !basketIssue &&
     picks.length > 0 &&
     orderingAvailable &&
     canViewReceipt &&
+    (orderId ||
+      !whatsAppDraft ||
+      checkoutMode !== "guest" ||
+      (whatsAppPrivacyAcknowledged && !whatsAppGuestMismatch)) &&
     (checkoutMode === "member" || guestEligible);
   const customerIdentity =
     checkoutMode === "guest"
@@ -619,8 +757,11 @@ export function LaunchCheckout({
   const publicMenu = usePublicMenu();
   const { catalogue } = publicMenu;
   const displayTotal = launchMenuBasketDisplayPrice(picks, catalogue).itemsSubtotalPence;
-  const accountReturnTo =
-    !orderId && (groupExpected || groupCheckout) ? "/checkout?group=1" : "/checkout";
+  const accountReturnTo = whatsAppCheckout
+    ? "/whatsapp/checkout"
+    : !orderId && (groupExpected || groupCheckout)
+      ? "/checkout?group=1"
+      : "/checkout";
   const sharedAvailable =
     sharedCapabilities?.available === true &&
     (checkoutMode !== "guest" || sharedCapabilities.guestEligible);
@@ -651,6 +792,18 @@ export function LaunchCheckout({
   }, [groupCheckout?.groupId, orderId, orderingAvailable, sharedRefresh]);
 
   useEffect(() => {
+    if (whatsAppDraft) {
+      setPicks(whatsAppDraft.picks);
+      setFulfilment(whatsAppDraft.fulfilment);
+      setVehicle(whatsAppDraft.vehicle ?? { make: "", colour: "", registrationLast4: "" });
+      setSpecialRequests(whatsAppDraft.notes);
+      setCutleryRequested(whatsAppDraft.packingPlan.cutleryRequested);
+      setSeparateBags(whatsAppDraft.packingPlan.separateBags);
+      setBagCount(whatsAppDraft.packingPlan.bagCount);
+      setBagQuantities(whatsAppDraftBagQuantities(whatsAppDraft));
+      setBasketLoaded(true);
+      return;
+    }
     const transfer = readLaunchCheckoutTransfer(groupExpected);
     const savedPicks = transfer.picks;
     const savedGroup = transfer.group;
@@ -682,17 +835,27 @@ export function LaunchCheckout({
         ]),
       ),
     );
-  }, [groupExpected]);
+  }, [groupExpected, whatsAppDraft]);
 
   useEffect(() => {
-    alive.current = true;
     try {
-      const saved = sessionStorage.getItem(FULFILMENT_KEY);
-      if (saved === "pickup" || saved === "curbside") setFulfilment(saved);
-      if (sessionStorage.getItem(CHECKOUT_MODE_KEY) === "guest") setCheckoutMode("guest");
+      if (!whatsAppDraft) {
+        const saved = sessionStorage.getItem(FULFILMENT_KEY);
+        if (saved === "pickup" || saved === "curbside") setFulfilment(saved);
+      }
+      if (
+        !whatsAppCheckout?.checkoutMode &&
+        !whatsAppPaymentAttempt &&
+        sessionStorage.getItem(checkoutModeKey) === "guest"
+      )
+        setCheckoutMode("guest");
     } catch {
       /* Optional restoration. */
     }
+  }, [checkoutModeKey, whatsAppCheckout?.checkoutMode, whatsAppDraft, whatsAppPaymentAttempt]);
+
+  useEffect(() => {
+    alive.current = true;
     let unsubscribe: (() => void) | undefined;
     const refreshAccount = async () => {
       try {
@@ -804,10 +967,10 @@ export function LaunchCheckout({
     setReceiptRefreshed(false);
     setQuote(null);
     setReviewConfirmed(false);
-    setSpecialRequests("");
+    setSpecialRequests(whatsAppDraft?.notes ?? "");
     setIssue(null);
     attempt.current = null;
-  }, [customerIdentity, orderId]);
+  }, [customerIdentity, orderId, whatsAppDraft]);
 
   const refreshReceipt = useCallback(
     async (signal?: AbortSignal) => {
@@ -872,6 +1035,16 @@ export function LaunchCheckout({
 
   useEffect(() => {
     if (!receipt?.verifiedPaid) return;
+    if (whatsAppCheckout) {
+      try {
+        const saved = readWhatsAppPaymentAttempt(sessionStorage, whatsAppCheckout.handoffId);
+        if (saved?.orderId === receipt.orderId)
+          sessionStorage.removeItem(whatsAppCheckoutStorageKey(whatsAppCheckout.handoffId));
+      } catch {
+        /* The verified receipt remains available. */
+      }
+      return;
+    }
     try {
       const saved = JSON.parse(sessionStorage.getItem(ATTEMPT_KEY) ?? "null") as {
         orderId?: string;
@@ -900,9 +1073,11 @@ export function LaunchCheckout({
     } catch {
       /* Never lose the confirmed receipt because local storage is unavailable. */
     }
-  }, [receipt]);
+  }, [receipt, whatsAppCheckout]);
 
   function chooseCheckoutMode(next: MealDeckCheckoutMode) {
+    if (whatsAppBoundMode && next !== whatsAppBoundMode) return;
+    if (whatsAppPaymentAttempt && next !== whatsAppPaymentAttempt.checkoutMode) return;
     modeChosen.current = true;
     if (next === checkoutMode) return;
     checkoutRequestId.current += 1;
@@ -914,24 +1089,30 @@ export function LaunchCheckout({
     setReceipt(null);
     setReceiptRefreshed(false);
     setReviewConfirmed(false);
-    setSpecialRequests("");
+    setSpecialRequests(whatsAppDraft?.notes ?? "");
+    setWhatsAppPrivacyAcknowledged(false);
     attempt.current = null;
     setIssue(null);
     setGuestIssue(null);
     try {
-      sessionStorage.setItem(CHECKOUT_MODE_KEY, next);
+      sessionStorage.setItem(checkoutModeKey, next);
     } catch {
       /* The selection still applies to this screen. */
     }
   }
   async function saveGuestDetails() {
     if (busy || !guestEligible) return;
+    if (whatsAppDraft && !whatsAppPrivacyAcknowledged) {
+      setGuestIssue("Please acknowledge the Privacy Notice before saving your guest details.");
+      return;
+    }
     setGuestIssue(null);
     let contact: ReturnType<typeof normaliseGuestInput>;
     try {
       contact = normaliseGuestInput({
         action: "guest",
         ...guestDetails,
+        ...(whatsAppDraft ? whatsAppDraft.customer : {}),
         privacyVersion: GUEST_PRIVACY_VERSION,
       });
     } catch (error) {
@@ -977,7 +1158,12 @@ export function LaunchCheckout({
             ? { ...current, guestCheckout: { ...current.guestCheckout, session: null } }
             : current,
         );
-        setGuestDetails({ name: "", email: "", phone: "" });
+        setGuestDetails({
+          name: whatsAppDraft?.customer.name ?? "",
+          email: "",
+          phone: whatsAppDraft?.customer.phone ?? "",
+        });
+        setWhatsAppPrivacyAcknowledged(false);
       }
     } catch (error) {
       if (alive.current && requestId === checkoutRequestId.current)
@@ -990,6 +1176,7 @@ export function LaunchCheckout({
     }
   }
   function chooseFulfilment(next: Fulfilment) {
+    if (whatsAppDraft) return;
     setFulfilment(next);
     setQuote(null);
     setReviewConfirmed(false);
@@ -1002,6 +1189,7 @@ export function LaunchCheckout({
     }
   }
   function updateBagCount(count: number) {
+    if (whatsAppDraft) return;
     setBagCount(count);
     setQuote(null);
     setReviewConfirmed(false);
@@ -1019,6 +1207,7 @@ export function LaunchCheckout({
     );
   }
   function updateSpecialRequests(value: string) {
+    if (whatsAppDraft) return;
     setSpecialRequests(value);
     setQuote(null);
     setReviewConfirmed(false);
@@ -1028,6 +1217,12 @@ export function LaunchCheckout({
   }
   async function reviewTotal() {
     if (!fulfilment || busy || !canCheckout) return;
+    if (whatsAppPaymentAttempt) {
+      setIssue(
+        "Payment has already been started for this WhatsApp order. Use Resume secure payment to continue the original checkout.",
+      );
+      return;
+    }
     if (fulfilment === "curbside" && !parseKerbsideVehicle(vehicle)) {
       setIssue("Enter the car make, colour and last 4 registration characters.");
       return;
@@ -1043,37 +1238,45 @@ export function LaunchCheckout({
     setBusy(true);
     setIssue(null);
     try {
-      const result = await checkoutRequest(checkoutMode, {
-        action: "quote",
-        fulfilment,
-        picks: picks.map(({ brandId, itemId, quantity, selections, crossSelections }) => ({
-          brandId,
-          itemId,
-          quantity,
-          selections,
-          ...(crossSelections?.length ? { crossSelections } : {}),
-        })),
-        ...(fulfilment === "curbside" ? { vehicle } : {}),
-        ...(notes ? { notes } : {}),
-        packing: {
-          cutleryRequested,
-          separateBags,
-          bagCount: separateBags ? bagCount : 1,
-          allocations: separateBags
-            ? Object.entries(bagQuantities).flatMap(([lineId, quantities]) =>
-                quantities.flatMap((quantity, bag) =>
-                  quantity > 0 ? [{ lineId, bag: bag + 1, quantity }] : [],
-                ),
-              )
-            : [],
-        },
-      });
+      const result = await checkoutRequest(
+        checkoutMode,
+        whatsAppDraft
+          ? whatsAppQuoteInput(whatsAppDraft)
+          : {
+              action: "quote",
+              fulfilment,
+              picks: picks.map(({ brandId, itemId, quantity, selections, crossSelections }) => ({
+                brandId,
+                itemId,
+                quantity,
+                selections,
+                ...(crossSelections?.length ? { crossSelections } : {}),
+              })),
+              ...(fulfilment === "curbside" ? { vehicle } : {}),
+              ...(notes ? { notes } : {}),
+              packing: {
+                cutleryRequested,
+                separateBags,
+                bagCount: separateBags ? bagCount : 1,
+                allocations: separateBags
+                  ? Object.entries(bagQuantities).flatMap(([lineId, quantities]) =>
+                      quantities.flatMap((quantity, bag) =>
+                        quantity > 0 ? [{ lineId, bag: bag + 1, quantity }] : [],
+                      ),
+                    )
+                  : [],
+              },
+            },
+        undefined,
+        !!whatsAppCheckout,
+      );
       if (alive.current && requestId === checkoutRequestId.current && result.quote) {
         if (!orderNotesMatch(notes, result.quote.notes))
           throw new Error(
             "Your special requests could not be confirmed. Review them and try the final total again.",
           );
         setQuote(result.quote);
+        if (whatsAppCheckout) setWhatsAppBoundMode(checkoutMode);
         setReviewConfirmed(false);
         attempt.current = { quoteId: result.quote.quoteId, attemptId: crypto.randomUUID() };
       }
@@ -1087,34 +1290,88 @@ export function LaunchCheckout({
   async function pay(quoteId: string) {
     if (busy || !canCheckout) return;
     const requestId = ++checkoutRequestId.current;
-    if (attempt.current?.quoteId !== quoteId)
-      attempt.current = { quoteId, attemptId: crypto.randomUUID() };
-    const selected = attempt.current!;
     setBusy(true);
     setPaymentPending(true);
     setIssue(null);
     try {
-      const result = await checkoutRequest(checkoutMode, {
-        action: "pay",
-        ...selected,
-        reviewConfirmed: true,
-      });
+      let saved: WhatsAppPaymentAttempt | null = whatsAppPaymentAttempt;
+      if (whatsAppCheckout) {
+        try {
+          saved = readWhatsAppPaymentAttempt(sessionStorage, whatsAppCheckout.handoffId) ?? saved;
+        } catch {
+          /* Server recovery below remains available. */
+        }
+        const recovered = whatsAppPaymentRecovery(whatsAppCheckout, saved, quoteId, checkoutMode);
+        if ((whatsAppCheckout.orderId || saved || whatsAppCheckout.attemptId) && !recovered)
+          throw new Error(
+            "This order already has a payment attempt. Reopen your WhatsApp checkout link in the original browser to continue it.",
+          );
+        if (recovered)
+          attempt.current = { quoteId: recovered.quoteId, attemptId: recovered.attemptId };
+      }
+      if (attempt.current?.quoteId !== quoteId)
+        attempt.current = { quoteId, attemptId: crypto.randomUUID() };
+      const selected = attempt.current!;
+      if (whatsAppCheckout) {
+        const recoverable = {
+          ...selected,
+          checkoutMode,
+          ...(whatsAppCheckout.orderId ? { orderId: whatsAppCheckout.orderId } : {}),
+        };
+        let remembered = false;
+        try {
+          remembered = rememberWhatsAppPaymentAttempt(
+            sessionStorage,
+            whatsAppCheckout.handoffId,
+            recoverable,
+          );
+        } catch {
+          /* Storage can be unavailable. */
+        }
+        if (!remembered && whatsAppCheckout.attemptId !== selected.attemptId)
+          throw new Error(
+            "Allow browser storage before starting secure payment so this checkout can be resumed safely. You can also return to your WhatsApp conversation for help.",
+          );
+        setWhatsAppPaymentAttempt(recoverable);
+      }
+      const result = await checkoutRequest(
+        checkoutMode,
+        {
+          action: "pay",
+          ...selected,
+          reviewConfirmed: true,
+        },
+        undefined,
+        !!whatsAppCheckout,
+      );
       if (!alive.current || requestId !== checkoutRequestId.current) return;
       if (!result.checkoutUrl || !result.orderId)
         throw new Error("We couldn't open secure payment. Please try again.");
+      if (whatsAppCheckout?.orderId && result.orderId !== whatsAppCheckout.orderId)
+        throw new Error(
+          "The existing payment could not be verified. Return to your WhatsApp conversation for help.",
+        );
       const url = safeMealDeckCheckoutRedirect(result.checkoutUrl);
       if (!url) throw new Error("The payment link could not be verified.");
       try {
-        sessionStorage.setItem(CHECKOUT_MODE_KEY, checkoutMode);
-        sessionStorage.setItem(
-          ATTEMPT_KEY,
-          JSON.stringify({
+        sessionStorage.setItem(checkoutModeKey, checkoutMode);
+        if (whatsAppCheckout) {
+          rememberWhatsAppPaymentAttempt(sessionStorage, whatsAppCheckout.handoffId, {
             ...selected,
+            checkoutMode,
             orderId: result.orderId,
-            basket: encodeLaunchPicks(picks),
-            preserveSavedBasket: !!groupCheckout,
-          }),
-        );
+          });
+        } else {
+          sessionStorage.setItem(
+            ATTEMPT_KEY,
+            JSON.stringify({
+              ...selected,
+              orderId: result.orderId,
+              basket: encodeLaunchPicks(picks),
+              preserveSavedBasket: !!groupCheckout,
+            }),
+          );
+        }
       } catch {
         /* Server still enforces idempotency. */
       }
@@ -1188,15 +1445,68 @@ export function LaunchCheckout({
         <header className="md-checkout-heading">
           <div>
             <p className="md-checkout-eyebrow">ONE ORDER. EVERY CRAVING.</p>
-            <h1>{orderId ? "Your MealDeck order" : "Let's make it yours."}</h1>
+            <h1 ref={checkoutHeading} tabIndex={whatsAppDraft ? -1 : undefined}>
+              {orderId
+                ? "Your MealDeck order"
+                : whatsAppDraft
+                  ? "Your WhatsApp checkout."
+                  : "Let's make it yours."}
+            </h1>
             <p>
               {orderId
                 ? "One kitchen. All your favourites. One collection."
-                : "Choose your pickup, confirm your details and pay securely."}
+                : whatsAppDraft
+                  ? "Confirm your checkout details, review the total and pay securely."
+                  : "Choose your pickup, confirm your details and pay securely."}
             </p>
           </div>
           <MealDeckLogo className="md-checkout-logo" />
         </header>
+        {whatsAppCheckout?.paused && (
+          <section className="md-checkout-notice" role="status">
+            <h2>Staff need to review this order</h2>
+            <p>
+              Payment already in progress is not cancelled. Return to your MealDeck WhatsApp
+              conversation for help. You can still check an existing order here.
+            </p>
+            <Link to="/luton">Luton kitchen & contact</Link>
+            {" · "}
+            <a href="/whatsapp/checkout">Check review status</a>
+          </section>
+        )}
+        {!orderId && whatsAppDraft && (
+          <section className="md-checkout-notice" aria-label="WhatsApp order review">
+            <h2>Your confirmed WhatsApp choices</h2>
+            <p>
+              Your food, collection details and packing are saved for this checkout. Your website
+              basket and group order stay separate.
+            </p>
+            <p>
+              To change these choices, return to your MealDeck conversation in WhatsApp and ask for
+              a new checkout link.
+            </p>
+            <a href="/whatsapp/checkout">Review the WhatsApp order</a>
+          </section>
+        )}
+        {!orderId && whatsAppPaymentAttempt && (
+          <section className="md-checkout-notice" aria-label="Payment recovery">
+            <h2>Continue your existing payment</h2>
+            <p>
+              Payment has already been started for this order. Confirm your checkout details below,
+              then return to the same secure payment.
+            </p>
+            <button
+              type="button"
+              className="md-checkout-primary"
+              disabled={busy || !canCheckout}
+              onClick={() => {
+                void pay(whatsAppPaymentAttempt.quoteId);
+              }}
+            >
+              {paymentPending ? "Opening secure payment…" : "Resume secure payment"}
+            </button>
+          </section>
+        )}
         {!orderId && basketIssue && (
           <section className="md-checkout-notice md-checkout-error" role="alert">
             <h2>Review the complete group again</h2>
@@ -1382,10 +1692,16 @@ export function LaunchCheckout({
                     {receipt.paymentSessionExpired && !receipt.verifiedPaid && (
                       <p>
                         This payment session has expired.{" "}
-                        <Link to="/checkout" search={{}}>
-                          Review your basket again
-                        </Link>
-                        .
+                        {whatsAppDraft ? (
+                          "Return to your MealDeck WhatsApp conversation for help with this order."
+                        ) : (
+                          <>
+                            <Link to="/checkout" search={{}}>
+                              Review your basket again
+                            </Link>
+                            .
+                          </>
+                        )}
                       </p>
                     )}
                     {receipt.held && (
@@ -1435,55 +1751,94 @@ export function LaunchCheckout({
         ) : (
           <div className="md-checkout-columns">
             <div className="md-checkout-steps">
-              <section className="md-checkout-card">
-                <h2>
-                  <span className="md-checkout-step">1</span>How are you collecting?
-                </h2>
-                <p className="md-checkout-location">
-                  <MapPin size={16} />
-                  Luton kitchen
-                </p>
-                <div className="md-checkout-methods" role="group" aria-label="Pickup method">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    aria-pressed={fulfilment === "pickup"}
-                    onClick={() => chooseFulfilment("pickup")}
-                  >
-                    <ShoppingBag size={25} />
-                    <strong>Collection</strong>
-                    <span>Pick up at the counter</span>
-                    {fulfilment === "pickup" && <Check size={17} />}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    aria-pressed={fulfilment === "curbside"}
-                    onClick={() => chooseFulfilment("curbside")}
-                  >
-                    <CarFront size={25} />
-                    <strong>Kerbside</strong>
-                    <span>Collect by your car</span>
-                    {fulfilment === "curbside" && <Check size={17} />}
-                  </button>
-                </div>
-                <button
-                  className="md-checkout-delivery"
-                  type="button"
-                  aria-disabled="true"
-                  onClick={() => setDeliveryNotice(true)}
-                >
-                  <Truck size={19} />
-                  <span>
-                    Delivery <small>Currently unavailable</small>
-                  </span>
-                </button>
-                {deliveryNotice && (
-                  <p className="md-checkout-notice" role="status">
-                    Delivery is not available at the moment. Please select collection or kerbside.
+              {whatsAppDraft ? (
+                <section className="md-checkout-card">
+                  <h2>
+                    <span className="md-checkout-step">1</span>
+                    {whatsAppDraft.fulfilment === "curbside"
+                      ? "Kerbside pickup"
+                      : "Counter collection"}
+                  </h2>
+                  <p className="md-checkout-location">
+                    <MapPin size={16} />
+                    Luton kitchen · Confirmed in WhatsApp
                   </p>
-                )}
-              </section>
+                  {whatsAppDraft.vehicle && (
+                    <>
+                      <p>{KERBSIDE_PARKING_INSTRUCTION}</p>
+                      <section
+                        className="md-checkout-pickup-review"
+                        aria-label="Confirmed car details"
+                      >
+                        <dl>
+                          <div>
+                            <dt>Car make</dt>
+                            <dd>{whatsAppDraft.vehicle.make}</dd>
+                          </div>
+                          <div>
+                            <dt>Colour</dt>
+                            <dd>{whatsAppDraft.vehicle.colour}</dd>
+                          </div>
+                          <div>
+                            <dt>Registration (last 4)</dt>
+                            <dd>{whatsAppDraft.vehicle.registrationLast4}</dd>
+                          </div>
+                        </dl>
+                      </section>
+                    </>
+                  )}
+                </section>
+              ) : (
+                <section className="md-checkout-card">
+                  <h2>
+                    <span className="md-checkout-step">1</span>How are you collecting?
+                  </h2>
+                  <p className="md-checkout-location">
+                    <MapPin size={16} />
+                    Luton kitchen
+                  </p>
+                  <div className="md-checkout-methods" role="group" aria-label="Pickup method">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      aria-pressed={fulfilment === "pickup"}
+                      onClick={() => chooseFulfilment("pickup")}
+                    >
+                      <ShoppingBag size={25} />
+                      <strong>Collection</strong>
+                      <span>Pick up at the counter</span>
+                      {fulfilment === "pickup" && <Check size={17} />}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      aria-pressed={fulfilment === "curbside"}
+                      onClick={() => chooseFulfilment("curbside")}
+                    >
+                      <CarFront size={25} />
+                      <strong>Kerbside</strong>
+                      <span>Collect by your car</span>
+                      {fulfilment === "curbside" && <Check size={17} />}
+                    </button>
+                  </div>
+                  <button
+                    className="md-checkout-delivery"
+                    type="button"
+                    aria-disabled="true"
+                    onClick={() => setDeliveryNotice(true)}
+                  >
+                    <Truck size={19} />
+                    <span>
+                      Delivery <small>Currently unavailable</small>
+                    </span>
+                  </button>
+                  {deliveryNotice && (
+                    <p className="md-checkout-notice" role="status">
+                      Delivery is not available at the moment. Please select collection or kerbside.
+                    </p>
+                  )}
+                </section>
+              )}
               {fulfilment && (
                 <section className="md-checkout-card">
                   <h2>
@@ -1504,7 +1859,7 @@ export function LaunchCheckout({
                       >
                         <button
                           type="button"
-                          disabled={busy}
+                          disabled={busy || !!whatsAppBoundMode}
                           aria-pressed={checkoutMode === "member"}
                           onClick={() => chooseCheckoutMode("member")}
                         >
@@ -1512,7 +1867,9 @@ export function LaunchCheckout({
                         </button>
                         <button
                           type="button"
-                          disabled={busy || (!guestEligible && !guestSession)}
+                          disabled={
+                            busy || !!whatsAppBoundMode || (!guestEligible && !guestSession)
+                          }
                           aria-pressed={checkoutMode === "guest"}
                           onClick={() => chooseCheckoutMode("guest")}
                         >
@@ -1527,6 +1884,40 @@ export function LaunchCheckout({
                         is needed. Guest orders earn no loyalty points. The 30% opening offer
                         applies during launch hours; other member offers require registration.
                       </p>
+                      {whatsAppDraft && (
+                        <>
+                          <p className="md-checkout-muted">
+                            Your name and WhatsApp number are prefilled from the chat. They do not
+                            create an account or sign you up for marketing.
+                          </p>
+                          <label className="md-checkout-check">
+                            <input
+                              type="checkbox"
+                              checked={whatsAppPrivacyAcknowledged}
+                              disabled={busy}
+                              onChange={(event) =>
+                                setWhatsAppPrivacyAcknowledged(event.target.checked)
+                              }
+                            />
+                            <span>
+                              <strong>
+                                I acknowledge the <Link to="/privacy">Privacy Notice</Link>
+                              </strong>
+                              <small>
+                                MealDeck will use my contact details to process this order and
+                                arrange collection.
+                              </small>
+                            </span>
+                          </label>
+                        </>
+                      )}
+                      {whatsAppGuestMismatch && (
+                        <p className="md-checkout-notice" role="alert">
+                          This browser has different guest contact details from your WhatsApp order.
+                          To use the contact details from your chat, end the current guest session
+                          first. This removes this browser’s access to earlier guest receipts.
+                        </p>
+                      )}
                       {!guestEligible && (
                         <p className="md-checkout-notice" role="status">
                           Guest checkout is available only during launch opening hours. Existing
@@ -1575,6 +1966,7 @@ export function LaunchCheckout({
                                 required
                                 autoComplete="name"
                                 maxLength={120}
+                                readOnly={!!whatsAppDraft}
                                 value={guestDetails.name}
                                 onChange={(event) =>
                                   setGuestDetails({ ...guestDetails, name: event.target.value })
@@ -1588,6 +1980,7 @@ export function LaunchCheckout({
                                 type="tel"
                                 autoComplete="tel"
                                 maxLength={40}
+                                readOnly={!!whatsAppDraft}
                                 placeholder="e.g. 07700 900123"
                                 value={guestDetails.phone}
                                 onChange={(event) =>
@@ -1601,7 +1994,11 @@ export function LaunchCheckout({
                               <Link to="/privacy">Privacy Notice</Link>. This does not sign you up
                               for marketing.
                             </p>
-                            <button type="submit" className="md-checkout-primary">
+                            <button
+                              type="submit"
+                              className="md-checkout-primary"
+                              disabled={!!whatsAppDraft && !whatsAppPrivacyAcknowledged}
+                            >
                               {busy ? (
                                 <Loader2 size={18} className="md-checkout-spin" />
                               ) : (
@@ -1671,7 +2068,7 @@ export function LaunchCheckout({
                   </p>
                 </section>
               )}
-              {fulfilment === "curbside" && (
+              {fulfilment === "curbside" && !whatsAppDraft && (
                 <section className="md-checkout-card">
                   <h2>
                     <span className="md-checkout-step">3</span>Your car details
@@ -1742,7 +2139,29 @@ export function LaunchCheckout({
                   </div>
                 </section>
               )}
-              {canViewReceipt && fulfilment && picks.length > 0 && (
+              {canViewReceipt && whatsAppDraft && (
+                <section className="md-checkout-card">
+                  <h2>
+                    <span className="md-checkout-step">3</span>Packing & final check
+                  </h2>
+                  <p>
+                    {whatsAppDraft.packingPlan.separateBags
+                      ? "Your order is assigned to " +
+                        whatsAppDraft.packingPlan.bagCount +
+                        " numbered bags."
+                      : "Your order will be packed together."}{" "}
+                    {whatsAppDraft.packingPlan.cutleryRequested
+                      ? "Cutlery is requested."
+                      : "Cutlery is not requested."}
+                  </p>
+                  <CheckoutSpecialRequestsReview notes={whatsAppDraft.notes || null} />
+                  <p>
+                    Review every item, choice and bag in the kitchen’s final total before confirming
+                    payment.
+                  </p>
+                </section>
+              )}
+              {canViewReceipt && fulfilment && picks.length > 0 && !whatsAppDraft && (
                 <section className="md-checkout-card md-checkout-packing">
                   <h2>
                     <span className="md-checkout-step">
@@ -2009,9 +2428,15 @@ export function LaunchCheckout({
                       })}
                     </ul>
                   )}
-                  <Link to="/menus" className="md-checkout-edit">
-                    Edit basket
-                  </Link>
+                  {whatsAppDraft ? (
+                    <p className="md-checkout-muted">
+                      To change this order, return to the MealDeck conversation in WhatsApp.
+                    </p>
+                  ) : (
+                    <Link to="/menus" className="md-checkout-edit">
+                      Edit basket
+                    </Link>
+                  )}
                   {groupCheckout && (
                     <GroupPaymentChoice
                       value={paymentChoice}
@@ -2112,7 +2537,7 @@ export function LaunchCheckout({
                         <button
                           type="button"
                           className="md-checkout-refresh"
-                          disabled={busy}
+                          disabled={busy || !!whatsAppPaymentAttempt}
                           onClick={() => {
                             void reviewTotal();
                           }}
@@ -2124,7 +2549,12 @@ export function LaunchCheckout({
                       <button
                         type="button"
                         className="md-checkout-primary"
-                        disabled={busy || !publicMenu.ready || displayTotal === null}
+                        disabled={
+                          busy ||
+                          !!whatsAppPaymentAttempt ||
+                          !publicMenu.ready ||
+                          displayTotal === null
+                        }
                         onClick={() => {
                           void reviewTotal();
                         }}

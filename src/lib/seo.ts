@@ -19,7 +19,7 @@ export function canonicalUrl(path: string) {
 
 export function isPrivateSeoPath(path: string) {
   const pathname = new URL(canonicalUrl(path)).pathname;
-  return /^\/(?:account|checkout|group-order|group-pay|track|ops|kds|printer|auth|api)(?:\/|$)/i.test(
+  return /^\/(?:account|checkout|whatsapp|group-order|group-pay|track|ops|kds|printer|auth|api)(?:\/|$)/i.test(
     pathname,
   );
 }
