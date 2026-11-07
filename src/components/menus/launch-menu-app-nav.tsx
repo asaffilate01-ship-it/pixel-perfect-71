@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { WhatsAppOrderLink } from "@/components/whatsapp-order-link";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   ArrowUpRight,
@@ -242,8 +243,10 @@ export function LaunchMenuAppNav({
               <Link to="/offers" onClick={followLink} className="lma-more-note">
                 Offers · 30% off, 99p milk cake &amp; double points
               </Link>
-              <p className="lma-more-note">Order for Luton collection or kerbside during kitchen opening hours.</p>
-              <p className="lma-more-note">WhatsApp ordering — coming soon</p>
+              <p className="lma-more-note">
+                Order for Luton collection or kerbside during kitchen opening hours.
+              </p>
+              <WhatsAppOrderLink className="lma-more-note" onClick={followLink} />
             </div>
           )}
         </DialogContent>

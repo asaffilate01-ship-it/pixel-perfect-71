@@ -73,7 +73,13 @@ The historical ordering path retains `COMING_SOON = true`. Customer registration
 
 Normal paid MealDeck orders require an accepted server-priced ordering/payment pathway in the independent MealDeck backend. A chat, browser redirect, model response, or client-side state update must **never** be used to mark an order paid or create kitchen tickets. The St Albans MealDeck channel's declared launch scope is delivery-only; Cafe 1's direct ordering modes are separate. Existing payment contracts can be adapted to the independent backend, but need their own provider, refund, replay and group-payment acceptance checks before activation.
 
-## WhatsApp enquiry contract
+## WhatsApp ordering — 7 November 2026
+
+The initial automated channel supports one Luton pickup or kerbside basket through the official Meta Cloud API. It reuses the independent MealDeck live menu, guest/member eligibility, canonical final quote, Stripe payment verification, shared KDS, packing and receipt rules. The assistant guides choices and can interpret menu requests through a narrowly constrained AI proposal. Payment and kitchen authority stay on the existing server pathway.
+
+The customer explicitly reviews chat choices, opens a private one-use checkout link, and reviews the current final price before paying. Separate browser access protects the frozen WhatsApp order and leaves personal/group baskets intact. Staff takeover, allergies and payment disputes pause further automated checkout; already-started payment recovery is preserved. Order updates are optional. Runtime configuration and actual provider acceptance control the public link; unconfigured channels remain coming soon. Group ordering and delivery are later channel phases. See `docs/mealdeck-whatsapp-ordering.md`.
+
+## Historical WhatsApp enquiry contract
 
 The optional MealDeck handoff prepares **dish names, quantities, modifiers, location and requested fulfilment only**. It must not send the customer's phone, address, account data, prices, discounts, payment state or access tier in a URL. The official business number is supplied by server-only location configuration after operations approval. The chat is an **enquiry**, not an order.
 

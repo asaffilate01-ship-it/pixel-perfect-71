@@ -23,7 +23,7 @@ function PrivacyPage() {
         <article className="md-info-inner">
           <p className="lm-eyebrow">Your details. Your choices.</p>
           <h1>MealDeck privacy notice</h1>
-          <p>Updated 6 November 2026</p>
+          <p>Updated 7 November 2026</p>
           <h2>Who is responsible?</h2>
           <p>
             MealDeck is a trading name of 313 Brands Ltd, the controller responsible for the
@@ -77,6 +77,37 @@ function PrivacyPage() {
             staff receive the information needed to prepare and hand over your order. If delivery
             becomes available and you choose it, the delivery provider receives the details needed
             to complete that delivery.
+          </p>
+          <h2>WhatsApp ordering and assistance</h2>
+          <p>
+            When enabled, MealDeck’s WhatsApp assistant helps you choose food for Luton pickup or
+            kerbside collection. Meta provides the WhatsApp messaging service. We use the messages
+            you send, your channel identifier, food choices and the contact details you provide to
+            handle your request. A WhatsApp number or username does not sign you into a MealDeck
+            account. You review the final order and payment on our secure checkout.
+          </p>
+          <p>
+            When AI interpretation is enabled, OpenAI processes the current menu request and
+            relevant food choices to suggest menu selections. We do not include your saved name,
+            phone, vehicle details, account credentials or payment information in that request.
+            Please keep personal and payment information out of food-selection messages. AI
+            suggestions cannot confirm payment or allergy suitability. Type HELP to request staff
+            assistance.
+          </p>
+          <p>
+            WhatsApp order updates are an optional, separate choice. Reply STOP UPDATES to stop
+            them, or STOP to stop automated replies; this does not cancel an existing order or
+            payment. Promotional consent is separate. Our assistant does not send promotional
+            campaigns as part of this ordering service.
+          </p>
+          <p>
+            A private checkout link can be claimed once and expires after 15 minutes before a quote
+            is created. A necessary secure cookie keeps that browser’s authorised checkout access
+            for up to seven days. An existing payment keeps its original recovery reference.
+            Automated housekeeping removes stored chat message bodies after seven days; relevant
+            order, payment and consent records may be retained separately for fulfilment, queries
+            and legal obligations. Meta and OpenAI also apply their own service terms and data
+            protection arrangements.
           </p>
           <h2>Opening offers and loyalty</h2>
           <p>

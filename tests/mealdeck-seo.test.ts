@@ -63,6 +63,7 @@ describe("private routes stay out of search discovery", () => {
     for (const path of [
       "/account",
       "/checkout?order=private",
+      "/whatsapp/checkout#token=private",
       "/group-order",
       "/group-pay",
       "/track",

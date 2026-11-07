@@ -8,6 +8,7 @@ describe("fixed customer authentication return destinations", () => {
       "/checkout?group=1",
       "/group-pay",
       "/group-order",
+      "/whatsapp/checkout",
     ] as const) {
       expect(customerReturnTarget(target)).toBe(target);
       const redirect = new URL(customerEmailReturnPath(target), "https://mealdeck.co.uk");
@@ -48,6 +49,8 @@ describe("fixed customer authentication return destinations", () => {
       "/group-order?next=https://example.org",
       "%2Fgroup-order",
       "/group-order/",
+      "/whatsapp/checkout#token=secret",
+      "/whatsapp/checkout?token=secret",
       "/group-order?",
       " /checkout",
       "/checkout\n",

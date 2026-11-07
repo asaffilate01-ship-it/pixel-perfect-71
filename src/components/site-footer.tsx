@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, MessageCircle, Music2 } from "lucide-react";
+import { Instagram, Music2 } from "lucide-react";
+import { WhatsAppOrderLink } from "@/components/whatsapp-order-link";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 import { MEALDECK_LAUNCH_DAYS } from "@/lib/mealdeck-launch-schedule";
@@ -56,9 +57,7 @@ export function SiteFooter() {
             <p>All times are UK local time.</p>
             <p>Order online for collection or kerbside during opening hours.</p>
             <p>Delivery · Coming soon</p>
-            <p className="md-whatsapp-soon">
-              <MessageCircle size={16} aria-hidden="true" /> WhatsApp ordering — coming soon
-            </p>
+            <WhatsAppOrderLink className="md-whatsapp-soon" />
           </div>
         </div>
       </div>
