@@ -6,20 +6,39 @@ runtime activation and a physical-phone delivery test are separate evidence.**
 The deployment record must preserve the observed outcome of each stage;
 this document does not claim a notification has appeared on a customer's phone.
 
-## Release checkpoint — 7 November 2026
+## Observed release — 7 November 2026, 09:14 UTC
 
-Both additive migrations were installed successfully in the actual independent
-MealDeck database. The encrypted Vault credential bundle was provisioned for
-the matching tenant/location, and the 30-second cron schedule is installed.
-At this checkpoint, the runtime `enabled` and customer `push_enabled` controls
-are **false**: the provisioned sender remains dormant. There are no queued jobs
-or campaigns.
+[PR #121](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/121)
+was merged with commit `563e42b6c8e3f9cb2d3bbf2ffadce48bb90deb60` and published
+to `https://mealdeck.co.uk`. The served customer service worker matched the
+reviewed source byte for byte. The deployment identifier was
+`f84e6427-f24d-4337-b876-8297cdbe8f8c`.
 
-The private tables have RLS enabled and API-role access revoked. Anonymous and
-member roles cannot read the Vault bundle; the runtime configuration RPC is
-service-only. Source publication, an authenticated worker heartbeat, deliberate
-runtime activation and physical-phone display remain separate pending checks.
-These observations do not establish that customers can already receive alerts.
+Both additive migrations were installed in the actual independent MealDeck
+database. The matching encrypted Vault bundle and 30-second cron schedule were
+provisioned while sending was disabled. The private tables have RLS enabled and
+API-role access revoked; anonymous/member roles cannot read the Vault bundle,
+and the runtime configuration RPC is service-only.
+
+An authenticated empty-queue worker check returned HTTP 200 at 09:11:58 UTC,
+with zero processed, accepted, retried or skipped messages. Only after this
+check were both runtime `enabled` and customer `push_enabled` controls enabled.
+The live `GET /api/notifications` then returned HTTP 200, `available: true` and
+the expected public key, with private/no-store caching controls and no secret
+fields. Unauthenticated order, campaign and worker requests returned 401, 401
+and 403 respectively.
+
+The recurring dispatcher independently invoked the worker at 09:13:27 UTC and
+received HTTP 200 with the same zero-message counts. Its heartbeat was recorded
+and the subsequent cron runs succeeded. There were no queued jobs or campaigns
+at verification; no customer campaign, test push or payment was created.
+
+This establishes publication, configuration and a functioning authenticated
+background dispatcher. **Physical Android/iPhone receipt, lock-screen display,
+sound and notification-click acceptance remain unverified.** A push-service
+delivery request has not been used as a substitute for those device checks.
+Runtime controls can change after this record; use the health checks below for
+current operation.
 
 ## Customer experience
 
@@ -274,8 +293,10 @@ Frontend validation performed for this change:
 | Targeted frontend lint                                                     | Passed.                                                                                                                                                                                  |
 | Full TypeScript check of the assembled worktree at the frontend checkpoint | Passed.                                                                                                                                                                                  |
 | Mobile screenshot/keyboard browser pass                                    | Not completed: installed Chromium was blocked at startup by the executor's socket restriction. No visual or physical-phone acceptance is claimed.                                        |
-| Hosted SQL and dormant provisioning                                        | Both migrations installed in independent MealDeck; matching encrypted Vault bundle and 30-second cron provisioned; runtime/feature flags remain off; no jobs or campaigns.               |
-| Hosted publication, worker heartbeat, activation and actual phone delivery | Pending at this checkpoint; record each observed outcome separately.                                                                                                                     |
+| Complete focused application CI                                            | 108 passed, 0 failed, 810 assertions across 10 files.                                                                                                                                    |
+| Database CI                                                                | 20 core checks and 8 hosted-dispatch checks passed against fresh PostgreSQL 17 services; extension stand-ins in the hosted fixture perform no real HTTP or scheduling.                   |
+| Hosted installation, publication and runtime                               | Both migrations installed; reviewed source served; public availability enabled; authenticated and independently scheduled empty-queue worker requests returned HTTP 200.                 |
+| Actual phone notification receipt                                          | Not performed. Android and installed iPhone commissioning remains outstanding.                                                                                                           |
 
 Relevant repeatable checks from the repository root:
 
