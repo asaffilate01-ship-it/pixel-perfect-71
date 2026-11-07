@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -69,6 +70,8 @@ final class ReceiptRuntime {
     private static final class Job {
         final String jobId, status, createdAt;
         final ReceiptModel receipt;
+        final String customerPhone;
+        final boolean hasContact;
         Job(JSONObject value) {
             jobId = PrinterContract.requestId(value.optString("jobId", null));
             String orderId = PrinterContract.requestId(value.optString("orderId", null));
@@ -77,6 +80,8 @@ final class ReceiptRuntime {
             stamp(value.optString("updatedAt", null));
             if (!STATES.contains(status)) throw new IllegalArgumentException();
             receipt = ReceiptModel.parse(value.optJSONObject("receipt"));
+            hasContact = value.has("receiptContact") && !value.isNull("receiptContact");
+            customerPhone = ReceiptContact.phoneFromResponse(value, orderId);
             Object copy = value.opt("copyNumber");
             if (!(copy instanceof Number) || ((Number) copy).doubleValue() != receipt.copyNumber || !orderId.equals(receipt.orderId)) throw new IllegalArgumentException();
         }
@@ -373,6 +378,7 @@ final class ReceiptRuntime {
         long authorizationDeadline = System.nanoTime() + 60_000_000_000L;
         ReceiptJournal.Attempt reservation = null;
         ReceiptRenderer.RenderedReceipt rendered = null;
+        PrinterBinderWire.PreparedReceipt prepared = null;
         try {
             JSONObject claimed = api.rpc("mealdeck_printer_claim_job", args("p_job", queued.jobId, "p_terminal", journal.terminalId()));
             Job job = new Job(claimed);
@@ -381,8 +387,8 @@ final class ReceiptRuntime {
             reservation = journal.reserve(scope.tenantId, scope.locationId, user, job.jobId, claim, job.receipt);
             if (!reservation.created) throw new PrinterFailure("receipt_held");
             if (!Boolean.FALSE.equals(claimed.opt("replayed"))) throw new PrinterFailure("receipt_held");
-            rendered = ReceiptRenderer.render(context, job.receipt);
-            if (rendered.strips.isEmpty() || rendered.strips.size() > 128) throw new PrinterFailure("receipt_held");
+            rendered = ReceiptRenderer.render(context, job.receipt, job.customerPhone);
+            prepared = PrinterBinderWire.prepareReceipt(rendered.bitmap);
             if (pauseEpoch.get() != permittedEpoch || (automatic && !enabled) || System.nanoTime() >= authorizationDeadline) throw new PrinterFailure("receipt_held");
             JSONObject begun = api.rpc("mealdeck_printer_begin_send", args("p_job", job.jobId, "p_claim", claim));
             if (!Boolean.TRUE.equals(begun.opt("ok")) || !Boolean.FALSE.equals(begun.opt("replayed")) || !"sending".equals(begun.optString("status"))) throw new PrinterFailure("receipt_held");
@@ -390,23 +396,36 @@ final class ReceiptRuntime {
             ReceiptModel fresh = ReceiptModel.parse(canonical.optJSONObject("receipt"));
             if (!job.jobId.equals(canonical.optString("jobId")) || !fresh.fingerprint.equals(job.receipt.fingerprint)
                 || !user.equals(api.userId()) || selected == null || !selected.equals(scope) || pauseEpoch.get() != permittedEpoch || System.nanoTime() >= authorizationDeadline || (automatic && !enabled)) throw new PrinterFailure("receipt_held");
+            if (job.hasContact) {
+                // Contact is an additive, order-bound projection, outside the
+                // immutable receipt/fingerprint so existing clients stay valid.
+                JSONObject contact = api.rpc("mealdeck_printer_claim_contact", PrinterApi.json("p_job", job.jobId, "p_claim", claim));
+                if (contact.optJSONObject("receiptContact") == null || !Objects.equals(job.customerPhone,
+                    ReceiptContact.phoneFromResponse(contact, job.receipt.orderId))) throw new PrinterFailure("receipt_held");
+            }
             PrinterServiceConnection.Verified service = verified;
             if (service == null || !connection.isCurrent(service)) throw new PrinterFailure("printer_unavailable");
             ReceiptRenderer.RenderedReceipt output = rendered;
+            PrinterBinderWire.PreparedReceipt outbound = prepared;
             ReceiptJournal.Attempt saved = reservation;
-            rendered = null;
             message = "Sending one receipt. Wait for its result before checking the paper.";
-            dispatch.send(job.jobId, permit -> {
-                PowerManager.WakeLock wake = context.getSystemService(PowerManager.class).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "mealdeck:receipt-send");
-                try {
-                    wake.acquire(35_000);
-                    if (!connection.isCurrent(service) || pauseEpoch.get() != permittedEpoch || System.nanoTime() >= authorizationDeadline || (automatic && !enabled) || !permit.begin()) return;
-                    for (var strip : output.strips) {
-                        if (!permit.continuing() || !connection.isCurrent(service) || pauseEpoch.get() != permittedEpoch || (automatic && !enabled)) throw new IllegalStateException();
-                        PrinterBinderWire.printReceiptStrip(service.binder(), strip);
-                    }
-                } finally { output.recycle(); if (wake.isHeld()) wake.release(); }
-            }).whenComplete((outcome, error) -> {
+            var result = dispatch.send(job.jobId, new ReceiptDispatch.Transport() {
+                @Override public void send(ReceiptDispatch.Permit permit) throws Exception {
+                    PowerManager.WakeLock wake = context.getSystemService(PowerManager.class).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "mealdeck:receipt-send");
+                    try {
+                        wake.acquire(35_000);
+                        if (!connection.isCurrent(service) || pauseEpoch.get() != permittedEpoch || System.nanoTime() >= authorizationDeadline || (automatic && !enabled) || !permit.begin()) return;
+                        if (!permit.continuing() || !connection.isCurrent(service) || pauseEpoch.get() != permittedEpoch || System.nanoTime() >= authorizationDeadline || (automatic && !enabled)) throw new IllegalStateException();
+                        outbound.send(service.binder(), () -> permit.continuing()
+                            && connection.isCurrent(service) && pauseEpoch.get() == permittedEpoch
+                            && System.nanoTime() < authorizationDeadline && (!automatic || enabled));
+                    } finally { if (wake.isHeld()) wake.release(); }
+                }
+                @Override public void close() { outbound.close(); output.recycle(); }
+            });
+            rendered = null;
+            prepared = null; // The dispatch now owns both resources through worker completion.
+            result.whenComplete((outcome, error) -> {
                 if (error != null || !"sent_unconfirmed".equals(outcome)) { enabled = false; message = INSPECT; }
                 commands.execute(() -> {
                     try {
@@ -434,7 +453,10 @@ final class ReceiptRuntime {
             }
             if (error instanceof PrinterFailure failure) throw failure;
             throw new PrinterFailure("receipt_held");
-        } finally { if (rendered != null) rendered.recycle(); }
+        } finally {
+            if (prepared != null) prepared.close();
+            if (rendered != null) rendered.recycle();
+        }
     }
 
     private void report(ReceiptJournal.Attempt local) {

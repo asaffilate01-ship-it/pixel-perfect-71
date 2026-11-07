@@ -5,7 +5,7 @@ import {
   validateReceipt,
   encodeReceipt,
   encodeReceiptLogo,
-  encodeReceiptGamesQr,
+  encodeReceiptPromotion,
   RECEIPT_LIMITS,
 } from "../receipt.mjs";
 import { receiptLogo } from "../receipt-logo.mjs";
@@ -15,11 +15,20 @@ import { fixture, JOB } from "./fixtures.mjs";
 // Pixel bytes can contain every byte value without becoming ESC/POS commands.
 const receiptBodyBytes = (result) => {
   const body = Buffer.from(result.bytes.slice(2 + encodeReceiptLogo().length));
-  const qr = Buffer.from(encodeReceiptGamesQr());
-  const position = body.indexOf(qr);
-  assert.ok(position > 0, "the fixed games QR is present after the order");
-  assert.equal(body.indexOf(qr, position + 1), -1, "exactly one fixed games QR");
-  return Buffer.concat([body.subarray(0, position), body.subarray(position + qr.length)]);
+  const matches = Array.from({ length: 8 }, (_, index) =>
+    Buffer.from(
+      encodeReceiptPromotion({ ...fixture(), orderNumber: String(index + 1).padStart(4, "0") }),
+    ),
+  ).flatMap((graphic) => {
+    const position = body.indexOf(graphic);
+    if (position === -1) return [];
+    assert.ok(position > 0, "the selected promotion follows the order");
+    assert.equal(body.indexOf(graphic, position + 1), -1, "exactly one selected promotion");
+    return [{ graphic, position }];
+  });
+  assert.equal(matches.length, 1, "only one of the eight approved images is present");
+  const { graphic, position } = matches[0];
+  return Buffer.concat([body.subarray(0, position), body.subarray(position + graphic.length)]);
 };
 
 test("one approved logo retains its exact fixed raster before the receipt body", () => {

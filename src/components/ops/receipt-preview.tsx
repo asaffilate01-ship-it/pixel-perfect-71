@@ -6,9 +6,16 @@ import {
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { receiptLogoSource } from "@/lib/mealdeck-receipt-logo";
-import { receiptGamesQr } from "@/lib/mealdeck-receipt-games";
-export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
+import { receiptPromotionForOrder } from "@/lib/mealdeck-receipt-games";
+export function ReceiptPreview({
+  receipt: r,
+  customerPhone,
+}: {
+  receipt: MealDeckReceipt;
+  customerPhone?: string | null;
+}) {
   const number = orderDisplayNumber(r.orderNumber, "");
+  const promotion = receiptPromotionForOrder(r);
   const ordered = r.items
     .filter((i) => !i.parentLineId)
     .flatMap((parent) => [parent, ...r.items.filter((i) => i.parentLineId === parent.lineId)]);
@@ -35,7 +42,8 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
           <p className="my-2 break-words text-3xl font-black tabular-nums">ORDER {number}</p>
         )}
         <p className="my-2 text-sm font-bold">
-          Collection code <strong className="tabular-nums">{r.displayCode}</strong>
+          COLLECTION CODE
+          <strong className="block text-3xl font-black tabular-nums">{r.displayCode}</strong>
         </p>
         <p className="font-bold">
           {r.fulfilment === "curbside" ? "KERBSIDE" : "COLLECTION"} ·{" "}
@@ -46,9 +54,9 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
             COPY {r.copyNumber} — {r.reprintReason}
           </p>
         )}
-        <p className="mt-2 text-sm">
-          {r.customerName} · {new Date(r.paidAt).toLocaleString("en-GB")}
-        </p>
+        <p className="mt-2 break-words text-sm font-bold">{r.customerName}</p>
+        {customerPhone && <p className="text-sm font-bold">{customerPhone}</p>}
+        <p className="text-sm">{new Date(r.paidAt).toLocaleString("en-GB")}</p>
         {r.car && (
           <p className="mt-1 text-sm font-bold">
             {r.car.colour} {r.car.make} · Reg ends {r.car.registrationLast4}
@@ -135,27 +143,47 @@ export function ReceiptPreview({ receipt: r }: { receipt: MealDeckReceipt }) {
             <dd>{money(r.totalPence)}</dd>
           </div>
         </dl>
-        <section className="md-receipt-games" aria-label="Free MealDeck games">
+        <section
+          className="md-receipt-promotion"
+          data-receipt-promotion={promotion.id}
+          aria-label={promotion.heading}
+        >
+          <p className="md-receipt-promotion__heading">
+            {promotion.targetUrl && !promotion.displayUrl ? (
+              <a className="md-receipt-promotion__link" href={promotion.targetUrl}>
+                {promotion.heading}
+              </a>
+            ) : (
+              promotion.heading
+            )}
+          </p>
+          {promotion.subtitle && <p className="md-receipt-promotion__copy">{promotion.subtitle}</p>}
           <svg
-            className="md-receipt-games__qr"
-            data-receipt-games-qr
+            className={`md-receipt-promotion__art md-receipt-promotion__art--${promotion.kind}`}
+            data-receipt-promotion-art={promotion.id}
+            data-receipt-games-qr={promotion.id === "play" ? true : undefined}
             xmlns="http://www.w3.org/2000/svg"
-            viewBox={`0 0 ${receiptGamesQr.gridSize} ${receiptGamesQr.gridSize}`}
-            width={164}
-            height={164}
+            viewBox={`0 0 ${promotion.viewBoxWidth} ${promotion.viewBoxHeight}`}
+            width={promotion.width}
+            height={promotion.height}
             role="img"
-            aria-label="QR code for free food games at mealdeck.co.uk/play"
+            aria-label={
+              promotion.kind === "qr" ? `QR code: ${promotion.heading}` : promotion.heading
+            }
             focusable="false"
             shapeRendering="crispEdges"
           >
-            <rect width={receiptGamesQr.gridSize} height={receiptGamesQr.gridSize} fill="#fff" />
-            <path d={receiptGamesQr.svgPath} fill="#000" />
+            <rect width={promotion.viewBoxWidth} height={promotion.viewBoxHeight} fill="#fff" />
+            <path d={promotion.svgPath} fill="#000" />
           </svg>
-          <p className="md-receipt-games__heading">{receiptGamesQr.heading}</p>
-          <p className="md-receipt-games__copy">{receiptGamesQr.subtitle}</p>
-          <a className="md-receipt-games__url" href={receiptGamesQr.targetUrl}>
-            {receiptGamesQr.displayUrl}
-          </a>
+          {promotion.displayUrl &&
+            (promotion.targetUrl ? (
+              <a className="md-receipt-promotion__url" href={promotion.targetUrl}>
+                {promotion.displayUrl}
+              </a>
+            ) : (
+              <p className="md-receipt-promotion__url">{promotion.displayUrl}</p>
+            ))}
         </section>
       </div>
       <footer className="border-t border-dashed border-black pt-3 text-center text-xs">
