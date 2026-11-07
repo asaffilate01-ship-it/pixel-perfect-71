@@ -218,12 +218,18 @@ type SauceRound = {
   hints: number;
 };
 
-export function SauceSwitch({ dailyDate }: { dailyDate?: string | undefined }) {
+export function SauceSwitch({
+  dailyDate,
+  initialSize = 3,
+}: {
+  dailyDate?: string | undefined;
+  initialSize?: SauceSize;
+}) {
   const requestedDate = isArcadeDailyDate(dailyDate) ? dailyDate : undefined;
   const lastRequestedDate = useRef(requestedDate);
   const { recordCompletion } = useArcadeProgress();
   const recordedRound = useRef<string | null>(null);
-  const [size, setSize] = useState<SauceSize>(3);
+  const [size, setSize] = useState<SauceSize>(initialSize);
   const [daily, setDaily] = useState(Boolean(requestedDate));
   const [selectedDailyDate, setSelectedDailyDate] = useState(requestedDate);
   const [round, setRound] = useState<SauceRound | null>(null);

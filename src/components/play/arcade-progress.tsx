@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Circle,
   RotateCcw,
+  Share2,
   Trash2,
 } from "lucide-react";
 import {
@@ -40,6 +41,7 @@ import {
   type DailyArcadeGame,
 } from "@/lib/mealdeck-play-progress";
 import "@/styles.mealdeck-play-progress.css";
+import type { ArcadeShareRequest } from "@/lib/mealdeck-arcade-sharing";
 
 type ProgressContextValue = {
   progress: ArcadeProgress;
@@ -159,7 +161,13 @@ function roundTime(timestamp: number): string {
   }).format(timestamp);
 }
 
-export function ArcadePlaybook({ onDailyGame }: { onDailyGame: (game: DailyArcadeGame) => void }) {
+export function ArcadePlaybook({
+  onDailyGame,
+  onShare,
+}: {
+  onDailyGame: (game: DailyArcadeGame) => void;
+  onShare: (request: ArcadeShareRequest, trigger: HTMLButtonElement) => void;
+}) {
   const { progress, storageMode, storageIssue, today, clearPlaybook } = useArcadeProgress();
   const [confirming, setConfirming] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -243,15 +251,27 @@ export function ArcadePlaybook({ onDailyGame }: { onDailyGame: (game: DailyArcad
                     <span>{game.completed ? "Completed today" : "Not completed today"}</span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  disabled={!today || storageMode === "loading"}
-                  onClick={() => onDailyGame(game.id)}
-                  aria-label={`${game.completed ? "Play again" : "Play today's"} ${game.name} daily puzzle`}
-                >
-                  {game.completed && <RotateCcw size={15} aria-hidden="true" />}
-                  {game.completed ? "Play again" : "Play daily"}
-                </button>
+                <div className="md-playbook__daily-actions">
+                  <button
+                    type="button"
+                    disabled={!today || storageMode === "loading"}
+                    onClick={() => onDailyGame(game.id)}
+                    aria-label={`${game.completed ? "Play again" : "Play today's"} ${game.name} daily puzzle`}
+                  >
+                    {game.completed && <RotateCcw size={15} aria-hidden="true" />}
+                    {game.completed ? "Play again" : "Play daily"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!today}
+                    onClick={(event) =>
+                      onShare({ game: game.id, dailyDate: today }, event.currentTarget)
+                    }
+                    aria-label={`Share today's ${game.name} daily puzzle`}
+                  >
+                    <Share2 size={15} aria-hidden="true" /> Share
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -281,9 +301,20 @@ export function ArcadePlaybook({ onDailyGame }: { onDailyGame: (game: DailyArcad
                     </span>
                     {round.dailyDate && <span>Daily puzzle · {round.dailyDate}</span>}
                   </div>
-                  <time dateTime={new Date(round.completedAt).toISOString()}>
-                    {roundTime(round.completedAt)} UTC
-                  </time>
+                  <div className="md-playbook__round-actions">
+                    <time dateTime={new Date(round.completedAt).toISOString()}>
+                      {roundTime(round.completedAt)} UTC
+                    </time>
+                    <button
+                      type="button"
+                      onClick={(event) =>
+                        onShare({ game: round.game, completion: round }, event.currentTarget)
+                      }
+                      aria-label={`Share ${ARCADE_TRACKED_GAMES.find((game) => game.id === round.game)?.name} result from ${roundTime(round.completedAt)} UTC`}
+                    >
+                      <Share2 size={15} aria-hidden="true" /> Share result
+                    </button>
+                  </div>
                 </li>
               ))}
             </ol>

@@ -176,6 +176,25 @@
 .md-playbook__daily button {
   background: #f8ebd3;
 }
+.md-playbook__daily-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.md-playbook__daily-actions button {
+  flex: 1 1 auto;
+}
+.md-playbook__round-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 116px;
+}
+.md-playbook__round-actions button {
+  font-size: 12px;
+  padding-inline: 10px;
+}
 .md-playbook__recent {
   margin-top: 22px;
 }
@@ -240,6 +259,10 @@
   .md-playbook__daily li {
     flex-direction: row;
     align-items: center;
+    flex-wrap: wrap;
+  }
+  .md-playbook__daily-actions {
+    margin-left: auto;
   }
   .md-playbook__daily button {
     flex-shrink: 0;
