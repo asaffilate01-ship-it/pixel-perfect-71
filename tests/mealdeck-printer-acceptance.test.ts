@@ -482,7 +482,8 @@ describe("printer acceptance presentation and arrivals", () => {
       "Alex · Bag 2: 1×",
       "No ice &lt;please&gt;",
       "Accept &amp; queue receipt",
-      "Queues one receipt.",
+      "Queues one receipt for the kitchen printer.",
+      "check that MealDeck Printer shows auto-print running",
     ])
       expect(markup).toContain(text);
     expect(markup).not.toContain('disabled=""');

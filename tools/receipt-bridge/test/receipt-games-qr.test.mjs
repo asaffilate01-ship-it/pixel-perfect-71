@@ -174,3 +174,51 @@ test("QR targets or bytes cannot be supplied through receipt data", () => {
   assert.ok(bytes.indexOf(command) > 0, "all valid orders receive exactly the same public QR");
   assert.equal(bytes.indexOf(command, bytes.indexOf(command) + 1), -1);
 });
+
+test("the signed H10S profile omits only fixed promotion and preserves canonical receipts", async () => {
+  const golden = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../apps/mealdeck-printer/native/src/test/resources/receipt-golden.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  for (const expected of golden.valid) {
+    const snapshot = JSON.stringify(validateReceipt(expected.input));
+    assert.equal(snapshot, expected.normalizedJson);
+    assert.equal(createHash("sha256").update(snapshot).digest("hex"), expected.fingerprint);
+    if (expected.renderError) {
+      assert.throws(() => encodeReceipt(expected.input, { columns: 32, includeGamesQr: false }), {
+        code: expected.renderError,
+      });
+      continue;
+    }
+    const native = encodeReceipt(expected.input, { columns: 32, includeGamesQr: false });
+    assert.equal(native.text, expected.text, expected.name);
+    assert.equal(Buffer.from(native.bytes).indexOf(Buffer.from(encodeReceiptGamesQr())), -1);
+    assert.equal(JSON.stringify(validateReceipt(expected.input)), snapshot);
+  }
+  for (const columns of [32, 42, 48]) {
+    const receipt = fixture();
+    receipt.orderNotes = "Keep every bag and named extra together.";
+    const current = encodeReceipt(receipt, { columns });
+    const native = encodeReceipt(receipt, { columns, includeGamesQr: false });
+    const lines = current.text.split("\n");
+    const promotionStart = lines.findIndex((line) => line.trim() === qr.heading);
+    assert.ok(promotionStart > 0);
+    assert.equal(
+      native.text,
+      [...lines.slice(0, promotionStart), ...lines.slice(promotionStart + 4)].join("\n"),
+      "only the fixed heading, subtitle, public URL and separator are omitted",
+    );
+    assert.ok(Buffer.from(native.bytes).subarray(-4).equals(Buffer.from("\n\n\n\n")));
+  }
+  assert.throws(() => encodeReceipt(fixture(), { includeGamesQr: "false" }), {
+    code: "invalid_printer_profile",
+  });
+  assert.throws(() => encodeReceipt({ ...fixture(), includeGamesQr: false }), {
+    code: "unexpected_receipt_fields",
+  });
+});

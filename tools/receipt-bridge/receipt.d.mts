@@ -59,6 +59,8 @@ export type PrinterProfile = {
   columns?: 32 | 42 | 48;
   cut?: "none" | "partial" | "full";
   feedLines?: number;
+  /** Defaults to true; false reproduces the signed H10S 0.2.0 text layout. */
+  includeGamesQr?: boolean;
 };
 export const RECEIPT_LIMITS: Readonly<{
   items: 180;

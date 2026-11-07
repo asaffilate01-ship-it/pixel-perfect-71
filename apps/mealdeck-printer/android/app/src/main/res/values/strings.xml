@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MealDeck Printer</string>
+    <string name="title_activity_main">MealDeck Printer</string>
+    <string name="package_name">uk.co.mealdeck.printer</string>
+    <string name="custom_url_scheme">uk.co.mealdeck.printer</string>
+</resources>

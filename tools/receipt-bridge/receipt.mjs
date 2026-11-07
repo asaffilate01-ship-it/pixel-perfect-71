@@ -454,12 +454,14 @@ export function encodeReceipt(input, profile = {}) {
   const columns = profile.columns ?? 42;
   const cut = profile.cut ?? "none";
   const feedLines = profile.feedLines ?? 3;
+  const includeGamesQr = profile.includeGamesQr ?? true;
   requireValue(
     [32, 42, 48].includes(columns) &&
       ["none", "partial", "full"].includes(cut) &&
       Number.isInteger(feedLines) &&
       feedLines >= 0 &&
-      feedLines <= 5,
+      feedLines <= 5 &&
+      typeof includeGamesQr === "boolean",
     "invalid_printer_profile",
   );
   const lines = [];
@@ -612,23 +614,32 @@ export function encodeReceipt(input, profile = {}) {
   write(rule);
   // Presentation-only invitation comes after every order/packing instruction.
   // Neither the canonical snapshot nor its journal fingerprint contains this art.
-  for (const label of [receiptGamesQr.heading, receiptGamesQr.subtitle])
-    write(label, " ".repeat(Math.max(0, Math.floor((columns - label.length) / 2))));
-  const gamesQrAfterLine = lines.length;
-  write(
-    receiptGamesQr.displayUrl,
-    " ".repeat(Math.max(0, Math.floor((columns - receiptGamesQr.displayUrl.length) / 2))),
-  );
-  write(rule);
+  // The already-signed H10S 0.2.0 renderer predates this fixed promotion.
+  // Its contract fixtures select the earlier layout; ordinary bridge output
+  // keeps the QR enabled. Receipt data cannot select a rendering profile.
+  let gamesQrAfterLine = null;
+  if (includeGamesQr) {
+    for (const label of [receiptGamesQr.heading, receiptGamesQr.subtitle])
+      write(label, " ".repeat(Math.max(0, Math.floor((columns - label.length) / 2))));
+    gamesQrAfterLine = lines.length;
+    write(
+      receiptGamesQr.displayUrl,
+      " ".repeat(Math.max(0, Math.floor((columns - receiptGamesQr.displayUrl.length) / 2))),
+    );
+    write(rule);
+  }
   write("MealDeck is a trading name of");
   write("313 Brands Ltd");
   write("Powered by Dishbee");
   write("mealdeck.co.uk");
   write("END OF RECEIPT");
   const encoder = new TextEncoder();
-  const beforeQr = encoder.encode(lines.slice(0, gamesQrAfterLine).join("\n") + "\n");
+  const beforeQr = encoder.encode(
+    lines.slice(0, gamesQrAfterLine ?? lines.length).join("\n") + "\n",
+  );
   const afterQr = encoder.encode(
-    lines.slice(gamesQrAfterLine).join("\n") + "\n" + "\n".repeat(feedLines),
+    (gamesQrAfterLine === null ? "" : lines.slice(gamesQrAfterLine).join("\n") + "\n") +
+      "\n".repeat(feedLines),
   );
   const ending = cut === "none" ? [] : [0x1d, 0x56, cut === "partial" ? 1 : 0];
   const bytes = Uint8Array.from([
@@ -636,7 +647,7 @@ export function encodeReceipt(input, profile = {}) {
     0x40,
     ...encodeReceiptLogo(),
     ...beforeQr,
-    ...encodeReceiptGamesQr(),
+    ...(includeGamesQr ? encodeReceiptGamesQr() : []),
     ...afterQr,
     ...ending,
   ]);

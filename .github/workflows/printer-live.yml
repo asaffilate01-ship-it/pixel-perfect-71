@@ -1,0 +1,73 @@
+name: H10S live receipt APK
+
+on:
+  pull_request:
+    paths:
+      - "apps/mealdeck-printer/**"
+      - "tools/receipt-bridge/receipt.mjs"
+      - "tools/receipt-bridge/test/fixtures.mjs"
+      - "tools/receipt-bridge/assets/mealdeck-thermal-logo.png"
+      - "src/assets/approved-logos/mealdeck.webp"
+      - ".github/workflows/printer-live.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  printer-live-android:
+    name: H10S receipt companion Android build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/mealdeck-printer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/mealdeck-printer/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install pinned app dependencies
+        run: npm ci --ignore-scripts
+      - name: Check screen and native receipt behavior
+        run: |
+          npm run typecheck
+          npm run test:web
+          npm run test:native-core
+          node native/generate-receipt-fixtures.mjs --check
+      - name: Bundle the local operator screen and verify boundaries
+        run: |
+          npm run sync:android
+          npm run verify:native
+      - name: Install Android compiler components
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Compile the non-debuggable release APK
+        working-directory: apps/mealdeck-printer/android
+        run: ./gradlew :app:testDebugUnitTest :app:assembleRelease --no-daemon --stacktrace
+      - name: Prepare the unsigned release for private signing
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk dist/mealdeck-printer-h10s-0.2.0-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions dist/mealdeck-printer-h10s-0.2.0-unsigned.apk > dist/permissions.txt
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/mealdeck-printer-h10s-0.2.0-unsigned.apk > dist/package.txt
+          if rg 'application-debuggable' dist/package.txt; then
+            echo "Release APK must not be debuggable"
+            exit 1
+          fi
+          cd dist
+          sha256sum mealdeck-printer-h10s-0.2.0-unsigned.apk > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-printer-h10s-release-unsigned
+          path: apps/mealdeck-printer/dist/
+          retention-days: 30
+          if-no-files-found: error
