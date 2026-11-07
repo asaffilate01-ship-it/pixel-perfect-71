@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
-import { isWebPushPublicKey } from "./mealdeck-customer";
 import { customerEntryPolicy } from "./mealdeck-customer-entry";
 
 /** Public VAPID key only. Private signing keys and sender credentials stay server-side. */
-export const getMealDeckCustomerPushConfig = createServerFn({ method: "GET" }).handler(() => {
-  const key = process.env["MEALDECK_WEB_PUSH_PUBLIC_KEY"]?.trim();
-  return { publicKey: isWebPushPublicKey(key) ? key : null };
+export const getMealDeckCustomerPushConfig = createServerFn({ method: "GET" }).handler(async () => {
+  const { readCustomerPushAvailability } = await import("./mealdeck-notifications.server");
+  const config = await readCustomerPushAvailability(process.env);
+  return { publicKey: config.publicKey };
 });
 
 /** The registration restart uses server time, not a customer-controlled clock. */
