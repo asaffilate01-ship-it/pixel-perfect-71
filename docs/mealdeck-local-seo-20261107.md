@@ -59,6 +59,16 @@ It checks all five clean menu pages and five legacy brand links for HTTP 200, co
 
 Exit `0` means the tested responses passed; `1` means a response or SEO assertion failed; `2` means an invalid invocation/runtime. A live run before publication should report the old deployment's differences. The script deliberately does not infer publication from a commit or merge. Record local test, CI, merge and live audit outcomes separately when observed.
 
+## Pre-merge verification and integration
+
+- The integrated source passed 1,561 non-PostgreSQL unit tests across 141 files (73,715 assertions). PostgreSQL behavior remains a separate CI check.
+- A locally running production Node build passed all 177 public-response audit assertions. The production Cloudflare build, TypeScript and scoped ESLint also passed.
+- Browser interaction review could not run because the browser connection timed out. These results establish source and HTTP output checks, not a completed visual/mobile browser review.
+- The latest menu update adds two Coke products, bringing the source catalogue to 91 items. Two stale product-count test expectations were updated accordingly.
+- The historical meal-components test now verifies the unchanged migration and manifest hashes against its original 16 parents and 73 options, while checking the two later Skorch Coke additions explicitly. Production generation still requires review before expanding that frozen projection. Purchased Coke text is preserved; the historical helper's empty summary for an unknown identity is tested. This change does not update the database, frozen receipts or production approval gates.
+
+See [PR #137](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/137) for CI, merge and publication evidence. A live public audit remains necessary after deployment.
+
 ## Google guidance and measurement
 
 The implementation follows Google's guidance on [descriptive title links](https://developers.google.com/search/docs/appearance/title-link), [crawlable anchor links](https://developers.google.com/search/docs/crawling-indexing/links-crawlable), [JavaScript-generated content](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics), [LocalBusiness structured data](https://developers.google.com/search/docs/appearance/structured-data/local-business) and [structured-data quality](https://developers.google.com/search/docs/appearance/structured-data/sd-policies). Google's [supported meta tags documentation](https://developers.google.com/search/docs/crawling-indexing/special-tags) explains that `meta keywords` has no effect on Google indexing or ranking; this work therefore improves actual page content and discovery.

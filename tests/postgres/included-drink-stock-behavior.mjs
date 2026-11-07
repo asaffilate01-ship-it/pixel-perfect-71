@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { uuid_ossp } from "@electric-sql/pglite/contrib/uuid_ossp";
 import { asActor, createDatabase, id } from "./harness.mjs";
 import { setupStripeCheckoutFixture } from "./stripe-checkout-fixture.mjs";
@@ -9,7 +10,6 @@ import {
   buildIncludedDrinkStockManifest,
   buildIncludedDrinkStockSql,
   buildManagedIncludedDrinkStockSql,
-  renderIncludedDrinkStockSql,
 } from "../../deploy/mealdeck/included-drink-stock.mjs";
 
 const db = await createDatabase(process.argv.includes("--native"), { uuid_ossp });
@@ -31,6 +31,16 @@ try {
   await db.exec(buildPublicMenuSql());
   await db.exec(buildPublicMenuReadSql());
   const bindings = buildIncludedDrinkStockManifest().bindings;
+  const newCokeOptions = [
+    "skorch-burgers-included-meal-drink-coke",
+    "skorch-burgers-kids-included-drink-coke",
+  ];
+  // The original migration remains frozen; Coke is installed by a separate additive operation.
+  const frozenStock = buildIncludedDrinkStockSql().match(
+    /jsonb_array_elements\(\('((?:[^']|'')*)'::jsonb\)->'bindings'\)/,
+  );
+  assert.ok(frozenStock, "Frozen included-drink manifest must be present");
+  const frozenBindings = JSON.parse(frozenStock[1].replaceAll("''", "'")).bindings;
   const read = () =>
     asActor(db, null, () => scalar("select public.mealdeck_public_menu()"), "anon");
   const itemId = (sku) =>
@@ -76,9 +86,22 @@ try {
   await check(
     "frozen explicit 28-option mapping, atomic rollback, replay and no stock/price writes",
     async () => {
-      assert.equal(bindings.length, 28);
-      assert.equal(new Set(bindings.map((row) => row.option)).size, 28);
-      assert.equal(buildIncludedDrinkStockSql(), renderIncludedDrinkStockSql());
+      assert.equal(frozenBindings.length, 28);
+      assert.equal(bindings.length, 30);
+      assert.equal(new Set(bindings.map((row) => row.option)).size, 30);
+      assert.deepEqual(
+        bindings.filter((row) => !newCokeOptions.includes(row.option)),
+        frozenBindings,
+      );
+      assert.deepEqual(
+        bindings.filter((row) => newCokeOptions.includes(row.option)),
+        newCokeOptions.map((option) => ({
+          option,
+          group: option.replace(/-coke$/, ""),
+          sku: "skorch-burgers-cans-drinks-coke",
+          brand: "skorch-burgers",
+        })),
+      );
       for (const options of [
         null,
         {},
@@ -101,6 +124,44 @@ try {
       await db.exec(buildIncludedDrinkStockSql());
       assert.equal(await dataDigest(), before);
       assert.deepEqual((await read()).items, originalSnapshot.items);
+    },
+  );
+  await check(
+    "Coke manifest additions are atomic, repeatable and preserve catalogue prices and stock",
+    async () => {
+      const sql = await readFile(
+        new URL(
+          "../../deploy/mealdeck/operations/20261107_coke_public_manifest.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      const countBindings = () =>
+        scalar("select count(*)::integer from mealdeck_private.included_drink_stock_bindings($1)", [
+          f.tenantId,
+        ]);
+      const countAudits = () =>
+        scalar(
+          "select count(*)::integer from public.mealdeck_ops_audit_log where action='catalogue.coke_manifest'",
+        );
+      await db.exec("begin");
+      await db.exec(sql);
+      await db.exec("rollback");
+      assert.equal(await countBindings(), 28);
+      assert.equal(await countAudits(), 0);
+      await db.exec(sql);
+      await db.exec(sql);
+      assert.equal(await countBindings(), 30);
+      assert.equal(await countAudits(), 1);
+      assert.equal(await dataDigest(), before);
+      const snapshot = await read();
+      assert.equal(snapshot.items.length, originalSnapshot.items.length + 2);
+      for (const sku of ["loadd-cans-drinks-coke", "skorch-burgers-cans-drinks-coke"]) {
+        assert.equal(snapshot.items.find((row) => row.sku === sku)?.name, "Coke");
+      }
+      for (const option of newCokeOptions) {
+        assert.ok(snapshot.items.some((row) => row.options[option]?.available === true));
+      }
     },
   );
   await check(

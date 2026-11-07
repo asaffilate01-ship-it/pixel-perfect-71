@@ -81,7 +81,7 @@ describe("Launch menu displayed prices", () => {
         }
       }
     }
-    expect(count).toBe(89);
+    expect(count).toBe(91);
   });
 
   test("reads current catalogue prices instead of amounts attached to saved browser picks", () => {

@@ -25,7 +25,7 @@ function group(brandId: string, groupId: string): LaunchMenuOptionGroup {
 }
 
 describe("Supplied launch menu transcription", () => {
-  it("retains the five approved brands with 89 products in 25 sections", () => {
+  it("retains the five approved brands with 91 products in 25 sections", () => {
     expect(
       launchMenuBrands.map((entry) => ({
         id: entry.id,
@@ -35,8 +35,8 @@ describe("Supplied launch menu transcription", () => {
     ).toEqual([
       { id: "tavo-chicken", sections: 8, items: 24 },
       { id: "moktl", sections: 2, items: 10 },
-      { id: "loadd", sections: 6, items: 29 },
-      { id: "skorch-burgers", sections: 5, items: 21 },
+      { id: "loadd", sections: 6, items: 30 },
+      { id: "skorch-burgers", sections: 5, items: 22 },
       { id: "souvano", sections: 4, items: 5 },
     ]);
     expect(getLaunchMenuBrand("not-a-supplied-brand")).toBeUndefined();
@@ -44,6 +44,7 @@ describe("Supplied launch menu transcription", () => {
 
   it("matches every supplied standalone price, including brand-specific drinks and nuggets", () => {
     const standardDrinks = [
+      ["Coke", 100],
       ["Pepsi", 100],
       ["Pepsi Max", 100],
       ["Tango Orange", 100],
@@ -98,10 +99,10 @@ describe("Supplied launch menu transcription", () => {
       },
       loadd: {
         "loaded-fries": [
-          ["King of Hearts", 550],
-          ["Queen of Hearts", 550],
-          ["Jack of Diamonds", 550],
-          ["King of Spades", 550],
+          ["Royal Flush", 550],
+          ["Double Deck", 550],
+          ["All In", 550],
+          ["The Jackpot", 550],
         ],
         "loaded-mac-cheese": [
           ["Ace Mac", 500],
@@ -111,10 +112,10 @@ describe("Supplied launch menu transcription", () => {
           ["King’s Mac", 599],
         ],
         "full-house": [
-          ["King of Hearts", 699],
-          ["Queen of Hearts", 699],
-          ["Jack of Diamonds", 699],
-          ["King of Spades", 699],
+          ["Royal Flush", 699],
+          ["Double Deck", 699],
+          ["All In", 699],
+          ["The Jackpot", 699],
         ],
         sides,
         "cans-drinks": standardDrinks,
@@ -165,6 +166,15 @@ describe("Supplied launch menu transcription", () => {
         expect(dessert.sourceRefs).toContain(`${launchMenuDessertApproval.id}#${entry.id}`);
       }
     }
+    for (const sectionId of ["loaded-fries", "full-house"]) {
+      const items = brand("loadd").sections.find((section) => section.id === sectionId)!.items;
+      expect(items.map((item) => [item.id, item.name])).toEqual([
+        [`loadd-${sectionId}-king-of-hearts`, "Royal Flush"],
+        [`loadd-${sectionId}-queen-of-hearts`, "Double Deck"],
+        [`loadd-${sectionId}-jack-of-diamonds`, "All In"],
+        [`loadd-${sectionId}-king-of-spades`, "The Jackpot"],
+      ]);
+    }
     expect(isLaunchBrandPriceApproved("paratique")).toBe(false);
     expect(brand("skorch").sections[0]?.description).toContain(
       "lettuce, cheese, gherkin, caramelised onion",
@@ -189,7 +199,13 @@ describe("Supplied launch menu transcription", () => {
         ]);
       for (const suffix of ["included-meal-drink", "kids-included-drink"]) {
         const included = group(id, `${id}-${suffix}`);
-        expect(included.options).toHaveLength(7);
+        expect(included.options).toHaveLength(id === "skorch-burgers" ? 8 : 7);
+        expect(
+          included.options.find((option) => option.id === `${included.id}-coke`),
+        ).toMatchObject({
+          label: "Coke",
+          pricePence: 0,
+        });
         expect(
           included.options.every(
             (option) => option.pricePence === 0 && option.label !== "Red Bull",

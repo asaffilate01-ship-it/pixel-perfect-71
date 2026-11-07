@@ -93,13 +93,21 @@ describe("the first MealDeck launch is Luton only", () => {
     expect(lutonBusiness.servesCuisine).toEqual([
       "Smash burgers",
       "Chicken",
+      "Chicken wings",
       "Greek",
       "Turkish",
       "Loaded fries",
       "Mac and cheese",
       "Mocktails",
+      "Desserts",
     ]);
-    expect(lutonBusiness.hasMenu).toBe("https://mealdeck.co.uk/menus");
+    expect(lutonBusiness.hasMenu).toEqual([
+      "https://mealdeck.co.uk/menus/skorch-burgers",
+      "https://mealdeck.co.uk/menus/tavo-chicken",
+      "https://mealdeck.co.uk/menus/loadd",
+      "https://mealdeck.co.uk/menus/souvano",
+      "https://mealdeck.co.uk/menus/moktl",
+    ]);
     expect(lutonBusiness).not.toHaveProperty("potentialAction");
     expect(lutonBusiness).not.toHaveProperty("openingHoursSpecification");
     expect(

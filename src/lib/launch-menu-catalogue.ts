@@ -340,6 +340,7 @@ const tavoDrinks: readonly MenuRow[] = [
   ["Red Bull", 220],
 ];
 const skorchLoaddDrinks: readonly MenuRow[] = [
+  ["Coke", 100],
   ["Pepsi", 100],
   ["Pepsi Max", 100],
   ["Tango Orange", 100],
@@ -666,10 +667,10 @@ const loadd: LaunchMenuBrand = {
       "loaded-fries",
       "Loaded Fries",
       [
-        ["King of Hearts", 550, "Fried chicken"],
-        ["Queen of Hearts", 550, "Grilled chicken"],
-        ["Jack of Diamonds", 550, "Chicken shawarma"],
-        ["King of Spades", 550, "Smash beef"],
+        ["Royal Flush", 550, "Fried chicken", "king-of-hearts"],
+        ["Double Deck", 550, "Grilled chicken", "queen-of-hearts"],
+        ["All In", 550, "Chicken shawarma", "jack-of-diamonds"],
+        ["The Jackpot", 550, "Smash beef", "king-of-spades"],
       ],
       ["loadd-menu#loaded-fries"],
       "All with cheese, Algerian sauce, and spring onions.",
@@ -692,10 +693,10 @@ const loadd: LaunchMenuBrand = {
       "full-house",
       "The Full House",
       [
-        ["King of Hearts", 699, "Fried chicken, loaded fries and mac ’n cheese."],
-        ["Queen of Hearts", 699, "Grilled chicken, loaded fries and mac ’n cheese."],
-        ["Jack of Diamonds", 699, "Chicken shawarma, loaded fries and mac ’n cheese."],
-        ["King of Spades", 699, "Smashed beef, loaded fries and mac ’n cheese."],
+        ["Royal Flush", 699, "Fried chicken, loaded fries and mac ’n cheese.", "king-of-hearts"],
+        ["Double Deck", 699, "Grilled chicken, loaded fries and mac ’n cheese.", "queen-of-hearts"],
+        ["All In", 699, "Chicken shawarma, loaded fries and mac ’n cheese.", "jack-of-diamonds"],
+        ["The Jackpot", 699, "Smashed beef, loaded fries and mac ’n cheese.", "king-of-spades"],
       ],
       ["loadd-menu#full-house"],
       "The best of both worlds. Loaded fries and mac ’n cheese together in one box, topped with cheese, Algerian sauce, spring onions and crispy fried onions.",
@@ -1033,17 +1034,18 @@ export function launchMenuConfiguredItemPrice(
 }
 
 export const launchMenuSourceNotes = [
+  "On 7 November 2026, the owner renamed only Load’d’s King of Hearts, Queen of Hearts, Jack of Diamonds and King of Spades to Royal Flush, Double Deck, All In and The Jackpot in Loaded Fries and Full House. Existing item IDs, descriptions and prices are preserved.",
   "The owner added Biscoff and Oreo milkcakes at £3.99 each to all five menus on 6 November 2026. These are standalone desserts; the separate Sunday promotion keeps its existing activation rules.",
   "The owner’s typed menus and prices dated 5 November 2026 supersede the earlier £20 placeholders for all five launch brands.",
   "Souvano’s three approved mains each include fries, rice or naan. No extra meal charge or standalone Souvano drinks were supplied; cross-brand additions are separately priced extras.",
   "Tavo wing and tender prices depend on the exact portion and flavour together. Grilled wings use Spicy Honey BBQ; fried wings and tenders use Korean BBQ.",
   "Nuggets Meal is the current display name for both kids meals; stable IDs preserve existing catalogue references.",
-  "Skorch and Load’d use the revised Pepsi/Tango/Rubicon/7up drink list. Tavo retains its separate Coke/Miranda/Barr list. Red Bull is £2.20 in all three menus.",
+  "The owner confirmed Coke, Pepsi Max, Tango Apple and water in stock on 7 November 2026. Coke is also listed for Skorch and Load’d at the existing £1 can price. Other drink identities and prices are retained; current kitchen stock controls availability.",
   "A named Load’d meal replacement is £2.99 for loaded fries or £3.99 for loaded mac ’n cheese. Moktl meal replacements are £2.99. Standalone extras retain their full item price.",
   "Milkshake upgrades remain displayed at £2.99 but unavailable until the owner supplies the flavour choices; no milkshake flavours are invented.",
   "No allergen declaration or ingredient-completeness assurance is supplied.",
   "No drink serving sizes, lamb-chop quantity, or meat species for the rashers are specified.",
   "Tavo’s Onion Rings burger add-on has no stated quantity; Skorch explicitly lists 3 Onion Rings.",
-  "The included meal drink selector uses each brand’s listed £1 cans/water. Red Bull stays a separate £2.20 purchase; a named Moktl or milkshake upgrade replaces the included drink.",
+  "The included meal drink selector follows the exact standalone can/water stock in its brand and kitchen, including Coke. Red Bull remains a separate catalogue item and is not an included drink; a named Moktl or milkshake upgrade replaces the included drink.",
   "Accent colours and single/multiple presentation are UI metadata, not live availability or kitchen rules.",
 ];
