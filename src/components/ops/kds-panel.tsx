@@ -35,6 +35,8 @@ import {
 import { KdsCompletedCard } from "./kds-completed-card";
 import { KdsPickupDetails } from "./kds-pickup-details";
 import { KdsMealComponents } from "./kds-meal-components";
+import { KdsTicketGrid } from "./kds-ticket-grid";
+import { KdsOrderNavigator } from "./kds-order-navigator";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
@@ -623,11 +625,22 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
               ` Showing the latest ${board.completed_orders.length}; ${board.completed_remaining_order_count} more are available in order history.`}
           </p>
           {completedOrders.length ? (
-            <div className="md-kds-ticket-grid" aria-label="Completed kitchen orders">
-              {completedOrders.map((order) => (
-                <KdsCompletedCard key={order.order_id} order={order} />
-              ))}
-            </div>
+            <>
+              <KdsOrderNavigator
+                orders={completedOrders.map((order) => ({
+                  id: order.order_id,
+                  headingId: `kds-completed-${order.order_id}`,
+                  reference: `${isOrderNumber(order.order_number) ? "Order" : "Collection code"} ${orderDisplayNumber(order.order_number, order.display_code)}`,
+                  stage: "Done",
+                  quantity: order.items.reduce((total, item) => total + item.quantity, 0),
+                }))}
+              />
+              <KdsTicketGrid label="Completed kitchen orders">
+                {completedOrders.map((order) => (
+                  <KdsCompletedCard key={order.order_id} order={order} />
+                ))}
+              </KdsTicketGrid>
+            </>
           ) : (
             <StateCard
               icon={<PackageCheck className="size-8" />}
@@ -1150,16 +1163,29 @@ export function KdsOrderCollection({
   filter: StageFilter;
   renderOrder: (order: KdsOrder) => ReactNode;
 }) {
+  const navigator = (
+    <KdsOrderNavigator
+      orders={orders.map((order) => ({
+        id: order.order_id,
+        headingId: `kds-order-${order.order_id}`,
+        reference: `${isOrderNumber(order.order_number) ? "Order" : "Collection code"} ${orderDisplayNumber(order.order_number, order.display_code)}`,
+        stage: stageLabels[kdsOrderStage(order)],
+        quantity: order.items.reduce((total, item) => total + item.quantity, 0),
+      }))}
+    />
+  );
   if (view === "tickets") {
     return (
-      <div className="md-kds-ticket-grid" aria-label="Kitchen orders">
-        {orders.map(renderOrder)}
-      </div>
+      <>
+        {navigator}
+        <KdsTicketGrid label="Kitchen orders">{orders.map(renderOrder)}</KdsTicketGrid>
+      </>
     );
   }
   const stages = KDS_ACTIVE_STAGES.filter((stage) => filter === "all" || filter === stage);
   return (
     <>
+      {navigator}
       {stages.length > 1 && (
         <p className="md-kds-mobile-board-hint" aria-hidden="true">
           Swipe to move between stages <ArrowRight className="size-3.5" />
@@ -1187,13 +1213,13 @@ export function KdsOrderCollection({
                 </h3>
                 <span>{laneOrders.length}</span>
               </header>
-              <div className="md-kds-lane-orders">
+              <KdsTicketGrid className="md-kds-lane-orders" label={`${stageLabels[stage]} orders`}>
                 {laneOrders.length ? (
                   laneOrders.map(renderOrder)
                 ) : (
                   <p className="md-kds-lane-empty">No orders in this view</p>
                 )}
-              </div>
+              </KdsTicketGrid>
             </section>
           );
         })}

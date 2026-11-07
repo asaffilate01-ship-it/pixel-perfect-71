@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="referrer" content="no-referrer" />
+    <title>UI TEST ONLY — MealDeck KDS layout</title>
+    <script>
+      // TEMPORARY, local UI fixture. Refuse application requests before importing
+      // production display components. Browser module loading and Vite HMR remain available.
+      window.__KDS_QA_BLOCKED_REQUESTS__ = [];
+      const refuseApplicationRequest = (request) => {
+        window.__KDS_QA_BLOCKED_REQUESTS__.push(String(request));
+        document.documentElement.dataset.blockedRequests = String(
+          window.__KDS_QA_BLOCKED_REQUESTS__.length,
+        );
+        throw new Error("UI TEST ONLY: application network requests are disabled");
+      };
+      window.fetch = async (request) => refuseApplicationRequest(request);
+      XMLHttpRequest.prototype.open = function (method, url) {
+        refuseApplicationRequest(url);
+      };
+    </script>
+    <script type="module">
+      import RefreshRuntime from "/@react-refresh";
+      RefreshRuntime.injectIntoGlobalHook(window);
+      window.$RefreshReg$ = () => {};
+      window.$RefreshSig$ = () => (type) => type;
+      window.__vite_plugin_react_preamble_installed__ = true;
+      await import("/tests/fixtures/kds-layout/fixture.tsx");
+    </script>
+  </head>
+  <body>
+    <div id="root">Loading synthetic KDS UI fixture…</div>
+  </body>
+</html>

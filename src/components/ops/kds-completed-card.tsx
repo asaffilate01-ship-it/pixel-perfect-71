@@ -15,6 +15,7 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
   const referenceLabel = hasOrderNumber ? "Order" : "Collection code";
   return (
     <article
+      tabIndex={-1}
       className="md-ops-ticket md-kds-ticket min-w-0 overflow-hidden border md-ops-border border-t-4 md-ops-stage-ready md-ops-paper"
       data-testid="kds-completed-order"
       data-order-id={order.order_id}

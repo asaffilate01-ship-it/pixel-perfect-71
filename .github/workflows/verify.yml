@@ -226,6 +226,7 @@ jobs:
           bunx eslint src/routes/ops.tsx src/routes/kds.tsx
           src/components/ops/operations-workspace.tsx src/components/ops/kds-panel.tsx
           src/components/ops/kds-completed-card.tsx src/components/ops/kds-pickup-details.tsx
+          src/components/ops/kds-ticket-grid.tsx src/components/ops/kds-order-navigator.tsx
           src/components/ops/kds-meal-components.tsx
           src/lib/mealdeck-kds.ts src/lib/mealdeck-kds-presentation.ts
           tests/mealdeck-kds*.test.ts
