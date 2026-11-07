@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           STORE_PASS="$(openssl rand -hex 24)"
-          printf '%s' "$STORE_PASS" > "$RUNNER_TEMP/mealdeck-printer-storepass.txt"
+          printf '%s\n' "$STORE_PASS" > "$RUNNER_TEMP/mealdeck-printer-storepass.txt"
           chmod 600 "$RUNNER_TEMP/mealdeck-printer-storepass.txt"
           keytool -genkeypair             -keystore "$RUNNER_TEMP/mealdeck-printer-release.p12"             -storetype PKCS12             -storepass "$STORE_PASS"             -keypass "$STORE_PASS"             -alias mealdeck-printer-release             -keyalg RSA             -keysize 4096             -validity 10000             -dname "CN=MealDeck Printer, OU=Operations, O=313 Brands Ltd, L=Luton, ST=England, C=GB"
 
