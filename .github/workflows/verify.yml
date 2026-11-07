@@ -130,7 +130,7 @@ jobs:
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
       - name: MealDeck Play game regressions
-        run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts tests/hero-food-deck.test.ts
+        run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts tests/bento-sudoku.test.ts tests/tray-lines.test.ts tests/mealdeck-play-progress.test.ts tests/hero-food-deck.test.ts
       - name: Homepage motion, native zoom and lifecycle cleanup
         run: |
           bun test tests/deck-motion.test.ts
@@ -202,6 +202,9 @@ jobs:
           src/components/play/puzzle-games.tsx src/components/play/tray-tactics.tsx
           src/components/play/game-panel-boundary.tsx
           tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts
+          src/lib/bento-sudoku.ts src/lib/tray-lines.ts src/lib/mealdeck-play-progress.ts
+          src/components/play/bento-sudoku.tsx src/components/play/tray-lines.tsx src/components/play/arcade-progress.tsx
+          tests/bento-sudoku.test.ts tests/tray-lines.test.ts tests/mealdeck-play-progress.test.ts
           --rule 'prettier/prettier: off'
 
       - name: Marketplace ordering lint

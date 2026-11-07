@@ -3,19 +3,21 @@ import {
   arcadeGameLink,
   findArcadeGames,
   parseArcadeFavourites,
+  parseArcadeSearch,
+  pickArcadeGame,
 } from "../src/lib/mealdeck-arcade-library";
 
 describe("Arcade discovery and device preferences", () => {
   test("combines collection, category and all search words", () => {
     expect(findArcadeGames("", "All games", "new").map((game) => game.id)).toEqual([
-      "sauce-switch",
-      "menu-quest",
-      "tray-tactics",
+      "bento-sudoku",
+      "tray-lines",
     ]);
     expect(findArcadeGames("chef friend", "Strategy", "two-player").map((game) => game.id)).toEqual(
-      ["tray-tactics", "four-to-feast"],
+      ["tray-lines", "tray-tactics", "four-to-feast"],
     );
     expect(findArcadeGames("", "Puzzles", "daily").map((game) => game.id)).toEqual([
+      "bento-sudoku",
       "sauce-switch",
       "menu-quest",
       "kitchen-shuffle",
@@ -46,5 +48,47 @@ describe("Arcade discovery and device preferences", () => {
     expect(arcadeGameLink("pairs", "evil&token=private")).toBe(
       "https://mealdeck.co.uk/play?game=pairs",
     );
+  });
+
+  test("daily launch accepts real calendar dates only for the supported puzzle games", () => {
+    expect(
+      parseArcadeSearch({ game: "bento-sudoku", daily: "2026-11-07", token: "private" }),
+    ).toEqual({
+      game: "bento-sudoku",
+      daily: "2026-11-07",
+    });
+    expect(parseArcadeSearch({ game: "menu-quest", daily: "2028-02-29" })).toEqual({
+      game: "menu-quest",
+      daily: "2028-02-29",
+    });
+    for (const daily of [
+      "2026-02-29",
+      "2026-04-31",
+      "2026-13-01",
+      "2026-00-01",
+      "2026-11-07T00:00:00Z",
+      "2026-11-07&token=private",
+      20261107,
+      {},
+      null,
+    ]) {
+      expect(parseArcadeSearch({ game: "sauce-switch", daily })).toEqual({ game: "sauce-switch" });
+    }
+    expect(parseArcadeSearch({ game: "tray-lines", daily: "2026-11-07" })).toEqual({
+      game: "tray-lines",
+    });
+    expect(parseArcadeSearch({ game: "unknown", brand: "unknown", daily: "2026-11-07" })).toEqual(
+      {},
+    );
+  });
+
+  test("pick-for-me stays within the filtered collection and offers another game", () => {
+    const games = findArcadeGames("", "All games", "new");
+    expect(pickArcadeGame(games, "bento-sudoku", () => 0)).toBe("tray-lines");
+    expect(pickArcadeGame(games, "tray-lines", () => 0.99)).toBe("bento-sudoku");
+    expect(pickArcadeGame(games, "pairs", () => 0)).toBe("bento-sudoku");
+    expect(pickArcadeGame(games, "pairs", () => 1)).toBe("tray-lines");
+    expect(pickArcadeGame([], "pairs")).toBeNull();
+    expect(pickArcadeGame([{ id: "pairs" }], "pairs")).toBe("pairs");
   });
 });

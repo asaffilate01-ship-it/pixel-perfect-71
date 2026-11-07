@@ -23,11 +23,13 @@ import {
   Minimize2,
   RotateCcw,
   Search,
+  Shuffle,
   Star,
   X,
 } from "lucide-react";
 import { Feast2048, FourToFeast, OrderEcho, KitchenShuffle } from "@/components/play/arcade-games";
 import { GamePanelBoundary } from "@/components/play/game-panel-boundary";
+import { ArcadePlaybook, ArcadeProgressProvider } from "@/components/play/arcade-progress";
 import {
   KitchenChaos,
   BrandSnap,
@@ -55,8 +57,9 @@ import {
   NEW_ARCADE_GAMES,
   arcadeGameLink,
   findArcadeGames,
-  isArcadeGameId,
+  parseArcadeSearch,
   parseArcadeFavourites,
+  pickArcadeGame,
   type ArcadeCollection,
   type ArcadeFilter,
   type ArcadeGameId,
@@ -75,15 +78,16 @@ const MenuQuest = lazy(() =>
 const TrayTactics = lazy(() =>
   import("@/components/play/tray-tactics").then((module) => ({ default: module.TrayTactics })),
 );
+const BentoSudoku = lazy(() =>
+  import("@/components/play/bento-sudoku").then((module) => ({ default: module.BentoSudoku })),
+);
+const TrayLines = lazy(() =>
+  import("@/components/play/tray-lines").then((module) => ({ default: module.TrayLines })),
+);
 const FAVOURITES_KEY = "mealdeck-play-favourites-v1";
 
 export const Route = createFileRoute("/play")({
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { brand?: BrandTheme; game?: ArcadeGameId } => ({
-    ...(isBrandTheme(search["brand"]) ? { brand: search["brand"] } : {}),
-    ...(isArcadeGameId(search["game"]) ? { game: search["game"] } : {}),
-  }),
+  validateSearch: parseArcadeSearch,
   head: () =>
     seo({
       title: "MealDeck Play — Free Food Games",
@@ -556,10 +560,25 @@ function GameLibrary({
           </button>
         ))}
       </div>
-      <p className="md-play-count" role="status">
-        {games.length} {games.length === 1 ? "game" : "games"}
-        {filter !== "All games" ? " · " + filter : ""}
-      </p>
+      <div className="md-play-results-heading">
+        <p className="md-play-count" role="status">
+          {games.length} {games.length === 1 ? "game" : "games"}
+          {filter !== "All games" ? " · " + filter : ""}
+        </p>
+        {games.length > 0 && (
+          <button
+            type="button"
+            className="md-play-suggest"
+            aria-label="Pick a game from these results"
+            onClick={() => {
+              const next = pickArcadeGame(games, game);
+              if (next) onSelect(next);
+            }}
+          >
+            <Shuffle size={15} aria-hidden="true" /> Pick for me
+          </button>
+        )}
+      </div>
       {games.length ? (
         <ul className="md-play-game-list">
           {games.map((item) => (
@@ -625,7 +644,15 @@ function GameLibrary({
 }
 
 function PlayPage() {
-  const { brand = "mealdeck", game = "feast-2048" } = Route.useSearch();
+  return (
+    <ArcadeProgressProvider>
+      <PlayArcade />
+    </ArcadeProgressProvider>
+  );
+}
+
+function PlayArcade() {
+  const { brand = "mealdeck", game = "feast-2048", daily } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ArcadeFilter>("All games");
@@ -637,6 +664,7 @@ function PlayPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerViewport, setPickerViewport] = useState<CSSProperties>({});
   const [focusMode, setFocusMode] = useState(false);
+  const [dailyLaunchSequence, setDailyLaunchSequence] = useState(0);
   const gamePanelRef = useRef<HTMLDivElement>(null);
   const libraryRef = useRef<HTMLElement>(null);
   const desktopSearchRef = useRef<HTMLInputElement>(null);
@@ -739,7 +767,7 @@ function PlayPage() {
       pendingFocus.current = false;
     });
     return () => cancelAnimationFrame(frame);
-  }, [game, brand, focusGame]);
+  }, [game, brand, daily, dailyLaunchSequence, focusGame]);
 
   function selectGame(id: ArcadeGameId) {
     selectedInPicker.current = pickerOpen;
@@ -771,9 +799,23 @@ function PlayPage() {
     });
   }
 
+  function selectDailyGame(id: "sauce-switch" | "menu-quest" | "bento-sudoku") {
+    const today = new Date().toISOString().slice(0, 10);
+    pendingFocus.current = true;
+    if (id === game && daily === today) {
+      // The playbook's explicit Play again action must set up another attempt,
+      // while selecting the current game in the library still preserves its board.
+      setDailyLaunchSequence((sequence) => sequence + 1);
+      return;
+    }
+    void navigate({ search: { brand, game: id, daily: today }, resetScroll: false });
+  }
+
   const panels: Record<ArcadeGameId, ReactNode> = {
-    "sauce-switch": <SauceSwitch />,
-    "menu-quest": <MenuQuest />,
+    "bento-sudoku": <BentoSudoku dailyDate={daily} />,
+    "tray-lines": <TrayLines />,
+    "sauce-switch": <SauceSwitch dailyDate={daily} />,
+    "menu-quest": <MenuQuest dailyDate={daily} />,
     "tray-tactics": <TrayTactics />,
     "feast-2048": <Feast2048 />,
     "four-to-feast": <FourToFeast />,
@@ -850,6 +892,9 @@ function PlayPage() {
               </div>
             </div>
           </header>
+          <div className="md-play-playbook">
+            <ArcadePlaybook onDailyGame={selectDailyGame} />
+          </div>
           <div
             className="md-play-workspace"
             onKeyDown={(event) => {
@@ -966,7 +1011,10 @@ function PlayPage() {
                 role="region"
                 aria-label={activeGame.name}
               >
-                <GamePanelBoundary key={game} onChooseGame={showLibrary}>
+                <GamePanelBoundary
+                  key={`${game}:${daily ?? "fresh"}:${dailyLaunchSequence}`}
+                  onChooseGame={showLibrary}
+                >
                   <Suspense
                     fallback={
                       <p className="md-quick-loading" role="status">
