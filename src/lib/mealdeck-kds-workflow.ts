@@ -3,6 +3,7 @@ import { parseKdsBoard, parseKdsPickupContact, type KdsBoard } from "./mealdeck-
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
 import { orderNumberSchema } from "./mealdeck-order-number";
 import { mealComponentsSchema } from "./mealdeck-meal-components";
+import { parseOwnDriverAddress } from "./mealdeck-own-driver-delivery";
 
 const timestamp = z
   .string()
@@ -40,6 +41,12 @@ const completedOrder = z
     completed_at: timestamp,
     fulfilment: z.enum(["delivery", "pickup", "curbside", "dine_in"]),
     pickupContact: z.unknown().optional(),
+    deliveryAddress: z.unknown().optional(),
+    deliveryContact: z.unknown().optional(),
+    driverStatus: z.enum(["awaiting_driver", "with_driver", "delivered"]).nullable().optional(),
+    deliveryDeadlineAt: timestamp.nullable().optional(),
+    driverHandoverAt: timestamp.nullable().optional(),
+    deliveredAt: timestamp.nullable().optional(),
     group_order: z.boolean(),
     cutlery_requested: z.boolean(),
     notes: z.string().max(20000).nullable(),
@@ -47,14 +54,30 @@ const completedOrder = z
   })
   .transform((order, context) => {
     try {
-      const { pickupContact: rawContact, ...rest } = order;
+      const {
+        pickupContact: rawContact,
+        deliveryAddress: rawDeliveryAddress,
+        deliveryContact: rawDeliveryContact,
+        ...rest
+      } = order;
       const pickupContact =
         order.fulfilment === "pickup" || order.fulfilment === "curbside"
           ? parseKdsPickupContact(rawContact)
           : null;
+      const deliveryAddress =
+        order.fulfilment === "delivery" ? parseOwnDriverAddress(rawDeliveryAddress) : null;
+      const deliveryContact =
+        order.fulfilment === "delivery" ? parseKdsPickupContact(rawDeliveryContact) : null;
+      if (order.fulfilment === "delivery" && (
+        !deliveryAddress || !deliveryContact || order.driverStatus !== "delivered" ||
+        !order.driverHandoverAt || !order.deliveredAt || !order.deliveryDeadlineAt
+      )) {
+        throw new Error("Missing confirmed delivery completion");
+      }
       return {
         ...rest,
         ...(rawContact === undefined ? {} : { pickupContact }),
+        ...(order.fulfilment === "delivery" ? { deliveryAddress, deliveryContact } : {}),
       };
     } catch {
       context.addIssue({ code: "custom", message: "Invalid collection contact" });
