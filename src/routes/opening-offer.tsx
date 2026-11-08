@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
+import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { MEALDECK_LAUNCH_HOURS_PROSE } from "@/lib/mealdeck-launch-schedule";
 import { seo } from "@/lib/seo";
 import "@/styles.launch-opening.css";
@@ -10,13 +11,14 @@ export const Route = createFileRoute("/opening-offer")({
   head: () =>
     seo({
       title: "Luton opening weekend — 30% off | MealDeck",
-      description: `6–8 November 2026: 30% off everything, no minimum. ${MEALDECK_LAUNCH_HOURS_PROSE} Guests and members welcome. Luton collection or kerbside only.`,
+      description: `6–8 November 2026: 30% off everything, no minimum. ${MEALDECK_LAUNCH_HOURS_PROSE} Guests and members welcome. Luton pickup or eligible free local own-driver delivery.`,
       path: "/opening-offer",
     }),
   component: OpeningOfferPage,
 });
 
 function OpeningOfferPage() {
+  const deliveryLive = useOwnDriverAvailability();
   return (
     <div className="md-marketing-shell">
       <SiteHeader />
@@ -29,12 +31,12 @@ function OpeningOfferPage() {
           <p>
             Guests and registered MealDeck members can use the opening offer during the hours shown
             above. On 6–8 November, you can order without creating an account. We still ask for your
-            name, email and mobile number to prepare and fulfil your order.
+            name and WhatsApp number to prepare and fulfil your order.
           </p>
           <p>
             Guest orders earn no loyalty points and do not sign you up for member offers,
-            promotional emails or app alerts. After the opening weekend, sign in to a verified
-            member account to place a new order.
+            promotional emails or app alerts. Guest checkout also remains available for subsequent
+            orders during kitchen opening hours; registration is optional.
           </p>
           <p>
             You do not need to agree to marketing emails, allow notifications or install the app to
@@ -43,14 +45,18 @@ function OpeningOfferPage() {
           <h2>What is included?</h2>
           <p>
             30% off all available menu items, drinks, add-ons and meal upgrades in an eligible
-            order. There is no minimum order value. The checkout shows your discount and final total
-            before you pay.
+            order.{" "}
+            {deliveryLive
+              ? "Collection and kerbside have no minimum; our free driver delivery requires a £15 payable total after the discount."
+              : "Collection and kerbside pickup have no minimum order value."}{" "}
+            The checkout shows your discount and final total before you pay.
           </p>
           <h2>Where and when?</h2>
           <p>
             MealDeck Luton opening weekend, 6–8 November 2026: {MEALDECK_LAUNCH_HOURS_PROSE} The
-            opening offer and guest checkout apply during these hours; both pause when we close each
-            night. The offer does not restart when you visit or register.
+            opening offer applies during these hours and pauses when we close each night. Guest
+            checkout continues whenever online ordering is open. The discount does not restart when
+            you visit or register.
           </p>
           <p>
             Start secure payment while the offer is active, then complete payment before that
@@ -58,9 +64,10 @@ function OpeningOfferPage() {
             offers available at that time.
           </p>
           <p>
-            Collection and kerbside pickup only, from 314–318 Selbourne Road, Luton, LU4 8NU.
-            Delivery is not included in this offer. St Albans and Bedford are coming in a future
-            deck.
+            {deliveryLive
+              ? "Due to popular demand, free delivery within 3 km of LU4 8NU for orders worth £15+ after discount, using our own driver. Collection and kerbside are also available at 314–318 Selbourne Road."
+              : "Collection and kerbside pickup are available from 314–318 Selbourne Road, Luton, LU4 8NU."}{" "}
+            St Albans and Bedford are coming in a future deck.
           </p>
           <h2>How does it work?</h2>
           <ul>
@@ -69,8 +76,11 @@ function OpeningOfferPage() {
               a guest or sign in to your verified member account.
             </li>
             <li>
-              Choose collection or kerbside pickup. For kerbside, enter your car make, colour and
-              the last four characters of its registration so the team can find you.
+              {deliveryLive
+                ? "Choose free local delivery, collection or kerbside. Delivery requires a postcode within 3 km, full street address, name and phone number; the minimum is £15 after discount."
+                : "Choose collection or kerbside pickup."}{" "}
+              For kerbside, enter your car make, colour and the last four characters of its
+              registration so the team can find you.
             </li>
             <li>
               During the offer dates, the eligible discount is calculated automatically at checkout.

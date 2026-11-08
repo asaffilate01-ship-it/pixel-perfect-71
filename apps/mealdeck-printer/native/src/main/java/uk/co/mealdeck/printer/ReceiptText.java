@@ -49,7 +49,7 @@ final class ReceiptText {
         }
         write("Placed / paid: " + DATE.format(Instant.parse(receipt.optString("paidAt"))));
         write("Accepted: " + DATE.format(Instant.parse(receipt.optString("acceptedAt"))));
-        write(receipt.optString("fulfilment").equals("curbside") ? "KERBSIDE PICKUP" : "COLLECTION");
+        write(receipt.optString("fulfilment").equals("delivery") ? "OWN DRIVER DELIVERY" : receipt.optString("fulfilment").equals("curbside") ? "KERBSIDE PICKUP" : "COLLECTION");
         if (receipt.optString("paymentMethod").equals("cash")) write("PAYMENT: CASH PAID");
         write("Name: " + receipt.optString("customerName"));
         JSONObject car = receipt.optJSONObject("car");

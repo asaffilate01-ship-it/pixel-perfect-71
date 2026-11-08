@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, CarFront, ShoppingBag } from "lucide-react";
 import { MEALDECK_LAUNCH_DAYS } from "@/lib/mealdeck-launch-schedule";
+import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import "@/styles.launch-opening.css";
 
 type PublicOffer = {
@@ -57,6 +58,7 @@ export function LaunchOpeningHours({ className = "" }: { className?: string }) {
 }
 
 export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) {
+  const deliveryLive = useOwnDriverAvailability();
   const [offer, setOffer] = useState<PublicOffer>(unscheduled);
   const headingId = useId();
   useEffect(() => {
@@ -128,20 +130,23 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
           {compact ? "30% off everything." : "Opening weekend. 30% off everything."}
         </h2>
         <p className="md-opening-condition">
-          No minimum order. Guests and members welcome during opening hours.
+          {deliveryLive
+            ? "No minimum for collection or kerbside. Free local delivery requires £15 after 30% off."
+            : "No minimum order for collection or kerbside. Guests and members welcome."}
         </p>
-        <div className="md-opening-methods" aria-label="Collection or kerbside pickup only">
+        <div className="md-opening-methods" aria-label="Available fulfilment methods">
           <span>
             <ShoppingBag size={16} aria-hidden="true" /> Collection
           </span>
           <span>
-            <CarFront size={18} aria-hidden="true" /> Kerbside only
+            <CarFront size={18} aria-hidden="true" /> Kerbside
           </span>
+          {deliveryLive && <span>Free delivery · within 3 km · £15 after discount</span>}
         </div>
         <p className="md-opening-dates">6–8 November 2026 · UK time</p>
         <LaunchOpeningHours />
         <p className="md-opening-guest-note">
-          Order without registering for these first three days. Guest orders earn no loyalty points.
+          Order without registering. Guest orders earn no loyalty points.
         </p>
       </div>
       <div className="md-opening-actions">

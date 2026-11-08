@@ -1,0 +1,64 @@
+name: Reconcile delivery with current main
+on:
+  push:
+    branches: ['feat/own-driver-luton-delivery']
+    paths:
+      - '.github/workflows/delivery-merge-main.yml'
+      - 'scripts/reconcile-delivery-main.mjs'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: mealdeck-delivery-main-reconciliation
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    if: github.ref == 'refs/heads/feat/own-driver-luton-delivery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/own-driver-luton-delivery
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Merge latest main without choosing sides or discarding changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'MealDeck Release Bot'
+          git config user.email 'release-bot@mealdeck.co.uk'
+          mkdir -p "$RUNNER_TEMP/delivery-merge-evidence"
+          git rev-parse HEAD > "$RUNNER_TEMP/delivery-merge-evidence/head.txt"
+          git rev-parse origin/main > "$RUNNER_TEMP/delivery-merge-evidence/main.txt"
+          if ! git merge --no-commit --no-ff origin/main; then
+            if [ -f scripts/reconcile-delivery-main.mjs ]; then
+              node scripts/reconcile-delivery-main.mjs
+            fi
+          fi
+          git diff --name-only --diff-filter=U | tee "$RUNNER_TEMP/delivery-merge-evidence/conflicts.txt"
+          if [ -s "$RUNNER_TEMP/delivery-merge-evidence/conflicts.txt" ]; then
+            while IFS= read -r path; do
+              case "$path" in
+                .env*|*secret*|*credential*) echo "Sensitive path needs separate review: $path" ;;
+                *) git diff --cc -- "$path" >> "$RUNNER_TEMP/delivery-merge-evidence/conflicts.patch" ;;
+              esac
+            done < "$RUNNER_TEMP/delivery-merge-evidence/conflicts.txt"
+            cat "$RUNNER_TEMP/delivery-merge-evidence/conflicts.patch"
+            git merge --abort
+            exit 1
+          fi
+          if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+            git commit -m 'merge: preserve current promotions and kitchen improvements in delivery release'
+            git push origin HEAD:feat/own-driver-luton-delivery
+          fi
+      - name: Retain merge evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-delivery-merge-evidence
+          path: ${{ runner.temp }}/delivery-merge-evidence/
+          retention-days: 14
+          if-no-files-found: warn

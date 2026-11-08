@@ -519,3 +519,31 @@ describe("printer acceptance presentation and arrivals", () => {
     expect(status).not.toContain("Receipt printed");
   });
 });
+
+test("own-driver paid order is accepted by the existing printer queue", () => {
+  const delivery = { ...pending(), fulfilment: "delivery" as const };
+  const board = parsePrinterAcceptanceBoard(
+    {
+      schemaVersion: 1,
+      tenantId: scope.tenantId,
+      locationId: scope.locationId,
+      generatedAt: time,
+      orders: [delivery],
+      remainingOrderCount: 0,
+    },
+    scope,
+  );
+  expect(board.orders[0]?.fulfilment).toBe("delivery");
+  const markup = renderToStaticMarkup(
+    createElement(PrinterPendingOrderCard, {
+      order: delivery,
+      fresh: true,
+      paired: false,
+      automatic: false,
+      busy: false,
+      accepting: false,
+      onAccept: () => {},
+    }),
+  );
+  expect(markup).toContain("Own-driver delivery");
+});

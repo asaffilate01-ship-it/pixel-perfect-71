@@ -44,7 +44,7 @@ export const receiptSchema = z
     createdAt: stamp,
     paidAt: stamp,
     acceptedAt: stamp,
-    fulfilment: z.enum(["pickup", "curbside"]),
+    fulfilment: z.enum(["pickup", "curbside", "delivery"]),
     customerName: z.string().min(1).max(200),
     car: z
       .object({
@@ -151,6 +151,19 @@ export const receiptSchema = z
       fail();
   });
 export type MealDeckReceipt = z.infer<typeof receiptSchema>;
+/** The driver address belongs to an authorised printer claim, not the immutable
+ * payment/receipt snapshot or printer job fingerprint. */
+const receiptAddressText = (value: string) =>
+  value === value.trim() && !/[\p{Cc}\p{Cf}]/u.test(value);
+export const printerDeliveryAddressSchema = z
+  .object({
+    postcode: z.string().regex(/^[A-Z]{1,2}[0-9][A-Z0-9]? [0-9][A-Z]{2}$/),
+    doorNumber: z.string().min(1).max(40).refine(receiptAddressText),
+    roadName: z.string().min(2).max(120).refine(receiptAddressText),
+    addressLine2: z.string().max(120).refine(receiptAddressText),
+  })
+  .strict();
+
 /** Saved order contact travels outside the immutable receipt/fingerprint, so
  * legacy printer consumers retain their original receipt contract. */
 export const receiptContactSchema = z
@@ -162,6 +175,7 @@ export const receiptContactSchema = z
       .regex(/^\+[1-9][0-9]{7,14}$/)
       .refine((phone) => phone === phone.trim())
       .nullable(),
+    deliveryAddress: printerDeliveryAddressSchema.optional(),
   })
   .strict();
 export type ReceiptContact = z.infer<typeof receiptContactSchema>;
@@ -190,6 +204,10 @@ export const printerJobSchema = z
       c.addIssue({ code: "custom", message: "Receipt job mismatch" });
     if (j.receiptContact && j.receiptContact.orderId !== j.orderId)
       c.addIssue({ code: "custom", message: "Receipt contact mismatch" });
+    if (j.receipt.fulfilment === "delivery" && !j.receiptContact?.deliveryAddress)
+      c.addIssue({ code: "custom", message: "Missing verified delivery address" });
+    if (j.receipt.fulfilment !== "delivery" && j.receiptContact?.deliveryAddress)
+      c.addIssue({ code: "custom", message: "Unexpected delivery address" });
   });
 export type PrinterJob = z.infer<typeof printerJobSchema>;
 export type PrinterScope = {

@@ -566,6 +566,83 @@ describe("canonical receipt presentation", () => {
     ])
       expect(() => parseClaim({ ...claim, receiptContact: bad }, id(2))).toThrow();
   });
+
+  test("requires a saved address for a paid delivery receipt without changing the purchased snapshot", () => {
+    const purchase = { ...receipt(), fulfilment: "delivery" as const, car: null };
+    const contact = {
+      schemaVersion: 1 as const,
+      orderId: purchase.orderId,
+      customerPhone: "+447700900123",
+      deliveryAddress: {
+        postcode: "LU4 8NU",
+        doorNumber: "14",
+        roadName: "Selbourne Road",
+        addressLine2: "Flat 2",
+      },
+    };
+    const candidate = {
+      ...job(),
+      status: "claimed",
+      receipt: purchase,
+      receiptContact: contact,
+      claimToken: id(3),
+      replayed: false,
+    };
+    const original = JSON.stringify(validateReceipt(purchase));
+    const parsed = parseClaim(candidate, id(2));
+    expect(parsed.receiptContact?.deliveryAddress).toEqual(contact.deliveryAddress);
+    expect(JSON.stringify(validateReceipt(parsed.receipt))).toEqual(original);
+    expect(parsed.receipt).not.toHaveProperty("deliveryAddress");
+    const html = renderToStaticMarkup(
+      createElement(ReceiptPreview, {
+        receipt: purchase,
+        customerPhone: contact.customerPhone,
+        deliveryAddress: contact.deliveryAddress,
+      }),
+    );
+    expect(html).toContain("OWN DRIVER DELIVERY");
+    expect(html).toContain("DELIVER TO");
+    expect(html).toContain("14 Selbourne Road");
+    expect(html).toContain("Flat 2");
+    expect(html).toContain("LU4 8NU");
+    expect(html).not.toContain("VERIFY DELIVERY ADDRESS");
+    for (const bad of [
+      { ...candidate, receiptContact: { ...contact, deliveryAddress: undefined } },
+      { ...candidate, receiptContact: { ...contact, orderId: id(9) } },
+      {
+        ...candidate,
+        receiptContact: {
+          ...contact,
+          deliveryAddress: { ...contact.deliveryAddress, postcode: "WRONG" },
+        },
+      },
+      {
+        ...candidate,
+        receiptContact: {
+          ...contact,
+          deliveryAddress: { ...contact.deliveryAddress, roadName: "Main Road\nAnother order" },
+        },
+      },
+      {
+        ...candidate,
+        receiptContact: {
+          ...contact,
+          deliveryAddress: { ...contact.deliveryAddress, email: "private@example.invalid" },
+        },
+      },
+      { ...candidate, receipt: receipt() },
+    ])
+      expect(() => parseClaim(bad, id(2))).toThrow();
+    const fallback = renderToStaticMarkup(createElement(ReceiptPreview, { receipt: purchase }));
+    expect(fallback).toContain("VERIFY DELIVERY ADDRESS BEFORE DISPATCH");
+    const pickup = renderToStaticMarkup(
+      createElement(ReceiptPreview, {
+        receipt: receipt(),
+        deliveryAddress: contact.deliveryAddress,
+      }),
+    );
+    expect(pickup).not.toContain("DELIVER TO");
+  });
 });
 
 describe("printer queue and completed history", () => {
@@ -766,4 +843,15 @@ describe("printer paper confirmation recovery", () => {
     });
     expect(browserConfirmed).toBe(true);
   });
+});
+
+test("delivery receipt validates and renders as own-driver delivery", () => {
+  const candidate = { ...receipt(), fulfilment: "delivery" as const, car: null };
+  expect(receiptSchema.parse(candidate).fulfilment).toBe("delivery");
+  expect(validateReceipt(candidate).fulfilment).toBe("delivery");
+  const html = renderToStaticMarkup(createElement(ReceiptPreview, { receipt: candidate }));
+  expect(html).toContain("OWN DRIVER DELIVERY");
+  expect(html).toContain("DELIVERY CODE");
+  expect(html).not.toContain("KERBSIDE");
+  expect(receiptSchema.safeParse({ ...candidate, car: receipt().car }).success).toBe(false);
 });

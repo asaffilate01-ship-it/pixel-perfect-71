@@ -31,9 +31,9 @@ export const Route = createFileRoute("/checkout")({
   },
   head: () => {
     const metadata = seo({
-      title: "Secure collection checkout | MealDeck",
+      title: "Secure delivery, collection or kerbside checkout | MealDeck",
       description:
-        "Review your MealDeck basket, choose collection or kerbside pickup and check the current ordering status. Guest checkout is available during the confirmed opening-weekend hours when ordering is open.",
+        "Review your MealDeck basket, check own-driver free delivery within 3 km of LU4 8NU on orders over £15 after discounts, or choose collection and kerbside. Guest checkout needs no account.",
       path: "/checkout",
     });
     return {

@@ -104,7 +104,7 @@ describe("durable Done history", () => {
         expect(() => parseKdsWorkflowBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
       }
     }
-    for (const fulfilment of ["delivery", "dine_in"]) {
+    for (const fulfilment of ["dine_in"]) {
       const value = fixture();
       Object.assign(value.completed_orders[0], {
         fulfilment,
@@ -113,6 +113,46 @@ describe("durable Done history", () => {
       expect(parseKdsWorkflowBoard(value, scope).completed_orders[0]!.pickupContact).toBeNull();
     }
   });
+  test("retains a completed own-driver delivery address, contact and verified delivery timestamps", () => {
+    const value = fixture();
+    Object.assign(value.completed_orders[0], {
+      fulfilment: "delivery",
+      pickupContact: null,
+      deliveryAddress: {
+        postcode: "LU4 8NU",
+        doorNumber: "14",
+        roadName: "Test Road",
+        addressLine2: "Flat 2",
+      },
+      deliveryContact: {
+        name: "Sam Driver Customer",
+        phone: "+447700900123",
+        email: "omit@example.invalid",
+      },
+      driverStatus: "delivered",
+      deliveryDeadlineAt: "2026-11-06T11:00:00Z",
+      driverHandoverAt: "2026-11-06T10:15:00Z",
+      deliveredAt: "2026-11-06T10:30:00Z",
+    });
+    const order = parseKdsWorkflowBoard(value, scope).completed_orders[0]!;
+    expect(order.deliveryAddress?.postcode).toBe("LU4 8NU");
+    expect(order.deliveryAddress?.roadName).toBe("Test Road");
+    expect(order.deliveryContact).toEqual({ name: "Sam Driver Customer", phone: "+447700900123" });
+    expect(order.driverStatus).toBe("delivered");
+    expect(order.completed_at).toBe(order.deliveredAt);
+    expect(JSON.stringify(order)).not.toContain("omit@example.invalid");
+    for (const bad of [
+      { driverStatus: "awaiting_driver" },
+      { deliveredAt: null },
+      { deliveryAddress: { postcode: "NOT VALID", doorNumber: "1", roadName: "Test Road" } },
+      { deliveryContact: { name: "Sam", phone: "invalid" } },
+    ]) {
+      const invalid = fixture();
+      Object.assign(invalid.completed_orders[0], value.completed_orders[0], bad);
+      expect(() => parseKdsWorkflowBoard(invalid, scope)).toThrow("mealdeck_kds_invalid_response");
+    }
+  });
+
   test("retains the same canonical number after handover without replacing the collection code", () => {
     for (const order_number of ["0001", "10000", null]) {
       const value = fixture();

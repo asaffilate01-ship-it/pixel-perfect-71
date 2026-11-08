@@ -15,7 +15,7 @@ export const KDS_STAGE_LABELS = {
 } as const;
 export type KdsOrderStage = keyof typeof KDS_STAGE_LABELS;
 export type KdsOrderAction = {
-  target: "accept" | "order" | "pass" | "item" | "handoff";
+  target: "accept" | "order" | "pass" | "item" | "handoff" | "driver";
   itemId?: string;
   ready?: boolean;
   code?: string;

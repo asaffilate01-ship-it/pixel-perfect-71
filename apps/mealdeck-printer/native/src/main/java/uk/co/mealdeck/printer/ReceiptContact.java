@@ -15,7 +15,7 @@ final class ReceiptContact {
         // Older server projections contain no optional contact extension.
         if (!response.has("receiptContact") || response.isNull("receiptContact")) return null;
         JSONObject contact = response.optJSONObject("receiptContact");
-        if (contact == null || contact.length() != 3
+        if (contact == null || contact.length() != (contact.has("deliveryAddress") ? 4 : 3)
             || !contact.has("schemaVersion") || !contact.has("orderId") || !contact.has("customerPhone")
             || !(contact.opt("schemaVersion") instanceof Number version) || version.doubleValue() != 1
             || !expectedOrderId.equals(contact.opt("orderId"))) throw invalid();

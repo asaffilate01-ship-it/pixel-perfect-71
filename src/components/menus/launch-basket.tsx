@@ -352,7 +352,10 @@ export function LaunchBasket({
                 extras is confirmed at checkout.
               </p>
             )}
-            <p>Collection or kerbside pickup. Your final total is confirmed before payment.</p>
+            <p>
+              Choose collection, kerbside or eligible free local delivery at checkout. Your final
+              total is confirmed before payment.
+            </p>
           </div>
         </>
       )}

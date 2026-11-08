@@ -39,7 +39,7 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
             </h3>
           </div>
           <div className="md-kds-ticket-timer">
-            <span>Handed over</span>
+            <span>{order.fulfilment === "delivery" ? "Delivered" : "Handed over"}</span>
             <strong>
               <time dateTime={order.completed_at}>{kdsClockTime(order.completed_at)}</time>
             </strong>
@@ -68,7 +68,8 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
           )}
         </div>
         <p className="mt-2 text-xs md-ops-muted">
-          Handover confirmed ·{" "}
+          {order.fulfilment === "delivery" ? "Own-driver delivery confirmed" : "Handover confirmed"}{" "}
+          ·{" "}
           {new Date(order.completed_at).toLocaleDateString("en-GB", {
             timeZone: "Europe/London",
             weekday: "short",
@@ -82,7 +83,15 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
         <KdsPickupDetails
           fulfilment={order.fulfilment}
           pickupContact={order.pickupContact ?? null}
+          deliveryAddress={order.deliveryAddress ?? null}
+          deliveryContact={order.deliveryContact ?? null}
         />
+        {order.fulfilment === "delivery" && order.driverHandoverAt && (
+          <p className="mb-3 rounded-lg border p-3 text-sm font-semibold md-ops-text">
+            Driver collected: {kdsClockTime(order.driverHandoverAt)} · Delivered:{" "}
+            {kdsClockTime(order.completed_at)}
+          </p>
+        )}
         <div className="md-kds-packing-flags">
           <span
             className={order.cutlery_requested ? "md-kds-cutlery-requested" : "md-kds-cutlery-none"}
