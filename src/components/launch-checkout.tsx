@@ -1532,7 +1532,7 @@ function LaunchCheckoutView({
                 ? "One kitchen. All your favourites. One collection."
                 : whatsAppDraft
                   ? "Confirm your checkout details, review the total and pay securely."
-                  : "Choose your pickup, confirm your details and pay securely."}
+                  : "Choose delivery, collection or kerbside and pay securely without registering."}
             </p>
           </div>
           <MealDeckLogo className="md-checkout-logo" />
@@ -1876,13 +1876,13 @@ function LaunchCheckoutView({
               ) : (
                 <section className="md-checkout-card">
                   <h2>
-                    <span className="md-checkout-step">1</span>How are you collecting?
+                    <span className="md-checkout-step">1</span>How would you like your order?
                   </h2>
                   <p className="md-checkout-location">
                     <MapPin size={16} />
                     Luton kitchen
                   </p>
-                  <div className="md-checkout-methods" role="group" aria-label="Pickup method">
+                  <div className="md-checkout-methods" role="group" aria-label="Order fulfilment method">
                     <button
                       type="button"
                       disabled={busy}
@@ -1906,21 +1906,20 @@ function LaunchCheckoutView({
                       {fulfilment === "curbside" && <Check size={17} />}
                     </button>
                   </div>
-                  <button
-                    className="md-checkout-delivery"
-                    type="button"
-                    aria-disabled="true"
-                    onClick={() => setDeliveryNotice(true)}
-                  >
-                    <Truck size={19} />
-                    <span>
-                      Delivery <small>Currently unavailable</small>
-                    </span>
-                  </button>
-                  {deliveryNotice && (
-                    <p className="md-checkout-notice" role="status">
-                      Delivery is not available at the moment. Please select collection or kerbside.
-                    </p>
+                  {status?.fulfilments?.includes("delivery") && (
+                    <button
+                      className="md-checkout-delivery"
+                      type="button"
+                      disabled={busy}
+                      aria-pressed={fulfilment === "delivery"}
+                      onClick={() => chooseFulfilment("delivery")}
+                    >
+                      <Truck size={19} />
+                      <span>
+                        Free delivery <small>Due to popular demand · within 3 km of LU4 8NU · £15 minimum after discounts · up to 60 minutes</small>
+                      </span>
+                      {fulfilment === "delivery" && <Check size={17} />}
+                    </button>
                   )}
                 </section>
               )}
@@ -1929,6 +1928,9 @@ function LaunchCheckoutView({
                   <h2>
                     <span className="md-checkout-step">2</span>Your details
                   </h2>
+                  {fulfilment === "delivery" && (
+                    <p className="md-checkout-muted">For delivery we need your name and WhatsApp number. No account registration is required.</p>
+                  )}
                   {fulfilment === "curbside" && (
                     <p className="md-checkout-muted">
                       For kerbside pickup, we need your name, WhatsApp number, car make, colour and
@@ -2149,8 +2151,43 @@ function LaunchCheckoutView({
                     </>
                   )}
                   <p className="md-checkout-muted">
-                    No address is needed for collection or kerbside pickup.
+                    {fulfilment === "delivery" ? "Your delivery address is collected in the next step." : "No address is needed for collection or kerbside pickup."}
                   </p>
+                </section>
+              )}
+              {fulfilment === "delivery" && !whatsAppDraft && (
+                <section className="md-checkout-card" aria-label="Delivery address">
+                  <h2><span className="md-checkout-step">3</span>Delivery address</h2>
+                  <p className="md-checkout-muted">Due to popular demand: FREE delivery within a 3 km radius of LU4 8NU for orders of £15 or more after discounts. Estimated delivery within 60 minutes of payment, using our own driver.</p>
+                  <div className="md-checkout-vehicle">
+                    <label>Postcode
+                      <input required autoComplete="postal-code" maxLength={20} disabled={busy}
+                        value={deliveryAddress.postcode} placeholder="e.g. LU4 8NU"
+                        onChange={(event)=>changeDeliveryAddress("postcode",event.target.value)} />
+                    </label>
+                    <button type="button" className="md-checkout-refresh" disabled={busy || checkingDeliveryArea}
+                      onClick={() => {void checkDeliveryArea();}}>
+                      {checkingDeliveryArea ? "Checking postcode…" : "Check delivery postcode"}
+                    </button>
+                    {deliveryArea?.eligible && <p role="status">Your postcode is in our delivery area. Please enter your full address.</p>}
+                    {deliveryAreaIssue && <p role="alert" className="md-checkout-notice md-checkout-error">{deliveryAreaIssue} <button type="button" onClick={()=>chooseFulfilment("pickup")}>Switch to collection</button></p>}
+                    <label>Door / house number
+                      <input required autoComplete="address-line1" maxLength={40} disabled={busy}
+                        value={deliveryAddress.doorNumber} placeholder="e.g. 14"
+                        onChange={(event)=>changeDeliveryAddress("doorNumber",event.target.value)} />
+                    </label>
+                    <label>Road name
+                      <input required maxLength={120} disabled={busy}
+                        value={deliveryAddress.roadName} placeholder="e.g. High Street"
+                        onChange={(event)=>changeDeliveryAddress("roadName",event.target.value)} />
+                    </label>
+                    <label>Flat / building (optional)
+                      <input autoComplete="address-line2" maxLength={120} disabled={busy}
+                        value={deliveryAddress.addressLine2} placeholder="e.g. Flat 3"
+                        onChange={(event)=>changeDeliveryAddress("addressLine2",event.target.value)} />
+                    </label>
+                  </div>
+                  <p className="md-checkout-muted">Delivery is free when your final payable total is at least £15, after the 30% discount where applicable. If you are short, we will show the exact extra amount required.</p>
                 </section>
               )}
               {fulfilment === "curbside" && !whatsAppDraft && (
@@ -2250,7 +2287,7 @@ function LaunchCheckoutView({
                 <section className="md-checkout-card md-checkout-packing">
                   <h2>
                     <span className="md-checkout-step">
-                      {fulfilment === "curbside" ? "4" : "3"}
+                      {fulfilment === "curbside" || fulfilment === "delivery" ? "4" : "3"}
                     </span>
                     Packing & final check
                   </h2>
@@ -2440,6 +2477,13 @@ function LaunchCheckoutView({
                       </p>
                       <DetailedOrderLines lines={quote.lines} packingPlan={quote.packingPlan} />
                       <CheckoutSpecialRequestsReview notes={quote.notes ?? null} />
+                      {fulfilment === "delivery" && deliveryArea?.eligible && (
+                        <section className="md-checkout-pickup-review" aria-label="Delivery details">
+                          <h3>Free delivery</h3>
+                          <p>{[deliveryAddress.doorNumber, deliveryAddress.roadName, deliveryAddress.addressLine2, deliveryAddress.postcode].filter(Boolean).join(", ")}</p>
+                          <p>Estimated within 60 minutes after payment</p>
+                        </section>
+                      )}
                       {fulfilment === "curbside" && pickupContact && (
                         <section
                           className="md-checkout-pickup-review"
@@ -2522,7 +2566,7 @@ function LaunchCheckoutView({
                       Edit basket
                     </Link>
                   )}
-                  {groupCheckout && (
+                  {groupCheckout && fulfilment !== "delivery" && (
                     <GroupPaymentChoice
                       value={paymentChoice}
                       onChange={(next) => {
@@ -2558,7 +2602,7 @@ function LaunchCheckoutView({
                   )}
                   {quote?.discountPence ? (
                     <p className="md-checkout-offer">
-                      30% off every item and upgrade. No minimum order.
+                      30% off every item and upgrade. {fulfilment === "delivery" ? "Free delivery when £15+ after discount." : "No minimum order."}
                     </p>
                   ) : status?.openingOffer.status === "active" ? (
                     <p className="md-checkout-offer">
@@ -2592,6 +2636,8 @@ function LaunchCheckoutView({
                               special requests are correct.
                               {fulfilment === "curbside" &&
                                 " My name, WhatsApp number and car details are also correct."}
+                              {fulfilment === "delivery" &&
+                                " My name, phone number and full delivery address are also correct."}
                             </small>
                           </span>
                         </label>
