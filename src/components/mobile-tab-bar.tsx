@@ -26,6 +26,8 @@ export function MobileTabBar() {
   });
 
   if (
+    pathname === "/driver" ||
+    pathname.startsWith("/driver/") ||
     pathname === "/franchise" ||
     pathname.startsWith("/franchise/") ||
     isLaunchMenuRoute(pathname)
