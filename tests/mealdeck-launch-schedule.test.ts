@@ -3,6 +3,7 @@ import {
   isMealDeckGuestCheckoutWindow,
   mealDeckLaunchWindowAt,
   isMealDeckSundayDeliveryPreopen,
+  isMealDeckSundayDeliveryService,
   MEALDECK_LAUNCH_DAYS,
   MEALDECK_LAUNCH_TIME_ZONE,
 } from "../src/lib/mealdeck-launch-schedule";
@@ -16,6 +17,15 @@ describe("MealDeck's confirmed Luton launch hours", () => {
     expect(isMealDeckSundayDeliveryPreopen(Date.parse("2026-11-09T00:00:00Z"))).toBe(false);
     expect(isMealDeckSundayDeliveryPreopen(Number.NaN)).toBe(false);
     expect(isMealDeckGuestCheckoutWindow("2026-11-08T14:59:59Z")).toBe(false);
+  });
+
+  test("Sunday delivery marketing uses exact 3pm–11pm window without granting checkout", () => {
+    expect(isMealDeckSundayDeliveryService(Date.parse("2026-11-08T14:59:59Z"))).toBe(false);
+    expect(isMealDeckSundayDeliveryService(Date.parse("2026-11-08T15:00:00Z"))).toBe(true);
+    expect(isMealDeckSundayDeliveryService(Date.parse("2026-11-08T22:59:59Z"))).toBe(true);
+    expect(isMealDeckSundayDeliveryService(Date.parse("2026-11-08T23:00:00Z"))).toBe(false);
+    expect(isMealDeckSundayDeliveryService(Date.parse("2026-11-09T15:00:00Z"))).toBe(false);
+    expect(isMealDeckSundayDeliveryService(Number.NaN)).toBe(false);
   });
 
   test("opens at 3pm each day and closes at midnight Friday/Saturday and 11pm Sunday", () => {
