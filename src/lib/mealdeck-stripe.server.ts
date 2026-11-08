@@ -162,7 +162,7 @@ export type PreparedStripeOrder = {
   discountPence: number;
   currency: "gbp";
   email: string | null;
-  fulfilment: "pickup" | "curbside";
+  fulfilment: "pickup" | "curbside" | "delivery";
   sessionId: string | null;
   sessionUrl: string | null;
   expiresAt: string;
@@ -191,7 +191,7 @@ export function stripeSessionParameters(order: PreparedStripeOrder) {
     "line_items[0][price_data][currency]": "gbp",
     "line_items[0][price_data][unit_amount]": String(order.totalPence),
     "line_items[0][price_data][product_data][name]":
-      "MealDeck · Luton " + (order.fulfilment === "curbside" ? "kerbside pickup" : "collection"),
+      "MealDeck · Luton " + (order.fulfilment === "delivery" ? "own-driver delivery" : order.fulfilment === "curbside" ? "kerbside pickup" : "collection"),
     "line_items[0][price_data][product_data][description]": [
       order.lines.map((line) => line.quantity + " × " + line.name).join("; "),
       order.discountPence > 0 ? "Opening weekend: 30% off everything included in this total." : "",
@@ -202,7 +202,7 @@ export function stripeSessionParameters(order: PreparedStripeOrder) {
     "line_items[0][quantity]": "1",
     "custom_text[submit][message]":
       "MealDeck is a trading name of 313 Brands Ltd. " +
-      (order.fulfilment === "curbside" ? "Kerbside pickup in Luton." : "Collection in Luton."),
+      (order.fulfilment === "delivery" ? "Free local delivery within 3 km of LU4 8NU. No live GPS tracking." : order.fulfilment === "curbside" ? "Kerbside pickup in Luton." : "Collection in Luton."),
   });
   // Hosted Checkout presents Apple Pay / Google Pay when supported by the
   // customer's device and Stripe account. It is never a bespoke Samsung button.
