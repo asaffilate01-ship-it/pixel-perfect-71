@@ -871,7 +871,23 @@ jobs:
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006" "cmake;3.22.1"
       - name: Compile an Android debug APK without production credentials
         working-directory: apps/mealdeck-terminal/android
-        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+        run: |
+          set -euo pipefail
+          # Expo prebuild regenerates the wrapper on every run. The default
+          # ten-second Gradle download timeout is too short for the CDN.
+          test -f gradle/wrapper/gradle-wrapper.properties
+          sed -i -E 's/^networkTimeout=[0-9]+/networkTimeout=120000/' gradle/wrapper/gradle-wrapper.properties
+          for attempt in 1 2 3; do
+            if ./gradlew --version --no-daemon; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo 'Gradle distribution download failed after three attempts.'
+              exit 1
+            fi
+            sleep "$((attempt * 10))"
+          done
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: mealdeck-staff-android-debug
