@@ -270,6 +270,43 @@ begin
     'driverHandoverAt',state.handed_to_driver_at,'deliveredAt',state.delivered_at);
 end $$;
 
+-- Rebind the protected KDS board call to the new delivery-enriched card,
+-- without relaxing paid-order visibility or staff authorisation.
+CREATE OR REPLACE FUNCTION public.mealdeck_ops_kds_board(p_tenant uuid, p_location uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare o record; evidence jsonb; cards jsonb:='[]'; stations jsonb;
+  held integer:=0; remaining integer:=0; ready boolean;
+begin
+  perform mealdeck_ops_private.kds_assert_scope(p_tenant,p_location,'orders.read');
+  ready:=mealdeck_ops_private.kds_authority_ready();
+  select coalesce(jsonb_agg(jsonb_build_object('station_id',s.id,'name',left(s.name,200),
+    'code',left(s.code,100),'active',s.active) order by s.sort_order,s.name,s.id),'[]'::jsonb)
+  into stations from public.kitchen_stations s
+  where s.tenant_id=p_tenant and s.location_id=p_location;
+  for o in select x.id from public.orders x
+    where x.tenant_id=p_tenant and x.location_id=p_location and x.source='mealdeck'
+      and x.status in ('accepted','preparing','ready')
+      and not exists(select 1 from public.mealdeck_pass_orders p
+        where p.order_id=x.id and p.status in ('handed_off','cancelled'))
+    order by x.created_at,x.id
+  loop
+    evidence:=case when ready then mealdeck_ops_private.kds_release_evidence(o.id) else null end;
+    if evidence is null then held:=held+1;
+    elsif jsonb_array_length(cards)>=250 then remaining:=remaining+1;
+    else
+      perform mealdeck_ops_private.kds_assert_instructions(o.id);
+      cards:=cards||jsonb_build_array(mealdeck_ops_private.kds_order_card(o.id,evidence));
+    end if;
+  end loop;
+  return jsonb_build_object('schema_version',1,'tenant_id',p_tenant,'location_id',p_location,
+    'generated_at',now(),'readiness',case when ready then 'ready' else 'setup_required' end,
+    'held_order_count',held,'remaining_order_count',remaining,'stations',stations,'orders',cards);
+end $function$;
+
 -- Extend the existing approved print snapshot and printer queue functions
 -- to include delivery, preserving their price/payment checks.
 create or replace function mealdeck_ops_private.receipt_snapshot_before_meal_components(p_order uuid)
