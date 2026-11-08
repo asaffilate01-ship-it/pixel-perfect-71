@@ -77,29 +77,25 @@ export function MobileTabBar() {
           <div className="flex flex-1 justify-center">
             <Link
               to="/menus"
-              aria-label="Order Now — browse MealDeck menus for Luton collection or kerbside"
+              aria-label="Order Now — browse MealDeck menus"
               aria-current={dealActive ? "page" : undefined}
               className={`relative -mt-8 flex h-20 w-14 rotate-[-6deg] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent flex-col items-center justify-center rounded-lg border border-ink/15 bg-paper shadow-xl transition-transform duration-300 active:scale-90 ${
                 dealActive ? "rotate-0 scale-105" : "hover:rotate-0"
               }`}
             >
               <span className="pointer-events-none absolute inset-1 rounded-[6px] border-[1.5px] border-primary/70" />
-              <span className="absolute left-1.5 top-1 flex flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
-                A
-                <img
-                  src={suitArtwork.burger}
-                  alt=""
-                  className="mt-0.5 h-2.5 w-2.5 object-contain"
-                />
-              </span>
-              <span className="absolute bottom-1 right-1.5 flex rotate-180 flex-col items-center font-display text-[10px] font-black leading-[0.85] text-primary">
-                A
-                <img
-                  src={suitArtwork.burger}
-                  alt=""
-                  className="mt-0.5 h-2.5 w-2.5 object-contain"
-                />
-              </span>
+              <img
+                src={suitArtwork.burger}
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1.5 top-1.5 h-3.5 w-3.5 object-contain"
+              />
+              <img
+                src={suitArtwork.burger}
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-1.5 right-1.5 h-3.5 w-3.5 rotate-180 object-contain"
+              />
               <MealDeckLogo decorative className="h-8 w-8" />
               <span className="mt-1 flex flex-col items-center font-display text-[10px] font-black uppercase leading-[1.05] tracking-[0.04em] text-ink">
                 <span>Order</span>

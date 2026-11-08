@@ -91,4 +91,87 @@ describe("MealDeck own-driver delivery safeguards", () => {
       OwnDriverPostcodeUnavailable,
     );
   });
+  test("uses an independent fallback postcode service when Postcodes.io is down", async () => {
+    const requested: string[] = [];
+    const backup = (async (url: string) => {
+      requested.push(url);
+      if (url.startsWith("https://api.postcodes.io/")) {
+        return Response.json({ status: 503 }, { status: 503 });
+      }
+      const code = url.split("/").at(-1);
+      return Response.json({
+        status: "match",
+        match_type: "unit_postcode",
+        data: {
+          postcode: code === "LU48NU" ? "LU4 8NU" : "LU4 8NR",
+          status: "live",
+          latitude: "51.893",
+          longitude: code === "LU48NU" ? "-0.459" : "-0.458",
+        },
+      });
+    }) as typeof fetch;
+    const result = await checkOwnDriverArea("lu4 8nr", backup);
+    expect(result.eligible).toBe(true);
+    expect(requested.filter((url) => url.startsWith("https://api.getthedata.com/"))).toHaveLength(1);
+  });
+
+  test("rejects a mismatched fallback response, not an unverified delivery", async () => {
+    const mismatched = (async (url: string) => {
+      if (url.startsWith("https://api.postcodes.io/")) {
+        return Response.json({ status: 503 }, { status: 503 });
+      }
+      return Response.json({
+        status: "match",
+        data: { postcode: "SW1A 1AA", status: "live", latitude: "51.5", longitude: "-0.1" },
+      });
+    }) as typeof fetch;
+    await expect(checkOwnDriverArea("LU4 8NR", mismatched)).rejects.toBeInstanceOf(
+      OwnDriverPostcodeUnavailable,
+    );
+  });
+
+  test("a source-verified exact Luton postcode remains serviceable during full provider outage", async () => {
+    const unavailable = (async () => {
+      throw new Error("outbound network temporarily unavailable");
+    }) as typeof fetch;
+    const area = await checkOwnDriverArea("LU1 1BU", unavailable);
+    expect(area.postcode).toBe("LU1 1BU");
+    expect(area.eligible).toBe(true);
+    // Two separately sourced live postcode centroids ~2.03 km apart.
+    expect(area.distanceMetres).toBeGreaterThan(2000);
+    expect(area.distanceMetres).toBeLessThan(2100);
+  });
+
+  test("offline continuity never approves other LU1 postcodes by prefix", async () => {
+    const unavailable = (async () => {
+      throw new Error("network down");
+    }) as typeof fetch;
+    await expect(checkOwnDriverArea("LU1 1BC", unavailable)).rejects.toBeInstanceOf(
+      OwnDriverPostcodeUnavailable,
+    );
+  });
+
+  test("known launch postcode remains available without any provider requests", async () => {
+    let calls = 0;
+    const unreachable = (async () => {
+      calls += 1;
+      throw new Error("network unavailable");
+    }) as typeof fetch;
+    const origin = await checkOwnDriverArea("LU4 8NU", unreachable);
+    const destination = await checkOwnDriverArea("LU1 1BU", unreachable);
+    expect(origin.distanceMetres).toBe(0);
+    expect(destination.eligible).toBe(true);
+    expect(calls).toBe(0);
+  });
+
+  test("unknown UK postcode is rejected when both services confirm it does not exist", async () => {
+    const missing = (async (url: string) =>
+      url.startsWith("https://api.postcodes.io/")
+        ? Response.json({ status: 404 }, { status: 404 })
+        : Response.json({ status: "no_match", data: null })) as typeof fetch;
+    await expect(checkOwnDriverArea("LU9 9ZZ", missing)).rejects.toBeInstanceOf(
+      OwnDriverInvalidPostcode,
+    );
+  });
+
 });

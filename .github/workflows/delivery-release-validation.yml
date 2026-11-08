@@ -3,14 +3,21 @@ on:
   pull_request:
     paths:
       - '.github/workflows/delivery-release-validation.yml'
+      - '.github/workflows/publish-printer-v023.yml'
       - 'scripts/finalise-own-driver-release.mjs'
       - 'scripts/prepare-printer-v023.mjs'
-      - 'src/lib/mealdeck-own-driver-payment.server.ts'
-      - 'tests/mealdeck-own-driver-payment.test.ts'
+      - 'src/lib/mealdeck-own-driver*'
+      - 'tests/mealdeck-own-driver*'
       - 'src/routeTree.gen.ts'
       - 'src/routes/delivery-terms.tsx'
       - 'src/lib/launch-menu-item-descriptor.ts'
-      - 'tests/mealdeck-kds-view.test.ts'
+      - 'tests/mealdeck-kds*.test.ts'
+      - 'tests/mealdeck-guest-checkout.test.ts'
+      - 'tests/mealdeck-whatsapp*.test.ts'
+      - 'tests/mealdeck-prelaunch-status.test.ts'
+      - 'tests/mealdeck-online-checkout.test.ts'
+      - 'tests/mealdeck-printer*.test.ts'
+      - 'tools/receipt-bridge/**'
   push:
     branches: [main]
     paths:
