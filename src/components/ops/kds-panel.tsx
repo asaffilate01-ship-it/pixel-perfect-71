@@ -1400,15 +1400,17 @@ export function KitchenOrderCard({
           pickupContact={order.pickupContact ?? null}
           vehicle={order.vehicle ?? null}
         />
-        {tenantId && locationId && (order.fulfilment === "pickup" || order.fulfilment === "curbside") && (
-          <KdsOrderComms
-            tenantId={tenantId}
-            locationId={locationId}
-            orderId={order.order_id}
-            canReply={!disabled}
-            autoPoll={stage === "ready" || order.pass?.status === "ready_for_handoff"}
-          />
-        )}
+        {tenantId &&
+          locationId &&
+          (order.fulfilment === "pickup" || order.fulfilment === "curbside") && (
+            <KdsOrderComms
+              tenantId={tenantId}
+              locationId={locationId}
+              orderId={order.order_id}
+              canReply={!disabled}
+              autoPoll={stage === "ready" || order.pass?.status === "ready_for_handoff"}
+            />
+          )}
         {order.fulfilment === "delivery" && order.deliveryDeadlineAt && (
           <p
             role="status"
