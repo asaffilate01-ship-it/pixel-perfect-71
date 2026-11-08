@@ -41,6 +41,18 @@ public final class ReceiptLayoutTest {
         }
         require(detailed != null, "Detailed fixture missing");
         checkHierarchyAndLastItem(detailed);
+        // A delivery receipt must remain one complete native bitmap, never a
+        // collection receipt or a rejected order on the current printer app.
+        JSONObject delivery = new JSONObject(detailed.toString());
+        delivery.put("fulfilment", "delivery").put("car", JSONObject.NULL);
+        ReceiptModel driverReceipt = ReceiptModel.parse(delivery);
+        ReceiptLayout driverLayout = ReceiptLayout.build(driverReceipt, MONOSPACE, "+447700900123");
+        checkBounds(driverLayout, MONOSPACE);
+        checkPromotionAndTail(driverLayout);
+        equal("DELIVERY CODE", text(driverLayout, "collection.label"), "Driver code heading");
+        equal("OWN DRIVER DELIVERY · CASH PAID", text(driverLayout, "fulfilment"), "Driver receipt heading");
+        require(String.join("\n", ReceiptText.layout(driverReceipt)).contains("OWN DRIVER DELIVERY"),
+            "Driver text bridge must not label delivery as collection");
         checkHeightBoundary(detailed);
         for (int sequence = 1; sequence <= 16; sequence++) {
             JSONObject raw = new JSONObject(detailed.toString());
