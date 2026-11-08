@@ -1,0 +1,87 @@
+name: Validate own-driver delivery release
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/delivery-release-validation.yml'
+      - 'scripts/finalise-own-driver-release.mjs'
+      - 'scripts/prepare-printer-v023.mjs'
+      - 'src/lib/mealdeck-own-driver-payment.server.ts'
+      - 'tests/mealdeck-own-driver-payment.test.ts'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: mealdeck-delivery-release-validation
+  cancel-in-progress: false
+jobs:
+  delivery-release:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/own-driver-luton-delivery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/own-driver-luton-delivery
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.4'
+      - name: Install pinned source and receipt-artwork test dependencies
+        run: |
+          git config user.name 'MealDeck Release Bot'
+          git config user.email 'release-bot@mealdeck.co.uk'
+          bun install --frozen-lockfile
+          python -m pip install --disable-pip-version-check 'Pillow==12.0.0'
+      - name: Apply reviewed source fixes and consistent printer version
+        run: |
+          node scripts/prepare-printer-v023.mjs
+          node scripts/finalise-own-driver-release.mjs
+          # Source changes only; the runner does not have workflow-write scope.
+          git restore --worktree .github/workflows/verify.yml
+      - name: Commit reviewed source and version metadata only
+        run: |
+          git add src tests apps/mealdeck-printer
+          if ! git diff --cached --quiet; then
+            git commit -m 'release(printer): prepare delivery-compatible v0.2.3 and regression fixtures'
+          fi
+          git push origin HEAD:feat/own-driver-luton-delivery
+          echo "Validated candidate: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Run all focused release checks without skipping later diagnostics
+        shell: bash
+        run: |
+          set +e
+          mkdir -p "$RUNNER_TEMP/delivery-results"
+          failed=0
+          check() {
+            label="$1"; shift
+            "$@" > "$RUNNER_TEMP/delivery-results/$label.log" 2>&1
+            code=$?
+            echo "$label: $code" | tee -a "$RUNNER_TEMP/delivery-results/summary.txt"
+            if [ "$code" -ne 0 ]; then
+              failed=1
+              grep -n -B 12 -A 22 -E '\(fail\)|not ok|error TS|Error:|error:' "$RUNNER_TEMP/delivery-results/$label.log" | head -c 20000 || true
+            fi
+            tail -n 30 "$RUNNER_TEMP/delivery-results/$label.log"
+          }
+          check migration node --test tests/delivery-migration-source.test.mjs
+          check focused bun test tests/mealdeck-own-driver*.test.ts tests/mealdeck-kds*.test.ts tests/mealdeck-guest-checkout.test.ts tests/mealdeck-whatsapp*.test.ts tests/mealdeck-prelaunch-status.test.ts tests/mealdeck-online-checkout.test.ts tests/mealdeck-printer*.test.ts
+          check receipt node --test tools/receipt-bridge/test/*.test.mjs
+          check types bunx tsc --noEmit
+          check build bun run build
+          git rev-parse HEAD > "$RUNNER_TEMP/delivery-results/commit.txt"
+          cat "$RUNNER_TEMP/delivery-results/summary.txt" >> "$GITHUB_STEP_SUMMARY"
+          exit "$failed"
+      - name: Retain verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-delivery-release-validation
+          path: ${{ runner.temp }}/delivery-results/
+          retention-days: 14
+          if-no-files-found: warn

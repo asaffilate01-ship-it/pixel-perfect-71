@@ -71,6 +71,7 @@ final class ReceiptRuntime {
         final String jobId, status, createdAt;
         final ReceiptModel receipt;
         final String customerPhone;
+        final ReceiptDelivery delivery;
         final boolean hasContact;
         Job(JSONObject value) {
             jobId = PrinterContract.requestId(value.optString("jobId", null));
@@ -82,6 +83,7 @@ final class ReceiptRuntime {
             receipt = ReceiptModel.parse(value.optJSONObject("receipt"));
             hasContact = value.has("receiptContact") && !value.isNull("receiptContact");
             customerPhone = ReceiptContact.phoneFromResponse(value, orderId);
+            delivery = ReceiptDelivery.fromResponse(value, orderId, receipt.toJson().optString("fulfilment"));
             Object copy = value.opt("copyNumber");
             if (!(copy instanceof Number) || ((Number) copy).doubleValue() != receipt.copyNumber || !orderId.equals(receipt.orderId)) throw new IllegalArgumentException();
         }
@@ -387,7 +389,7 @@ final class ReceiptRuntime {
             reservation = journal.reserve(scope.tenantId, scope.locationId, user, job.jobId, claim, job.receipt);
             if (!reservation.created) throw new PrinterFailure("receipt_held");
             if (!Boolean.FALSE.equals(claimed.opt("replayed"))) throw new PrinterFailure("receipt_held");
-            rendered = ReceiptRenderer.render(context, job.receipt, job.customerPhone);
+            rendered = ReceiptRenderer.render(context, job.receipt, job.customerPhone, job.delivery);
             prepared = PrinterBinderWire.prepareReceipt(rendered.bitmap);
             if (pauseEpoch.get() != permittedEpoch || (automatic && !enabled) || System.nanoTime() >= authorizationDeadline) throw new PrinterFailure("receipt_held");
             JSONObject begun = api.rpc("mealdeck_printer_begin_send", args("p_job", job.jobId, "p_claim", claim));
@@ -401,7 +403,10 @@ final class ReceiptRuntime {
                 // immutable receipt/fingerprint so existing clients stay valid.
                 JSONObject contact = api.rpc("mealdeck_printer_claim_contact", PrinterApi.json("p_job", job.jobId, "p_claim", claim));
                 if (contact.optJSONObject("receiptContact") == null || !Objects.equals(job.customerPhone,
-                    ReceiptContact.phoneFromResponse(contact, job.receipt.orderId))) throw new PrinterFailure("receipt_held");
+                    ReceiptContact.phoneFromResponse(contact, job.receipt.orderId))
+                    || !Objects.equals(job.delivery, ReceiptDelivery.fromResponse(
+                        contact, job.receipt.orderId, job.receipt.toJson().optString("fulfilment"))))
+                    throw new PrinterFailure("receipt_held");
             }
             PrinterServiceConnection.Verified service = verified;
             if (service == null || !connection.isCurrent(service)) throw new PrinterFailure("printer_unavailable");

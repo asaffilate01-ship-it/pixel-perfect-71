@@ -133,7 +133,7 @@ export function validateReceipt(input) {
     "unsupported_receipt_schema",
   );
   requireValue(
-    r.fulfilment === "pickup" || r.fulfilment === "curbside",
+    ["pickup", "curbside", "delivery"].includes(r.fulfilment),
     "unsupported_receipt_fulfilment",
   );
   const copyNumber = integer(r.copyNumber, 1, 100);
@@ -575,14 +575,14 @@ export function encodeReceipt(input, profile = {}) {
   write("MEALDECK");
   write(receipt.locationName);
   write("ORDER " + (receipt.orderNumber ?? receipt.displayCode));
-  if (receipt.orderNumber) write("Collection code: " + receipt.displayCode);
+  if (receipt.orderNumber) write((receipt.fulfilment === "delivery" ? "Delivery code: " : "Collection code: ") + receipt.displayCode);
   if (receipt.copyNumber > 1) {
     write("REPRINT - COPY " + receipt.copyNumber);
     write("Reason: " + receipt.reprintReason);
   }
   write("Placed / paid: " + date(receipt.paidAt));
   write("Accepted: " + date(receipt.acceptedAt));
-  write(receipt.fulfilment === "curbside" ? "KERBSIDE PICKUP" : "COLLECTION");
+  write(receipt.fulfilment === "delivery" ? "OWN DRIVER DELIVERY" : receipt.fulfilment === "curbside" ? "KERBSIDE PICKUP" : "COLLECTION");
   if (receipt.paymentMethod === "cash") write("PAYMENT: CASH PAID");
   write("Name: " + receipt.customerName);
   if (receipt.car)

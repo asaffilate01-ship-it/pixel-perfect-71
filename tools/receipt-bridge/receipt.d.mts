@@ -43,7 +43,7 @@ export type MealDeckReceipt = {
   createdAt: string;
   paidAt: string;
   acceptedAt: string;
-  fulfilment: "pickup" | "curbside";
+  fulfilment: "pickup" | "curbside" | "delivery";
   customerName: string;
   car: null | { make: string; colour: string; registrationLast4: string };
   cutleryRequested: boolean;

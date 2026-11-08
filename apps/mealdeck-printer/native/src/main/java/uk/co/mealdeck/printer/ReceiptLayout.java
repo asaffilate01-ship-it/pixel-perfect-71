@@ -80,8 +80,12 @@ public final class ReceiptLayout {
         return build(model, measurer, null);
     }
     public static ReceiptLayout build(ReceiptModel model, TextMeasurer measurer, String customerPhone) {
+        return build(model, measurer, customerPhone, null);
+    }
+    public static ReceiptLayout build(ReceiptModel model, TextMeasurer measurer,
+                                      String customerPhone, ReceiptDelivery delivery) {
         if (model == null || measurer == null) throw unavailable();
-        return new Builder(measurer).build(model.toJson(), customerPhone);
+        return new Builder(measurer).build(model.toJson(), customerPhone, delivery);
     }
 
     private static final class Builder {
@@ -92,7 +96,7 @@ public final class ReceiptLayout {
         private ReceiptPromotion.Slot promotion;
         Builder(TextMeasurer measurer) { this.measurer = measurer; }
 
-        ReceiptLayout build(JSONObject receipt, String customerPhone) {
+        ReceiptLayout build(JSONObject receipt, String customerPhone, ReceiptDelivery delivery) {
             promotion = ReceiptPromotion.forOrder(nullable(receipt, "orderNumber"), receipt.optString("orderId"));
             gap(8);
             block(Kind.LOGO, "logo", (WIDTH - LOGO_WIDTH) / 2, LOGO_WIDTH, LOGO_HEIGHT);
@@ -105,11 +109,11 @@ public final class ReceiptLayout {
                 center("order", "ORDER " + order, Style.ORDER);
             }
             gap(6);
-            center("collection.label", "COLLECTION CODE", Style.HEADER_DETAIL_BOLD);
+            center("collection.label", "delivery".equals(receipt.optString("fulfilment")) ? "DELIVERY CODE" : "COLLECTION CODE", Style.HEADER_DETAIL_BOLD);
             center("collection", receipt.optString("displayCode"), Style.ORDER);
             gap(6);
             String paid = "cash".equals(receipt.optString("paymentMethod")) ? "CASH PAID" : "PAID";
-            center("fulfilment", ("curbside".equals(receipt.optString("fulfilment")) ? "KERBSIDE" : "COLLECTION")
+            center("fulfilment", ("delivery".equals(receipt.optString("fulfilment")) ? "OWN DRIVER DELIVERY" : "curbside".equals(receipt.optString("fulfilment")) ? "KERBSIDE" : "COLLECTION")
                 + " · " + paid, Style.BODY_BOLD);
             if (receipt.optInt("copyNumber") > 1) {
                 gap(8);
@@ -118,6 +122,16 @@ public final class ReceiptLayout {
             gap(10);
             center("customer", receipt.optString("customerName"), Style.BODY_BOLD);
             if (customerPhone != null) center("customer.phone", customerPhone, Style.BODY_BOLD);
+            if (delivery != null) {
+                if (!"delivery".equals(receipt.optString("fulfilment"))) throw unavailable();
+                gap(8);
+                paragraph("delivery.label", "DELIVER TO", Style.HEADER_DETAIL_BOLD, MARGIN, RIGHT, false);
+                paragraph("delivery.street", delivery.doorNumber() + " " + delivery.roadName(),
+                    Style.BODY_BOLD, MARGIN, RIGHT, false);
+                if (!delivery.addressLine2().isEmpty())
+                    paragraph("delivery.unit", delivery.addressLine2(), Style.BODY_BOLD, MARGIN, RIGHT, false);
+                paragraph("delivery.postcode", delivery.postcode(), Style.BODY_BOLD, MARGIN, RIGHT, false);
+            }
             center("paid-at", DATE.format(Instant.parse(receipt.optString("paidAt"))), Style.HEADER_DETAIL);
             JSONObject car = receipt.optJSONObject("car");
             if (car != null) {

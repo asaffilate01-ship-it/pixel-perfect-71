@@ -1,6 +1,12 @@
 name: H10S live receipt APK
 
 on:
+  push:
+    branches: ['feat/own-driver-luton-delivery']
+    paths:
+      - "apps/mealdeck-printer/**"
+      - "tools/receipt-bridge/receipt.mjs"
+      - ".github/workflows/printer-live.yml"
   pull_request:
     paths:
       - "apps/mealdeck-printer/**"
@@ -18,6 +24,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: h10s-receipt-validation-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   printer-live-android:
@@ -38,11 +48,16 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
-      - name: Install pinned app dependencies
-        run: npm ci --ignore-scripts
+      - name: Install pinned app and artwork dependencies
+        run: |
+          npm ci --ignore-scripts
+          python -m pip install --disable-pip-version-check 'Pillow==12.0.0'
       - name: Check screen and native receipt behavior
         run: |
           npm run typecheck
@@ -72,8 +87,6 @@ jobs:
           arch: x86_64
           disable-animations: true
           working-directory: apps/mealdeck-printer/android
-          # A single shell invocation retains the test failure while collecting
-          # synthetic receipt PNGs. Keep APKs installed until cache is pulled.
           script: >-
             receipt_test_status=0;
             ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace
@@ -94,21 +107,32 @@ jobs:
             apps/mealdeck-printer/android/app/build/outputs/androidTest-results/connected/
           retention-days: 30
           if-no-files-found: warn
-      - name: Prepare the unsigned release for private signing
+      - name: Prepare aligned v0.2.3 for private signing with the existing identity
+        shell: bash
         run: |
-          mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk dist/mealdeck-printer-h10s-0.2.2-unsigned.apk
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions dist/mealdeck-printer-h10s-0.2.2-unsigned.apk > dist/permissions.txt
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging dist/mealdeck-printer-h10s-0.2.2-unsigned.apk > dist/package.txt
-          if rg 'application-debuggable' dist/package.txt; then
-            echo "Release APK must not be debuggable"
+          set -euo pipefail
+          mkdir -p dist/signing-tools
+          TOOLS="$ANDROID_HOME/build-tools/36.0.0"
+          APK="dist/mealdeck-printer-h10s-0.2.3-unsigned.apk"
+          "$TOOLS/zipalign" -f -p 4 android/app/build/outputs/apk/release/app-release-unsigned.apk "$APK"
+          "$TOOLS/zipalign" -c -p 4 "$APK"
+          "$TOOLS/aapt" dump permissions "$APK" > dist/permissions.txt
+          "$TOOLS/aapt" dump badging "$APK" > dist/package.txt
+          grep -q "package: name='uk.co.mealdeck.printer' versionCode='5' versionName='0.2.3'" dist/package.txt
+          if grep -q 'application-debuggable' dist/package.txt; then
+            echo 'Release APK must not be debuggable'
             exit 1
           fi
+          # Only the public signer certificate is retained. No key is generated.
+          "$TOOLS/apksigner" verify --verbose --print-certs ../../public/downloads/mealdeck-printer-h10s-0.2.2.apk > dist/installed-v022-signature.txt
+          cp "$TOOLS/lib/apksigner.jar" dist/signing-tools/apksigner.jar
+          git rev-parse HEAD > dist/source-commit.txt
+          printf '%s\n' 'UNSIGNED v0.2.3/build 5. Must be signed with the original v0.2.2 key and verified against installed-v022-signature.txt before publication. Never uninstall the existing app or use a replacement signing key.' > dist/RELEASE-STATUS.txt
           cd dist
-          sha256sum mealdeck-printer-h10s-0.2.2-unsigned.apk > SHA256SUMS.txt
+          sha256sum mealdeck-printer-h10s-0.2.3-unsigned.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: mealdeck-printer-h10s-release-unsigned
+          name: mealdeck-printer-h10s-v023-release-unsigned
           path: apps/mealdeck-printer/dist/
           retention-days: 30
           if-no-files-found: error

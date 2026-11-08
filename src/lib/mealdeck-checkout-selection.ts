@@ -5,6 +5,7 @@ import { findLaunchMenuItem, launchItemGroups, missingLaunchChoices } from "./la
 import { cleanLaunchCrossConfiguration } from "./launch-menu-upsells";
 import { parseKerbsideVehicle } from "./mealdeck-opening-offer";
 import { normaliseOrderNotes, ORDER_NOTES_ERROR_MESSAGE } from "./mealdeck-order-notes";
+import { parseOwnDriverAddress } from "./mealdeck-own-driver-delivery";
 
 const sourceId = z
   .string()
@@ -35,7 +36,8 @@ const pickSchema = z
 export const checkoutQuoteInput = z
   .object({
     action: z.literal("quote"),
-    fulfilment: z.enum(["pickup", "curbside"]),
+    fulfilment: z.enum(["pickup", "curbside", "delivery"]),
+    deliveryAddress: z.unknown().optional(),
     picks: z.array(pickSchema).min(1).max(60),
     vehicle: z.unknown().optional(),
     notes: z.string().optional(),
@@ -139,6 +141,18 @@ export function normaliseCheckoutSelection(input: unknown, tenantId: string) {
   if (data.picks.reduce((count, pick) => count + pick.quantity, 0) > 60)
     throw new CheckoutProblem("basket_limit", "Please keep this order to 60 items or fewer.");
   const vehicle = data.fulfilment === "curbside" ? parseKerbsideVehicle(data.vehicle) : null;
+  const deliveryAddress =
+    data.fulfilment === "delivery" ? parseOwnDriverAddress(data.deliveryAddress) : null;
+  if (data.fulfilment === "delivery" && !deliveryAddress)
+    throw new CheckoutProblem(
+      "delivery_address_required",
+      "Enter your door number, road name and full postcode.",
+    );
+  if (data.fulfilment !== "delivery" && data.deliveryAddress !== undefined)
+    throw new CheckoutProblem(
+      "delivery_address_not_needed",
+      "Address details are only needed for delivery.",
+    );
   if (data.fulfilment === "curbside" && !vehicle)
     throw new CheckoutProblem(
       "vehicle_required",
@@ -313,6 +327,7 @@ export function normaliseCheckoutSelection(input: unknown, tenantId: string) {
   const payload = {
     fulfilment: data.fulfilment,
     vehicle,
+    ...(deliveryAddress ? { deliveryAddress } : {}),
     lines,
     packingPlan,
     ...(notes === null ? {} : { notes }),

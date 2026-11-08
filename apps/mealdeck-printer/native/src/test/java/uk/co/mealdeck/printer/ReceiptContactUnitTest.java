@@ -21,6 +21,12 @@ public final class ReceiptContactUnitTest {
         assertNull(ReceiptContact.phoneFromResponse(response(null), ORDER));
         assertNull(ReceiptContact.phoneFromResponse(new JSONObject(), ORDER));
         assertNull(ReceiptContact.phoneFromResponse(new JSONObject().put("receiptContact", JSONObject.NULL), ORDER));
+        JSONObject delivery = response("+447700900123");
+        delivery.getJSONObject("receiptContact").put("deliveryAddress", new JSONObject()
+            .put("postcode", "LU4 8NU").put("doorNumber", "14")
+            .put("roadName", "Selbourne Road").put("addressLine2", "Flat 2"));
+        assertEquals("+447700900123", ReceiptContact.phoneFromResponse(delivery, ORDER));
+        assertEquals("LU4 8NU", ReceiptDelivery.fromResponse(delivery, ORDER, "delivery").postcode());
     }
 
     @Test public void rejectsWrongOrderMalformedFieldsAndUnsafePhone() throws Exception {

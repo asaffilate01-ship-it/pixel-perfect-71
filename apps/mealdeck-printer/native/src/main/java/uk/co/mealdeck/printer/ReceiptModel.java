@@ -64,7 +64,7 @@ public final class ReceiptModel {
             "orderNumber paymentMethod");
         require(numberEquals(value(r, "schemaVersion"), 1) && "MealDeck".equals(value(r, "brand")) &&
             "313 Brands Ltd".equals(value(r, "tradingName")) && "GBP".equals(value(r, "currency")), "unsupported_receipt_schema");
-        String fulfilment = stringChoice(value(r, "fulfilment"), "unsupported_receipt_fulfilment", "pickup", "curbside");
+        String fulfilment = stringChoice(value(r, "fulfilment"), "unsupported_receipt_fulfilment", "pickup", "curbside", "delivery");
         long copy = integer(value(r, "copyNumber"), 1, 100);
         String parentCopy = value(r, "reprintOf") == null ? null : identifier(value(r, "reprintOf"), UUID);
         String reason = nullableText(value(r, "reprintReason"), 300);

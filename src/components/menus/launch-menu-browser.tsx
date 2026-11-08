@@ -12,6 +12,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
+import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { MenuInstallPrompt } from "@/components/menus/menu-install-prompt";
 import {
   LaunchBasket,
@@ -150,6 +151,7 @@ export function LaunchMenuBrowser({
 }) {
   const navigate = useNavigate();
   const entryPolicy = useCustomerEntryPolicy();
+  const deliveryLive = useOwnDriverAvailability();
   const groupOrderingOpen =
     !!entryPolicy &&
     Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
@@ -448,7 +450,10 @@ export function LaunchMenuBrowser({
           <span className="lm-eyebrow">The Luton launch deck</span>
           <p>Five menus. Every craving.</p>
           <span className="lm-launch-label">
-            <span>Luton · Collection &amp; kerbside</span>
+            <span>
+              Luton ·{" "}
+              {deliveryLive ? "Free delivery, collection & kerbside" : "Collection & kerbside"}
+            </span>
             <img
               className="lm-halal-mark"
               src="/halal-mark.svg"
@@ -796,8 +801,11 @@ export function LaunchMenuBrowser({
                       </Link>
                       <p>
                         Opening offer: 30% off the entire menu during our 6–8 November opening
-                        hours. No minimum order. Guests and members welcome for Luton collection or
-                        kerbside. <Link to="/offers">See all three offers.</Link>
+                        hours.{" "}
+                        {deliveryLive
+                          ? "Collection and kerbside have no minimum; free delivery requires £15 after the discount within 3 km of LU4 8NU."
+                          : "No minimum order for collection or kerbside."}{" "}
+                        Guests and members welcome. <Link to="/offers">See all three offers.</Link>
                         {hasMilkcakeOffer &&
                           " One milkcake per order is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount."}
                       </p>
@@ -851,7 +859,9 @@ export function LaunchMenuBrowser({
             <span className="lm-eyebrow">{menuPage.brandName} at MealDeck Luton</span>
             <h2 id="menu-local-guide-title">Useful before you order</h2>
             <p>
-              Collection and kerbside pickup from 314–318 Selbourne Road, Luton, LU4 8NU.{" "}
+              {deliveryLive
+                ? "Free delivery within 3 km on orders £15+ after discounts, or collect from 314–318 Selbourne Road, Luton, LU4 8NU."
+                : "Collection and kerbside pickup from 314–318 Selbourne Road, Luton, LU4 8NU."}{" "}
               <Link to="/luton">See the Luton kitchen and opening hours</Link>.
             </p>
             <div className="lm-local-faqs">
@@ -884,8 +894,10 @@ export function LaunchMenuBrowser({
             One order. <em>Every craving.</em>
           </strong>
           <p>
-            Five Luton launch menus · Item and upgrade prices shown. Collection and kerbside pickup;
-            delivery is not available yet.
+            Five Luton launch menus · Item and upgrade prices shown.{" "}
+            {deliveryLive
+              ? "Free own-driver delivery within 3 km, £15 minimum after discounts; collection and kerbside also available."
+              : "Collection and kerbside pickup; delivery is not available yet."}
           </p>
         </footer>
       </main>
@@ -995,7 +1007,8 @@ export function LaunchMenuBrowser({
                     : storageStatus === "checking"
                       ? "Checking your saved choices."
                       : "Your choices are saved on this device."}{" "}
-                  Confirm current prices and collection availability at checkout.
+                  Confirm current prices and{" "}
+                  {deliveryLive ? "delivery eligibility" : "collection availability"} at checkout.
                 </DialogDescription>
               </div>
               <div className="lm-basket-scroll">

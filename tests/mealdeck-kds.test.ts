@@ -43,7 +43,7 @@ function board(): KdsBoard {
         created_at: now,
         released_at: now,
         order_status: "accepted",
-        fulfilment: "delivery",
+        fulfilment: "pickup",
         notes: "Pack the whole order together",
         group_order: true,
         routing_complete: true,
@@ -349,7 +349,7 @@ describe("MealDeck canonical KDS response boundaries", () => {
   });
 
   test("discards contact projections from every other fulfilment", () => {
-    for (const fulfilment of ["delivery", "dine_in"] as const) {
+    for (const fulfilment of ["dine_in"] as const) {
       const value = board();
       Object.assign(value.orders[0]!, {
         fulfilment,
@@ -494,4 +494,49 @@ describe("MealDeck one-card cooking and packing controls", () => {
     expect(() => parseKdsMutation({ ...value, ok: "true" }, expected)).toThrow();
     expect(() => parseKdsMutation({ ...value, replayed: "false" }, expected)).toThrow();
   });
+});
+
+test("own-driver KDS requires a validated address and driver state", () => {
+  const value = board();
+  Object.assign(value.orders[0]!, {
+    fulfilment: "delivery",
+    group_order: false,
+    deliveryAddress: {
+      postcode: "LU4 8NU",
+      doorNumber: "14",
+      roadName: "Test Road",
+      addressLine2: "Flat 2",
+    },
+    deliveryContact: {
+      name: "Delivery Customer",
+      phone: "+447700900987",
+      email: "not-returned@example.invalid",
+    },
+    pickupContact: { name: "Private contact", phone: "+447700900123" },
+    driverStatus: "awaiting_driver",
+    driverVersion: version,
+    deliveryDeadlineAt: "2026-11-04T21:00:00+00:00",
+    driverHandoverAt: null,
+    deliveredAt: null,
+  });
+  const order = parseKdsBoard(value, scope).orders[0]!;
+  expect(order.deliveryAddress?.postcode).toBe("LU4 8NU");
+  expect(order.deliveryContact).toEqual({ name: "Delivery Customer", phone: "+447700900987" });
+  expect(order.pickupContact).toBeNull();
+  expect(JSON.stringify(order)).not.toContain("not-returned@example.invalid");
+  expect(JSON.stringify(order)).not.toContain("Private contact");
+  for (const field of [
+    "deliveryAddress",
+    "deliveryContact",
+    "driverVersion",
+    "deliveryDeadlineAt",
+    "driverStatus",
+  ]) {
+    const invalid = structuredClone(value);
+    Object.assign(invalid.orders[0]!, { [field]: null });
+    expect(() => parseKdsBoard(invalid, scope)).toThrow("mealdeck_kds_invalid_response");
+  }
+  const handed = structuredClone(value);
+  Object.assign(handed.orders[0]!, { driverStatus: "with_driver", driverHandoverAt: null });
+  expect(() => parseKdsBoard(handed, scope)).toThrow("mealdeck_kds_invalid_response");
 });

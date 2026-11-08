@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Bike, Clock3, MapPin, Package, Store } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { LocalMenuDiscovery } from "@/components/marketing/local-menu-discovery";
 import { marketingBrands, cafe1Brand } from "@/lib/marketing-brands";
@@ -25,6 +26,7 @@ type Props = {
 
 export function LocationPage({ town, intro, hours, fulfilment, areas, includeCafe1, faqs }: Props) {
   const isLuton = town.toLowerCase() === "luton";
+  const deliveryLive = useOwnDriverAvailability() && isLuton;
   const isStAlbans = town.toLowerCase() === "st albans";
   const heroImage = isLuton ? heroLuton : isStAlbans ? heroStAlbans : heroTable;
   const displayedBrands = isLuton
@@ -57,7 +59,8 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
                 <Clock3 /> {isLuton ? "Opening weekend:" : "Planned hours:"} {hours}
               </span>
               <span>
-                <Bike /> {fulfilment}
+                <Bike />{" "}
+                {deliveryLive ? "Collection · Kerbside · Free own-driver delivery" : fulfilment}
               </span>
             </div>
             <div className="md-hero-actions">
@@ -94,7 +97,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <h2>{isLuton ? "Five brands. One kitchen." : "More flavours to come."}</h2>
               <p>
                 {isLuton
-                  ? "Order Skorch smash burgers, Tavo chicken wings and tenders, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails for Luton collection or kerbside. More brands join a future deck."
+                  ? `Order Skorch smash burgers, Tavo chicken wings and tenders, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails for Luton ${deliveryLive ? "free delivery, collection or kerbside" : "collection or kerbside"}. More brands join a future deck.`
                   : `Luton launches first. The ${town} line-up and opening date will be confirmed separately; this is the wider brand collection.`}
               </p>
             </div>
@@ -122,15 +125,21 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <MapPin />
             <p className="md-kicker">{isLuton ? "Collection location" : "Planned service areas"}</p>
             <h2>Local first.</h2>
-            <p>{areas.join(" · ")}</p>
+            <p>
+              {deliveryLive
+                ? "Collection and kerbside at 314–318 Selbourne Road · Free delivery within 3 km of LU4 8NU on £15+ after discounts"
+                : areas.join(" · ")}
+            </p>
           </article>
           <article className="md-location-info-panel md-location-info-panel-red">
             <Store />
             <p className="md-kicker md-kicker-light">{isLuton ? "Order online" : "Coming soon"}</p>
-            <h2>{fulfilment}</h2>
+            <h2>{deliveryLive ? "Collection · Kerbside · Free delivery" : fulfilment}</h2>
             <p>
               {isLuton
-                ? "Order from the five Luton menus for collection or kerbside during kitchen opening hours. Guest ordering is available on 6–8 November, with name and WhatsApp number. Registration and member sign-in return on Monday 9 November."
+                ? deliveryLive
+                  ? "Order from the five Luton menus for free local delivery, collection or kerbside. Our own driver delivers within a 3 km radius of LU4 8NU, for orders of £15 or more after discounts, normally within 60 minutes. Guest ordering needs only a name and WhatsApp number, with no registration."
+                  : "Order from the five Luton menus for collection or kerbside during kitchen opening hours. Guest ordering is available with your name and WhatsApp number; no account is required."
                 : `${town} is coming in a future deck. MealDeck is launching in Luton first, with no orders accepted here yet.`}
             </p>
           </article>
@@ -144,9 +153,9 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               </p>
               <h2>314–318 Selbourne Road, Luton, LU4 8NU</h2>
               <p>
-                Collection and kerbside pickup are available during the confirmed opening hours on
-                6–8 November 2026, once online ordering opens. Delivery is unavailable. Check your
-                order and choose any cutlery or numbered bags before payment.
+                {deliveryLive
+                  ? "Due to popular demand: free delivery within 3 km of LU4 8NU, for orders of £15 or more after discounts. Our own driver brings food within an estimated hour of payment. Collection and kerbside remain available."
+                  : "Collection and kerbside pickup are available during kitchen opening hours. Check your order and choose cutlery or numbered bags before payment."}
               </p>
             </div>
             <div className="md-collection-icons">
@@ -156,6 +165,11 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <span>
                 <MapPin /> Kerbside
               </span>
+              {deliveryLive && (
+                <span>
+                  <Bike /> Free delivery · 3 km
+                </span>
+              )}
             </div>
           </section>
         ) : isStAlbans ? (

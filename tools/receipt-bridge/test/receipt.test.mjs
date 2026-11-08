@@ -477,3 +477,18 @@ test("explicit copies require provenance and signed adjustments retain their lab
   assert.doesNotMatch(text, /GBP -0\.50/);
   assert.equal(validateReceipt(r).items[0].modifiers.at(-1).priceDeltaPence, -50);
 });
+
+test("own-driver delivery receipt prints as delivery rather than collection", () => {
+  const delivery = { ...fixture(), fulfilment: "delivery", car: null, orderNumber: "0019" };
+  const normalized = validateReceipt(delivery);
+  assert.equal(normalized.fulfilment, "delivery");
+  assert.equal(normalized.car, null);
+  const printed = encodeReceipt(delivery).text;
+  assert.match(printed, /OWN DRIVER DELIVERY/);
+  assert.match(printed, /Delivery code: 0427/);
+  assert.doesNotMatch(printed, /KERBSIDE PICKUP|Collection code: 0427/);
+  assert.equal(printed.match(/END OF RECEIPT/g)?.length, 1);
+  assert.throws(() => validateReceipt({ ...delivery, car: fixture().car }), {
+    code: "receipt_car_fulfilment_mismatch",
+  });
+});

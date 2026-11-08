@@ -17,6 +17,8 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+      - name: Luton own-driver delivery migration safety contract
+        run: node --test tests/delivery-migration-source.test.mjs
       - name: WhatsApp conversation, transport and private checkout boundaries
         run: bun test tests/mealdeck-whatsapp-*.test.ts tests/mealdeck-customer-return.test.ts
       - name: WhatsApp implementation lint and worker syntax
@@ -72,7 +74,7 @@ jobs:
       - name: Verified customer checkout, packing, receipt printing and distinct staff alerts
         run: >-
           bun test tests/mealdeck-order-number.test.ts tests/mealdeck-order-notes.test.ts tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
-          tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts
+          tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts tests/mealdeck-own-driver-delivery.test.ts
           tests/mealdeck-checkout-browser.test.ts
           tests/mealdeck-checkout-feedback.test.ts
           tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts
@@ -130,6 +132,8 @@ jobs:
           src/lib/mealdeck-checkout-selection.ts src/lib/mealdeck-stripe.server.ts
           src/lib/mealdeck-opening-offer.ts src/lib/mealdeck-opening-offer.functions.ts
           src/lib/mealdeck-customer-order-timing.ts
+          src/lib/mealdeck-own-driver-delivery.ts tests/mealdeck-own-driver-delivery.test.ts
+          src/components/own-driver-offer-banner.tsx src/components/site-header.tsx src/components/location-page.tsx src/routes/index.tsx
           src/lib/mealdeck-guest.ts src/lib/mealdeck-guest-session.server.ts src/lib/mealdeck-launch-schedule.ts
           src/lib/mealdeck-checkout-browser.ts src/lib/mealdeck-group-launch.ts
           src/lib/mealdeck-kitchen-availability.ts

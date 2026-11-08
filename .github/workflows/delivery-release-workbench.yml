@@ -1,0 +1,53 @@
+name: Prepare delivery release verification workspace
+on:
+  push:
+    branches: [feat/own-driver-luton-delivery]
+    paths: ['.github/workflows/delivery-release-workbench.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verification-workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/own-driver-luton-delivery
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.4'
+      - name: Install reproducible verification dependencies
+        run: |
+          bun install --frozen-lockfile
+          npm ci --prefix tests/postgres
+      - name: Export source history and test dependencies, excluding credentials
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/delivery-workbench"
+          git rev-parse HEAD > "$RUNNER_TEMP/delivery-workbench/head.txt"
+          git rev-parse origin/main > "$RUNNER_TEMP/delivery-workbench/main.txt"
+          git merge-base HEAD origin/main > "$RUNNER_TEMP/delivery-workbench/base.txt"
+          # A Git bundle contains source objects/refs, not .git/config, tokens,
+          # working credentials, environment variables or account configuration.
+          git bundle create "$RUNNER_TEMP/delivery-workbench/source.bundle" HEAD refs/remotes/origin/main
+          tar -czf "$RUNNER_TEMP/delivery-workbench/dependencies.tar.gz" node_modules tests/postgres/node_modules
+          cp "$(command -v bun)" "$RUNNER_TEMP/delivery-workbench/bun"
+          node --version > "$RUNNER_TEMP/delivery-workbench/node-version.txt"
+          bun --version > "$RUNNER_TEMP/delivery-workbench/bun-version.txt"
+          git config user.name 'MealDeck Verification'
+          git config user.email 'verification@mealdeck.co.uk'
+          git merge --no-commit --no-ff origin/main > "$RUNNER_TEMP/delivery-workbench/merge-result.txt" 2>&1 || true
+          git diff --name-only --diff-filter=U > "$RUNNER_TEMP/delivery-workbench/conflicted-files.txt"
+          git status --short >> "$RUNNER_TEMP/delivery-workbench/merge-result.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-delivery-verification-workbench
+          path: ${{ runner.temp }}/delivery-workbench/
+          retention-days: 2
+          if-no-files-found: error
