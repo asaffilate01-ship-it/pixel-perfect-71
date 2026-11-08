@@ -1374,6 +1374,21 @@ export function KitchenOrderCard({
           pickupContact={order.pickupContact ?? null}
           vehicle={order.vehicle ?? null}
         />
+        {order.fulfilment === "delivery" && order.deliveryDeadlineAt && (
+          <p
+            role="status"
+            className={
+              Date.parse(order.deliveryDeadlineAt) < now
+                ? "mb-3 rounded-md border border-red-400 bg-red-100 p-3 text-sm font-bold text-red-950"
+                : "mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-950"
+            }
+          >
+            Delivery target: {kdsClockTime(order.deliveryDeadlineAt)} · 60 minutes from confirmed payment
+            {Date.parse(order.deliveryDeadlineAt) < now
+              ? " · OVERDUE — contact driver and customer"
+              : ""}
+          </p>
+        )}
         <div className="md-kds-packing-flags">
           <span
             className={order.cutlery_requested ? "md-kds-cutlery-requested" : "md-kds-cutlery-none"}
