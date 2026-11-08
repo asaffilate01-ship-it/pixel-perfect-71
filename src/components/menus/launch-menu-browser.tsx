@@ -35,6 +35,7 @@ import {
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
 import { getMealDeckMenuPage } from "@/lib/mealdeck-menu-seo";
+import { getLaunchMenuScrollTarget } from "@/lib/launch-menu-navigation";
 import type { MealDeckPublicMenuSnapshot } from "@/lib/mealdeck-public-menu";
 import {
   getLaunchMenuBrand,
@@ -220,25 +221,29 @@ export function LaunchMenuBrowser({
 
   function browse(brandId: string, sectionId?: string, target: "brand" | "items" = "brand") {
     setSearch("");
+    const scrollTarget = getLaunchMenuScrollTarget(sectionId, target);
     const page = getMealDeckMenuPage(brandId);
     const navigation = page
       ? navigate({
           to: "/menus/$brandId",
           params: { brandId: page.brandId },
           search: sectionId ? { section: sectionId } : {},
-          resetScroll: false,
+          resetScroll: scrollTarget === "top",
         })
       : navigate({
           to: "/menus",
           search: { brand: brandId, ...(sectionId ? { section: sectionId } : {}) },
-          resetScroll: false,
+          resetScroll: scrollTarget === "top",
         });
     void navigation.then(() => {
-      const mobile = window.matchMedia("(max-width: 800px)").matches;
-      const destination =
-        mobile || target === "items" || sectionId ? "launch-menu-items" : "launch-brand-selector";
       requestAnimationFrame(() => {
-        document.getElementById(destination)?.scrollIntoView({ block: "start" });
+        if (scrollTarget === "top") {
+          // Switching brands must show the beginning of its page, on mobile and desktop.
+          window.scrollTo({ top: 0, behavior: "instant" });
+          return;
+        }
+        // Section shortcuts and Order Now still take the customer to the food.
+        document.getElementById("launch-menu-items")?.scrollIntoView({ block: "start" });
       });
     });
   }
@@ -540,7 +545,7 @@ export function LaunchMenuBrowser({
               activeSection={activeSection}
               search={search}
               count={visibleCount}
-              onBrand={(id) => browse(id, undefined, "items")}
+              onBrand={(id) => browse(id)}
               onSection={(id) => browse(brand.id, id, "items")}
               onSearch={setSearch}
             />
@@ -879,7 +884,7 @@ export function LaunchMenuBrowser({
               : "smooth",
           });
         }}
-        onBrand={(id) => browse(id, undefined, "items")}
+        onBrand={(id) => browse(id)}
         onBasket={openBasket}
       />
       <LaunchBasketFeedback
