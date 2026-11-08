@@ -338,7 +338,9 @@ export function LaunchItemCustomiser({
         <div>
           <span className="lmc-eyebrow">{section.title}</span>
           <DialogTitle className="lmc-title">{item.name}</DialogTitle>
-          <p className="lmc-product-kind">{launchMenuItemDescriptor(brand, section, item)}</p>
+          {launchMenuItemDescriptor(brand, section, item) && (
+            <p className="lmc-product-kind">{launchMenuItemDescriptor(brand, section, item)}</p>
+          )}
           <p className="lmc-item-price">
             {price.baseUnitPence === null && item.priceVariants?.length ? "From " : ""}
             {price.promotionQuantity
