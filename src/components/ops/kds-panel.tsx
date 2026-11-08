@@ -314,7 +314,8 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
       void refresh();
       return;
     }
-    const expectedVersion = action.target === "pass" ? order.pass?.version : order.version;
+    const expectedVersion = action.target === "driver"
+      ? order.driverVersion : action.target === "pass" ? order.pass?.version : order.version;
     if (!expectedVersion) return;
     const orderNumber = orderDisplayNumber(order.order_number, order.display_code);
     const reference = `${isOrderNumber(order.order_number) ? "Order" : "Collection code"} ${orderNumber}`;
@@ -334,13 +335,14 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
         pass: "mealdeck_ops_kds_transition_pass",
         item: "mealdeck_ops_kds_set_item_ready",
         handoff: "mealdeck_ops_kds_complete_handoff",
+        driver: "mealdeck_ops_kds_transition_local_driver",
       };
       const raw = await opsRpc<unknown>(names[action.target], {
         p_tenant: tenantId,
         p_location: locationId,
         p_order: order.order_id,
         p_expected_version: expectedVersion,
-        ...(action.target === "order" || action.target === "pass"
+        ...(action.target === "order" || action.target === "pass" || action.target === "driver"
           ? { p_status: action.status }
           : {}),
         ...(action.target === "item" ? { p_item: action.itemId, p_ready: action.ready } : {}),
@@ -350,7 +352,7 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
       saved = true;
       if (!mounted.current) return;
       setNotice(
-        `${reference} · ${action.status === "accepted" ? "Accepted · receipt queued" : action.status === "completed" ? "Done · handover confirmed" : action.target === "item" ? "Item checklist updated" : action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Ready for handover"}.`,
+        `${reference} · ${action.status === "accepted" ? "Accepted · receipt queued" : action.status === "completed" ? "Done · handover confirmed" : action.status === "with_driver" ? "Handed to our driver" : action.status === "delivered" ? "Delivery confirmed" : action.target === "item" ? "Item checklist updated" : action.status === "preparing" ? "Preparation started" : action.status === "ready" ? "Ready to pack" : action.status === "packing" ? "Packing started" : "Ready for handover"}.`,
       );
     } catch (reason) {
       if (!mounted.current) return;
@@ -699,6 +701,13 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
                     label: "Update item",
                   });
                 }}
+                onDriver={(next) =>
+                  void updateOrder(order, {
+                    target: "driver",
+                    status: next,
+                    label: next === "with_driver" ? "Hand to driver" : "Mark delivered",
+                  })
+                }
                 onHandoff={(code) =>
                   void updateOrder(order, {
                     target: "handoff",
@@ -1266,6 +1275,7 @@ export function KitchenOrderCard({
   onCancelSeal,
   onItemReady,
   onHandoff,
+  onDriver,
 }: {
   order: KdsOrder;
   stage: Stage;
@@ -1281,6 +1291,7 @@ export function KitchenOrderCard({
   onCancelSeal: () => void;
   onItemReady: (itemId: string, ready: boolean) => void;
   onHandoff: (code: string) => void;
+  onDriver: (status: "with_driver" | "delivered") => void;
 }) {
   const [handoffCode, setHandoffCode] = useState("");
   const confirmButton = useRef<HTMLButtonElement>(null);
@@ -1306,7 +1317,7 @@ export function KitchenOrderCard({
     >
       <header className="md-ops-ticket-heading md-kds-ticket-heading border-b md-ops-divider">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="md-kds-fulfilment">{fulfilmentLabels[order.fulfilment]}</span>
+          <span className="md-kds-fulfilment">{fulfilmentLabels[order.fulfilment]}{order.fulfilment === "delivery" ? " · Own driver" : ""}</span>
           <span
             className={`md-kds-status rounded-full px-2.5 py-1 text-xs font-bold ${stageStyles[stage].badge}`}
           >
@@ -1357,6 +1368,8 @@ export function KitchenOrderCard({
       </header>
       <div className="md-kds-ticket-body">
         <KdsPickupDetails
+          deliveryAddress={order.deliveryAddress ?? null}
+          deliveryContact={order.deliveryContact ?? null}
           fulfilment={order.fulfilment}
           pickupContact={order.pickupContact ?? null}
           vehicle={order.vehicle ?? null}
@@ -1541,7 +1554,25 @@ export function KitchenOrderCard({
             Packing in progress · check all named bags before handover.
           </p>
         )}
-        {order.pass?.status === "ready_for_handoff" ? (
+        {order.fulfilment === "delivery" &&
+        (order.pass?.status === "sealed" || order.pass?.status === "ready_for_handoff") ? (
+          <div className="space-y-2" aria-label="Own-driver delivery progress">
+            {order.driverStatus === "with_driver" ? (
+              <button type="button" className={`${button} md-ops-primary w-full`}
+                disabled={disabled || !order.driverVersion}
+                onClick={() => onDriver("delivered")}>
+                {saving ? "Saving…" : "Confirm delivered"}
+              </button>
+            ) : order.driverStatus === "awaiting_driver" ? (
+              <button type="button" className={`${button} md-ops-primary w-full`}
+                disabled={disabled || !order.driverVersion}
+                onClick={() => onDriver("with_driver")}>
+                {saving ? "Saving…" : "Hand over to our driver"}
+              </button>
+            ) : <p role="status">Delivered · confirmed</p>}
+            <p className="md-kds-action-hint">Verify the full delivery address and every bag before driver handover.</p>
+          </div>
+        ) : order.pass?.status === "ready_for_handoff" ? (
           <form
             className="md-kds-handoff-form space-y-2"
             onSubmit={(event) => {
