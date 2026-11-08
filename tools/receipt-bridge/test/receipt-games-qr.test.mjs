@@ -5,9 +5,11 @@ import { readFile } from "node:fs/promises";
 import jsQR from "jsqr";
 import { buildReceiptGamesQr } from "../build-games-qr.mjs";
 import { receiptGamesQr as qr } from "../receipt-games-qr.mjs";
+import { receiptPromotions } from "../receipt-promotions.mjs";
 import {
   encodeReceipt,
   encodeReceiptGamesQr,
+  encodeReceiptPromotion,
   validateReceipt,
   RECEIPT_LIMITS,
 } from "../receipt.mjs";
@@ -122,7 +124,7 @@ test("browser SVG uses the identical bounded grid and decodes at screen and prin
     );
 });
 
-test("one fixed QR is fully framed after order instructions and before the legal footer", () => {
+test("legacy QR framing is retained and the current play slot follows all order instructions", () => {
   const command = Buffer.from(encodeReceiptGamesQr());
   assert.deepEqual([...command.subarray(0, 6)], [27, 97, 1, 29, 40, 76]);
   assert.equal(command[6] + command[7] * 256, raster.length + 10);
@@ -133,23 +135,26 @@ test("one fixed QR is fully framed after order instructions and before the legal
     [29, 40, 76, 2, 0, 48, 50, 27, 97, 0],
   );
   const receipt = fixture();
+  receipt.orderNumber = "0001";
+  const play = receiptPromotions[0];
+  const selected = Buffer.from(encodeReceiptPromotion(receipt));
   receipt.orderNotes = "Keep both bags together. Check every labelled extra.";
   const snapshot = JSON.stringify(validateReceipt(receipt));
   const original = JSON.stringify(receipt);
   for (const columns of [32, 42, 48]) {
     const result = encodeReceipt(receipt, { columns });
     const bytes = Buffer.from(result.bytes);
-    const position = bytes.indexOf(command);
+    const position = bytes.indexOf(selected);
     assert.ok(position > 0);
-    assert.equal(bytes.indexOf(command, position + 1), -1);
+    assert.equal(bytes.indexOf(selected, position + 1), -1);
     const before = bytes.subarray(0, position).toString();
-    const after = bytes.subarray(position + command.length).toString();
-    assert.ok(before.endsWith(qr.subtitle + "\n"));
+    const after = bytes.subarray(position + selected.length).toString();
+    assert.ok(before.endsWith(play.subtitle + "\n"));
     assert.ok(before.includes(receipt.orderNotes.split(" ").at(-1)));
-    assert.ok(before.indexOf("CUTLERY:") < before.indexOf(qr.heading));
-    assert.ok(before.indexOf("Order note:") < before.indexOf(qr.heading));
-    assert.ok(after.trimStart().startsWith(qr.displayUrl + "\n"));
-    assert.ok(after.indexOf(qr.displayUrl) < after.indexOf("MealDeck is a trading name of"));
+    assert.ok(before.indexOf("CUTLERY:") < before.indexOf(play.heading));
+    assert.ok(before.indexOf("Order note:") < before.indexOf(play.heading));
+    assert.ok(after.trimStart().startsWith(play.displayUrl + "\n"));
+    assert.ok(after.indexOf(play.displayUrl) < after.indexOf("MealDeck is a trading name of"));
     assert.ok(after.endsWith("END OF RECEIPT\n\n\n\n"));
     assert.equal(result.text.match(/END OF RECEIPT/g)?.length, 1);
     assert.ok(result.text.split("\n").every((line) => line.length <= columns));
@@ -166,16 +171,20 @@ test("QR targets or bytes cannot be supplied through receipt data", () => {
       { code: "unexpected_receipt_fields" },
     );
   const receipt = fixture();
+  receipt.orderNumber = "0001";
   receipt.customerName = "Different customer";
   receipt.displayCode = "9999";
   receipt.orderNotes = "https://untrusted.invalid/customer-note";
   const bytes = Buffer.from(encodeReceipt(receipt).bytes);
-  const command = Buffer.from(encodeReceiptGamesQr());
-  assert.ok(bytes.indexOf(command) > 0, "all valid orders receive exactly the same public QR");
+  const command = Buffer.from(encodeReceiptPromotion(receipt));
+  assert.ok(
+    bytes.indexOf(command) > 0,
+    "the selected public QR cannot be changed by customer text",
+  );
   assert.equal(bytes.indexOf(command, bytes.indexOf(command) + 1), -1);
 });
 
-test("the signed H10S profile omits only fixed promotion and preserves canonical receipts", async () => {
+test("the signed H10S profile retains its exact historical text and canonical receipts", async () => {
   const golden = JSON.parse(
     await readFile(
       new URL(
@@ -202,17 +211,29 @@ test("the signed H10S profile omits only fixed promotion and preserves canonical
   }
   for (const columns of [32, 42, 48]) {
     const receipt = fixture();
+    receipt.orderNumber = "0001";
     receipt.orderNotes = "Keep every bag and named extra together.";
     const current = encodeReceipt(receipt, { columns });
     const native = encodeReceipt(receipt, { columns, includeGamesQr: false });
     const lines = current.text.split("\n");
-    const promotionStart = lines.findIndex((line) => line.trim() === qr.heading);
+    const promotionStart = lines.findIndex((line) => line.trim() === receiptPromotions[0].heading);
     assert.ok(promotionStart > 0);
-    assert.equal(
-      native.text,
-      [...lines.slice(0, promotionStart), ...lines.slice(promotionStart + 4)].join("\n"),
-      "only the fixed heading, subtitle, public URL and separator are omitted",
+    const withoutTotalsAndRules = (values) =>
+      values.filter(
+        (line) =>
+          line !== "-".repeat(columns) && !/^(?:Subtotal|Discount|TOTAL)\s+-?GBP /.test(line),
+      );
+    assert.deepEqual(
+      withoutTotalsAndRules(native.text.split("\n")),
+      withoutTotalsAndRules([
+        ...lines.slice(0, promotionStart),
+        ...lines.slice(promotionStart + 4),
+      ]),
+      "all order, packing, note and footer text stays in order while current totals move next to promotion",
     );
+    assert.match(lines[promotionStart - 1], /^TOTAL\s+GBP /, "no blank gap after the total");
+    assert.ok(current.text.indexOf("Order note:") < current.text.indexOf("Subtotal"));
+    assert.ok(native.text.indexOf("Subtotal") < native.text.indexOf("PACKING -"));
     assert.ok(Buffer.from(native.bytes).subarray(-4).equals(Buffer.from("\n\n\n\n")));
   }
   assert.throws(() => encodeReceipt(fixture(), { includeGamesQr: "false" }), {

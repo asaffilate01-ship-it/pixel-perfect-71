@@ -80,9 +80,7 @@ export function buildLaunchCatalogueData() {
           ? " (grilled wings)"
           : group.id === "souvano-heatwave-base"
             ? " (Heatwave)"
-            : group.id === "souvano-meal-side"
-              ? " (Doner / Lamb Chops)"
-              : "";
+            : "";
       const name = brand.name + " · " + group.label + suffix;
       text(name, 140, "modifier group name too long");
       for (const option of group.options) {

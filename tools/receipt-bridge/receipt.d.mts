@@ -59,7 +59,7 @@ export type PrinterProfile = {
   columns?: 32 | 42 | 48;
   cut?: "none" | "partial" | "full";
   feedLines?: number;
-  /** Defaults to true; false reproduces the signed H10S 0.2.0 text layout. */
+  /** Defaults to the rotating promotion; false reproduces signed H10S 0.2.0. */
   includeGamesQr?: boolean;
 };
 export const RECEIPT_LIMITS: Readonly<{
@@ -76,6 +76,9 @@ export class ReceiptError extends Error {
 export function validateReceipt(input: unknown): MealDeckReceipt;
 export function encodeReceiptLogo(): Uint8Array;
 export function encodeReceiptGamesQr(): Uint8Array;
+export function encodeReceiptPromotion(
+  order: Pick<MealDeckReceipt, "orderId" | "orderNumber">,
+): Uint8Array;
 export function encodeReceipt(
   input: unknown,
   profile?: PrinterProfile,

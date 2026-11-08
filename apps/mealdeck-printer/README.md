@@ -2,7 +2,7 @@
 
 The networked Android companion consumes MealDeck's existing receipt queue and
 uses the H10S built-in printer service. Its application ID is
-`uk.co.mealdeck.printer`, version `0.2.0` (code `2`). The separate setup utility in
+`uk.co.mealdeck.printer`, version `0.2.2` (code `4`). The separate setup utility in
 `../mealdeck-printer-probe` and its published setup APK remain unchanged.
 
 `release-certificate.pem` contains only the public release certificate. Its
@@ -53,10 +53,27 @@ automatic consumer off when this companion is selected.
 - The claimed receipt is independently fetched again after `begin_send` and its
   normalized fingerprint must match before dispatch. A replayed or ambiguous
   claim/begin response never authorizes another send.
-- Rendering completes before dispatch. Each bitmap strip is at most
-  `384 × 384` ARGB pixels, with a `750,000`-byte parcel ceiling. All strips belong
-  to one logical attempt; failure after any strip holds the whole attempt.
-  There is no undocumented cut/feed command or physical-cutter claim.
+- The full branded receipt keeps the large logo, prominent order number and
+  equally large collection code, customer name and saved phone, boxed copy
+  reason, complete purchased/packing information, paid total and one rotating
+  promotion. The eight slots are Play, TikTok and Instagram QRs, then Skorch,
+  Tavo Chicken, Load’d, Moktl and Souvano logos. Canonical order numbers select
+  the slot; a reprint keeps it. The gap after PAID is compact and each QR retains
+  its full four-module quiet border.
+- Saved phone is an optional authenticated projection of the same order, outside
+  the immutable receipt and fingerprint. The claim's phone is rechecked through
+  the separately gated contact RPC before dispatch. Existing server projections
+  without the extension remain readable; no profile or fabricated phone fallback
+  is used, and no customer phone is written to the native journal.
+- Rendering and parcel preparation complete before `begin_send`. One immutable
+  shared-memory bitmap, bounded to `384 × 16,000` ARGB pixels, is submitted in one
+  `printBitmap` call. The parcel must contain a shared-memory descriptor and fit
+  the unchanged `750,000`-byte ceiling. There are no app-created strip boundaries.
+  A fixed 180-pixel white raster tail follows the footer. The same one-shot send
+  then executes the pinned protocol's fixed `nextLine(4)` paper advance before
+  releasing its slot. The feed is skipped after timeout/pause/service loss; any
+  uncertain stage holds the original attempt without replay. No undocumented
+  cut/flush command or physical-cutter claim is introduced.
 - The command worker, Binder sender and deadline scheduler are separate. A
   30-second send deadline holds the attempt but retains the global send slot until
   the actual Binder call exits. Late success cannot upgrade a held outcome.
@@ -83,6 +100,8 @@ npm run sync:android
 npm run verify:native
 cd android
 ./gradlew :app:testDebugUnitTest :app:assembleRelease
+# With an Android 13 emulator running (fake Binder only, no real printer):
+./gradlew :app:connectedDebugAndroidTest
 ```
 
 The release build intentionally produces
@@ -96,6 +115,12 @@ timeout retention, interrupted starts and partial-send uncertainty. JVM golden
 fixtures compare receipt validation, canonical JSON, SHA-256 fingerprints and full
 text against the existing JavaScript receipt bridge. Web contract checks and
 native bundle verification cover the installed application's fixed interface.
+Layout tests retain long notes and every purchased detail; an Android 13 emulator
+renders synthetic receipts, decodes the fixed promotion QRs, and round-trips the
+complete shared bitmap through a recording Binder. A buffering receiver checks
+that every bitmap is followed by its own final feed before the next header.
+These checks do not simulate the
+H10S service's handling of a tall immutable bitmap or prove its paper output.
 
 ## Physical acceptance still required
 

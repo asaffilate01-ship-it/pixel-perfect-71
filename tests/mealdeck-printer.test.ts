@@ -5,7 +5,7 @@ import { ReceiptPreview } from "../src/components/ops/receipt-preview";
 import { ReceiptQueueList } from "../src/components/ops/printer-receipt-list";
 import { validateReceipt } from "../tools/receipt-bridge/receipt.mjs";
 import { receiptLogoSource, waitForReceiptLogo } from "../src/lib/mealdeck-receipt-logo";
-import { receiptGamesQr } from "../src/lib/mealdeck-receipt-games";
+import { receiptPromotions, receiptPromotionForOrder } from "../src/lib/mealdeck-receipt-games";
 import { printerQueueView } from "../src/lib/mealdeck-printer-queue";
 import {
   receiptSchema,
@@ -107,8 +107,10 @@ const job = () => ({
   receipt: receipt(),
 });
 describe("canonical receipt presentation", () => {
-  test("places one fixed games QR after the full order and before the footer without changing the snapshot", () => {
+  test("places the first rotation slot after the full order and before the footer without changing the snapshot", () => {
     const value = receipt();
+    value.orderNumber = "0001";
+    const promotion = receiptPromotions[0]!;
     value.orderNotes = "Keep the labelled bags together.";
     value.packingPlan.bags[0]!.name = "Amer";
     value.packingPlan.bags[1]!.name = "Jay";
@@ -124,13 +126,13 @@ describe("canonical receipt presentation", () => {
     expect(html).toContain("Jay · Bag 2");
     expect(qrPosition).toBeLessThan(html.indexOf("<footer"));
     expect(html.match(/data-receipt-games-qr/g)).toHaveLength(1);
-    expect(html).toContain("Got a minute? Play MealDeck");
+    expect(html).toContain("Got a minute? Play MealDeck.");
     expect(html).toContain("Scan for free food games");
-    expect(html).toContain('href="https://mealdeck.co.uk/play/receipt"');
+    expect(html).toContain('href="https://mealdeck.co.uk/play"');
     expect(html).toContain(">mealdeck.co.uk/play</a>");
     expect(html).toContain('viewBox="0 0 41 41"');
     expect(html).toContain('shape-rendering="crispEdges"');
-    expect(html).toContain(`<path d="${receiptGamesQr.svgPath}" fill="#000"`);
+    expect(html).toContain(`<path d="${promotion.svgPath}" fill="#000"`);
     expect(html).toContain(`src="${receiptLogoSource}"`);
     expect(html).toContain("313 Brands Ltd.");
     expect(html).toContain("Powered by Dishbee");
@@ -140,6 +142,84 @@ describe("canonical receipt presentation", () => {
     expect(JSON.stringify(value)).toBe(original);
     const untrusted = { ...value, qrUrl: "https://untrusted.invalid/private", qrBytes: "abc" };
     expect(renderToStaticMarkup(createElement(ReceiptPreview, { receipt: untrusted }))).toBe(html);
+  });
+
+  test("rotates one public promotion after PAID in the requested order and repeats after eight receipts", () => {
+    const slots = [
+      "play",
+      "tiktok",
+      "instagram",
+      "skorch",
+      "tavo-chicken",
+      "loadd",
+      "moktl",
+      "souvano",
+    ];
+    const targets = [
+      "https://mealdeck.co.uk/play",
+      "https://www.tiktok.com/@mealdeckofficial",
+      "https://www.instagram.com/mealdeckofficial/",
+    ];
+    for (let order = 1; order <= 16; order++) {
+      const value = receipt();
+      value.orderNumber = String(order).padStart(4, "0");
+      value.orderNotes = "Keep both bags together.";
+      const original = JSON.stringify(value);
+      const html = renderToStaticMarkup(
+        createElement(ReceiptPreview, {
+          receipt: value,
+          customerPhone: "+447700900123",
+        }),
+      );
+      const slot = (order - 1) % 8;
+      const marker = `data-receipt-promotion="${slots[slot]}"`;
+      const start = html.indexOf(marker);
+      expect(start).toBeGreaterThan(html.indexOf("£14.67"));
+      expect(start).toBeGreaterThan(html.indexOf(value.orderNotes));
+      expect(start).toBeLessThan(html.indexOf("<footer"));
+      expect(html.match(/data-receipt-promotion="/g)).toHaveLength(1);
+      expect(html.match(/data-receipt-promotion-art="/g)).toHaveLength(1);
+      expect(html).toContain(`md-receipt-promotion__art--${slot < 3 ? "qr" : "brand"}`);
+      if (slot < 3) expect(html).toContain(`href="${targets[slot]}"`);
+      else expect(html.slice(start, html.indexOf("<footer"))).not.toContain("href=");
+      expect(html).not.toContain("/play/receipt");
+      expect(html).toContain("COLLECTION CODE");
+      expect(html).toContain('font-black tabular-nums">0427</strong>');
+      expect(html).toContain("Fixture customer</p>");
+      expect(html).toContain("+447700900123</p>");
+      expect(html).toContain("Burger add-ons: 1× 3 Onion rings per item");
+      expect(html).toContain("INCLUDE CUTLERY");
+      expect(html).toContain("Powered by Dishbee");
+      expect(html).toContain("ONE ORDER. EVERY CRAVING.");
+      if (slot === 7) expect(html).toContain("Souvano’s Greek &amp; Turkish favourites.");
+      expect(JSON.stringify(value)).toBe(original);
+    }
+  });
+
+  test("numbered reprints and historical receipts retain the same promotion without payload changes", () => {
+    const promotionMarkup = (html: string) =>
+      html.match(/<section class="md-receipt-promotion"[\s\S]*?<\/section>/)?.[0];
+    for (const value of [
+      receipt(),
+      { ...receipt(), orderNumber: "0008" },
+      { ...receipt(), orderNumber: "9223372036854775807" },
+    ]) {
+      const before = JSON.stringify(validateReceipt(value));
+      const original = renderToStaticMarkup(createElement(ReceiptPreview, { receipt: value }));
+      const copy = {
+        ...value,
+        copyNumber: 2,
+        reprintOf: id(99),
+        reprintReason: "Paper was incomplete",
+        customerName: "A changed display name cannot select another advert",
+        displayCode: "9876",
+      };
+      const reprinted = renderToStaticMarkup(createElement(ReceiptPreview, { receipt: copy }));
+      expect(promotionMarkup(original)).toBeDefined();
+      expect(promotionMarkup(reprinted)).toBe(promotionMarkup(original));
+      expect(receiptPromotionForOrder(copy)).toBe(receiptPromotionForOrder(value));
+      expect(JSON.stringify(validateReceipt(value))).toBe(before);
+    }
   });
 
   test("prints the approved fixed logo and canonical meal contents without changing money or extras", () => {
@@ -449,6 +529,42 @@ describe("canonical receipt presentation", () => {
     expect(() =>
       parseClaim({ ...job(), status: "claimed", claimToken: id(3), replayed: false }, id(9)),
     ).toThrow();
+  });
+  test("retains saved contact outside the legacy receipt and binds it to the same order", () => {
+    const canonical = JSON.stringify(validateReceipt(receipt()));
+    const claim = { ...job(), status: "claimed", claimToken: id(3), replayed: false };
+    const contact = { schemaVersion: 1, orderId: id(1), customerPhone: "+447700900123" };
+    const parsed = parseClaim({ ...claim, receiptContact: contact }, id(2));
+    expect(parsed.receiptContact).toEqual(contact);
+    expect(JSON.stringify(validateReceipt(parsed.receipt))).toBe(canonical);
+    expect(parsed.receipt).not.toHaveProperty("customerPhone");
+    expect(parsed.receipt).not.toHaveProperty("receiptContact");
+    expect(parseClaim(claim, id(2))).not.toHaveProperty("receiptContact");
+    expect(parseClaim({ ...claim, receiptContact: null }, id(2)).receiptContact).toBeNull();
+    expect(
+      parseClaim({ ...claim, receiptContact: { ...contact, customerPhone: null } }, id(2))
+        .receiptContact?.customerPhone,
+    ).toBeNull();
+    const board = {
+      schemaVersion: 1,
+      tenantId: id(10),
+      locationId: id(11),
+      generatedAt: time,
+      jobs: [{ ...job(), receiptContact: contact }],
+    };
+    expect(
+      parsePrinterBoard(board, { tenantId: id(10), locationId: id(11) }).jobs[0]!.receiptContact,
+    ).toEqual(contact);
+    for (const bad of [
+      { ...contact, orderId: id(7) },
+      { ...contact, schemaVersion: 2 },
+      { ...contact, customerPhone: "07700900123" },
+      { ...contact, customerPhone: "+447700900123\n" },
+      { ...contact, customerPhone: "+447700900123\u202e" },
+      { ...contact, customerPhone: 447700900123 },
+      { ...contact, email: "private@example.invalid" },
+    ])
+      expect(() => parseClaim({ ...claim, receiptContact: bad }, id(2))).toThrow();
   });
 });
 

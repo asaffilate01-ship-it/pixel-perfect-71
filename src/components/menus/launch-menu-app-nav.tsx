@@ -82,7 +82,7 @@ export function LaunchMenuAppNav({
   return (
     <>
       <div className="lma-nav-clearance" aria-hidden="true" />
-      <nav className="lma-app-nav" aria-label="Menu navigation" hidden={dialogOpen || sheetOpen}>
+      <nav className="lma-app-nav" aria-label="Ordering navigation" hidden={dialogOpen || sheetOpen}>
         <button
           type="button"
           className="lma-tab"
@@ -93,7 +93,7 @@ export function LaunchMenuAppNav({
           <span className="lma-tab-icon">
             <UtensilsCrossed size={21} aria-hidden="true" />
           </span>
-          <span>Menus</span>
+          <span>Order Now</span>
         </button>
         <button
           type="button"

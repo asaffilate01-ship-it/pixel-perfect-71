@@ -151,6 +151,20 @@ export const receiptSchema = z
       fail();
   });
 export type MealDeckReceipt = z.infer<typeof receiptSchema>;
+/** Saved order contact travels outside the immutable receipt/fingerprint, so
+ * legacy printer consumers retain their original receipt contract. */
+export const receiptContactSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    orderId: uuid,
+    customerPhone: z
+      .string()
+      .regex(/^\+[1-9][0-9]{7,14}$/)
+      .refine((phone) => phone === phone.trim())
+      .nullable(),
+  })
+  .strict();
+export type ReceiptContact = z.infer<typeof receiptContactSchema>;
 export const printerJobSchema = z
   .object({
     jobId: uuid,
@@ -169,10 +183,13 @@ export const printerJobSchema = z
     updatedAt: stamp,
     resolution: z.string().max(300).nullable(),
     receipt: receiptSchema,
+    receiptContact: receiptContactSchema.nullable().optional(),
   })
   .superRefine((j, c) => {
     if (j.orderId !== j.receipt.orderId || j.copyNumber !== j.receipt.copyNumber)
       c.addIssue({ code: "custom", message: "Receipt job mismatch" });
+    if (j.receiptContact && j.receiptContact.orderId !== j.orderId)
+      c.addIssue({ code: "custom", message: "Receipt contact mismatch" });
   });
 export type PrinterJob = z.infer<typeof printerJobSchema>;
 export type PrinterScope = {
