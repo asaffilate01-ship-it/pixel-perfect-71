@@ -21,7 +21,7 @@ record ReceiptDelivery(String postcode, String doorNumber, String roadName, Stri
             || !contact.has("deliveryAddress") || contact.length() != 4) throw invalid();
         JSONObject address = contact.optJSONObject("deliveryAddress");
         if (address == null || address.length() != 4) throw invalid();
-        String postcode = field(address, "postcode", 7, 8, false);
+        String postcode = field(address, "postcode", 5, 8, false);
         String number = field(address, "doorNumber", 1, 40, false);
         String road = field(address, "roadName", 2, 120, false);
         String line2 = field(address, "addressLine2", 0, 120, true);
