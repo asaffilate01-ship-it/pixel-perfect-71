@@ -84,7 +84,11 @@ export function OwnDriverOfferBanner() {
       <span>
         {available ? (
           <>
-            <strong>Due to popular demand: FREE delivery is now available!</strong>{" "}
+            <strong>
+              {sundayHours
+                ? "Due to popular demand: FREE delivery from 3pm to 11pm today!"
+                : "Due to popular demand: FREE delivery is now available!"}
+            </strong>{" "}
             {sundayHours
               ? "Available during Sunday's opening hours, 3pm–11pm, for Luton collection, kerbside pickup and delivery."
               : "Order for delivery, collection or kerbside pickup during Luton opening hours."}{" "}
@@ -92,8 +96,8 @@ export function OwnDriverOfferBanner() {
           </>
         ) : (
           <>
-            <strong>Due to popular demand: FREE delivery planned from 3pm today!</strong>{" "}
-            Sunday's opening hours: 3pm–11pm for Luton collection, kerbside pickup and eligible delivery.
+            <strong>Due to popular demand: FREE delivery from 3pm to 11pm today!</strong>{" "}
+            Luton collection and kerbside pickup are also available during Sunday's opening hours.
             Free delivery within 3 km of LU4 8NU on orders paying £15+ after discounts.
           </>
         )}
