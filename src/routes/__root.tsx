@@ -4,6 +4,7 @@ import { SkipToMainContent } from "@/components/skip-to-main-content";
 import { ThemeProvider } from "@/components/theme-provider";
 import { MealDeckPageLoading } from "@/components/mealdeck-page-loading";
 import { PwaConnectionNotice, PwaProvider } from "@/components/pwa-provider";
+import { isLaunchMenuRoute } from "@/lib/launch-menu-navigation";
 import { isMealDeckStaffPath, mealDeckPwaSurface } from "@/lib/mealdeck-pwa-surface";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 import { seo, SITE_DESCRIPTION } from "@/lib/seo";
@@ -200,6 +201,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const internal = isMealDeckStaffPath(pathname);
+  const basketPage = isLaunchMenuRoute(pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -214,7 +216,7 @@ function RootComponent() {
             <Outlet />
           </ArcadeProgressProvider>
         </div>
-        {!internal && <BackToTop />}
+        {!internal && !basketPage && <BackToTop />}
         {!internal && <MobileTabBar />}
         <Toaster position="top-center" />
       </PwaProvider>
