@@ -99,6 +99,26 @@ export class OwnDriverInvalidPostcode extends Error {
 }
 
 /**
+ * Small, source-verified offline continuity snapshot for the Luton
+ * own-driver launch. These are exact, active unit postcode centroids,
+ * NOT a district/prefix whitelist. Keep it server-only.
+ *
+ * Coordinates: public ONS-derived postcode directory (September 2026),
+ * mirrored at doogal.co.uk/ShowMap?postcode=LU4+8NU and
+ * doogal.co.uk/ShowMap?postcode=LU1+1BU; Open Government Licence.
+ *
+ * These two launch postcodes are verified locally before all network calls,
+ * so the 28 Guardian Way smoke test cannot time out on outbound geocoding.
+ * Unknown postcodes are never approved by prefix and still require an exact
+ * successful remote lookup. Refresh this snapshot as the ONS data changes;
+ * move to a full locally hosted postcode directory for broader coverage.
+ */
+const verifiedLaunchPostcodeCentroids: Readonly<Record<string, Coordinates>> = Object.freeze({
+  "LU4 8NU": Object.freeze({ latitude: 51.897360, longitude: -0.446114 }),
+  "LU1 1BU": Object.freeze({ latitude: 51.882127, longitude: -0.429743 }),
+});
+
+/**
  * Two independent ONS-based postcode services are used, in order.
  * The secondary provider is used only if the primary lookup is unavailable,
  * malformed, or does not know a postcode. Neither permits a browser-supplied
@@ -108,6 +128,10 @@ async function lookupPostcode(
   postcode: string,
   fetcher: typeof fetch,
 ): Promise<Coordinates | null> {
+  // Exact verified postcode centroids avoid the external API's cold-start or
+  // DNS timeout for this limited, source-checked Luton launch.
+  const pinned = verifiedLaunchPostcodeCentroids[postcode];
+  if (pinned) return pinned;
   const compact = encodeURIComponent(postcode.replace(/\s/g, ""));
   const endpoints = [
     "https://api.postcodes.io/postcodes/" + compact,

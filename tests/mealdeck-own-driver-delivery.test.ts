@@ -112,7 +112,7 @@ describe("MealDeck own-driver delivery safeguards", () => {
     }) as typeof fetch;
     const result = await checkOwnDriverArea("lu4 8nr", backup);
     expect(result.eligible).toBe(true);
-    expect(requested.filter((url) => url.startsWith("https://api.getthedata.com/"))).toHaveLength(2);
+    expect(requested.filter((url) => url.startsWith("https://api.getthedata.com/"))).toHaveLength(1);
   });
 
   test("rejects a mismatched fallback response, not an unverified delivery", async () => {
@@ -128,6 +128,40 @@ describe("MealDeck own-driver delivery safeguards", () => {
     await expect(checkOwnDriverArea("LU4 8NR", mismatched)).rejects.toBeInstanceOf(
       OwnDriverPostcodeUnavailable,
     );
+  });
+
+  test("a source-verified exact Luton postcode remains serviceable during full provider outage", async () => {
+    const unavailable = (async () => {
+      throw new Error("outbound network temporarily unavailable");
+    }) as typeof fetch;
+    const area = await checkOwnDriverArea("LU1 1BU", unavailable);
+    expect(area.postcode).toBe("LU1 1BU");
+    expect(area.eligible).toBe(true);
+    // Two separately sourced live postcode centroids ~2.03 km apart.
+    expect(area.distanceMetres).toBeGreaterThan(2000);
+    expect(area.distanceMetres).toBeLessThan(2100);
+  });
+
+  test("offline continuity never approves other LU1 postcodes by prefix", async () => {
+    const unavailable = (async () => {
+      throw new Error("network down");
+    }) as typeof fetch;
+    await expect(checkOwnDriverArea("LU1 1BC", unavailable)).rejects.toBeInstanceOf(
+      OwnDriverPostcodeUnavailable,
+    );
+  });
+
+  test("known launch postcode remains available without any provider requests", async () => {
+    let calls = 0;
+    const unreachable = (async () => {
+      calls += 1;
+      throw new Error("network unavailable");
+    }) as typeof fetch;
+    const origin = await checkOwnDriverArea("LU4 8NU", unreachable);
+    const destination = await checkOwnDriverArea("LU1 1BU", unreachable);
+    expect(origin.distanceMetres).toBe(0);
+    expect(destination.eligible).toBe(true);
+    expect(calls).toBe(0);
   });
 
   test("unknown UK postcode is rejected when both services confirm it does not exist", async () => {
