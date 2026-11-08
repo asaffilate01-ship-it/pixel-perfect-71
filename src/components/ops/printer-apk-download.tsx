@@ -1,21 +1,43 @@
 import { Download } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function PrinterApkDownload({ headingLevel = "h2" }: { headingLevel?: "h2" | "h3" }) {
   const Heading = headingLevel;
+  // An unsigned APK must never replace the existing signed printer. The
+  // release workflow writes a checksum only after verifying signer continuity.
+  const [updatePublished, setUpdatePublished] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/downloads/mealdeck-printer-h10s-0.2.3.apk.sha256", {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const checksum = (await response.text()).trim();
+        if (/^[a-f0-9]{64}  mealdeck-printer-h10s-0\.2\.3\.apk$/.test(checksum))
+          setUpdatePublished(true);
+      })
+      .catch(() => {
+        // Retain v0.2.2 if no verified signed update is published.
+      });
+    return () => controller.abort();
+  }, []);
+  const version = updatePublished ? "0.2.3" : "0.2.2";
 
   return (
     <section className="md-ops-card space-y-4 p-4 sm:p-5" aria-label="Senraise H10S receipt app">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <p className="text-xs font-bold uppercase tracking-[.12em] md-ops-accent">
-            Version 0.2.2 · receipt app
+            Version {version} · receipt app
           </p>
           <Heading className="text-xl font-black">H10S automatic receipts</Heading>
           <p className="text-sm md-ops-muted">Android 13 · sign in with your printer account</p>
         </div>
         <a
-          href="/downloads/mealdeck-printer-h10s-0.2.2.apk"
-          download="mealdeck-printer-h10s-0.2.2.apk"
+          href={`/downloads/mealdeck-printer-h10s-${version}.apk`}
+          download={`mealdeck-printer-h10s-${version}.apk`}
           className="md-ops-button md-ops-primary w-full sm:w-auto"
         >
           <Download className="size-4 shrink-0" aria-hidden="true" />
