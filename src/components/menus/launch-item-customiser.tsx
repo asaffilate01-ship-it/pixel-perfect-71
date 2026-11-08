@@ -1,4 +1,5 @@
 import { usePublicMenu } from "./use-public-menu";
+import { launchMenuItemDescriptor } from "@/lib/launch-menu-item-descriptor";
 import { findLaunchMenuItem } from "@/lib/launch-menu-picks";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronRight, ShoppingBag } from "lucide-react";
@@ -326,6 +327,7 @@ export function LaunchItemCustomiser({
         <div>
           <span className="lmc-eyebrow">{section.title}</span>
           <DialogTitle className="lmc-title">{item.name}</DialogTitle>
+          <p className="lmc-product-kind">{launchMenuItemDescriptor(brand, section, item)}</p>
           <p className="lmc-item-price">
             {price.baseUnitPence === null && item.priceVariants?.length ? "From " : ""}
             {formatLaunchMenuPrice(price.baseUnitPence ?? item.pricePence)} <span>per item</span>
