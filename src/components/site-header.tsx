@@ -47,7 +47,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
         {nav ? (
           <nav className="md-desktop-nav" aria-label="Main navigation">
             <Link to="/" aria-current={current("/")?"page":undefined} className={active("/")}>Home</Link>
-            <Link to="/menus" aria-current={current("/menus")?"page":undefined} className={active("/menus")}>Menus</Link>
+            <Link to="/menus" aria-current={current("/menus")?"page":undefined} className={active("/menus")}>Order Now</Link>
             {navItems.map((item) => (
               <Link key={item.label} to={item.to} {...(item.hash?{hash:item.hash}:{})} aria-current={current(item.to,item.hash)?(item.hash?"location":"page"):undefined} className={active(item.to,item.hash)}>{item.label}</Link>
             ))}
@@ -62,7 +62,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           {context ?? (
             <>
               <Link to="/luton" className="md-header-location"><MapPin /> Luton</Link>
-              <Link to="/menus" className="md-btn md-btn-yellow">Browse menus <ArrowRight /></Link>
+              <Link to="/menus" className="md-btn md-btn-yellow">Order Now <ArrowRight /></Link>
             </>
           )}
           {nav ? (
@@ -84,7 +84,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
       {nav && open ? (
         <nav id={menuId} className="md-mobile-nav" aria-label="Mobile navigation">
           <Link to="/" ref={firstLinkRef} onClick={() => setOpen(false)} aria-current={current("/")?"page":undefined} className={active("/")}>Home</Link>
-          <Link to="/menus" onClick={() => setOpen(false)} aria-current={current("/menus")?"page":undefined} className={active("/menus")}>Menus</Link>
+          <Link to="/menus" onClick={() => setOpen(false)} aria-current={current("/menus")?"page":undefined} className={active("/menus")}>Order Now</Link>
           {navItems.map((item) => (
             <Link key={item.label} to={item.to} {...(item.hash?{hash:item.hash}:{})} onClick={() => setOpen(false)} aria-current={current(item.to,item.hash)?(item.hash?"location":"page"):undefined} className={active(item.to,item.hash)}>{item.label}</Link>
           ))}
@@ -96,7 +96,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           <Link to="/blog" onClick={() => setOpen(false)} aria-current={current("/blog")?"page":undefined} className={active("/blog")}>Blog</Link>
           <Link to="/track" onClick={() => setOpen(false)} aria-current={current("/track")?"page":undefined} className={active("/track")}>Track order <small className="md-nav-coming-soon">Coming soon</small></Link>
           <Link to="/account" onClick={() => setOpen(false)} aria-current={current("/account")?"page":undefined} className={active("/account")}>My account &amp; preferences</Link>
-          <Link to="/menus" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Browse menus <ArrowRight /></Link>
+          <Link to="/menus" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Order Now <ArrowRight /></Link>
         </nav>
       ) : null}
       <OwnDriverOfferBanner />

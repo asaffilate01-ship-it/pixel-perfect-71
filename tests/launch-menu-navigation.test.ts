@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { isLaunchMenuRoute, validateLaunchMenuSearch } from "../src/lib/launch-menu-navigation";
+import {
+  getLaunchMenuScrollTarget,
+  isLaunchMenuRoute,
+  validateLaunchMenuSearch,
+} from "../src/lib/launch-menu-navigation";
 import { MEALDECK_MENU_PAGES } from "../src/lib/mealdeck-menu-seo";
 
 describe("launch menu navigation", () => {
@@ -57,4 +61,12 @@ describe("launch menu navigation", () => {
       validateLaunchMenuSearch({ brand: "loadd", section: null, fulfilment: "pickup" }),
     ).toEqual({ brand: "loadd" });
   });
+  test("starts brand switches at page top on mobile and desktop", () => {
+    expect(getLaunchMenuScrollTarget(undefined, "brand")).toBe("top");
+    expect(getLaunchMenuScrollTarget()).toBe("top");
+    expect(getLaunchMenuScrollTarget(undefined, "items")).toBe("items");
+    expect(getLaunchMenuScrollTarget("wings", "brand")).toBe("items");
+    expect(getLaunchMenuScrollTarget("wings", "items")).toBe("items");
+  });
+
 });

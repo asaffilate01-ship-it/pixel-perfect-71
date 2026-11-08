@@ -856,6 +856,37 @@
   font-weight: 800;
   line-height: 1.4;
 }
+/* Make Souvano's purchased main unmissable; the included side remains below.
+   This uses the saved dish name, never an inferred recipe from the side group. */
+.md-kds-workspace .md-kds-line-title > p.md-kds-souvano-main {
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-left: 4px solid #a61c24;
+  border-radius: 6px;
+  background: #fff0d7;
+  line-height: 1.25;
+}
+.md-kds-workspace .md-kds-souvano-main-label {
+  color: #751c19;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.045em;
+  line-height: 1.3;
+}
+.md-kds-workspace .md-kds-souvano-main-name {
+  color: #22140f;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.18;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.md-kds-workspace .md-kds-souvano-main[data-main-state="verify-main"] {
+  background: #fff3e1;
+  border-color: #b45309;
+}
 
 .md-kds-workspace .md-kds-bag-labels {
   display: flex;
@@ -913,6 +944,36 @@
   border-radius: 1px;
   margin-top: 8px;
   background: var(--ops-muted);
+}
+/* A selected wing flavour or burger dip is an instruction to the kitchen,
+   not a low-priority add-on. Keep the exact purchased name and portion. */
+.md-kds-workspace .md-kds-choices > li.md-kds-flavour-choice {
+  display: block;
+  border: 1px solid #d8a263;
+  border-left: 4px solid #a61c24;
+  border-radius: 7px;
+  background: #fff0d7;
+  padding: 9px 11px;
+}
+.md-kds-workspace .md-kds-flavour-main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.md-kds-workspace .md-kds-flavour-eyebrow {
+  color: #771d16;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.07em;
+}
+.md-kds-workspace .md-kds-flavour-value {
+  color: #27150d;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: 0.015em;
+  overflow-wrap: anywhere;
 }
 .md-kds-workspace .md-kds-choice-group {
   font-weight: 800;

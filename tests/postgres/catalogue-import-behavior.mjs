@@ -16,6 +16,15 @@ import { verifyCataloguePriceRevision } from "./catalogue-price-revision-behavio
 const db = await createDatabase(process.argv.includes("--native"));
 const owner = id(801);
 const data = buildLaunchCatalogueData();
+// A shared Souvano side never names two alternative mains on the kitchen ticket.
+const souvanoSharedSide = data.modifierGroups.find((group) => group.id === "souvano-meal-side");
+assert.equal(souvanoSharedSide?.name, "Souvano · Included side");
+assert.deepEqual(
+  data.brands.find((brand) => brand.id === "souvano")?.sections
+    .filter((section) => ["stir-fry-donner", "lamb-chops"].includes(section.id))
+    .flatMap((section) => section.items.map((item) => item.name)),
+  ["Stir-Fry Doner", "Lamb Chops"],
+);
 const binding = { tenantId: id(901), locationId: id(902), stationId: id(903) };
 const managed = () =>
   buildManagedLaunchCatalogueImportSql({

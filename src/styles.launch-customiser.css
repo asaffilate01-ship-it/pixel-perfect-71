@@ -60,6 +60,19 @@
   font-size: 11px;
   line-height: 1.45;
 }
+.lmc-product-kind {
+  display: inline-block;
+  max-width: 100%;
+  margin: 1px 0 7px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #fff0d7;
+  color: #711a18;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
 .lmc-steps {
   display: flex;
   flex-shrink: 0;

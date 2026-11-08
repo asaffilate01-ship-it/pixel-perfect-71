@@ -77,7 +77,7 @@ export function MobileTabBar() {
           <div className="flex flex-1 justify-center">
             <Link
               to="/menus"
-              aria-label="Browse MealDeck menus and order for Luton collection or kerbside"
+              aria-label="Order Now — browse MealDeck menus for Luton collection or kerbside"
               aria-current={dealActive ? "page" : undefined}
               className={`relative -mt-8 flex h-20 w-14 rotate-[-6deg] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent flex-col items-center justify-center rounded-lg border border-ink/15 bg-paper shadow-xl transition-transform duration-300 active:scale-90 ${
                 dealActive ? "rotate-0 scale-105" : "hover:rotate-0"
@@ -101,8 +101,9 @@ export function MobileTabBar() {
                 />
               </span>
               <MealDeckLogo decorative className="h-8 w-8" />
-              <span className="mt-1 font-display text-[9px] font-black uppercase tracking-widest text-ink">
-                Menus
+              <span className="mt-1 flex flex-col items-center font-display text-[10px] font-black uppercase leading-[1.05] tracking-[0.04em] text-ink">
+                <span>Order</span>
+                <span>Now</span>
               </span>
             </Link>
           </div>

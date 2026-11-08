@@ -28,17 +28,20 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.4.4'
-      - name: Preserve current main and install pinned dependencies
+      - name: Install pinned dependencies
         run: |
           git config user.name 'MealDeck Release Bot'
           git config user.email 'release-bot@mealdeck.co.uk'
-          git merge --no-edit origin/main
           bun install --frozen-lockfile
       - name: Apply reviewed repairs and format changed application files
-        run: node scripts/finalise-own-driver-release.mjs
-      - name: Commit only source fixes to the delivery branch
         run: |
-          git add src tests .github/workflows/verify.yml
+          node scripts/finalise-own-driver-release.mjs
+          # Workflow changes are made only through the authorised connector.
+          # This job has source-content permissions, not workflow-write scope.
+          git restore --worktree .github/workflows/verify.yml
+      - name: Commit only application and test fixes to the delivery branch
+        run: |
+          git add src tests
           if ! git diff --cached --quiet; then
             git commit -m 'fix(delivery): isolate payment admission, update KDS fixtures and format release'
           fi

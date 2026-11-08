@@ -5,6 +5,7 @@ import { KDS_FULFILMENT_LABELS, kdsClockTime } from "@/lib/mealdeck-kds-view";
 import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { KdsPickupDetails } from "./kds-pickup-details";
 import { KdsMealComponents } from "./kds-meal-components";
+import { kdsModifierChoiceText, kdsSouvanoMainState } from "@/lib/mealdeck-kds-dish-clarity";
 
 /** Read-only durable history. No checklist, mutation, payment or print action. */
 export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
@@ -119,7 +120,14 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
               <p className="mb-1 text-xs font-bold uppercase md-ops-accent">{item.brand_name}</p>
               <div className="md-kds-line-title">
                 <span className="md-ops-ticket-quantity md-kds-quantity">{item.quantity}×</span>
-                <p>{item.item_name}</p>
+                <p className={kdsSouvanoMainState(item) ? "md-kds-souvano-main" : undefined} data-main-state={kdsSouvanoMainState(item) ?? undefined}>
+                  {kdsSouvanoMainState(item) && (
+                    <span className="md-kds-souvano-main-label">
+                      {kdsSouvanoMainState(item) === "verify-main" ? "VERIFY MAIN — check order record" : "MAIN DISH"}
+                    </span>
+                  )}
+                  <span className={kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined}>{item.item_name}</span>
+                </p>
               </div>
               {item.unit_pence != null && (
                 <p className="md-kds-line-price">
@@ -153,7 +161,7 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
                   {item.modifiers.map((modifier, index) => (
                     <li key={index}>
                       <span className="md-kds-choice-mark" aria-hidden="true" />
-                      <span>{modifier}</span>
+                      <span>{kdsModifierChoiceText(item, modifier)}</span>
                     </li>
                   ))}
                 </ul>
