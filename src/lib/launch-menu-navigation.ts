@@ -25,3 +25,14 @@ export function isLaunchMenuRoute(pathname: string): boolean {
     (/^\/menus\//i.test(path) && !!getMealDeckMenuPage(path.slice("/menus/".length)))
   );
 }
+
+/**
+ * Brand changes start at the top of the menu page, even on phones.
+ * Explicit section/food shortcuts keep their direct-to-items behaviour.
+ */
+export function getLaunchMenuScrollTarget(
+  sectionId?: string,
+  target: "brand" | "items" = "brand",
+): "top" | "items" {
+  return target === "brand" && !sectionId ? "top" : "items";
+}
