@@ -33,7 +33,7 @@ export const Route = createFileRoute("/checkout")({
     const metadata = seo({
       title: "Secure delivery, collection or kerbside checkout | MealDeck",
       description:
-        "Review your MealDeck basket, check own-driver free delivery within 3 km of LU4 8NU on orders over £15 after discounts, or choose collection and kerbside. Guest checkout needs no account.",
+        "Review your MealDeck basket, check own-driver free delivery within 4 km of LU4 8NU on orders over £15 after discounts, or choose collection and kerbside. Guest checkout needs no account.",
       path: "/checkout",
     });
     return {

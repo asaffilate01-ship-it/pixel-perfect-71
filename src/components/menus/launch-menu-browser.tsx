@@ -805,7 +805,7 @@ export function LaunchMenuBrowser({
                         Opening offer: 30% off the entire menu during our 6–8 November opening
                         hours.{" "}
                         {deliveryLive
-                          ? "Collection and kerbside have no minimum; free delivery requires £15 after the discount within 3 km of LU4 8NU."
+                          ? "Collection and kerbside have no minimum; free delivery requires £15 after the discount within 4 km of LU4 8NU."
                           : "No minimum order for collection or kerbside."}{" "}
                         Guests and members welcome. <Link to="/offers">See all three offers.</Link>
                         {hasMilkcakeOffer &&
@@ -862,7 +862,7 @@ export function LaunchMenuBrowser({
             <h2 id="menu-local-guide-title">Useful before you order</h2>
             <p>
               {deliveryLive
-                ? "Free delivery within 3 km on orders £15+ after discounts, or collect from 314–318 Selbourne Road, Luton, LU4 8NU."
+                ? "Free delivery within 4 km on orders £15+ after discounts, or collect from 314–318 Selbourne Road, Luton, LU4 8NU."
                 : "Collection and kerbside pickup from 314–318 Selbourne Road, Luton, LU4 8NU."}{" "}
               <Link to="/luton">See the Luton kitchen and opening hours</Link>.
             </p>
@@ -898,7 +898,7 @@ export function LaunchMenuBrowser({
           <p>
             Five Luton launch menus · Item and upgrade prices shown.{" "}
             {deliveryLive
-              ? "Free own-driver delivery within 3 km, £15 minimum after discounts; collection and kerbside also available."
+              ? "Free own-driver delivery within 4 km, £15 minimum after discounts; collection and kerbside also available."
               : "Collection and kerbside pickup; delivery is not available yet."}
           </p>
         </footer>
