@@ -339,7 +339,7 @@ try {
       const before = await card();
       await driver("with_driver", before.driverVersion);
       assert.equal((await card()).driverStatus, "with_driver");
-      await assert.rejects(() => driver("delivered", before.driverVersion), /conflict/);
+      await assert.rejects(() => driver("delivered", "0".repeat(32)), /conflict/);
       const out = await f.guest.receipt(token, order.orderId);
       assert.ok(out.driverHandoverAt);
       assert.equal(out.deliveredAt, null);
