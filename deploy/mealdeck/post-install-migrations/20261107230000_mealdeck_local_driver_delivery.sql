@@ -272,14 +272,13 @@ end $$;
 
 -- Extend the existing approved print snapshot and printer queue functions
 -- to include delivery, preserving their price/payment checks.
-create or replace function mealdeck_ops_private.receipt_snapshot(p_order uuid)
+create or replace function mealdeck_ops_private.receipt_snapshot_before_meal_components(p_order uuid)
 returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare o public.orders%rowtype;q mealdeck_private.checkout_quotes%rowtype;items jsonb;loc text;
 begin
   select * into o from public.orders where id=p_order;
-  select cq.* into q from mealdeck_private.checkout_quotes cq where cq.id=(
-    select s.quote_id from mealdeck_private.stripe_orders s where s.order_id=p_order
-    union all select p.quote_id from mealdeck_private.payment_orders p where p.order_id=p_order);
+  select cq.* into q from mealdeck_private.checkout_quotes cq
+    where cq.id=mealdeck_private.order_checkout_quote_id(p_order);
   if not found or o.accepted_at is null or o.fulfilment not in ('pickup','curbside','delivery') or o.handoff_code !~ '^\d{4}$'
     or o.packing_plan is distinct from q.packing_plan then raise exception 'mealdeck_printer_snapshot_unavailable'; end if;
   select name into loc from public.tenant_locations where id=o.location_id and tenant_id=o.tenant_id;
@@ -299,7 +298,9 @@ begin
     'customerName',coalesce(o.customer_name,'Customer'),'car',case when o.fulfilment='curbside' then o.vehicle else null end,
     'cutleryRequested',o.cutlery_requested,'packingPlan',o.packing_plan,'items',items,
     'subtotalPence',q.gross_pence,'discountPence',q.discount_pence,'totalPence',q.total_pence,
-    'currency','GBP','orderNotes',o.notes);
+    'currency','GBP','orderNotes',o.notes)
+    ||case when exists(select 1 from mealdeck_private.cash_orders where order_id=p_order)
+      then jsonb_build_object('paymentMethod','cash') else '{}'::jsonb end;
 end $$;
 
 create or replace function public.mealdeck_printer_acceptance_board(p_tenant uuid,p_location uuid)
@@ -323,11 +324,11 @@ begin
     perform mealdeck_ops_private.kds_assert_instructions(o.id);
     if jsonb_array_length(cards)>=100 then remaining:=remaining+1;continue;end if;
     card:=mealdeck_ops_private.kds_order_card(o.id,e);
-    -- Reuse the canonical purchased-line projection, not a pre-accept receipt.
     select coalesce(jsonb_agg(jsonb_build_object(
       'lineId',i->'checkout_line_id','parentLineId',i->'parent_checkout_line_id',
       'name',i->'item_name','brandName',i->'brand_name','quantity',i->'quantity',
-      'unitPence',i->'unit_pence','modifiers',i->'modifiers','notes',i->'notes','bags',i->'bags'
+      'unitPence',i->'unit_pence','modifiers',i->'modifiers','notes',i->'notes','bags',i->'bags',
+      'mealComponents',i->'mealComponents'
     ) order by i->>'checkout_line_id'),'[]'::jsonb) into items from jsonb_array_elements(card->'items') i;
     cards:=cards||jsonb_build_array(jsonb_build_object(
       'orderNumber',card->'order_number','orderId',o.id,'version',card->'version','displayCode',card->'display_code',
