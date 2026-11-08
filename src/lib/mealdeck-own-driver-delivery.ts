@@ -98,46 +98,70 @@ export class OwnDriverInvalidPostcode extends Error {
   }
 }
 
+/**
+ * Two independent ONS-based postcode services are used, in order.
+ * The secondary provider is used only if the primary lookup is unavailable,
+ * malformed, or does not know a postcode. Neither permits a browser-supplied
+ * coordinate or a prefix-only delivery approval.
+ */
 async function lookupPostcode(
   postcode: string,
   fetcher: typeof fetch,
 ): Promise<Coordinates | null> {
-  let response: Response;
-  try {
-    response = await fetcher(
-      "https://api.postcodes.io/postcodes/" + encodeURIComponent(postcode.replace(/\s/g, "")),
-      {
+  const compact = encodeURIComponent(postcode.replace(/\s/g, ""));
+  const endpoints = [
+    "https://api.postcodes.io/postcodes/" + compact,
+    "https://api.getthedata.com/postcode/" + compact,
+  ];
+  let receivedDefinitiveNotFound = false;
+  for (let provider = 0; provider < endpoints.length; provider++) {
+    let response: Response;
+    try {
+      response = await fetcher(endpoints[provider]!, {
         method: "GET",
         redirect: "error",
-        signal: AbortSignal.timeout(6_000),
+        signal: AbortSignal.timeout(5_000),
         headers: { Accept: "application/json" },
         cache: "no-store",
-      },
-    );
-  } catch {
-    throw new OwnDriverPostcodeUnavailable();
+      });
+    } catch {
+      continue; // Retry the independent provider; never claim delivery coverage.
+    }
+    if (response.status === 404) {
+      receivedDefinitiveNotFound = true;
+      continue;
+    }
+    if (!response.ok) continue;
+    let json: unknown;
+    try {
+      json = await response.json();
+    } catch {
+      continue;
+    }
+    if (!json || typeof json !== "object" || Array.isArray(json)) continue;
+    const envelope = json as Record<string, unknown>;
+    const record = provider === 0 ? envelope["result"] : envelope["data"];
+    if (
+      !record ||
+      typeof record !== "object" ||
+      Array.isArray(record)
+    ) {
+      if (provider === 1 && envelope["status"] === "no_match") {
+        receivedDefinitiveNotFound = true;
+      }
+      continue;
+    }
+    if (provider === 1 && envelope["status"] !== "match") continue;
+    const data = record as Record<string, unknown>;
+    if (normaliseUkPostcode(data["postcode"]) !== postcode) continue;
+    if (provider === 1 && data["status"] !== "live") continue;
+    const latitude = provider === 1 ? Number(data["latitude"]) : data["latitude"];
+    const longitude = provider === 1 ? Number(data["longitude"]) : data["longitude"];
+    const coordinates = validCoordinates(latitude, longitude);
+    if (coordinates) return coordinates;
   }
-  if (response.status === 404) return null;
-  if (!response.ok) throw new OwnDriverPostcodeUnavailable();
-  let json: unknown;
-  try {
-    json = await response.json();
-  } catch {
-    throw new OwnDriverPostcodeUnavailable();
-  }
-  if (!json || typeof json !== "object" || Array.isArray(json))
-    throw new OwnDriverPostcodeUnavailable();
-  const result = (json as Record<string, unknown>)["result"];
-  if (!result || typeof result !== "object" || Array.isArray(result))
-    throw new OwnDriverPostcodeUnavailable();
-  const data = result as Record<string, unknown>;
-  if (normaliseUkPostcode(data["postcode"]) !== postcode) throw new OwnDriverPostcodeUnavailable();
-  return (
-    validCoordinates(data["latitude"], data["longitude"]) ??
-    (() => {
-      throw new OwnDriverPostcodeUnavailable();
-    })()
-  );
+  if (receivedDefinitiveNotFound) return null;
+  throw new OwnDriverPostcodeUnavailable();
 }
 
 /** Never trust a browser-provided radius result or coordinates. Checked again at quote time. */
