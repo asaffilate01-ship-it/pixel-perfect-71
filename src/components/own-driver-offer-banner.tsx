@@ -71,14 +71,13 @@ export function OwnDriverOfferBanner() {
       <span>
         {available ? (
           <>
-            <strong>FREE delivery is now available!</strong> Within 3 km of LU4 8NU, with a minimum
+            <strong>Due to popular demand: FREE delivery is now available!</strong> Within 3 km of LU4 8NU, with a minimum
             payable order of £15 after all discounts. Our own driver · estimated within 60 minutes.
           </>
         ) : (
           <>
-            <strong>FREE delivery planned from 3pm today, Sunday 8 November!</strong> Within 3 km of
-            LU4 8NU, on orders paying £15+ after discounts. Starts once the kitchen, printer and
-            driver have passed their launch checks.
+            <strong>Due to popular demand: FREE delivery planned from 3pm today, Sunday 8 November!</strong> Within 3 km of
+            LU4 8NU, on orders paying £15+ after discounts.
           </>
         )}
       </span>
