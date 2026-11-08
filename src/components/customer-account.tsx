@@ -182,14 +182,14 @@ function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
       </div>
       <h2 id="account-guest-heading">Just your name and WhatsApp number.</h2>
       <p>
-        Choose your food and continue as a guest this opening weekend. Enter your name and WhatsApp
+        Choose your food and continue as a guest while member registration is being prepared. Enter your name and WhatsApp
         number at checkout.
       </p>
       <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>
         Continue without registering <ArrowRight size={18} aria-hidden="true" />
       </a>
       <p className="md-account-fine md-account-guest-note">
-        Email registration opens at 00:00 on Monday 9 November 2026, UK time. Guest orders earn no
+        Email registration opens at 1pm on Monday 9 November 2026, UK time. Guest orders earn no
         loyalty points.
       </p>
     </section>
