@@ -6,6 +6,7 @@ import {
   parseOwnDriverAddress,
   postcodeDistanceMetres,
   OwnDriverInvalidPostcode,
+  OWN_DRIVER_RADIUS_METRES,
 } from "../src/lib/mealdeck-own-driver-delivery";
 
 const coords = { latitude: 51.893, longitude: -0.459 };
@@ -66,14 +67,15 @@ describe("MealDeck own-driver delivery safeguards", () => {
     expect(ownDriverShortfallPence(2000)).toBe(0);
     expect(ownDriverShortfallPence(-1)).toBeNull();
   });
-  test("3 km radius has a precise boundary", () => {
+  test("4 km radius has a precise boundary", () => {
+    expect(OWN_DRIVER_RADIUS_METRES).toBe(4000);
     expect(postcodeDistanceMetres(coords, coords)).toBe(0);
     expect(
       postcodeDistanceMetres(coords, { ...coords, latitude: coords.latitude + 0.02 }),
     ).toBeGreaterThan(2000);
     expect(
       postcodeDistanceMetres(coords, { ...coords, latitude: coords.latitude + 0.04 }),
-    ).toBeGreaterThan(3000);
+    ).toBeGreaterThan(4000);
   });
   const offline = (async () => {
     throw new Error("outbound network unavailable");
@@ -93,19 +95,28 @@ describe("MealDeck own-driver delivery safeguards", () => {
     // Reported live failure: LU2 7EZ is 2,506 m away and must now pass.
     const north = await checkOwnDriverArea("LU2 7EZ", counting);
     expect(north).toMatchObject({ eligible: true, distanceMetres: 2506 });
+    // Previous 3 km boundary no longer excludes 3.3 km delivery.
+    const south = await checkOwnDriverArea("LU1 5QD", counting);
+    expect(south).toMatchObject({ eligible: true, distanceMetres: 3317, source: "local_store" });
+    const newLuton = await checkOwnDriverArea("LU4 9GF", counting);
+    expect(newLuton).toMatchObject({ eligible: true, distanceMetres: 1210 });
     expect(calls).toBe(0);
   });
 
-  test("3 km boundary: 3,002 m postcode is refused, 2,99x m postcode accepted", async () => {
-    // OS grid 3,002 m (postcodes.io says 2,993 m) — conservatively refused.
-    const outside = await checkOwnDriverArea("LU4 0PR", offline);
-    expect(outside.eligible).toBe(false);
-    expect(outside.distanceMetres).toBe(3002);
+  test("4 km boundary accepts 3,999 m and refuses 4,003 m from the verified local store", async () => {
+    const inside = await checkOwnDriverArea("LU5 5TB", offline);
+    expect(inside).toMatchObject({ eligible: true, distanceMetres: 3999, source: "local_store" });
+    const outside = await checkOwnDriverArea("LU2 9ER", offline);
+    expect(outside).toMatchObject({ eligible: false, distanceMetres: 4003, source: "local_store" });
+    const newlyEligible = await checkOwnDriverArea("LU4 0PR", offline);
+    expect(newlyEligible).toMatchObject({ eligible: true, distanceMetres: 3002 });
   });
 
-  test("a real LU postcode beyond 3 km is refused, not approved by prefix", async () => {
-    const far = await checkOwnDriverArea("LU2 9BL", offline);
-    expect(far).toMatchObject({ eligible: false, distanceMetres: 3954, source: "local_store" });
+  test("a real LU postcode at 3,954 m now qualifies but a farther postcode does not", async () => {
+    const close = await checkOwnDriverArea("LU2 9BL", offline);
+    expect(close).toMatchObject({ eligible: true, distanceMetres: 3954, source: "local_store" });
+    const far = await checkOwnDriverArea("LU2 9ER", offline);
+    expect(far.eligible).toBe(false);
   });
 
   test("non-existent LU postcode with lookup down is never approved", async () => {

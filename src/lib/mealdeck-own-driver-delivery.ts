@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /** Luton own-driver launch rules. Distances use postcode centroids, not road routes. */
 export const OWN_DRIVER_BASE_POSTCODE = "LU4 8NU";
-export const OWN_DRIVER_RADIUS_METRES = 3_000;
+export const OWN_DRIVER_RADIUS_METRES = 4_000;
 export const OWN_DRIVER_MINIMUM_PENCE = 1_500;
 export const OWN_DRIVER_MAX_MINUTES = 60;
 
@@ -76,7 +76,7 @@ function validCoordinates(lat: unknown, lon: unknown): Coordinates | null {
   return { latitude: lat, longitude: lon };
 }
 
-/** Haversine in metres: 3km straight-line radius from LU4 8NU. */
+/** Haversine in metres: 4km straight-line radius from LU4 8NU. */
 export function postcodeDistanceMetres(a: Coordinates, b: Coordinates): number {
   const rad = Math.PI / 180;
   const deltaLat = (b.latitude - a.latitude) * rad;
@@ -221,7 +221,7 @@ export async function checkOwnDriverArea(
     };
   }
   // Not a live postcode within 5 km in the current OS release, so it cannot be
-  // inside the 3 km circle unless it is newer than that release.
+  // inside the 4 km circle unless it is newer than that release.
   let destination: Coordinates | null;
   try {
     destination = await lookupPostcode(postcode, fetcher);
