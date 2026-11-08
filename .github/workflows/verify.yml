@@ -64,6 +64,12 @@ jobs:
           --rule 'prettier/prettier: off'
       - name: Installable app cache isolation and offline behavior
         run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
+      - name: MealDeck own-driver PWA state and privacy contract
+        run: bun test tests/mealdeck-driver-app-view.test.ts tests/mealdeck-driver-app-contract.test.ts
+      - name: Driver UI contract and dispatch implementation lint
+        run: |
+          node --check public/driver-sw.js
+          bunx eslint src/lib/mealdeck-driver-app-view.ts src/lib/mealdeck-driver-browser.ts src/components/driver/driver-workspace.tsx src/components/ops/driver-dispatch-panel.tsx src/routes/driver.tsx tests/mealdeck-driver-app-view.test.ts --rule 'prettier/prettier: off'
       - name: Page loading and failed-route recovery
         run: node --conditions=development --import tsx --test tests/mealdeck-route-recovery.test.tsx tests/mealdeck-arcade-navigation.test.tsx
       - name: Installable app implementation checks
