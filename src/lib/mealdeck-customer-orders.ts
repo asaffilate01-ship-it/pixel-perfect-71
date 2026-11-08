@@ -7,7 +7,7 @@ export type CustomerOrderSummary = {
   verifiedPaid: boolean;
   held: boolean;
   paymentSessionExpired: boolean;
-  fulfilment: "pickup" | "curbside";
+  fulfilment: "pickup" | "curbside" | "delivery";
   totalPence: number;
   createdAt: string;
   paidAt: string | null;
@@ -44,7 +44,7 @@ export function parseCustomerOrders(value: unknown): CustomerOrderSummary[] | nu
       typeof entry["verifiedPaid"] !== "boolean" ||
       typeof entry["held"] !== "boolean" ||
       typeof entry["paymentSessionExpired"] !== "boolean" ||
-      !["pickup", "curbside"].includes(String(entry["fulfilment"])) ||
+      !["pickup", "curbside", "delivery"].includes(String(entry["fulfilment"])) ||
       !Number.isSafeInteger(entry["totalPence"]) ||
       (entry["totalPence"] as number) < 1 ||
       (entry["totalPence"] as number) > 10_000_000 ||
@@ -71,7 +71,7 @@ export function parseCustomerOrders(value: unknown): CustomerOrderSummary[] | nu
       verifiedPaid: entry["verifiedPaid"],
       held: entry["held"],
       paymentSessionExpired: entry["paymentSessionExpired"],
-      fulfilment: entry["fulfilment"] as "pickup" | "curbside",
+      fulfilment: entry["fulfilment"] as "pickup" | "curbside" | "delivery",
       totalPence: entry["totalPence"] as number,
       createdAt: entry["createdAt"],
       ...Object.fromEntries(timestamps.map((key) => [key, entry[key]])),
@@ -84,7 +84,8 @@ export function customerOrderStatus(order: CustomerOrderSummary) {
   if (!order.verifiedPaid)
     return order.paymentSessionExpired ? "Payment session expired" : "Awaiting payment";
   if (order.completedAt) return "Completed";
-  if (order.readyForCollectionAt) return "Ready to collect";
+  if (order.readyForCollectionAt)
+    return order.fulfilment === "delivery" ? "Packed for delivery" : "Ready to collect";
   if (order.preparingAt) return "Preparing";
   if (order.acceptedAt) return "Accepted";
   return "Order placed";

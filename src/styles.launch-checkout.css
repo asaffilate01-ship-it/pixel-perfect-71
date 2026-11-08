@@ -536,7 +536,7 @@
 }
 .md-checkout-order-code > strong {
   font:
-    800 58px/1.05 Outfit,
+    800 34px/1.05 Outfit,
     sans-serif;
   letter-spacing: 0.08em;
   color: #bd1420;
@@ -546,28 +546,33 @@
 .md-checkout-order-code small {
   font-size: 12px;
 }
-.md-checkout-collection-code {
+.md-checkout-confirmation-code {
   display: grid;
-  gap: 6px;
+  gap: 9px;
   margin: 18px 0;
-  padding: 14px 18px;
+  padding: 20px 16px;
+  border: 1px solid #dec5a7;
   border-radius: 14px;
   background: #f5eee4;
+  text-align: center;
 }
-.md-checkout-collection-code > span {
-  font-size: 13px;
-  font-weight: 700;
+.md-checkout-confirmation-code > span {
+  font-size: 14px;
+  font-weight: 800;
+  color: #4a3628;
 }
-.md-checkout-collection-code > strong {
+.md-checkout-confirmation-code > strong {
   font:
-    800 28px/1.2 Outfit,
+    800 clamp(40px, 11vw, 58px)/1.08 Outfit,
     sans-serif;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
+  color: #bd1420;
 }
-.md-checkout-collection-code > small {
-  font-size: 12px;
+.md-checkout-confirmation-code > small {
+  font-size: 13px;
   line-height: 1.5;
+  color: #4a3628;
 }
 .md-checkout-estimate {
   display: flex;

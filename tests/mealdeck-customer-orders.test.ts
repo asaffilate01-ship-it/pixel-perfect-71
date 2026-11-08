@@ -45,6 +45,26 @@ describe("private customer order summaries", () => {
     expect(parseCustomerOrders({ orders: [{ ...order, totalPence: 0.5 }] })).toBeNull();
     expect(parseCustomerOrders({ orders: [] })).toEqual([]);
   });
+  test("includes paid delivery orders and keeps their existing code", () => {
+    const delivery = parseCustomerOrders({
+      orders: [{ ...order, fulfilment: "delivery", handoffCode: "0042", orderNumber: "0007" }],
+    });
+    expect(delivery?.[0]?.fulfilment).toBe("delivery");
+    expect(delivery?.[0]?.handoffCode).toBe("0042");
+    expect(delivery?.[0]?.orderNumber).toBe("0007");
+    expect(customerOrderStatus({ ...delivery![0]!, readyForCollectionAt: order.createdAt })).toBe(
+      "Packed for delivery",
+    );
+    expect(customerOrderStatus({ ...delivery![0]!, completedAt: order.createdAt })).toBe("Completed");
+    expect(
+      parseCustomerOrders({
+        orders: [
+          { ...order, fulfilment: "delivery", verifiedPaid: false, paidAt: null, handoffCode: null },
+        ],
+      })?.[0]?.handoffCode,
+    ).toBeNull();
+    expect(parseCustomerOrders({ orders: [{ ...order, fulfilment: "dine_in" }] })).toBeNull();
+  });
   test("shows verified progress and gives payment holds precedence over stale readiness", () => {
     const base = parseCustomerOrders({ orders: [order] })![0]!;
     expect(customerOrderStatus(base)).toBe("Order placed");

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, RefreshCw, ShoppingBag } from "lucide-react";
 import { customerRpc } from "@/lib/mealdeck-customer-browser";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
+import { visibleCustomerConfirmationCode } from "@/lib/mealdeck-customer-confirmation";
 import {
   customerOrderStatus,
   parseCustomerOrders,
@@ -98,8 +99,17 @@ export function CustomerOrders() {
                   </strong>
                   <span>
                     {date(order.paidAt ?? order.createdAt)} ·{" "}
-                    {order.fulfilment === "curbside" ? "Kerbside" : "Collection"}
+                    {order.fulfilment === "delivery"
+                      ? "Delivery"
+                      : order.fulfilment === "curbside"
+                        ? "Kerbside"
+                        : "Collection"}
                   </span>
+                  {visibleCustomerConfirmationCode(order) && (
+                    <span className="md-account-confirmation-code">
+                      Confirmation code <strong>{visibleCustomerConfirmationCode(order)}</strong>
+                    </span>
+                  )}
                   <b
                     data-ready={
                       order.verifiedPaid && !!order.readyForCollectionAt && !order.completedAt

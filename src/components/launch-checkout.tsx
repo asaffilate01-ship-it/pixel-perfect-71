@@ -76,6 +76,10 @@ import { normaliseUkPostcode, parseOwnDriverAddress } from "@/lib/mealdeck-own-d
 import { deliveryAreaRejectionMessage } from "@/lib/mealdeck-delivery-postcode-notice";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
+  customerConfirmationInstruction,
+  visibleCustomerConfirmationCode,
+} from "@/lib/mealdeck-customer-confirmation";
+import {
   MAX_ORDER_NOTES_LENGTH,
   ORDER_NOTES_ERROR_MESSAGE,
   normaliseOrderNotes,
@@ -1843,22 +1847,28 @@ function LaunchCheckoutView({
                           ? "Your basket is waiting for you."
                           : "We're checking your payment."}
                     </h2>
+                    {visibleCustomerConfirmationCode(receipt) && (
+                      <div
+                        className="md-checkout-confirmation-code"
+                        role="group"
+                        aria-label="Your confirmation code"
+                      >
+                        <span>Your confirmation code</span>
+                        <strong>{visibleCustomerConfirmationCode(receipt)}</strong>
+                        <small>
+                          {customerConfirmationInstruction(receipt.fulfilment)} Keep this private
+                          order page open or take a screenshot so you have the code on your phone.
+                          This is the same code shown on our kitchen screen and receipt.
+                        </small>
+                      </div>
+                    )}
                     {receipt.verifiedPaid && orderDisplayNumber(receipt.orderNumber, "") && (
                       <div className="md-checkout-order-code">
                         <span>Your order number</span>
                         <strong>{orderDisplayNumber(receipt.orderNumber, "")}</strong>
-                        <small>Use this number when speaking to our team.</small>
+                        <small>Use this separate order number when speaking to our team.</small>
                       </div>
                     )}
-                    {receipt.verifiedPaid &&
-                      receipt.handoffCode &&
-                      receipt.fulfilment !== "delivery" && (
-                        <div className="md-checkout-collection-code">
-                          <span>Collection code</span>
-                          <strong>{receipt.handoffCode}</strong>
-                          <small>Give this code to the team when your food is handed over.</small>
-                        </div>
-                      )}
                     {receipt.verifiedPaid && !receipt.completedAt && (
                       <p className="md-checkout-estimate">
                         <Clock3 size={18} />
