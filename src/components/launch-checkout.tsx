@@ -1,4 +1,11 @@
 import { usePublicMenu } from "@/components/menus/use-public-menu";
+import { MilkcakeOfferTerms } from "@/components/menus/milkcake-offer-terms";
+import {
+  isMealDeckMilkcakePromotion,
+  appliedMilkcakePromotion,
+  milkcakeQuoteDisplayTotals,
+  type AppliedMealDeckMilkcakePromotion,
+} from "@/lib/mealdeck-milkcake-promotion";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { KERBSIDE_PARKING_INSTRUCTION } from "@/lib/mealdeck-customer-entry";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -52,8 +59,8 @@ import type { MealDeckPackingPlan } from "@/lib/mealdeck-checkout-selection";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import {
   formatLaunchMenuPrice,
-  launchMenuBasketDisplayPrice,
-  launchMenuPickDisplayPrice,
+  formatLaunchPromotionalPrice,
+  launchMenuOfferBasketDisplayPrice,
 } from "@/lib/launch-menu-display-prices";
 import { launchCrossSelectionSummaries } from "@/lib/launch-menu-upsells";
 import {
@@ -125,6 +132,7 @@ type PricedLine = {
   base_unit_pence: number;
   unit_pence: number;
   line_pence: number;
+  promotion?: AppliedMealDeckMilkcakePromotion;
   modifiers: {
     group_name: string;
     name: string;
@@ -285,6 +293,18 @@ export function DetailedOrderLines({
   lines: PricedLine[];
   packingPlan: MealDeckPackingPlan;
 }) {
+  const promotion = appliedMilkcakePromotion(lines);
+  const offerBagNumber = promotion
+    ? Math.min(
+        ...packingPlan.bags
+          .filter((bag) =>
+            bag.allocations.some(
+              (allocation) => allocation.lineId === promotion.lineId && allocation.quantity > 0,
+            ),
+          )
+          .map((bag) => bag.number),
+      )
+    : null;
   return (
     <div className="md-checkout-itemised">
       <p className="md-checkout-packing-label">
@@ -306,6 +326,10 @@ export function DetailedOrderLines({
               const parent = line.parentLineId
                 ? lines.find((item) => item.lineId === line.parentLineId)
                 : null;
+              const offerQuantity =
+                promotion?.lineId === line.lineId && offerBagNumber === bag.number ? 1 : 0;
+              const displayLinePence =
+                line.unit_pence * allocation.quantity - (offerQuantity ? 300 : 0);
               return (
                 <li key={allocation.lineId} className={parent ? "md-checkout-linked-extra" : ""}>
                   <div className="md-checkout-line-detail">
@@ -313,14 +337,49 @@ export function DetailedOrderLines({
                       <strong>
                         {allocation.quantity} × {line.name}
                       </strong>
-                      <span>{formatLaunchMenuPrice(line.unit_pence * allocation.quantity)}</span>
+                      <span>
+                        {formatLaunchPromotionalPrice(
+                          displayLinePence,
+                          offerQuantity ? line.promotion : undefined,
+                        )}
+                      </span>
                     </div>
                     {parent && <small>Extra with {parent.name}</small>}
+                    {offerQuantity === 1 && (
+                      <p className="md-checkout-offer">
+                        <MilkcakeOfferTerms explained />
+                      </p>
+                    )}
                     <dl className="md-checkout-choice-list">
-                      <div>
-                        <dt>{line.modifiers.length ? "Each, including choices" : "Each"}</dt>
-                        <dd>{formatLaunchMenuPrice(line.unit_pence)}</dd>
-                      </div>
+                      {offerQuantity === 1 ? (
+                        <>
+                          <div>
+                            <dt>
+                              1 milkcake · offer included
+                              {line.modifiers.length ? ", with choices" : ""}
+                            </dt>
+                            <dd>
+                              {formatLaunchPromotionalPrice(line.unit_pence - 300, line.promotion)}
+                            </dd>
+                          </div>
+                          {allocation.quantity > 1 && (
+                            <div>
+                              <dt>
+                                {allocation.quantity - 1} additional milkcake
+                                {allocation.quantity > 2 ? "s" : ""} · before 30% off
+                              </dt>
+                              <dd>
+                                {formatLaunchMenuPrice(line.unit_pence * (allocation.quantity - 1))}
+                              </dd>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div>
+                          <dt>{line.modifiers.length ? "Each, including choices" : "Each"}</dt>
+                          <dd>{formatLaunchMenuPrice(line.unit_pence)}</dd>
+                        </div>
+                      )}
                       {line.modifiers.map((modifier, index) => (
                         <div key={index}>
                           <dt>
@@ -438,23 +497,31 @@ function ReceiptProgress({ receipt }: { receipt: Receipt }) {
   );
 }
 
-function PriceSummary({
+export function CheckoutPriceSummary({
   total,
   fulfilment,
 }: {
-  total: Pick<Quote, "grossPence" | "discountPence" | "totalPence">;
+  total: Pick<Quote, "grossPence" | "discountPence" | "totalPence" | "lines">;
   fulfilment?: Fulfilment | null;
 }) {
+  const display = milkcakeQuoteDisplayTotals(total);
+  const hasMilkcakeOffer = !!display.promotion;
   return (
     <dl className="md-checkout-totals">
       <div>
         <dt>Items & upgrades</dt>
-        <dd>{formatLaunchMenuPrice(total.grossPence)}</dd>
+        <dd>{formatLaunchPromotionalPrice(display.itemsSubtotalPence, display.promotion)}</dd>
       </div>
-      {total.discountPence > 0 && (
+      {display.openingDiscountPence > 0 && (
         <div className="md-checkout-discount">
-          <dt>Opening weekend · 30% off</dt>
-          <dd>−{formatLaunchMenuPrice(total.discountPence)}</dd>
+          <dt>{hasMilkcakeOffer ? "30% off other items & extras" : "Opening weekend · 30% off"}</dt>
+          <dd>−{formatLaunchMenuPrice(display.openingDiscountPence)}</dd>
+        </div>
+      )}
+      {hasMilkcakeOffer && (
+        <div>
+          <dt>One 99p milkcake</dt>
+          <dd>Discount included</dd>
         </div>
       )}
       <div>
@@ -831,7 +898,11 @@ function LaunchCheckoutView({
       : "member:" + (account?.status === "signed_in" ? account.profile.userId : "signed-out");
   const publicMenu = usePublicMenu();
   const { catalogue } = publicMenu;
-  const displayTotal = launchMenuBasketDisplayPrice(picks, catalogue).itemsSubtotalPence;
+  const basketPrice = launchMenuOfferBasketDisplayPrice(picks, catalogue);
+  const displayTotal = basketPrice.itemsSubtotalPence;
+  const hasMilkcakeOffer = quote
+    ? !!appliedMilkcakePromotion(quote.lines)
+    : basketPrice.hasMilkcakeOffer;
   const accountReturnTo = whatsAppCheckout
     ? "/whatsapp/checkout"
     : !orderId && (groupExpected || groupCheckout)
@@ -1904,7 +1975,7 @@ function LaunchCheckoutView({
                   </p>
                   <DetailedOrderLines lines={receipt.lines} packingPlan={receipt.packingPlan} />
                   <CheckoutSpecialRequestsReview notes={receipt.notes ?? null} />
-                  <PriceSummary total={receipt} fulfilment={receipt.fulfilment} />
+                  <CheckoutPriceSummary total={receipt} fulfilment={receipt.fulfilment} />
                 </aside>
               </div>
             )}
@@ -2675,7 +2746,7 @@ function LaunchCheckoutView({
                     </>
                   ) : (
                     <ul>
-                      {picks.map((pick) => {
+                      {picks.map((pick, index) => {
                         const found = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
                         return (
                           <li key={pick.key}>
@@ -2704,10 +2775,18 @@ function LaunchCheckoutView({
                                     ].join(" · ")
                                   : ""}
                               </small>
+                              {isMealDeckMilkcakePromotion(found?.item.promotion) && (
+                                <small>
+                                  <MilkcakeOfferTerms explained />
+                                </small>
+                              )}
                             </div>
                             <span>
-                              {formatLaunchMenuPrice(
-                                launchMenuPickDisplayPrice(pick, catalogue).itemsSubtotalPence,
+                              {formatLaunchPromotionalPrice(
+                                basketPrice.lines[index]!.displayedItemsSubtotalPence,
+                                basketPrice.lines[index]!.promotionQuantity
+                                  ? found?.item.promotion
+                                  : undefined,
                               )}
                             </span>
                           </li>
@@ -2749,7 +2828,7 @@ function LaunchCheckoutView({
                     />
                   )}
                   {quote ? (
-                    <PriceSummary total={quote} fulfilment={fulfilment} />
+                    <CheckoutPriceSummary total={quote} fulfilment={fulfilment} />
                   ) : (
                     <dl className="md-checkout-totals">
                       <div className="md-checkout-total">
@@ -2760,14 +2839,18 @@ function LaunchCheckoutView({
                   )}
                   {quote?.discountPence ? (
                     <p className="md-checkout-offer">
-                      30% off every item and upgrade.{" "}
+                      {hasMilkcakeOffer
+                        ? "One milkcake is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount, applied above with the other eligible items and extras."
+                        : "30% off every item and upgrade."}{" "}
                       {fulfilment === "delivery"
                         ? "Free delivery when £15+ after discount."
                         : "No minimum order."}
                     </p>
-                  ) : status?.openingOffer.status === "active" ? (
+                  ) : !quote && status?.openingOffer.status === "active" ? (
                     <p className="md-checkout-offer">
-                      Your 30% opening discount will be applied to the verified checkout total.
+                      {hasMilkcakeOffer
+                        ? "One milkcake per order is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount, confirmed with your final total."
+                        : "Your 30% opening discount will be applied to the verified checkout total."}
                     </p>
                   ) : null}
                   <CheckoutActionFeedback issue={issue} paymentPending={paymentPending} />
