@@ -65,7 +65,10 @@ export function OfferDiscovery() {
               <br />
               to join the table.
             </h2>
-            <p>Your MealDeck offers for November. Luton collection, kerbside pickup and eligible delivery where available. <Link to="/delivery-terms">Delivery T&amp;Cs apply</Link>.</p>
+            <p>
+              Your MealDeck offers for November. Luton collection, kerbside pickup and eligible
+              delivery where available. <Link to="/delivery-terms">Delivery T&amp;Cs apply</Link>.
+            </p>
           </div>
           <Link to="/offers" className="md-btn md-btn-yellow">
             See all offer details <ArrowRight size={18} aria-hidden="true" />
