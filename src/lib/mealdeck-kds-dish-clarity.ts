@@ -1,39 +1,29 @@
 import type { KdsOrderItem } from "./mealdeck-kds";
 
-/**
- * Souvano sells three distinct main dishes. Their common side choice is NOT
- * the name of a fourth, combined main. Work only from the frozen order's dish
- * name and modifier text: never choose Lamb Chops or Doner by inference.
- */
-type KdsDishIdentity = Pick<
-  KdsOrderItem,
-  "brand_name" | "item_name" | "parent_checkout_line_id"
->;
+type KdsDishIdentity = Pick<KdsOrderItem, "brand_name" | "item_name" | "parent_checkout_line_id">;
+
+function comparable(value: string): string {
+  // Match historical spelling/typography without rewriting purchased text.
+  return value.trim().replace(/[\u2010-\u2015]/g, "-").replace(/\s+/g, " ");
+}
 
 function isSouvano(item: Pick<KdsOrderItem, "brand_name">): boolean {
-  return item.brand_name.trim().toLocaleLowerCase("en-GB") === "souvano";
+  return comparable(item.brand_name).toLocaleLowerCase("en-GB") === "souvano";
 }
 
-const knownMainNames = /^(?:stir[- ]fry doner|heatwave|lamb chops)$/i;
-const ambiguousMainNames =
-  /\b(?:lamb chops\s*\/\s*(?:stir[- ]fry\s*)?doner|(?:stir[- ]fry\s*)?doner\s*\/\s*lamb chops)\b/i;
+const knownMainNames = /^(?:stir[- ]fry donn?er|heatwave|lamb chops)$/i;
 
-/** Only known ordered mains receive a MAIN label; a combined legacy name is flagged. */
-export function kdsSouvanoMainState(
-  item: KdsDishIdentity,
-): "main" | "verify-main" | null {
+/** Never choose a main from a shared side, price or flavour. */
+export function kdsSouvanoMainState(item: KdsDishIdentity): "main" | "verify-main" | null {
   if (!isSouvano(item) || item.parent_checkout_line_id) return null;
-  if (knownMainNames.test(item.item_name.trim())) return "main";
-  if (ambiguousMainNames.test(item.item_name.trim())) return "verify-main";
-  return null;
+  const name = comparable(item.item_name);
+  // Both dish names need review regardless of slash/order/legacy spelling.
+  if (/\blamb chops\b/i.test(name) && /\bdonn?er\b/i.test(name)) return "verify-main";
+  return knownMainNames.test(name) ? "main" : null;
 }
 
-/**
- * Hide an old shared modifier-group label that misleadingly lists two mains.
- * Keep the purchased side itself (Fries / Rice / Naan) intact.
- */
 const sharedSideGroup =
-  /^souvano\s*·\s*included side\s*(?:\(\s*(?:doner\s*\/\s*lamb chops|(?:lamb chops\s*\/\s*(?:stir[- ]fry\s*)?doner))\s*\))?$/i;
+  /^(?:souvano\s*·\s*)?included side(?:\s*\(\s*(?:heatwave|(?:stir[- ]fry )?donn?er\s*\/\s*lamb chops|lamb chops\s*\/\s*(?:stir[- ]fry )?donn?er)\s*\))?$/i;
 
 export function kdsModifierGroupLabel(
   item: Pick<KdsOrderItem, "brand_name">,
@@ -41,22 +31,21 @@ export function kdsModifierGroupLabel(
 ): string | null {
   const groupName = rawGroupName?.trim() ?? "";
   if (!groupName) return null;
-  if (isSouvano(item) && sharedSideGroup.test(groupName)) return "Included side";
-  // The Heatwave side is a distinct, still-uniquely-identified DB group.
-  if (isSouvano(item) && /^souvano\s*·\s*included side\s*\(heatwave\)$/i.test(groupName)) {
-    return "Included side";
-  }
-  return groupName;
+  return isSouvano(item) && sharedSideGroup.test(comparable(groupName))
+    ? "Included side"
+    : groupName;
 }
 
-/** Legacy modifier text may itself contain the misleading group prefix. */
+/** Replace only a recognised group prefix; keep the actual side/notes intact. */
 export function kdsModifierChoiceText(
   item: Pick<KdsOrderItem, "brand_name">,
   rawModifier: string,
 ): string {
   if (!isSouvano(item)) return rawModifier;
-  return rawModifier.replace(
-    /^souvano\s*·\s*included side\s*\(\s*(?:doner\s*\/\s*lamb chops|lamb chops\s*\/\s*(?:stir[- ]fry\s*)?doner)\s*\)\s*:\s*/i,
-    "Included side: ",
-  );
+  const separator = rawModifier.indexOf(":");
+  if (separator < 0 || !sharedSideGroup.test(comparable(rawModifier.slice(0, separator)))) {
+    return rawModifier;
+  }
+  const choice = rawModifier.slice(separator + 1).trimStart();
+  return choice ? `Included side: ${choice}` : rawModifier;
 }
