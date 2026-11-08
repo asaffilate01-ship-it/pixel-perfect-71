@@ -4,7 +4,10 @@ type KdsDishIdentity = Pick<KdsOrderItem, "brand_name" | "item_name" | "parent_c
 
 function comparable(value: string): string {
   // Match historical spelling/typography without rewriting purchased text.
-  return value.trim().replace(/[\u2010-\u2015]/g, "-").replace(/\s+/g, " ");
+  return value
+    .trim()
+    .replace(/[\u2010-\u2015]/g, "-")
+    .replace(/\s+/g, " ");
 }
 
 function isSouvano(item: Pick<KdsOrderItem, "brand_name">): boolean {

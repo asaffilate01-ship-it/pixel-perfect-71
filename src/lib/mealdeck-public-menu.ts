@@ -4,6 +4,10 @@ import {
   type LaunchMenuItem,
 } from "./launch-menu-catalogue";
 import { getLaunchCrossOffers } from "./launch-menu-upsells";
+import {
+  isPublicMilkcakePromotion,
+  type MealDeckMilkcakePromotion,
+} from "./mealdeck-milkcake-promotion";
 
 type PublicMenuOption = { pricePence: number; available: boolean; label?: string };
 
@@ -16,6 +20,7 @@ export type MealDeckPublicMenuSnapshot = {
     name: string;
     description: string | null;
     pricePence: number;
+    promotion?: MealDeckMilkcakePromotion;
     options: Record<string, PublicMenuOption>;
     replacementPricePence: number | null;
     replacementLabel?: string;
@@ -50,6 +55,10 @@ export function parseMealDeckPublicMenu(value: unknown): MealDeckPublicMenuSnaps
       !item.name.trim() ||
       !(item.description === null || typeof item.description === "string") ||
       !isPence(item.pricePence) ||
+      !(
+        item.promotion === undefined ||
+        isPublicMilkcakePromotion(item.promotion, item.sku, item.pricePence, data.checkedAt)
+      ) ||
       !item.options ||
       typeof item.options !== "object" ||
       Array.isArray(item.options) ||
@@ -156,7 +165,11 @@ export function hydrateMealDeckPublicMenu(snapshot: MealDeckPublicMenuSnapshot):
             .find((name) => name !== undefined) ?? section.title,
         items: section.items.map((item) => {
           const row = rows.get(item.id);
-          const { description: sourceDescription, ...itemTemplate } = item;
+          const {
+            description: sourceDescription,
+            promotion: sourcePromotion,
+            ...itemTemplate
+          } = item;
           const description = row ? row.description : sourceDescription;
           const variants = item.priceVariants?.map((variant) => {
             const option = row?.options[variant.optionId];
@@ -178,6 +191,10 @@ export function hydrateMealDeckPublicMenu(snapshot: MealDeckPublicMenuSnapshot):
                 ? Math.min(...availableVariants.map((variant) => variant.pricePence))
                 : row.pricePence
               : null,
+            ...(row &&
+            isPublicMilkcakePromotion(row.promotion, row.sku, row.pricePence, snapshot.checkedAt)
+              ? { promotion: row.promotion }
+              : {}),
             replacementPricePence: row?.replacementPricePence ?? null,
             ...(row?.replacementLabel === undefined
               ? {}

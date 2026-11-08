@@ -1,6 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { CheckoutProblem } from "./mealdeck-checkout-selection";
 import { checkoutPathMatchesSession, safeHostedCheckoutUrl } from "./mealdeck-checkout-url";
+import { isAppliedMealDeckMilkcakePromotion } from "./mealdeck-milkcake-promotion";
 import {
   readMealDeckStripeCheckoutDomain,
   type MealDeckStripeCheckoutDomain,
@@ -166,7 +167,13 @@ export type PreparedStripeOrder = {
   sessionId: string | null;
   sessionUrl: string | null;
   expiresAt: string;
-  lines: { name: string; quantity: number; line_pence: number }[];
+  lines: {
+    name: string;
+    quantity: number;
+    base_unit_pence?: number;
+    line_pence: number;
+    promotion?: unknown;
+  }[];
   requestHash: string;
 };
 
@@ -178,6 +185,11 @@ export function stripeSessionParameters(order: PreparedStripeOrder) {
     !Number.isFinite(Date.parse(order.expiresAt))
   )
     throw new CheckoutProblem("invalid_order", "Please refresh your order total.", 409);
+  // The frozen server quote owns both this marker and the amount. Describing
+  // its included offer never adds a Stripe coupon or recalculates the charge.
+  const includesMilkcakeOffer = order.lines.some(
+    (line) => line.base_unit_pence === 399 && isAppliedMealDeckMilkcakePromotion(line.promotion),
+  );
   const origin = "https://mealdeck.co.uk";
   const body = new URLSearchParams({
     mode: "payment",
@@ -193,8 +205,15 @@ export function stripeSessionParameters(order: PreparedStripeOrder) {
     "line_items[0][price_data][product_data][name]":
       "MealDeck · Luton " + (order.fulfilment === "curbside" ? "kerbside pickup" : "collection"),
     "line_items[0][price_data][product_data][description]": [
+      includesMilkcakeOffer
+        ? "One milkcake per order is 99p after the 30% discount; additional milkcakes are £3.99 before the opening discount"
+        : "",
       order.lines.map((line) => line.quantity + " × " + line.name).join("; "),
-      order.discountPence > 0 ? "Opening weekend: 30% off everything included in this total." : "",
+      order.discountPence > 0
+        ? includesMilkcakeOffer
+          ? "The milkcake offer and 30% discount on the remaining items are already included in this total."
+          : "Opening weekend: 30% off everything included in this total."
+        : "",
     ]
       .filter(Boolean)
       .join(". ")
