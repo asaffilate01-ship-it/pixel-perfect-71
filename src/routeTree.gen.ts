@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as BedfordRouteImport } from './routes/bedford'
 import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as DeliveryTermsRouteImport } from './routes/delivery-terms'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as GroupOrderRouteImport } from './routes/group-order'
 import { Route as GroupPayRouteImport } from './routes/group-pay'
@@ -79,6 +80,11 @@ const BedfordRoute = BedfordRouteImport.update({
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeliveryTermsRoute = DeliveryTermsRouteImport.update({
+  id: '/delivery-terms',
+  path: '/delivery-terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FranchiseRoute = FranchiseRouteImport.update({
@@ -318,6 +324,7 @@ const ApiWhatsappWorkerRoute = ApiWhatsappWorkerRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/delivery-terms': typeof DeliveryTermsRoute
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/bedford': typeof BedfordRoute
@@ -371,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/api/whatsapp/worker': typeof ApiWhatsappWorkerRoute
 }
 export interface FileRoutesByTo {
+  '/delivery-terms': typeof DeliveryTermsRoute
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/bedford': typeof BedfordRoute
@@ -424,6 +432,7 @@ export interface FileRoutesByTo {
   '/api/whatsapp/worker': typeof ApiWhatsappWorkerRoute
 }
 export interface FileRoutesById {
+  '/delivery-terms': typeof DeliveryTermsRoute
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
@@ -480,6 +489,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/delivery-terms'
     | '/'
     | '/account'
     | '/bedford'
@@ -533,6 +543,7 @@ export interface FileRouteTypes {
     | '/api/whatsapp/worker'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/delivery-terms'
     | '/'
     | '/account'
     | '/bedford'
@@ -585,6 +596,7 @@ export interface FileRouteTypes {
     | '/api/whatsapp/webhook'
     | '/api/whatsapp/worker'
   id:
+    | '/delivery-terms'
     | '__root__'
     | '/'
     | '/account'
@@ -640,6 +652,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  DeliveryTermsRoute: typeof DeliveryTermsRoute
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
   BedfordRoute: typeof BedfordRoute
@@ -693,6 +706,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/delivery-terms': {
+      id: '/delivery-terms'
+      path: '/delivery-terms'
+      fullPath: '/delivery-terms'
+      preLoaderRoute: typeof DeliveryTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -1075,6 +1095,7 @@ const ApiNotificationsRouteWithChildren =
   ApiNotificationsRoute._addFileChildren(ApiNotificationsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  DeliveryTermsRoute: DeliveryTermsRoute,
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   BedfordRoute: BedfordRoute,
