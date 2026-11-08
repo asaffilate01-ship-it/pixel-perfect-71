@@ -11,6 +11,12 @@
 
 <!-- LOVABLE:END -->
 
+## Souvano KDS main clarity — owner direction, 8 November 2026
+
+- Souvano has three **different** canonical mains: Stir-Fry Doner, Heatwave and Lamb Chops. An old shared **included-side** modifier group was named `Souvano · Included side (Doner / Lamb Chops)`, causing confusion on KDS. The group is not a product and must never be used to infer a main.
+- Show the **actual frozen `item_name`** prominently as MAIN DISH on active and completed kitchen tickets, and the selected Fries/Rice/Naan separately as **Included side**. Preserve Doner flavour and all other purchased choices. Display-normalise the legacy group label for old tickets without rewriting purchase, receipt, payment, status or routing snapshots. If a main name is itself ambiguous, request verification rather than choosing a product by assumption.
+- Future source importer/manifest uses `Souvano · Included side`. Only an independently verified MealDeck database owner may run `deploy/mealdeck/operations/20261108_souvano_clear_shared_side_label.sql`; the guarded operation changes group metadata only and is **not** executed by committing frontend code. Never apply it to Dishbee. See `docs/mealdeck-souvano-kds-clarity-20261108.md`.
+
 ## Load’d names and current drinks — owner direction, 7 November 2026
 
 - Rename only Load’d’s King of Hearts → Royal Flush, Queen of Hearts → Double Deck, Jack of Diamonds → All In, and King of Spades → The Jackpot in Loaded Fries and Full House, including the same products’ named replacement labels. Preserve stable product/modifier IDs, descriptions, prices and historical purchased snapshots.
