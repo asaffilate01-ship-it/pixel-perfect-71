@@ -27,7 +27,7 @@ import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import { OfferDiscovery } from "@/components/marketing/offer-discovery";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
-import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
+import { useOwnDriverAvailability, useOwnDriverPreopenNotice } from "@/components/own-driver-offer-banner";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { ldScript, orgJsonLd, seo, SITE_DESCRIPTION } from "@/lib/seo";
@@ -97,6 +97,7 @@ const steps = [
 function LandingPage() {
   const entryPolicy = useCustomerEntryPolicy();
   const deliveryLive = useOwnDriverAvailability();
+  const deliveryPreopen = useOwnDriverPreopenNotice();
   const groupOrderingOpen =
     !!entryPolicy &&
     Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
@@ -139,8 +140,10 @@ function LandingPage() {
               </div>
               <p className="md-hero-soon">
                 {deliveryLive
-                  ? "Due to popular demand, FREE delivery within 3 km of LU4 8NU on £15+ orders after discounts."
-                  : "Luton collection and kerbside, from our kitchen to you."}
+                  ? "FREE delivery now available within 3 km of LU4 8NU on orders paying £15+ after discounts."
+                  : deliveryPreopen
+                    ? "FREE delivery planned from 3pm today within 3 km of LU4 8NU on orders paying £15+ after discounts, subject to readiness."
+                    : "Luton collection and kerbside, from our kitchen to you."}
               </p>
               <div className="md-hero-proof">
                 <span>
@@ -305,11 +308,13 @@ function LandingPage() {
           <div className="md-fulfilment-grid">
             <article>
               <Bike />
-              <h3>{deliveryLive ? "Free local delivery · Live" : "Delivery · Coming soon"}</h3>
+              <h3>{deliveryLive ? "Free local delivery · Live" : deliveryPreopen ? "Free delivery · Planned from 3pm today" : "Delivery · Coming soon"}</h3>
               <p>
                 {deliveryLive
                   ? "Due to popular demand: free own-driver delivery within 3 km of LU4 8NU for £15+ after discounts. Estimated within one hour, without GPS tracking."
-                  : "Delivery is not available at the moment. Please select collection or kerbside."}
+                  : deliveryPreopen
+                    ? "Planned from 3pm Sunday 8 November: free own-driver delivery within 3 km of LU4 8NU on orders paying at least £15 after discounts. Checkout enables delivery only after final kitchen, driver and printer checks."
+                    : "Delivery is not available at the moment. Please select collection or kerbside."}
               </p>
             </article>
             <article>
