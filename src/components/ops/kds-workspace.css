@@ -914,6 +914,36 @@
   margin-top: 8px;
   background: var(--ops-muted);
 }
+/* A selected wing flavour or burger dip is an instruction to the kitchen,
+   not a low-priority add-on. Keep the exact purchased name and portion. */
+.md-kds-workspace .md-kds-choices > li.md-kds-flavour-choice {
+  display: block;
+  border: 1px solid #d8a263;
+  border-left: 4px solid #a61c24;
+  border-radius: 7px;
+  background: #fff0d7;
+  padding: 9px 11px;
+}
+.md-kds-workspace .md-kds-flavour-main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.md-kds-workspace .md-kds-flavour-eyebrow {
+  color: #771d16;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.07em;
+}
+.md-kds-workspace .md-kds-flavour-value {
+  color: #27150d;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: 0.015em;
+  overflow-wrap: anywhere;
+}
 .md-kds-workspace .md-kds-choice-group {
   font-weight: 800;
 }
