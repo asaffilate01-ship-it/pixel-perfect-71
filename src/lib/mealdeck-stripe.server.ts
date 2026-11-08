@@ -227,7 +227,7 @@ export function stripeSessionParameters(order: PreparedStripeOrder) {
     "custom_text[submit][message]":
       "MealDeck is a trading name of 313 Brands Ltd. " +
       (order.fulfilment === "delivery"
-        ? "Free local delivery within 3 km of LU4 8NU. No live GPS tracking."
+        ? "Free local delivery within 4 km of LU4 8NU. No live GPS tracking."
         : order.fulfilment === "curbside"
           ? "Kerbside pickup in Luton."
           : "Collection in Luton."),

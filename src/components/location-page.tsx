@@ -127,7 +127,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <h2>Local first.</h2>
             <p>
               {deliveryLive
-                ? "Collection and kerbside at 314–318 Selbourne Road · Free delivery within 3 km of LU4 8NU on £15+ after discounts"
+                ? "Collection and kerbside at 314–318 Selbourne Road · Free delivery within 4 km of LU4 8NU on £15+ after discounts"
                 : areas.join(" · ")}
             </p>
           </article>
@@ -138,7 +138,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <p>
               {isLuton
                 ? deliveryLive
-                  ? "Order from the five Luton menus for free local delivery, collection or kerbside. Our own driver delivers within a 3 km radius of LU4 8NU, for orders of £15 or more after discounts, normally within 60 minutes. Guest ordering needs only a name and WhatsApp number, with no registration."
+                  ? "Order from the five Luton menus for free local delivery, collection or kerbside. Our own driver delivers within a 4 km radius of LU4 8NU, for orders of £15 or more after discounts, normally within 60 minutes. Guest ordering needs only a name and WhatsApp number, with no registration."
                   : "Order from the five Luton menus for collection or kerbside during kitchen opening hours. Guest ordering is available with your name and WhatsApp number; no account is required."
                 : `${town} is coming in a future deck. MealDeck is launching in Luton first, with no orders accepted here yet.`}
             </p>
@@ -154,7 +154,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <h2>314–318 Selbourne Road, Luton, LU4 8NU</h2>
               <p>
                 {deliveryLive
-                  ? "Due to popular demand: free delivery within 3 km of LU4 8NU, for orders of £15 or more after discounts. Our own driver brings food within an estimated hour of payment. Collection and kerbside remain available."
+                  ? "Due to popular demand: free delivery within 4 km of LU4 8NU, for orders of £15 or more after discounts. Our own driver brings food within an estimated hour of payment. Collection and kerbside remain available."
                   : "Collection and kerbside pickup are available during kitchen opening hours. Check your order and choose cutlery or numbered bags before payment."}
               </p>
             </div>
@@ -167,7 +167,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               </span>
               {deliveryLive && (
                 <span>
-                  <Bike /> Free delivery · 3 km
+                  <Bike /> Free delivery · 4 km
                 </span>
               )}
             </div>

@@ -9,9 +9,9 @@ describe("customer-facing delivery postcode rejection", () => {
     expect(text).not.toContain("outside MealDeck");
   });
 
-  test("verified postcode beyond the strict 3 km radius gets an out-of-area message", () => {
-    const text = deliveryAreaRejectionMessage(3002);
-    expect(text).toContain("outside MealDeck's 3 km delivery area");
+  test("verified postcode beyond the strict 4 km radius gets an out-of-area message", () => {
+    const text = deliveryAreaRejectionMessage(4003);
+    expect(text).toContain("outside MealDeck's 4 km delivery area");
     expect(text).not.toContain("couldn't verify");
   });
 });

@@ -32,9 +32,9 @@ function LutonPage() {
       areas={[
         "Collection and kerbside from 314–318 Selbourne Road, Luton, LU4 8NU",
         deliveryLive
-          ? "Free delivery within 3 km of LU4 8NU on orders £15+ after discounts"
+          ? "Free delivery within 4 km of LU4 8NU on orders £15+ after discounts"
           : deliveryPreopen
-            ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 3 km of LU4 8NU; £15 minimum after discounts. Delivery T&Cs apply"
+            ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 4 km of LU4 8NU; £15 minimum after discounts. Delivery T&Cs apply"
             : "Delivery currently unavailable",
       ]}
       includeCafe1={false}
@@ -70,7 +70,7 @@ function LutonPage() {
         {
           q: "Can I collect my order or use kerbside pickup?",
           a: deliveryLive
-            ? "Yes. You can collect, use kerbside pickup, or select free local delivery if your postcode is within 3 km of LU4 8NU and you pay at least £15 after discounts. Our driver delivers within an estimated 60 minutes. No registration or live GPS tracking. St Albans and Bedford remain coming soon."
+            ? "Yes. You can collect, use kerbside pickup, or select free local delivery if your postcode is within 4 km of LU4 8NU and you pay at least £15 after discounts. Our driver delivers within an estimated 60 minutes. No registration or live GPS tracking. St Albans and Bedford remain coming soon."
             : "Yes. Collection and kerbside pickup are available. For kerbside, enter your car make, colour and last four registration characters. St Albans and Bedford remain coming soon.",
         },
         {
