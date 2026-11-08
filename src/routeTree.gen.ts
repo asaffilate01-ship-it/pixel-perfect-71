@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as BedfordRouteImport } from './routes/bedford'
 import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as DeliveryTermsRouteImport } from './routes/delivery-terms'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as GroupOrderRouteImport } from './routes/group-order'
 import { Route as GroupPayRouteImport } from './routes/group-pay'
@@ -23,7 +24,6 @@ import { Route as MenusRouteImport } from './routes/menus'
 import { Route as MetaAdRouteImport } from './routes/meta-ad'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as OpeningOfferRouteImport } from './routes/opening-offer'
-import { Route as DeliveryTermsRouteImport } from './routes/delivery-terms'
 import { Route as OpsRouteImport } from './routes/ops'
 import { Route as OrderRouteImport } from './routes/order'
 import { Route as PlayRouteImport } from './routes/play'
@@ -82,6 +82,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeliveryTermsRoute = DeliveryTermsRouteImport.update({
+  id: '/delivery-terms',
+  path: '/delivery-terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FranchiseRoute = FranchiseRouteImport.update({
   id: '/franchise',
   path: '/franchise',
@@ -130,11 +135,6 @@ const OffersRoute = OffersRouteImport.update({
 const OpeningOfferRoute = OpeningOfferRouteImport.update({
   id: '/opening-offer',
   path: '/opening-offer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DeliveryTermsRoute = DeliveryTermsRouteImport.update({
-  id: '/delivery-terms',
-  path: '/delivery-terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OpsRoute = OpsRouteImport.update({
@@ -328,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/bedford': typeof BedfordRoute
   '/checkout': typeof CheckoutRoute
+  '/delivery-terms': typeof DeliveryTermsRoute
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
   '/group-pay': typeof GroupPayRoute
@@ -338,7 +339,6 @@ export interface FileRoutesByFullPath {
   '/meta-ad': typeof MetaAdRoute
   '/offers': typeof OffersRoute
   '/opening-offer': typeof OpeningOfferRoute
-  '/delivery-terms': typeof DeliveryTermsRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
@@ -382,6 +382,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/bedford': typeof BedfordRoute
   '/checkout': typeof CheckoutRoute
+  '/delivery-terms': typeof DeliveryTermsRoute
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
   '/group-pay': typeof GroupPayRoute
@@ -392,7 +393,6 @@ export interface FileRoutesByTo {
   '/meta-ad': typeof MetaAdRoute
   '/offers': typeof OffersRoute
   '/opening-offer': typeof OpeningOfferRoute
-  '/delivery-terms': typeof DeliveryTermsRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
@@ -437,6 +437,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/bedford': typeof BedfordRoute
   '/checkout': typeof CheckoutRoute
+  '/delivery-terms': typeof DeliveryTermsRoute
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
   '/group-pay': typeof GroupPayRoute
@@ -447,7 +448,6 @@ export interface FileRoutesById {
   '/meta-ad': typeof MetaAdRoute
   '/offers': typeof OffersRoute
   '/opening-offer': typeof OpeningOfferRoute
-  '/delivery-terms': typeof DeliveryTermsRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
@@ -493,6 +493,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/bedford'
     | '/checkout'
+    | '/delivery-terms'
     | '/franchise'
     | '/group-order'
     | '/group-pay'
@@ -503,7 +504,6 @@ export interface FileRouteTypes {
     | '/meta-ad'
     | '/offers'
     | '/opening-offer'
-    | '/delivery-terms'
     | '/ops'
     | '/order'
     | '/play'
@@ -547,6 +547,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/bedford'
     | '/checkout'
+    | '/delivery-terms'
     | '/franchise'
     | '/group-order'
     | '/group-pay'
@@ -557,7 +558,6 @@ export interface FileRouteTypes {
     | '/meta-ad'
     | '/offers'
     | '/opening-offer'
-    | '/delivery-terms'
     | '/ops'
     | '/order'
     | '/play'
@@ -601,6 +601,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/bedford'
     | '/checkout'
+    | '/delivery-terms'
     | '/franchise'
     | '/group-order'
     | '/group-pay'
@@ -611,7 +612,6 @@ export interface FileRouteTypes {
     | '/meta-ad'
     | '/offers'
     | '/opening-offer'
-    | '/delivery-terms'
     | '/ops'
     | '/order'
     | '/play'
@@ -656,6 +656,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   BedfordRoute: typeof BedfordRoute
   CheckoutRoute: typeof CheckoutRoute
+  DeliveryTermsRoute: typeof DeliveryTermsRoute
   FranchiseRoute: typeof FranchiseRoute
   GroupOrderRoute: typeof GroupOrderRoute
   GroupPayRoute: typeof GroupPayRoute
@@ -666,7 +667,6 @@ export interface RootRouteChildren {
   MetaAdRoute: typeof MetaAdRoute
   OffersRoute: typeof OffersRoute
   OpeningOfferRoute: typeof OpeningOfferRoute
-  DeliveryTermsRoute: typeof DeliveryTermsRoute
   OpsRoute: typeof OpsRoute
   OrderRoute: typeof OrderRoute
   PlayRoute: typeof PlayRoute
@@ -732,6 +732,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout'
       fullPath: '/checkout'
       preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delivery-terms': {
+      id: '/delivery-terms'
+      path: '/delivery-terms'
+      fullPath: '/delivery-terms'
+      preLoaderRoute: typeof DeliveryTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/franchise': {
@@ -802,13 +809,6 @@ declare module '@tanstack/react-router' {
       path: '/opening-offer'
       fullPath: '/opening-offer'
       preLoaderRoute: typeof OpeningOfferRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/delivery-terms': {
-      id: '/delivery-terms'
-      path: '/delivery-terms'
-      fullPath: '/delivery-terms'
-      preLoaderRoute: typeof DeliveryTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ops': {
@@ -1099,6 +1099,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   BedfordRoute: BedfordRoute,
   CheckoutRoute: CheckoutRoute,
+  DeliveryTermsRoute: DeliveryTermsRoute,
   FranchiseRoute: FranchiseRoute,
   GroupOrderRoute: GroupOrderRoute,
   GroupPayRoute: GroupPayRoute,
@@ -1109,7 +1110,6 @@ const rootRouteChildren: RootRouteChildren = {
   MetaAdRoute: MetaAdRoute,
   OffersRoute: OffersRoute,
   OpeningOfferRoute: OpeningOfferRoute,
-  DeliveryTermsRoute: DeliveryTermsRoute,
   OpsRoute: OpsRoute,
   OrderRoute: OrderRoute,
   PlayRoute: PlayRoute,
