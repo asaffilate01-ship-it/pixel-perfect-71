@@ -44,7 +44,7 @@ export const receiptSchema = z
     createdAt: stamp,
     paidAt: stamp,
     acceptedAt: stamp,
-    fulfilment: z.enum(["pickup", "curbside"]),
+    fulfilment: z.enum(["pickup", "curbside", "delivery"]),
     customerName: z.string().min(1).max(200),
     car: z
       .object({
