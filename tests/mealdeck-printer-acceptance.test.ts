@@ -533,11 +533,12 @@ test("own-driver paid order is accepted by the existing printer queue", () => {
   expect(board.orders[0]?.fulfilment).toBe("delivery");
   const markup = renderToStaticMarkup(createElement(PrinterPendingOrderCard, {
     order: delivery,
-    disabled: false,
-    busy: false,
-    automatic: false,
+    fresh: true,
     paired: false,
+    automatic: false,
+    busy: false,
+    accepting: false,
     onAccept: () => {},
-  } as never));
+  }));
   expect(markup).toContain("Own-driver delivery");
 });
