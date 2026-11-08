@@ -113,7 +113,7 @@ async function lookupPostcode(
     "https://api.postcodes.io/postcodes/" + compact,
     "https://api.getthedata.com/postcode/" + compact,
   ];
-  let receivedDefinitiveNotFound = false;
+  let confirmedNotFoundCount = 0;
   for (let provider = 0; provider < endpoints.length; provider++) {
     let response: Response;
     try {
@@ -128,7 +128,7 @@ async function lookupPostcode(
       continue; // Retry the independent provider; never claim delivery coverage.
     }
     if (response.status === 404) {
-      receivedDefinitiveNotFound = true;
+      confirmedNotFoundCount += 1;
       continue;
     }
     if (!response.ok) continue;
@@ -155,12 +155,14 @@ async function lookupPostcode(
     const data = record as Record<string, unknown>;
     if (normaliseUkPostcode(data["postcode"]) !== postcode) continue;
     if (provider === 1 && data["status"] !== "live") continue;
-    const latitude = provider === 1 ? Number(data["latitude"]) : data["latitude"];
-    const longitude = provider === 1 ? Number(data["longitude"]) : data["longitude"];
+    const latitude = provider === 1 && typeof data["latitude"] === "string" && data["latitude"].trim() !== ""
+      ? Number(data["latitude"]) : data["latitude"];
+    const longitude = provider === 1 && typeof data["longitude"] === "string" && data["longitude"].trim() !== ""
+      ? Number(data["longitude"]) : data["longitude"];
     const coordinates = validCoordinates(latitude, longitude);
     if (coordinates) return coordinates;
   }
-  if (receivedDefinitiveNotFound) return null;
+  if (confirmedNotFoundCount === endpoints.length) return null;
   throw new OwnDriverPostcodeUnavailable();
 }
 
