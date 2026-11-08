@@ -2,7 +2,7 @@
 
 The networked Android companion consumes MealDeck's existing receipt queue and
 uses the H10S built-in printer service. Its application ID is
-`uk.co.mealdeck.printer`, version `0.2.2` (code `4`). The separate setup utility in
+`uk.co.mealdeck.printer`, version `0.2.3` (code `5`). The separate setup utility in
 `../mealdeck-printer-probe` and its published setup APK remain unchanged.
 
 `release-certificate.pem` contains only the public release certificate. Its
@@ -10,6 +10,27 @@ SHA-256 fingerprint is
 `0AA18A66B01CECBE0AA86C07A6EFA8693B5F01138278488D7DCE4A296B992EC8`.
 Future signed updates must match this identity. The private keystore and its
 password are retained separately and must never enter this repository.
+
+## v0.2.3 safe update
+
+The new receipt validator accepts **delivery** as well as collection and
+kerbside. Version 0.2.2 cannot reliably print delivery orders.
+
+Build verification creates an **unsigned** non-debuggable v0.2.3/build 5 APK
+first. It is *not* an installable update to the live v0.2.2 until the
+original owner's release key signs it. The manual
+`.github/workflows/publish-printer-v023.yml` publisher requires
+`MEALDECK_PRINTER_ORIGINAL_KEYSTORE_BASE64` and
+`MEALDECK_PRINTER_ORIGINAL_STORE_PASSWORD` as protected GitHub secrets,
+then verifies identical Android signing certificate fingerprints for
+both published v0.2.2 and candidate v0.2.3, plus this repository's public
+release certificate. Do **not** create a fresh signing key or uninstall
+v0.2.2; either breaks update compatibility and may lose the printer journal.
+
+When the signed APK and checksum exist, `/printer` automatically offers
+v0.2.3; otherwise it continues to offer v0.2.2. After installing the update
+over v0.2.2 on the same H10S, verify one *actual* complete receipt including
+its footer before enabling customer delivery.
 
 ## Operator flow
 
