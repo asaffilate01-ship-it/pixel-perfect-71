@@ -142,7 +142,7 @@ function LandingPage() {
                 {deliveryLive
                   ? "Due to popular demand: FREE delivery now available within 3 km of LU4 8NU on orders paying £15+ after discounts."
                   : deliveryPreopen
-                    ? "Due to popular demand: FREE delivery planned from 3pm today within 3 km of LU4 8NU on orders paying £15+ after discounts."
+                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 3 km of LU4 8NU on orders paying £15+ after discounts."
                     : "Luton collection and kerbside, from our kitchen to you."}
               </p>
               <div className="md-hero-proof">
@@ -308,12 +308,12 @@ function LandingPage() {
           <div className="md-fulfilment-grid">
             <article>
               <Bike />
-              <h3>{deliveryLive ? "Free local delivery · Live" : deliveryPreopen ? "Free delivery · Planned from 3pm today" : "Delivery · Coming soon"}</h3>
+              <h3>{deliveryLive ? "Free local delivery · Live" : deliveryPreopen ? "Free delivery · 3pm–11pm today" : "Delivery · Coming soon"}</h3>
               <p>
                 {deliveryLive
                   ? "Due to popular demand: free own-driver delivery within 3 km of LU4 8NU for £15+ after discounts. Estimated within one hour, without GPS tracking."
                   : deliveryPreopen
-                    ? "Due to popular demand: FREE delivery planned from 3pm Sunday 8 November within 3 km of LU4 8NU on orders paying at least £15 after discounts."
+                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 3 km of LU4 8NU on orders paying at least £15 after discounts. Delivery T&Cs apply."
                     : "Delivery is not available at the moment. Please select collection or kerbside."}
               </p>
             </article>
