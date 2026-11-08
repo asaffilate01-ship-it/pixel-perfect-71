@@ -1,3 +1,4 @@
+import { parseCustomerCommsAction } from "./mealdeck-order-comms";
 import { verifyOwnDriverPayment } from "./mealdeck-own-driver-payment.server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -574,6 +575,27 @@ export async function handleOnlineCheckoutRequest(
           : { ...guestScope(clients, guestToken!), p_order: parsed.data.orderId },
       );
       return Response.json({ receipt }, { headers: NO_STORE });
+    }
+    // Order communications must remain accessible after the kitchen closes.
+    // Neither a public order ID nor a client-supplied user/guest ID grants access.
+    if (action === "handoff_comms") {
+      const parsed = parseCustomerCommsAction(input);
+      if (!parsed)
+        throw new CheckoutProblem("invalid_request", "Please check your handover message.");
+      const guest = customerId ? null : await resolveGuest(clients, guestToken);
+      if (!customerId && !guest)
+        throw new CheckoutProblem("guest_session_expired", "Reopen this order in your original browser.", 401);
+      const comms = await rpc(clients.service, "mealdeck_order_comms_customer", {
+        p_order: parsed.orderId,
+        p_customer: customerId,
+        p_guest: guest?.id ?? null,
+        p_action: parsed.kind,
+        p_body: parsed.body,
+        p_parking_note: parsed.parkingNote,
+        p_latitude: parsed.latitude,
+        p_longitude: parsed.longitude,
+      });
+      return Response.json({ comms }, { headers: NO_STORE });
     }
     const whatsapp = await readWhatsAppCheckoutBinding(request, env, fetcher);
     const whatsappActor = customerId
