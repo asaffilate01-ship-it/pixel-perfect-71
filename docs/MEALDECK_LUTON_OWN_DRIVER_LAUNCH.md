@@ -1,6 +1,6 @@
 # MealDeck Luton: own-driver free delivery (controlled launch)
 
-**Release state:** source code only. Not production-live until the dedicated MealDeck database migration, host flag and real-order tests pass. Existing collection and kerbside must remain unaffected.
+**Release state (8 November 2026):** the dedicated MealDeck production migration is installed and has been read-verified. Delivery is still **disabled in the website runtime** until end-to-end acceptance, printer v0.2.3 installation and a driver on shift are verified. Existing collection and kerbside must remain unaffected.
 
 ## Business rules
 
@@ -24,6 +24,38 @@
 9. Build and install a delivery-compatible H10S Android receipt-printer APK. Earlier APKs reject delivery receipts as unsupported fulfilment. Verify a real thermal receipt prints the complete order on one sheet, labels OWN DRIVER DELIVERY and leaves collection/kerbside receipts unchanged. Repeat on the website printer queue as well as the native bridge.
 10. Mobile smoke test: menu, basket, postcode checks, guest checkout, Stripe, receipt, KDS, printer, collection and kerbside regression.
 11. Only after successful real tests, set the **MEALDECK_OWN_DRIVER_DELIVERY_ENABLED** server environment setting to true. Redeploy and test again on the live domain.
+
+## H10S v0.2.3 signed update (mandatory before enabling delivery)
+
+The Android printer v0.2.2/build 4 rejects the new `delivery` receipt type.
+v0.2.3/build 5 adds it, while keeping the existing app ID
+`uk.co.mealdeck.printer`, receipt journal and exact single-bitmap send protocol.
+
+1. Complete source build, KDS, payment and Android instrumented tests on the delivery PR.
+2. Preserve the original v0.2.2 signing identity. The old workflow which
+   **generated a new private key on each run is removed**. A different
+   certificate cannot update an installed v0.2.2 APK.
+3. Recover the original private `mealdeck-printer-release.p12` and its
+   store password *privately* from the existing encrypted owner backup.
+   Configure the protected GitHub Actions repository secrets
+   `MEALDECK_PRINTER_ORIGINAL_KEYSTORE_BASE64` (base64 of the original
+   .p12) and `MEALDECK_PRINTER_ORIGINAL_STORE_PASSWORD`. Never put these
+   secrets in source code, user-visible chat, issue bodies or logs.
+4. After the PR is verified and merged to `main`, manually start
+   **Publish signed MealDeck H10S printer v0.2.3** in GitHub Actions.
+   It refuses to publish without the original key, refuses a certificate
+   mismatch with both the *published* v0.2.2 APK and the pinned public
+   release certificate, and refuses a debuggable or incorrectly versioned APK.
+5. Only the successful signed release publishes both
+   `/downloads/mealdeck-printer-h10s-0.2.3.apk` and its SHA-256 manifest.
+   The private `/printer` page continues offering v0.2.2 until that
+   manifest exists, then automatically offers the verified v0.2.3.
+6. **On the actual H10S**, update the installed app *without uninstalling
+   or clearing its data*. Check the app's existing printer history,
+   explicitly allow auto-print, test one full delivery receipt including all
+   items and footer in one piece, and confirm the paper output before resuming
+   production delivery. If the owner signing identity is unavailable, stop:
+   an unsigned/different-signer APK must not be advertised as an update.
 
 ## Rollback and privacy
 
