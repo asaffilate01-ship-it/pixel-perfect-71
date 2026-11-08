@@ -5,7 +5,7 @@
 ## Business rules
 
 - Kitchen postcode **LU4 8NU** (314–318 Selbourne Road, Luton).
-- **3 km straight-line radius** from the origin postcode centroid to destination postcode centroid, using Postcodes.io. This is not a driving distance; edge cases may require a manual check.
+- **4 km straight-line radius** from the origin postcode centroid to destination postcode centroid, using the server-side OS postcode directory within 5 km and an exact validated fallback outside that directory. This is not a driving distance; edge cases may require a manual check.
 - Free own-driver delivery when the canonical **payable total AFTER all discounts is £15 or more**. During the 30% opening offer this is the discounted figure, never the menu subtotal. £0 delivery fee.
 - No registration required: guest name, WhatsApp/phone, full postcode, door or house number, road name and optional flat/building. Keep numbered bags, notes and cutlery.
 - Default estimated delivery within 60 minutes of verified payment. Staff manually confirm driver handover then delivered. No live courier tracking or GPS location shown.
@@ -17,7 +17,7 @@
 2. Confirm the **dedicated MealDeck Supabase database** and its correct tenant and Luton location, not the separate DISHBEE project. Back up the database.
 3. Apply existing post-install migrations in order. Apply deploy/mealdeck/post-install-migrations/20261107230000_mealdeck_local_driver_delivery.sql as one atomic transaction. The deploy/mealdeck/local-driver-delivery.mjs installer also offers a managed-transaction variant.
 4. Verify the server-only MealDeck local-delivery-ready RPC confirms only the Luton kitchen and no public role can read private delivery tables.
-5. Test one postcode inside and one outside 3 km; invalid/unavailable postcode lookups must reject delivery but preserve pickup checkout.
+5. Test one postcode inside and one outside 4 km; invalid/unavailable postcode lookups must reject delivery but preserve pickup checkout.
 6. Test discounted payable amounts: £14.99 -> £0.01 short and blocked, £15.00 -> eligible, and a gross £16 basket discounted below £15 -> blocked. The server must reprice before Stripe.
 7. Place a real guest order: phone/name and full street address, zero delivery charge, Stripe delivery wording, order receipt with 60-minute estimate.
 8. Staff KDS: verify full address and contact, finish all brands and bag checklist, then explicitly Hand over to our driver, Confirm delivered, and review the guest receipt. Test stale cards, wrong roles and refunded orders cannot bypass permissions.
