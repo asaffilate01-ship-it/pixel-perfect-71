@@ -2,6 +2,16 @@ import type { LaunchMenuBrand, LaunchMenuItem, LaunchMenuSection } from "./launc
 
 /** Preserve the publishing branch's existing, product-specific subtitle copy. */
 const ownerDishLines: Readonly<Record<string, string>> = {
+  "tavo-chicken-burgers-cruncher": "1 buttermilk fried chicken fillet in bun",
+  "tavo-chicken-burgers-twin-crunch": "2 buttermilk fried chicken fillets in bun",
+  "tavo-chicken-burgers-flame": "1 spicy grilled chicken fillet in bun",
+  "tavo-chicken-burgers-big-flame": "2 spicy grilled chicken fillets in bun",
+  "tavo-chicken-fried-chicken-wings-fried-chicken-wings":
+    "Fried chicken wings with choice of flavour",
+  "tavo-chicken-fried-chicken-tenders-fried-chicken-tenders":
+    "Fried chicken tenders with choice of flavour",
+  "tavo-chicken-grilled-chicken-wings-grilled-chicken-wings":
+    "Grilled chicken wings with choice of flavour",
   "loadd-loaded-fries-king-of-hearts": "Fried Chicken Loaded Fries",
   "loadd-loaded-fries-queen-of-hearts": "Grilled Chicken Loaded Fries",
   "loadd-loaded-fries-jack-of-diamonds": "Chicken Shawarma Loaded Fries",
@@ -55,14 +65,19 @@ export function launchMenuItemDescriptor(
   }
 
   if (brand.id === "tavo-chicken" && section.id === "burgers") {
+    // Fall back to the source cooking method, never a generic "chicken burger".
+    // Do not infer a quantity from an ambiguous or optional description.
     const match = description.match(
-      /^([1-9])\s+(?:(?:buttermilk|fried|spicy|grilled)\s+)*chicken\s+fillets?\b/i,
+      /^(?:([1-9]\d*)\s+)?(buttermilk fried|spicy grilled)\s+chicken\s+(fillet|fillets)\b/i,
     );
-    const count =
-      match && !/\b(?:add|extra|optional|upgrade|or)\b/i.test(description) ? match[1] : null;
-    return count
-      ? `${count} chicken ${count === "1" ? "fillet" : "fillets"} · burger bun`
-      : "Chicken burger · bun";
+    const count = match?.[1]
+      ? Number(match[1])
+      : match?.[3]?.toLowerCase() === "fillet"
+        ? 1
+        : null;
+    return count && match && !/\b(?:add|extra|optional|upgrade|or)\b/i.test(description)
+      ? `${count} ${match[2].toLowerCase()} chicken ${count === 1 ? "fillet" : "fillets"} in bun`
+      : "Chicken fillet burger in bun";
   }
 
   if (brand.id === "loadd") {
