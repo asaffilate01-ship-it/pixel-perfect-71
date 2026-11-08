@@ -134,7 +134,7 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
           {deliveryLive
             ? "No minimum for collection or kerbside. Free local delivery within 3 km requires £15 payable after discounts."
             : deliveryPreopen
-              ? "No minimum for collection or kerbside. Free delivery planned from 3pm today within 3 km of LU4 8NU; £15 minimum after discount, subject to launch checks."
+              ? "Due to popular demand, FREE delivery planned from 3pm today within 3 km of LU4 8NU, with £15 minimum after discounts. Collection and kerbside have no minimum."
               : "No minimum order for collection or kerbside. Guests and members welcome."}
         </p>
         <div className="md-opening-methods" aria-label="Available fulfilment methods">
