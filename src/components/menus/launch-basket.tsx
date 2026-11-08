@@ -323,7 +323,7 @@ export function LaunchBasket({
             {basketPrice.hasPaidChoices && (
               <p>Includes your selected upgrades, add-ons and extras.</p>
             )}
-            <p>Collection or kerbside pickup. Your final total is confirmed before payment.</p>
+            <p>Choose collection, kerbside or eligible free local delivery at checkout. Your final total is confirmed before payment.</p>
           </div>
         </>
       )}
