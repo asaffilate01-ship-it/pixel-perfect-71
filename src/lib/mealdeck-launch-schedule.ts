@@ -48,6 +48,16 @@ export function isMealDeckSundayDeliveryPreopen(now: number): boolean {
   );
 }
 
+/** Sunday service copy must disappear outside the actual Sunday opening window. */
+export function isMealDeckSundayDeliveryService(now: number): boolean {
+  const sunday = MEALDECK_LAUNCH_DAYS[2];
+  return (
+    Number.isFinite(now) &&
+    now >= Date.parse(sunday.opensAt) &&
+    now < Date.parse(sunday.closesAt)
+  );
+}
+
 /** Exact launch windows, including the nightly closure. No browser-local dates. */
 export function mealDeckLaunchWindowAt(now: Date | string | number): MealDeckLaunchDay | null {
   const timestamp =
