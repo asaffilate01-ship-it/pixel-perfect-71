@@ -1,5 +1,23 @@
 import type { LaunchMenuBrand, LaunchMenuItem, LaunchMenuSection } from "./launch-menu-catalogue";
 
+/** Preserve the publishing branch's existing, product-specific subtitle copy. */
+const ownerDishLines: Readonly<Record<string, string>> = {
+  "loadd-loaded-fries-king-of-hearts": "Fried Chicken Loaded Fries",
+  "loadd-loaded-fries-queen-of-hearts": "Grilled Chicken Loaded Fries",
+  "loadd-loaded-fries-jack-of-diamonds": "Chicken Shawarma Loaded Fries",
+  "loadd-loaded-fries-king-of-spades": "Smashed Beef Loaded Fries",
+  "loadd-loaded-mac-cheese-ace-mac": "Plain Mac ’n Cheese",
+  "loadd-loaded-mac-cheese-jacks-mac": "Fried Chicken Mac ’n Cheese",
+  "loadd-loaded-mac-cheese-diamond-melt": "Chicken Shawarma Mac ’n Cheese",
+  "loadd-loaded-mac-cheese-spade-stack": "Smash Beef Mac ’n Cheese",
+  "loadd-loaded-mac-cheese-kings-mac": "Grilled Chicken Mac ’n Cheese",
+  "loadd-full-house-king-of-hearts": "Fried Chicken Loaded Fries & Mac ’n Cheese",
+  "loadd-full-house-queen-of-hearts": "Grilled Chicken Loaded Fries & Mac ’n Cheese",
+  "loadd-full-house-jack-of-diamonds": "Chicken Shawarma Loaded Fries & Mac ’n Cheese",
+  "loadd-full-house-king-of-spades": "Smashed Beef Loaded Fries & Mac ’n Cheese",
+  "souvano-heatwave-heatwave": "Chopped and Shredded Chicken",
+};
+
 type DescriptorSection = Pick<LaunchMenuSection, "id" | "title"> &
   Partial<Pick<LaunchMenuSection, "description">>;
 
@@ -18,8 +36,10 @@ function dishDescription(section: DescriptorSection, item: Pick<LaunchMenuItem, 
 export function launchMenuItemDescriptor(
   brand: Pick<LaunchMenuBrand, "id">,
   section: DescriptorSection,
-  item: Pick<LaunchMenuItem, "description">,
+  item: Pick<LaunchMenuItem, "description"> & Partial<Pick<LaunchMenuItem, "id">>,
 ): string {
+  const ownerLine = item.id ? ownerDishLines[item.id] : undefined;
+  if (ownerLine) return ownerLine;
   const description = dishDescription(section, item);
 
   if (brand.id === "skorch-burgers" && section.id === "beef-smash-deck") {
@@ -65,6 +85,7 @@ export function launchMenuItemDescriptor(
     }
   }
 
-  if (brand.id === "moktl" && section.id === "mocktail-lounge") return "Alcohol-free mocktail";
+  // Preserve the existing Moktl presentation: no additional explainer line.
+  if (brand.id === "moktl" && section.id === "mocktail-lounge") return "";
   return section.title;
 }

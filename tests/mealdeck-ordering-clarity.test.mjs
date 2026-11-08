@@ -158,7 +158,39 @@ describe("compact customer descriptors use published facts", () => {
   });
   it("retains other published types without inventing a recipe", () => {
     assert.equal(descriptor("loadd", "loaded-mac-cheese", ""), "Loaded mac ’n cheese");
-    assert.equal(descriptor("moktl", "mocktail-lounge", ""), "Alcohol-free mocktail");
+    assert.equal(descriptor("moktl", "mocktail-lounge", ""), "");
     assert.equal(descriptor("souvano", "lamb-chops", ""), "Published section");
   });
+});
+
+
+describe("preserve the publishing branch's approved product wording", () => {
+  const lines = {
+    "loadd-loaded-fries-king-of-hearts": "Fried Chicken Loaded Fries",
+    "loadd-loaded-fries-queen-of-hearts": "Grilled Chicken Loaded Fries",
+    "loadd-loaded-fries-jack-of-diamonds": "Chicken Shawarma Loaded Fries",
+    "loadd-loaded-fries-king-of-spades": "Smashed Beef Loaded Fries",
+    "loadd-loaded-mac-cheese-ace-mac": "Plain Mac ’n Cheese",
+    "loadd-loaded-mac-cheese-jacks-mac": "Fried Chicken Mac ’n Cheese",
+    "loadd-loaded-mac-cheese-diamond-melt": "Chicken Shawarma Mac ’n Cheese",
+    "loadd-loaded-mac-cheese-spade-stack": "Smash Beef Mac ’n Cheese",
+    "loadd-loaded-mac-cheese-kings-mac": "Grilled Chicken Mac ’n Cheese",
+    "loadd-full-house-king-of-hearts": "Fried Chicken Loaded Fries & Mac ’n Cheese",
+    "loadd-full-house-queen-of-hearts": "Grilled Chicken Loaded Fries & Mac ’n Cheese",
+    "loadd-full-house-jack-of-diamonds": "Chicken Shawarma Loaded Fries & Mac ’n Cheese",
+    "loadd-full-house-king-of-spades": "Smashed Beef Loaded Fries & Mac ’n Cheese",
+    "souvano-heatwave-heatwave": "Chopped and Shredded Chicken",
+  };
+  for (const [id, expected] of Object.entries(lines)) {
+    it(`retains the stable product line for ${id}`, () => {
+      const brandId = id.startsWith("souvano-") ? "souvano" : "loadd";
+      const sectionId = id.includes("loaded-fries") ? "loaded-fries"
+        : id.includes("loaded-mac-cheese") ? "loaded-mac-cheese"
+          : id.includes("full-house") ? "full-house" : "heatwave";
+      assert.equal(launchMenuItemDescriptor(
+        { id: brandId }, { id: sectionId, title: "Published section" },
+        { id, description: "Current full description remains available separately" },
+      ), expected);
+    });
+  }
 });

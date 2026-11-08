@@ -27,17 +27,17 @@ describe("prominent customer menu explanations", () => {
   });
 
   test("uses the renamed Load’d items as loaded fries, not burgers", () => {
-    expect(descriptor("loadd", "loaded-fries", "Double Deck")).toBe("Grilled chicken · loaded fries");
+    expect(descriptor("loadd", "loaded-fries", "Double Deck")).toBe("Grilled Chicken Loaded Fries");
     expect(descriptor("loadd", "full-house", "Double Deck")).toBe(
-      "Grilled chicken · loaded fries + mac ’n cheese",
+      "Grilled Chicken Loaded Fries & Mac ’n Cheese",
     );
   });
 
-  test("distinguishes chicken burgers and alcohol-free mocktails", () => {
+  test("distinguishes chicken burgers and keeps Moktl free of duplicate copy", () => {
     expect(descriptor("tavo-chicken", "burgers", "Twin Crunch")).toBe(
       "2 chicken fillets · burger bun",
     );
-    expect(descriptor("moktl", "mocktail-lounge", "Virgin Mojito")).toBe("Alcohol-free mocktail");
+    expect(descriptor("moktl", "mocktail-lounge", "Virgin Mojito")).toBe("");
   });
 
   test("does not invent patty count when the published description changes", () => {
