@@ -610,7 +610,7 @@ describe("canonical receipt presentation", () => {
       { ...candidate, receiptContact: { ...contact, deliveryAddress: undefined } },
       { ...candidate, receiptContact: { ...contact, orderId: id(9) } },
       { ...candidate, receiptContact: { ...contact, deliveryAddress: { ...contact.deliveryAddress, postcode: "WRONG" } } },
-      { ...candidate, receiptContact: { ...contact, deliveryAddress: { ...contact.deliveryAddress, roadName: "Main Road\\nAnother order" } } },
+      { ...candidate, receiptContact: { ...contact, deliveryAddress: { ...contact.deliveryAddress, roadName: "Main Road\nAnother order" } } },
       { ...candidate, receiptContact: { ...contact, deliveryAddress: { ...contact.deliveryAddress, email: "private@example.invalid" } } },
       { ...candidate, receipt: receipt() },
     ]) expect(() => parseClaim(bad, id(2))).toThrow();
