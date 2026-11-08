@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
-import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
+import { useOwnDriverAvailability, useOwnDriverPreopenNotice } from "@/components/own-driver-offer-banner";
 import { MEALDECK_LAUNCH_HOURS_PROSE } from "@/lib/mealdeck-launch-schedule";
 import { seo } from "@/lib/seo";
 import "@/styles.launch-opening.css";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/opening-offer")({
 
 function OpeningOfferPage() {
   const deliveryLive = useOwnDriverAvailability();
+  const deliveryPreopen = useOwnDriverPreopenNotice();
   return (
     <div className="md-marketing-shell">
       <SiteHeader />
@@ -47,8 +48,10 @@ function OpeningOfferPage() {
             30% off all available menu items, drinks, add-ons and meal upgrades in an eligible
             order.{" "}
             {deliveryLive
-              ? "Collection and kerbside have no minimum; our free driver delivery requires a £15 payable total after the discount."
-              : "Collection and kerbside pickup have no minimum order value."}{" "}
+              ? "Collection and kerbside have no minimum; free driver delivery within 3 km of LU4 8NU requires £15 payable after all discounts."
+              : deliveryPreopen
+                ? "Collection and kerbside have no minimum. Free own-driver delivery is planned from 3pm today, within 3 km of LU4 8NU and with a £15 minimum payable after all discounts, subject to final launch checks."
+                : "Collection and kerbside pickup have no minimum order value."}{" "}
             The checkout shows your discount and final total before you pay.
           </p>
           <h2>Where and when?</h2>
@@ -66,7 +69,9 @@ function OpeningOfferPage() {
           <p>
             {deliveryLive
               ? "Due to popular demand, free delivery within 3 km of LU4 8NU for orders worth £15+ after discount, using our own driver. Collection and kerbside are also available at 314–318 Selbourne Road."
-              : "Collection and kerbside pickup are available from 314–318 Selbourne Road, Luton, LU4 8NU."}{" "}
+              : deliveryPreopen
+                ? "Free own-driver delivery is planned to start at 3pm on Sunday 8 November, once kitchen, driver and printer readiness are confirmed. The free 3 km service requires £15 payable after discounts. Until then, collection and kerbside are available during opening hours."
+                : "Collection and kerbside pickup are available from 314–318 Selbourne Road, Luton, LU4 8NU."}{" "}
             St Albans and Bedford are coming in a future deck.
           </p>
           <h2>How does it work?</h2>

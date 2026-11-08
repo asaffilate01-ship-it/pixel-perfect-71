@@ -1,6 +1,12 @@
 name: Publish signed MealDeck H10S printer v0.2.3
 on:
   workflow_dispatch:
+  # One-shot automatic request on merge of this reviewed release workflow.
+  # The pinned signer, native test suite and checksum gates below still apply.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-printer-v023.yml"
 
 permissions:
   contents: write
