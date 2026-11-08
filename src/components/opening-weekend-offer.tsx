@@ -130,7 +130,9 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
           {compact ? "30% off everything." : "Opening weekend. 30% off everything."}
         </h2>
         <p className="md-opening-condition">
-          {deliveryLive ? "No minimum for collection or kerbside. Free local delivery requires £15 after 30% off." : "No minimum order for collection or kerbside. Guests and members welcome."}
+          {deliveryLive
+            ? "No minimum for collection or kerbside. Free local delivery requires £15 after 30% off."
+            : "No minimum order for collection or kerbside. Guests and members welcome."}
         </p>
         <div className="md-opening-methods" aria-label="Available fulfilment methods">
           <span>

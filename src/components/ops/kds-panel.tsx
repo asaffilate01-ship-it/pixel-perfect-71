@@ -38,7 +38,11 @@ import { KdsMealComponents } from "./kds-meal-components";
 import { KdsTicketGrid } from "./kds-ticket-grid";
 import { KdsOrderNavigator } from "./kds-order-navigator";
 import { kdsFlavourHighlight } from "@/lib/mealdeck-kds-flavour";
-import { kdsModifierChoiceText, kdsModifierGroupLabel, kdsSouvanoMainState } from "@/lib/mealdeck-kds-dish-clarity";
+import {
+  kdsModifierChoiceText,
+  kdsModifierGroupLabel,
+  kdsSouvanoMainState,
+} from "@/lib/mealdeck-kds-dish-clarity";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
@@ -316,8 +320,12 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
       void refresh();
       return;
     }
-    const expectedVersion = action.target === "driver"
-      ? order.driverVersion : action.target === "pass" ? order.pass?.version : order.version;
+    const expectedVersion =
+      action.target === "driver"
+        ? order.driverVersion
+        : action.target === "pass"
+          ? order.pass?.version
+          : order.version;
     if (!expectedVersion) return;
     const orderNumber = orderDisplayNumber(order.order_number, order.display_code);
     const reference = `${isOrderNumber(order.order_number) ? "Order" : "Collection code"} ${orderNumber}`;
@@ -1319,11 +1327,16 @@ export function KitchenOrderCard({
     >
       <header className="md-ops-ticket-heading md-kds-ticket-heading border-b md-ops-divider">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="md-kds-fulfilment">{fulfilmentLabels[order.fulfilment]}{order.fulfilment === "delivery" ? " · Own driver" : ""}</span>
+          <span className="md-kds-fulfilment">
+            {fulfilmentLabels[order.fulfilment]}
+            {order.fulfilment === "delivery" ? " · Own driver" : ""}
+          </span>
           <span
             className={`md-kds-status rounded-full px-2.5 py-1 text-xs font-bold ${stageStyles[stage].badge}`}
           >
-            {order.fulfilment === "delivery" && order.driverStatus === "with_driver" ? "With driver" : stageLabels[stage]}
+            {order.fulfilment === "delivery" && order.driverStatus === "with_driver"
+              ? "With driver"
+              : stageLabels[stage]}
           </span>
         </div>
         <div className="md-kds-ticket-identity">
@@ -1385,7 +1398,8 @@ export function KitchenOrderCard({
                 : "mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-950"
             }
           >
-            Delivery target: {kdsClockTime(order.deliveryDeadlineAt)} · 60 minutes from confirmed payment
+            Delivery target: {kdsClockTime(order.deliveryDeadlineAt)} · 60 minutes from confirmed
+            payment
             {Date.parse(order.deliveryDeadlineAt) < now
               ? " · OVERDUE — contact driver and customer"
               : ""}
@@ -1475,7 +1489,11 @@ export function KitchenOrderCard({
                                 : "MAIN DISH"}
                             </span>
                           )}
-                          <span className={kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined}>
+                          <span
+                            className={
+                              kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined
+                            }
+                          >
                             {item.item_name}
                           </span>
                         </p>
@@ -1544,8 +1562,12 @@ export function KitchenOrderCard({
                                 >
                                   {flavour ? (
                                     <div className="md-kds-flavour-main">
-                                      <span className="md-kds-flavour-eyebrow">{flavour.label}</span>
-                                      <strong className="md-kds-flavour-value">{flavour.value}</strong>
+                                      <span className="md-kds-flavour-eyebrow">
+                                        {flavour.label}
+                                      </span>
+                                      <strong className="md-kds-flavour-value">
+                                        {flavour.value}
+                                      </strong>
                                     </div>
                                   ) : (
                                     <>
@@ -1554,8 +1576,12 @@ export function KitchenOrderCard({
                                         {groupName &&
                                           !visibleModifier
                                             .toLocaleLowerCase("en-GB")
-                                            .startsWith(`${groupName.toLocaleLowerCase("en-GB")}:`) && (
-                                            <span className="md-kds-choice-group">{groupName}: </span>
+                                            .startsWith(
+                                              `${groupName.toLocaleLowerCase("en-GB")}:`,
+                                            ) && (
+                                            <span className="md-kds-choice-group">
+                                              {groupName}:{" "}
+                                            </span>
                                           )}
                                         {visibleModifier}
                                         {detail && !priceVariant && (
@@ -1604,19 +1630,29 @@ export function KitchenOrderCard({
         (order.pass?.status === "sealed" || order.pass?.status === "ready_for_handoff") ? (
           <div className="space-y-2" aria-label="Own-driver delivery progress">
             {order.driverStatus === "with_driver" ? (
-              <button type="button" className={`${button} md-ops-primary w-full`}
+              <button
+                type="button"
+                className={`${button} md-ops-primary w-full`}
                 disabled={disabled || !order.driverVersion}
-                onClick={() => onDriver("delivered")}>
+                onClick={() => onDriver("delivered")}
+              >
                 {saving ? "Saving…" : "Confirm delivered"}
               </button>
             ) : order.driverStatus === "awaiting_driver" ? (
-              <button type="button" className={`${button} md-ops-primary w-full`}
+              <button
+                type="button"
+                className={`${button} md-ops-primary w-full`}
                 disabled={disabled || !order.driverVersion}
-                onClick={() => onDriver("with_driver")}>
+                onClick={() => onDriver("with_driver")}
+              >
                 {saving ? "Saving…" : "Hand over to our driver"}
               </button>
-            ) : <p role="status">Delivered · confirmed</p>}
-            <p className="md-kds-action-hint">Verify the full delivery address and every bag before driver handover.</p>
+            ) : (
+              <p role="status">Delivered · confirmed</p>
+            )}
+            <p className="md-kds-action-hint">
+              Verify the full delivery address and every bag before driver handover.
+            </p>
           </div>
         ) : order.pass?.status === "ready_for_handoff" ? (
           <form

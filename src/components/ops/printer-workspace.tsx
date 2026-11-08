@@ -1318,7 +1318,10 @@ function ReceiptTerminal({
       {printJob &&
         createPortal(
           <div className="md-printer-print-only">
-            <ReceiptPreview receipt={printJob.receipt} customerPhone={printJob.receiptContact?.customerPhone ?? null} />
+            <ReceiptPreview
+              receipt={printJob.receipt}
+              customerPhone={printJob.receiptContact?.customerPhone ?? null}
+            />
           </div>,
           document.body,
         )}
@@ -1365,8 +1368,12 @@ function ReceiptJobCard({
             Collection code <strong className="tabular-nums">{job.receipt.displayCode}</strong>
           </p>
           <p className="mt-1 text-xs font-bold md-ops-muted">
-            {job.receipt.fulfilment === "delivery" ? "Own-driver delivery" : job.receipt.fulfilment === "curbside" ? "Kerbside" : "Collection"} ·{" "}
-            {job.copyNumber === 1 ? "Original" : `COPY ${job.copyNumber}`}
+            {job.receipt.fulfilment === "delivery"
+              ? "Own-driver delivery"
+              : job.receipt.fulfilment === "curbside"
+                ? "Kerbside"
+                : "Collection"}{" "}
+            · {job.copyNumber === 1 ? "Original" : `COPY ${job.copyNumber}`}
           </p>
         </div>
         <span
@@ -1390,7 +1397,12 @@ function ReceiptJobCard({
         <button type="button" onClick={onPreview} className="min-h-11 text-sm font-bold underline">
           {showing ? "Hide itemised receipt" : "View items, extras and bag numbers"}
         </button>
-        {showing && <ReceiptPreview receipt={job.receipt} customerPhone={job.receiptContact?.customerPhone ?? null} />}
+        {showing && (
+          <ReceiptPreview
+            receipt={job.receipt}
+            customerPhone={job.receiptContact?.customerPhone ?? null}
+          />
+        )}
         {job.status === "queued" && (
           <div className="flex flex-wrap gap-2">
             <button

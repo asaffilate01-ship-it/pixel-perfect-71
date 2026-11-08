@@ -63,7 +63,10 @@ export async function verifyOwnDriverPayment({
       );
     }
   } catch (error) {
-    if (error instanceof OwnDriverInvalidPostcode || error instanceof OwnDriverPostcodeUnavailable) {
+    if (
+      error instanceof OwnDriverInvalidPostcode ||
+      error instanceof OwnDriverPostcodeUnavailable
+    ) {
       throw new CheckoutProblem(
         "area_unavailable",
         "We could not confirm your delivery postcode. Please try again, or choose collection.",

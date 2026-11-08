@@ -522,23 +522,28 @@ describe("printer acceptance presentation and arrivals", () => {
 
 test("own-driver paid order is accepted by the existing printer queue", () => {
   const delivery = { ...pending(), fulfilment: "delivery" as const };
-  const board = parsePrinterAcceptanceBoard({
-    schemaVersion: 1,
-    tenantId: scope.tenantId,
-    locationId: scope.locationId,
-    generatedAt: time,
-    orders: [delivery],
-    remainingOrderCount: 0,
-  }, scope);
+  const board = parsePrinterAcceptanceBoard(
+    {
+      schemaVersion: 1,
+      tenantId: scope.tenantId,
+      locationId: scope.locationId,
+      generatedAt: time,
+      orders: [delivery],
+      remainingOrderCount: 0,
+    },
+    scope,
+  );
   expect(board.orders[0]?.fulfilment).toBe("delivery");
-  const markup = renderToStaticMarkup(createElement(PrinterPendingOrderCard, {
-    order: delivery,
-    fresh: true,
-    paired: false,
-    automatic: false,
-    busy: false,
-    accepting: false,
-    onAccept: () => {},
-  }));
+  const markup = renderToStaticMarkup(
+    createElement(PrinterPendingOrderCard, {
+      order: delivery,
+      fresh: true,
+      paired: false,
+      automatic: false,
+      busy: false,
+      accepting: false,
+      onAccept: () => {},
+    }),
+  );
   expect(markup).toContain("Own-driver delivery");
 });

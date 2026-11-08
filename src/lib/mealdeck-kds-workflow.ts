@@ -68,10 +68,15 @@ const completedOrder = z
         order.fulfilment === "delivery" ? parseOwnDriverAddress(rawDeliveryAddress) : null;
       const deliveryContact =
         order.fulfilment === "delivery" ? parseKdsPickupContact(rawDeliveryContact) : null;
-      if (order.fulfilment === "delivery" && (
-        !deliveryAddress || !deliveryContact || order.driverStatus !== "delivered" ||
-        !order.driverHandoverAt || !order.deliveredAt || !order.deliveryDeadlineAt
-      )) {
+      if (
+        order.fulfilment === "delivery" &&
+        (!deliveryAddress ||
+          !deliveryContact ||
+          order.driverStatus !== "delivered" ||
+          !order.driverHandoverAt ||
+          !order.deliveredAt ||
+          !order.deliveryDeadlineAt)
+      ) {
         throw new Error("Missing confirmed delivery completion");
       }
       return {

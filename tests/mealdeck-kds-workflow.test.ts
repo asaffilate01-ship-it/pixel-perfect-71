@@ -124,7 +124,11 @@ describe("durable Done history", () => {
         roadName: "Test Road",
         addressLine2: "Flat 2",
       },
-      deliveryContact: { name: "Sam Driver Customer", phone: "+447700900123", email: "omit@example.invalid" },
+      deliveryContact: {
+        name: "Sam Driver Customer",
+        phone: "+447700900123",
+        email: "omit@example.invalid",
+      },
       driverStatus: "delivered",
       deliveryDeadlineAt: "2026-11-06T11:00:00Z",
       driverHandoverAt: "2026-11-06T10:15:00Z",

@@ -141,11 +141,18 @@ export function normaliseCheckoutSelection(input: unknown, tenantId: string) {
   if (data.picks.reduce((count, pick) => count + pick.quantity, 0) > 60)
     throw new CheckoutProblem("basket_limit", "Please keep this order to 60 items or fewer.");
   const vehicle = data.fulfilment === "curbside" ? parseKerbsideVehicle(data.vehicle) : null;
-  const deliveryAddress = data.fulfilment === "delivery" ? parseOwnDriverAddress(data.deliveryAddress) : null;
+  const deliveryAddress =
+    data.fulfilment === "delivery" ? parseOwnDriverAddress(data.deliveryAddress) : null;
   if (data.fulfilment === "delivery" && !deliveryAddress)
-    throw new CheckoutProblem("delivery_address_required", "Enter your door number, road name and full postcode.");
+    throw new CheckoutProblem(
+      "delivery_address_required",
+      "Enter your door number, road name and full postcode.",
+    );
   if (data.fulfilment !== "delivery" && data.deliveryAddress !== undefined)
-    throw new CheckoutProblem("delivery_address_not_needed", "Address details are only needed for delivery.");
+    throw new CheckoutProblem(
+      "delivery_address_not_needed",
+      "Address details are only needed for delivery.",
+    );
   if (data.fulfilment === "curbside" && !vehicle)
     throw new CheckoutProblem(
       "vehicle_required",

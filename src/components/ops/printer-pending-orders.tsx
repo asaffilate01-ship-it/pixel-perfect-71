@@ -116,7 +116,12 @@ export function PrinterPendingOrderCard({
             Collection code <strong className="tabular-nums">{order.displayCode}</strong>
           </p>
           <p className="text-sm font-bold">
-            {order.fulfilment === "delivery" ? "Own-driver delivery" : order.fulfilment === "curbside" ? "Kerbside" : "Collection"} · paid{" "}
+            {order.fulfilment === "delivery"
+              ? "Own-driver delivery"
+              : order.fulfilment === "curbside"
+                ? "Kerbside"
+                : "Collection"}{" "}
+            · paid{" "}
             {new Date(order.paidAt).toLocaleTimeString("en-GB", {
               hour: "2-digit",
               minute: "2-digit",

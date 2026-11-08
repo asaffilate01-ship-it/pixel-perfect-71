@@ -59,7 +59,8 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
                 <Clock3 /> {isLuton ? "Opening weekend:" : "Planned hours:"} {hours}
               </span>
               <span>
-                <Bike /> {deliveryLive ? "Collection · Kerbside · Free own-driver delivery" : fulfilment}
+                <Bike />{" "}
+                {deliveryLive ? "Collection · Kerbside · Free own-driver delivery" : fulfilment}
               </span>
             </div>
             <div className="md-hero-actions">
@@ -124,7 +125,11 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <MapPin />
             <p className="md-kicker">{isLuton ? "Collection location" : "Planned service areas"}</p>
             <h2>Local first.</h2>
-            <p>{deliveryLive ? "Collection and kerbside at 314–318 Selbourne Road · Free delivery within 3 km of LU4 8NU on £15+ after discounts" : areas.join(" · ")}</p>
+            <p>
+              {deliveryLive
+                ? "Collection and kerbside at 314–318 Selbourne Road · Free delivery within 3 km of LU4 8NU on £15+ after discounts"
+                : areas.join(" · ")}
+            </p>
           </article>
           <article className="md-location-info-panel md-location-info-panel-red">
             <Store />
@@ -160,7 +165,11 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <span>
                 <MapPin /> Kerbside
               </span>
-              {deliveryLive && <span><Bike /> Free delivery · 3 km</span>}
+              {deliveryLive && (
+                <span>
+                  <Bike /> Free delivery · 3 km
+                </span>
+              )}
             </div>
           </section>
         ) : isStAlbans ? (

@@ -7,7 +7,10 @@ export function KdsPickupDetails({
   vehicle,
   deliveryAddress,
   deliveryContact,
-}: Pick<KdsOrder, "fulfilment" | "pickupContact" | "vehicle" | "deliveryAddress" | "deliveryContact">) {
+}: Pick<
+  KdsOrder,
+  "fulfilment" | "pickupContact" | "vehicle" | "deliveryAddress" | "deliveryContact"
+>) {
   if (fulfilment === "delivery" && deliveryAddress && deliveryContact) {
     return (
       <dl className="md-kds-pickup-details" aria-label="Driver delivery address">
@@ -22,8 +25,14 @@ export function KdsPickupDetails({
         <div>
           <dt>Full delivery address</dt>
           <dd className="md-kds-contact-address">
-            {[deliveryAddress.doorNumber, deliveryAddress.roadName,
-              deliveryAddress.addressLine2, deliveryAddress.postcode].filter(Boolean).join(", ")}
+            {[
+              deliveryAddress.doorNumber,
+              deliveryAddress.roadName,
+              deliveryAddress.addressLine2,
+              deliveryAddress.postcode,
+            ]
+              .filter(Boolean)
+              .join(", ")}
           </dd>
         </div>
         <div>
@@ -57,7 +66,9 @@ export function KdsPickupDetails({
         <>
           <div>
             <dt>Car</dt>
-            <dd>{car.colour} {car.make}</dd>
+            <dd>
+              {car.colour} {car.make}
+            </dd>
           </div>
           <div>
             <dt>Reg ends</dt>

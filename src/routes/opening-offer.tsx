@@ -45,13 +45,18 @@ function OpeningOfferPage() {
           <h2>What is included?</h2>
           <p>
             30% off all available menu items, drinks, add-ons and meal upgrades in an eligible
-            order. {deliveryLive ? "Collection and kerbside have no minimum; our free driver delivery requires a £15 payable total after the discount." : "Collection and kerbside pickup have no minimum order value."} The checkout shows your discount and final total before you pay.
+            order.{" "}
+            {deliveryLive
+              ? "Collection and kerbside have no minimum; our free driver delivery requires a £15 payable total after the discount."
+              : "Collection and kerbside pickup have no minimum order value."}{" "}
+            The checkout shows your discount and final total before you pay.
           </p>
           <h2>Where and when?</h2>
           <p>
             MealDeck Luton opening weekend, 6–8 November 2026: {MEALDECK_LAUNCH_HOURS_PROSE} The
             opening offer applies during these hours and pauses when we close each night. Guest
-            checkout continues whenever online ordering is open. The discount does not restart when you visit or register.
+            checkout continues whenever online ordering is open. The discount does not restart when
+            you visit or register.
           </p>
           <p>
             Start secure payment while the offer is active, then complete payment before that
@@ -59,7 +64,10 @@ function OpeningOfferPage() {
             offers available at that time.
           </p>
           <p>
-            {deliveryLive ? "Due to popular demand, free delivery within 3 km of LU4 8NU for orders worth £15+ after discount, using our own driver. Collection and kerbside are also available at 314–318 Selbourne Road." : "Collection and kerbside pickup are available from 314–318 Selbourne Road, Luton, LU4 8NU."} St Albans and Bedford are coming in a future deck.
+            {deliveryLive
+              ? "Due to popular demand, free delivery within 3 km of LU4 8NU for orders worth £15+ after discount, using our own driver. Collection and kerbside are also available at 314–318 Selbourne Road."
+              : "Collection and kerbside pickup are available from 314–318 Selbourne Road, Luton, LU4 8NU."}{" "}
+            St Albans and Bedford are coming in a future deck.
           </p>
           <h2>How does it work?</h2>
           <ul>
@@ -68,7 +76,11 @@ function OpeningOfferPage() {
               a guest or sign in to your verified member account.
             </li>
             <li>
-              {deliveryLive ? "Choose free local delivery, collection or kerbside. Delivery requires a postcode within 3 km, full street address, name and phone number; the minimum is £15 after discount." : "Choose collection or kerbside pickup."} For kerbside, enter your car make, colour and the last four characters of its registration so the team can find you.
+              {deliveryLive
+                ? "Choose free local delivery, collection or kerbside. Delivery requires a postcode within 3 km, full street address, name and phone number; the minimum is £15 after discount."
+                : "Choose collection or kerbside pickup."}{" "}
+              For kerbside, enter your car make, colour and the last four characters of its
+              registration so the team can find you.
             </li>
             <li>
               During the offer dates, the eligible discount is calculated automatically at checkout.

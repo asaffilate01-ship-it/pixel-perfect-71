@@ -68,7 +68,8 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
           )}
         </div>
         <p className="mt-2 text-xs md-ops-muted">
-          {order.fulfilment === "delivery" ? "Own-driver delivery confirmed" : "Handover confirmed"} ·{" "}
+          {order.fulfilment === "delivery" ? "Own-driver delivery confirmed" : "Handover confirmed"}{" "}
+          ·{" "}
           {new Date(order.completed_at).toLocaleDateString("en-GB", {
             timeZone: "Europe/London",
             weekday: "short",
@@ -87,7 +88,8 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
         />
         {order.fulfilment === "delivery" && order.driverHandoverAt && (
           <p className="mb-3 rounded-lg border p-3 text-sm font-semibold md-ops-text">
-            Driver collected: {kdsClockTime(order.driverHandoverAt)} · Delivered: {kdsClockTime(order.completed_at)}
+            Driver collected: {kdsClockTime(order.driverHandoverAt)} · Delivered:{" "}
+            {kdsClockTime(order.completed_at)}
           </p>
         )}
         <div className="md-kds-packing-flags">
@@ -120,13 +122,22 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
               <p className="mb-1 text-xs font-bold uppercase md-ops-accent">{item.brand_name}</p>
               <div className="md-kds-line-title">
                 <span className="md-ops-ticket-quantity md-kds-quantity">{item.quantity}×</span>
-                <p className={kdsSouvanoMainState(item) ? "md-kds-souvano-main" : undefined} data-main-state={kdsSouvanoMainState(item) ?? undefined}>
+                <p
+                  className={kdsSouvanoMainState(item) ? "md-kds-souvano-main" : undefined}
+                  data-main-state={kdsSouvanoMainState(item) ?? undefined}
+                >
                   {kdsSouvanoMainState(item) && (
                     <span className="md-kds-souvano-main-label">
-                      {kdsSouvanoMainState(item) === "verify-main" ? "VERIFY MAIN — check order record" : "MAIN DISH"}
+                      {kdsSouvanoMainState(item) === "verify-main"
+                        ? "VERIFY MAIN — check order record"
+                        : "MAIN DISH"}
                     </span>
                   )}
-                  <span className={kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined}>{item.item_name}</span>
+                  <span
+                    className={kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined}
+                  >
+                    {item.item_name}
+                  </span>
                 </p>
               </div>
               {item.unit_pence != null && (

@@ -30,7 +30,9 @@ function LutonPage() {
       fulfilment={deliveryLive ? "Collection · Kerbside · Free delivery" : "Collection · Kerbside"}
       areas={[
         "Collection and kerbside from 314–318 Selbourne Road, Luton, LU4 8NU",
-        deliveryLive ? "Free delivery within 3 km of LU4 8NU on orders £15+ after discounts" : "Delivery currently unavailable",
+        deliveryLive
+          ? "Free delivery within 3 km of LU4 8NU on orders £15+ after discounts"
+          : "Delivery currently unavailable",
       ]}
       includeCafe1={false}
       faqs={[

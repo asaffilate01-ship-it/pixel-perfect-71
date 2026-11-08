@@ -1,3 +1,4 @@
+import { verifyOwnDriverPayment } from "./mealdeck-own-driver-payment.server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { reconcileOrderPaymentWebhook } from "./mealdeck-order-payments-stripe.server";
@@ -51,7 +52,12 @@ import {
   registerWhatsAppCheckoutQuote,
 } from "./mealdeck-whatsapp-checkout.server";
 import { readWhatsAppConfig } from "./mealdeck-whatsapp-transport.server";
-import { checkOwnDriverArea, ownDriverShortfallPence, OwnDriverInvalidPostcode, OwnDriverPostcodeUnavailable } from "./mealdeck-own-driver-delivery";
+import {
+  checkOwnDriverArea,
+  ownDriverShortfallPence,
+  OwnDriverInvalidPostcode,
+  OwnDriverPostcodeUnavailable,
+} from "./mealdeck-own-driver-delivery";
 
 type Json = Record<string, unknown>;
 const object = (value: unknown): Json =>
@@ -462,10 +468,17 @@ export async function handleOnlineCheckoutRequest(
         throw new CheckoutProblem("invalid_request", "Enter only a postcode to check coverage.");
       const status = await readOnlineCheckoutStatus(env, fetcher);
       if (!status.fulfilments.includes("delivery"))
-        throw new CheckoutProblem("delivery_unavailable", "Delivery is not available at the moment. Please choose collection or kerbside.", 503);
+        throw new CheckoutProblem(
+          "delivery_unavailable",
+          "Delivery is not available at the moment. Please choose collection or kerbside.",
+          503,
+        );
       try {
         const area = await checkOwnDriverArea(requestData["postcode"], fetcher);
-        return Response.json({ postcode: area.postcode, eligible: area.eligible, distanceMetres: area.distanceMetres }, { headers: NO_STORE });
+        return Response.json(
+          { postcode: area.postcode, eligible: area.eligible, distanceMetres: area.distanceMetres },
+          { headers: NO_STORE },
+        );
       } catch (error) {
         if (error instanceof OwnDriverInvalidPostcode)
           throw new CheckoutProblem("invalid_postcode", error.message);
@@ -593,11 +606,18 @@ export async function handleOnlineCheckoutRequest(
       let deliveryDistanceMetres: number | null = null;
       if (selection.fulfilment === "delivery") {
         if (!status.fulfilments.includes("delivery") || !selection.deliveryAddress)
-          throw new CheckoutProblem("delivery_unavailable", "Delivery is unavailable. Choose collection or kerbside.", 503);
+          throw new CheckoutProblem(
+            "delivery_unavailable",
+            "Delivery is unavailable. Choose collection or kerbside.",
+            503,
+          );
         try {
           const area = await checkOwnDriverArea(selection.deliveryAddress.postcode, fetcher);
           if (!area.eligible)
-            throw new CheckoutProblem("outside_delivery_area", "Sorry, we're not delivering to your location yet. You can select collection or kerbside pickup.");
+            throw new CheckoutProblem(
+              "outside_delivery_area",
+              "Sorry, we're not delivering to your location yet. You can select collection or kerbside pickup.",
+            );
           deliveryDistanceMetres = area.distanceMetres;
         } catch (error) {
           if (error instanceof OwnDriverInvalidPostcode)
@@ -637,12 +657,17 @@ export async function handleOnlineCheckoutRequest(
         const shortfall = ownDriverShortfallPence(quote["totalPence"] as number);
         if (shortfall === null) throw backendProblem({});
         if (shortfall > 0)
-          throw new CheckoutProblem("minimum_delivery_order", `Your total after discounts is below the £15 free-delivery minimum. Add £${(shortfall / 100).toFixed(2)} more to your basket, or choose collection.`);
+          throw new CheckoutProblem(
+            "minimum_delivery_order",
+            `Your total after discounts is below the £15 free-delivery minimum. Add £${(shortfall / 100).toFixed(2)} more to your basket, or choose collection.`,
+          );
         await rpc(clients.service, "mealdeck_bind_local_delivery_quote", {
           p_tenant: clients.config.tenantId,
           p_location: clients.config.locationId,
           p_quote: quote["quoteId"],
-          ...(customerId ? { p_customer: customerId, p_token_hash: null } : { p_customer: null, p_token_hash: guestTokenHash(guestToken!) }),
+          ...(customerId
+            ? { p_customer: customerId, p_token_hash: null }
+            : { p_customer: null, p_token_hash: guestTokenHash(guestToken!) }),
           p_request_hash: selection.requestHash,
           p_address: selection.deliveryAddress,
           p_distance_metres: deliveryDistanceMetres,
@@ -679,47 +704,6 @@ export async function handleOnlineCheckoutRequest(
         "Resume the original WhatsApp payment attempt.",
         409,
       );
-    // Existing bound delivery quotes MUST NOT be payable after the operator
-    // disables delivery. Read this even with the feature flag off. Before the
-    // migration exists, the known missing-RPC response preserves pickup only.
-    const localLookup = await clients.service.rpc("mealdeck_local_delivery_quote_for_actor", {
-      p_quote: parsed.data.quoteId,
-      ...(customerId
-        ? { p_customer: customerId, p_token_hash: null }
-        : { p_customer: null, p_token_hash: guestTokenHash(guestToken!) }),
-    });
-    let deliveryCheck: Json = { delivery: false };
-    if (localLookup.error) {
-      if (
-        localLookup.error.code !== "PGRST202" ||
-        env["MEALDECK_OWN_DRIVER_DELIVERY_ENABLED"] === "true"
-      ) {
-        throw backendProblem(localLookup.error);
-      }
-    } else if (
-      localLookup.data &&
-      typeof localLookup.data === "object" &&
-      !Array.isArray(localLookup.data)
-    ) {
-      deliveryCheck = localLookup.data as Json;
-    } else {
-      throw backendProblem({});
-    }
-    if (deliveryCheck["delivery"] === true) {
-      if (!status.fulfilments.includes("delivery"))
-        throw new CheckoutProblem("delivery_unavailable", "New delivery payments are paused. Your basket remains saved.", 503);
-      try {
-        const area = await checkOwnDriverArea(deliveryCheck["postcode"], fetcher);
-        if (!area.eligible)
-          throw new CheckoutProblem("outside_delivery_area", "Sorry, we are not currently delivering to your location. Please choose collection.");
-      } catch (error) {
-        if (error instanceof OwnDriverInvalidPostcode || error instanceof OwnDriverPostcodeUnavailable)
-          throw new CheckoutProblem("area_unavailable", "We could not confirm your delivery postcode. Please try again.", 503);
-        throw error;
-      }
-      if (ownDriverShortfallPence(deliveryCheck["totalPence"] as number) !== 0)
-        throw new CheckoutProblem("minimum_delivery_order", "Please add items to reach the £15 delivery minimum after discounts.");
-    }
     await verifyStripeAccount(stripe, fetcher);
     // Provider verification may take time. Recheck the scoped clock/readiness
     // immediately before preparing a real payment when public signoff is absent.
@@ -742,6 +726,22 @@ export async function handleOnlineCheckoutRequest(
     if (!z.uuid().safeParse(prepared["orderId"]).success || !Array.isArray(prepared["lines"]))
       throw backendProblem({});
     const order = prepared as unknown as PreparedStripeOrder;
+    // Inspect the actor-scoped canonical order, not browser input. A pending
+    // order is not a payment: no Stripe session exists until this guard passes.
+    await verifyOwnDriverPayment({
+      order,
+      deliveryEnabled:
+        env["MEALDECK_OWN_DRIVER_DELIVERY_ENABLED"] === "true" &&
+        status.fulfilments.includes("delivery"),
+      readQuote: () =>
+        rpc(clients.service!, "mealdeck_local_delivery_quote_for_actor", {
+          p_quote: parsed.data.quoteId,
+          ...(customerId
+            ? { p_customer: customerId, p_token_hash: null }
+            : { p_customer: null, p_token_hash: guestTokenHash(guestToken!) }),
+        }),
+      fetcher,
+    });
     // Bind the verified actor and original canonical order before any provider
     // session can be created. Chat messages cannot supply this authority.
     if (whatsapp)

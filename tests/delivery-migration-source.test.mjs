@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const sql = readFileSync(
-  new URL("../deploy/mealdeck/post-install-migrations/20261107230000_mealdeck_local_driver_delivery.sql", import.meta.url),
+  new URL(
+    "../deploy/mealdeck/post-install-migrations/20261107230000_mealdeck_local_driver_delivery.sql",
+    import.meta.url,
+  ),
   "utf8",
 );
 
@@ -40,8 +43,8 @@ test("existing printer, guest and member checkout projections include delivery",
   assert.match(sql, /receipt_snapshot_before_meal_components/);
   assert.match(sql, /'mealComponents',i->'mealComponents'/);
   assert.match(sql, /'paymentMethod','cash'/);
-  assert.match(sql, /create or replace function public\.mealdeck_customer_order_receipt/);
-  assert.match(sql, /create or replace function public\.mealdeck_guest_order_receipt/);
+  assert.match(sql, /create or replace function public\.mealdeck_customer_order_receipt/i);
+  assert.match(sql, /create or replace function public\.mealdeck_guest_order_receipt/i);
   assert.match(sql, /o\.paid_at\+interval '60 minutes'/);
   assert.match(sql, /handoff_status|handed_off/);
 });

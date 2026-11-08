@@ -110,7 +110,12 @@ import {
 const FULFILMENT_KEY = "mealdeck-checkout-fulfilment-v1";
 const ATTEMPT_KEY = "mealdeck-checkout-attempt-v2";
 type Fulfilment = "pickup" | "curbside" | "delivery";
-type DeliveryAddressDraft = { postcode: string; doorNumber: string; roadName: string; addressLine2: string };
+type DeliveryAddressDraft = {
+  postcode: string;
+  doorNumber: string;
+  roadName: string;
+  addressLine2: string;
+};
 type DeliveryArea = { postcode: string; eligible: boolean; distanceMetres: number };
 type PricedLine = {
   lineId: string;
@@ -358,22 +363,23 @@ function ReceiptProgress({ receipt }: { receipt: Receipt }) {
     const timer = setInterval(tick, 30_000);
     return () => clearInterval(timer);
   }, [receipt.paidAt, receipt.serverNow]);
-  const stages = receipt.fulfilment === "delivery"
-    ? [
-        { label: "Placed", at: receipt.paidAt },
-        { label: "Accepted", at: receipt.acceptedAt },
-        { label: "Preparing", at: receipt.preparingAt },
-        { label: "Ready", at: receipt.readyForCollectionAt },
-        { label: "Handed to driver", at: receipt.driverHandoverAt ?? null },
-        { label: "Delivered", at: receipt.deliveredAt ?? null },
-      ]
-    : [
-        { label: "Placed", at: receipt.paidAt },
-        { label: "Accepted", at: receipt.acceptedAt },
-        { label: "Preparing", at: receipt.preparingAt },
-        { label: "Ready", at: receipt.readyForCollectionAt },
-        { label: "Completed", at: receipt.completedAt },
-      ];
+  const stages =
+    receipt.fulfilment === "delivery"
+      ? [
+          { label: "Placed", at: receipt.paidAt },
+          { label: "Accepted", at: receipt.acceptedAt },
+          { label: "Preparing", at: receipt.preparingAt },
+          { label: "Ready", at: receipt.readyForCollectionAt },
+          { label: "Handed to driver", at: receipt.driverHandoverAt ?? null },
+          { label: "Delivered", at: receipt.deliveredAt ?? null },
+        ]
+      : [
+          { label: "Placed", at: receipt.paidAt },
+          { label: "Accepted", at: receipt.acceptedAt },
+          { label: "Preparing", at: receipt.preparingAt },
+          { label: "Ready", at: receipt.readyForCollectionAt },
+          { label: "Completed", at: receipt.completedAt },
+        ];
   const count = stages.filter((stage) => stage.at).length;
   return (
     <section className="md-checkout-progress" aria-label="Order progress">
@@ -418,22 +424,23 @@ function ReceiptProgress({ receipt }: { receipt: Receipt }) {
             ? "Your order is with our driver. We will update this page when delivery is confirmed."
             : receipt.fulfilment === "delivery" && receipt.readyForCollectionAt
               ? "Your order is packed and ready for our driver."
-            : receipt.readyForCollectionAt
-              ? "Your complete order is packed and ready. Give your collection code to the team at handover."
-            : receipt.preparingAt
-              ? receipt.fulfilment === "delivery"
-                ? "The kitchen is preparing your brands for delivery."
-                : "The kitchen is preparing your brands together for one collection."
-              : receipt.acceptedAt
-                ? "The kitchen has accepted your order. We'll update this page as it progresses."
-                : "Payment confirmed. Your order is with the kitchen, awaiting acceptance."}
+              : receipt.readyForCollectionAt
+                ? "Your complete order is packed and ready. Give your collection code to the team at handover."
+                : receipt.preparingAt
+                  ? receipt.fulfilment === "delivery"
+                    ? "The kitchen is preparing your brands for delivery."
+                    : "The kitchen is preparing your brands together for one collection."
+                  : receipt.acceptedAt
+                    ? "The kitchen has accepted your order. We'll update this page as it progresses."
+                    : "Payment confirmed. Your order is with the kitchen, awaiting acceptance."}
       </p>
     </section>
   );
 }
 
 function PriceSummary({
-  total, fulfilment,
+  total,
+  fulfilment,
 }: {
   total: Pick<Quote, "grossPence" | "discountPence" | "totalPence">;
   fulfilment?: Fulfilment | null;
@@ -451,7 +458,9 @@ function PriceSummary({
         </div>
       )}
       <div>
-        <dt>{fulfilment === "delivery" ? "Own-driver delivery" : "Collection / kerbside pickup"}</dt>
+        <dt>
+          {fulfilment === "delivery" ? "Own-driver delivery" : "Collection / kerbside pickup"}
+        </dt>
         <dd>Free</dd>
       </div>
       <div className="md-checkout-total">
@@ -675,7 +684,12 @@ function LaunchCheckoutView({
   const [basketLoaded, setBasketLoaded] = useState(false);
   const [fulfilment, setFulfilment] = useState<Fulfilment | null>(null);
   const [vehicle, setVehicle] = useState({ make: "", registrationLast4: "", colour: "" });
-  const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddressDraft>({postcode:"",doorNumber:"",roadName:"",addressLine2:""});
+  const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddressDraft>({
+    postcode: "",
+    doorNumber: "",
+    roadName: "",
+    addressLine2: "",
+  });
   const [deliveryArea, setDeliveryArea] = useState<DeliveryArea | null>(null);
   const [deliveryAreaIssue, setDeliveryAreaIssue] = useState<string | null>(null);
   const [checkingDeliveryArea, setCheckingDeliveryArea] = useState(false);
@@ -714,8 +728,17 @@ function LaunchCheckoutView({
     } catch {
       /* No stored choice. */
     }
-    setCheckoutMode(entryPolicy.emailRegistrationDeferred || status?.guestCheckout.eligible ? "guest" : "member");
-  }, [entryPolicy, orderId, checkoutModeKey, whatsAppPaymentAttempt, whatsAppBoundMode, status?.guestCheckout.eligible]);
+    setCheckoutMode(
+      entryPolicy.emailRegistrationDeferred || status?.guestCheckout.eligible ? "guest" : "member",
+    );
+  }, [
+    entryPolicy,
+    orderId,
+    checkoutModeKey,
+    whatsAppPaymentAttempt,
+    whatsAppBoundMode,
+    status?.guestCheckout.eligible,
+  ]);
   const [guestIssue, setGuestIssue] = useState<string | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -784,12 +807,12 @@ function LaunchCheckoutView({
     status.kitchen.collectionEstimateMinutes !== null;
   const guestEligible = orderingAvailable && status?.guestCheckout.eligible === true;
   const canViewReceipt = checkoutMode === "guest" ? Boolean(guestSession) : registered;
-  const deliveryReady = fulfilment !== "delivery" || (
-    status?.fulfilments?.includes("delivery") === true &&
-    parseOwnDriverAddress(deliveryAddress) !== null &&
-    deliveryArea?.eligible === true &&
-    deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode)
-  );
+  const deliveryReady =
+    fulfilment !== "delivery" ||
+    (status?.fulfilments?.includes("delivery") === true &&
+      parseOwnDriverAddress(deliveryAddress) !== null &&
+      deliveryArea?.eligible === true &&
+      deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode));
   const canCheckout =
     !whatsAppCheckout?.paused &&
     deliveryReady &&
@@ -815,7 +838,8 @@ function LaunchCheckoutView({
       ? "/checkout?group=1"
       : "/checkout";
   const sharedAvailable =
-    fulfilment !== "delivery" && sharedCapabilities?.available === true &&
+    fulfilment !== "delivery" &&
+    sharedCapabilities?.available === true &&
     (checkoutMode !== "guest" || sharedCapabilities.guestEligible);
   const sharedReady =
     sharedAvailable && !sharedLoading && separateBags && bagCount >= 2 && bagCount <= 10;
@@ -893,7 +917,8 @@ function LaunchCheckoutView({
     try {
       if (!whatsAppDraft) {
         const saved = sessionStorage.getItem(FULFILMENT_KEY);
-        if (saved === "pickup" || saved === "curbside" || saved === "delivery") setFulfilment(saved);
+        if (saved === "pickup" || saved === "curbside" || saved === "delivery")
+          setFulfilment(saved);
       }
       if (
         !receiptMode &&
@@ -1259,14 +1284,26 @@ function LaunchCheckoutView({
     try {
       const result = await checkoutRequest("guest", { action: "delivery_area", postcode });
       if (generation !== deliveryLookupGeneration.current) return;
-      if (typeof result.eligible !== "boolean" || result.postcode !== postcode ||
-        typeof result.distanceMetres !== "number") throw new Error("Please check your postcode again.");
-      setDeliveryArea({postcode,eligible:result.eligible,distanceMetres:result.distanceMetres});
+      if (
+        typeof result.eligible !== "boolean" ||
+        result.postcode !== postcode ||
+        typeof result.distanceMetres !== "number"
+      )
+        throw new Error("Please check your postcode again.");
+      setDeliveryArea({
+        postcode,
+        eligible: result.eligible,
+        distanceMetres: result.distanceMetres,
+      });
       if (!result.eligible)
-        setDeliveryAreaIssue("Sorry, we are not currently delivering to your location. You can collect or choose kerbside pickup.");
-    } catch(error) {
+        setDeliveryAreaIssue(
+          "Sorry, we are not currently delivering to your location. You can collect or choose kerbside pickup.",
+        );
+    } catch (error) {
       if (generation === deliveryLookupGeneration.current)
-        setDeliveryAreaIssue(error instanceof Error ? error.message : "We couldn't check this postcode right now.");
+        setDeliveryAreaIssue(
+          error instanceof Error ? error.message : "We couldn't check this postcode right now.",
+        );
     } finally {
       if (generation === deliveryLookupGeneration.current) setCheckingDeliveryArea(false);
     }
@@ -1352,7 +1389,9 @@ function LaunchCheckoutView({
                 ...(crossSelections?.length ? { crossSelections } : {}),
               })),
               ...(fulfilment === "curbside" ? { vehicle } : {}),
-              ...(fulfilment === "delivery" ? { deliveryAddress: parseOwnDriverAddress(deliveryAddress) } : {}),
+              ...(fulfilment === "delivery"
+                ? { deliveryAddress: parseOwnDriverAddress(deliveryAddress) }
+                : {}),
               ...(notes ? { notes } : {}),
               packing: {
                 cutleryRequested,
@@ -1739,17 +1778,21 @@ function LaunchCheckoutView({
                         <small>Use this number when speaking to our team.</small>
                       </div>
                     )}
-                    {receipt.verifiedPaid && receipt.handoffCode && receipt.fulfilment !== "delivery" && (
-                      <div className="md-checkout-collection-code">
-                        <span>Collection code</span>
-                        <strong>{receipt.handoffCode}</strong>
-                        <small>Give this code to the team when your food is handed over.</small>
-                      </div>
-                    )}
+                    {receipt.verifiedPaid &&
+                      receipt.handoffCode &&
+                      receipt.fulfilment !== "delivery" && (
+                        <div className="md-checkout-collection-code">
+                          <span>Collection code</span>
+                          <strong>{receipt.handoffCode}</strong>
+                          <small>Give this code to the team when your food is handed over.</small>
+                        </div>
+                      )}
                     {receipt.verifiedPaid && !receipt.completedAt && (
                       <p className="md-checkout-estimate">
                         <Clock3 size={18} />
-                        {receipt.fulfilment === "delivery" ? "Delivery within 60 minutes of payment (estimated)" : "Approx. pickup " + clock(receipt.estimatedReadyAt)}
+                        {receipt.fulfilment === "delivery"
+                          ? "Delivery within 60 minutes of payment (estimated)"
+                          : "Approx. pickup " + clock(receipt.estimatedReadyAt)}
                         <small>
                           {receipt.fulfilment === "delivery"
                             ? "Our own driver will deliver within the Luton delivery area. There is no live GPS tracking."
@@ -1852,7 +1895,12 @@ function LaunchCheckoutView({
                   <h2>Your order</h2>
                   <p className="md-checkout-location">
                     <MapPin size={16} />
-                    Luton · {receipt.fulfilment === "delivery" ? "Free delivery" : receipt.fulfilment === "curbside" ? "Kerbside pickup" : "Collection"}
+                    Luton ·{" "}
+                    {receipt.fulfilment === "delivery"
+                      ? "Free delivery"
+                      : receipt.fulfilment === "curbside"
+                        ? "Kerbside pickup"
+                        : "Collection"}
                   </p>
                   <DetailedOrderLines lines={receipt.lines} packingPlan={receipt.packingPlan} />
                   <CheckoutSpecialRequestsReview notes={receipt.notes ?? null} />
@@ -1910,7 +1958,11 @@ function LaunchCheckoutView({
                     <MapPin size={16} />
                     Luton kitchen
                   </p>
-                  <div className="md-checkout-methods" role="group" aria-label="Order fulfilment method">
+                  <div
+                    className="md-checkout-methods"
+                    role="group"
+                    aria-label="Order fulfilment method"
+                  >
                     <button
                       type="button"
                       disabled={busy}
@@ -1944,7 +1996,11 @@ function LaunchCheckoutView({
                     >
                       <Truck size={19} />
                       <span>
-                        Free delivery <small>Due to popular demand · within 3 km of LU4 8NU · £15 minimum after discounts · up to 60 minutes</small>
+                        Free delivery{" "}
+                        <small>
+                          Due to popular demand · within 3 km of LU4 8NU · £15 minimum after
+                          discounts · up to 60 minutes
+                        </small>
                       </span>
                       {fulfilment === "delivery" && <Check size={17} />}
                     </button>
@@ -1957,7 +2013,10 @@ function LaunchCheckoutView({
                     <span className="md-checkout-step">2</span>Your details
                   </h2>
                   {fulfilment === "delivery" && (
-                    <p className="md-checkout-muted">For delivery we need your name and WhatsApp number. No account registration is required.</p>
+                    <p className="md-checkout-muted">
+                      For delivery we need your name and WhatsApp number. No account registration is
+                      required.
+                    </p>
                   )}
                   {fulfilment === "curbside" && (
                     <p className="md-checkout-muted">
@@ -2035,8 +2094,8 @@ function LaunchCheckoutView({
                       )}
                       {!guestEligible && (
                         <p className="md-checkout-notice" role="status">
-                          Guest checkout is available while the Luton kitchen is accepting orders. Existing
-                          guest orders remain accessible in this browser.
+                          Guest checkout is available while the Luton kitchen is accepting orders.
+                          Existing guest orders remain accessible in this browser.
                         </p>
                       )}
                       {guestSession ? (
@@ -2156,8 +2215,8 @@ function LaunchCheckoutView({
                       <div className="md-checkout-benefit">
                         <ShieldCheck size={21} />
                         <p>
-                          Members and guests receive the 30% opening offer during the promotional period.
-                          Register for future member offers; marketing is optional.
+                          Members and guests receive the 30% opening offer during the promotional
+                          period. Register for future member offers; marketing is optional.
                         </p>
                       </div>
                       {accountIssue && (
@@ -2179,43 +2238,102 @@ function LaunchCheckoutView({
                     </>
                   )}
                   <p className="md-checkout-muted">
-                    {fulfilment === "delivery" ? "Your delivery address is collected in the next step." : "No address is needed for collection or kerbside pickup."}
+                    {fulfilment === "delivery"
+                      ? "Your delivery address is collected in the next step."
+                      : "No address is needed for collection or kerbside pickup."}
                   </p>
                 </section>
               )}
               {fulfilment === "delivery" && !whatsAppDraft && (
                 <section className="md-checkout-card" aria-label="Delivery address">
-                  <h2><span className="md-checkout-step">3</span>Delivery address</h2>
-                  <p className="md-checkout-muted">Due to popular demand: FREE delivery within a 3 km radius of LU4 8NU for orders of £15 or more after discounts. Estimated delivery within 60 minutes of payment, using our own driver.</p>
+                  <h2>
+                    <span className="md-checkout-step">3</span>Delivery address
+                  </h2>
+                  <p className="md-checkout-muted">
+                    Due to popular demand: FREE delivery within a 3 km radius of LU4 8NU for orders
+                    of £15 or more after discounts. Estimated delivery within 60 minutes of payment,
+                    using our own driver.
+                  </p>
                   <div className="md-checkout-vehicle">
-                    <label>Postcode
-                      <input required autoComplete="postal-code" maxLength={20} disabled={busy}
-                        value={deliveryAddress.postcode} placeholder="e.g. LU4 8NU"
-                        onChange={(event)=>changeDeliveryAddress("postcode",event.target.value)} />
+                    <label>
+                      Postcode
+                      <input
+                        required
+                        autoComplete="postal-code"
+                        maxLength={20}
+                        disabled={busy}
+                        value={deliveryAddress.postcode}
+                        placeholder="e.g. LU4 8NU"
+                        onChange={(event) => changeDeliveryAddress("postcode", event.target.value)}
+                      />
                     </label>
-                    <button type="button" className="md-checkout-refresh" disabled={busy || checkingDeliveryArea}
-                      onClick={() => {void checkDeliveryArea();}}>
+                    <button
+                      type="button"
+                      className="md-checkout-refresh"
+                      disabled={busy || checkingDeliveryArea}
+                      onClick={() => {
+                        void checkDeliveryArea();
+                      }}
+                    >
                       {checkingDeliveryArea ? "Checking postcode…" : "Check delivery postcode"}
                     </button>
-                    {deliveryArea?.eligible && <p role="status">Your postcode is in our delivery area. Please enter your full address.</p>}
-                    {deliveryAreaIssue && <p role="alert" className="md-checkout-notice md-checkout-error">{deliveryAreaIssue} <button type="button" onClick={()=>chooseFulfilment("pickup")}>Switch to collection</button></p>}
-                    <label>Door / house number
-                      <input required autoComplete="address-line1" maxLength={40} disabled={busy}
-                        value={deliveryAddress.doorNumber} placeholder="e.g. 14"
-                        onChange={(event)=>changeDeliveryAddress("doorNumber",event.target.value)} />
+                    {deliveryArea?.eligible && (
+                      <p role="status">
+                        Your postcode is in our delivery area. Please enter your full address.
+                      </p>
+                    )}
+                    {deliveryAreaIssue && (
+                      <p role="alert" className="md-checkout-notice md-checkout-error">
+                        {deliveryAreaIssue}{" "}
+                        <button type="button" onClick={() => chooseFulfilment("pickup")}>
+                          Switch to collection
+                        </button>
+                      </p>
+                    )}
+                    <label>
+                      Door / house number
+                      <input
+                        required
+                        autoComplete="address-line1"
+                        maxLength={40}
+                        disabled={busy}
+                        value={deliveryAddress.doorNumber}
+                        placeholder="e.g. 14"
+                        onChange={(event) =>
+                          changeDeliveryAddress("doorNumber", event.target.value)
+                        }
+                      />
                     </label>
-                    <label>Road name
-                      <input required maxLength={120} disabled={busy}
-                        value={deliveryAddress.roadName} placeholder="e.g. High Street"
-                        onChange={(event)=>changeDeliveryAddress("roadName",event.target.value)} />
+                    <label>
+                      Road name
+                      <input
+                        required
+                        maxLength={120}
+                        disabled={busy}
+                        value={deliveryAddress.roadName}
+                        placeholder="e.g. High Street"
+                        onChange={(event) => changeDeliveryAddress("roadName", event.target.value)}
+                      />
                     </label>
-                    <label>Flat / building (optional)
-                      <input autoComplete="address-line2" maxLength={120} disabled={busy}
-                        value={deliveryAddress.addressLine2} placeholder="e.g. Flat 3"
-                        onChange={(event)=>changeDeliveryAddress("addressLine2",event.target.value)} />
+                    <label>
+                      Flat / building (optional)
+                      <input
+                        autoComplete="address-line2"
+                        maxLength={120}
+                        disabled={busy}
+                        value={deliveryAddress.addressLine2}
+                        placeholder="e.g. Flat 3"
+                        onChange={(event) =>
+                          changeDeliveryAddress("addressLine2", event.target.value)
+                        }
+                      />
                     </label>
                   </div>
-                  <p className="md-checkout-muted">Delivery is free when your final payable total is at least £15, after the 30% discount where applicable. If you are short, we will show the exact extra amount required.</p>
+                  <p className="md-checkout-muted">
+                    Delivery is free when your final payable total is at least £15, after the 30%
+                    discount where applicable. If you are short, we will show the exact extra amount
+                    required.
+                  </p>
                 </section>
               )}
               {fulfilment === "curbside" && !whatsAppDraft && (
@@ -2506,9 +2624,21 @@ function LaunchCheckoutView({
                       <DetailedOrderLines lines={quote.lines} packingPlan={quote.packingPlan} />
                       <CheckoutSpecialRequestsReview notes={quote.notes ?? null} />
                       {fulfilment === "delivery" && deliveryArea?.eligible && (
-                        <section className="md-checkout-pickup-review" aria-label="Delivery details">
+                        <section
+                          className="md-checkout-pickup-review"
+                          aria-label="Delivery details"
+                        >
                           <h3>Free delivery</h3>
-                          <p>{[deliveryAddress.doorNumber, deliveryAddress.roadName, deliveryAddress.addressLine2, deliveryAddress.postcode].filter(Boolean).join(", ")}</p>
+                          <p>
+                            {[
+                              deliveryAddress.doorNumber,
+                              deliveryAddress.roadName,
+                              deliveryAddress.addressLine2,
+                              deliveryAddress.postcode,
+                            ]
+                              .filter(Boolean)
+                              .join(", ")}
+                          </p>
                           <p>Estimated within 60 minutes after payment</p>
                         </section>
                       )}
@@ -2630,7 +2760,10 @@ function LaunchCheckoutView({
                   )}
                   {quote?.discountPence ? (
                     <p className="md-checkout-offer">
-                      30% off every item and upgrade. {fulfilment === "delivery" ? "Free delivery when £15+ after discount." : "No minimum order."}
+                      30% off every item and upgrade.{" "}
+                      {fulfilment === "delivery"
+                        ? "Free delivery when £15+ after discount."
+                        : "No minimum order."}
                     </p>
                   ) : status?.openingOffer.status === "active" ? (
                     <p className="md-checkout-offer">
@@ -2644,7 +2777,10 @@ function LaunchCheckoutView({
                       <>
                         <p className="md-checkout-muted">
                           <Clock3 size={16} />
-                          {fulfilment === "delivery" ? "Delivery within 60 minutes" : `Approx. ${quote.collectionEstimateMinutes} minutes`} after{" "}
+                          {fulfilment === "delivery"
+                            ? "Delivery within 60 minutes"
+                            : `Approx. ${quote.collectionEstimateMinutes} minutes`}{" "}
+                          after{" "}
                           {paymentChoice === "host"
                             ? "payment"
                             : "all required payments are confirmed"}
