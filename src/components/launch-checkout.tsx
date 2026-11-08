@@ -73,6 +73,7 @@ import {
 import { parseKerbsideVehicle, type MealDeckOpeningOffer } from "@/lib/mealdeck-opening-offer";
 import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timing";
 import { normaliseUkPostcode, parseOwnDriverAddress } from "@/lib/mealdeck-own-driver-delivery";
+import { deliveryAreaRejectionMessage } from "@/lib/mealdeck-delivery-postcode-notice";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
   MAX_ORDER_NOTES_LENGTH,
@@ -1369,9 +1370,7 @@ function LaunchCheckoutView({
         distanceMetres: typeof result.distanceMetres === "number" ? result.distanceMetres : null,
       });
       if (!result.eligible)
-        setDeliveryAreaIssue(
-          "Sorry, we are not currently delivering to your location. You can collect or choose kerbside pickup.",
-        );
+        setDeliveryAreaIssue(deliveryAreaRejectionMessage(result.distanceMetres));
     } catch (error) {
       if (generation === deliveryLookupGeneration.current)
         setDeliveryAreaIssue(
@@ -2358,6 +2357,11 @@ function LaunchCheckoutView({
                     {deliveryAreaIssue && (
                       <p role="alert" className="md-checkout-notice md-checkout-error">
                         {deliveryAreaIssue}{" "}
+                        {deliveryArea?.eligible === false && deliveryArea.distanceMetres === null && (
+                          <a href="https://www.royalmail.com/find-a-postcode" target="_blank" rel="noopener noreferrer">
+                            Find your current postcode
+                          </a>
+                        )}{" "}
                         <button type="button" onClick={() => chooseFulfilment("pickup")}>
                           Switch to collection
                         </button>
