@@ -1,6 +1,7 @@
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
 import { isOrderNumber } from "./mealdeck-order-number";
 import { mealComponentsSchema, type MealComponent } from "./mealdeck-meal-components";
+import { parseOwnDriverAddress, type OwnDriverAddress } from "./mealdeck-own-driver-delivery";
 
 /**
  * The staff KDS consumes a privacy-minimised projection of canonical MealDeck
@@ -84,6 +85,12 @@ export type KdsOrder = {
   cutlery_requested?: boolean;
   vehicle?: { make: string; colour: string; registrationLast4: string } | null;
   pickupContact?: { name: string; phone: string } | null;
+  deliveryAddress?: OwnDriverAddress | null;
+  deliveryContact?: { name: string; phone: string } | null;
+  driverStatus?: "awaiting_driver" | "with_driver" | "delivered" | null;
+  driverVersion?: string | null;
+  driverHandoverAt?: string | null;
+  deliveredAt?: string | null;
 };
 
 export type KdsBoard = {
@@ -102,7 +109,7 @@ export type KdsMutation = {
   ok: true;
   replayed: boolean;
   order_id: string;
-  status: "accepted" | "preparing" | "ready" | "packing" | "sealed" | "completed";
+  status: "accepted" | "preparing" | "ready" | "packing" | "sealed" | "completed" | "with_driver" | "delivered";
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -378,6 +385,19 @@ function parseOrder(value: unknown): KdsOrder {
   )
     invalid();
   if (v["order_number"] != null && !isOrderNumber(v["order_number"])) invalid();
+  const deliveryAddress = fulfilment === "delivery" ? parseOwnDriverAddress(v["deliveryAddress"]) : null;
+  const deliveryContact = fulfilment === "delivery" ? parseKdsPickupContact(v["deliveryContact"]) : null;
+  if (fulfilment === "delivery" && (!deliveryAddress || !deliveryContact)) invalid();
+  const driverStatus = fulfilment === "delivery"
+    ? choice(v["driverStatus"], ["awaiting_driver", "with_driver", "delivered"] as const)
+    : null;
+  const driverVersion = fulfilment === "delivery" ? version(v["driverVersion"]) : null;
+  const driverHandoverAt = fulfilment === "delivery" ? nullableTimestamp(v["driverHandoverAt"]) : null;
+  const deliveredAt = fulfilment === "delivery" ? nullableTimestamp(v["deliveredAt"]) : null;
+  if (fulfilment === "delivery" && ((driverStatus === "awaiting_driver" && driverHandoverAt !== null) ||
+      (driverStatus !== "awaiting_driver" && driverHandoverAt === null) ||
+      (driverStatus === "delivered" && deliveredAt === null) ||
+      (driverStatus !== "delivered" && deliveredAt !== null))) invalid();
   return {
     order_id: id(v["order_id"]),
     version: version(v["version"]),
@@ -414,6 +434,12 @@ function parseOrder(value: unknown): KdsOrder {
       fulfilment === "pickup" || fulfilment === "curbside"
         ? parseKdsPickupContact(v["pickupContact"])
         : null,
+    deliveryAddress,
+    deliveryContact,
+    driverStatus,
+    driverVersion,
+    driverHandoverAt,
+    deliveredAt,
   };
 }
 
@@ -482,6 +508,8 @@ export function parseKdsMutation(
       "packing",
       "sealed",
       "completed",
+      "with_driver",
+      "delivered",
     ] as const),
   };
 }
