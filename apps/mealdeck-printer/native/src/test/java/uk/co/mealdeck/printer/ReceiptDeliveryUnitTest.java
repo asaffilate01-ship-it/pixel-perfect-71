@@ -24,6 +24,10 @@ public final class ReceiptDeliveryUnitTest {
         assertEquals("14 Selbourne Road", address.doorNumber() + " " + address.roadName());
         assertEquals("Flat 2", address.addressLine2());
         assertEquals(serialized, original.toString());
+        // UK postcodes with a one-character outward code remain valid.
+        original.getJSONObject("receiptContact").getJSONObject("deliveryAddress")
+            .put("postcode", "M1 1AE");
+        assertEquals("M1 1AE", ReceiptDelivery.fromResponse(original, ORDER, "delivery").postcode());
     }
 
     @Test public void rejectsMissingMismatchAndInjection() throws Exception {
