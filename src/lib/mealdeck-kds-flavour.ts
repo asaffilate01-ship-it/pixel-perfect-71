@@ -53,3 +53,46 @@ export function kdsFlavourHighlight(
     quantity && Number.isSafeInteger(quantity) && quantity > 1 ? ` · ${quantity}× EACH` : "";
   return { label, value: value.toLocaleUpperCase("en-GB") + quantityText };
 }
+
+type TavoMenuIdentity = Pick<KdsOrderItem, "brand_name" | "item_name">;
+
+const tavoBurgerPreparation: Readonly<Record<string, string>> = {
+  cruncher: "1 buttermilk fried chicken fillet in bun",
+  "twin crunch": "2 buttermilk fried chicken fillets in bun",
+  flame: "1 spicy grilled chicken fillet in bun",
+  "big flame": "2 spicy grilled chicken fillets in bun",
+};
+
+function isTavoChicken(brandName: string) {
+  return /^tavo chicken(?:\\s+by mealdeck)?$/i.test(brandName.trim());
+}
+
+/** Derived only from the saved, unambiguous Tavo dish name; not from an add-on. */
+export function kdsTavoChickenPreparation(item: TavoMenuIdentity): string | null {
+  if (!isTavoChicken(item.brand_name)) return null;
+  return tavoBurgerPreparation[item.item_name.trim().toLocaleLowerCase("en-GB")] ?? null;
+}
+
+type TavoFlavourReviewItem = TavoMenuIdentity & Pick<KdsOrderItem, "modifiers"> & {
+  modifier_details?: KdsOrderItem["modifier_details"];
+};
+
+/**
+ * Never invent a wing/tender flavour from a sauce named Dynamite or BBQ.
+ * Highlight recognised saved choices; if the selected flavour is not
+ * independently identifiable, ask kitchen staff to verify the frozen order.
+ */
+export function kdsTavoFlavourNeedsReview(item: TavoFlavourReviewItem): boolean {
+  if (
+    !isTavoChicken(item.brand_name) ||
+    !/^(?:fried chicken wings|fried chicken tenders|grilled chicken wings)$/i.test(
+      item.item_name.trim(),
+    )
+  ) {
+    return false;
+  }
+  return !item.modifiers.some((modifier, index) => {
+    const flavour = kdsFlavourHighlight(modifier, item.modifier_details?.[index]);
+    return flavour?.label === "FLAVOUR" || flavour?.label === "FLAVOUR & PORTION";
+  });
+}
