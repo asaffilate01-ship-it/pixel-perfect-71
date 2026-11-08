@@ -322,8 +322,13 @@ export async function readOnlineCheckoutStatus(
       readMealDeckStripeCheckoutDomain(env).status !== "invalid";
     let localDeliveryReady = false;
     if (available && env["MEALDECK_OWN_DRIVER_DELIVERY_ENABLED"] === "true" && clients.service) {
-      const { data, error } = await clients.service.rpc("mealdeck_local_delivery_ready", scope);
-      localDeliveryReady = !error && data === true;
+      try {
+        const { data, error } = await clients.service.rpc("mealdeck_local_delivery_ready", scope);
+        localDeliveryReady = !error && data === true;
+      } catch {
+        // A delivery configuration issue must never disable existing pickup orders.
+        localDeliveryReady = false;
+      }
     }
     return {
       ...base,
