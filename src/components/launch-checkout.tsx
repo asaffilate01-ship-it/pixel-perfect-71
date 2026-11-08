@@ -679,6 +679,7 @@ function LaunchCheckoutView({
   const [deliveryArea, setDeliveryArea] = useState<DeliveryArea | null>(null);
   const [deliveryAreaIssue, setDeliveryAreaIssue] = useState<string | null>(null);
   const [checkingDeliveryArea, setCheckingDeliveryArea] = useState(false);
+  const deliveryLookupGeneration = useRef(0);
   const [account, setAccount] = useState<CustomerAccountState | null>(null);
   const [accountIssue, setAccountIssue] = useState<string | null>(null);
   const [status, setStatus] = useState<CheckoutStatus | null>(null);
@@ -1246,6 +1247,7 @@ function LaunchCheckoutView({
     }
   }
   async function checkDeliveryArea() {
+    const generation = ++deliveryLookupGeneration.current;
     const postcode = normaliseUkPostcode(deliveryAddress.postcode);
     setDeliveryArea(null);
     setDeliveryAreaIssue(null);
@@ -1256,19 +1258,26 @@ function LaunchCheckoutView({
     setCheckingDeliveryArea(true);
     try {
       const result = await checkoutRequest("guest", { action: "delivery_area", postcode });
-      if (normaliseUkPostcode(deliveryAddress.postcode) !== postcode) return;
+      if (generation !== deliveryLookupGeneration.current) return;
       if (typeof result.eligible !== "boolean" || result.postcode !== postcode ||
         typeof result.distanceMetres !== "number") throw new Error("Please check your postcode again.");
       setDeliveryArea({postcode,eligible:result.eligible,distanceMetres:result.distanceMetres});
       if (!result.eligible)
         setDeliveryAreaIssue("Sorry, we are not currently delivering to your location. You can collect or choose kerbside pickup.");
     } catch(error) {
-      setDeliveryAreaIssue(error instanceof Error ? error.message : "We couldn't check this postcode right now.");
-    } finally { setCheckingDeliveryArea(false); }
+      if (generation === deliveryLookupGeneration.current)
+        setDeliveryAreaIssue(error instanceof Error ? error.message : "We couldn't check this postcode right now.");
+    } finally {
+      if (generation === deliveryLookupGeneration.current) setCheckingDeliveryArea(false);
+    }
   }
   function changeDeliveryAddress(key: keyof DeliveryAddressDraft, value: string) {
     setDeliveryAddress((current) => ({ ...current, [key]: value }));
-    if (key === "postcode") setDeliveryArea(null);
+    if (key === "postcode") {
+      deliveryLookupGeneration.current += 1;
+      setDeliveryArea(null);
+      setCheckingDeliveryArea(false);
+    }
     setDeliveryAreaIssue(null);
     setQuote(null);
     setReviewConfirmed(false);
