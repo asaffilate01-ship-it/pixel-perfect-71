@@ -1321,7 +1321,7 @@ export function KitchenOrderCard({
           <span
             className={`md-kds-status rounded-full px-2.5 py-1 text-xs font-bold ${stageStyles[stage].badge}`}
           >
-            {stageLabels[stage]}
+            {order.fulfilment === "delivery" && order.driverStatus === "with_driver" ? "With driver" : stageLabels[stage]}
           </span>
         </div>
         <div className="md-kds-ticket-identity">
