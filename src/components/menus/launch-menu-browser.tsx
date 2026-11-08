@@ -1,6 +1,8 @@
 import { usePublicMenu } from "./use-public-menu";
 import { launchMenuItemDescriptor } from "@/lib/launch-menu-item-descriptor";
 import { PublicMenuStatus } from "./public-menu-status";
+import { MilkcakeOfferTerms } from "./milkcake-offer-terms";
+import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
@@ -45,7 +47,8 @@ import {
 } from "@/lib/launch-menu-catalogue";
 import {
   formatLaunchMenuPrice,
-  launchMenuBasketDisplayPrice,
+  formatLaunchMenuItemPrice,
+  launchMenuOfferBasketDisplayPrice,
 } from "@/lib/launch-menu-display-prices";
 import "@/styles.launch-prices.css";
 import { prepareLaunchCheckout } from "@/lib/launch-basket-transfer";
@@ -111,7 +114,7 @@ function LaunchDessertUpsells({
               " from " +
               entry.brand.name +
               " for " +
-              formatLaunchMenuPrice(entry.item.pricePence)
+              formatLaunchMenuItemPrice(entry.item)
             }
           >
             <span className="lm-dessert-copy">
@@ -119,7 +122,8 @@ function LaunchDessertUpsells({
               <small>{entry.brand.name}</small>
             </span>
             <span className="lm-dessert-add">
-              <strong>{formatLaunchMenuPrice(entry.item.pricePence)}</strong>
+              <strong>{formatLaunchMenuItemPrice(entry.item)}</strong>
+              {isMealDeckMilkcakePromotion(entry.item.promotion) && <small>T&amp;Cs apply</small>}
               <span>
                 <Plus size={16} aria-hidden="true" /> Add
               </span>
@@ -127,6 +131,11 @@ function LaunchDessertUpsells({
           </button>
         ))}
       </div>
+      {recommendations.some((entry) => isMealDeckMilkcakePromotion(entry.item.promotion)) && (
+        <p>
+          <MilkcakeOfferTerms explained />
+        </p>
+      )}
     </section>
   );
 }
@@ -347,7 +356,8 @@ export function LaunchMenuBrowser({
   }
 
   const quantity = launchPickCount(picks);
-  const basketPrice = launchMenuBasketDisplayPrice(picks, catalogue);
+  const basketPrice = launchMenuOfferBasketDisplayPrice(picks, catalogue);
+  const hasMilkcakeOffer = basketPrice.hasMilkcakeOffer;
   const dessertRecommendations = publicMenu.ready
     ? getLaunchDessertRecommendations(picks, catalogue, brand?.id)
     : [];
@@ -656,7 +666,13 @@ export function LaunchMenuBrowser({
                                 <span className="lm-dish-action">
                                   <span className="lm-item-price" id={"launch-price-" + item.id}>
                                     {item.priceVariants?.length ? "From " : ""}
-                                    {formatLaunchMenuPrice(item.pricePence)}
+                                    {formatLaunchMenuItemPrice(item)}
+                                    {isMealDeckMilkcakePromotion(item.promotion) && (
+                                      <small className="lm-promotion-label">
+                                        {" "}
+                                        · T&amp;Cs apply
+                                      </small>
+                                    )}
                                     <span className="sr-only"> per item</span>
                                   </span>
                                   <span className="lm-add-label" aria-hidden="true">
@@ -667,6 +683,13 @@ export function LaunchMenuBrowser({
                             </li>
                           ))}
                         </ul>
+                        {section.items.some((item) =>
+                          isMealDeckMilkcakePromotion(item.promotion),
+                        ) && (
+                          <p className="lm-section-description">
+                            <MilkcakeOfferTerms explained />
+                          </p>
+                        )}
                         {section.items.some((item) =>
                           item.optionGroupIds.some((id) => id.endsWith("make-it-a-meal")),
                         ) && (
@@ -728,7 +751,8 @@ export function LaunchMenuBrowser({
                             {entry.brand.name} · {entry.section.title}
                           </small>
                           <span className="lm-pairing-price" id={"pairing-price-" + entry.item.id}>
-                            {formatLaunchMenuPrice(entry.item.pricePence)}
+                            {formatLaunchMenuItemPrice(entry.item)}
+                            {isMealDeckMilkcakePromotion(entry.item.promotion) && " · T&Cs apply"}
                             <span className="sr-only"> per item</span>
                           </span>
                         </span>
@@ -782,6 +806,8 @@ export function LaunchMenuBrowser({
                           ? "Collection and kerbside have no minimum; free delivery requires £15 after the discount within 3 km of LU4 8NU."
                           : "No minimum order for collection or kerbside."}{" "}
                         Guests and members welcome. <Link to="/offers">See all three offers.</Link>
+                        {hasMilkcakeOffer &&
+                          " One milkcake per order is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount."}
                       </p>
                     </div>
                   )}
@@ -954,6 +980,7 @@ export function LaunchMenuBrowser({
             <LaunchItemCustomiser
               key={draft.item.id + (draft.existing?.key ?? "new")}
               draft={draft}
+              basketPicks={picks}
               onSave={savePick}
               onBack={() => {
                 setDraft(null);
