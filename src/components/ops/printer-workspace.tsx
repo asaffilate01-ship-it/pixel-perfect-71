@@ -1365,7 +1365,7 @@ function ReceiptJobCard({
             Collection code <strong className="tabular-nums">{job.receipt.displayCode}</strong>
           </p>
           <p className="mt-1 text-xs font-bold md-ops-muted">
-            {job.receipt.fulfilment === "curbside" ? "Kerbside" : "Collection"} ·{" "}
+            {job.receipt.fulfilment === "delivery" ? "Own-driver delivery" : job.receipt.fulfilment === "curbside" ? "Kerbside" : "Collection"} ·{" "}
             {job.copyNumber === 1 ? "Original" : `COPY ${job.copyNumber}`}
           </p>
         </div>
