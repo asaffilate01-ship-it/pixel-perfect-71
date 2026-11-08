@@ -316,6 +316,8 @@ begin
   return base||jsonb_build_object(
     'collectionEstimateMinutes',60,
     'estimatedReadyAt',case when o.paid_at is null then null else o.paid_at+interval '60 minutes' end,
+    'readyForCollectionAt',(select coalesce(p.ready_for_handoff_at,p.sealed_at)
+      from public.mealdeck_pass_orders p where p.order_id=p_order),
     'driverHandoverAt',state.handed_to_driver_at,'deliveredAt',state.delivered_at,
     'completedAt',state.delivered_at);
 end $$;
