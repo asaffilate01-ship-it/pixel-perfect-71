@@ -35,11 +35,15 @@ of two private recovery paths** through protected GitHub Actions secrets:
 1. Set both `MEALDECK_PRINTER_ORIGINAL_KEYSTORE_BASE64` (base64 of the
    recovered original v0.2.2 `.p12`) and
    `MEALDECK_PRINTER_ORIGINAL_STORE_PASSWORD` (the original keystore password).
-2. Alternatively, set `MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_BASE64` to
-   base64-encoded PEM bytes of the **matching private recovery key** whose
-   certificate is in `recovery-recipient.pem`. The workflow downloads
-   the historical encrypted artifact and decrypts it inside the temporary
-   GitHub runner, without logging or publishing the recovered signer.
+2. Recommended if using the owner recovery file: copy the full contents of
+   `printer-ci-recovery-private.pem` from your private MealDeck Library into
+   the protected GitHub Actions secret `MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_PEM`.
+   The secret accepts the original multiline PEM directly; do not paste it in
+   chat or add it to any repository file. Alternatively, set
+   `MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_BASE64` to the base64 encoding of the
+   PEM file bytes. The workflow downloads the historical encrypted artifact
+   and decrypts it inside its temporary GitHub runner, without logging or
+   publishing the recovered signer.
 
 Only the holder of that private recovery key can use the second path. Neither
 the public certificate, encrypted backup nor existing APK can regenerate the
