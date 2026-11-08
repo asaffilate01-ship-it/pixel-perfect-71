@@ -713,8 +713,8 @@ function LaunchCheckoutView({
     } catch {
       /* No stored choice. */
     }
-    setCheckoutMode(entryPolicy.emailRegistrationDeferred ? "guest" : "member");
-  }, [entryPolicy, orderId, checkoutModeKey, whatsAppPaymentAttempt, whatsAppBoundMode]);
+    setCheckoutMode(entryPolicy.emailRegistrationDeferred || status?.guestCheckout.eligible ? "guest" : "member");
+  }, [entryPolicy, orderId, checkoutModeKey, whatsAppPaymentAttempt, whatsAppBoundMode, status?.guestCheckout.eligible]);
   const [guestIssue, setGuestIssue] = useState<string | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -2026,7 +2026,7 @@ function LaunchCheckoutView({
                       )}
                       {!guestEligible && (
                         <p className="md-checkout-notice" role="status">
-                          Guest checkout is available only during launch opening hours. Existing
+                          Guest checkout is available while the Luton kitchen is accepting orders. Existing
                           guest orders remain accessible in this browser.
                         </p>
                       )}
@@ -2147,7 +2147,7 @@ function LaunchCheckoutView({
                       <div className="md-checkout-benefit">
                         <ShieldCheck size={21} />
                         <p>
-                          Members and guests receive the 30% opening offer during launch hours.
+                          Members and guests receive the 30% opening offer during the promotional period.
                           Register for future member offers; marketing is optional.
                         </p>
                       </div>
