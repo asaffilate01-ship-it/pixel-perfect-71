@@ -243,111 +243,17 @@ begin
     'driverHandoverAt',state.handed_to_driver_at,'deliveredAt',state.delivered_at);
 end $$;
 
--- Preserve the complete previously reviewed cash/Stripe/printing protection while
--- permitting the new own-driver fulfilment; the printer otherwise suppresses
--- or rejects delivery orders. These are exact prior function bodies, changed
--- only to allow delivery in their existing fulfilment filters.
+-- Extend the existing approved print snapshot and printer queue functions
+-- to include delivery, preserving their price/payment checks.
 create or replace function mealdeck_ops_private.receipt_snapshot(p_order uuid)
-returns jsonb language plpgsql stable security definer set search_path='' as $
+returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare o public.orders%rowtype;q mealdeck_private.checkout_quotes%rowtype;items jsonb;loc text;
 begin
   select * into o from public.orders where id=p_order;
   select cq.* into q from mealdeck_private.checkout_quotes cq where cq.id=(
     select s.quote_id from mealdeck_private.stripe_orders s where s.order_id=p_order
     union all select p.quote_id from mealdeck_private.payment_orders p where p.order_id=p_order);
-  if not found or o.accepted_at is null or o.fulfilment not in ('pickup','curbside','delivery') or o.handoff_code !~ '^\d{4}
--- and verified-paid delivery to their own driver, then confirm delivery.
-create or replace function public.mealdeck_ops_kds_transition_local_driver(
-  p_tenant uuid,p_location uuid,p_order uuid,p_expected_version text,p_status text
-) returns jsonb language plpgsql security definer set search_path='' set lock_timeout='3s' as $$
-declare o public.orders%rowtype; d mealdeck_private.local_driver_orders%rowtype;
- p public.mealdeck_pass_orders%rowtype; evidence jsonb; expected text;
-begin
-  perform mealdeck_ops_private.kds_assert_scope(p_tenant,p_location,'orders.status');
-  if p_status not in ('with_driver','delivered') or p_expected_version !~ '^[a-f0-9]{32}$'
-    then raise exception 'mealdeck_kds_invalid_transition'; end if;
-  select * into o from public.orders where id=p_order and tenant_id=p_tenant
-    and location_id=p_location and source='mealdeck' and fulfilment='delivery' for update;
-  if not found then raise exception 'mealdeck_kds_order_unavailable'; end if;
-  select * into d from mealdeck_private.local_driver_orders
-    where order_id=p_order and tenant_id=p_tenant and location_id=p_location for update;
-  select * into p from public.mealdeck_pass_orders
-    where order_id=p_order and tenant_id=p_tenant and location_id=p_location for update;
-  perform mealdeck_ops_private.kds_assert_scope(p_tenant,p_location,'orders.status');
-  if d.order_id is null or p.order_id is null then raise exception 'mealdeck_kds_not_ready'; end if;
-  expected:=mealdeck_private.local_driver_version(d.order_id,d.driver_status,d.updated_at);
-  if d.driver_status=p_status then
-    return jsonb_build_object('ok',true,'replayed',true,'order_id',p_order,'status',p_status);
-  end if;
-  if expected is distinct from p_expected_version then raise exception 'mealdeck_kds_conflict'; end if;
-  evidence:=mealdeck_ops_private.kds_release_evidence(p_order);
-  if evidence is null or o.payment_status<>'paid'
-     or not mealdeck_ops_private.kds_routing_complete(p_order)
-     then raise exception 'mealdeck_kds_release_required'; end if;
-  if p_status='with_driver' then
-    if d.driver_status<>'awaiting_driver' or o.status<>'ready'
-      or mealdeck_ops_private.kds_preparation_status(p_order)<>'ready'
-      or p.status not in ('sealed','ready_for_handoff')
-      then raise exception 'mealdeck_kds_not_ready'; end if;
-    update mealdeck_private.local_driver_orders set driver_status='with_driver',
-      handed_to_driver_at=now(),updated_at=now() where order_id=p_order;
-  else
-    if d.driver_status<>'with_driver' or o.status<>'ready'
-      or p.status not in ('sealed','ready_for_handoff')
-      then raise exception 'mealdeck_kds_invalid_transition'; end if;
-    update mealdeck_private.local_driver_orders set driver_status='delivered',
-      delivered_at=now(),updated_at=now() where order_id=p_order;
-    update public.mealdeck_pass_orders set status='handed_off',handed_off_at=now(),
-      updated_at=now(),updated_by=auth.uid()
-      where order_id=p_order and tenant_id=p_tenant and location_id=p_location;
-    update public.orders set status='fulfilled'
-      where id=p_order and tenant_id=p_tenant and location_id=p_location;
-  end if;
-  insert into public.mealdeck_ops_audit_log(
-    tenant_id,location_id,actor_id,action,entity_type,entity_id,previous_value,next_value)
-    values(p_tenant,p_location,auth.uid(),'kds.driver.'||p_status,'order',p_order,
-      jsonb_build_object('driverStatus',d.driver_status),
-      jsonb_build_object('driverStatus',p_status,'releaseId',evidence->>'release_id'));
-  return jsonb_build_object('ok',true,'replayed',false,'order_id',p_order,'status',p_status);
-end $$;
-
--- A confirmed guest/member alone can access their private delivery timestamps,
--- not the staff address register, fleet register or unrelated orders.
-alter function mealdeck_private.checkout_receipt_for_identity(uuid,uuid,uuid)
-rename to checkout_receipt_before_own_driver;
-create function mealdeck_private.checkout_receipt_for_identity(
-  p_order uuid,p_customer uuid,p_guest uuid
-) returns jsonb language plpgsql stable security definer set search_path='' as $$
-declare base jsonb; o public.orders%rowtype; state mealdeck_private.local_driver_orders%rowtype;
-begin
-  base:=mealdeck_private.checkout_receipt_before_own_driver(p_order,p_customer,p_guest);
-  select * into o from public.orders where id=p_order;
-  if o.fulfilment<>'delivery' then return base; end if;
-  select * into state from mealdeck_private.local_driver_orders where order_id=p_order;
-  if state.order_id is null then raise exception 'mealdeck_delivery_order_invalid'; end if;
-  return base||jsonb_build_object(
-    'collectionEstimateMinutes',60,
-    'estimatedReadyAt',case when o.paid_at is null then null else o.paid_at+interval '60 minutes' end,
-    'readyForCollectionAt',(select coalesce(p.ready_for_handoff_at,p.sealed_at)
-      from public.mealdeck_pass_orders p where p.order_id=p_order),
-    'driverHandoverAt',state.handed_to_driver_at,'deliveredAt',state.delivered_at,
-    'completedAt',state.delivered_at);
-end $$;
-
-revoke all on function mealdeck_private.register_local_driver_order(),
-  mealdeck_private.assert_local_driver_order_exists(),
-  mealdeck_private.local_driver_version(uuid,text,timestamptz),
-  mealdeck_ops_private.kds_order_card_before_own_driver(uuid,jsonb),
-  mealdeck_ops_private.kds_order_card(uuid,jsonb),
-  mealdeck_private.checkout_receipt_before_own_driver(uuid,uuid,uuid),
-  mealdeck_private.checkout_receipt_for_identity(uuid,uuid,uuid)
-  from public,anon,authenticated,service_role;
-revoke all on function public.mealdeck_ops_kds_transition_local_driver(uuid,uuid,uuid,text,text)
-  from public,anon,authenticated,service_role;
-grant execute on function public.mealdeck_ops_kds_transition_local_driver(uuid,uuid,uuid,text,text)
-  to authenticated;
-commit;
-
+  if not found or o.accepted_at is null or o.fulfilment not in ('pickup','curbside','delivery') or o.handoff_code !~ '^\d{4}$'
     or o.packing_plan is distinct from q.packing_plan then raise exception 'mealdeck_printer_snapshot_unavailable'; end if;
   select name into loc from public.tenant_locations where id=o.location_id and tenant_id=o.tenant_id;
   select jsonb_agg(jsonb_build_object('lineId',l->>'lineId','parentLineId',l->>'parentLineId',
@@ -367,10 +273,10 @@ commit;
     'cutleryRequested',o.cutlery_requested,'packingPlan',o.packing_plan,'items',items,
     'subtotalPence',q.gross_pence,'discountPence',q.discount_pence,'totalPence',q.total_pence,
     'currency','GBP','orderNotes',o.notes);
-end $;
+end $$;
 
 create or replace function public.mealdeck_printer_acceptance_board(p_tenant uuid,p_location uuid)
-returns jsonb language plpgsql stable security definer set search_path='' as $
+returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare o record;e jsonb;card jsonb;items jsonb;cards jsonb:='[]'::jsonb;remaining integer:=0;
 begin
   perform mealdeck_ops_private.printer_assert_scope(p_tenant,p_location);
@@ -404,7 +310,7 @@ begin
   end loop;
   return jsonb_build_object('schemaVersion',1,'tenantId',p_tenant,'locationId',p_location,
     'generatedAt',now(),'orders',cards,'remainingOrderCount',remaining);
-end $;
+end $$;
 
 -- Only signed-in kitchen staff with orders.status may hand an entirely packed
 -- and verified-paid delivery to their own driver, then confirm delivery.
@@ -484,6 +390,33 @@ begin
     'driverHandoverAt',state.handed_to_driver_at,'deliveredAt',state.delivered_at,
     'completedAt',state.delivered_at);
 end $$;
+
+-- Preserve scoped customer/member receipt authority and rebind to
+-- the new driver timestamps. No public access to delivery address tables.
+create or replace function public.mealdeck_customer_order_receipt(p_order uuid,p_customer uuid)
+returns jsonb language sql stable security definer set search_path='' as $$
+  select mealdeck_private.checkout_receipt_for_identity(p_order,p_customer,null)
+$$;
+
+create or replace function public.mealdeck_guest_order_receipt(
+  p_tenant uuid,p_location uuid,p_token_hash text,p_order uuid
+) returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare g mealdeck_private.guest_sessions%rowtype;
+begin
+  g:=mealdeck_private.guest_session_authority(p_tenant,p_location,p_token_hash);
+  if g.id is null then raise exception 'mealdeck_checkout_guest_session_invalid'; end if;
+  if not exists(
+    select 1 from public.orders o join mealdeck_private.stripe_orders s on s.order_id=o.id
+    where o.id=p_order and o.tenant_id=p_tenant and o.location_id=p_location
+      and s.guest_id=g.id and o.customer_id is null and o.guest_checkout
+  ) then raise exception 'mealdeck_checkout_order_unavailable'; end if;
+  return mealdeck_private.checkout_receipt_for_identity(p_order,null,g.id);
+end $$;
+revoke all on function public.mealdeck_customer_order_receipt(uuid,uuid),
+  public.mealdeck_guest_order_receipt(uuid,uuid,text,uuid)
+  from public,anon,authenticated,service_role;
+grant execute on function public.mealdeck_customer_order_receipt(uuid,uuid),
+  public.mealdeck_guest_order_receipt(uuid,uuid,text,uuid) to service_role;
 
 revoke all on function mealdeck_private.register_local_driver_order(),
   mealdeck_private.assert_local_driver_order_exists(),
