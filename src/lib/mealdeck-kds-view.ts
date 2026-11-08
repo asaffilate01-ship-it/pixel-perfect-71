@@ -41,6 +41,17 @@ export function matchesKdsOrderSearch(order: KdsOrder | KdsCompletedOrder, query
     ...((order.fulfilment === "pickup" || order.fulfilment === "curbside") && order.pickupContact
       ? [order.pickupContact.name, order.pickupContact.phone]
       : []),
+    ...("deliveryContact" in order && order.deliveryContact
+      ? [order.deliveryContact.name, order.deliveryContact.phone]
+      : []),
+    ...("deliveryAddress" in order && order.deliveryAddress
+      ? [
+          order.deliveryAddress.postcode,
+          order.deliveryAddress.roadName,
+          order.deliveryAddress.doorNumber,
+          order.deliveryAddress.addressLine2,
+        ]
+      : []),
   ].map((value) => value.toLocaleLowerCase("en-GB"));
   return terms.every((term) => values.some((value) => value.includes(term)));
 }
