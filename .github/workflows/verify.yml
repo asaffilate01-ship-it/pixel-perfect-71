@@ -17,6 +17,8 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+      - name: Luton own-driver delivery migration safety contract
+        run: node --test tests/delivery-migration-source.test.mjs
       - name: WhatsApp conversation, transport and private checkout boundaries
         run: bun test tests/mealdeck-whatsapp-*.test.ts tests/mealdeck-customer-return.test.ts
       - name: WhatsApp implementation lint and worker syntax
