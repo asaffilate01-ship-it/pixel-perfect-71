@@ -623,9 +623,11 @@ export function LaunchMenuBrowser({
                                 <span>
                                   <span className="lm-dish-title-line">
                                     <strong>{item.name}</strong>
-                                    <span className="lm-dish-kind">
-                                      {launchMenuItemDescriptor(brand, section, item)}
-                                    </span>
+                                    {launchMenuItemDescriptor(brand, section, item) && (
+                                      <span className="lm-dish-kind">
+                                        {launchMenuItemDescriptor(brand, section, item)}
+                                      </span>
+                                    )}
                                   </span>
                                   {item.description && <small>{item.description}</small>}
                                   {item.optionGroupIds.some((id) => id.endsWith("-portion")) && (
