@@ -38,6 +38,16 @@ export const MEALDECK_LAUNCH_HOURS_PROSE =
   MEALDECK_LAUNCH_DAYS.map((day) => `${day.label}, ${day.hoursLabel}`).join("; ") +
   ". All times are UK local time.";
 
+/** Marketing-only Sunday pre-opening notice. It never grants checkout or delivery access. */
+export function isMealDeckSundayDeliveryPreopen(now: number): boolean {
+  const sunday = MEALDECK_LAUNCH_DAYS[2];
+  return (
+    Number.isFinite(now) &&
+    now >= Date.parse(`${sunday.date}T00:00:00Z`) &&
+    now < Date.parse(sunday.opensAt)
+  );
+}
+
 /** Exact launch windows, including the nightly closure. No browser-local dates. */
 export function mealDeckLaunchWindowAt(now: Date | string | number): MealDeckLaunchDay | null {
   const timestamp =
