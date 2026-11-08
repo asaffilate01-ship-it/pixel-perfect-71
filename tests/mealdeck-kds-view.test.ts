@@ -534,8 +534,8 @@ describe("ticket alignment retains every kitchen instruction", () => {
     const done = renderToStaticMarkup(
       createElement(KdsCompletedCard, { order: completed({ items: candidate.items }) }),
     );
-    expect(done).toContain("Korean BBQ · 3 pcs");
-    expect(done).toContain("Fiery Sweet Chilli · 3 pcs");
+    expect(done).toContain("KOREAN BBQ · 3 PCS");
+    expect(done).toContain("FIERY SWEET CHILLI · 3 PCS");
     expect(done.match(/£3\.50 each/g)).toHaveLength(2);
     expect(done).not.toContain("£0.51");
     expect(done).not.toMatch(/<(button|input|form)\b/);
@@ -602,7 +602,7 @@ describe("ticket alignment retains every kitchen instruction", () => {
       for (const text of [
         "£3.50 each",
         "£7.00 line total",
-        "Korean BBQ · 3 pcs",
+        "KOREAN BBQ · 3 PCS",
         "Garlic dip",
         "£0.50 each",
         "£1.00 line total",
@@ -643,7 +643,7 @@ describe("ticket alignment retains every kitchen instruction", () => {
         createElement(KdsCompletedCard, { order: completed({ items: candidate.items }) }),
       ),
     ]) {
-      expect(html).toContain("Korean BBQ · 3 pcs");
+      expect(html).toContain("KOREAN BBQ · 3 PCS");
       expect(html).not.toContain("£");
     }
   });
