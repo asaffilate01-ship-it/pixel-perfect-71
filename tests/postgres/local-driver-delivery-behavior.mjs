@@ -170,11 +170,11 @@ try {
       );
     },
   );
-  await f.bind(order.orderId, "cs_test_local_driver");
+  await f.bind(order.orderId, "cs_test_localdriver");
   await f.reconcile(order, {
-    session: "cs_test_local_driver",
-    intent: "pi_local_driver",
-    event: "evt_local_driver",
+    session: "cs_test_localdriver",
+    intent: "pi_localdriver",
+    event: "evt_localdriver",
   });
   const card = () => f.card(order.orderId);
   const driver = async (status, version) =>
@@ -193,7 +193,7 @@ try {
       assert.equal(c.deliveryContact.name, "Delivery Customer");
       assert.equal(c.deliveryContact.phone, "+447700900123");
       const paidAt = await scalar("select paid_at from public.orders where id=$1", [order.orderId]);
-      assert.equal(Date.parse(c.deliveryDeadlineAt) - Date.parse(paidAt), 3600000);
+      assert.equal(Date.parse(c.deliveryDeadlineAt) - new Date(paidAt).getTime(), 3600000);
       await assert.rejects(() => driver("with_driver"), /not_ready/);
       await assert.rejects(
         () =>
