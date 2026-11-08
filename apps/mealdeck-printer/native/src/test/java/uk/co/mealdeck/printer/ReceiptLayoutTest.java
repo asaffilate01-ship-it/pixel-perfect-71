@@ -51,6 +51,16 @@ public final class ReceiptLayoutTest {
         checkPromotionAndTail(driverLayout);
         equal("DELIVERY CODE", text(driverLayout, "collection.label"), "Driver code heading");
         equal("OWN DRIVER DELIVERY · CASH PAID", text(driverLayout, "fulfilment"), "Driver receipt heading");
+        ReceiptDelivery destination = new ReceiptDelivery("LU4 8NU", "14", "Selbourne Road", "Flat 2");
+        ReceiptLayout withAddress = ReceiptLayout.build(driverReceipt, MONOSPACE, "+447700900123", destination);
+        checkBounds(withAddress, MONOSPACE);
+        checkPromotionAndTail(withAddress);
+        equal("DELIVER TO", text(withAddress, "delivery.label"), "Delivery destination heading");
+        equal("14 Selbourne Road", text(withAddress, "delivery.street"), "Complete delivery street");
+        equal("Flat 2", text(withAddress, "delivery.unit"), "Delivery flat detail");
+        equal("LU4 8NU", text(withAddress, "delivery.postcode"), "Delivery postcode");
+        require(last(withAddress, "delivery.postcode").bottom() < first(withAddress, "header.rule").y,
+            "Address stays above the full order items");
         require(String.join("\n", ReceiptText.layout(driverReceipt)).contains("OWN DRIVER DELIVERY"),
             "Driver text bridge must not label delivery as collection");
         checkHeightBoundary(detailed);
