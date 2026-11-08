@@ -252,11 +252,11 @@ begin
               case when l.driver_status='delivered' then 'delivered' else a.state end,
             'version',a.version,'offeredUntil',a.offered_until,
             'driverStatus',l.driver_status,'postcode',q.address->>'postcode',
-            'address',case when r.on_shift and a.state not in ('offered','declined')
+            'address',case when r.on_shift and l.driver_status<>'delivered' and a.state not in ('offered','declined')
               then q.address else null end,
-            'customerName',case when r.on_shift and a.state not in ('offered','declined')
+            'customerName',case when r.on_shift and l.driver_status<>'delivered' and a.state not in ('offered','declined')
               then o.customer_name else null end,
-            'customerPhone',case when r.on_shift and a.state not in ('offered','declined')
+            'customerPhone',case when r.on_shift and l.driver_status<>'delivered' and a.state not in ('offered','declined')
               then o.customer_phone else null end,
             'createdAt',o.created_at
           ) as card
