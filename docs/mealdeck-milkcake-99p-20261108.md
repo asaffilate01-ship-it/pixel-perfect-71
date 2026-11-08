@@ -56,3 +56,13 @@ Source validation, live database installation, site publication and a real charg
 - The combined frontend, public-menu, checkout and provider suite passed **156 tests with 3,257 assertions**. The focused milkcake tests include rendered menu, modal, basket and checkout output.
 - The disposable PostgreSQL suite passed **all ten integrated checks**, including one allowance across all ten SKUs and duplicate lines; 1/2/3/20-cake totals; guest, member and cash pricing; materialisation and prepared-payment recovery; precise time boundaries; by-bag and equal shares; guarded atomic rerun; and unchanged historical data, base prices, permissions and kitchen controls.
 - Existing CI failures inherited from main were corrected narrowly: two navigation assertions now match the existing Ordering navigation label, and six KDS files received formatting-only changes required by their lint gate.
+- When those gates passed, the full workflow exposed a missing Python/Pillow setup for existing receipt artwork checks and three stale KDS wording assertions. CI now uses Python 3.12 with Pillow 13.0.0, matching the verified regeneration runtime. The three active-ticket expectations now match the already-approved uppercase flavour/portion presentation; the 23-test KDS view suite and its 213 assertions pass.
+- All 80 remaining source test/lint steps were exercised. One stale mobile-navigation label expectation was updated to the existing Order Now accessible label; the remaining 79 steps passed unchanged. The complete 48-test receipt-bridge suite also passed with the pinned Python dependency.
+
+### Live pricing installation, 07:03 UTC
+
+The complete reviewed transaction from source commit `b7e680206b6796e716abb701351ebac0049d2aa9` was installed through the existing MealDeck project database connection after the native PostgreSQL 17 milkcake CI job passed. Readback at 07:03:49 UTC confirmed all four expected financial/public function hashes, with no execute permission for application roles on the new private helpers.
+
+The production helper returned no offer at 14:59:59, the capped 99p offer at exactly 15:00:00 and at 22:59:59, and no offer at exactly 23:00:00. All ten normal cake amounts remain 399p. Kitchen settings, including `checkout_enabled = false`, `availability_state = closed`, 30-minute collection estimate and the original update timestamp, remained identical.
+
+The public menu before opening correctly continues to return ordinary 399p rows without active promotion metadata. A one-time read-only opening check is scheduled for 15:00 Europe/London. Frontend publication is tracked separately below.

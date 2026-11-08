@@ -85,6 +85,11 @@ jobs:
           tests/mealdeck-staff-vibration.test.ts
           tests/mealdeck-staff-alert-delivery.test.ts
           tests/mealdeck-staff-alert-controls.test.tsx
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install reproducible receipt artwork dependency
+        run: python -m pip install "Pillow==13.0.0"
       - name: Receipt bridge one-copy delivery, pairing and canonical order verification
         run: |
           node tools/receipt-bridge/build-games-qr.mjs --check
