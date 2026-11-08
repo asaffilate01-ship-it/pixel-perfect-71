@@ -2,6 +2,32 @@
 -- Apply after the ordered post-install MealDeck migrations, before enabling the
 -- MEALDECK_OWN_DRIVER_DELIVERY_ENABLED runtime flag. No third-party dispatch.
 begin;
+set local lock_timeout='5s';
+set local statement_timeout='60s';
+set local check_function_bodies=on;
+
+-- Prevent installation into another business's database or an incomplete
+-- MealDeck schema. This migration never upgrades the separate DISHBEE project.
+do $guard$
+begin
+  if to_regnamespace('dishbee_private') is not null
+    or to_regclass('mealdeck_private.installation') is null
+    or to_regclass('mealdeck_private.checkout_quotes') is null
+    or to_regclass('mealdeck_private.stripe_orders') is null
+    or to_regprocedure('mealdeck_ops_private.kds_order_card(uuid,jsonb)') is null
+    or to_regprocedure('mealdeck_ops_private.receipt_snapshot(uuid)') is null
+    or to_regprocedure('public.mealdeck_printer_acceptance_board(uuid,uuid)') is null
+    or to_regprocedure('mealdeck_private.checkout_receipt_for_identity(uuid,uuid,uuid)') is null
+  then raise exception 'mealdeck_delivery_dedicated_backend_required'; end if;
+  if current_user in ('anon','authenticated','service_role') or not exists(
+    select 1 from pg_class c
+    where c.oid='mealdeck_private.installation'::regclass
+      and pg_has_role(current_user,c.relowner,'USAGE')
+  ) or not exists(
+    select 1 from mealdeck_private.installation i
+    where i.singleton and i.profile='mealdeck-independent-v1' and i.business_id is not null
+  ) then raise exception 'mealdeck_delivery_database_owner_required'; end if;
+end $guard$;
 
 alter table mealdeck_private.checkout_quotes drop constraint if exists checkout_quotes_fulfilment_check;
 alter table mealdeck_private.checkout_quotes
