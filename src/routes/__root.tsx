@@ -1,11 +1,9 @@
-import { ComingSoonBanner } from "@/components/coming-soon";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BackToTop } from "@/components/back-to-top";
 import { SkipToMainContent } from "@/components/skip-to-main-content";
 import { ThemeProvider } from "@/components/theme-provider";
 import { MealDeckPageLoading } from "@/components/mealdeck-page-loading";
 import { PwaConnectionNotice, PwaProvider } from "@/components/pwa-provider";
-import { isLaunchMenuRoute } from "@/lib/launch-menu-navigation";
 import { isMealDeckStaffPath, mealDeckPwaSurface } from "@/lib/mealdeck-pwa-surface";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 import { seo, SITE_DESCRIPTION } from "@/lib/seo";
@@ -202,14 +200,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const internal = isMealDeckStaffPath(pathname);
-  const basketPage = isLaunchMenuRoute(pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
       <PwaProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         {!internal && <SkipToMainContent />}
-        {!internal && !basketPage && <ComingSoonBanner />}
         {!internal && <PwaConnectionNotice />}
         <div id="mealdeck-main" tabIndex={-1}>
           {/* The URL can change before the outgoing route unmounts. Keep its
@@ -218,7 +214,7 @@ function RootComponent() {
             <Outlet />
           </ArcadeProgressProvider>
         </div>
-        {!internal && !basketPage && <BackToTop />}
+        {!internal && <BackToTop />}
         {!internal && <MobileTabBar />}
         <Toaster position="top-center" />
       </PwaProvider>
