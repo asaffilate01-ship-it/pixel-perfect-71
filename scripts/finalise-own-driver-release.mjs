@@ -106,6 +106,15 @@ if (!verify.includes("tests/mealdeck-own-driver-payment.test.ts")) {
 // Format only changed application/test source, not historical SQL or manifests.
 const names = execFileSync("git", ["diff", "--name-only", "origin/main...HEAD"], { encoding: "utf8" })
   .split("\n").filter((p) => /^(src|tests)\//.test(p) && /\.(?:ts|tsx|mjs|css)$/.test(p));
-for (const p of [serverPath, contractPath, kdsPath, deliveryPath]) if (!names.includes(p)) names.push(p);
+// The current main branch introduced these four KDS clarity/flavour files
+// without matching Prettier formatting. Include them explicitly so the KDS
+// verification checks pass without turning off lint rules or altering logic.
+for (const p of [
+  serverPath, contractPath, kdsPath, deliveryPath,
+  "src/lib/mealdeck-kds-dish-clarity.ts",
+  "src/lib/mealdeck-kds-flavour.ts",
+  "tests/mealdeck-kds-dish-clarity.test.ts",
+  "tests/mealdeck-kds-flavour.test.ts",
+]) if (!names.includes(p)) names.push(p);
 if (names.length) execFileSync("bunx", ["prettier", "--write", ...names], { stdio: "inherit" });
 console.log("Applied reviewed payment/KDS/source-contract repairs; production delivery was not enabled.");
