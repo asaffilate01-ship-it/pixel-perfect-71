@@ -32,6 +32,12 @@ v0.2.3; otherwise it continues to offer v0.2.2. After installing the update
 over v0.2.2 on the same H10S, verify one *actual* complete receipt including
 its footer before enabling customer delivery.
 
+### Delivery destination on the physical v0.2.3 slip
+
+The driver ticket prints the verified **DELIVER TO** street, number, optional flat and postcode, with the saved order name/phone. It uses the canonical saved local-driver quote via the existing authenticated printer-claim contact projection, **outside** the immutable paid receipt, SHA-256 receipt fingerprint and local printer journal. An absent, changed or invalid delivery address **holds** the print job for operator inspection; it must never print a seemingly complete delivery slip without the destination. Customer collection and kerbside print contracts retain their original contact shape.
+
+Install `deploy/mealdeck/post-install-migrations/20261108074000_mealdeck_printer_delivery_address.sql` only on the verified independent MealDeck database, **after** the local-driver delivery migration. Complete Android emulator, server receipt, QR/footer and real H10S paper checks before publishing and enabling delivery; no source commit alone commissions the printer.
+
 ## Operator flow
 
 1. Install the signed companion and sign in with a verified account assigned to

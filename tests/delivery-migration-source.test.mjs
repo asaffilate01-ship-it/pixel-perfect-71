@@ -37,6 +37,24 @@ test("database enforces one real own-driver order, address privacy and full paym
   assert.match(sql, /driver_status='delivered'/);
 });
 
+test("printer v0.2.3 address extension keeps private printer authority and receipt snapshots", () => {
+  const addressSql = readFileSync(new URL(
+    "../deploy/mealdeck/post-install-migrations/20261108074000_mealdeck_printer_delivery_address.sql",
+    import.meta.url,
+  ), "utf8");
+  assert.equal((addressSql.match(/^begin;$/gm) ?? []).length, 1);
+  assert.equal((addressSql.match(/^commit;$/gm) ?? []).length, 1);
+  assert.match(addressSql, /mealdeck_delivery_printer_wrong_database/);
+  assert.match(addressSql, /mealdeck_delivery_printer_owner_required/);
+  assert.match(addressSql, /mealdeck_ops_private\.printer_assert_scope/);
+  assert.match(addressSql, /public\.mealdeck_printer_claim_contact/);
+  assert.match(addressSql, /mealdeck_private\.local_driver_orders/);
+  assert.match(addressSql, /mealdeck_private\.local_driver_quotes/);
+  assert.match(addressSql, /receiptContact|deliveryAddress/);
+  assert.doesNotMatch(addressSql, /grant execute\s+on function public\./i);
+  assert.doesNotMatch(addressSql, /update\s+mealdeck_private\.receipt_jobs/i);
+});
+
 test("existing printer, guest and member checkout projections include delivery", () => {
   assert.match(sql, /o\.fulfilment not in \('pickup','curbside','delivery'\)/);
   assert.match(sql, /x\.fulfilment in \('pickup','curbside','delivery'\)/);

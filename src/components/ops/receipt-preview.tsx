@@ -2,6 +2,7 @@ import {
   formatReceiptMoney as money,
   receiptItemBags,
   type MealDeckReceipt,
+  type ReceiptContact,
 } from "@/lib/mealdeck-printer";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
@@ -10,9 +11,11 @@ import { receiptPromotionForOrder } from "@/lib/mealdeck-receipt-games";
 export function ReceiptPreview({
   receipt: r,
   customerPhone,
+  deliveryAddress,
 }: {
   receipt: MealDeckReceipt;
   customerPhone?: string | null;
+  deliveryAddress?: ReceiptContact["deliveryAddress"] | null;
 }) {
   const number = orderDisplayNumber(r.orderNumber, "");
   const promotion = receiptPromotionForOrder(r);
@@ -60,6 +63,20 @@ export function ReceiptPreview({
         )}
         <p className="mt-2 break-words text-sm font-bold">{r.customerName}</p>
         {customerPhone && <p className="text-sm font-bold">{customerPhone}</p>}
+        {r.fulfilment === "delivery" && (
+          <div className="mt-2 border-y border-dashed border-black py-2 text-left">
+            <p className="text-sm font-black">DELIVER TO</p>
+            {deliveryAddress ? (
+              <address className="not-italic text-sm font-bold">
+                <p>{deliveryAddress.doorNumber} {deliveryAddress.roadName}</p>
+                {deliveryAddress.addressLine2 && <p>{deliveryAddress.addressLine2}</p>}
+                <p>{deliveryAddress.postcode}</p>
+              </address>
+            ) : (
+              <p className="text-sm font-black">VERIFY DELIVERY ADDRESS BEFORE DISPATCH</p>
+            )}
+          </div>
+        )}
         <p className="text-sm">{new Date(r.paidAt).toLocaleString("en-GB")}</p>
         {r.car && (
           <p className="mt-1 text-sm font-bold">

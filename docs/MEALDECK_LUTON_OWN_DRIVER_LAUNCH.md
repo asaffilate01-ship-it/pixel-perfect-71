@@ -21,14 +21,14 @@
 6. Test discounted payable amounts: £14.99 -> £0.01 short and blocked, £15.00 -> eligible, and a gross £16 basket discounted below £15 -> blocked. The server must reprice before Stripe.
 7. Place a real guest order: phone/name and full street address, zero delivery charge, Stripe delivery wording, order receipt with 60-minute estimate.
 8. Staff KDS: verify full address and contact, finish all brands and bag checklist, then explicitly Hand over to our driver, Confirm delivered, and review the guest receipt. Test stale cards, wrong roles and refunded orders cannot bypass permissions.
-9. Build and install a delivery-compatible H10S Android receipt-printer APK. Earlier APKs reject delivery receipts as unsupported fulfilment. Verify a real thermal receipt prints the complete order on one sheet, labels OWN DRIVER DELIVERY and leaves collection/kerbside receipts unchanged. Repeat on the website printer queue as well as the native bridge.
+9. Install the separate **printer-address** post-install migration `deploy/mealdeck/post-install-migrations/20261108074000_mealdeck_printer_delivery_address.sql` after the own-driver migration. It reads the immutable saved delivery quote using the existing printer claim identity, never includes the address in the priced receipt fingerprint or native journal, and returns no new public RPC. Build and install signed v0.2.3 H10S APK: prior APKs reject delivery. Verify one real staff-accepted paid delivery order prints **OWN DRIVER DELIVERY**, customer name/phone, full **DELIVER TO** address, all dishes and rotating footer on one complete receipt. Pickup/kerbside must remain unchanged. Missing/invalid address must hold, not silently print. Repeat on the website printer queue as well as the native bridge.
 10. Mobile smoke test: menu, basket, postcode checks, guest checkout, Stripe, receipt, KDS, printer, collection and kerbside regression.
 11. Only after successful real tests, set the **MEALDECK_OWN_DRIVER_DELIVERY_ENABLED** server environment setting to true. Redeploy and test again on the live domain.
 
 ## H10S v0.2.3 signed update (mandatory before enabling delivery)
 
 The Android printer v0.2.2/build 4 rejects the new `delivery` receipt type.
-v0.2.3/build 5 adds it, while keeping the existing app ID
+v0.2.3/build 5 adds it **and** prints the independently authorised delivery destination and saved contact above the purchased items, while keeping the existing app ID
 `uk.co.mealdeck.printer`, receipt journal and exact single-bitmap send protocol.
 
 1. Complete source build, KDS, payment and Android instrumented tests on the delivery PR.

@@ -1321,6 +1321,7 @@ function ReceiptTerminal({
             <ReceiptPreview
               receipt={printJob.receipt}
               customerPhone={printJob.receiptContact?.customerPhone ?? null}
+              deliveryAddress={printJob.receiptContact?.deliveryAddress ?? null}
             />
           </div>,
           document.body,
@@ -1401,6 +1402,7 @@ function ReceiptJobCard({
           <ReceiptPreview
             receipt={job.receipt}
             customerPhone={job.receiptContact?.customerPhone ?? null}
+            deliveryAddress={job.receiptContact?.deliveryAddress ?? null}
           />
         )}
         {job.status === "queued" && (

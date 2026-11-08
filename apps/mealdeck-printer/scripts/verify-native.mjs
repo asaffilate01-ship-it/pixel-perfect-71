@@ -53,4 +53,6 @@ assert.match(renderer, /\.asShared\(\)/);
 const runtime = await read("native/src/main/java/uk/co/mealdeck/printer/ReceiptRuntime.java");
 assert.ok(runtime.indexOf("PrinterBinderWire.prepareReceipt") < runtime.indexOf('api.rpc("mealdeck_printer_begin_send"'));
 assert.doesNotMatch(runtime, /printReceiptStrip|output\.strips/);
+assert.match(runtime, /ReceiptDelivery\.fromResponse/);
+assert.match(runtime, /ReceiptRenderer\.render\(context, job\.receipt, job\.customerPhone, job\.delivery\)/);
 console.log("Native bundle, identity, foreground service, backup exclusions, bounded Binder protocol and unsigned release checks passed.");

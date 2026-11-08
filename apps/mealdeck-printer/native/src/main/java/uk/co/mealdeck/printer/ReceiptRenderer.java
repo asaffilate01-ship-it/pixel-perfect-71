@@ -46,11 +46,16 @@ public final class ReceiptRenderer {
     }
 
     /** The same measured display list is available to Android raster acceptance tests. */
-    static ReceiptLayout layout(ReceiptModel model) { return layout(model, paints(), null); }
+    static ReceiptLayout layout(ReceiptModel model) { return layout(model, paints(), null, null); }
 
-    static ReceiptLayout layout(ReceiptModel model, String customerPhone) { return layout(model, paints(), customerPhone); }
+    static ReceiptLayout layout(ReceiptModel model, String customerPhone) { return layout(model, paints(), customerPhone, null); }
 
-    private static ReceiptLayout layout(ReceiptModel model, Map<ReceiptLayout.Style, Paint> paints, String customerPhone) {
+    static ReceiptLayout layout(ReceiptModel model, String customerPhone, ReceiptDelivery delivery) {
+        return layout(model, paints(), customerPhone, delivery);
+    }
+
+    private static ReceiptLayout layout(ReceiptModel model, Map<ReceiptLayout.Style, Paint> paints,
+                                        String customerPhone, ReceiptDelivery delivery) {
         return ReceiptLayout.build(model, new ReceiptLayout.TextMeasurer() {
             @Override public float width(String text, ReceiptLayout.Style style) {
                 return paints.get(style).measureText(text);
@@ -59,22 +64,27 @@ public final class ReceiptRenderer {
                 Paint.FontMetricsInt metrics = paints.get(style).getFontMetricsInt();
                 return Math.max(style.minimumLineHeight, metrics.bottom - metrics.top + 2);
             }
-        }, customerPhone);
+        }, customerPhone, delivery);
     }
 
     /** Validation, full allocation, drawing and sharing all complete before dispatch. */
     public static RenderedReceipt render(Context context, ReceiptModel model) {
-        return render(context, model, null);
+        return render(context, model, null, null);
     }
 
     public static RenderedReceipt render(Context context, ReceiptModel model, String customerPhone) {
+        return render(context, model, customerPhone, null);
+    }
+
+    public static RenderedReceipt render(Context context, ReceiptModel model,
+                                         String customerPhone, ReceiptDelivery delivery) {
         Bitmap logo = null;
         Bitmap promotion = null;
         Bitmap raster = null;
         Bitmap shared = null;
         try {
             Map<ReceiptLayout.Style, Paint> paints = paints();
-            ReceiptLayout layout = layout(model, paints, customerPhone);
+            ReceiptLayout layout = layout(model, paints, customerPhone, delivery);
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
