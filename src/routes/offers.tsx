@@ -73,7 +73,7 @@ function OffersPage() {
                 {deliveryLive && sundayHours
                   ? "Available during Sunday's opening hours, 3pm–11pm, for Luton collection, kerbside pickup and delivery."
                   : deliveryPreopen
-                    ? "Due to popular demand, FREE delivery planned from 3pm today. Sunday's opening hours are 3pm–11pm, with collection and kerbside pickup."
+                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Luton collection and kerbside pickup are also available during Sunday's opening hours."
                     : sundayHours
                       ? "Sunday's opening hours are 3pm–11pm. Collection and kerbside are available; delivery is subject to availability at checkout."
                       : "All opening times are UK local time (Europe/London). Collection, kerbside and eligible delivery depend on checkout availability."}{" "}
