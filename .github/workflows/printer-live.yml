@@ -7,6 +7,8 @@ on:
       - "apps/mealdeck-printer/**"
       - "tools/receipt-bridge/receipt.mjs"
       - ".github/workflows/printer-live.yml"
+      - ".github/workflows/publish-printer-v023.yml"
+      - "src/components/ops/printer-apk-download.tsx"
   pull_request:
     paths:
       - "apps/mealdeck-printer/**"

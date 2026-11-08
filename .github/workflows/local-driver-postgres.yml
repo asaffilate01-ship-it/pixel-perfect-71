@@ -7,6 +7,9 @@ on:
       - 'tests/postgres/local-driver-delivery-behavior.mjs'
       - 'deploy/mealdeck/local-driver-delivery.mjs'
       - 'deploy/mealdeck/post-install-migrations/*local_driver_delivery.sql'
+      - 'src/lib/mealdeck-own-driver*'
+      - 'src/lib/mealdeck-online-checkout.server.ts'
+      - 'tests/mealdeck-own-driver*'
   pull_request:
     paths:
       - '.github/workflows/local-driver-postgres.yml'

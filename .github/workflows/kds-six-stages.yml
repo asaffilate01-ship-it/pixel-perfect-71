@@ -2,7 +2,7 @@ name: Verify KDS six-stage workflow
 on:
   pull_request:
   push:
-    branches: [main, feature/mealdeck-kds-six-stages-20261106]
+    branches: [main, feature/mealdeck-kds-six-stages-20261106, feat/own-driver-luton-delivery]
 permissions:
   contents: read
 jobs:

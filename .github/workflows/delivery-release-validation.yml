@@ -7,6 +7,14 @@ on:
       - 'scripts/prepare-printer-v023.mjs'
       - 'src/lib/mealdeck-own-driver-payment.server.ts'
       - 'tests/mealdeck-own-driver-payment.test.ts'
+  push:
+    branches: ['feat/own-driver-luton-delivery']
+    paths:
+      - '.github/workflows/delivery-release-validation.yml'
+      - 'src/lib/mealdeck-own-driver*'
+      - 'src/lib/mealdeck-online-checkout.server.ts'
+      - 'tests/mealdeck-own-driver*'
+      - 'tests/postgres/local-driver-delivery-behavior.mjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,13 +23,15 @@ concurrency:
   cancel-in-progress: false
 jobs:
   delivery-release:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/own-driver-luton-delivery'
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/own-driver-luton-delivery') ||
+      ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/feat/own-driver-luton-delivery')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -39,7 +49,7 @@ jobs:
           python -m pip install --disable-pip-version-check 'Pillow==12.0.0'
       - name: Verify tested source is the immutable pull-request commit
         run: |
-          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
           echo "Read-only validation: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
       - name: Run all focused release checks without skipping later diagnostics
         shell: bash
