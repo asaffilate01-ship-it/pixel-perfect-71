@@ -869,6 +869,27 @@ jobs:
           npm run export:check
       - name: Install Android compiler components
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006" "cmake;3.22.1"
+      - name: Prepare pinned staff Gradle wrapper with resilient download
+        working-directory: apps/mealdeck-terminal/android
+        run: |
+          set -euo pipefail
+          wrapper=gradle/wrapper/gradle-wrapper.properties
+          test -f "$wrapper"
+          if grep -q '^networkTimeout=' "$wrapper"; then
+            sed -i 's/^networkTimeout=.*/networkTimeout=120000/' "$wrapper"
+          else
+            printf '\nnetworkTimeout=120000\n' >> "$wrapper"
+          fi
+          for attempt in 1 2 3; do
+            if ./gradlew --version --no-daemon; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo 'Pinned staff Gradle wrapper download failed after retries.'
+              exit 1
+            fi
+            sleep "$((attempt * 10))"
+          done
       - name: Compile an Android debug APK without production credentials
         working-directory: apps/mealdeck-terminal/android
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace

@@ -602,7 +602,7 @@ describe("ticket alignment retains every kitchen instruction", () => {
       for (const text of [
         "£3.50 each",
         "£7.00 line total",
-        "KOREAN BBQ · 3 PCS",
+        "Korean BBQ · 3 pcs",
         "Garlic dip",
         "£0.50 each",
         "£1.00 line total",
@@ -643,7 +643,7 @@ describe("ticket alignment retains every kitchen instruction", () => {
         createElement(KdsCompletedCard, { order: completed({ items: candidate.items }) }),
       ),
     ]) {
-      expect(html).toContain("KOREAN BBQ · 3 PCS");
+      expect(html).toContain("Korean BBQ · 3 pcs");
       expect(html).not.toContain("£");
     }
   });
