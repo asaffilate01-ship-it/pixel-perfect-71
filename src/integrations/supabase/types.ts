@@ -2609,6 +2609,19 @@ export type Database = {
         }
         Returns: Json
       }
+      mealdeck_bind_local_delivery_quote: {
+        Args: {
+          p_address: Json
+          p_customer: string
+          p_distance_metres: number
+          p_location: string
+          p_quote: string
+          p_request_hash: string
+          p_tenant: string
+          p_token_hash: string
+        }
+        Returns: Json
+      }
       mealdeck_bind_order_payment: {
         Args: {
           p_account: string
@@ -2899,6 +2912,14 @@ export type Database = {
       mealdeck_leave_ordering_room: {
         Args: { p_actor_hash: string; p_room: string }
         Returns: Json
+      }
+      mealdeck_local_delivery_quote_for_actor: {
+        Args: { p_customer: string; p_quote: string; p_token_hash: string }
+        Returns: Json
+      }
+      mealdeck_local_delivery_ready: {
+        Args: { p_location: string; p_tenant: string }
+        Returns: boolean
       }
       mealdeck_online_checkout_status: {
         Args: { p_location: string; p_tenant: string }
@@ -3220,6 +3241,16 @@ export type Database = {
           p_location: string
           p_order: string
           p_ready: boolean
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_ops_kds_transition_local_driver: {
+        Args: {
+          p_expected_version: string
+          p_location: string
+          p_order: string
+          p_status: string
           p_tenant: string
         }
         Returns: Json
