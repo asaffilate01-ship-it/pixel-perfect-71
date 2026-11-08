@@ -37,6 +37,9 @@ test("database enforces one real own-driver order, address privacy and full paym
 test("existing printer, guest and member checkout projections include delivery", () => {
   assert.match(sql, /o\.fulfilment not in \('pickup','curbside','delivery'\)/);
   assert.match(sql, /x\.fulfilment in \('pickup','curbside','delivery'\)/);
+  assert.match(sql, /receipt_snapshot_before_meal_components/);
+  assert.match(sql, /'mealComponents',i->'mealComponents'/);
+  assert.match(sql, /'paymentMethod','cash'/);
   assert.match(sql, /create or replace function public\.mealdeck_customer_order_receipt/);
   assert.match(sql, /create or replace function public\.mealdeck_guest_order_receipt/);
   assert.match(sql, /o\.paid_at\+interval '60 minutes'/);
