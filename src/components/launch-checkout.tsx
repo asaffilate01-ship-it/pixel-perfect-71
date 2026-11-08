@@ -1370,7 +1370,7 @@ function LaunchCheckoutView({
         distanceMetres: typeof result.distanceMetres === "number" ? result.distanceMetres : null,
       });
       if (!result.eligible)
-        setDeliveryAreaIssue(deliveryAreaRejectionMessage(result.distanceMetres));
+        setDeliveryAreaIssue(deliveryAreaRejectionMessage(result.distanceMetres ?? null));
     } catch (error) {
       if (generation === deliveryLookupGeneration.current)
         setDeliveryAreaIssue(
