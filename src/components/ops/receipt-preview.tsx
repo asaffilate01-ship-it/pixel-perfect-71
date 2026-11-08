@@ -68,7 +68,9 @@ export function ReceiptPreview({
             <p className="text-sm font-black">DELIVER TO</p>
             {deliveryAddress ? (
               <address className="not-italic text-sm font-bold">
-                <p>{deliveryAddress.doorNumber} {deliveryAddress.roadName}</p>
+                <p>
+                  {deliveryAddress.doorNumber} {deliveryAddress.roadName}
+                </p>
                 {deliveryAddress.addressLine2 && <p>{deliveryAddress.addressLine2}</p>}
                 <p>{deliveryAddress.postcode}</p>
               </address>

@@ -38,10 +38,13 @@ test("database enforces one real own-driver order, address privacy and full paym
 });
 
 test("printer v0.2.3 address extension keeps private printer authority and receipt snapshots", () => {
-  const addressSql = readFileSync(new URL(
-    "../deploy/mealdeck/post-install-migrations/20261108074000_mealdeck_printer_delivery_address.sql",
-    import.meta.url,
-  ), "utf8");
+  const addressSql = readFileSync(
+    new URL(
+      "../deploy/mealdeck/post-install-migrations/20261108074000_mealdeck_printer_delivery_address.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
   assert.equal((addressSql.match(/^begin;$/gm) ?? []).length, 1);
   assert.equal((addressSql.match(/^commit;$/gm) ?? []).length, 1);
   assert.match(addressSql, /mealdeck_delivery_printer_wrong_database/);
