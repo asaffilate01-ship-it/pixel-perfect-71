@@ -22,7 +22,7 @@ export const Route = createFileRoute("/menus")({
       : seo({
           title: "Luton Menus: Burgers, Wings & Loaded Fries | MealDeck",
           description:
-            "Explore Skorch burgers, Tavo Chicken wings, Load’d fries, Souvano doner, Moktl mocktails and milk cake. One MealDeck basket for Luton collection or kerbside.",
+            "Explore Skorch burgers, Tavo Chicken wings, Load’d fries, Souvano doner, Moktl mocktails and milk cake. One MealDeck basket for Luton collection, kerbside or eligible free own-driver delivery.",
           path: "/menus",
           noIndex: !!match.loaderDeps.brand,
         });
