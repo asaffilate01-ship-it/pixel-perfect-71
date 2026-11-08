@@ -29,7 +29,7 @@ export function mealDeckPwaSurface(pathname: string) {
 }
 
 export function isMealDeckStaffPath(pathname: string) {
-  return ["/ops", "/kds", "/printer"].some(
+  return ["/ops", "/kds", "/printer", "/driver"].some(
     (prefix) => pathname === prefix || pathname.startsWith(prefix + "/"),
   );
 }
