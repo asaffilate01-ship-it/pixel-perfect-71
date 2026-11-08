@@ -1,12 +1,13 @@
 import { OPENING_OFFER_PERCENT } from "./mealdeck-opening-offer";
 import { MEALDECK_LAUNCH_DAYS } from "./mealdeck-launch-schedule";
+import { MILKCAKE_PROMOTION_TERMS } from "./mealdeck-milkcake-promotion";
 
 /**
- * Owner-approved public terms, updated 7 November 2026. This catalogue publishes offers;
+ * Owner-approved public terms, updated 8 November 2026. This catalogue publishes offers;
  * it cannot grant discounts, issue points or enable a payment channel.
  * Pricing and membership evidence remain the independent MealDeck server's job.
  */
-export const MEALDECK_OFFERS_TERMS_VERSION = "mealdeck-offers-20261107-v4";
+export const MEALDECK_OFFERS_TERMS_VERSION = "mealdeck-offers-20261108-v5";
 export const MEALDECK_OFFERS_TIME_ZONE = "Europe/London";
 
 export const MILK_CAKE_CAMPAIGN = Object.freeze({
@@ -14,9 +15,10 @@ export const MILK_CAKE_CAMPAIGN = Object.freeze({
   pricePence: 99,
   requiresOrder: true,
   registrationRequired: false,
-  // The manager must supply the canonical product before automatic pricing exists.
-  canonicalItemId: null,
-  automaticPricingEnabled: false,
+  maximumPerOrder: 1,
+  additionalPricePence: 399,
+  // Publication alone never grants pricing. Only validated server metadata does.
+  pricingAuthority: "server",
 } as const);
 
 const milkCakeLaunchDay = MEALDECK_LAUNCH_DAYS.find((day) => day.date === MILK_CAKE_CAMPAIGN.date);
@@ -76,13 +78,14 @@ export const MEALDECK_OFFERS: readonly MealDeckOffer[] = [
     suit: "cake",
     title: "Milk cake with every order",
     value: `${MILK_CAKE_CAMPAIGN.pricePence}p`,
-    description: "A Sunday treat: milk cake for 99p with every order.",
+    description: "A Sunday treat: one milkcake for 99p with every order. T&Cs apply.",
     dateLabel: "Sunday 8 November 2026",
     startsOn: MILK_CAKE_CAMPAIGN.date,
     throughDate: MILK_CAKE_CAMPAIGN.date,
     audience: "Guests and members",
     terms: [
-      "Milk cake for 99p with every order on Sunday 8 November 2026.",
+      "One milkcake for 99p with every order on Sunday 8 November 2026.",
+      MILKCAKE_PROMOTION_TERMS,
       `Available during Sunday's opening hours${milkCakeLaunchDay ? `, ${milkCakeLaunchDay.hoursLabel},` : ""} for Luton collection or kerbside pickup.`,
     ],
   },

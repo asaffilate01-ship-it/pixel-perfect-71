@@ -1,33 +1,32 @@
 # MealDeck November offers — publication and activation
 
-Owner decision: 5 November 2026; double-points dates updated 6 November 2026. These are the only three advertised consumer promotions.
+Owner decision: 5 November 2026; double-points dates updated 6 November and Sunday milkcake pricing clarified 8 November 2026. These are the only three advertised consumer promotions.
 
 | Offer                 | Confirmed terms                                                                                                                                                                               |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Opening weekend       | 30% off the entire menu, Friday 6 through Sunday 8 November 2026. Existing no-minimum, guest/member, Luton collection and kerbside terms remain.                                              |
-| Sunday milk cake      | Milk cake for 99p with every order on Sunday 8 November 2026. No flavour, size, quantity cap or further minimum has been supplied.                                                            |
+| Sunday milk cake      | One Biscoff or Oreo milkcake per order is 99p after the 30% discount on Sunday 8 November 2026, 15:00–23:00 UK time. Additional milkcakes are £3.99 each before the ordinary 30% discount.    |
 | Double loyalty points | Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive for 2× loyalty points. Marketing opt-ins are separate and optional. No base earning rate has been supplied. |
 
-All campaign dates are Europe/London. Opening hours remain Friday 6 November 15:00–23:00; Saturday 7 and Sunday 8 November 13:00–23:00. The double-points campaign begins Monday 9 November 00:00 and ends exclusively Saturday 14 November 00:00, covering Monday 9 through Friday 13 November 2026 inclusive. These dates do not establish kitchen hours or permit checkout when the kitchen is unavailable.
+All campaign dates are Europe/London. Confirmed opening hours are Friday 6 and Saturday 7 November 15:00–midnight, and Sunday 8 November 15:00–23:00. The double-points campaign begins Monday 9 November 00:00 and ends exclusively Saturday 14 November 00:00, covering Monday 9 through Friday 13 November 2026 inclusive. These dates do not permit checkout when the kitchen is unavailable.
 
 ## Source implemented
 
 `src/lib/mealdeck-offers.ts` is the shared public campaign catalogue. `/offers`, the homepage cards and the offer-explainer blog use the same three records. Header, footer, menu and opening-offer links expose the page. Retired sample discounts and invented loyalty streak/group bonuses have been removed from current public copy. Historical non-routed UI archives remain historical files.
 
-The module also records the 99p price and double-points threshold/date window/multiplier as inactive setup data. It is not imported by checkout pricing or a points issuer. Publishing it cannot change a pending or paid order, activate payments, mint a reward, or alter a customer's stored points. Account rendering still follows the server's real `loyalty.enabled` value.
+The module records the owner-approved campaign details. Public copy is not pricing authority: the independent database owns timed milkcake pricing and the ordinary checkout discount. Publishing text cannot change a prepared or paid order, activate payments, mint a reward, or alter a customer's stored points. The double-points setup remains incomplete, and account rendering follows the server's real `loyalty.enabled` value.
 
 ## Existing 30% path
 
 The 30% campaign already has its shared server/database quotation path. This update preserves that path, the confirmed daily windows, guest/member separation, kitchen Online/Busy/Pause/Closed controls, payment readiness and verified payment reconciliation. Existing paid receipts retain their historical prices.
 
-## Manager setup needed: Sunday milk cake
+## Sunday milkcake pricing — clarified 8 November
 
-1. The owner supplied **Biscoff Milkcake £3.99** and **Oreo Milkcake £3.99** for every launch menu on 6 November. Their standalone catalogue mapping is now defined in `src/lib/launch-menu-catalogue.ts` and `deploy/mealdeck/catalogue/launch-catalogue.json`, with the additive live import described in `docs/mealdeck-milkcake-desserts.md`. The Sunday promotion must explicitly bind its eligible product identities; adding the standard products alone does not establish the promotional price. No serving size or recipe/allergen declarations were supplied.
-2. Confirm how the stated 99p price interacts with the simultaneous 30% entire-menu offer. No stacking rule, exclusion or quantity cap has been assumed in source or public terms.
-3. Implement server-priced, date- and kitchen-scoped eligibility for the product through the existing quotation/Stripe/packing/KDS flow. Browser prices and a generic promotional card cannot establish a charge.
-4. Verify the price shown in order review, immutable payment snapshot, customer receipt, KDS and printer receipt. Test guest and member orders, outside-Sunday requests, retries, and existing paid-order preservation before enabling the rule.
+The owner confirmed **99p as the final amount after the 30% discount**, with only **99p · T&Cs apply** on customer displays. The terms explain that the displayed price already includes the discount. The 99p offer applies to one milkcake per entire order, across every brand and flavour. No second reduction is applied to that unit. Additional milkcakes cost £3.99 each before the ordinary 30% discount, which still applies to other eligible items.
 
-`MILK_CAKE_CAMPAIGN.canonicalItemId` remains null and `automaticPricingEnabled` remains false. The standalone £3.99 products are distinct from activation of this Sunday price rule.
+The existing Biscoff and Oreo products across all five launch menus are the exact eligible identities. Their normal £3.99 catalogue records and current stock remain authoritative outside the Sunday promotion. The owner specified the one-per-order 99p cap. No serving size, recipe, allergen declaration or extra minimum has been added.
+
+The timed database rule, public menu metadata, checkout presentation, monetary tests and installation/publication evidence are documented in [the Sunday rollout record](mealdeck-milkcake-99p-20261108.md). That record distinguishes source readiness from actual live installation.
 
 ## Manager setup needed: double points
 

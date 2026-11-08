@@ -974,6 +974,7 @@ export function CashOrderPanel({
             <LaunchItemCustomiser
               key={draft.item.id + (draft.existing?.key ?? "new")}
               draft={draft}
+              basketPicks={picks}
               onSave={savePick}
               onBack={() => setDraft(null)}
               error={draftError}

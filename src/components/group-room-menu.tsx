@@ -12,9 +12,11 @@ import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { getLaunchMenuBrand, isLaunchBrandPriceApproved } from "@/lib/launch-menu-catalogue";
 import {
   formatLaunchMenuPrice,
+  formatLaunchMenuItemPrice,
   launchMenuBasketDisplayPrice,
   launchMenuPickDisplayPrice,
 } from "@/lib/launch-menu-display-prices";
+import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
 import {
   addLaunchPick,
   findLaunchMenuItem,
@@ -267,7 +269,8 @@ export function GroupRoomMenu({
                     {item.description && <small>{item.description}</small>}
                     <span className="md-room-dish-price">
                       {item.priceVariants?.length ? "From " : ""}
-                      {formatLaunchMenuPrice(item.pricePence)}
+                      {formatLaunchMenuItemPrice(item)}
+                      {isMealDeckMilkcakePromotion(item.promotion) && " · T&Cs apply"}
                     </span>
                   </span>
                   <Plus size={19} aria-hidden="true" />
@@ -306,6 +309,7 @@ export function GroupRoomMenu({
               key={draft.item.id + (draft.existing?.key ?? "new")}
               context="group-order"
               draft={draft}
+              basketPicks={picks}
               onSave={save}
               onBack={() => setDraft(null)}
               error={error}

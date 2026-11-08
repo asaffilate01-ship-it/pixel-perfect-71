@@ -22,6 +22,33 @@
   text-align: right;
 }
 
+.lm-item-price .lm-promotion-label {
+  display: block;
+  margin-top: 3px;
+  color: #655a4d;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.md-milkcake-offer-terms a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.md-milkcake-offer-terms a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+.lmb-promotion {
+  margin: 5px 0 0;
+  color: var(--lmb-muted, #655a4e);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .lm-pairing-price {
   display: block;
   margin-top: 7px;
