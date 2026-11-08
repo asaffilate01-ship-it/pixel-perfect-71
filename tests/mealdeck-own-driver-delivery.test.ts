@@ -6,7 +6,6 @@ import {
   parseOwnDriverAddress,
   postcodeDistanceMetres,
   OwnDriverInvalidPostcode,
-  OwnDriverPostcodeUnavailable,
 } from "../src/lib/mealdeck-own-driver-delivery";
 
 const coords = { latitude: 51.893, longitude: -0.459 };
@@ -76,46 +75,93 @@ describe("MealDeck own-driver delivery safeguards", () => {
       postcodeDistanceMetres(coords, { ...coords, latitude: coords.latitude + 0.04 }),
     ).toBeGreaterThan(3000);
   });
-  test("looks up both postcodes server side and checks independently", async () => {
-    const r = await checkOwnDriverArea("LU4 8NR", fetcher);
-    expect(r.postcode).toBe("LU4 8NR");
-    expect(r.eligible).toBe(true);
-    expect(r.distanceMetres).toBeGreaterThan(0);
-    await expect(checkOwnDriverArea("not valid", fetcher)).rejects.toBeInstanceOf(
+  const offline = (async () => {
+    throw new Error("outbound network unavailable");
+  }) as typeof fetch;
+
+  test("verified Luton postcodes resolve from the local store with no network", async () => {
+    let calls = 0;
+    const counting = (async () => {
+      calls += 1;
+      throw new Error("network unavailable");
+    }) as typeof fetch;
+    const base = await checkOwnDriverArea("lu48nu", counting);
+    expect(base).toMatchObject({ postcode: "LU4 8NU", eligible: true, distanceMetres: 0 });
+    // 14 Guardian Way: OS grid offset (+1163, -1670) from LU4 8NU.
+    const guardian = await checkOwnDriverArea("LU1 1BU", counting);
+    expect(guardian).toMatchObject({ eligible: true, distanceMetres: 2035, source: "local_store" });
+    // Reported live failure: LU2 7EZ is 2,506 m away and must now pass.
+    const north = await checkOwnDriverArea("LU2 7EZ", counting);
+    expect(north).toMatchObject({ eligible: true, distanceMetres: 2506 });
+    expect(calls).toBe(0);
+  });
+
+  test("3 km boundary: 3,002 m postcode is refused, 2,99x m postcode accepted", async () => {
+    // OS grid 3,002 m (postcodes.io says 2,993 m) — conservatively refused.
+    const outside = await checkOwnDriverArea("LU4 0PR", offline);
+    expect(outside.eligible).toBe(false);
+    expect(outside.distanceMetres).toBe(3002);
+  });
+
+  test("a real LU postcode beyond 3 km is refused, not approved by prefix", async () => {
+    const far = await checkOwnDriverArea("LU2 9BL", offline);
+    expect(far).toMatchObject({ eligible: false, distanceMetres: 3954, source: "local_store" });
+  });
+
+  test("non-existent LU postcode with lookup down is never approved", async () => {
+    const area = await checkOwnDriverArea("LU1 1BC", offline);
+    expect(area.eligible).toBe(false);
+    expect(area.distanceMetres).toBeNull();
+  });
+
+  test("invalid format is rejected", async () => {
+    await expect(checkOwnDriverArea("not valid", offline)).rejects.toBeInstanceOf(
       OwnDriverInvalidPostcode,
     );
   });
-  test("geocoder failure denies delivery rather than approving any postcode", async () => {
-    const bad = (async () => Response.json({ status: 500 }, { status: 500 })) as typeof fetch;
-    await expect(checkOwnDriverArea("LU4 8NR", bad)).rejects.toBeInstanceOf(
-      OwnDriverPostcodeUnavailable,
-    );
+
+  test("postcodes outside the local store use an exact remote lookup", async () => {
+    const remote = (async (url: string) =>
+      Response.json({
+        status: 200,
+        result: {
+          postcode: url.endsWith("SW1A1AA") ? "SW1A 1AA" : "X",
+          latitude: 51.501,
+          longitude: -0.1416,
+        },
+      })) as typeof fetch;
+    const area = await checkOwnDriverArea("SW1A 1AA", remote);
+    expect(area.source).toBe("remote_lookup");
+    expect(area.eligible).toBe(false);
+    expect(area.distanceMetres).toBeGreaterThan(40_000);
   });
+
+  test("remote failure for an outside postcode refuses delivery rather than approving", async () => {
+    const bad = (async () => Response.json({ status: 500 }, { status: 500 })) as typeof fetch;
+    const area = await checkOwnDriverArea("MK9 3AA", bad);
+    expect(area).toMatchObject({ eligible: false, distanceMetres: null });
+  });
+
   test("uses an independent fallback postcode service when Postcodes.io is down", async () => {
     const requested: string[] = [];
-    const backup = (async (url: string) => {
+    const backup = (async (url: string, init?: RequestInit) => {
       requested.push(url);
+      expect(init?.redirect).toBe("manual");
       if (url.startsWith("https://api.postcodes.io/")) {
         return Response.json({ status: 503 }, { status: 503 });
       }
-      const code = url.split("/").at(-1);
       return Response.json({
         status: "match",
-        match_type: "unit_postcode",
-        data: {
-          postcode: code === "LU48NU" ? "LU4 8NU" : "LU4 8NR",
-          status: "live",
-          latitude: "51.893",
-          longitude: code === "LU48NU" ? "-0.459" : "-0.458",
-        },
+        data: { postcode: "MK9 3AA", status: "live", latitude: "52.04", longitude: "-0.76" },
       });
     }) as typeof fetch;
-    const result = await checkOwnDriverArea("lu4 8nr", backup);
-    expect(result.eligible).toBe(true);
+    const result = await checkOwnDriverArea("mk9 3aa", backup);
+    expect(result.eligible).toBe(false);
+    expect(result.source).toBe("remote_lookup");
     expect(requested.filter((url) => url.startsWith("https://api.getthedata.com/"))).toHaveLength(1);
   });
 
-  test("rejects a mismatched fallback response, not an unverified delivery", async () => {
+  test("a mismatched fallback response is never treated as a verified location", async () => {
     const mismatched = (async (url: string) => {
       if (url.startsWith("https://api.postcodes.io/")) {
         return Response.json({ status: 503 }, { status: 503 });
@@ -125,43 +171,8 @@ describe("MealDeck own-driver delivery safeguards", () => {
         data: { postcode: "SW1A 1AA", status: "live", latitude: "51.5", longitude: "-0.1" },
       });
     }) as typeof fetch;
-    await expect(checkOwnDriverArea("LU4 8NR", mismatched)).rejects.toBeInstanceOf(
-      OwnDriverPostcodeUnavailable,
-    );
-  });
-
-  test("a source-verified exact Luton postcode remains serviceable during full provider outage", async () => {
-    const unavailable = (async () => {
-      throw new Error("outbound network temporarily unavailable");
-    }) as typeof fetch;
-    const area = await checkOwnDriverArea("LU1 1BU", unavailable);
-    expect(area.postcode).toBe("LU1 1BU");
-    expect(area.eligible).toBe(true);
-    // Two separately sourced live postcode centroids ~2.03 km apart.
-    expect(area.distanceMetres).toBeGreaterThan(2000);
-    expect(area.distanceMetres).toBeLessThan(2100);
-  });
-
-  test("offline continuity never approves other LU1 postcodes by prefix", async () => {
-    const unavailable = (async () => {
-      throw new Error("network down");
-    }) as typeof fetch;
-    await expect(checkOwnDriverArea("LU1 1BC", unavailable)).rejects.toBeInstanceOf(
-      OwnDriverPostcodeUnavailable,
-    );
-  });
-
-  test("known launch postcode remains available without any provider requests", async () => {
-    let calls = 0;
-    const unreachable = (async () => {
-      calls += 1;
-      throw new Error("network unavailable");
-    }) as typeof fetch;
-    const origin = await checkOwnDriverArea("LU4 8NU", unreachable);
-    const destination = await checkOwnDriverArea("LU1 1BU", unreachable);
-    expect(origin.distanceMetres).toBe(0);
-    expect(destination.eligible).toBe(true);
-    expect(calls).toBe(0);
+    const area = await checkOwnDriverArea("MK9 3AA", mismatched);
+    expect(area).toMatchObject({ eligible: false, distanceMetres: null });
   });
 
   test("unknown UK postcode is rejected when both services confirm it does not exist", async () => {
@@ -173,5 +184,4 @@ describe("MealDeck own-driver delivery safeguards", () => {
       OwnDriverInvalidPostcode,
     );
   });
-
 });

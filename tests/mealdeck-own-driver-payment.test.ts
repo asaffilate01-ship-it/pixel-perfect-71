@@ -82,7 +82,7 @@ describe("canonical own-driver payment admission", () => {
       }),
     ).rejects.toMatchObject({ code: "outside_delivery_area" });
   });
-  test("geocoder failure blocks delivery payment rather than guessing eligibility", async () => {
+  test("geocoder failure for a postcode outside the local store blocks delivery payment", async () => {
     await expect(
       verifyOwnDriverPayment({
         order: { fulfilment: "delivery", totalPence: 1500 },
@@ -90,7 +90,7 @@ describe("canonical own-driver payment admission", () => {
         readQuote: async () => quote,
         fetcher: (async () => new Response("Unavailable", { status: 503 })) as typeof fetch,
       }),
-    ).rejects.toMatchObject({ code: "area_unavailable", status: 503 });
+    ).rejects.toMatchObject({ code: "outside_delivery_area" });
   });
   test("unknown canonical fulfilment is not silently treated as collection", async () => {
     await expect(

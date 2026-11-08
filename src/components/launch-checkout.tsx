@@ -123,7 +123,7 @@ type DeliveryAddressDraft = {
   roadName: string;
   addressLine2: string;
 };
-type DeliveryArea = { postcode: string; eligible: boolean; distanceMetres: number };
+type DeliveryArea = { postcode: string; eligible: boolean; distanceMetres: number | null };
 type PricedLine = {
   lineId: string;
   parentLineId: string | null;
@@ -206,7 +206,7 @@ type ApiResult = {
   guestCheckout?: GuestCheckoutState;
   postcode?: string;
   eligible?: boolean;
-  distanceMetres?: number;
+  distanceMetres?: number | null;
 };
 
 function clock(value: string | null) {
@@ -1358,13 +1358,15 @@ function LaunchCheckoutView({
       if (
         typeof result.eligible !== "boolean" ||
         result.postcode !== postcode ||
-        typeof result.distanceMetres !== "number"
+        (result.eligible
+          ? typeof result.distanceMetres !== "number"
+          : typeof result.distanceMetres !== "number" && result.distanceMetres !== null)
       )
         throw new Error("Please check your postcode again.");
       setDeliveryArea({
         postcode,
         eligible: result.eligible,
-        distanceMetres: result.distanceMetres,
+        distanceMetres: typeof result.distanceMetres === "number" ? result.distanceMetres : null,
       });
       if (!result.eligible)
         setDeliveryAreaIssue(
