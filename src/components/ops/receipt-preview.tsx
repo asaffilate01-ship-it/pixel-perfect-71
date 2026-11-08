@@ -42,11 +42,11 @@ export function ReceiptPreview({
           <p className="my-2 break-words text-3xl font-black tabular-nums">ORDER {number}</p>
         )}
         <p className="my-2 text-sm font-bold">
-          COLLECTION CODE
+          {r.fulfilment === "delivery" ? "DELIVERY CODE" : "COLLECTION CODE"}
           <strong className="block text-3xl font-black tabular-nums">{r.displayCode}</strong>
         </p>
         <p className="font-bold">
-          {r.fulfilment === "curbside" ? "KERBSIDE" : "COLLECTION"} ·{" "}
+          {r.fulfilment === "delivery" ? "OWN DRIVER DELIVERY" : r.fulfilment === "curbside" ? "KERBSIDE" : "COLLECTION"} ·{" "}
           {r.paymentMethod === "cash" ? "CASH PAID" : "PAID"}
         </p>
         {r.copyNumber > 1 && (
