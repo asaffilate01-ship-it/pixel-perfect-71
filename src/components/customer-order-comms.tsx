@@ -57,7 +57,7 @@ export function CustomerOrderComms({orderId,mode,fulfilment}:Props){
   },[request]);
 
   const save=async(kind:CustomerCommsKind,values:Record<string,unknown>={})=>{
-    if(busy||locating)return;
+    if(busy)return;
     setBusy(true);setIssue("");
     try{
       const result=await request(kind,values);

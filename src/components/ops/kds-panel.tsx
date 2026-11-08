@@ -34,6 +34,7 @@ import {
 } from "@/lib/mealdeck-kds-workflow";
 import { KdsCompletedCard } from "./kds-completed-card";
 import { KdsPickupDetails } from "./kds-pickup-details";
+import { KdsOrderComms } from "./kds-order-comms";
 import { KdsMealComponents } from "./kds-meal-components";
 import { KdsTicketGrid } from "./kds-ticket-grid";
 import { KdsOrderNavigator } from "./kds-order-navigator";
@@ -685,6 +686,8 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
             const confirmingSeal = sealConfirmation === `${order.order_id}:${order.pass?.version}`;
             return (
               <KitchenOrderCard
+                tenantId={tenantId}
+                locationId={locationId}
                 key={order.order_id}
                 order={order}
                 stage={stage}
@@ -1275,6 +1278,8 @@ function StateCard({
 }
 
 export function KitchenOrderCard({
+  tenantId,
+  locationId,
   order,
   stage,
   now,
@@ -1291,6 +1296,8 @@ export function KitchenOrderCard({
   onHandoff,
   onDriver,
 }: {
+  tenantId?: string;
+  locationId?: string;
   order: KdsOrder;
   stage: Stage;
   now: number;
@@ -1393,6 +1400,15 @@ export function KitchenOrderCard({
           pickupContact={order.pickupContact ?? null}
           vehicle={order.vehicle ?? null}
         />
+        {tenantId && locationId && (order.fulfilment === "pickup" || order.fulfilment === "curbside") && (
+          <KdsOrderComms
+            tenantId={tenantId}
+            locationId={locationId}
+            orderId={order.order_id}
+            canReply={!disabled}
+            autoPoll={stage === "ready" || order.pass?.status === "ready_for_handoff"}
+          />
+        )}
         {order.fulfilment === "delivery" && order.deliveryDeadlineAt && (
           <p
             role="status"
