@@ -140,9 +140,9 @@ function LandingPage() {
               </div>
               <p className="md-hero-soon">
                 {deliveryLive
-                  ? "FREE delivery now available within 3 km of LU4 8NU on orders paying £15+ after discounts."
+                  ? "Due to popular demand: FREE delivery now available within 3 km of LU4 8NU on orders paying £15+ after discounts."
                   : deliveryPreopen
-                    ? "FREE delivery planned from 3pm today within 3 km of LU4 8NU on orders paying £15+ after discounts, subject to readiness."
+                    ? "Due to popular demand: FREE delivery planned from 3pm today within 3 km of LU4 8NU on orders paying £15+ after discounts."
                     : "Luton collection and kerbside, from our kitchen to you."}
               </p>
               <div className="md-hero-proof">
@@ -313,7 +313,7 @@ function LandingPage() {
                 {deliveryLive
                   ? "Due to popular demand: free own-driver delivery within 3 km of LU4 8NU for £15+ after discounts. Estimated within one hour, without GPS tracking."
                   : deliveryPreopen
-                    ? "Planned from 3pm Sunday 8 November: free own-driver delivery within 3 km of LU4 8NU on orders paying at least £15 after discounts. Checkout enables delivery only after final kitchen, driver and printer checks."
+                    ? "Due to popular demand: FREE delivery planned from 3pm Sunday 8 November within 3 km of LU4 8NU on orders paying at least £15 after discounts."
                     : "Delivery is not available at the moment. Please select collection or kerbside."}
               </p>
             </article>
