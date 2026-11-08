@@ -675,10 +675,12 @@ export async function handleOnlineCheckoutRequest(
         409,
       );
     // Revalidate the quote destination before creating or resuming a real payment.
-    const deliveryCheck = await rpc(clients.service, "mealdeck_local_delivery_quote_for_actor", {
+    const deliveryCheck = status.fulfilments.includes("delivery")
+      ? await rpc(clients.service, "mealdeck_local_delivery_quote_for_actor", {
       p_quote: parsed.data.quoteId,
       ...(customerId ? { p_customer: customerId, p_token_hash: null } : { p_customer: null, p_token_hash: guestTokenHash(guestToken!) }),
-    });
+    })
+      : { delivery: false };
     if (deliveryCheck["delivery"] === true) {
       if (!status.fulfilments.includes("delivery"))
         throw new CheckoutProblem("delivery_unavailable", "New delivery payments are paused. Your basket remains saved.", 503);
