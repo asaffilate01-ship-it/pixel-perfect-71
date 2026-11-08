@@ -132,9 +132,9 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
         </h2>
         <p className="md-opening-condition">
           {deliveryLive
-            ? "No minimum for collection or kerbside. Free local delivery within 3 km requires £15 payable after discounts."
+            ? "No minimum for collection or kerbside. Free local delivery within 4 km requires £15 payable after discounts."
             : deliveryPreopen
-              ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 3 km of LU4 8NU, with £15 minimum after discounts. Collection and kerbside have no minimum."
+              ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 4 km of LU4 8NU, with £15 minimum after discounts. Collection and kerbside have no minimum."
               : "No minimum order for collection or kerbside. Guests and members welcome."}
         </p>
         <div className="md-opening-methods" aria-label="Available fulfilment methods">
@@ -144,7 +144,7 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
           <span>
             <CarFront size={18} aria-hidden="true" /> Kerbside
           </span>
-          {deliveryLive && <span>Free delivery · within 3 km · £15 after discount</span>}
+          {deliveryLive && <span>Free delivery · within 4 km · £15 after discount</span>}
         </div>
         <p className="md-opening-dates">6–8 November 2026 · UK time</p>
         <LaunchOpeningHours />
