@@ -888,6 +888,39 @@
   border-color: #b45309;
 }
 
+/* Tavo's reviewed cooked-fillets sit beside the frozen ordered dish name. */
+.md-kds-workspace .md-kds-tavo-preparation {
+  margin: 4px 0 8px;
+  color: var(--ops-ink);
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* Missing/ambiguous flavours require an operator check, never an invented choice. */
+.md-kds-workspace .md-kds-flavour-review {
+  display: grid;
+  gap: 3px;
+  margin: 7px 0 8px;
+  padding: 8px 10px;
+  border: 2px solid #b45309;
+  border-radius: 7px;
+  background: #fff3db;
+  color: #5b2c0d;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.md-kds-workspace .md-kds-flavour-review strong {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+}
+.md-kds-workspace .md-kds-flavour-review span {
+  font-weight: 650;
+}
+
 .md-kds-workspace .md-kds-bag-labels {
   display: flex;
   flex-wrap: wrap;
