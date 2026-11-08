@@ -1,5 +1,12 @@
 name: Own-driver delivery PostgreSQL lifecycle
 on:
+  push:
+    branches: ['feat/own-driver-luton-delivery']
+    paths:
+      - '.github/workflows/local-driver-postgres.yml'
+      - 'tests/postgres/local-driver-delivery-behavior.mjs'
+      - 'deploy/mealdeck/local-driver-delivery.mjs'
+      - 'deploy/mealdeck/post-install-migrations/*local_driver_delivery.sql'
   pull_request:
     paths:
       - '.github/workflows/local-driver-postgres.yml'
@@ -11,7 +18,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: own-driver-postgres-${{ github.event.pull_request.number || github.ref }}
+  group: own-driver-postgres-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 jobs:
   local-driver-postgres:
