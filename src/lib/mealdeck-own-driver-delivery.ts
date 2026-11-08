@@ -147,7 +147,7 @@ async function lookupPostcode(
       Array.isArray(record)
     ) {
       if (provider === 1 && envelope["status"] === "no_match") {
-        receivedDefinitiveNotFound = true;
+        confirmedNotFoundCount += 1;
       }
       continue;
     }
