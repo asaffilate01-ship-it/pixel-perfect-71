@@ -58,7 +58,7 @@ export function KdsPickupDetails({
           </div>
           <div>
             <dt>WhatsApp number</dt>
-            <dd className="md-kds-contact-phone"><a href={"tel:" + pickupContact.phone} aria-label="Call customer">{pickupContact.phone}</a></dd>
+            <dd className="md-kds-contact-phone">{pickupContact.phone}</dd>
           </div>
         </>
       )}
