@@ -519,9 +519,9 @@ describe("ticket alignment retains every kitchen instruction", () => {
     const html = ticketMarkup(candidate);
     expect(html.match(/£3\.50 each/g)).toHaveLength(2);
     expect(html.match(/selected choices included/g)).toHaveLength(2);
-    expect(html).toContain("Portion &amp; flavour:");
-    expect(html).toContain("Korean BBQ · 3 pcs");
-    expect(html).toContain("Fiery Sweet Chilli · 3 pcs");
+    expect(html).toContain("FLAVOUR &amp; PORTION");
+    expect(html).toContain("KOREAN BBQ · 3 PCS");
+    expect(html).toContain("FIERY SWEET CHILLI · 3 PCS");
     expect(html).not.toContain("£0.51");
     expect(html).not.toContain("£2.99");
     expect(html).not.toContain("Portion and flavour price");

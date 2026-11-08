@@ -42,7 +42,8 @@ export function MealDeckOfferCards({ detailed = false }: { detailed?: boolean })
               className="md-current-offer-link"
               aria-label={`${offer.title}: offer details`}
             >
-              Offer details <ArrowRight size={17} aria-hidden="true" />
+              {offer.id === "sunday-milk-cake" ? "T&Cs apply" : "Offer details"}{" "}
+              <ArrowRight size={17} aria-hidden="true" />
             </Link>
           )}
         </article>

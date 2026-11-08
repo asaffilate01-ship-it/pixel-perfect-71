@@ -4,9 +4,24 @@ import { launchMenuBrands } from "./launch-menu-catalogue";
 import { checkoutModifierId } from "./mealdeck-checkout-selection";
 import type { MealDeckPublicMenuSnapshot } from "./mealdeck-public-menu";
 import { readMealDeckBackendConfig, type MealDeckRuntimeEnv } from "./mealdeck-runtime-config";
+import {
+  isMealDeckMilkcakePromotion,
+  isPublicMilkcakePromotion,
+} from "./mealdeck-milkcake-promotion";
 
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const pence = z.number().int().min(0).max(1_000_000);
+const milkcakePromotion = z
+  .object({
+    id: z.literal("sunday-milk-cake-20261108"),
+    finalUnitPence: z.literal(99),
+    regularUnitPence: z.literal(399),
+    maximumQuantityPerOrder: z.literal(1),
+    discountIncluded: z.literal(true),
+    startsAt: z.string().max(64),
+    endsAt: z.string().max(64),
+  })
+  .refine(isMealDeckMilkcakePromotion);
 const canonicalOption = z.object({
   id: z.uuid(),
   groupId: z.uuid(),
@@ -31,6 +46,7 @@ const canonicalSnapshot = z.object({
         name: z.string().trim().min(1).max(140),
         description: z.string().max(2000).nullable(),
         pricePence: pence,
+        promotion: milkcakePromotion.optional(),
         requiredGroupIds: z.array(z.uuid()).max(100),
         options: z.array(canonicalOption).max(256),
       }),
@@ -55,6 +71,7 @@ const publicSnapshot = z.object({
         name: z.string().trim().min(1).max(140),
         description: z.string().max(2000).nullable(),
         pricePence: pence,
+        promotion: milkcakePromotion.optional(),
         options: z
           .record(z.string().min(1).max(180), publicOption)
           .refine((options) => Object.keys(options).length <= 256),
@@ -79,6 +96,11 @@ export function sanitizePublicMenuSnapshot(value: unknown): MealDeckPublicMenuSn
   );
   const items: MealDeckPublicMenuSnapshot["items"] = [];
   for (const row of data.items) {
+    if (
+      row.promotion !== undefined &&
+      !isPublicMilkcakePromotion(row.promotion, row.sku, row.pricePence, data.checkedAt)
+    )
+      throw new Error("mealdeck_public_menu_invalid_response");
     const source = sourceItems.get(row.sku);
     if (!source) continue;
     const allowedOptions = new Map(
@@ -109,6 +131,7 @@ export function sanitizePublicMenuSnapshot(value: unknown): MealDeckPublicMenuSn
       name: row.name,
       description: row.description,
       pricePence: row.pricePence,
+      ...(row.promotion === undefined ? {} : { promotion: row.promotion }),
       options,
       replacementPricePence: replacementAllowed ? row.replacementPricePence : null,
       ...(replacementAllowed && row.replacementLabel !== undefined
@@ -191,6 +214,11 @@ export function projectPublicMenuSnapshot(
   for (const binding of bindings.items) {
     const row = rows.get(binding.sku);
     if (!row || row.brandSlug !== binding.brandId) continue;
+    if (
+      row.promotion !== undefined &&
+      !isPublicMilkcakePromotion(row.promotion, row.sku, row.pricePence, data.checkedAt)
+    )
+      throw new Error("mealdeck_public_menu_invalid_response");
     if (new Set(row.options.map((option) => option.id)).size !== row.options.length)
       throw new Error("mealdeck_public_menu_invalid_response");
     const knownGroups = new Set([...binding.options.values()].map((option) => option.groupId));
@@ -214,6 +242,7 @@ export function projectPublicMenuSnapshot(
       name: row.name,
       description: row.description,
       pricePence: row.pricePence,
+      ...(row.promotion === undefined ? {} : { promotion: row.promotion }),
       options,
       replacementPricePence:
         replacement?.available && replacement.groupId === binding.replacement?.groupId

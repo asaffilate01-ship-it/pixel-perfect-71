@@ -25,6 +25,15 @@ jobs:
           bunx eslint src/lib/mealdeck-whatsapp*.ts src/routes/api.whatsapp*.ts src/routes/api.ops.whatsapp.ts src/routes/whatsapp.checkout.tsx src/components/whatsapp*.tsx src/components/ops/whatsapp-inbox-panel.tsx tests/mealdeck-whatsapp*.test.ts deploy/mealdeck/whatsapp-ordering.mjs tests/postgres/whatsapp-ordering-behavior.mjs --rule 'prettier/prettier: off'
       - name: Launch menu prices, basket arithmetic and cross-brand choices
         run: bun test tests/launch-menu-catalogue.test.ts tests/mealdeck-menu-item-descriptor.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-desserts.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/launch-basket-feedback.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
+      - name: Sunday milkcakes show the exact final promotional amount
+        run: bun test tests/mealdeck-milkcake-promotion.test.ts
+      - name: Sunday milkcake promotion implementation lint
+        run: >-
+          bunx eslint src/lib/mealdeck-milkcake-promotion.ts
+          src/components/menus/milkcake-offer-terms.tsx
+          tests/mealdeck-milkcake-promotion.test.ts
+          deploy/mealdeck/milkcake-offer.mjs tests/postgres/milkcake-offer-behavior.mjs
+          --rule 'prettier/prettier: off'
       - name: Launch menu and approved logo implementation lint
         run: >-
           bunx eslint src/lib/launch-menu-catalogue.ts src/lib/launch-menu-item-descriptor.ts src/lib/launch-menu-picks.ts
@@ -76,6 +85,11 @@ jobs:
           tests/mealdeck-staff-vibration.test.ts
           tests/mealdeck-staff-alert-delivery.test.ts
           tests/mealdeck-staff-alert-controls.test.tsx
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install reproducible receipt artwork dependency
+        run: python -m pip install "Pillow==13.0.0"
       - name: Receipt bridge one-copy delivery, pairing and canonical order verification
         run: |
           node tools/receipt-bridge/build-games-qr.mjs --check
@@ -327,6 +341,9 @@ jobs:
 
       - name: Additive milkcake publication and canonical dessert pricing
         run: node tests/postgres/milkcake-desserts-behavior.mjs
+
+      - name: Sunday milkcake exact payment, timing and prepared-order recovery
+        run: node tests/postgres/milkcake-offer-behavior.mjs
 
       - name: Private kerbside contact projection and staff scope
         run: node tests/postgres/kerbside-contact-behavior.mjs
@@ -773,6 +790,7 @@ jobs:
             menu-structure,
             public-menu-read,
             milkcake-desserts,
+            milkcake-offer,
             kerbside-contact,
             paid-order-numbers,
             included-drink-stock,

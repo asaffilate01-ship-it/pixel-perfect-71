@@ -518,6 +518,79 @@ describe("Stripe server boundaries", () => {
     ).toBeNull();
     expect(safeStripeCheckoutUrl("https://checkout.stripe.com/c/pay/cs_test_foo")).not.toBeNull();
   });
+  test("Hosted Checkout charges the capped milkcake quote once, including all discounts", () => {
+    const promotion = {
+      id: "sunday-milk-cake-20261108",
+      finalUnitPence: 99,
+      regularUnitPence: 399,
+      maximumQuantityPerOrder: 1,
+      eligibleQuantity: 1,
+      discountPence: 300,
+      discountIncluded: true,
+      startsAt: "2026-11-08T15:00:00Z",
+      endsAt: "2026-11-08T23:00:00Z",
+    };
+    for (const [quantity, totalPence] of [
+      [1, 99],
+      [2, 378],
+      [3, 658],
+    ] as const) {
+      const params = stripeSessionParameters({
+        ...prepared,
+        grossPence: 399 * quantity,
+        discountPence: 399 * quantity - totalPence,
+        totalPence,
+        lines: [
+          {
+            name: "Oreo Milkcake",
+            quantity,
+            base_unit_pence: 399,
+            line_pence: 399 * quantity,
+            promotion,
+          },
+        ],
+      });
+      expect(params.get("line_items[0][price_data][unit_amount]")).toBe(String(totalPence));
+      expect(params.get("line_items[0][quantity]")).toBe("1");
+      expect(params.get("line_items[0][price_data][product_data][description]")).toContain(
+        "One milkcake per order is 99p after the 30% discount",
+      );
+      expect([...params.keys()].some((key) => /discount|coupon|promotion_code/.test(key))).toBe(
+        false,
+      );
+    }
+
+    const mixed = stripeSessionParameters({
+      ...prepared,
+      grossPence: 1798,
+      discountPence: 720,
+      totalPence: 1078,
+      lines: [
+        { name: "Oreo Milkcake", quantity: 1, base_unit_pence: 399, line_pence: 399, promotion },
+        { name: "Biscoff Milkcake", quantity: 1, base_unit_pence: 399, line_pence: 399 },
+        { name: "Other eligible food", quantity: 1, line_pence: 1000 },
+      ],
+    });
+    expect(mixed.get("line_items[0][price_data][unit_amount]")).toBe("1078");
+    expect(mixed.get("line_items[0][price_data][product_data][description]")).toContain(
+      "30% discount on the remaining items",
+    );
+    expect([...mixed.keys()].some((key) => /discount|coupon|promotion_code/.test(key))).toBe(false);
+
+    const unverified = stripeSessionParameters({
+      ...prepared,
+      lines: [
+        {
+          ...prepared.lines[0]!,
+          base_unit_pence: 399,
+          promotion: { ...promotion, eligibleQuantity: 2 },
+        },
+      ],
+    });
+    expect(unverified.get("line_items[0][price_data][product_data][description]")).not.toContain(
+      "One milkcake per order is 99p",
+    );
+  });
   test("signature checks bind raw bytes, timestamp and secret with replay tolerance", () => {
     const { body, header } = signed(event);
     expect(verifyStripeSignature(body, header, config.webhookSecret)).toBe(true);

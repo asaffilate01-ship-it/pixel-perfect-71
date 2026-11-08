@@ -4,6 +4,8 @@
  * Live pricing and availability are database-owned.
  */
 
+import type { MealDeckMilkcakePromotion } from "./mealdeck-milkcake-promotion";
+
 export type LaunchMenuBrandId = "tavo-chicken" | "moktl" | "loadd" | "skorch-burgers" | "souvano";
 
 export type LaunchMenuOption = {
@@ -46,6 +48,8 @@ export type LaunchMenuItem = {
   pricePence: number | null;
   /** Current public catalogue state; source templates leave these unset. */
   available?: boolean;
+  /** Validated live server metadata only; source templates cannot activate an offer. */
+  promotion?: MealDeckMilkcakePromotion;
   replacementPricePence?: number | null;
   replacementLabel?: string;
   availableOptionIds?: string[];

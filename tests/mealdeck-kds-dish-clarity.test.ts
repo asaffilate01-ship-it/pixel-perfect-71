@@ -35,8 +35,9 @@ describe("Souvano kitchen clarity", () => {
       expect(kdsModifierGroupLabel(main(dish), old)).toBe("Included side");
     }
     expect(kdsModifierGroupLabel(souvano, "Souvano · Included side")).toBe("Included side");
-    expect(kdsModifierGroupLabel(souvano, "Souvano · Included side (Heatwave)"))
-      .toBe("Included side");
+    expect(kdsModifierGroupLabel(souvano, "Souvano · Included side (Heatwave)")).toBe(
+      "Included side",
+    );
   });
 
   test("the side choice itself remains exactly what the customer ordered", () => {
@@ -46,32 +47,38 @@ describe("Souvano kitchen clarity", () => {
       expect(kdsModifierChoiceText(souvano, side)).toBe(side);
     }
     expect(kdsModifierGroupLabel({ brand_name: "Skorch" }, legacy)).toBe(legacy.trim());
-    expect(kdsModifierChoiceText({ brand_name: "Skorch" }, legacy + "Fries"))
-      .toBe(legacy + "Fries");
+    expect(kdsModifierChoiceText({ brand_name: "Skorch" }, legacy + "Fries")).toBe(
+      legacy + "Fries",
+    );
   });
 
   test("does not invent an entree for an ambiguous legacy purchase", () => {
-    expect(kdsSouvanoMainState(main("Lamb Chops / Stir Fry Doner")))
-      .toBe("verify-main");
-    expect(kdsSouvanoMainState(main("Stir-Fry Doner / Lamb Chops")))
-      .toBe("verify-main");
+    expect(kdsSouvanoMainState(main("Lamb Chops / Stir Fry Doner"))).toBe("verify-main");
+    expect(kdsSouvanoMainState(main("Stir-Fry Doner / Lamb Chops"))).toBe("verify-main");
     expect(kdsSouvanoMainState(main("Biscoff Milkcake"))).toBeNull();
-    expect(kdsSouvanoMainState({
-      ...main("Lamb Chops"),
-      parent_checkout_line_id: "attached-to-main",
-    })).toBeNull();
+    expect(
+      kdsSouvanoMainState({
+        ...main("Lamb Chops"),
+        parent_checkout_line_id: "attached-to-main",
+      }),
+    ).toBeNull();
   });
 
   test("new importer manifest names the shared side without listing mains", () => {
-    const manifest = JSON.parse(readFileSync(
-      new URL("../deploy/mealdeck/catalogue/launch-catalogue.json", import.meta.url),
-      "utf8",
-    )) as { modifierGroups: { id: string; name: string }[] };
+    const manifest = JSON.parse(
+      readFileSync(
+        new URL("../deploy/mealdeck/catalogue/launch-catalogue.json", import.meta.url),
+        "utf8",
+      ),
+    ) as { modifierGroups: { id: string; name: string }[] };
     const group = manifest.modifierGroups.find((entry) => entry.id === "souvano-meal-side");
-    const heatwaveGroup = manifest.modifierGroups.find((entry) => entry.id === "souvano-heatwave-base");
+    const heatwaveGroup = manifest.modifierGroups.find(
+      (entry) => entry.id === "souvano-heatwave-base",
+    );
     expect(group?.name).toBe("Souvano · Included side");
     expect(heatwaveGroup?.name).toBe("Souvano · Included side (Heatwave)");
-    expect(new Set(manifest.modifierGroups.map((entry) => entry.name)).size)
-      .toBe(manifest.modifierGroups.length);
+    expect(new Set(manifest.modifierGroups.map((entry) => entry.name)).size).toBe(
+      manifest.modifierGroups.length,
+    );
   });
 });
