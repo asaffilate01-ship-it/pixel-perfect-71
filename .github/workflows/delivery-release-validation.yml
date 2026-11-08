@@ -7,6 +7,10 @@ on:
       - 'scripts/prepare-printer-v023.mjs'
       - 'src/lib/mealdeck-own-driver-payment.server.ts'
       - 'tests/mealdeck-own-driver-payment.test.ts'
+      - 'src/routeTree.gen.ts'
+      - 'src/routes/delivery-terms.tsx'
+      - 'src/lib/launch-menu-item-descriptor.ts'
+      - 'tests/mealdeck-kds-view.test.ts'
   push:
     branches: [main]
     paths:
@@ -14,6 +18,10 @@ on:
       - '.github/workflows/publish-printer-v023.yml'
       - 'src/lib/mealdeck-own-driver*'
       - 'tests/mealdeck-own-driver*'
+      - 'src/routeTree.gen.ts'
+      - 'src/routes/delivery-terms.tsx'
+      - 'src/lib/launch-menu-item-descriptor.ts'
+      - 'tests/mealdeck-kds-view.test.ts'
   workflow_dispatch:
 permissions:
   contents: read
