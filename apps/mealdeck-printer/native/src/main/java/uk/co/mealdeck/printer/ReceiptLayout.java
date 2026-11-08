@@ -105,11 +105,11 @@ public final class ReceiptLayout {
                 center("order", "ORDER " + order, Style.ORDER);
             }
             gap(6);
-            center("collection.label", "COLLECTION CODE", Style.HEADER_DETAIL_BOLD);
+            center("collection.label", "delivery".equals(receipt.optString("fulfilment")) ? "DELIVERY CODE" : "COLLECTION CODE", Style.HEADER_DETAIL_BOLD);
             center("collection", receipt.optString("displayCode"), Style.ORDER);
             gap(6);
             String paid = "cash".equals(receipt.optString("paymentMethod")) ? "CASH PAID" : "PAID";
-            center("fulfilment", ("curbside".equals(receipt.optString("fulfilment")) ? "KERBSIDE" : "COLLECTION")
+            center("fulfilment", ("delivery".equals(receipt.optString("fulfilment")) ? "OWN DRIVER DELIVERY" : "curbside".equals(receipt.optString("fulfilment")) ? "KERBSIDE" : "COLLECTION")
                 + " · " + paid, Style.BODY_BOLD);
             if (receipt.optInt("copyNumber") > 1) {
                 gap(8);
