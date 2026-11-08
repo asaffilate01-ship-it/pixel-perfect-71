@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { WifiOff } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
-import { mealDeckPwaSurface } from "@/lib/mealdeck-pwa-surface";
+import { isMealDeckStaffPath, mealDeckPwaSurface } from "@/lib/mealdeck-pwa-surface";
 import { PwaContext, useMealDeckPwa } from "@/lib/mealdeck-pwa-context";
 import "@/styles.pwa.css";
 
@@ -159,11 +159,14 @@ export function PwaProvider({ children }: { children: ReactNode }) {
 
 export function PwaConnectionNotice() {
   const { offline } = useMealDeckPwa();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   if (!offline) return null;
   return (
     <div className="md-offline-notice" role="status">
       <WifiOff size={17} aria-hidden="true" />
-      <span>You’re offline. Saved basket choices stay on this device.</span>
+      <span>{isMealDeckStaffPath(pathname)
+            ? "You’re offline. Staff and driver actions need a connection."
+            : "You’re offline. Saved basket choices stay on this device."}</span>
     </div>
   );
 }
