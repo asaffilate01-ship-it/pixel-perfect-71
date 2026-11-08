@@ -130,6 +130,37 @@ describe("MealDeck own-driver delivery safeguards", () => {
     );
   });
 
+  test("a source-verified exact Luton postcode remains serviceable during full provider outage", async () => {
+    const unavailable = (async () => {
+      throw new Error("outbound network temporarily unavailable");
+    }) as typeof fetch;
+    const area = await checkOwnDriverArea("LU1 1BU", unavailable);
+    expect(area.postcode).toBe("LU1 1BU");
+    expect(area.eligible).toBe(true);
+    // Two separately sourced live postcode centroids ~2.03 km apart.
+    expect(area.distanceMetres).toBeGreaterThan(2000);
+    expect(area.distanceMetres).toBeLessThan(2100);
+  });
+
+  test("offline continuity never approves other LU1 postcodes by prefix", async () => {
+    const unavailable = (async () => {
+      throw new Error("network down");
+    }) as typeof fetch;
+    await expect(checkOwnDriverArea("LU1 1BC", unavailable)).rejects.toBeInstanceOf(
+      OwnDriverPostcodeUnavailable,
+    );
+  });
+
+  test("a 404 from the authoritative lookup cannot be overwritten by the local snapshot", async () => {
+    const maybeTerminated = (async (url: string) =>
+      url.startsWith("https://api.postcodes.io/")
+        ? Response.json({ status: 404 }, { status: 404 })
+        : Response.json({ status: 503 }, { status: 503 })) as typeof fetch;
+    await expect(checkOwnDriverArea("LU1 1BU", maybeTerminated)).rejects.toBeInstanceOf(
+      OwnDriverPostcodeUnavailable,
+    );
+  });
+
   test("unknown UK postcode is rejected when both services confirm it does not exist", async () => {
     const missing = (async (url: string) =>
       url.startsWith("https://api.postcodes.io/")
