@@ -33,10 +33,47 @@ describe("prominent customer menu explanations", () => {
     );
   });
 
-  test("distinguishes chicken burgers and keeps Moktl free of duplicate copy", () => {
-    expect(descriptor("tavo-chicken", "burgers", "Twin Crunch")).toBe(
-      "2 chicken fillets · burger bun",
+  test("shows actual Tavo fillet counts and cooking methods", () => {
+    expect(descriptor("tavo-chicken", "burgers", "Cruncher")).toBe(
+      "1 buttermilk fried chicken fillet in bun",
     );
+    expect(descriptor("tavo-chicken", "burgers", "Twin Crunch")).toBe(
+      "2 buttermilk fried chicken fillets in bun",
+    );
+    expect(descriptor("tavo-chicken", "burgers", "Flame")).toBe(
+      "1 spicy grilled chicken fillet in bun",
+    );
+    expect(descriptor("tavo-chicken", "burgers", "Big Flame")).toBe(
+      "2 spicy grilled chicken fillets in bun",
+    );
+  });
+
+  test("distinguishes fried wings, fried tenders and grilled wings with flavour choice", () => {
+    expect(descriptor("tavo-chicken", "fried-chicken-wings", "Fried Chicken Wings")).toBe(
+      "Fried chicken wings with choice of flavour",
+    );
+    expect(descriptor("tavo-chicken", "fried-chicken-tenders", "Fried Chicken Tenders")).toBe(
+      "Fried chicken tenders with choice of flavour",
+    );
+    expect(descriptor("tavo-chicken", "grilled-chicken-wings", "Grilled Chicken Wings")).toBe(
+      "Grilled chicken wings with choice of flavour",
+    );
+  });
+
+  test("preserves valid future fillet quantities without guessing unclear counts", () => {
+    const brand = { id: "tavo-chicken" } as const;
+    const section = { id: "burgers", title: "Burgers" };
+    expect(
+      launchMenuItemDescriptor(brand, section, {
+        description: "3 buttermilk fried chicken fillets",
+      }),
+    ).toBe("3 buttermilk fried chicken fillets in bun");
+    expect(
+      launchMenuItemDescriptor(brand, section, { description: "4 spicy grilled chicken fillets" }),
+    ).toBe("4 spicy grilled chicken fillets in bun");
+    expect(
+      launchMenuItemDescriptor(brand, section, { description: "Make it your own" }),
+    ).toBe("Chicken fillet burger in bun");
     expect(descriptor("moktl", "mocktail-lounge", "Virgin Mojito")).toBe("");
   });
 
