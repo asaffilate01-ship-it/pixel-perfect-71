@@ -99,6 +99,26 @@ export class OwnDriverInvalidPostcode extends Error {
 }
 
 /**
+ * Small, source-verified offline continuity snapshot for the Luton
+ * own-driver launch. These are exact, active unit postcode centroids,
+ * NOT a district/prefix whitelist. Keep it server-only.
+ *
+ * Coordinates: public ONS-derived postcode directory (September 2026),
+ * mirrored at doogal.co.uk/ShowMap?postcode=LU4+8NU and
+ * doogal.co.uk/ShowMap?postcode=LU1+1BU; Open Government Licence.
+ *
+ * Use only when both external lookup providers are unavailable. If either
+ * provider confirms a postcode is missing, don't override it with the
+ * snapshot: terminated/reassigned postcodes must fail closed. A complete
+ * locally hosted/periodically refreshed postcode dataset is preferable
+ * before enabling broad delivery coverage.
+ */
+const verifiedLaunchPostcodeCentroids: Readonly<Record<string, Coordinates>> = Object.freeze({
+  "LU4 8NU": Object.freeze({ latitude: 51.897360, longitude: -0.446114 }),
+  "LU1 1BU": Object.freeze({ latitude: 51.882127, longitude: -0.429743 }),
+});
+
+/**
  * Two independent ONS-based postcode services are used, in order.
  * The secondary provider is used only if the primary lookup is unavailable,
  * malformed, or does not know a postcode. Neither permits a browser-supplied
@@ -163,6 +183,12 @@ async function lookupPostcode(
     if (coordinates) return coordinates;
   }
   if (confirmedNotFoundCount === endpoints.length) return null;
+  if (confirmedNotFoundCount === 0) {
+    // Known, previously verified centroids preserve coverage during an
+    // outbound-network failure without approving arbitrary postcodes.
+    const cached = verifiedLaunchPostcodeCentroids[postcode];
+    if (cached) return cached;
+  }
   throw new OwnDriverPostcodeUnavailable();
 }
 
