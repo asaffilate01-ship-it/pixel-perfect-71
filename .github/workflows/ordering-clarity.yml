@@ -1,0 +1,30 @@
+name: Verify MealDeck ordering clarity
+on:
+  pull_request:
+    paths:
+      - src/lib/mealdeck-kds-flavour.ts
+      - src/lib/mealdeck-kds-dish-clarity.ts
+      - src/lib/launch-menu-item-descriptor.ts
+      - tests/mealdeck-ordering-clarity.test.mjs
+      - .github/workflows/ordering-clarity.yml
+  push:
+    branches: [main, feature/dishbee-play-food-cards]
+    paths:
+      - src/lib/mealdeck-kds-flavour.ts
+      - src/lib/mealdeck-kds-dish-clarity.ts
+      - src/lib/launch-menu-item-descriptor.ts
+      - tests/mealdeck-ordering-clarity.test.mjs
+      - .github/workflows/ordering-clarity.yml
+permissions:
+  contents: read
+jobs:
+  ordering-clarity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Actual presentation modules and immutable choice regressions
+        run: node --experimental-strip-types --test tests/mealdeck-ordering-clarity.test.mjs
