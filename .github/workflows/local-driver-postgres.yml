@@ -1,0 +1,51 @@
+name: Own-driver delivery PostgreSQL lifecycle
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/local-driver-postgres.yml'
+      - 'tests/postgres/local-driver-delivery-behavior.mjs'
+      - 'deploy/mealdeck/local-driver-delivery.mjs'
+      - 'deploy/mealdeck/post-install-migrations/*local_driver_delivery.sql'
+      - 'src/lib/mealdeck-own-driver*'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: own-driver-postgres-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  local-driver-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_own_driver
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_own_driver"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked isolated database test dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Verify discounted threshold, guest privacy, receipt and complete driver lifecycle
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_own_driver
+        run: |
+          set -o pipefail
+          node tests/postgres/local-driver-delivery-behavior.mjs --native 2>&1 | tee "$RUNNER_TEMP/own-driver-postgres.log"
+      - name: Retain database verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-own-driver-postgres-evidence
+          path: ${{ runner.temp }}/own-driver-postgres.log
+          retention-days: 14
+          if-no-files-found: warn
