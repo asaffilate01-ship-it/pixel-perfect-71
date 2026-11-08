@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LocationPage } from "@/components/location-page";
-import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
+import { useOwnDriverAvailability, useOwnDriverPreopenNotice } from "@/components/own-driver-offer-banner";
 import { ldScript, lutonBusiness, seo } from "@/lib/seo";
 import {
   MEALDECK_LAUNCH_HOURS_LABEL,
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/luton")({
 
 function LutonPage() {
   const deliveryLive = useOwnDriverAvailability();
+  const deliveryPreopen = useOwnDriverPreopenNotice();
   return (
     <LocationPage
       town="Luton"
@@ -32,7 +33,9 @@ function LutonPage() {
         "Collection and kerbside from 314–318 Selbourne Road, Luton, LU4 8NU",
         deliveryLive
           ? "Free delivery within 3 km of LU4 8NU on orders £15+ after discounts"
-          : "Delivery currently unavailable",
+          : deliveryPreopen
+            ? "Free delivery planned from 3pm today within 3 km of LU4 8NU; £15 after discounts, subject to readiness"
+            : "Delivery currently unavailable",
       ]}
       includeCafe1={false}
       faqs={[

@@ -1,6 +1,12 @@
 name: Publish signed MealDeck H10S printer v0.2.3
 on:
   workflow_dispatch:
+  # One-shot automatic request on merge of this reviewed release workflow.
+  # The pinned signer, native test suite and checksum gates below still apply.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-printer-v023.yml"
 
 permissions:
   contents: write
@@ -49,7 +55,10 @@ jobs:
           fi
           umask 077
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/mealdeck-printer-original-release.p12"
-          printf '%s' "$STORE_PASSWORD" > "$RUNNER_TEMP/mealdeck-printer-original-storepass.txt"
+          # apksigner consumes two independent password-reader streams. The
+          # earlier publisher reused an EOF-exhausted file and could not sign.
+          printf '%s\n' "$STORE_PASSWORD" > "$RUNNER_TEMP/mealdeck-printer-original-storepass.txt"
+          printf '%s\n' "$STORE_PASSWORD" > "$RUNNER_TEMP/mealdeck-printer-original-keypass.txt"
           test -s "$RUNNER_TEMP/mealdeck-printer-original-release.p12"
 
       - name: Build and test printer v0.2.3 with the complete receipt renderer
@@ -84,7 +93,7 @@ jobs:
             --ks "$RUNNER_TEMP/mealdeck-printer-original-release.p12" \
             --ks-key-alias mealdeck-printer-release \
             --ks-pass "file:$RUNNER_TEMP/mealdeck-printer-original-storepass.txt" \
-            --key-pass "file:$RUNNER_TEMP/mealdeck-printer-original-storepass.txt" \
+            --key-pass "file:$RUNNER_TEMP/mealdeck-printer-original-keypass.txt" \
             --out "$OUTPUT" "$ALIGNED"
           "$TOOLS/apksigner" verify --verbose --print-certs "$OLD" > "$RUNNER_TEMP/printer-v022-cert.txt"
           "$TOOLS/apksigner" verify --verbose --print-certs "$OUTPUT" > "$RUNNER_TEMP/printer-v023-cert.txt"

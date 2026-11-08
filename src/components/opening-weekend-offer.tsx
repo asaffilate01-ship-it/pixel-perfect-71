@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, CarFront, ShoppingBag } from "lucide-react";
 import { MEALDECK_LAUNCH_DAYS } from "@/lib/mealdeck-launch-schedule";
-import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
+import { useOwnDriverAvailability, useOwnDriverPreopenNotice } from "@/components/own-driver-offer-banner";
 import "@/styles.launch-opening.css";
 
 type PublicOffer = {
@@ -59,6 +59,7 @@ export function LaunchOpeningHours({ className = "" }: { className?: string }) {
 
 export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) {
   const deliveryLive = useOwnDriverAvailability();
+  const deliveryPreopen = useOwnDriverPreopenNotice();
   const [offer, setOffer] = useState<PublicOffer>(unscheduled);
   const headingId = useId();
   useEffect(() => {
@@ -131,8 +132,10 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
         </h2>
         <p className="md-opening-condition">
           {deliveryLive
-            ? "No minimum for collection or kerbside. Free local delivery requires £15 after 30% off."
-            : "No minimum order for collection or kerbside. Guests and members welcome."}
+            ? "No minimum for collection or kerbside. Free local delivery within 3 km requires £15 payable after discounts."
+            : deliveryPreopen
+              ? "No minimum for collection or kerbside. Free delivery planned from 3pm today within 3 km of LU4 8NU; £15 minimum after discount, subject to launch checks."
+              : "No minimum order for collection or kerbside. Guests and members welcome."}
         </p>
         <div className="md-opening-methods" aria-label="Available fulfilment methods">
           <span>
