@@ -1,4 +1,3 @@
-import { ComingSoonBanner } from "@/components/coming-soon";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BackToTop } from "@/components/back-to-top";
 import { SkipToMainContent } from "@/components/skip-to-main-content";
@@ -209,7 +208,6 @@ function RootComponent() {
       <PwaProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         {!internal && <SkipToMainContent />}
-        {!internal && !basketPage && <ComingSoonBanner />}
         {!internal && <PwaConnectionNotice />}
         <div id="mealdeck-main" tabIndex={-1}>
           {/* The URL can change before the outgoing route unmounts. Keep its
