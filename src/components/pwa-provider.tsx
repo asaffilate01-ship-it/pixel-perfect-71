@@ -164,9 +164,11 @@ export function PwaConnectionNotice() {
   return (
     <div className="md-offline-notice" role="status">
       <WifiOff size={17} aria-hidden="true" />
-      <span>{isMealDeckStaffPath(pathname)
-            ? "You’re offline. Staff and driver actions need a connection."
-            : "You’re offline. Saved basket choices stay on this device."}</span>
+      <span>
+        {isMealDeckStaffPath(pathname)
+          ? "You’re offline. Staff and driver actions need a connection."
+          : "You’re offline. Saved basket choices stay on this device."}
+      </span>
     </div>
   );
 }
