@@ -4,6 +4,11 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MealDeckOfferCards } from "@/components/marketing/offer-discovery";
 import { LaunchOpeningHours } from "@/components/opening-weekend-offer";
+import {
+  useOwnDriverAvailability,
+  useOwnDriverPreopenNotice,
+  useOwnDriverSundayServiceNotice,
+} from "@/components/own-driver-offer-banner";
 import { seo } from "@/lib/seo";
 import "@/styles.mealdeck-offers.css";
 
@@ -19,6 +24,9 @@ export const Route = createFileRoute("/offers")({
 });
 
 function OffersPage() {
+  const deliveryLive = useOwnDriverAvailability();
+  const deliveryPreopen = useOwnDriverPreopenNotice();
+  const sundayHours = useOwnDriverSundayServiceNotice();
   return (
     <div className="md-marketing-shell">
       <SiteHeader />
@@ -50,7 +58,7 @@ function OffersPage() {
               <p className="md-current-offers-kicker">
                 <MapPin size={16} aria-hidden="true" /> Luton launches first
               </p>
-              <h2 id="offers-pickup-title">Your opening-weekend pickup</h2>
+              <h2 id="offers-pickup-title">Your Luton opening-weekend order</h2>
               <p>314–318 Selbourne Road, Luton, LU4 8NU.</p>
               <div className="md-offers-fulfilments">
                 <span>
@@ -62,8 +70,18 @@ function OffersPage() {
               </div>
               <LaunchOpeningHours />
               <p className="md-offers-detail-small">
-                All times are UK local time (Europe/London). Delivery is unavailable for this
-                launch. St Albans and Bedford are coming soon.
+                {deliveryLive && sundayHours
+                  ? "Available during Sunday's opening hours, 3pm–11pm, for Luton collection, kerbside pickup and delivery."
+                  : deliveryPreopen
+                    ? "Due to popular demand, FREE delivery planned from 3pm today. Sunday's opening hours are 3pm–11pm, with collection and kerbside pickup."
+                    : sundayHours
+                      ? "Sunday's opening hours are 3pm–11pm. Collection and kerbside are available; delivery is subject to availability at checkout."
+                      : "All opening times are UK local time (Europe/London). Collection, kerbside and eligible delivery depend on checkout availability."}{" "}
+                Delivery is subject to the{" "}
+                <Link to="/delivery-terms" className="md-offers-text-link">
+                  delivery T&amp;Cs
+                </Link>
+                . St Albans and Bedford are coming soon.
               </p>
               <Link to="/opening-offer" className="md-offers-text-link">
                 More about the 30% opening offer <ArrowRight size={17} aria-hidden="true" />
