@@ -91,4 +91,53 @@ describe("MealDeck own-driver delivery safeguards", () => {
       OwnDriverPostcodeUnavailable,
     );
   });
+  test("uses an independent fallback postcode service when Postcodes.io is down", async () => {
+    const requested: string[] = [];
+    const backup = (async (url: string) => {
+      requested.push(url);
+      if (url.startsWith("https://api.postcodes.io/")) {
+        return Response.json({ status: 503 }, { status: 503 });
+      }
+      const code = url.split("/").at(-1);
+      return Response.json({
+        status: "match",
+        match_type: "unit_postcode",
+        data: {
+          postcode: code === "LU48NU" ? "LU4 8NU" : "LU4 8NR",
+          status: "live",
+          latitude: "51.893",
+          longitude: code === "LU48NU" ? "-0.459" : "-0.458",
+        },
+      });
+    }) as typeof fetch;
+    const result = await checkOwnDriverArea("lu4 8nr", backup);
+    expect(result.eligible).toBe(true);
+    expect(requested.filter((url) => url.startsWith("https://api.getthedata.com/"))).toHaveLength(2);
+  });
+
+  test("rejects a mismatched fallback response, not an unverified delivery", async () => {
+    const mismatched = (async (url: string) => {
+      if (url.startsWith("https://api.postcodes.io/")) {
+        return Response.json({ status: 503 }, { status: 503 });
+      }
+      return Response.json({
+        status: "match",
+        data: { postcode: "SW1A 1AA", status: "live", latitude: "51.5", longitude: "-0.1" },
+      });
+    }) as typeof fetch;
+    await expect(checkOwnDriverArea("LU4 8NR", mismatched)).rejects.toBeInstanceOf(
+      OwnDriverPostcodeUnavailable,
+    );
+  });
+
+  test("unknown UK postcode is rejected when both services confirm it does not exist", async () => {
+    const missing = (async (url: string) =>
+      url.startsWith("https://api.postcodes.io/")
+        ? Response.json({ status: 404 }, { status: 404 })
+        : Response.json({ status: "no_match", data: null })) as typeof fetch;
+    await expect(checkOwnDriverArea("LU9 9ZZ", missing)).rejects.toBeInstanceOf(
+      OwnDriverInvalidPostcode,
+    );
+  });
+
 });
