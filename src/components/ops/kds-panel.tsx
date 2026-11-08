@@ -37,7 +37,11 @@ import { KdsPickupDetails } from "./kds-pickup-details";
 import { KdsMealComponents } from "./kds-meal-components";
 import { KdsTicketGrid } from "./kds-ticket-grid";
 import { KdsOrderNavigator } from "./kds-order-navigator";
-import { kdsFlavourHighlight } from "@/lib/mealdeck-kds-flavour";
+import {
+  kdsFlavourHighlight,
+  kdsTavoChickenPreparation,
+  kdsTavoFlavourNeedsReview,
+} from "@/lib/mealdeck-kds-flavour";
 import {
   kdsModifierChoiceText,
   kdsModifierGroupLabel,
@@ -1499,48 +1503,20 @@ export function KitchenOrderCard({
                         </p>
                       </div>
                       <div className="md-kds-line-details">
-                        {item.parent_checkout_line_id && (
-                          <p className="md-kds-extra-label">
-                            Extra from {item.brand_name} · with the item above
+                        {kdsTavoChickenPreparation(item) && (
+                          <p className="md-kds-tavo-preparation">
+                            {kdsTavoChickenPreparation(item)}
                           </p>
                         )}
-                        {!!item.bags?.length && (
-                          <ul
-                            className="md-kds-bag-labels"
-                            aria-label={`Packing for ${item.item_name}`}
-                          >
-                            {item.bags.map((bag) => (
-                              <li key={bag.number}>
-                                <ShoppingBag className="size-3 shrink-0" aria-hidden="true" />
-                                <span>{formatPackingBagName(bag)}</span>
-                                <strong>{bag.quantity}×</strong>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        <KdsMealComponents
-                          components={item.mealComponents ?? []}
-                          quantity={item.quantity}
-                        />
-                        {item.unit_pence != null && (
-                          <p className="md-kds-line-price">
-                            <strong>£{(item.unit_pence / 100).toFixed(2)} each</strong>
-                            <span> · selected choices included</span>
-                            {item.quantity > 1 && (
-                              <span>
-                                {" "}
-                                · £{((item.quantity * item.unit_pence) / 100).toFixed(2)} line total
-                              </span>
-                            )}
+                        {kdsTavoFlavourNeedsReview(item) && (
+                          <p className="md-kds-flavour-review" role="status">
+                            <strong>CHECK FLAVOUR</strong>
+                            <span>
+                              No clear flavour selection on this ticket. Verify the saved flavour
+                              and portion before preparing this dish.
+                            </span>
                           </p>
                         )}
-                        {order.group_order &&
-                          item.participant_name &&
-                          !item.bags?.some((bag) => bag.name === item.participant_name) && (
-                            <p className="mt-0.5 break-words text-xs font-semibold md-ops-muted">
-                              For {item.participant_name}
-                            </p>
-                          )}
                         {item.modifiers.length > 0 && (
                           <ul
                             className="md-kds-choices"
@@ -1598,6 +1574,48 @@ export function KitchenOrderCard({
                             })}
                           </ul>
                         )}
+                        {item.parent_checkout_line_id && (
+                          <p className="md-kds-extra-label">
+                            Extra from {item.brand_name} · with the item above
+                          </p>
+                        )}
+                        {!!item.bags?.length && (
+                          <ul
+                            className="md-kds-bag-labels"
+                            aria-label={`Packing for ${item.item_name}`}
+                          >
+                            {item.bags.map((bag) => (
+                              <li key={bag.number}>
+                                <ShoppingBag className="size-3 shrink-0" aria-hidden="true" />
+                                <span>{formatPackingBagName(bag)}</span>
+                                <strong>{bag.quantity}×</strong>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <KdsMealComponents
+                          components={item.mealComponents ?? []}
+                          quantity={item.quantity}
+                        />
+                        {item.unit_pence != null && (
+                          <p className="md-kds-line-price">
+                            <strong>£{(item.unit_pence / 100).toFixed(2)} each</strong>
+                            <span> · selected choices included</span>
+                            {item.quantity > 1 && (
+                              <span>
+                                {" "}
+                                · £{((item.quantity * item.unit_pence) / 100).toFixed(2)} line total
+                              </span>
+                            )}
+                          </p>
+                        )}
+                        {order.group_order &&
+                          item.participant_name &&
+                          !item.bags?.some((bag) => bag.name === item.participant_name) && (
+                            <p className="mt-0.5 break-words text-xs font-semibold md-ops-muted">
+                              For {item.participant_name}
+                            </p>
+                          )}
                         {item.notes && (
                           <div className="mt-2">
                             <Note label="Item note" text={item.notes} />
