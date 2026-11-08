@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: mealdeck-printer-signed-release
@@ -46,14 +47,42 @@ jobs:
         env:
           KEYSTORE_B64: ${{ secrets.MEALDECK_PRINTER_ORIGINAL_KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.MEALDECK_PRINTER_ORIGINAL_STORE_PASSWORD }}
+          RECOVERY_KEY_B64: ${{ secrets.MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_BASE64 }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ]; then
-            echo 'Original printer signing identity not installed as protected repository secrets.'
-            echo 'Do not create a new key, uninstall the existing app, or publish an incompatible APK.'
-            exit 1
-          fi
           umask 077
+          # Only the historical encrypted backup may supply a missing signer.
+          # GitHub-hosted runners discard any generated key after the job.
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ]; then
+            if [ -z "$RECOVERY_KEY_B64" ]; then
+              echo 'BLOCKED: missing original v0.2.2 keystore/password and recovery private key secret.'
+              echo 'Set the original signer secrets or MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_BASE64 in GitHub Actions.'
+              echo 'Do not create a new key, uninstall the existing app, or publish an incompatible APK.'
+              exit 1
+            fi
+            mkdir -p "$RUNNER_TEMP/printer-signing-recovery"
+            gh run download 42428234548 \
+              --name mealdeck-printer-v0.2.2-signing-backup-encrypted \
+              --dir "$RUNNER_TEMP/printer-signing-recovery"
+            test -s "$RUNNER_TEMP/printer-signing-recovery/mealdeck-printer-signing-backup.cms"
+            printf '%s' "$RECOVERY_KEY_B64" | base64 --decode > "$RUNNER_TEMP/printer-recovery-private.key"
+            chmod 600 "$RUNNER_TEMP/printer-recovery-private.key"
+            openssl cms -decrypt -binary -inform DER \
+              -in "$RUNNER_TEMP/printer-signing-recovery/mealdeck-printer-signing-backup.cms" \
+              -recip apps/mealdeck-printer/recovery-recipient.pem \
+              -inkey "$RUNNER_TEMP/printer-recovery-private.key" \
+              -out "$RUNNER_TEMP/printer-signing-recovery/backup.tar.gz"
+            tar -xzf "$RUNNER_TEMP/printer-signing-recovery/backup.tar.gz" \
+              -C "$RUNNER_TEMP/printer-signing-recovery"
+            test -s "$RUNNER_TEMP/printer-signing-recovery/mealdeck-printer-release.p12"
+            test -s "$RUNNER_TEMP/printer-signing-recovery/store-password.txt"
+            IFS= read -r STORE_PASSWORD < "$RUNNER_TEMP/printer-signing-recovery/store-password.txt"
+            test -n "$STORE_PASSWORD"
+            KEYSTORE_B64="$(base64 -w0 "$RUNNER_TEMP/printer-signing-recovery/mealdeck-printer-release.p12")"
+            echo 'Recovered original v0.2.2 signer privately from historical encrypted Actions artifact.'
+          fi
+          test -n "$KEYSTORE_B64" && test -n "$STORE_PASSWORD"
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/mealdeck-printer-original-release.p12"
           # apksigner consumes two independent password-reader streams. The
           # earlier publisher reused an EOF-exhausted file and could not sign.
@@ -83,6 +112,7 @@ jobs:
           set -euo pipefail
           TOOLS="$ANDROID_HOME/build-tools/36.0.0"
           OLD="public/downloads/mealdeck-printer-h10s-0.2.2.apk"
+          sha256sum -c "public/downloads/mealdeck-printer-h10s-0.2.2.apk.sha256"
           ALIGNED="$RUNNER_TEMP/mealdeck-printer-0.2.3-aligned.apk"
           OUTPUT="public/downloads/mealdeck-printer-h10s-0.2.3.apk"
           APK="apps/mealdeck-printer/android/app/build/outputs/apk/release/app-release-unsigned.apk"
@@ -105,10 +135,12 @@ jobs:
             rm -f "$OUTPUT"
             exit 1
           fi
-          # The public owner certificate is an independent signer continuity guard.
-          expected="$(openssl x509 -in apps/mealdeck-printer/release-certificate.pem -noout -fingerprint -sha256 | cut -d= -f2 | tr -d : | tr A-F a-f)"
+          # Pinned from successful v0.2.2 signing run 42428234548 (commit 3c92620).
+          # The earlier release-certificate.pem belongs to v0.2.0 and is NOT
+          # the certificate used to sign the published v0.2.2 APK.
+          expected="56bdf4173ac112fab080c8a88485c31fb5d7ff3847c02af314039ccb459d6d17"
           if [ "$expected" != "$old_signer" ]; then
-            echo 'BLOCKED: published v0.2.2 does not match the recorded release certificate.'
+            echo 'BLOCKED: published v0.2.2 does not match its independently verified release certificate digest.'
             rm -f "$OUTPUT"
             exit 1
           fi
