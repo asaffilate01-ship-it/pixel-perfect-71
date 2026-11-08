@@ -755,8 +755,7 @@ export function LaunchMenuBrowser({
                       </Link>
                       <p>
                         Opening offer: 30% off the entire menu during our 6–8 November opening
-                        hours. No minimum order. Guests and members welcome for Luton collection or
-                        kerbside. <Link to="/offers">See all three offers.</Link>
+                        hours. {deliveryLive ? "Collection and kerbside have no minimum; free delivery requires £15 after the discount within 3 km of LU4 8NU." : "No minimum order for collection or kerbside."} Guests and members welcome. <Link to="/offers">See all three offers.</Link>
                       </p>
                     </div>
                   )}
