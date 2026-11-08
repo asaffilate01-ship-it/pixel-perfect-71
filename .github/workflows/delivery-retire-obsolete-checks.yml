@@ -1,13 +1,15 @@
 name: Retire superseded delivery validation runs
 on:
-  pull_request:
+  push:
+    branches: [feat/own-driver-luton-delivery]
     paths: ['.github/workflows/delivery-retire-obsolete-checks.yml']
+  workflow_dispatch:
 permissions:
   actions: write
   contents: read
 jobs:
   retire-old-checks:
-    if: github.head_ref == 'feat/own-driver-luton-delivery' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.ref_name == 'feat/own-driver-luton-delivery'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
