@@ -38,6 +38,7 @@ import { KdsMealComponents } from "./kds-meal-components";
 import { KdsTicketGrid } from "./kds-ticket-grid";
 import { KdsOrderNavigator } from "./kds-order-navigator";
 import { kdsFlavourHighlight } from "@/lib/mealdeck-kds-flavour";
+import { kdsModifierChoiceText, kdsModifierGroupLabel, kdsSouvanoMainState } from "@/lib/mealdeck-kds-dish-clarity";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
@@ -1435,7 +1436,21 @@ export function KitchenOrderCard({
                         >
                           {item.quantity}×
                         </span>
-                        <p>{item.item_name}</p>
+                        <p
+                          className={kdsSouvanoMainState(item) ? "md-kds-souvano-main" : undefined}
+                          data-main-state={kdsSouvanoMainState(item) ?? undefined}
+                        >
+                          {kdsSouvanoMainState(item) && (
+                            <span className="md-kds-souvano-main-label">
+                              {kdsSouvanoMainState(item) === "verify-main"
+                                ? "VERIFY MAIN — check customer’s selected dish"
+                                : "MAIN DISH"}
+                            </span>
+                          )}
+                          <span className={kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined}>
+                            {item.item_name}
+                          </span>
+                        </p>
                       </div>
                       <div className="md-kds-line-details">
                         {item.parent_checkout_line_id && (
@@ -1488,10 +1503,12 @@ export function KitchenOrderCard({
                             {item.modifiers.map((modifier, index) => {
                               const detail = item.modifier_details?.[index];
                               const priceVariant = detail?.kind === "variant";
-                              const groupName = priceVariant
-                                ? "Portion & flavour"
-                                : detail?.group_name;
-                              const flavour = kdsFlavourHighlight(modifier, detail);
+                              const groupName = kdsModifierGroupLabel(
+                                item,
+                                priceVariant ? "Portion & flavour" : detail?.group_name,
+                              );
+                              const visibleModifier = kdsModifierChoiceText(item, modifier);
+                              const flavour = kdsFlavourHighlight(visibleModifier, detail);
                               return (
                                 <li
                                   key={`${index}:${modifier}`}
@@ -1507,12 +1524,12 @@ export function KitchenOrderCard({
                                       <span className="md-kds-choice-mark" aria-hidden="true" />
                                       <span className="min-w-0 break-words">
                                         {groupName &&
-                                          !modifier
+                                          !visibleModifier
                                             .toLocaleLowerCase("en-GB")
                                             .startsWith(`${groupName.toLocaleLowerCase("en-GB")}:`) && (
                                             <span className="md-kds-choice-group">{groupName}: </span>
                                           )}
-                                        {modifier}
+                                        {visibleModifier}
                                         {detail && !priceVariant && (
                                           <span className="md-kds-choice-detail">
                                             {detail.quantity_per_parent}× each
