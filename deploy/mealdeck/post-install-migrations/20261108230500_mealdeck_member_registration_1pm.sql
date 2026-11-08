@@ -9,8 +9,7 @@ DO $guard$ BEGIN
     OR (SELECT COUNT(*) FROM mealdeck_private.installation WHERE singleton AND profile='mealdeck-independent-v1') <> 1
     OR NOT EXISTS(SELECT 1 FROM public.tenants WHERE slug='mealdeck' AND legal_name='313 Brands Ltd')
     OR (SELECT md5(prosrc) FROM pg_proc WHERE oid='mealdeck_private.email_registration_available_at(timestamptz)'::regprocedure)
-         NOT IN ('e4d600976237a11f5efa99715736b8fa',
-                 '4f4ad3b4864fdd8724008e933a108fd8')
+         <> 'e4d600976237a11f5efa99715736b8fa'
   THEN RAISE EXCEPTION 'mealdeck_registration_scope_or_definition_changed'; END IF;
 END $guard$;
 CREATE OR REPLACE FUNCTION mealdeck_private.email_registration_available_at(p_at timestamptz)
