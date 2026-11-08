@@ -1,6 +1,12 @@
 name: H10S live receipt APK
 
 on:
+  push:
+    branches: ['feat/own-driver-luton-delivery']
+    paths:
+      - "apps/mealdeck-printer/**"
+      - "tools/receipt-bridge/receipt.mjs"
+      - ".github/workflows/printer-live.yml"
   pull_request:
     paths:
       - "apps/mealdeck-printer/**"
@@ -18,6 +24,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: h10s-receipt-validation-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   printer-live-android:
@@ -113,8 +123,7 @@ jobs:
             echo 'Release APK must not be debuggable'
             exit 1
           fi
-          # Capture ONLY the public signer certificate for compatibility checks.
-          # No signing key is generated, uploaded, replaced or stored in this job.
+          # Only the public signer certificate is retained. No key is generated.
           "$TOOLS/apksigner" verify --verbose --print-certs ../../public/downloads/mealdeck-printer-h10s-0.2.2.apk > dist/installed-v022-signature.txt
           cp "$TOOLS/lib/apksigner.jar" dist/signing-tools/apksigner.jar
           git rev-parse HEAD > dist/source-commit.txt
