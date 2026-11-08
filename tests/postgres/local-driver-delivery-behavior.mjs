@@ -345,6 +345,11 @@ try {
       assert.equal(out.deliveredAt, null);
       assert.equal(out.collectionEstimateMinutes, 60);
       await driver("delivered");
+      const completedDriverJob = (await driverActor("mealdeck_driver_portal")).jobs[0];
+      assert.equal(completedDriverJob.status, "delivered");
+      assert.equal(completedDriverJob.address, null);
+      assert.equal(completedDriverJob.customerName, null);
+      assert.equal(completedDriverJob.customerPhone, null);
       assert.equal(
         (await f.board()).orders.some((x) => x.order_id === order.orderId),
         false,
