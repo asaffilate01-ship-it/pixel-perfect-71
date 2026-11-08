@@ -90,7 +90,7 @@ function backendProblem(error: unknown): CheckoutProblem {
     [
       /guest_window_closed|guest_unavailable/,
       "guest_window_closed",
-      "Guest ordering is available only during our opening hours on 6–8 November. Sign in to order after the opening weekend.",
+      "Guest checkout is available whenever online ordering is open. Please try again during opening hours.",
       403,
     ],
     [
