@@ -39,9 +39,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.4'
+      - name: Install pinned Bun from npm registry
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          test "$(bun --version)" = "1.4.4"
       - name: Install pinned source and receipt-artwork test dependencies
         run: |
           bun install --frozen-lockfile

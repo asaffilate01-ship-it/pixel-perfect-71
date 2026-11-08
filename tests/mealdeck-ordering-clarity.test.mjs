@@ -2,7 +2,7 @@
 // Node 22: node --experimental-strip-types --test tests/mealdeck-ordering-clarity.test.mjs
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { kdsFlavourHighlight } from "../src/lib/mealdeck-kds-flavour.ts";
+import { kdsFlavourHighlight, kdsTavoChickenPreparation, kdsTavoFlavourNeedsReview } from "../src/lib/mealdeck-kds-flavour.ts";
 import {
   kdsModifierChoiceText,
   kdsModifierGroupLabel,
@@ -82,6 +82,33 @@ describe("KDS highlights the actual choice, not a similar sauce name", () => {
   });
 });
 
+describe("Tavo KDS identity and flavour safety", () => {
+  it("shows exact fillet construction for the purchased dish, not a choice modifier", () => {
+    assert.equal(kdsTavoChickenPreparation({brand_name: "Tavo Chicken", item_name: "Cruncher"}), "1 buttermilk fried chicken fillet in bun");
+    assert.equal(kdsTavoChickenPreparation({brand_name: "Tavo Chicken", item_name: "Big Flame"}), "2 spicy grilled chicken fillets in bun");
+  });
+  it("recognises explicit wing flavour and portion without mistaking a sauce for flavour", () => {
+    assert.equal(kdsTavoFlavourNeedsReview({
+      brand_name: "Tavo Chicken", item_name: "Fried Chicken Wings",
+      modifiers: ["Dynamite · 8 pcs"],
+    }), false);
+    assert.equal(kdsTavoFlavourNeedsReview({
+      brand_name: "Tavo Chicken", item_name: "Grilled Chicken Wings",
+      modifiers: ["Spicy Honey BBQ"],
+      modifier_details: [detail("Tavo Chicken · Flavour (grilled wings)")],
+    }), false);
+    assert.equal(kdsTavoFlavourNeedsReview({
+      brand_name: "Tavo Chicken", item_name: "Fried Chicken Tenders",
+      modifiers: ["Dynamite"],
+      modifier_details: [detail("Sauces")],
+    }), true);
+    assert.equal(kdsTavoFlavourNeedsReview({
+      brand_name: "Tavo Chicken", item_name: "Fried Chicken Tenders",
+      modifiers: [],
+    }), true);
+  });
+});
+
 describe("Souvano never guesses which main was ordered", () => {
   for (const name of ["Lamb Chops", "Heatwave", "Stir-Fry Doner", "Stir Fry Donner", "Stir‑Fry Doner"]) {
     it(`recognises the separate frozen main ${name}`, () => {
@@ -133,10 +160,13 @@ describe("compact customer descriptors use published facts", () => {
       assert.equal(descriptor("skorch-burgers", "beef-smash-deck", description), "Beef smash burger · bun");
     }
   });
-  it("keeps the Tavo double-fillet explanation and rejects an optional upgrade", () => {
-    assert.equal(descriptor("tavo-chicken", "burgers", "2 buttermilk fried chicken fillets"), "2 chicken fillets · burger bun");
-    assert.equal(descriptor("tavo-chicken", "burgers", "2 spicy grilled chicken fillets"), "2 chicken fillets · burger bun");
-    assert.equal(descriptor("tavo-chicken", "burgers", "Add 2 chicken fillets"), "Chicken burger · bun");
+  it("keeps Tavo's exact cooked fillet count and rejects an optional upgrade", () => {
+    assert.equal(descriptor("tavo-chicken", "burgers", "Buttermilk fried chicken fillet"), "1 buttermilk fried chicken fillet in bun");
+    assert.equal(descriptor("tavo-chicken", "burgers", "2 buttermilk fried chicken fillets"), "2 buttermilk fried chicken fillets in bun");
+    assert.equal(descriptor("tavo-chicken", "burgers", "Spicy grilled chicken fillet"), "1 spicy grilled chicken fillet in bun");
+    assert.equal(descriptor("tavo-chicken", "burgers", "2 spicy grilled chicken fillets"), "2 spicy grilled chicken fillets in bun");
+    assert.equal(descriptor("tavo-chicken", "burgers", "3 spicy grilled chicken fillets"), "3 spicy grilled chicken fillets in bun");
+    assert.equal(descriptor("tavo-chicken", "burgers", "Add 2 chicken fillets"), "Chicken fillet burger in bun");
   });
   it("does not repeat the importer's section paragraph in a Load'd badge", () => {
     const shared = "All with cheese, Algerian sauce, and spring onions.";
