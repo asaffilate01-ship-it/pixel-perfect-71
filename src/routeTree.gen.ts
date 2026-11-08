@@ -16,6 +16,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as GroupOrderRouteImport } from './routes/group-order'
 import { Route as GroupPayRouteImport } from './routes/group-pay'
+import { Route as DriverRouteImport } from './routes/driver'
 import { Route as KdsRouteImport } from './routes/kds'
 import { Route as LutonRouteImport } from './routes/luton'
 import { Route as MenuRouteImport } from './routes/menu'
@@ -95,6 +96,11 @@ const GroupOrderRoute = GroupOrderRouteImport.update({
 const GroupPayRoute = GroupPayRouteImport.update({
   id: '/group-pay',
   path: '/group-pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DriverRoute = DriverRouteImport.update({
+  id: '/driver',
+  path: '/driver',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KdsRoute = KdsRouteImport.update({
@@ -331,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
   '/group-pay': typeof GroupPayRoute
+  '/driver': typeof DriverRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -385,6 +392,7 @@ export interface FileRoutesByTo {
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
   '/group-pay': typeof GroupPayRoute
+  '/driver': typeof DriverRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -440,6 +448,7 @@ export interface FileRoutesById {
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
   '/group-pay': typeof GroupPayRoute
+  '/driver': typeof DriverRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -496,6 +505,7 @@ export interface FileRouteTypes {
     | '/franchise'
     | '/group-order'
     | '/group-pay'
+    | '/driver'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -550,6 +560,7 @@ export interface FileRouteTypes {
     | '/franchise'
     | '/group-order'
     | '/group-pay'
+    | '/driver'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/franchise'
     | '/group-order'
     | '/group-pay'
+    | '/driver'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -659,6 +671,7 @@ export interface RootRouteChildren {
   FranchiseRoute: typeof FranchiseRoute
   GroupOrderRoute: typeof GroupOrderRoute
   GroupPayRoute: typeof GroupPayRoute
+  DriverRoute: typeof DriverRoute
   KdsRoute: typeof KdsRoute
   LutonRoute: typeof LutonRoute
   MenuRoute: typeof MenuRoute
@@ -753,6 +766,13 @@ declare module '@tanstack/react-router' {
       path: '/group-pay'
       fullPath: '/group-pay'
       preLoaderRoute: typeof GroupPayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/driver': {
+      id: '/driver'
+      path: '/driver'
+      fullPath: '/driver'
+      preLoaderRoute: typeof DriverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kds': {
@@ -1102,6 +1122,7 @@ const rootRouteChildren: RootRouteChildren = {
   FranchiseRoute: FranchiseRoute,
   GroupOrderRoute: GroupOrderRoute,
   GroupPayRoute: GroupPayRoute,
+  DriverRoute: DriverRoute,
   KdsRoute: KdsRoute,
   LutonRoute: LutonRoute,
   MenuRoute: MenuRoute,
