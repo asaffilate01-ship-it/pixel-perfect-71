@@ -2630,6 +2630,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      mealdeck_cancel_cash_order_attempt: {
+        Args: {
+          p_actor: string
+          p_attempt: string
+          p_location: string
+          p_quote: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
       mealdeck_cancel_group_payment_room: {
         Args: { p_customer: string; p_guest_token_hash: string; p_room: string }
         Returns: Json
@@ -2652,6 +2662,16 @@ export type Database = {
         }
         Returns: Json
       }
+      mealdeck_cash_order_status: {
+        Args: {
+          p_actor: string
+          p_attempt: string
+          p_location: string
+          p_quote: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
       mealdeck_checkout_status_for_customer: {
         Args: { p_customer: string; p_location: string; p_tenant: string }
         Returns: Json
@@ -2660,11 +2680,50 @@ export type Database = {
         Args: { p_actor_hash: string; p_room: string }
         Returns: Json
       }
+      mealdeck_confirm_cash_order: {
+        Args: {
+          p_actor: string
+          p_attempt: string
+          p_cash_received: boolean
+          p_location: string
+          p_quote: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_create_cash_quote: {
+        Args: {
+          p_actor: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_location: string
+          p_notes: string
+          p_packing: Json
+          p_request_hash: string
+          p_selection: Json
+          p_tenant: string
+        }
+        Returns: Json
+      }
       mealdeck_create_checkout_quote: {
         Args: {
           p_customer: string
           p_fulfilment: string
           p_location: string
+          p_packing: Json
+          p_request_hash: string
+          p_selection: Json
+          p_tenant: string
+          p_vehicle: Json
+        }
+        Returns: Json
+      }
+      mealdeck_create_checkout_quote_with_notes: {
+        Args: {
+          p_customer: string
+          p_fulfilment: string
+          p_location: string
+          p_notes: string
           p_packing: Json
           p_request_hash: string
           p_selection: Json
@@ -2691,6 +2750,20 @@ export type Database = {
         Args: {
           p_fulfilment: string
           p_location: string
+          p_packing: Json
+          p_request_hash: string
+          p_selection: Json
+          p_tenant: string
+          p_token_hash: string
+          p_vehicle: Json
+        }
+        Returns: Json
+      }
+      mealdeck_create_guest_checkout_quote_with_notes: {
+        Args: {
+          p_fulfilment: string
+          p_location: string
+          p_notes: string
           p_packing: Json
           p_request_hash: string
           p_selection: Json
@@ -3190,6 +3263,17 @@ export type Database = {
           location_name: string
         }[]
       }
+      mealdeck_ops_menu_categories: {
+        Args: { p_tenant: string }
+        Returns: {
+          active: boolean
+          affected_item_count: number
+          brand_id: string
+          brand_name: string
+          category_id: string
+          category_name: string
+        }[]
+      }
       mealdeck_ops_menu_list: {
         Args: { p_location: string; p_tenant: string }
         Returns: {
@@ -3215,6 +3299,41 @@ export type Database = {
           category_name: string
         }[]
       }
+      mealdeck_ops_modifier_prices: {
+        Args: { p_tenant: string }
+        Returns: {
+          active: boolean
+          affected_item_count: number
+          group_id: string
+          group_name: string
+          option_id: string
+          option_name: string
+          price_delta_pence: number
+        }[]
+      }
+      mealdeck_ops_modifier_update_option: {
+        Args: {
+          p_active: boolean
+          p_expected_active: boolean
+          p_expected_name: string
+          p_expected_price_pence: number
+          p_group: string
+          p_name: string
+          p_option: string
+          p_price_pence: number
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_ops_modifier_update_price: {
+        Args: {
+          p_expected_price_pence: number
+          p_option: string
+          p_price_pence: number
+          p_tenant: string
+        }
+        Returns: Json
+      }
       mealdeck_ops_my_access: {
         Args: never
         Returns: {
@@ -3239,6 +3358,7 @@ export type Database = {
           fulfilment: string
           item_count: number
           order_id: string
+          order_number: string
           paid_at: string
           source: string
           status: string
@@ -3481,6 +3601,18 @@ export type Database = {
         }
         Returns: Json
       }
+      mealdeck_ops_update_menu_category: {
+        Args: {
+          p_active: boolean
+          p_brand: string
+          p_category: string
+          p_expected_active: boolean
+          p_expected_name: string
+          p_name: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
       mealdeck_ops_update_menu_item: {
         Args: {
           p_active: boolean
@@ -3587,6 +3719,19 @@ export type Database = {
         }
         Returns: Json
       }
+      mealdeck_printer_accept_order: {
+        Args: {
+          p_expected_version: string
+          p_location: string
+          p_order: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_printer_acceptance_board: {
+        Args: { p_location: string; p_tenant: string }
+        Returns: Json
+      }
       mealdeck_printer_access_list: {
         Args: { p_location: string; p_tenant: string }
         Returns: Json
@@ -3611,6 +3756,10 @@ export type Database = {
       }
       mealdeck_printer_board: {
         Args: { p_location: string; p_tenant: string }
+        Returns: Json
+      }
+      mealdeck_printer_claim_contact: {
+        Args: { p_claim: string; p_job: string }
         Returns: Json
       }
       mealdeck_printer_claim_job: {
@@ -3655,6 +3804,85 @@ export type Database = {
           p_outcome: string
           p_tenant: string
         }
+        Returns: Json
+      }
+      mealdeck_public_launch_catalogue: {
+        Args: {
+          p_location: string
+          p_replacement_options: string[]
+          p_skus: string[]
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_public_menu: { Args: never; Returns: Json }
+      mealdeck_push_campaign_cancel: {
+        Args: { p_campaign: string; p_location: string; p_tenant: string }
+        Returns: Json
+      }
+      mealdeck_push_campaign_confirm: {
+        Args: { p_campaign: string; p_location: string; p_tenant: string }
+        Returns: Json
+      }
+      mealdeck_push_campaign_list: {
+        Args: { p_location: string; p_tenant: string }
+        Returns: Json
+      }
+      mealdeck_push_campaign_prepare: {
+        Args: {
+          p_body: string
+          p_expires_at: string
+          p_location: string
+          p_path: string
+          p_tenant: string
+          p_title: string
+        }
+        Returns: Json
+      }
+      mealdeck_push_claim: {
+        Args: { p_limit?: number; p_location: string; p_tenant: string }
+        Returns: Json
+      }
+      mealdeck_push_finish: {
+        Args: {
+          p_job: string
+          p_lease: string
+          p_location: string
+          p_outcome: string
+          p_status?: number
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_push_order_subscription: {
+        Args: {
+          p_action: string
+          p_actor: string
+          p_auth?: string
+          p_endpoint: string
+          p_guest_hash: string
+          p_location: string
+          p_order: string
+          p_p256dh?: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_push_preflight: {
+        Args: {
+          p_job: string
+          p_lease: string
+          p_location: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_push_runtime_config: {
+        Args: { p_location: string; p_tenant: string }
+        Returns: Json
+      }
+      mealdeck_push_worker_seen: {
+        Args: { p_location: string; p_tenant: string }
         Returns: Json
       }
       mealdeck_reconcile_order_payment: {
