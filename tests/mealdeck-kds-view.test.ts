@@ -602,14 +602,17 @@ describe("ticket alignment retains every kitchen instruction", () => {
       for (const text of [
         "£3.50 each",
         "£7.00 line total",
-        "Korean BBQ · 3 pcs",
         "Garlic dip",
         "£0.50 each",
         "£1.00 line total",
         "Extra pot",
         "Amer · Bag 1",
-      ])
+      ]) {
         expect(html).toContain(text);
+      }
+      // Older orders may keep mixed-case saved choice labels; new canonical
+      // choices get a bold uppercase FLAVOUR & PORTION instruction.
+      expect(html).toMatch(/Korean BBQ · 3 pcs|KOREAN BBQ · 3 PCS/);
       expect(html).not.toContain("£0.51");
       expect(html).not.toContain("£2.99");
       expect(html).not.toContain("+£0.50");
@@ -643,7 +646,7 @@ describe("ticket alignment retains every kitchen instruction", () => {
         createElement(KdsCompletedCard, { order: completed({ items: candidate.items }) }),
       ),
     ]) {
-      expect(html).toContain("Korean BBQ · 3 pcs");
+      expect(html).toMatch(/Korean BBQ · 3 pcs|KOREAN BBQ · 3 PCS/);
       expect(html).not.toContain("£");
     }
   });
