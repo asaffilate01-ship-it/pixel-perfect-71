@@ -679,13 +679,32 @@ export async function handleOnlineCheckoutRequest(
         "Resume the original WhatsApp payment attempt.",
         409,
       );
-    // Revalidate the quote destination before creating or resuming a real payment.
-    const deliveryCheck = status.fulfilments.includes("delivery")
-      ? await rpc(clients.service, "mealdeck_local_delivery_quote_for_actor", {
+    // Existing bound delivery quotes MUST NOT be payable after the operator
+    // disables delivery. Read this even with the feature flag off. Before the
+    // migration exists, the known missing-RPC response preserves pickup only.
+    const localLookup = await clients.service.rpc("mealdeck_local_delivery_quote_for_actor", {
       p_quote: parsed.data.quoteId,
-      ...(customerId ? { p_customer: customerId, p_token_hash: null } : { p_customer: null, p_token_hash: guestTokenHash(guestToken!) }),
-    })
-      : { delivery: false };
+      ...(customerId
+        ? { p_customer: customerId, p_token_hash: null }
+        : { p_customer: null, p_token_hash: guestTokenHash(guestToken!) }),
+    });
+    let deliveryCheck: Json = { delivery: false };
+    if (localLookup.error) {
+      if (
+        localLookup.error.code !== "PGRST202" ||
+        env["MEALDECK_OWN_DRIVER_DELIVERY_ENABLED"] === "true"
+      ) {
+        throw backendProblem(localLookup.error);
+      }
+    } else if (
+      localLookup.data &&
+      typeof localLookup.data === "object" &&
+      !Array.isArray(localLookup.data)
+    ) {
+      deliveryCheck = localLookup.data as Json;
+    } else {
+      throw backendProblem({});
+    }
     if (deliveryCheck["delivery"] === true) {
       if (!status.fulfilments.includes("delivery"))
         throw new CheckoutProblem("delivery_unavailable", "New delivery payments are paused. Your basket remains saved.", 503);
