@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { isMealDeckNavCurrent } from "@/lib/mealdeck-nav-state";
 import { ArrowRight, MapPin, Menu, X } from "lucide-react";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
+import { OwnDriverOfferBanner } from "@/components/own-driver-offer-banner";
 
 const navItems = [
   { label: "Brands", to: "/", hash: "brands" },
@@ -98,6 +99,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
           <Link to="/menus" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>Browse menus <ArrowRight /></Link>
         </nav>
       ) : null}
+      <OwnDriverOfferBanner />
     </header>
   );
 }
