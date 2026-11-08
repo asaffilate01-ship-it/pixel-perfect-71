@@ -37,7 +37,7 @@ export const printerPendingOrderSchema = z
     displayCode: z.string().regex(/^\d{4}$/),
     orderNumber: orderNumberSchema.nullable().optional(),
     paidAt: stamp,
-    fulfilment: z.enum(["pickup", "curbside"]),
+    fulfilment: z.enum(["pickup", "curbside", "delivery"]),
     totalPence: money,
     cutleryRequested: z.boolean(),
     notes: z.string().max(20000).nullable(),
