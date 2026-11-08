@@ -42,7 +42,7 @@ export function SiteFooter() {
             <Link to="/luton">Luton</Link>
             <Link to="/st-albans">St Albans · Coming soon</Link>
             <Link to="/bedford">Bedford · Coming soon</Link>
-            <Link to="/menus">Browse menus</Link>
+            <Link to="/menus">Order Now</Link>
           </div>
           <div>
             <h3>Luton collection</h3>

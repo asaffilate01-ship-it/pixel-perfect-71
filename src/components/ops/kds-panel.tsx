@@ -37,6 +37,7 @@ import { KdsPickupDetails } from "./kds-pickup-details";
 import { KdsMealComponents } from "./kds-meal-components";
 import { KdsTicketGrid } from "./kds-ticket-grid";
 import { KdsOrderNavigator } from "./kds-order-navigator";
+import { kdsFlavourHighlight } from "@/lib/mealdeck-kds-flavour";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
@@ -1490,24 +1491,37 @@ export function KitchenOrderCard({
                               const groupName = priceVariant
                                 ? "Portion & flavour"
                                 : detail?.group_name;
+                              const flavour = kdsFlavourHighlight(modifier, detail);
                               return (
-                                <li key={`${index}:${modifier}`}>
-                                  <span className="md-kds-choice-mark" aria-hidden="true" />
-                                  <span className="min-w-0 break-words">
-                                    {groupName &&
-                                      !modifier
-                                        .toLocaleLowerCase("en-GB")
-                                        .startsWith(`${groupName.toLocaleLowerCase("en-GB")}:`) && (
-                                        <span className="md-kds-choice-group">{groupName}: </span>
-                                      )}
-                                    {modifier}
-                                    {detail && !priceVariant && (
-                                      <span className="md-kds-choice-detail">
-                                        {detail.quantity_per_parent}× each
-                                        {item.unit_pence != null && " · included in item price"}
+                                <li
+                                  key={`${index}:${modifier}`}
+                                  className={flavour ? "md-kds-flavour-choice" : undefined}
+                                >
+                                  {flavour ? (
+                                    <div className="md-kds-flavour-main">
+                                      <span className="md-kds-flavour-eyebrow">{flavour.label}</span>
+                                      <strong className="md-kds-flavour-value">{flavour.value}</strong>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <span className="md-kds-choice-mark" aria-hidden="true" />
+                                      <span className="min-w-0 break-words">
+                                        {groupName &&
+                                          !modifier
+                                            .toLocaleLowerCase("en-GB")
+                                            .startsWith(`${groupName.toLocaleLowerCase("en-GB")}:`) && (
+                                            <span className="md-kds-choice-group">{groupName}: </span>
+                                          )}
+                                        {modifier}
+                                        {detail && !priceVariant && (
+                                          <span className="md-kds-choice-detail">
+                                            {detail.quantity_per_parent}× each
+                                            {item.unit_pence != null && " · included in item price"}
+                                          </span>
+                                        )}
                                       </span>
-                                    )}
-                                  </span>
+                                    </>
+                                  )}
                                 </li>
                               );
                             })}
