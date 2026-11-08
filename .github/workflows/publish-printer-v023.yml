@@ -48,6 +48,7 @@ jobs:
           KEYSTORE_B64: ${{ secrets.MEALDECK_PRINTER_ORIGINAL_KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.MEALDECK_PRINTER_ORIGINAL_STORE_PASSWORD }}
           RECOVERY_KEY_B64: ${{ secrets.MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_BASE64 }}
+          RECOVERY_KEY_PEM: ${{ secrets.MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_PEM }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -55,9 +56,9 @@ jobs:
           # Only the historical encrypted backup may supply a missing signer.
           # GitHub-hosted runners discard any generated key after the job.
           if [ -z "$KEYSTORE_B64" ] || [ -z "$STORE_PASSWORD" ]; then
-            if [ -z "$RECOVERY_KEY_B64" ]; then
+            if [ -z "$RECOVERY_KEY_B64" ] && [ -z "$RECOVERY_KEY_PEM" ]; then
               echo 'BLOCKED: missing original v0.2.2 keystore/password and recovery private key secret.'
-              echo 'Set the original signer secrets or MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_BASE64 in GitHub Actions.'
+              echo 'Set the original signer secrets, or provide MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_PEM in GitHub Actions.'
               echo 'Do not create a new key, uninstall the existing app, or publish an incompatible APK.'
               exit 1
             fi
@@ -66,8 +67,13 @@ jobs:
               --name mealdeck-printer-v0.2.2-signing-backup-encrypted \
               --dir "$RUNNER_TEMP/printer-signing-recovery"
             test -s "$RUNNER_TEMP/printer-signing-recovery/mealdeck-printer-signing-backup.cms"
-            printf '%s' "$RECOVERY_KEY_B64" | base64 --decode > "$RUNNER_TEMP/printer-recovery-private.key"
+            if [ -n "$RECOVERY_KEY_PEM" ]; then
+              printf '%s\n' "$RECOVERY_KEY_PEM" > "$RUNNER_TEMP/printer-recovery-private.key"
+            else
+              printf '%s' "$RECOVERY_KEY_B64" | base64 --decode > "$RUNNER_TEMP/printer-recovery-private.key"
+            fi
             chmod 600 "$RUNNER_TEMP/printer-recovery-private.key"
+            openssl pkey -in "$RUNNER_TEMP/printer-recovery-private.key" -noout >/dev/null
             openssl cms -decrypt -binary -inform DER \
               -in "$RUNNER_TEMP/printer-signing-recovery/mealdeck-printer-signing-backup.cms" \
               -recip apps/mealdeck-printer/recovery-recipient.pem \
