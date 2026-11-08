@@ -75,8 +75,9 @@ export function launchMenuItemDescriptor(
       : match?.[3]?.toLowerCase() === "fillet"
         ? 1
         : null;
-    return count && match?.[2] && !/\b(?:add|extra|optional|upgrade|or)\b/i.test(description)
-      ? `${count} ${match[2].toLowerCase()} chicken ${count === 1 ? "fillet" : "fillets"} in bun`
+    const cookingMethod = match?.[2];
+    return count && cookingMethod && !/\b(?:add|extra|optional|upgrade|or)\b/i.test(description)
+      ? `${count} ${cookingMethod.toLowerCase()} chicken ${count === 1 ? "fillet" : "fillets"} in bun`
       : "Chicken fillet burger in bun";
   }
 
