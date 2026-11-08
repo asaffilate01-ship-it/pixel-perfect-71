@@ -46,20 +46,24 @@ function updateWebVersions(directory) {
 }
 updateWebVersions(join(root, "web"));
 
-// The kitchen intentionally displays flavours in bold capitals. Preserve
-// quantities, full paid prices, absence of internal adjustments and immutability
-// assertions, but stop expecting the superseded mixed-case rendering.
+// The active priced-wing ticket deliberately displays flavours in capitals.
+// Keep legacy fallback and completed-history tests unchanged, as well as every
+// assertion about prices, choices, quantities, checklists and input immutability.
 const testPath = "tests/mealdeck-kds-view.test.ts";
-let test = read(testPath);
+const test = read(testPath);
+const start = test.indexOf('  test("Tavo portion and flavour show the full dish price without the internal 51p adjustment"');
+const end = test.indexOf('  test("legacy choices without kind keep food and extra quantities', start);
+assert.ok(start >= 0 && end > start, "Expected the bounded priced-wing regression test");
+let section = test.slice(start, end);
 const replacements = [
   ['expect(html).toContain("Portion &amp; flavour:");', 'expect(html).toContain("FLAVOUR &amp; PORTION");'],
   ['expect(html).toContain("Korean BBQ · 3 pcs");', 'expect(html).toContain("KOREAN BBQ · 3 PCS");'],
   ['expect(html).toContain("Fiery Sweet Chilli · 3 pcs");', 'expect(html).toContain("FIERY SWEET CHILLI · 3 PCS");'],
 ];
 for (const [oldText, newText] of replacements) {
-  if (test.includes(newText)) continue;
-  assert.equal(test.split(oldText).length, 2, "Expected one reviewed KDS assertion");
-  test = test.replace(oldText, () => newText);
+  if (section.includes(newText)) continue;
+  assert.equal(section.split(oldText).length, 2, "Expected one reviewed active-ticket assertion");
+  section = section.replace(oldText, () => newText);
 }
-save(testPath, test);
-console.log("Prepared printer v0.2.3/build 5 and updated intended uppercase flavour assertions. No secrets or production changes.");
+save(testPath, test.slice(0, start) + section + test.slice(end));
+console.log("Prepared printer v0.2.3/build 5 and intended uppercase flavour assertions. No secrets or production changes.");
