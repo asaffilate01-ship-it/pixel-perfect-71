@@ -58,9 +58,9 @@ type Coordinates = { latitude: number; longitude: number };
 export type OwnDriverArea = {
   eligible: boolean;
   postcode: string;
-  distanceMetres: number;
-  origin: Coordinates;
-  destination: Coordinates;
+  /** Null only when the postcode is outside the complete local store and no exact lookup was possible. */
+  distanceMetres: number | null;
+  source: "local_store" | "remote_lookup" | "outside_local_store";
 };
 
 function validCoordinates(lat: unknown, lon: unknown): Coordinates | null {
@@ -98,40 +98,48 @@ export class OwnDriverInvalidPostcode extends Error {
   }
 }
 
-/**
- * Small, source-verified offline continuity snapshot for the Luton
- * own-driver launch. These are exact, active unit postcode centroids,
- * NOT a district/prefix whitelist. Keep it server-only.
- *
- * Coordinates: public ONS-derived postcode directory (September 2026),
- * mirrored at doogal.co.uk/ShowMap?postcode=LU4+8NU and
- * doogal.co.uk/ShowMap?postcode=LU1+1BU; Open Government Licence.
- *
- * These two launch postcodes are verified locally before all network calls,
- * so the 28 Guardian Way smoke test cannot time out on outbound geocoding.
- * Unknown postcodes are never approved by prefix and still require an exact
- * successful remote lookup. Refresh this snapshot as the ONS data changes;
- * move to a full locally hosted postcode directory for broader coverage.
- */
-const verifiedLaunchPostcodeCentroids: Readonly<Record<string, Coordinates>> = Object.freeze({
-  "LU4 8NU": Object.freeze({ latitude: 51.897360, longitude: -0.446114 }),
-  "LU1 1BU": Object.freeze({ latitude: 51.882127, longitude: -0.429743 }),
-});
+/** LU4 8NU WGS84 centroid (ONS), used only for the remote-lookup fallback. */
+const BASE_CENTROID: Coordinates = Object.freeze({ latitude: 51.89736, longitude: -0.446114 });
+
+type GridOffset = readonly [number, number];
+let localStorePromise: Promise<ReadonlyMap<string, GridOffset>> | null = null;
 
 /**
- * Two independent ONS-based postcode services are used, in order.
- * The secondary provider is used only if the primary lookup is unavailable,
- * malformed, or does not know a postcode. Neither permits a browser-supplied
- * coordinate or a prefix-only delivery approval.
+ * Server-side OS Code-Point Open store (see mealdeck-luton-postcode-store.ts).
+ * Loaded lazily so the browser bundle never includes it. Exact unit postcodes
+ * only — never a district or prefix approval.
+ */
+function loadLocalStore(): Promise<ReadonlyMap<string, GridOffset>> {
+  localStorePromise ??= import("./mealdeck-luton-postcode-store").then((store) => {
+    const map = new Map<string, GridOffset>();
+    for (const entry of store.LUTON_POSTCODE_STORE_DATA.split(";")) {
+      if (!entry) continue;
+      const match = /^([A-Z0-9]{5,7})([+-][0-9]{1,5})([+-][0-9]{1,5})$/.exec(entry);
+      const postcode = match ? normaliseUkPostcode(match[1]) : null;
+      if (!match || !postcode || map.has(postcode)) throw new Error("Postcode store is corrupt.");
+      map.set(postcode, [Number(match[2]), Number(match[3])]);
+    }
+    if (map.size !== store.LUTON_POSTCODE_STORE_COUNT || !map.has(OWN_DRIVER_BASE_POSTCODE))
+      throw new Error("Postcode store is incomplete.");
+    const base = map.get(OWN_DRIVER_BASE_POSTCODE)!;
+    if (base[0] !== 0 || base[1] !== 0) throw new Error("Postcode store base mismatch.");
+    return map;
+  });
+  localStorePromise.catch(() => {
+    localStorePromise = null;
+  });
+  return localStorePromise;
+}
+
+/**
+ * Remote exact lookup, used ONLY for postcodes outside the complete local
+ * store (i.e. not a live postcode within 5 km in the current OS release).
+ * Two independent ONS-based services are tried in order.
  */
 async function lookupPostcode(
   postcode: string,
   fetcher: typeof fetch,
 ): Promise<Coordinates | null> {
-  // Exact verified postcode centroids avoid the external API's cold-start or
-  // DNS timeout for this limited, source-checked Luton launch.
-  const pinned = verifiedLaunchPostcodeCentroids[postcode];
-  if (pinned) return pinned;
   const compact = encodeURIComponent(postcode.replace(/\s/g, ""));
   const endpoints = [
     "https://api.postcodes.io/postcodes/" + compact,
@@ -141,12 +149,12 @@ async function lookupPostcode(
   for (let provider = 0; provider < endpoints.length; provider++) {
     let response: Response;
     try {
+      // Worker-compatible options: "manual" (not "error") redirects, no cache mode.
       response = await fetcher(endpoints[provider]!, {
         method: "GET",
-        redirect: "error",
+        redirect: "manual",
         signal: AbortSignal.timeout(5_000),
         headers: { Accept: "application/json" },
-        cache: "no-store",
       });
     } catch {
       continue; // Retry the independent provider; never claim delivery coverage.
@@ -165,24 +173,22 @@ async function lookupPostcode(
     if (!json || typeof json !== "object" || Array.isArray(json)) continue;
     const envelope = json as Record<string, unknown>;
     const record = provider === 0 ? envelope["result"] : envelope["data"];
-    if (
-      !record ||
-      typeof record !== "object" ||
-      Array.isArray(record)
-    ) {
-      if (provider === 1 && envelope["status"] === "no_match") {
-        confirmedNotFoundCount += 1;
-      }
+    if (!record || typeof record !== "object" || Array.isArray(record)) {
+      if (provider === 1 && envelope["status"] === "no_match") confirmedNotFoundCount += 1;
       continue;
     }
     if (provider === 1 && envelope["status"] !== "match") continue;
     const data = record as Record<string, unknown>;
     if (normaliseUkPostcode(data["postcode"]) !== postcode) continue;
     if (provider === 1 && data["status"] !== "live") continue;
-    const latitude = provider === 1 && typeof data["latitude"] === "string" && data["latitude"].trim() !== ""
-      ? Number(data["latitude"]) : data["latitude"];
-    const longitude = provider === 1 && typeof data["longitude"] === "string" && data["longitude"].trim() !== ""
-      ? Number(data["longitude"]) : data["longitude"];
+    const latitude =
+      provider === 1 && typeof data["latitude"] === "string" && data["latitude"].trim() !== ""
+        ? Number(data["latitude"])
+        : data["latitude"];
+    const longitude =
+      provider === 1 && typeof data["longitude"] === "string" && data["longitude"].trim() !== ""
+        ? Number(data["longitude"])
+        : data["longitude"];
     const coordinates = validCoordinates(latitude, longitude);
     if (coordinates) return coordinates;
   }
@@ -190,25 +196,45 @@ async function lookupPostcode(
   throw new OwnDriverPostcodeUnavailable();
 }
 
-/** Never trust a browser-provided radius result or coordinates. Checked again at quote time. */
+/** Never trust a browser-provided radius result or coordinates. Checked again at quote and payment time. */
 export async function checkOwnDriverArea(
   raw: unknown,
   fetcher: typeof fetch = fetch,
 ): Promise<OwnDriverArea> {
   const postcode = normaliseUkPostcode(raw);
   if (!postcode) throw new OwnDriverInvalidPostcode();
-  const [origin, destination] = await Promise.all([
-    lookupPostcode(OWN_DRIVER_BASE_POSTCODE, fetcher),
-    lookupPostcode(postcode, fetcher),
-  ]);
-  if (!origin) throw new OwnDriverPostcodeUnavailable();
+  let store: ReadonlyMap<string, GridOffset>;
+  try {
+    store = await loadLocalStore();
+  } catch {
+    throw new OwnDriverPostcodeUnavailable();
+  }
+  const local = store.get(postcode);
+  if (local) {
+    // Straight-line British National Grid distance from LU4 8NU.
+    const distance = Math.hypot(local[0], local[1]);
+    return {
+      eligible: distance <= OWN_DRIVER_RADIUS_METRES,
+      postcode,
+      distanceMetres: Math.round(distance),
+      source: "local_store",
+    };
+  }
+  // Not a live postcode within 5 km in the current OS release, so it cannot be
+  // inside the 3 km circle unless it is newer than that release.
+  let destination: Coordinates | null;
+  try {
+    destination = await lookupPostcode(postcode, fetcher);
+  } catch (error) {
+    if (!(error instanceof OwnDriverPostcodeUnavailable)) throw error;
+    return { eligible: false, postcode, distanceMetres: null, source: "outside_local_store" };
+  }
   if (!destination) throw new OwnDriverInvalidPostcode();
-  const distance = postcodeDistanceMetres(origin, destination);
+  const distance = postcodeDistanceMetres(BASE_CENTROID, destination);
   return {
     eligible: distance <= OWN_DRIVER_RADIUS_METRES,
     postcode,
     distanceMetres: Math.round(distance),
-    origin,
-    destination,
+    source: "remote_lookup",
   };
 }
