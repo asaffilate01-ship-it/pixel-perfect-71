@@ -188,5 +188,15 @@ BEGIN
  DELETE FROM mealdeck_private.order_contact_messages WHERE created_at<now()-interval '7 days';
 END $purge$;
 REVOKE ALL ON FUNCTION mealdeck_private.order_comms_purge() FROM PUBLIC,anon,authenticated,service_role;
--- Apply cron scheduling explicitly after permission review; until then all reads hide expired pins.
+-- Strictly scoped recurring cleanup: each position expires after 30 minutes; messages after 7 days.
+DO $schedule$
+BEGIN
+ IF to_regclass('cron.job') IS NULL THEN
+   RAISE EXCEPTION 'mealdeck_comms_cron_unavailable';
+ END IF;
+ IF NOT EXISTS (SELECT 1 FROM cron.job WHERE jobname='mealdeck-order-comms-private-purge') THEN
+   PERFORM cron.schedule('mealdeck-order-comms-private-purge','*/15 * * * *',
+     'SELECT mealdeck_private.order_comms_purge()');
+ END IF;
+END $schedule$;
 COMMIT;
