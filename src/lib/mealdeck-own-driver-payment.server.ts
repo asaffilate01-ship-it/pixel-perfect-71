@@ -37,7 +37,7 @@ export async function verifyOwnDriverPayment({
     );
   }
   const quote = await readQuote();
-  if (quote.delivery !== true || quote.totalPence !== order.totalPence) {
+  if (quote["delivery"] !== true || quote["totalPence"] !== order.totalPence) {
     throw new CheckoutProblem(
       "delivery_quote_invalid",
       "Your delivery details need to be checked again. Please review your order.",
@@ -55,7 +55,7 @@ export async function verifyOwnDriverPayment({
     );
   }
   try {
-    const area = await checkOwnDriverArea(quote.postcode, fetcher);
+    const area = await checkOwnDriverArea(quote["postcode"], fetcher);
     if (!area.eligible) {
       throw new CheckoutProblem(
         "outside_delivery_area",
