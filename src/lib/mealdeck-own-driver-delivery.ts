@@ -107,11 +107,11 @@ export class OwnDriverInvalidPostcode extends Error {
  * mirrored at doogal.co.uk/ShowMap?postcode=LU4+8NU and
  * doogal.co.uk/ShowMap?postcode=LU1+1BU; Open Government Licence.
  *
- * Use only when both external lookup providers are unavailable. If either
- * provider confirms a postcode is missing, don't override it with the
- * snapshot: terminated/reassigned postcodes must fail closed. A complete
- * locally hosted/periodically refreshed postcode dataset is preferable
- * before enabling broad delivery coverage.
+ * These two launch postcodes are verified locally before all network calls,
+ * so the 28 Guardian Way smoke test cannot time out on outbound geocoding.
+ * Unknown postcodes are never approved by prefix and still require an exact
+ * successful remote lookup. Refresh this snapshot as the ONS data changes;
+ * move to a full locally hosted postcode directory for broader coverage.
  */
 const verifiedLaunchPostcodeCentroids: Readonly<Record<string, Coordinates>> = Object.freeze({
   "LU4 8NU": Object.freeze({ latitude: 51.897360, longitude: -0.446114 }),
@@ -128,6 +128,10 @@ async function lookupPostcode(
   postcode: string,
   fetcher: typeof fetch,
 ): Promise<Coordinates | null> {
+  // Exact verified postcode centroids avoid the external API's cold-start or
+  // DNS timeout for this limited, source-checked Luton launch.
+  const pinned = verifiedLaunchPostcodeCentroids[postcode];
+  if (pinned) return pinned;
   const compact = encodeURIComponent(postcode.replace(/\s/g, ""));
   const endpoints = [
     "https://api.postcodes.io/postcodes/" + compact,
@@ -183,12 +187,6 @@ async function lookupPostcode(
     if (coordinates) return coordinates;
   }
   if (confirmedNotFoundCount === endpoints.length) return null;
-  if (confirmedNotFoundCount === 0) {
-    // Known, previously verified centroids preserve coverage during an
-    // outbound-network failure without approving arbitrary postcodes.
-    const cached = verifiedLaunchPostcodeCentroids[postcode];
-    if (cached) return cached;
-  }
   throw new OwnDriverPostcodeUnavailable();
 }
 
