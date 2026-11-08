@@ -132,6 +132,22 @@ async function lookupPostcode(
   // DNS timeout for this limited, source-checked Luton launch.
   const pinned = verifiedLaunchPostcodeCentroids[postcode];
   if (pinned) return pinned;
+
+  // Server-side postcode directory: exact LU unit postcodes, never prefixes.
+  // The November 2025 ONS-derived snapshot makes everyday Luton checks work
+  // without relying on third-party DNS or public API uptime. Unknown/new
+  // postcodes continue to require validated live-provider data below.
+  try {
+    const { default: directory } = await import("./mealdeck-luton-postcodes.json");
+    const pair = (directory as Record<string, readonly [number, number]>)[postcode];
+    if (pair && pair.length === 2) {
+      const local = validCoordinates(pair[0], pair[1]);
+      if (local) return local;
+    }
+  } catch {
+    // A missing/offline deployment asset must not grant coverage. Continue to
+    // verified public lookup and fail closed if every source is unavailable.
+  }
   const compact = encodeURIComponent(postcode.replace(/\s/g, ""));
   const endpoints = [
     "https://api.postcodes.io/postcodes/" + compact,
