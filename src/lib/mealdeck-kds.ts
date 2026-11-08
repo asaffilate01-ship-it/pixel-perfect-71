@@ -434,12 +434,7 @@ function parseOrder(value: unknown): KdsOrder {
       fulfilment === "pickup" || fulfilment === "curbside"
         ? parseKdsPickupContact(v["pickupContact"])
         : null,
-    deliveryAddress,
-    deliveryContact,
-    driverStatus,
-    driverVersion,
-    driverHandoverAt,
-    deliveredAt,
+    ...(fulfilment === "delivery" ? {deliveryAddress,deliveryContact,driverStatus,driverVersion,driverHandoverAt,deliveredAt} : {}),
   };
 }
 
