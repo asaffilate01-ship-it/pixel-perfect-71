@@ -7,22 +7,32 @@ on:
       - 'scripts/prepare-printer-v023.mjs'
       - 'src/lib/mealdeck-own-driver-payment.server.ts'
       - 'tests/mealdeck-own-driver-payment.test.ts'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/delivery-release-validation.yml'
+      - '.github/workflows/publish-printer-v023.yml'
+      - 'src/lib/mealdeck-own-driver*'
+      - 'tests/mealdeck-own-driver*'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: mealdeck-delivery-release-validation
   cancel-in-progress: false
 jobs:
   delivery-release:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feat/own-driver-luton-delivery'
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) ||
+      ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feat/own-driver-luton-delivery
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -34,24 +44,13 @@ jobs:
           bun-version: '1.4.4'
       - name: Install pinned source and receipt-artwork test dependencies
         run: |
-          git config user.name 'MealDeck Release Bot'
-          git config user.email 'release-bot@mealdeck.co.uk'
           bun install --frozen-lockfile
           python -m pip install --disable-pip-version-check 'Pillow==12.0.0'
-      - name: Apply reviewed source fixes and consistent printer version
+      - name: Verify immutable tested source and signing workflow
         run: |
-          node scripts/prepare-printer-v023.mjs
-          node scripts/finalise-own-driver-release.mjs
-          # Source changes only; the runner does not have workflow-write scope.
-          git restore --worktree .github/workflows/verify.yml
-      - name: Commit reviewed source and version metadata only
-        run: |
-          git add src tests apps/mealdeck-printer
-          if ! git diff --cached --quiet; then
-            git commit -m 'release(printer): prepare delivery-compatible v0.2.3 and regression fixtures'
-          fi
-          git push origin HEAD:feat/own-driver-luton-delivery
-          echo "Validated candidate: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          node --test tests/printer-v023-publisher.test.mjs
+          echo "Read-only validation of $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
       - name: Run all focused release checks without skipping later diagnostics
         shell: bash
         run: |
