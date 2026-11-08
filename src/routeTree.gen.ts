@@ -23,6 +23,7 @@ import { Route as MenusRouteImport } from './routes/menus'
 import { Route as MetaAdRouteImport } from './routes/meta-ad'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as OpeningOfferRouteImport } from './routes/opening-offer'
+import { Route as DeliveryTermsRouteImport } from './routes/delivery-terms'
 import { Route as OpsRouteImport } from './routes/ops'
 import { Route as OrderRouteImport } from './routes/order'
 import { Route as PlayRouteImport } from './routes/play'
@@ -129,6 +130,11 @@ const OffersRoute = OffersRouteImport.update({
 const OpeningOfferRoute = OpeningOfferRouteImport.update({
   id: '/opening-offer',
   path: '/opening-offer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeliveryTermsRoute = DeliveryTermsRouteImport.update({
+  id: '/delivery-terms',
+  path: '/delivery-terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OpsRoute = OpsRouteImport.update({
@@ -332,6 +338,7 @@ export interface FileRoutesByFullPath {
   '/meta-ad': typeof MetaAdRoute
   '/offers': typeof OffersRoute
   '/opening-offer': typeof OpeningOfferRoute
+  '/delivery-terms': typeof DeliveryTermsRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
@@ -385,6 +392,7 @@ export interface FileRoutesByTo {
   '/meta-ad': typeof MetaAdRoute
   '/offers': typeof OffersRoute
   '/opening-offer': typeof OpeningOfferRoute
+  '/delivery-terms': typeof DeliveryTermsRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
@@ -439,6 +447,7 @@ export interface FileRoutesById {
   '/meta-ad': typeof MetaAdRoute
   '/offers': typeof OffersRoute
   '/opening-offer': typeof OpeningOfferRoute
+  '/delivery-terms': typeof DeliveryTermsRoute
   '/ops': typeof OpsRoute
   '/order': typeof OrderRoute
   '/play': typeof PlayRoute
@@ -494,6 +503,7 @@ export interface FileRouteTypes {
     | '/meta-ad'
     | '/offers'
     | '/opening-offer'
+    | '/delivery-terms'
     | '/ops'
     | '/order'
     | '/play'
@@ -547,6 +557,7 @@ export interface FileRouteTypes {
     | '/meta-ad'
     | '/offers'
     | '/opening-offer'
+    | '/delivery-terms'
     | '/ops'
     | '/order'
     | '/play'
@@ -600,6 +611,7 @@ export interface FileRouteTypes {
     | '/meta-ad'
     | '/offers'
     | '/opening-offer'
+    | '/delivery-terms'
     | '/ops'
     | '/order'
     | '/play'
@@ -654,6 +666,7 @@ export interface RootRouteChildren {
   MetaAdRoute: typeof MetaAdRoute
   OffersRoute: typeof OffersRoute
   OpeningOfferRoute: typeof OpeningOfferRoute
+  DeliveryTermsRoute: typeof DeliveryTermsRoute
   OpsRoute: typeof OpsRoute
   OrderRoute: typeof OrderRoute
   PlayRoute: typeof PlayRoute
@@ -789,6 +802,13 @@ declare module '@tanstack/react-router' {
       path: '/opening-offer'
       fullPath: '/opening-offer'
       preLoaderRoute: typeof OpeningOfferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delivery-terms': {
+      id: '/delivery-terms'
+      path: '/delivery-terms'
+      fullPath: '/delivery-terms'
+      preLoaderRoute: typeof DeliveryTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ops': {
@@ -1089,6 +1109,7 @@ const rootRouteChildren: RootRouteChildren = {
   MetaAdRoute: MetaAdRoute,
   OffersRoute: OffersRoute,
   OpeningOfferRoute: OpeningOfferRoute,
+  DeliveryTermsRoute: DeliveryTermsRoute,
   OpsRoute: OpsRoute,
   OrderRoute: OrderRoute,
   PlayRoute: PlayRoute,
