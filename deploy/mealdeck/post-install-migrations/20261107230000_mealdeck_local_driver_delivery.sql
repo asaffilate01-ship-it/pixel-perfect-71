@@ -238,6 +238,7 @@ begin
   return card||jsonb_build_object(
     'deliveryAddress',d.address,'deliveryContact',jsonb_build_object(
       'name',o.customer_name,'phone',o.customer_phone),
+    'deliveryDeadlineAt',o.paid_at+interval '60 minutes',
     'driverStatus',state.driver_status,
     'driverVersion',mealdeck_private.local_driver_version(state.order_id,state.driver_status,state.updated_at),
     'driverHandoverAt',state.handed_to_driver_at,'deliveredAt',state.delivered_at);
