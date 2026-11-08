@@ -17,8 +17,24 @@ test("H10S v0.2.3 reuses original Android signer, never creates a new key", () =
   assert.doesNotMatch(release, /keytool -genkeypair|openssl req -newkey/);
   assert.match(release, /Signer #1 certificate SHA-256 digest:/);
   assert.match(release, /old_signer.*!=.*new_signer/);
-  assert.match(release, /release-certificate\.pem/);
+  // The published v0.2.2 uses the signer recorded in successful run 42428234548.
+  // Its certificate differs from the historical v0.2.0 public certificate.
+  assert.match(release, /56bdf4173ac112fab080c8a88485c31fb5d7ff3847c02af314039ccb459d6d17/);
+  assert.match(release, /sha256sum -c/);
+  assert.match(release, /MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_BASE64/);
+  assert.match(release, /gh run download 42428234548/);
+  assert.match(release, /mealdeck-printer-v0\\.2\\.2-signing-backup-encrypted/);
+  assert.match(release, /openssl cms -decrypt/);
   assert.match(release, /versionCode='5' versionName='0\.2\.3'/);
+});
+
+test("encrypted backup requires the exact private recovery key", () => {
+  assert.match(release, /RECOVERY_KEY_B64/);
+  assert.match(release, /recovery-recipient/);
+  assert.match(release, /printer-recovery-private/);
+  assert.match(release, /read -r STORE_PASSWORD/);
+  assert.match(release, /store-password/);
+  assert.doesNotMatch(release, /keytool -genkeypair|openssl req -newkey|openssl cms -encrypt/);
 });
 
 test("apksigner reads separate newline-terminated store and key password files", () => {
