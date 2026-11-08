@@ -9,7 +9,7 @@ export const Route = createFileRoute("/delivery-terms")({
     seo({
       title: "Free Luton Delivery — Terms & Conditions | MealDeck",
       description:
-        "MealDeck Luton free own-driver delivery terms: available postcodes within 3 km of LU4 8NU, £15 minimum after discounts, delivery times and address requirements.",
+        "MealDeck Luton free own-driver delivery terms: available postcodes within 4 km of LU4 8NU, £15 minimum after discounts, delivery times and address requirements.",
       path: "/delivery-terms",
     }),
   component: DeliveryTermsPage,
@@ -30,7 +30,7 @@ function DeliveryTermsPage() {
 
           <h2>Where do we deliver?</h2>
           <p>
-            Eligible destination postcodes must be within a 3 km straight-line radius of LU4 8NU.
+            Eligible destination postcodes must be within a 4 km straight-line radius of LU4 8NU.
             We check the postcode area using postcode coordinates, not driving distance. Enter your
             full postcode at checkout to check whether your address qualifies. If it is outside our
             current area, you can choose collection or kerbside pickup instead.

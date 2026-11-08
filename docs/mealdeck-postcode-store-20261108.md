@@ -9,3 +9,7 @@
 - No district/prefix approval. Quote and payment re-run the same server check; DB still enforces 0–3,000 m and the £15 minimum.
 
 Regenerate from each new Code-Point Open release (download `CodePointOpen` GB CSV, filter `lu.csv` PQ<90 within 5 km of (507014, 223230)).
+
+## 4 km radius update — 8 November 2026
+
+The kitchen's own-driver radius is now **4,000 m**, still straight-line from LU4 8NU. The same OS postcode store already contains all 3,734 active unit postcodes within 5 km: **3,067 are within 4 km**, an increase of **867** compared with the previous 2,200 inside 3 km. The server checks eligibility at coverage, quote and payment. The separate production SQL upgrade widens both the database constraint and authoritative quote-binding RPC to 4,000 m; the historic 3 km migration remains unchanged. The £15 after-discount minimum, free delivery, and Ops/kitchen/payment guards are unchanged. LU1 5QD is 3,317 m and qualifies; LU2 9ER is 4,003 m and does not. Older 3 km boundary examples in this document refer to the original launch checks.

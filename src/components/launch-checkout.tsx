@@ -2070,7 +2070,7 @@ function LaunchCheckoutView({
                       <span>
                         Free delivery{" "}
                         <small>
-                          Due to popular demand · within 3 km of LU4 8NU · £15 minimum after
+                          Due to popular demand · within 4 km of LU4 8NU · £15 minimum after
                           discounts · up to 60 minutes
                         </small>
                       </span>
@@ -2322,7 +2322,7 @@ function LaunchCheckoutView({
                     <span className="md-checkout-step">3</span>Delivery address
                   </h2>
                   <p className="md-checkout-muted">
-                    Due to popular demand: FREE delivery within a 3 km radius of LU4 8NU for orders
+                    Due to popular demand: FREE delivery within a 4 km radius of LU4 8NU for orders
                     of £15 or more after discounts. Estimated delivery within 60 minutes of payment,
                     using our own driver.
                   </p>

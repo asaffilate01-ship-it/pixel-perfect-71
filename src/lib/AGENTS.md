@@ -1,3 +1,3 @@
 # src/lib notes
 
-- Own-driver 3 km coverage resolves exact unit postcodes from the generated server-only OS Code-Point Open store (`src/lib/mealdeck-luton-postcode-store.ts`, complete to 5 km of LU4 8NU), loaded by dynamic import; remote postcode APIs are only a fallback for postcodes outside it, and a fallback failure refuses delivery — the Worker runtime could not reach those APIs reliably. Regenerate the store from a new OS release rather than hand-editing.
+- Own-driver 4 km coverage resolves exact unit postcodes from the generated server-only OS Code-Point Open store (`src/lib/mealdeck-luton-postcode-store.ts`, complete to 5 km of LU4 8NU), loaded by dynamic import; remote postcode APIs are only a fallback for postcodes outside it, and a fallback failure refuses delivery — the Worker runtime could not reach those APIs reliably. Regenerate the store from a new OS release rather than hand-editing.

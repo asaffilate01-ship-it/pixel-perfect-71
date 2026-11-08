@@ -69,3 +69,19 @@ test("existing printer, guest and member checkout projections include delivery",
   assert.match(sql, /o\.paid_at\+interval '60 minutes'/);
   assert.match(sql, /handoff_status|handed_off/);
 });
+
+const radiusUpgrade = readFileSync(
+  new URL("../deploy/mealdeck/post-install-migrations/20261108165000_mealdeck_local_driver_radius_4km.sql", import.meta.url),
+  "utf8",
+);
+test("4 km own-driver radius migration preserves trusted checkout gates", () => {
+  assert.equal((radiusUpgrade.match(/^begin;$/gm) ?? []).length, 1);
+  assert.equal((radiusUpgrade.match(/^commit;$/gm) ?? []).length, 1);
+  assert.match(radiusUpgrade, /local_driver_quotes_distance_metres_check/);
+  assert.match(radiusUpgrade, /distance_metres between 0 and 4000/);
+  assert.match(radiusUpgrade, /p_distance_metres not between 0 and 4000/);
+  assert.match(radiusUpgrade, /q\.total_pence<1500/);
+  assert.match(radiusUpgrade, /mealdeck_delivery_database_owner_required/);
+  assert.match(radiusUpgrade, /mealdeck_delivery_dedicated_backend_required/);
+  assert.doesNotMatch(radiusUpgrade, /grant\s+execute\s+on\s+function/i);
+});
