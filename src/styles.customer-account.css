@@ -644,3 +644,20 @@
   outline-offset: 4px;
   border-radius: 4px;
 }
+
+.md-account-orders li span.md-account-confirmation-code {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a3628;
+}
+.md-account-orders li .md-account-confirmation-code strong {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  color: #bd1420;
+}
