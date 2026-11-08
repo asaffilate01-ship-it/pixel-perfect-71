@@ -64,7 +64,7 @@ const tavoBurgerPreparation: Readonly<Record<string, string>> = {
 };
 
 function isTavoChicken(brandName: string) {
-  return /^tavo chicken(?:\\s+by mealdeck)?$/i.test(brandName.trim());
+  return /^tavo chicken(?:\s+by mealdeck)?$/i.test(brandName.trim());
 }
 
 /** Derived only from the saved, unambiguous Tavo dish name; not from an add-on. */
