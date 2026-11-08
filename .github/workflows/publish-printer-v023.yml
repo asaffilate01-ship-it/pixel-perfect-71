@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/publish-printer-v023.yml"
+      - "apps/mealdeck-printer/android/gradle/wrapper/gradle-wrapper.properties"
 
 permissions:
   contents: write
@@ -110,6 +111,19 @@ jobs:
           npm run sync:android
           npm run verify:native
           sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          # Fetch only the pinned Gradle distribution first. A transient CDN
+          # timeout should not prevent otherwise-valid signing credentials
+          # from reaching the actual unit tests and native release build.
+          for attempt in 1 2 3; do
+            if (cd android && ./gradlew --version --no-daemon); then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo 'Pinned Gradle 8.14.3 download failed after three attempts.'
+              exit 1
+            fi
+            sleep "$((attempt * 10))"
+          done
           (cd android && ./gradlew :app:testDebugUnitTest :app:assembleRelease --no-daemon --stacktrace)
 
       - name: Sign v0.2.3 with original certificate and verify update compatibility
