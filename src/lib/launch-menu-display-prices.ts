@@ -1,4 +1,9 @@
-import { launchMenuConfiguredItemPrice, type LaunchMenuBrand } from "./launch-menu-catalogue";
+import {
+  launchMenuConfiguredItemPrice,
+  type LaunchMenuBrand,
+  type LaunchMenuItem,
+} from "./launch-menu-catalogue";
+import { isMealDeckMilkcakePromotion } from "./mealdeck-milkcake-promotion";
 import {
   findLaunchMenuItem,
   launchItemGroups,
@@ -20,6 +25,22 @@ function knownPrice(value: number | null): number | null {
 export function formatLaunchMenuPrice(pence: number | null): string {
   const value = knownPrice(pence);
   return value === null ? "Price unavailable" : sterling.format(value / 100);
+}
+
+/** Keep the promised 99p wording tied to validated server promotion metadata. */
+export function formatLaunchPromotionalPrice(pence: number | null, promotion: unknown): string {
+  return pence === 99 && isMealDeckMilkcakePromotion(promotion)
+    ? "99p"
+    : formatLaunchMenuPrice(pence);
+}
+
+export function formatLaunchMenuItemPrice(
+  item: Pick<LaunchMenuItem, "pricePence" | "promotion">,
+): string {
+  return isMealDeckMilkcakePromotion(item.promotion) &&
+    item.pricePence === item.promotion.regularUnitPence
+    ? "99p"
+    : formatLaunchMenuPrice(item.pricePence);
 }
 
 /** Display only: never an order quote or payment amount. */
@@ -192,5 +213,43 @@ export function launchMenuBasketDisplayPrice(
     hasPaidChoices: lines.some(
       (line) => line.additions.length > 0 || line.options.some((option) => option.unitPence !== 0),
     ),
+  };
+}
+
+/** One offer across the complete current basket; extra milkcakes keep £3.99 before 30%. */
+export function launchMenuOfferBasketDisplayPrice(
+  picks: PriceSelection[],
+  catalogue: LaunchMenuBrand[],
+) {
+  const rawLines = picks.map((pick) => launchMenuPickDisplayPrice(pick, catalogue));
+  const eligibleIndex = picks.findIndex((pick, index) => {
+    const item = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue)?.item;
+    return (
+      item?.available === true &&
+      isMealDeckMilkcakePromotion(item.promotion) &&
+      item.pricePence === item.promotion.regularUnitPence &&
+      rawLines[index]?.baseUnitPence === item.promotion.regularUnitPence &&
+      rawLines[index]?.itemsSubtotalPence !== null
+    );
+  });
+  const lines = rawLines.map((line, index) => {
+    const promotionQuantity = index === eligibleIndex ? 1 : 0;
+    const includedDiscountPence = promotionQuantity ? 300 : 0;
+    return {
+      ...line,
+      promotionQuantity,
+      displayedBaseLinePence:
+        line.baseLinePence === null ? null : line.baseLinePence - includedDiscountPence,
+      displayedItemsSubtotalPence:
+        line.itemsSubtotalPence === null ? null : line.itemsSubtotalPence - includedDiscountPence,
+    };
+  });
+  return {
+    lines,
+    itemsSubtotalPence: sumKnownPrices(lines.map((line) => line.displayedItemsSubtotalPence)),
+    hasPaidChoices: lines.some(
+      (line) => line.additions.length > 0 || line.options.some((option) => option.unitPence !== 0),
+    ),
+    hasMilkcakeOffer: eligibleIndex !== -1,
   };
 }

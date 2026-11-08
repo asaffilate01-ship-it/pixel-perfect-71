@@ -11,6 +11,13 @@
 
 <!-- LOVABLE:END -->
 
+## Sunday milkcake final price — owner direction, 8 November 2026
+
+- On Sunday 8 November 2026, 15:00–23:00 Europe/London, **one milkcake per order** from the ten existing Biscoff/Oreo milkcake SKUs across the five launch brands costs **99p after the 30% discount**. Additional milkcakes on the same checkout are **£3.99 each before the ordinary 30% discount**. Show **99p · T&Cs apply** and explain in the terms that the displayed price already includes the discount. Do not show £1.29 or apply another 30% reduction to the 99p amount.
+- The owner mentioned £1.29 less 30%; that arithmetic would produce 90p, so the explicit 99p final payment requirement governs. Enforce exactly one discounted unit across the entire checkout, including mixed brands/flavours and quantities within one line. Price that unit at 99p after discount and apply the ordinary whole-basket 30% calculation to every other eligible unit. With only cakes in a basket, one/two/three cost 99p/£3.78/£6.58 using the existing whole-basket discount rounding.
+- Preserve the normal £3.99 catalogue records, current stock, kitchen controls, guest eligibility, frozen prepared payments and historical orders/receipts. The campaign activates and expires by the server clock; the browser cannot establish eligibility. The owner explicitly capped the 99p offer at one milkcake per order. Do not add a minimum spend, compulsory registration or another-purchase requirement.
+- Install the reviewed additive pricing operation only against the independently verified MealDeck database. Publishing frontend terms alone does not install the pricing rule. See `docs/mealdeck-milkcake-99p-20261108.md` for validation and rollout evidence.
+
 ## Souvano KDS main clarity — owner direction, 8 November 2026
 
 - Souvano has three **different** canonical mains: Stir-Fry Doner, Heatwave and Lamb Chops. An old shared **included-side** modifier group was named `Souvano · Included side (Doner / Lamb Chops)`, causing confusion on KDS. The group is not a product and must never be used to infer a main.

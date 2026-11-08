@@ -1,4 +1,6 @@
 import { usePublicMenu } from "./use-public-menu";
+import { MilkcakeOfferTerms } from "./milkcake-offer-terms";
+import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
 import { launchMenuItemDescriptor } from "@/lib/launch-menu-item-descriptor";
 import { findLaunchMenuItem } from "@/lib/launch-menu-picks";
 import { useEffect, useRef, useState } from "react";
@@ -33,8 +35,9 @@ import {
 } from "@/lib/launch-menu-upsells";
 import {
   formatLaunchMenuPrice,
+  formatLaunchPromotionalPrice,
   launchMenuCrossChoicePrice,
-  launchMenuPickDisplayPrice,
+  launchMenuOfferBasketDisplayPrice,
 } from "@/lib/launch-menu-display-prices";
 
 export type LaunchMenuEntry = {
@@ -65,12 +68,14 @@ function noneLabel(offer: LaunchCrossOffer) {
 
 export function LaunchItemCustomiser({
   draft,
+  basketPicks = [],
   onSave,
   onBack,
   error,
   context = "preview",
 }: {
   draft: LaunchItemDraft;
+  basketPicks?: LaunchMenuPick[];
   onSave: (
     selections: LaunchMenuSelections,
     quantity: number,
@@ -147,16 +152,22 @@ export function LaunchItemCustomiser({
     crossSelections,
     catalogue,
   );
-  const price = launchMenuPickDisplayPrice(
-    {
-      brandId: brand.id,
-      itemId: item.id,
-      selections,
-      crossSelections,
-      quantity,
-    },
-    catalogue,
-  );
+  const configuredPick = {
+    key: existing?.key ?? "menu-draft",
+    brandId: brand.id,
+    itemId: item.id,
+    selections,
+    crossSelections,
+    quantity,
+  };
+  const existingIndex = existing ? basketPicks.findIndex((pick) => pick.key === existing.key) : -1;
+  const draftPicks =
+    existingIndex >= 0
+      ? basketPicks.map((pick, index) => (index === existingIndex ? configuredPick : pick))
+      : [...basketPicks, configuredPick];
+  const price = launchMenuOfferBasketDisplayPrice(draftPicks, catalogue).lines[
+    existingIndex >= 0 ? existingIndex : basketPicks.length
+  ]!;
   const stepLabels: Record<Step, string> = { food: "Food", extras: "Extras", review: "Review" };
 
   useEffect(() => {
@@ -332,7 +343,20 @@ export function LaunchItemCustomiser({
           )}
           <p className="lmc-item-price">
             {price.baseUnitPence === null && item.priceVariants?.length ? "From " : ""}
-            {formatLaunchMenuPrice(price.baseUnitPence ?? item.pricePence)} <span>per item</span>
+            {price.promotionQuantity
+              ? "99p"
+              : formatLaunchMenuPrice(price.baseUnitPence ?? item.pricePence)}
+            {isMealDeckMilkcakePromotion(item.promotion) ? (
+              <>
+                {" "}
+                · <MilkcakeOfferTerms />
+              </>
+            ) : (
+              <>
+                {" "}
+                <span>per item</span>
+              </>
+            )}
           </p>
           <DialogDescription className="lmc-description">
             {context === "group-order"
@@ -532,9 +556,20 @@ export function LaunchItemCustomiser({
             <dl className="lmc-review-prices">
               <div>
                 <dt>
-                  {formatLaunchMenuPrice(price.baseUnitPence)} × {quantity}
+                  {price.promotionQuantity ? (
+                    <>1 × 99p{quantity > 1 && ` + ${quantity - 1} × £3.99 before 30% off`}</>
+                  ) : (
+                    <>
+                      {formatLaunchMenuPrice(price.baseUnitPence)} × {quantity}
+                    </>
+                  )}
                 </dt>
-                <dd>{formatLaunchMenuPrice(price.baseLinePence)}</dd>
+                <dd>
+                  {formatLaunchPromotionalPrice(
+                    price.displayedBaseLinePence,
+                    price.promotionQuantity ? item.promotion : undefined,
+                  )}
+                </dd>
               </div>
               {price.options.map((option) => (
                 <div key={option.optionId}>
@@ -550,9 +585,19 @@ export function LaunchItemCustomiser({
               ))}
               <div className="lmc-items-subtotal">
                 <dt>Items subtotal</dt>
-                <dd>{formatLaunchMenuPrice(price.itemsSubtotalPence)}</dd>
+                <dd>
+                  {formatLaunchPromotionalPrice(
+                    price.displayedItemsSubtotalPence,
+                    price.promotionQuantity ? item.promotion : undefined,
+                  )}
+                </dd>
               </div>
             </dl>
+            {isMealDeckMilkcakePromotion(item.promotion) && (
+              <p className="lmc-help">
+                <MilkcakeOfferTerms explained />
+              </p>
+            )}
             {summaries.length > 0 && <p className="lmc-help">Your choices apply to each item.</p>}
             <p className="lmc-allergy">
               For allergies or dietary needs, check with the team before ordering

@@ -116,7 +116,7 @@ describe("one basket opener with separate change feedback", () => {
     const closed = renderNav(false);
     expect(closed.match(/aria-label="View basket, 3 selections"/g)).toHaveLength(1);
     expect(closed.match(/<button\b/g)).toHaveLength(4);
-    expect(closed).not.toContain('aria-label="Menu navigation" hidden');
-    expect(renderNav(true)).toContain('aria-label="Menu navigation" hidden=""');
+    expect(closed).not.toContain('aria-label="Ordering navigation" hidden');
+    expect(renderNav(true)).toContain('aria-label="Ordering navigation" hidden=""');
   });
 });

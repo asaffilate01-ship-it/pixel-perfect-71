@@ -33,21 +33,28 @@ describe("The three approved November MealDeck offers", () => {
     expect(openingOfferDiscountPence(1500)).toBe(450);
   });
 
-  test("records 99p milk cake with an order on Sunday without inventing a product or activation", () => {
+  test("publishes 99p after the included 30% discount while keeping pricing server-owned", () => {
     expect(MILK_CAKE_CAMPAIGN.pricePence).toBe(99);
     expect(MILK_CAKE_CAMPAIGN.requiresOrder).toBe(true);
     expect(MILK_CAKE_CAMPAIGN.date).toBe("2026-11-08");
     expect(MILK_CAKE_CAMPAIGN.registrationRequired).toBe(false);
-    expect(MILK_CAKE_CAMPAIGN.canonicalItemId).toBeNull();
-    expect(MILK_CAKE_CAMPAIGN.automaticPricingEnabled).toBe(false);
+    expect(MILK_CAKE_CAMPAIGN.pricingAuthority).toBe("server");
     const cake = MEALDECK_OFFERS.find((offer) => offer.id === "sunday-milk-cake")!;
     expect(cake.startsOn).toBe(cake.throughDate);
     expect(cake.description).toContain("with every order");
+    expect(cake.description).toContain("T&Cs apply");
+    expect(cake.terms.join(" ")).toContain("One milkcake per order is 99p after the 30% discount");
+    expect(cake.terms.join(" ")).toContain("already includes this discount");
+    expect(cake.terms.join(" ")).toContain(
+      "Additional milkcakes are £3.99 each before the usual 30% discount",
+    );
+    expect(cake.terms.join(" ")).not.toMatch(/£1\.29|£1\.41|minimum spend/i);
     expect(cake.terms).toContain(
       "Available during Sunday's opening hours, 3pm–11pm, for Luton collection or kerbside pickup.",
     );
     expect("flavour" in MILK_CAKE_CAMPAIGN).toBe(false);
-    expect("maximumPerOrder" in MILK_CAKE_CAMPAIGN).toBe(false);
+    expect(MILK_CAKE_CAMPAIGN.maximumPerOrder).toBe(1);
+    expect(MILK_CAKE_CAMPAIGN.additionalPricePence).toBe(399);
   });
 
   test("limits double points to Monday 9 through Friday 13 November, inclusive in the UK", () => {
