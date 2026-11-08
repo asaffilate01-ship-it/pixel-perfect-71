@@ -24,10 +24,10 @@ jobs:
           node --check apps/mealdeck-whatsapp-worker/worker.mjs
           bunx eslint src/lib/mealdeck-whatsapp*.ts src/routes/api.whatsapp*.ts src/routes/api.ops.whatsapp.ts src/routes/whatsapp.checkout.tsx src/components/whatsapp*.tsx src/components/ops/whatsapp-inbox-panel.tsx tests/mealdeck-whatsapp*.test.ts deploy/mealdeck/whatsapp-ordering.mjs tests/postgres/whatsapp-ordering-behavior.mjs --rule 'prettier/prettier: off'
       - name: Launch menu prices, basket arithmetic and cross-brand choices
-        run: bun test tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-desserts.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/launch-basket-feedback.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
+        run: bun test tests/launch-menu-catalogue.test.ts tests/mealdeck-menu-item-descriptor.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-desserts.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/launch-basket-feedback.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
       - name: Launch menu and approved logo implementation lint
         run: >-
-          bunx eslint src/lib/launch-menu-catalogue.ts src/lib/launch-menu-picks.ts
+          bunx eslint src/lib/launch-menu-catalogue.ts src/lib/launch-menu-item-descriptor.ts src/lib/launch-menu-picks.ts
           src/lib/launch-menu-upsells.ts
           src/lib/launch-menu-desserts.ts
           src/lib/launch-menu-display-prices.ts
@@ -40,7 +40,7 @@ jobs:
           src/components/menus/launch-menu-app-nav.tsx
           src/components/ui/dialog.tsx src/components/ui/sheet.tsx
           src/components/menus/launch-basket-feedback.tsx
-          tests/launch-menu-catalogue.test.ts tests/launch-menu-picks.test.ts
+          tests/launch-menu-catalogue.test.ts tests/mealdeck-menu-item-descriptor.test.ts tests/launch-menu-picks.test.ts
           tests/launch-menu-upsells.test.ts
           tests/launch-menu-desserts.test.ts
           tests/launch-menu-navigation.test.ts
