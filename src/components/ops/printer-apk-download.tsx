@@ -26,7 +26,7 @@ export function PrinterApkDownload({ headingLevel = "h2" }: { headingLevel?: "h2
   const version = updatePublished ? "0.2.3" : "0.2.2";
 
   return (
-    <section className="md-ops-card space-y-4 p-4 sm:p-5" aria-label="Senraise H10S receipt app">
+    <section className="md-ops-card space-y-4 p-4 sm:p-5" aria-label="MealDeck H10S receipt app">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <p className="text-xs font-bold uppercase tracking-[.12em] md-ops-accent">
