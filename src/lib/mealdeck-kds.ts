@@ -89,6 +89,7 @@ export type KdsOrder = {
   deliveryContact?: { name: string; phone: string } | null;
   driverStatus?: "awaiting_driver" | "with_driver" | "delivered" | null;
   driverVersion?: string | null;
+  deliveryDeadlineAt?: string | null;
   driverHandoverAt?: string | null;
   deliveredAt?: string | null;
 };
@@ -392,6 +393,7 @@ function parseOrder(value: unknown): KdsOrder {
     ? choice(v["driverStatus"], ["awaiting_driver", "with_driver", "delivered"] as const)
     : null;
   const driverVersion = fulfilment === "delivery" ? version(v["driverVersion"]) : null;
+  const deliveryDeadlineAt = fulfilment === "delivery" ? timestamp(v["deliveryDeadlineAt"]) : null;
   const driverHandoverAt = fulfilment === "delivery" ? nullableTimestamp(v["driverHandoverAt"]) : null;
   const deliveredAt = fulfilment === "delivery" ? nullableTimestamp(v["deliveredAt"]) : null;
   if (fulfilment === "delivery" && ((driverStatus === "awaiting_driver" && driverHandoverAt !== null) ||
@@ -434,7 +436,7 @@ function parseOrder(value: unknown): KdsOrder {
       fulfilment === "pickup" || fulfilment === "curbside"
         ? parseKdsPickupContact(v["pickupContact"])
         : null,
-    ...(fulfilment === "delivery" ? {deliveryAddress,deliveryContact,driverStatus,driverVersion,driverHandoverAt,deliveredAt} : {}),
+    ...(fulfilment === "delivery" ? {deliveryAddress,deliveryContact,driverStatus,driverVersion,deliveryDeadlineAt,driverHandoverAt,deliveredAt} : {}),
   };
 }
 
