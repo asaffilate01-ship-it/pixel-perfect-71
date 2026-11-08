@@ -66,3 +66,11 @@ The complete reviewed transaction from source commit `b7e680206b6796e716abb70135
 The production helper returned no offer at 14:59:59, the capped 99p offer at exactly 15:00:00 and at 22:59:59, and no offer at exactly 23:00:00. All ten normal cake amounts remain 399p. Kitchen settings, including `checkout_enabled = false`, `availability_state = closed`, 30-minute collection estimate and the original update timestamp, remained identical.
 
 The public menu before opening correctly continues to return ordinary 399p rows without active promotion metadata. A one-time read-only opening check is scheduled for 15:00 Europe/London. Frontend publication is tracked separately below.
+
+### Published site, 07:18 UTC
+
+Source PR [#153](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/153) was merged to main as `70632f8fa8fb459e710361f7a49393ac575c25a6` after the full source verification job passed. Both source verify runs subsequently passed. Publication PR [#154](https://github.com/asaffilate01-ship-it/pixel-perfect-71/pull/154) merged the reviewed tree into the existing connected hosting branch as `bededd5127ab21d4fc9a70b755b0ca4f99e2246c`, preserving both histories and the hosting-specific environment, signup and schema changes. The merged production build passed.
+
+The existing hosting project reported that exact commit ready before deployment `41e99557-ec76-4593-b970-73a6e15245f6` was requested. Production HTTP responses and a refreshed browser view at [mealdeck.co.uk/offers](https://mealdeck.co.uk/offers) subsequently showed the new 99p headline, T&Cs apply, the included 30% discount, one-per-order limit across both flavours/all brands, extra milkcakes at £3.99 before the ordinary 30%, and Sunday's 3pm–11pm hours. No £1.29 amount is advertised.
+
+The pricing rule is installed and the customer site is published ahead of the offer window. Actual active-window menu metadata will be checked at opening by the scheduled read-only check. No live customer order or payment was created for this verification, and kitchen opening remains an ordinary staff action.
