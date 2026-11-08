@@ -2,7 +2,7 @@
 
 The networked Android companion consumes MealDeck's existing receipt queue and
 uses the H10S built-in printer service. Its application ID is
-`uk.co.mealdeck.printer`, version `0.2.3` (code `5`) in the delivery release branch. The separate setup utility in
+`uk.co.mealdeck.printer`, version `0.2.3` (code `5`). The separate setup utility in
 `../mealdeck-printer-probe` and its published setup APK remain unchanged.
 
 `release-certificate.pem` contains only the public release certificate. Its
@@ -10,6 +10,33 @@ SHA-256 fingerprint is
 `0AA18A66B01CECBE0AA86C07A6EFA8693B5F01138278488D7DCE4A296B992EC8`.
 Future signed updates must match this identity. The private keystore and its
 password are retained separately and must never enter this repository.
+
+## v0.2.3 safe update
+
+The new receipt validator accepts **delivery** as well as collection and
+kerbside. Version 0.2.2 cannot reliably print delivery orders.
+
+Build verification creates an **unsigned** non-debuggable v0.2.3/build 5 APK
+first. It is *not* an installable update to the live v0.2.2 until the
+original owner's release key signs it. The manual
+`.github/workflows/publish-printer-v023.yml` publisher requires
+`MEALDECK_PRINTER_ORIGINAL_KEYSTORE_BASE64` and
+`MEALDECK_PRINTER_ORIGINAL_STORE_PASSWORD` as protected GitHub secrets,
+then verifies identical Android signing certificate fingerprints for
+both published v0.2.2 and candidate v0.2.3, plus this repository's public
+release certificate. Do **not** create a fresh signing key or uninstall
+v0.2.2; either breaks update compatibility and may lose the printer journal.
+
+When the signed APK and checksum exist, `/printer` automatically offers
+v0.2.3; otherwise it continues to offer v0.2.2. After installing the update
+over v0.2.2 on the same H10S, verify one *actual* complete receipt including
+its footer before enabling customer delivery.
+
+### Delivery destination on the physical v0.2.3 slip
+
+The driver ticket prints the verified **DELIVER TO** street, number, optional flat and postcode, with the saved order name/phone. It uses the canonical saved local-driver quote via the existing authenticated printer-claim contact projection, **outside** the immutable paid receipt, SHA-256 receipt fingerprint and local printer journal. An absent, changed or invalid delivery address **holds** the print job for operator inspection; it must never print a seemingly complete delivery slip without the destination. Customer collection and kerbside print contracts retain their original contact shape.
+
+Install `deploy/mealdeck/post-install-migrations/20261108074000_mealdeck_printer_delivery_address.sql` only on the verified independent MealDeck database, **after** the local-driver delivery migration. Complete Android emulator, server receipt, QR/footer and real H10S paper checks before publishing and enabling delivery; no source commit alone commissions the printer.
 
 ## Operator flow
 
@@ -53,7 +80,6 @@ automatic consumer off when this companion is selected.
 - The claimed receipt is independently fetched again after `begin_send` and its
   normalized fingerprint must match before dispatch. A replayed or ambiguous
   claim/begin response never authorizes another send.
-- The updated v0.2.3 app accepts **paid, staff-accepted own-driver delivery** receipts through the same original queue and same single-bitmap print path. Receipt headings say **OWN DRIVER DELIVERY** with a delivery code; the order's independently verified saved delivery address, postcode, name and phone appear on the paper before items. The address is an authorised claim-bound private projection, never in the immutable priced receipt, journal, or customer-facing public data. If missing or inconsistent, the printer holds rather than printing an incomplete delivery ticket. Collection and kerbside still print unchanged.
 - The full branded receipt keeps the large logo, prominent order number and
   equally large collection code, customer name and saved phone, boxed copy
   reason, complete purchased/packing information, paid total and one rotating
@@ -122,13 +148,6 @@ complete shared bitmap through a recording Binder. A buffering receiver checks
 that every bitmap is followed by its own final feed before the next header.
 These checks do not simulate the
 H10S service's handling of a tall immutable bitmap or prove its paper output.
-
-## v0.2.3 release and signing
-
-- The source branch is **not a published APK**. v0.2.2 is the last signed version until the original-signing-identity workflow has successfully published a new immutable APK and SHA-256 manifest.
-- First install the guarded local-driver migration, then `deploy/mealdeck/post-install-migrations/20261108074000_mealdeck_printer_delivery_address.sql` on the **independent MealDeck** database only. The second migration does not change existing receipts or paid totals; verify exact function definitions and permissions before applying it. This is not part of ordinary front-end publication.
-- Merge approved v0.2.3 source into `main`, pass Android/emulator and KDS/checkout CI and execute `.github/workflows/publish-printer-v023.yml` with the original retained v0.2.2 release-signing keystore and password in protected Actions secrets. Do not create a new signing key for an update.
-- Do **not** enable own-driver delivery until one real paid delivery order is staff-accepted, one complete paper receipt with **DELIVER TO** address/phone and all purchased items prints once on the Senraise H10S, and all required recovery checks pass. Updating the APK must preserve the existing application installation and local print journal.
 
 ## Physical acceptance still required
 
