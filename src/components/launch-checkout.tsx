@@ -65,6 +65,7 @@ import {
 } from "@/lib/mealdeck-customer-browser";
 import { parseKerbsideVehicle, type MealDeckOpeningOffer } from "@/lib/mealdeck-opening-offer";
 import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timing";
+import { normaliseUkPostcode, parseOwnDriverAddress } from "@/lib/mealdeck-own-driver-delivery";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
   MAX_ORDER_NOTES_LENGTH,
@@ -108,7 +109,9 @@ import {
 
 const FULFILMENT_KEY = "mealdeck-checkout-fulfilment-v1";
 const ATTEMPT_KEY = "mealdeck-checkout-attempt-v2";
-type Fulfilment = "pickup" | "curbside";
+type Fulfilment = "pickup" | "curbside" | "delivery";
+type DeliveryAddressDraft = { postcode: string; doorNumber: string; roadName: string; addressLine2: string };
+type DeliveryArea = { postcode: string; eligible: boolean; distanceMetres: number };
 type PricedLine = {
   lineId: string;
   parentLineId: string | null;
@@ -135,6 +138,8 @@ type Quote = {
   discountPence: number;
   totalPence: number;
   collectionEstimateMinutes: number;
+  deliveryEstimateMinutes?: number;
+  deliveryFeePence?: number;
   lines: PricedLine[];
   openingOffer: MealDeckOpeningOffer;
   packingPlan: MealDeckPackingPlan;
@@ -155,6 +160,8 @@ type Receipt = {
   preparingAt: string | null;
   readyForCollectionAt: string | null;
   completedAt: string | null;
+  driverHandoverAt?: string | null;
+  deliveredAt?: string | null;
   estimatedReadyAt: string | null;
   serverNow: string;
   collectionEstimateMinutes: number;
@@ -170,6 +177,7 @@ type Receipt = {
 };
 type CheckoutStatus = {
   available: boolean;
+  fulfilments?: Fulfilment[];
   prelaunchVerification?: boolean;
   openingOffer: MealDeckOpeningOffer;
   guestCheckout: GuestCheckoutState;
@@ -183,6 +191,9 @@ type ApiResult = {
   message?: string;
   error?: string;
   guestCheckout?: GuestCheckoutState;
+  postcode?: string;
+  eligible?: boolean;
+  distanceMetres?: number;
 };
 
 function clock(value: string | null) {
@@ -648,6 +659,10 @@ function LaunchCheckoutView({
   const [basketLoaded, setBasketLoaded] = useState(false);
   const [fulfilment, setFulfilment] = useState<Fulfilment | null>(null);
   const [vehicle, setVehicle] = useState({ make: "", registrationLast4: "", colour: "" });
+  const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddressDraft>({postcode:"",doorNumber:"",roadName:"",addressLine2:""});
+  const [deliveryArea, setDeliveryArea] = useState<DeliveryArea | null>(null);
+  const [deliveryAreaIssue, setDeliveryAreaIssue] = useState<string | null>(null);
+  const [checkingDeliveryArea, setCheckingDeliveryArea] = useState(false);
   const [account, setAccount] = useState<CustomerAccountState | null>(null);
   const [accountIssue, setAccountIssue] = useState<string | null>(null);
   const [status, setStatus] = useState<CheckoutStatus | null>(null);
@@ -690,7 +705,6 @@ function LaunchCheckoutView({
   const [issue, setIssue] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [paymentPending, setPaymentPending] = useState(false);
-  const [deliveryNotice, setDeliveryNotice] = useState(false);
   const [cutleryRequested, setCutleryRequested] = useState(false);
   const [specialRequests, setSpecialRequests] = useState("");
   const [separateBags, setSeparateBags] = useState(false);
@@ -753,8 +767,15 @@ function LaunchCheckoutView({
     status.kitchen.collectionEstimateMinutes !== null;
   const guestEligible = orderingAvailable && status?.guestCheckout.eligible === true;
   const canViewReceipt = checkoutMode === "guest" ? Boolean(guestSession) : registered;
+  const deliveryReady = fulfilment !== "delivery" || (
+    status?.fulfilments?.includes("delivery") === true &&
+    parseOwnDriverAddress(deliveryAddress) !== null &&
+    deliveryArea?.eligible === true &&
+    deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode)
+  );
   const canCheckout =
     !whatsAppCheckout?.paused &&
+    deliveryReady &&
     !basketIssue &&
     picks.length > 0 &&
     orderingAvailable &&
@@ -777,7 +798,7 @@ function LaunchCheckoutView({
       ? "/checkout?group=1"
       : "/checkout";
   const sharedAvailable =
-    sharedCapabilities?.available === true &&
+    fulfilment !== "delivery" && sharedCapabilities?.available === true &&
     (checkoutMode !== "guest" || sharedCapabilities.guestEligible);
   const sharedReady =
     sharedAvailable && !sharedLoading && separateBags && bagCount >= 2 && bagCount <= 10;
@@ -855,7 +876,7 @@ function LaunchCheckoutView({
     try {
       if (!whatsAppDraft) {
         const saved = sessionStorage.getItem(FULFILMENT_KEY);
-        if (saved === "pickup" || saved === "curbside") setFulfilment(saved);
+        if (saved === "pickup" || saved === "curbside" || saved === "delivery") setFulfilment(saved);
       }
       if (
         !receiptMode &&
@@ -1202,12 +1223,40 @@ function LaunchCheckoutView({
     setQuote(null);
     setReviewConfirmed(false);
     setIssue(null);
-    setDeliveryNotice(false);
     try {
       sessionStorage.setItem(FULFILMENT_KEY, next);
     } catch {
       /* Current-screen selection still works. */
     }
+  }
+  async function checkDeliveryArea() {
+    const postcode = normaliseUkPostcode(deliveryAddress.postcode);
+    setDeliveryArea(null);
+    setDeliveryAreaIssue(null);
+    if (!postcode) {
+      setDeliveryAreaIssue("Enter a valid postcode, for example LU4 8NU.");
+      return;
+    }
+    setCheckingDeliveryArea(true);
+    try {
+      const result = await checkoutRequest("guest", { action: "delivery_area", postcode });
+      if (normaliseUkPostcode(deliveryAddress.postcode) !== postcode) return;
+      if (typeof result.eligible !== "boolean" || result.postcode !== postcode ||
+        typeof result.distanceMetres !== "number") throw new Error("Please check your postcode again.");
+      setDeliveryArea({postcode,eligible:result.eligible,distanceMetres:result.distanceMetres});
+      if (!result.eligible)
+        setDeliveryAreaIssue("Sorry, we are not currently delivering to your location. You can collect or choose kerbside pickup.");
+    } catch(error) {
+      setDeliveryAreaIssue(error instanceof Error ? error.message : "We couldn't check this postcode right now.");
+    } finally { setCheckingDeliveryArea(false); }
+  }
+  function changeDeliveryAddress(key: keyof DeliveryAddressDraft, value: string) {
+    setDeliveryAddress((current) => ({ ...current, [key]: value }));
+    if (key === "postcode") setDeliveryArea(null);
+    setDeliveryAreaIssue(null);
+    setQuote(null);
+    setReviewConfirmed(false);
+    attempt.current = null;
   }
   function updateBagCount(count: number) {
     if (whatsAppDraft) return;
@@ -1244,6 +1293,10 @@ function LaunchCheckoutView({
       );
       return;
     }
+    if (fulfilment === "delivery" && !deliveryReady) {
+      setIssue("Check your delivery postcode and full address before reviewing your total.");
+      return;
+    }
     if (fulfilment === "curbside" && !parseKerbsideVehicle(vehicle)) {
       setIssue("Enter the car make, colour and last 4 registration characters.");
       return;
@@ -1274,6 +1327,7 @@ function LaunchCheckoutView({
                 ...(crossSelections?.length ? { crossSelections } : {}),
               })),
               ...(fulfilment === "curbside" ? { vehicle } : {}),
+              ...(fulfilment === "delivery" ? { deliveryAddress: parseOwnDriverAddress(deliveryAddress) } : {}),
               ...(notes ? { notes } : {}),
               packing: {
                 cutleryRequested,
