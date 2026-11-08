@@ -6,6 +6,7 @@ import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { KdsPickupDetails } from "./kds-pickup-details";
 import { KdsMealComponents } from "./kds-meal-components";
 import { kdsModifierChoiceText, kdsSouvanoMainState } from "@/lib/mealdeck-kds-dish-clarity";
+import { kdsFlavourHighlight, kdsTavoChickenPreparation } from "@/lib/mealdeck-kds-flavour";
 
 /** Read-only durable history. No checklist, mutation, payment or print action. */
 export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
@@ -140,6 +141,37 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
                   </span>
                 </p>
               </div>
+              {kdsTavoChickenPreparation(item) && (
+                <p className="md-kds-tavo-preparation">{kdsTavoChickenPreparation(item)}</p>
+              )}
+              {!!item.modifiers.length && (
+                <ul className="md-kds-choices" aria-label={`Choices for ${item.item_name}`}>
+                  {item.modifiers.map((modifier, index) => {
+                    const visibleModifier = kdsModifierChoiceText(item, modifier);
+                    // Archived tickets may not have group metadata. Highlight
+                    // only explicitly labelled flavours or flavour + portion.
+                    const flavour = kdsFlavourHighlight(visibleModifier);
+                    return (
+                      <li
+                        key={`${index}:${modifier}`}
+                        className={flavour ? "md-kds-flavour-choice" : undefined}
+                      >
+                        {flavour ? (
+                          <div className="md-kds-flavour-main">
+                            <span className="md-kds-flavour-eyebrow">{flavour.label}</span>
+                            <strong className="md-kds-flavour-value">{flavour.value}</strong>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="md-kds-choice-mark" aria-hidden="true" />
+                            <span>{visibleModifier}</span>
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
               {item.unit_pence != null && (
                 <p className="md-kds-line-price">
                   <strong>£{(item.unit_pence / 100).toFixed(2)} each</strong>
@@ -166,16 +198,6 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
               )}
               {!item.bags?.length && item.participant_name && (
                 <p className="text-sm md-ops-text">For {item.participant_name}</p>
-              )}
-              {!!item.modifiers.length && (
-                <ul className="md-kds-choices" aria-label={`Choices for ${item.item_name}`}>
-                  {item.modifiers.map((modifier, index) => (
-                    <li key={index}>
-                      <span className="md-kds-choice-mark" aria-hidden="true" />
-                      <span>{kdsModifierChoiceText(item, modifier)}</span>
-                    </li>
-                  ))}
-                </ul>
               )}
               {item.notes && (
                 <div className="md-kds-note mt-2 flex items-start gap-2">
