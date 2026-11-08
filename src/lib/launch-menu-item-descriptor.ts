@@ -68,14 +68,14 @@ export function launchMenuItemDescriptor(
     // Fall back to the source cooking method, never a generic "chicken burger".
     // Do not infer a quantity from an ambiguous or optional description.
     const match = description.match(
-      /^(?:([1-9]\\d*)\\s+)?(buttermilk fried|spicy grilled)\\s+chicken\\s+(fillet|fillets)\\b/i,
+      /^(?:([1-9]\d*)\s+)?(buttermilk fried|spicy grilled)\s+chicken\s+(fillet|fillets)\b/i,
     );
     const count = match?.[1]
       ? Number(match[1])
       : match?.[3]?.toLowerCase() === "fillet"
         ? 1
         : null;
-    return count && match && !/\\b(?:add|extra|optional|upgrade|or)\\b/i.test(description)
+    return count && match && !/\b(?:add|extra|optional|upgrade|or)\b/i.test(description)
       ? `${count} ${match[2].toLowerCase()} chicken ${count === 1 ? "fillet" : "fillets"} in bun`
       : "Chicken fillet burger in bun";
   }
