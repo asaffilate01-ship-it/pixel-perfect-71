@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Truck } from "lucide-react";
-import { isMealDeckSundayDeliveryPreopen } from "@/lib/mealdeck-launch-schedule";
+import { isMealDeckSundayDeliveryPreopen, isMealDeckSundayDeliveryService } from "@/lib/mealdeck-launch-schedule";
 
 /** Public marketing appears only after the server confirms the driver checkout gate. */
 export function useOwnDriverAvailability() {
@@ -57,9 +57,22 @@ export function useOwnDriverPreopenNotice() {
   return preopen;
 }
 
+/** Sunday-specific marketing copy is displayed only during the actual service date. */
+export function useOwnDriverSundayServiceNotice() {
+  const [sundayHours, setSundayHours] = useState(false);
+  useEffect(() => {
+    const update = () => setSundayHours(isMealDeckSundayDeliveryService(Date.now()));
+    update();
+    const timer = window.setInterval(update, 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  return sundayHours;
+}
+
 export function OwnDriverOfferBanner() {
   const available = useOwnDriverAvailability();
   const preopen = useOwnDriverPreopenNotice();
+  const sundayHours = useOwnDriverSundayServiceNotice();
   if (!available && !preopen) return null;
   return (
     <div
@@ -71,16 +84,23 @@ export function OwnDriverOfferBanner() {
       <span>
         {available ? (
           <>
-            <strong>FREE delivery is now available!</strong> Within 3 km of LU4 8NU, with a minimum
-            payable order of £15 after all discounts. Our own driver · estimated within 60 minutes.
+            <strong>Due to popular demand: FREE delivery is now available!</strong>{" "}
+            {sundayHours
+              ? "Available during Sunday's opening hours, 3pm–11pm, for Luton collection, kerbside pickup and delivery."
+              : "Order for delivery, collection or kerbside pickup during Luton opening hours."}{" "}
+            Free delivery within 3 km of LU4 8NU on orders paying £15+ after discounts.
           </>
         ) : (
           <>
-            <strong>FREE delivery planned from 3pm today, Sunday 8 November!</strong> Within 3 km of
-            LU4 8NU, on orders paying £15+ after discounts. Starts once the kitchen, printer and
-            driver have passed their launch checks.
+            <strong>Due to popular demand: FREE delivery planned from 3pm today!</strong>{" "}
+            Sunday's opening hours: 3pm–11pm for Luton collection, kerbside pickup and eligible delivery.
+            Free delivery within 3 km of LU4 8NU on orders paying £15+ after discounts.
           </>
         )}
+        {" "}
+        <Link to="/delivery-terms" className="font-bold underline underline-offset-4">
+          Delivery T&amp;Cs apply
+        </Link>
       </span>
       <Link to="/menus" className="font-bold underline underline-offset-4">
         {available ? "Order delivery" : "Explore menus"}

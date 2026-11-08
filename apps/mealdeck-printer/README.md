@@ -5,11 +5,22 @@ uses the H10S built-in printer service. Its application ID is
 `uk.co.mealdeck.printer`, version `0.2.3` (code `5`). The separate setup utility in
 `../mealdeck-printer-probe` and its published setup APK remain unchanged.
 
-`release-certificate.pem` contains only the public release certificate. Its
-SHA-256 fingerprint is
-`0AA18A66B01CECBE0AA86C07A6EFA8693B5F01138278488D7DCE4A296B992EC8`.
-Future signed updates must match this identity. The private keystore and its
-password are retained separately and must never enter this repository.
+`release-certificate.pem` is the **historical v0.2.0** public release
+certificate (SHA-256 `0AA18A66B01CECBE0AA86C07A6EFA8693B5F01138278488D7DCE4A296B992EC8`).
+**The published v0.2.2 APK was signed with a different certificate**:
+`56BDF4173AC112FAB080C8A88485C31FB5D7FF3847C02AF314039CCB459D6D17`,
+confirmed by successful GitHub Actions run
+[`42428234548`](https://github.com/asaffilate01-ship-it/pixel-perfect-71/actions/runs/42428234548)
+and its APK SHA-256. A v0.2.3 update to an **installed v0.2.2** must match
+**that actual v0.2.2 certificate**, not the old v0.2.0 certificate.
+Before attempting any in-place update, confirm which certificate is installed
+on the H10S. Do not uninstall the application to work around a mismatch.
+
+The corresponding v0.2.2 private keystore and password were encrypted to
+`recovery-recipient.pem` and retained in the Actions artifact
+`mealdeck-printer-v0.2.2-signing-backup-encrypted` (ID `13596113904`,
+expires **8 December 2026**). That PEM contains **only the public recovery
+certificate**. It does not contain the private recovery key.
 
 ## v0.2.3 safe update
 
@@ -18,14 +29,26 @@ kerbside. Version 0.2.2 cannot reliably print delivery orders.
 
 Build verification creates an **unsigned** non-debuggable v0.2.3/build 5 APK
 first. It is *not* an installable update to the live v0.2.2 until the
-original owner's release key signs it. The manual
-`.github/workflows/publish-printer-v023.yml` publisher requires
-`MEALDECK_PRINTER_ORIGINAL_KEYSTORE_BASE64` and
-`MEALDECK_PRINTER_ORIGINAL_STORE_PASSWORD` as protected GitHub secrets,
-then verifies identical Android signing certificate fingerprints for
-both published v0.2.2 and candidate v0.2.3, plus this repository's public
-release certificate. Do **not** create a fresh signing key or uninstall
-v0.2.2; either breaks update compatibility and may lose the printer journal.
+original owner's release key signs it. The `.github/workflows/publish-printer-v023.yml` publisher accepts **one
+of two private recovery paths** through protected GitHub Actions secrets:
+
+1. Set both `MEALDECK_PRINTER_ORIGINAL_KEYSTORE_BASE64` (base64 of the
+   recovered original v0.2.2 `.p12`) and
+   `MEALDECK_PRINTER_ORIGINAL_STORE_PASSWORD` (the original keystore password).
+2. Alternatively, set `MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_BASE64` to
+   base64-encoded PEM bytes of the **matching private recovery key** whose
+   certificate is in `recovery-recipient.pem`. The workflow downloads
+   the historical encrypted artifact and decrypts it inside the temporary
+   GitHub runner, without logging or publishing the recovered signer.
+
+Only the holder of that private recovery key can use the second path. Neither
+the public certificate, encrypted backup nor existing APK can regenerate the
+missing private key. Never put a private key or password in code, chat, CI
+logs or a public artifact. The workflow verifies the published v0.2.2 APK
+checksum, requires the new APK to have the **same actual v0.2.2 signer**
+and checks the independent pinned signer fingerprint from run `42428234548`.
+Do **not** create a fresh signing key or uninstall an existing app; either
+breaks update compatibility and may lose the printer journal.
 
 When the signed APK and checksum exist, `/printer` automatically offers
 v0.2.3; otherwise it continues to offer v0.2.2. After installing the update

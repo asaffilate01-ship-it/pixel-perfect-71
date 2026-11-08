@@ -50,7 +50,7 @@ function OpeningOfferPage() {
             {deliveryLive
               ? "Collection and kerbside have no minimum; free driver delivery within 3 km of LU4 8NU requires £15 payable after all discounts."
               : deliveryPreopen
-                ? "Collection and kerbside have no minimum. Free own-driver delivery is planned from 3pm today, within 3 km of LU4 8NU and with a £15 minimum payable after all discounts, subject to final launch checks."
+                ? "Collection and kerbside have no minimum. Due to popular demand, FREE own-driver delivery is planned from 3pm today within 3 km of LU4 8NU, with a £15 minimum payable after all discounts."
                 : "Collection and kerbside pickup have no minimum order value."}{" "}
             The checkout shows your discount and final total before you pay.
           </p>
@@ -70,7 +70,7 @@ function OpeningOfferPage() {
             {deliveryLive
               ? "Due to popular demand, free delivery within 3 km of LU4 8NU for orders worth £15+ after discount, using our own driver. Collection and kerbside are also available at 314–318 Selbourne Road."
               : deliveryPreopen
-                ? "Free own-driver delivery is planned to start at 3pm on Sunday 8 November, once kitchen, driver and printer readiness are confirmed. The free 3 km service requires £15 payable after discounts. Until then, collection and kerbside are available during opening hours."
+                ? "Due to popular demand, FREE own-driver delivery is planned from 3pm on Sunday 8 November within 3 km of LU4 8NU for orders paying £15+ after discounts. Collection and kerbside remain available during opening hours."
                 : "Collection and kerbside pickup are available from 314–318 Selbourne Road, Luton, LU4 8NU."}{" "}
             St Albans and Bedford are coming in a future deck.
           </p>
