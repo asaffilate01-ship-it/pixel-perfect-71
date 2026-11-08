@@ -92,13 +92,13 @@ export function OwnDriverOfferBanner() {
             {sundayHours
               ? "Available during Sunday's opening hours, 3pm–11pm, for Luton collection, kerbside pickup and delivery."
               : "Order for delivery, collection or kerbside pickup during Luton opening hours."}{" "}
-            Free delivery within 3 km of LU4 8NU on orders paying £15+ after discounts.
+            Free delivery within 4 km of LU4 8NU on orders paying £15+ after discounts.
           </>
         ) : (
           <>
             <strong>Due to popular demand: FREE delivery from 3pm to 11pm today!</strong>{" "}
             Luton collection and kerbside pickup are also available during Sunday's opening hours.
-            Free delivery within 3 km of LU4 8NU on orders paying £15+ after discounts.
+            Free delivery within 4 km of LU4 8NU on orders paying £15+ after discounts.
           </>
         )}
         {" "}

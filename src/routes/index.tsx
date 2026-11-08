@@ -140,9 +140,9 @@ function LandingPage() {
               </div>
               <p className="md-hero-soon">
                 {deliveryLive
-                  ? "Due to popular demand: FREE delivery now available within 3 km of LU4 8NU on orders paying £15+ after discounts."
+                  ? "Due to popular demand: FREE delivery now available within 4 km of LU4 8NU on orders paying £15+ after discounts."
                   : deliveryPreopen
-                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 3 km of LU4 8NU on orders paying £15+ after discounts."
+                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 4 km of LU4 8NU on orders paying £15+ after discounts."
                     : "Luton collection and kerbside, from our kitchen to you."}
               </p>
               <div className="md-hero-proof">
@@ -311,9 +311,9 @@ function LandingPage() {
               <h3>{deliveryLive ? "Free local delivery · Live" : deliveryPreopen ? "Free delivery · 3pm–11pm today" : "Delivery · Coming soon"}</h3>
               <p>
                 {deliveryLive
-                  ? "Due to popular demand: free own-driver delivery within 3 km of LU4 8NU for £15+ after discounts. Estimated within one hour, without GPS tracking."
+                  ? "Due to popular demand: free own-driver delivery within 4 km of LU4 8NU for £15+ after discounts. Estimated within one hour, without GPS tracking."
                   : deliveryPreopen
-                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 3 km of LU4 8NU on orders paying at least £15 after discounts. Delivery T&Cs apply."
+                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 4 km of LU4 8NU on orders paying at least £15 after discounts. Delivery T&Cs apply."
                     : "Delivery is not available at the moment. Please select collection or kerbside."}
               </p>
             </article>
@@ -369,7 +369,7 @@ function LandingPage() {
               <p>
                 Order online during kitchen opening hours.{" "}
                 {deliveryLive &&
-                  "Free delivery is available to eligible postcodes within 3 km with £15 payable after discounts."}
+                  "Free delivery is available to eligible postcodes within 4 km with £15 payable after discounts."}
               </p>
             </div>
             <Link to="/menus" className="md-btn md-btn-yellow">
