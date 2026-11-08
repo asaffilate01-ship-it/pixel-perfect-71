@@ -358,13 +358,22 @@ function ReceiptProgress({ receipt }: { receipt: Receipt }) {
     const timer = setInterval(tick, 30_000);
     return () => clearInterval(timer);
   }, [receipt.paidAt, receipt.serverNow]);
-  const stages = [
-    { label: "Placed", at: receipt.paidAt },
-    { label: "Accepted", at: receipt.acceptedAt },
-    { label: "Preparing", at: receipt.preparingAt },
-    { label: "Ready", at: receipt.readyForCollectionAt },
-    { label: "Completed", at: receipt.completedAt },
-  ];
+  const stages = receipt.fulfilment === "delivery"
+    ? [
+        { label: "Placed", at: receipt.paidAt },
+        { label: "Accepted", at: receipt.acceptedAt },
+        { label: "Preparing", at: receipt.preparingAt },
+        { label: "Ready", at: receipt.readyForCollectionAt },
+        { label: "Handed to driver", at: receipt.driverHandoverAt ?? null },
+        { label: "Delivered", at: receipt.deliveredAt ?? null },
+      ]
+    : [
+        { label: "Placed", at: receipt.paidAt },
+        { label: "Accepted", at: receipt.acceptedAt },
+        { label: "Preparing", at: receipt.preparingAt },
+        { label: "Ready", at: receipt.readyForCollectionAt },
+        { label: "Completed", at: receipt.completedAt },
+      ];
   const count = stages.filter((stage) => stage.at).length;
   return (
     <section className="md-checkout-progress" aria-label="Order progress">
@@ -385,11 +394,11 @@ function ReceiptProgress({ receipt }: { receipt: Receipt }) {
         role="progressbar"
         aria-label="Order progress"
         aria-valuemin={0}
-        aria-valuemax={5}
+        aria-valuemax={stages.length}
         aria-valuenow={count}
         aria-valuetext={stages[Math.max(0, count - 1)]?.label}
       >
-        <span style={{ width: `${count * 20}%` }} />
+        <span style={{ width: `${(count / stages.length) * 100}%` }} />
       </div>
       <ol>
         {stages.map((stage) => (
@@ -405,10 +414,16 @@ function ReceiptProgress({ receipt }: { receipt: Receipt }) {
       <p>
         {receipt.completedAt
           ? "Thanks for ordering with MealDeck. Enjoy your food."
-          : receipt.readyForCollectionAt
-            ? "Your complete order is packed and ready. Give your collection code to the team at handover."
+          : receipt.fulfilment === "delivery" && receipt.driverHandoverAt
+            ? "Your order is with our driver. We will update this page when delivery is confirmed."
+            : receipt.fulfilment === "delivery" && receipt.readyForCollectionAt
+              ? "Your order is packed and ready for our driver."
+            : receipt.readyForCollectionAt
+              ? "Your complete order is packed and ready. Give your collection code to the team at handover."
             : receipt.preparingAt
-              ? "The kitchen is preparing your brands together for one collection."
+              ? receipt.fulfilment === "delivery"
+                ? "The kitchen is preparing your brands for delivery."
+                : "The kitchen is preparing your brands together for one collection."
               : receipt.acceptedAt
                 ? "The kitchen has accepted your order. We'll update this page as it progresses."
                 : "Payment confirmed. Your order is with the kitchen, awaiting acceptance."}
@@ -418,9 +433,10 @@ function ReceiptProgress({ receipt }: { receipt: Receipt }) {
 }
 
 function PriceSummary({
-  total,
+  total, fulfilment,
 }: {
   total: Pick<Quote, "grossPence" | "discountPence" | "totalPence">;
+  fulfilment?: Fulfilment | null;
 }) {
   return (
     <dl className="md-checkout-totals">
@@ -435,7 +451,7 @@ function PriceSummary({
         </div>
       )}
       <div>
-        <dt>Collection / kerbside pickup</dt>
+        <dt>{fulfilment === "delivery" ? "Own-driver delivery" : "Collection / kerbside pickup"}</dt>
         <dd>Free</dd>
       </div>
       <div className="md-checkout-total">
@@ -1529,7 +1545,9 @@ function LaunchCheckoutView({
             </h1>
             <p>
               {orderId
-                ? "One kitchen. All your favourites. One collection."
+                ? receipt?.fulfilment === "delivery"
+                  ? "Your food is prepared and delivered by the MealDeck team."
+                  : "One kitchen. All your favourites. One collection."
                 : whatsAppDraft
                   ? "Confirm your checkout details, review the total and pay securely."
                   : "Choose delivery, collection or kerbside and pay securely without registering."}
@@ -1712,7 +1730,7 @@ function LaunchCheckoutView({
                         <small>Use this number when speaking to our team.</small>
                       </div>
                     )}
-                    {receipt.verifiedPaid && receipt.handoffCode && (
+                    {receipt.verifiedPaid && receipt.handoffCode && receipt.fulfilment !== "delivery" && (
                       <div className="md-checkout-collection-code">
                         <span>Collection code</span>
                         <strong>{receipt.handoffCode}</strong>
@@ -1722,10 +1740,11 @@ function LaunchCheckoutView({
                     {receipt.verifiedPaid && !receipt.completedAt && (
                       <p className="md-checkout-estimate">
                         <Clock3 size={18} />
-                        Approx. pickup {clock(receipt.estimatedReadyAt)}
+                        {receipt.fulfilment === "delivery" ? "Delivery within 60 minutes of payment (estimated)" : "Approx. pickup " + clock(receipt.estimatedReadyAt)}
                         <small>
-                          About {receipt.collectionEstimateMinutes} minutes from payment. Follow the
-                          live ready status before collecting.
+                          {receipt.fulfilment === "delivery"
+                            ? "Our own driver will deliver within the Luton delivery area. There is no live GPS tracking."
+                            : `About ${receipt.collectionEstimateMinutes} minutes from payment. Follow the live ready status before collecting.`}
                         </small>
                       </p>
                     )}
@@ -1824,11 +1843,11 @@ function LaunchCheckoutView({
                   <h2>Your order</h2>
                   <p className="md-checkout-location">
                     <MapPin size={16} />
-                    Luton · {receipt.fulfilment === "curbside" ? "Kerbside pickup" : "Collection"}
+                    Luton · {receipt.fulfilment === "delivery" ? "Free delivery" : receipt.fulfilment === "curbside" ? "Kerbside pickup" : "Collection"}
                   </p>
                   <DetailedOrderLines lines={receipt.lines} packingPlan={receipt.packingPlan} />
                   <CheckoutSpecialRequestsReview notes={receipt.notes ?? null} />
-                  <PriceSummary total={receipt} />
+                  <PriceSummary total={receipt} fulfilment={receipt.fulfilment} />
                 </aside>
               </div>
             )}
@@ -2591,7 +2610,7 @@ function LaunchCheckoutView({
                     />
                   )}
                   {quote ? (
-                    <PriceSummary total={quote} />
+                    <PriceSummary total={quote} fulfilment={fulfilment} />
                   ) : (
                     <dl className="md-checkout-totals">
                       <div className="md-checkout-total">
@@ -2616,7 +2635,7 @@ function LaunchCheckoutView({
                       <>
                         <p className="md-checkout-muted">
                           <Clock3 size={16} />
-                          Approx. {quote.collectionEstimateMinutes} minutes after{" "}
+                          {fulfilment === "delivery" ? "Delivery within 60 minutes" : `Approx. ${quote.collectionEstimateMinutes} minutes`} after{" "}
                           {paymentChoice === "host"
                             ? "payment"
                             : "all required payments are confirmed"}
