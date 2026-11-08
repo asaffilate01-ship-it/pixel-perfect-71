@@ -52,8 +52,8 @@ jobs:
           # apksigner consumes password-file streams independently. The old
           # v0.2.2 publisher reused a single EOF-exhausted file for both
           # --ks-pass and --key-pass and failed at the key-password read.
-          printf '%s\\n' "$STORE_PASSWORD" > "$RUNNER_TEMP/mealdeck-printer-original-storepass.txt"
-          printf '%s\\n' "$STORE_PASSWORD" > "$RUNNER_TEMP/mealdeck-printer-original-keypass.txt"
+          printf '%s\n' "$STORE_PASSWORD" > "$RUNNER_TEMP/mealdeck-printer-original-storepass.txt"
+          printf '%s\n' "$STORE_PASSWORD" > "$RUNNER_TEMP/mealdeck-printer-original-keypass.txt"
           test -s "$RUNNER_TEMP/mealdeck-printer-original-release.p12"
 
       - name: Build and test printer v0.2.3 with the complete receipt renderer
