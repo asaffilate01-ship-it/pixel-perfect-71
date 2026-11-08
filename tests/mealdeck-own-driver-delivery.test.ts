@@ -87,7 +87,7 @@ describe("MealDeck own-driver delivery safeguards", () => {
   });
   test("geocoder failure denies delivery rather than approving any postcode", async () => {
     const bad = (async () => Response.json({ status: 500 }, { status: 500 })) as typeof fetch;
-    await expect(checkOwnDriverArea("LU4 8NR", bad)).rejects.toBeInstanceOf(
+    await expect(checkOwnDriverArea("LU4 8ZX", bad)).rejects.toBeInstanceOf(
       OwnDriverPostcodeUnavailable,
     );
   });
@@ -103,14 +103,14 @@ describe("MealDeck own-driver delivery safeguards", () => {
         status: "match",
         match_type: "unit_postcode",
         data: {
-          postcode: code === "LU48NU" ? "LU4 8NU" : "LU4 8NR",
+          postcode: code === "LU48NU" ? "LU4 8NU" : "LU4 8ZX",
           status: "live",
           latitude: "51.893",
           longitude: code === "LU48NU" ? "-0.459" : "-0.458",
         },
       });
     }) as typeof fetch;
-    const result = await checkOwnDriverArea("lu4 8nr", backup);
+    const result = await checkOwnDriverArea("lu4 8zx", backup);
     expect(result.eligible).toBe(true);
     expect(requested.filter((url) => url.startsWith("https://api.getthedata.com/"))).toHaveLength(1);
   });
@@ -125,7 +125,7 @@ describe("MealDeck own-driver delivery safeguards", () => {
         data: { postcode: "SW1A 1AA", status: "live", latitude: "51.5", longitude: "-0.1" },
       });
     }) as typeof fetch;
-    await expect(checkOwnDriverArea("LU4 8NR", mismatched)).rejects.toBeInstanceOf(
+    await expect(checkOwnDriverArea("LU4 8ZX", mismatched)).rejects.toBeInstanceOf(
       OwnDriverPostcodeUnavailable,
     );
   });
@@ -162,6 +162,35 @@ describe("MealDeck own-driver delivery safeguards", () => {
     expect(origin.distanceMetres).toBe(0);
     expect(destination.eligible).toBe(true);
     expect(calls).toBe(0);
+  });
+
+  test("local directory checks real LU postcodes inside and outside 3 km without internet", async () => {
+    let networkCalls = 0;
+    const disconnected = (async () => {
+      networkCalls += 1;
+      throw new Error("network disconnected");
+    }) as typeof fetch;
+    for (const postcode of ["LU1 1AA", "LU3 1AA", "LU1 5AA"]) {
+      const area = await checkOwnDriverArea(postcode, disconnected);
+      expect(area.postcode).toBe(postcode);
+      expect(area.eligible).toBe(true);
+      expect(area.distanceMetres).toBeLessThanOrEqual(3000);
+    }
+    for (const postcode of ["LU2 0AA", "LU5 4AA"]) {
+      const area = await checkOwnDriverArea(postcode, disconnected);
+      expect(area.eligible).toBe(false);
+      expect(area.distanceMetres).toBeGreaterThan(3000);
+    }
+    expect(networkCalls).toBe(0);
+  });
+
+  test("local directory never guesses postcode membership from LU prefix", async () => {
+    const down = (async () => {
+      throw new Error("providers unavailable");
+    }) as typeof fetch;
+    await expect(checkOwnDriverArea("LU4 8ZX", down)).rejects.toBeInstanceOf(
+      OwnDriverPostcodeUnavailable,
+    );
   });
 
   test("unknown UK postcode is rejected when both services confirm it does not exist", async () => {
