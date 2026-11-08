@@ -17,8 +17,8 @@ describe("MealDeck keyboard navigation", () => {
     expect(root).toContain("<Outlet />");
     expect(root).toContain("<SkipToMainContent />");
   });
-  test("mobile navigation labels collection ordering and the active page", () => {
-    expect(tabs).toContain("Order Now — browse MealDeck menus for Luton collection or kerbside");
+  test("mobile navigation labels ordering without restricting delivery and shows the active page", () => {
+    expect(tabs).toContain("Order Now — browse MealDeck menus");
     expect(tabs).toContain('aria-current={dealActive ? "page" : undefined}');
     expect(tabs).toContain("focus-visible:outline");
   });
