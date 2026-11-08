@@ -34,7 +34,7 @@ function LutonPage() {
         deliveryLive
           ? "Free delivery within 3 km of LU4 8NU on orders £15+ after discounts"
           : deliveryPreopen
-            ? "Due to popular demand: FREE delivery planned from 3pm today within 3 km of LU4 8NU; £15 minimum after discounts"
+            ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 3 km of LU4 8NU; £15 minimum after discounts. Delivery T&Cs apply"
             : "Delivery currently unavailable",
       ]}
       includeCafe1={false}
