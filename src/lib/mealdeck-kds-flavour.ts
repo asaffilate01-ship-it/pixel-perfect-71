@@ -15,7 +15,9 @@ function groupKind(group: string): KdsFlavourHighlight["label"] | null {
     return "FLAVOUR & PORTION";
   }
   if (
-    /^(?:(?:wing|chicken|milkshake|drink)\s+)?flavou?r(?: \((?:grilled|fried) wings\))?$/i.test(label)
+    /^(?:(?:wing|chicken|milkshake|drink)\s+)?flavou?r(?: \((?:grilled|fried) wings\))?$/i.test(
+      label,
+    )
   ) {
     return "FLAVOUR";
   }
@@ -41,7 +43,7 @@ export function kdsFlavourHighlight(
   // labels or a known flavour+portion pair, never a bare sauce name.
   const label = group
     ? groupKind(group)
-    : prefixKind ?? (legacyPortionFlavour.test(original) ? "FLAVOUR & PORTION" : null);
+    : (prefixKind ?? (legacyPortionFlavour.test(original) ? "FLAVOUR & PORTION" : null));
   if (!label) return null;
 
   const value = prefixKind === label ? original.slice(separator + 1).trim() : original;

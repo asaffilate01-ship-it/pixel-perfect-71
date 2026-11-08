@@ -38,7 +38,11 @@ import { KdsMealComponents } from "./kds-meal-components";
 import { KdsTicketGrid } from "./kds-ticket-grid";
 import { KdsOrderNavigator } from "./kds-order-navigator";
 import { kdsFlavourHighlight } from "@/lib/mealdeck-kds-flavour";
-import { kdsModifierChoiceText, kdsModifierGroupLabel, kdsSouvanoMainState } from "@/lib/mealdeck-kds-dish-clarity";
+import {
+  kdsModifierChoiceText,
+  kdsModifierGroupLabel,
+  kdsSouvanoMainState,
+} from "@/lib/mealdeck-kds-dish-clarity";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import { isOrderNumber, orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
@@ -1447,7 +1451,11 @@ export function KitchenOrderCard({
                                 : "MAIN DISH"}
                             </span>
                           )}
-                          <span className={kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined}>
+                          <span
+                            className={
+                              kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined
+                            }
+                          >
                             {item.item_name}
                           </span>
                         </p>
@@ -1516,8 +1524,12 @@ export function KitchenOrderCard({
                                 >
                                   {flavour ? (
                                     <div className="md-kds-flavour-main">
-                                      <span className="md-kds-flavour-eyebrow">{flavour.label}</span>
-                                      <strong className="md-kds-flavour-value">{flavour.value}</strong>
+                                      <span className="md-kds-flavour-eyebrow">
+                                        {flavour.label}
+                                      </span>
+                                      <strong className="md-kds-flavour-value">
+                                        {flavour.value}
+                                      </strong>
                                     </div>
                                   ) : (
                                     <>
@@ -1526,8 +1538,12 @@ export function KitchenOrderCard({
                                         {groupName &&
                                           !visibleModifier
                                             .toLocaleLowerCase("en-GB")
-                                            .startsWith(`${groupName.toLocaleLowerCase("en-GB")}:`) && (
-                                            <span className="md-kds-choice-group">{groupName}: </span>
+                                            .startsWith(
+                                              `${groupName.toLocaleLowerCase("en-GB")}:`,
+                                            ) && (
+                                            <span className="md-kds-choice-group">
+                                              {groupName}:{" "}
+                                            </span>
                                           )}
                                         {visibleModifier}
                                         {detail && !priceVariant && (

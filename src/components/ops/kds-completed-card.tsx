@@ -113,13 +113,22 @@ export function KdsCompletedCard({ order }: { order: KdsCompletedOrder }) {
               <p className="mb-1 text-xs font-bold uppercase md-ops-accent">{item.brand_name}</p>
               <div className="md-kds-line-title">
                 <span className="md-ops-ticket-quantity md-kds-quantity">{item.quantity}×</span>
-                <p className={kdsSouvanoMainState(item) ? "md-kds-souvano-main" : undefined} data-main-state={kdsSouvanoMainState(item) ?? undefined}>
+                <p
+                  className={kdsSouvanoMainState(item) ? "md-kds-souvano-main" : undefined}
+                  data-main-state={kdsSouvanoMainState(item) ?? undefined}
+                >
                   {kdsSouvanoMainState(item) && (
                     <span className="md-kds-souvano-main-label">
-                      {kdsSouvanoMainState(item) === "verify-main" ? "VERIFY MAIN — check order record" : "MAIN DISH"}
+                      {kdsSouvanoMainState(item) === "verify-main"
+                        ? "VERIFY MAIN — check order record"
+                        : "MAIN DISH"}
                     </span>
                   )}
-                  <span className={kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined}>{item.item_name}</span>
+                  <span
+                    className={kdsSouvanoMainState(item) ? "md-kds-souvano-main-name" : undefined}
+                  >
+                    {item.item_name}
+                  </span>
                 </p>
               </div>
               {item.unit_pence != null && (
