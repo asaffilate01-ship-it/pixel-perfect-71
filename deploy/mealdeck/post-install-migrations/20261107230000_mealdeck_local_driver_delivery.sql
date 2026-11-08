@@ -340,6 +340,60 @@ begin
     'generatedAt',now(),'orders',cards,'remainingOrderCount',remaining);
 end $$;
 
+CREATE OR REPLACE FUNCTION public.mealdeck_ops_kds_workflow_board(p_tenant uuid, p_location uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare board jsonb; completed jsonb:='[]'::jsonb; extra integer:=0;
+  candidate record; evidence jsonb; card jsonb;
+begin
+  -- Retain the existing live identity, location permission and paid-release
+  -- checks. This read does not create receipts or perform any transition.
+  board:=public.mealdeck_ops_kds_board(p_tenant,p_location);
+  if board->>'readiness'='ready' then
+    for candidate in
+      select o.id,p.handed_off_at from public.orders o
+      join public.mealdeck_pass_orders p on p.order_id=o.id
+        and p.tenant_id=o.tenant_id and p.location_id=o.location_id
+      where o.tenant_id=p_tenant and o.location_id=p_location
+        and o.source='mealdeck' and o.status='fulfilled'
+        and o.payment_status='paid' and o.paid_at is not null
+        and o.accepted_at is not null and p.status='handed_off'
+        and p.handed_off_at>=now()-interval '12 hours' and p.handed_off_at<=now()
+        and p.handed_off_at>=o.accepted_at
+      order by p.handed_off_at desc,o.id
+    loop
+      -- A completed status alone is not evidence of a verified payment. Holds,
+      -- refunds and disputes remain governed by the canonical payment ledger.
+      evidence:=mealdeck_private.kds_release_authority(candidate.id);
+      if evidence->'eligible' is distinct from 'true'::jsonb
+        or evidence->'schema_version' is distinct from '1'::jsonb
+        or evidence->>'order_id' is distinct from candidate.id::text
+        or evidence->>'tenant_id' is distinct from p_tenant::text
+        or evidence->>'location_id' is distinct from p_location::text
+        or evidence->>'source' is distinct from 'mealdeck' then continue; end if;
+      if jsonb_array_length(completed)>=100 then extra:=extra+1; continue; end if;
+      perform mealdeck_ops_private.kds_assert_instructions(candidate.id);
+      card:=mealdeck_ops_private.kds_order_card(candidate.id,evidence);
+      completed:=completed||jsonb_build_array(jsonb_build_object(
+        'order_number',card->'order_number','order_id',card->'order_id','display_code',card->'display_code',
+        'order_status','fulfilled','handoff_status','handed_off',
+        'accepted_at',card->'accepted_at','completed_at',candidate.handed_off_at,
+        'fulfilment',card->'fulfilment','group_order',card->'group_order','pickupContact',card->'pickupContact',
+        'deliveryAddress',card->'deliveryAddress','deliveryContact',card->'deliveryContact',
+        'driverStatus',card->'driverStatus','deliveryDeadlineAt',card->'deliveryDeadlineAt',
+        'driverHandoverAt',card->'driverHandoverAt','deliveredAt',card->'deliveredAt',
+        'cutlery_requested',coalesce(card->'cutlery_requested','false'::jsonb),
+        'notes',card->'notes','items',card->'items'));
+    end loop;
+  end if;
+  return board||jsonb_build_object('completed_orders',completed,
+    'completed_remaining_order_count',extra,'completed_window_hours',12);
+end
+$function$;
+
 -- Only signed-in kitchen staff with orders.status may hand an entirely packed
 -- and verified-paid delivery to their own driver, then confirm delivery.
 create or replace function public.mealdeck_ops_kds_transition_local_driver(
@@ -426,20 +480,23 @@ returns jsonb language sql stable security definer set search_path='' as $$
   select mealdeck_private.checkout_receipt_for_identity(p_order,p_customer,null)
 $$;
 
-create or replace function public.mealdeck_guest_order_receipt(
-  p_tenant uuid,p_location uuid,p_token_hash text,p_order uuid
-) returns jsonb language plpgsql stable security definer set search_path='' as $$
+CREATE OR REPLACE FUNCTION public.mealdeck_guest_order_receipt(p_tenant uuid, p_location uuid, p_token_hash text, p_order uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
 declare g mealdeck_private.guest_sessions%rowtype;
 begin
   g:=mealdeck_private.guest_session_authority(p_tenant,p_location,p_token_hash);
   if g.id is null then raise exception 'mealdeck_checkout_guest_session_invalid'; end if;
-  if not exists(
-    select 1 from public.orders o join mealdeck_private.stripe_orders s on s.order_id=o.id
-    where o.id=p_order and o.tenant_id=p_tenant and o.location_id=p_location
-      and s.guest_id=g.id and o.customer_id is null and o.guest_checkout
-  ) then raise exception 'mealdeck_checkout_order_unavailable'; end if;
+  if not exists(select 1 from public.orders o where o.id=p_order and o.tenant_id=p_tenant and o.location_id=p_location
+    and o.customer_id is null and o.guest_checkout and (
+      exists(select 1 from mealdeck_private.stripe_orders s where s.order_id=o.id and s.guest_id=g.id)
+      or exists(select 1 from mealdeck_private.payment_orders p where p.order_id=o.id and p.guest_id=g.id and p.staff_id is null))) then
+    raise exception 'mealdeck_checkout_order_unavailable'; end if;
   return mealdeck_private.checkout_receipt_for_identity(p_order,null,g.id);
-end $$;
+end $function$;
 revoke all on function public.mealdeck_customer_order_receipt(uuid,uuid),
   public.mealdeck_guest_order_receipt(uuid,uuid,text,uuid)
   from public,anon,authenticated,service_role;
