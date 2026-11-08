@@ -40,6 +40,10 @@ public final class ReceiptModelTest {
                 if (endings != 1) throw new AssertionError(name + " footer must occur once");
             }
         }
+        JSONObject delivery = new JSONObject(valid.getJSONObject(0).getJSONObject("input").toString());
+        delivery.put("fulfilment", "delivery").put("car", JSONObject.NULL);
+        equal("delivery", ReceiptModel.parse(delivery).toJson().getString("fulfilment"),
+            "Native own-driver receipt accepted with no vehicle");
         JSONArray invalid = golden.getJSONArray("invalid");
         for (int n = 0; n < invalid.length(); n++) {
             JSONObject example = invalid.getJSONObject(n);
