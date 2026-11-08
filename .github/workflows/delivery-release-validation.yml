@@ -9,7 +9,7 @@ on:
       - 'tests/mealdeck-own-driver-payment.test.ts'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: mealdeck-delivery-release-validation
   cancel-in-progress: false
@@ -21,8 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feat/own-driver-luton-delivery
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -34,24 +35,12 @@ jobs:
           bun-version: '1.4.4'
       - name: Install pinned source and receipt-artwork test dependencies
         run: |
-          git config user.name 'MealDeck Release Bot'
-          git config user.email 'release-bot@mealdeck.co.uk'
           bun install --frozen-lockfile
           python -m pip install --disable-pip-version-check 'Pillow==12.0.0'
-      - name: Apply reviewed source fixes and consistent printer version
+      - name: Verify tested source is the immutable pull-request commit
         run: |
-          node scripts/prepare-printer-v023.mjs
-          node scripts/finalise-own-driver-release.mjs
-          # Source changes only; the runner does not have workflow-write scope.
-          git restore --worktree .github/workflows/verify.yml
-      - name: Commit reviewed source and version metadata only
-        run: |
-          git add src tests apps/mealdeck-printer
-          if ! git diff --cached --quiet; then
-            git commit -m 'release(printer): prepare delivery-compatible v0.2.3 and regression fixtures'
-          fi
-          git push origin HEAD:feat/own-driver-luton-delivery
-          echo "Validated candidate: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          echo "Read-only validation: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
       - name: Run all focused release checks without skipping later diagnostics
         shell: bash
         run: |
