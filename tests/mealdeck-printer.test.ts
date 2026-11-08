@@ -767,3 +767,14 @@ describe("printer paper confirmation recovery", () => {
     expect(browserConfirmed).toBe(true);
   });
 });
+
+test("delivery receipt validates and renders as own-driver delivery", () => {
+  const candidate = { ...receipt(), fulfilment: "delivery" as const, car: null };
+  expect(receiptSchema.parse(candidate).fulfilment).toBe("delivery");
+  expect(validateReceipt(candidate).fulfilment).toBe("delivery");
+  const html = renderToStaticMarkup(createElement(ReceiptPreview, { receipt: candidate }));
+  expect(html).toContain("OWN DRIVER DELIVERY");
+  expect(html).toContain("DELIVERY CODE");
+  expect(html).not.toContain("KERBSIDE");
+  expect(receiptSchema.safeParse({ ...candidate, car: receipt().car }).success).toBe(false);
+});
