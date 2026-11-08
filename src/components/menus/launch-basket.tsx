@@ -1,4 +1,6 @@
 import { usePublicMenu } from "./use-public-menu";
+import { MilkcakeOfferTerms } from "./milkcake-offer-terms";
+import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
 import { useEffect, useId, useRef, type CSSProperties } from "react";
 import { Bookmark, ChevronUp, Minus, Plus, RotateCcw, ShoppingBag, Trash2 } from "lucide-react";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
@@ -13,8 +15,8 @@ import {
 import { launchCrossSelectionSummaries } from "@/lib/launch-menu-upsells";
 import {
   formatLaunchMenuPrice,
-  launchMenuBasketDisplayPrice,
-  launchMenuPickDisplayPrice,
+  formatLaunchPromotionalPrice,
+  launchMenuOfferBasketDisplayPrice,
 } from "@/lib/launch-menu-display-prices";
 
 export type LaunchBasketStorageStatus = "checking" | "saved" | "session";
@@ -80,7 +82,8 @@ export function LaunchBasket({
 }) {
   const { catalogue } = usePublicMenu();
   const total = launchPickCount(picks);
-  const basketPrice = launchMenuBasketDisplayPrice(picks, catalogue);
+  const basketPrice = launchMenuOfferBasketDisplayPrice(picks, catalogue);
+  const hasMilkcakeOffer = basketPrice.hasMilkcakeOffer;
   const clearButtonRef = useRef<HTMLButtonElement>(null);
   const undoButtonRef = useRef<HTMLButtonElement>(null);
   const emptyHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -172,7 +175,7 @@ export function LaunchBasket({
               const found = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
               if (!found) return null;
               const controlName = found.item.name + " from " + found.section.title;
-              const price = launchMenuPickDisplayPrice(pick, catalogue);
+              const price = basketPrice.lines[index]!;
               const groups = launchItemGroups(found.brand, found.item);
               const children = launchCrossSelectionSummaries(
                 found.brand,
@@ -204,14 +207,33 @@ export function LaunchBasket({
                   </div>
                   <div className="lmb-item-price">
                     <span>
-                      {formatLaunchMenuPrice(price.baseUnitPence)} each × {pick.quantity}
+                      {price.promotionQuantity ? (
+                        <>
+                          1 × 99p
+                          {pick.quantity > 1 && ` + ${pick.quantity - 1} × £3.99 before 30% off`}
+                        </>
+                      ) : (
+                        <>
+                          {formatLaunchMenuPrice(price.baseUnitPence)} each × {pick.quantity}
+                          {isMealDeckMilkcakePromotion(found.item.promotion) &&
+                            " · Additional milkcake, before 30% off"}
+                        </>
+                      )}
                     </span>
                     <strong>
                       {found.item.available === false
                         ? "Currently unavailable — remove or replace this item"
-                        : formatLaunchMenuPrice(price.baseLinePence)}
+                        : formatLaunchPromotionalPrice(
+                            price.displayedBaseLinePence,
+                            price.promotionQuantity ? found.item.promotion : undefined,
+                          )}
                     </strong>
                   </div>
+                  {isMealDeckMilkcakePromotion(found.item.promotion) && (
+                    <p className="lmb-promotion">
+                      <MilkcakeOfferTerms explained />
+                    </p>
+                  )}
                   {price.options.length > 0 && (
                     <dl className="lmb-option-prices" aria-label={"Options for " + controlName}>
                       {price.options.map((option) => (
@@ -322,6 +344,13 @@ export function LaunchBasket({
             </p>
             {basketPrice.hasPaidChoices && (
               <p>Includes your selected upgrades, add-ons and extras.</p>
+            )}
+            {hasMilkcakeOffer && (
+              <p>
+                Includes one 99p milkcake with its discount. Additional milkcakes are £3.99 each
+                before the usual 30% discount. The discount on the remaining eligible items and
+                extras is confirmed at checkout.
+              </p>
             )}
             <p>
               Choose collection, kerbside or eligible free local delivery at checkout. Your final
