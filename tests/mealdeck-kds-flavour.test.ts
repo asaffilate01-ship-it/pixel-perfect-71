@@ -44,22 +44,25 @@ describe("KDS flavour prominence", () => {
     });
   });
 
-
   test("identifies Tavo's exact purchased fried and grilled fillet preparations", () => {
     expect(kdsTavoChickenPreparation({ brand_name: "Tavo Chicken", item_name: "Cruncher" })).toBe(
       "1 buttermilk fried chicken fillet in bun",
     );
-    expect(kdsTavoChickenPreparation({ brand_name: "Tavo Chicken", item_name: "Twin Crunch" })).toBe(
-      "2 buttermilk fried chicken fillets in bun",
-    );
+    expect(
+      kdsTavoChickenPreparation({ brand_name: "Tavo Chicken", item_name: "Twin Crunch" }),
+    ).toBe("2 buttermilk fried chicken fillets in bun");
     expect(kdsTavoChickenPreparation({ brand_name: "Tavo Chicken", item_name: "Flame" })).toBe(
       "1 spicy grilled chicken fillet in bun",
     );
     expect(kdsTavoChickenPreparation({ brand_name: "Tavo Chicken", item_name: "Big Flame" })).toBe(
       "2 spicy grilled chicken fillets in bun",
     );
-    expect(kdsTavoChickenPreparation({ brand_name: "Another brand", item_name: "Flame" })).toBeNull();
-    expect(kdsTavoChickenPreparation({ brand_name: "Tavo Chicken", item_name: "Mystery" })).toBeNull();
+    expect(
+      kdsTavoChickenPreparation({ brand_name: "Another brand", item_name: "Flame" }),
+    ).toBeNull();
+    expect(
+      kdsTavoChickenPreparation({ brand_name: "Tavo Chicken", item_name: "Mystery" }),
+    ).toBeNull();
   });
 
   test("makes Tavo wing/tender flavours verifiable, with portion and grilled status", () => {

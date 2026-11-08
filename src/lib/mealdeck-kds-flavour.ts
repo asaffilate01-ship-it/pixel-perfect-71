@@ -73,9 +73,10 @@ export function kdsTavoChickenPreparation(item: TavoMenuIdentity): string | null
   return tavoBurgerPreparation[item.item_name.trim().toLocaleLowerCase("en-GB")] ?? null;
 }
 
-type TavoFlavourReviewItem = TavoMenuIdentity & Pick<KdsOrderItem, "modifiers"> & {
-  modifier_details?: KdsOrderItem["modifier_details"];
-};
+type TavoFlavourReviewItem = TavoMenuIdentity &
+  Pick<KdsOrderItem, "modifiers"> & {
+    modifier_details?: KdsOrderItem["modifier_details"];
+  };
 
 /**
  * Never invent a wing/tender flavour from a sauce named Dynamite or BBQ.

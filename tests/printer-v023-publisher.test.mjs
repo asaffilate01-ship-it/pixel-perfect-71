@@ -25,7 +25,7 @@ test("H10S v0.2.3 reuses original Android signer, never creates a new key", () =
   assert.match(release, /MEALDECK_PRINTER_RECOVERY_PRIVATE_KEY_PEM/);
   assert.match(release, /openssl pkey -in/);
   assert.match(release, /gh run download 42428234548/);
-  assert.match(release, /mealdeck-printer-v0\\.2\\.2-signing-backup-encrypted/);
+  assert.match(release, /mealdeck-printer-v0\.2\.2-signing-backup-encrypted/);
   assert.match(release, /openssl cms -decrypt/);
   assert.match(release, /versionCode='5' versionName='0\.2\.3'/);
 });
