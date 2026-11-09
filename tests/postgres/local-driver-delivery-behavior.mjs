@@ -24,6 +24,9 @@ try {
   await db.exec(readFileSync(
     new URL("../../deploy/mealdeck/post-install-migrations/20261108154500_mealdeck_driver_pwa_dispatch.sql",import.meta.url),"utf8"
   ));
+  await db.exec(readFileSync(
+    new URL("../../deploy/mealdeck/post-install-migrations/20261109234500_mealdeck_driver_verified_email_lookup.sql",import.meta.url),"utf8"
+  ));
   await setGuestFixtureClock(db, "2026-11-06T16:00:00Z");
   const token = guestTokenHash("isolated-own-driver-guest-one");
   const stranger = guestTokenHash("isolated-own-driver-guest-two");
@@ -280,6 +283,22 @@ try {
       "public.mealdeck_driver_portal()"
     ]),false);
     await assert.rejects(()=>driverActor("mealdeck_driver_portal"),/mealdeck_driver_forbidden/);
+  });
+  await check("only authorised managers can resolve an existing verified driver by exact email",async()=>{
+    const fn="public.mealdeck_ops_driver_find_verified_email(uuid,uuid,text)";
+    assert.equal(await scalar("select has_function_privilege('anon',$1,'EXECUTE')",[fn]),false);
+    await db.query("update auth.users set email_confirmed_at=now() where id=$1",[f.customer]);
+    const lookup=(email)=>asActor(db,f.owner,()=>scalar(
+      "select public.mealdeck_ops_driver_find_verified_email($1,$2,$3)",
+      [f.tenantId,f.locationId,email]
+    ));
+    assert.deepEqual(await lookup("fixture-109@example.invalid"),{found:true,userId:f.customer});
+    assert.deepEqual(await lookup("not-a-driver@example.invalid"),{found:false,userId:null});
+    await assert.rejects(()=>asActor(db,f.customer,()=>scalar(
+      "select public.mealdeck_ops_driver_find_verified_email($1,$2,$3)",
+      [f.tenantId,f.locationId,"fixture-109@example.invalid"]
+    )),/mealdeck_ops_forbidden/);
+    await assert.rejects(()=>lookup("not-an-email"),/mealdeck_driver_email_invalid/);
   });
   await check("owner enrols a real driver, who starts shift and sees no unrelated jobs",async()=>{
     await asActor(db,f.owner,()=>scalar(
