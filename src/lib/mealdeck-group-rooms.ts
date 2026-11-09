@@ -87,6 +87,11 @@ export const groupOrderRoomSchema = z
     phase: z.enum(["collecting", "ready", "payment", "cancelled"]),
     paymentMode: mode,
     joinDeadline: instant,
+    /** Server-enforced 30-minute pre-payment room deadline. */
+    unpaidRoomExpiresAt: instant.nullable().optional(),
+    /** Set only by canonical cancellation or confirmed order handoff. */
+    closedAt: instant.nullable().optional(),
+    closeReason: z.enum(["unpaid_timeout", "all_left", "fulfilled", "cancelled"]).nullable().optional(),
     invitationsClosed: z.boolean(),
     serverNow: instant,
     createdAt: instant,
@@ -126,6 +131,12 @@ export const groupOrderRoomSchema = z
       room.readyCount !== room.people.filter((entry) => entry.state === "ready").length
     )
       invalid("The participant counts are inconsistent.");
+    if ((room.closedAt == null) !== (room.closeReason == null))
+      invalid("The room closing state is incomplete.");
+    if (room.unpaidRoomExpiresAt && room.orderId !== null)
+      invalid("An order already locked for payment must not have a draft timeout.");
+    if (room.closeReason === "fulfilled" && room.orderId === null)
+      invalid("A fulfilled room must have a confirmed order.");
     if (
       (room.orderId === null) !== (room.paymentRoomId === null) ||
       (room.paymentRoomId !== null && room.paymentRoomId !== room.roomId)
