@@ -71,6 +71,12 @@ function millisAtLondonMinute(day: LondonTime, minuteOfDay: number): number | nu
   return timestamp;
 }
 
+/** Pre-order opens at 13:00, but physical fulfilment cannot precede actual kitchen hours. */
+function lutonKitchenOpeningMinute(day: LondonTime): number {
+  const weekday = new Date(Date.UTC(day.year, day.month - 1, day.day)).getUTCDay();
+  return weekday >= 1 && weekday <= 4 ? 17 * 60 : 16 * 60;
+}
+
 function asInstant(value: Date | string | number): number {
   if (value instanceof Date) return value.getTime();
   if (typeof value === "number") return value;
@@ -90,7 +96,12 @@ export function mealDeckScheduledSlots(
   if (!day || !rule || day.hour * 60 + day.minute < MEALDECK_SCHEDULE_OPEN_MINUTE)
     return [];
   const result: MealDeckScheduledSlot[] = [];
-  const firstMinute = MEALDECK_SCHEDULE_OPEN_MINUTE + rule.leadMinutes;
+  // Meals cannot be prepared or handed out before Luton opens: Monday–Thursday
+  // 17:00, Friday–Sunday 16:00. Scheduling orders can still be PLACED from 13:00.
+  const firstMinute = Math.max(
+    MEALDECK_SCHEDULE_OPEN_MINUTE + rule.leadMinutes,
+    lutonKitchenOpeningMinute(day) + rule.leadMinutes,
+  );
   for (let minute = firstMinute; minute <= rule.lastMinute; minute += MEALDECK_SCHEDULE_STEP_MINUTES) {
     const fulfilmentAt = millisAtLondonMinute(day, minute);
     const prepStartAt = millisAtLondonMinute(day, minute - rule.prepMinutes);
