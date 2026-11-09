@@ -1,5 +1,4 @@
 import {
-  decodeLaunchPicks,
   encodeLaunchPicks,
   LAUNCH_PICKS_STORAGE_KEY,
   type LaunchMenuPick,
