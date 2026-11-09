@@ -89,12 +89,13 @@ begin
     whatsapp_marketing=p_whatsapp,
     whatsapp_marketing_phone=case when p_whatsapp then p.phone else null end,
     updated_at=clock_timestamp() where user_id=v_user;
-  if previous_sms is distinct from p_sms then
+  if previous_sms is distinct from p_sms or p.sms_marketing is distinct from p_sms then
     insert into mealdeck_private.customer_message_consent_events(
       user_id,channel,allowed,previous_allowed,notice_version,source)
     values(v_user,'sms_marketing',p_sms,previous_sms,p_notice_version,p_source);
   end if;
-  if previous_whatsapp is distinct from p_whatsapp then
+  if previous_whatsapp is distinct from p_whatsapp
+    or p.whatsapp_marketing is distinct from p_whatsapp then
     insert into mealdeck_private.customer_message_consent_events(
       user_id,channel,allowed,previous_allowed,notice_version,source)
     values(v_user,'whatsapp_marketing',p_whatsapp,previous_whatsapp,p_notice_version,p_source);
