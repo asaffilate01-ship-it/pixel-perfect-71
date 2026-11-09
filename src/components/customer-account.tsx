@@ -30,7 +30,9 @@ import {
 import {
   CustomerAccountError,
   EMPTY_CUSTOMER_PREFERENCES,
+  EMPTY_CUSTOMER_MESSAGE_PREFERENCES,
   validateCustomerRegistration,
+  type CustomerMessagePreferences,
   type CustomerCapabilities,
   type CustomerPreferences,
   type CustomerRegistration,
@@ -68,22 +70,43 @@ function errorMessage(reason: unknown) {
 function Preferences({
   value,
   onChange,
+  messagePreferences,
+  onMessageChange,
   disabled = false,
 }: {
   value: CustomerPreferences;
   onChange: (next: CustomerPreferences) => void;
+  messagePreferences: CustomerMessagePreferences;
+  onMessageChange: (next: CustomerMessagePreferences) => void;
   disabled?: boolean;
 }) {
   return (
-    <fieldset className="md-account-preferences" disabled={disabled}>
+    <fieldset
+      id="account-notification-choices"
+      className="md-account-preferences"
+      disabled={disabled}
+      aria-describedby="account-choice-help"
+    >
       <legend>
-        Make it your deck <span>Optional</span>
+        Notification &amp; marketing choices <span>All optional</span>
       </legend>
-      <p>
-        As a registered member, choose what you hear from MealDeck, a trading name of 313 Brands
-        Ltd. Offer emails and app alerts need your separate opt-in. You can change these choices at
-        any time.
+      <p id="account-choice-help">
+        Choose only what you want. All switches start off. We always send essential
+        verification and order-confirmation messages, regardless of these options.
       </p>
+      <p className="md-account-pref-group-title">Order updates</p>
+      <label>
+        <input
+          type="checkbox"
+          checked={value.orderNotifications}
+          onChange={(event) => onChange({ ...value, orderNotifications: event.target.checked })}
+        />
+        <span>
+          <strong>Order progress notifications</strong>
+          <small>Get updates when your order is accepted, prepared or ready. App permission is required.</small>
+        </span>
+      </label>
+      <p className="md-account-pref-group-title">Deals and offers</p>
       <label>
         <input
           type="checkbox"
@@ -92,7 +115,7 @@ function Preferences({
         />
         <span>
           <strong>Offers by email</strong>
-          <small>Send me MealDeck promotions, loyalty offers and menu news by email.</small>
+          <small>Receive occasional promotions and new menu announcements.</small>
         </span>
       </label>
       <label>
@@ -102,28 +125,39 @@ function Preferences({
           onChange={(event) => onChange({ ...value, pushMarketing: event.target.checked })}
         />
         <span>
-          <strong>Offers in the app</strong>
-          <small>
-            Send me promotional push notifications. This needs a separate device permission.
-          </small>
+          <strong>Offers as app notifications</strong>
+          <small>You also need to enable notifications on this device after saving your choices.</small>
         </span>
       </label>
       <label>
         <input
           type="checkbox"
-          checked={value.orderNotifications}
-          onChange={(event) => onChange({ ...value, orderNotifications: event.target.checked })}
+          checked={messagePreferences.smsMarketing}
+          onChange={(event) =>
+            onMessageChange({ ...messagePreferences, smsMarketing: event.target.checked })
+          }
         />
         <span>
-          <strong>Order progress alerts</strong>
-          <small>
-            Use push notifications for updates about my orders. These are separate from promotions.
-          </small>
+          <strong>Offers by SMS</strong>
+          <small>Optional marketing texts to your saved mobile number when this channel is available.</small>
+        </span>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={messagePreferences.whatsappMarketing}
+          onChange={(event) =>
+            onMessageChange({ ...messagePreferences, whatsappMarketing: event.target.checked })
+          }
+        />
+        <span>
+          <strong>Offers by WhatsApp</strong>
+          <small>Optional marketing via WhatsApp when available. This choice does not verify WhatsApp ownership.</small>
         </span>
       </label>
       <p className="md-account-fine">
-        Marketing is never required for registration, ordering or loyalty membership.
-        Essential verification and order messages are separate.
+        These choices never affect membership or loyalty points. You can withdraw consent at
+        any time. SMS and WhatsApp options do not themselves activate a message campaign.
       </p>
     </fieldset>
   );
