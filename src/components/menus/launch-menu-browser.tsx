@@ -5,7 +5,7 @@ import { MilkcakeOfferTerms } from "./milkcake-offer-terms";
 import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { ArrowRight, ChevronRight, Layers3, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SiteHeader } from "@/components/site-header";
@@ -411,6 +411,26 @@ export function LaunchMenuBrowser({
           ".",
         tone: "info",
       });
+    }
+  }
+
+  function proceedToCheckout(event: MouseEvent<HTMLAnchorElement>) {
+    const live = expireTimedLaunchBasket(basketRef.current);
+    if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null || !live.picks.length
+      || live.picks.length !== picks.length
+      || live.picks.some((pick, index) => pick.key !== picks[index]?.key || pick.quantity !== picks[index]?.quantity)) {
+      event.preventDefault();
+      acceptBasket(live);
+      setNotice({ message: LAUNCH_BASKET_EXPIRY_NOTICE, tone: "info" });
+      return;
+    }
+    try {
+      prepareLaunchCheckout(live.picks, live);
+      setPicksOpen(false);
+    } catch {
+      event.preventDefault();
+      acceptBasket(expireTimedLaunchBasket(basketRef.current));
+      setNotice({ message: LAUNCH_BASKET_EXPIRY_NOTICE, tone: "info" });
     }
   }
 
@@ -850,19 +870,12 @@ export function LaunchMenuBrowser({
                       <Link
                         to="/checkout"
                         className="lm-primary"
-                        onClick={(event) => {
-                          if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null) {
-                            event.preventDefault();
-                            return;
-                          }
-                          prepareLaunchCheckout(picks, basketRef.current);
-                        }}
+                        onClick={proceedToCheckout}
                       >
                         Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
                       </Link>
                       <p>
-                        Opening offer: 30% off the entire menu during our 6–8 November opening
-                        hours.{" "}
+                        Basket items expire after five minutes.{" "}
                         {deliveryLive
                           ? "Collection and kerbside have no minimum; free delivery requires £15 after the discount within 4 km of LU4 8NU."
                           : "No minimum order for collection or kerbside."}{" "}
@@ -1090,14 +1103,7 @@ export function LaunchMenuBrowser({
                   <Link
                     to="/checkout"
                     className="lm-primary"
-                    onClick={(event) => {
-                      if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null) {
-                        event.preventDefault();
-                        return;
-                      }
-                      prepareLaunchCheckout(picks, basketRef.current);
-                      setPicksOpen(false);
-                    }}
+                    onClick={proceedToCheckout}
                   >
                     Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
                   </Link>
