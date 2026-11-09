@@ -31,9 +31,16 @@ describe("MealDeck scheduled order release policy", () => {
     expect(scheduledTimeLabel(mealDeckScheduledSlots("2026-11-09T13:00:01Z", "pickup")[0]!.fulfilmentAt)).toBe("14:00");
     expect(scheduledTimeLabel(mealDeckScheduledSlots("2026-11-09T13:01:00Z", "delivery")[0]!.fulfilmentAt)).toBe("14:30");
     expect(mealDeckScheduledSlots("2026-11-09T22:00:00Z", "delivery")).toEqual([]);
-    expect(mealDeckScheduledSlots("2026-11-09T22:00:00Z", "pickup")).toEqual([]);
-    expect(mealDeckScheduledSlots("2026-11-09T21:59:59Z", "pickup")).toEqual([]);
-    expect(mealDeckScheduledSlots("2026-11-09T21:45:00Z", "pickup")).toEqual([]);
+    expect(mealDeckScheduledSlots("2026-11-09T22:00:01Z", "pickup")).toEqual([]);
+    expect(mealDeckScheduledSlots("2026-11-09T22:00:00Z", "pickup").map(
+      (slot) => scheduledTimeLabel(slot.fulfilmentAt),
+    )).toEqual(["22:45"]);
+    expect(mealDeckScheduledSlots("2026-11-09T21:59:59Z", "pickup").map(
+      (slot) => scheduledTimeLabel(slot.fulfilmentAt),
+    )).toEqual(["22:45"]);
+    expect(mealDeckScheduledSlots("2026-11-09T21:45:00Z", "pickup").map(
+      (slot) => scheduledTimeLabel(slot.fulfilmentAt),
+    )).toEqual(["22:30", "22:45"]);
   });
 
   test("rejects late paid, invalid or off-grid checkout claims", () => {
