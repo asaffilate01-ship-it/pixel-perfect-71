@@ -558,13 +558,19 @@ function CustomerSettings({
   const [name, setName] = useState(profile.name ?? "");
   const [phone, setPhone] = useState(profile.phone ?? "");
   const [preferences, setPreferences] = useState({ ...profile.preferences });
+  const [messages, setMessages] = useState<CustomerMessagePreferences>({
+    ...(profile.messagePreferences ?? EMPTY_CUSTOMER_MESSAGE_PREFERENCES),
+  });
   const [busy, setBusy] = useState(false);
   const [device, setDevice] = useState<CustomerDeviceNotifications>("off");
   const [deviceLoading, setDeviceLoading] = useState(true);
   const pushReady = capabilities.pushReady && Boolean(pushPublicKey);
-  const preferencesChanged = (Object.keys(preferences) as (keyof CustomerPreferences)[]).some(
-    (key) => preferences[key] !== profile.preferences[key],
-  );
+  const preferencesChanged =
+    (Object.keys(preferences) as (keyof CustomerPreferences)[]).some(
+      (key) => preferences[key] !== profile.preferences[key],
+    ) ||
+    messages.smsMarketing !== (profile.messagePreferences?.smsMarketing ?? false) ||
+    messages.whatsappMarketing !== (profile.messagePreferences?.whatsappMarketing ?? false);
   useEffect(() => {
     let active = true;
     void readCustomerDeviceNotifications()
@@ -591,13 +597,14 @@ function CustomerSettings({
         phone,
         email: profile.email,
         preferences,
+        messagePreferences: messages,
       });
       if (!preferences.pushMarketing && !preferences.orderNotifications) {
         await disableCustomerDeviceNotifications().catch(() => {});
         setDevice("off");
       }
       onSaved(saved);
-      onMessage("Your details and preferences are saved.");
+      onMessage("Saved. Your account and notification choices are up to date.");
     } catch (reason) {
       onError(reason);
     } finally {
@@ -663,9 +670,19 @@ function CustomerSettings({
             setPhone={setPhone}
             disabled={busy}
           />
-          <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
+          <div className="md-account-section-heading" id="account-notifications-heading">
+            <Bell size={20} aria-hidden="true" />
+            <h2>Notifications and messages</h2>
+          </div>
+          <Preferences
+            value={preferences}
+            onChange={setPreferences}
+            messagePreferences={messages}
+            onMessageChange={setMessages}
+            disabled={busy}
+          />
           <button type="submit" className="md-account-primary" disabled={busy}>
-            {busy ? "Saving…" : "Save details & preferences"}
+            {busy ? "Saving…" : "Save my choices"}
             <Check size={18} aria-hidden="true" />
           </button>
         </form>
@@ -673,8 +690,9 @@ function CustomerSettings({
       <section className="md-account-panel" aria-labelledby="account-device-heading">
         <div className="md-account-section-heading">
           <Bell size={21} aria-hidden="true" />
-          <h2 id="account-device-heading">Notifications on this device</h2>
+          <h2 id="account-device-heading">Enable app notifications</h2>
         </div>
+        <p className="md-account-fine">Step 1: choose and save app or order alerts above. Step 2: allow notifications on your phone.</p>
         <p>
           {device === "connected"
             ? "Connected. You’ll receive only the types of notification saved in your preferences."
@@ -710,17 +728,17 @@ function CustomerSettings({
               }
               onClick={() => void changeDevice(true)}
             >
-              <Bell size={18} aria-hidden="true" /> Allow notifications
+              <Bell size={18} aria-hidden="true" /> Enable on this device
             </button>
             {(preferencesChanged ||
               (!profile.preferences.pushMarketing && !profile.preferences.orderNotifications)) && (
               <p className="md-account-fine">
-                Choose and save an app notification type above first.
+                Choose app offers or order progress above, then select Save my choices before enabling this device.
               </p>
             )}
           </>
         ) : (
-          <span className="md-account-soon">Coming soon</span>
+          <p role="status">This device is not ready for push notifications. Your preferences can still be saved.</p>
         )}
       </section>
       <section
