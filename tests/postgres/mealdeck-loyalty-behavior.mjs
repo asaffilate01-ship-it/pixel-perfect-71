@@ -49,6 +49,11 @@ try {
     ).rows;
     assert.equal(tables.length,names.length);
     assert.ok(tables.every(t=>t.relrowsecurity && !t.anon && !t.customer && !t.service));
+    const backfillAccess = (await db.query(`select
+      has_function_privilege('authenticated','mealdeck_private.backfill_member_loyalty_since_20261109(integer)','EXECUTE') as customer,
+      has_function_privilege('anon','mealdeck_private.backfill_member_loyalty_since_20261109(integer)','EXECUTE') as guest,
+      has_function_privilege('service_role','mealdeck_private.backfill_member_loyalty_since_20261109(integer)','EXECUTE') as service`)).rows[0];
+    assert.deepEqual(backfillAccess, {customer:false,guest:false,service:false});
   });
 
   const quote = await f.quote({
@@ -61,7 +66,31 @@ try {
     assert.equal(await count("select count(*)::integer total from mealdeck_private.customer_loyalty_ledger"),0);
   });
   await f.bind(order.orderId);
-  await test("verified payment earns one point per complete £1 after discounts, exactly once", async () => {
+  await test("a late loyalty activation can backfill verified paid member orders exactly once", async () => {
+    // Simulate a Stripe payment processed BEFORE installing the earning trigger.
+    // Never simulate this against a hosted or real payment database.
+    await db.exec("alter table public.orders disable trigger mealdeck_customer_loyalty_paid_order");
+    try {
+      await f.reconcile(order, { event: "evt_loyaltyfirst", hash: "1".repeat(64) });
+    } finally {
+      await db.exec("alter table public.orders enable trigger mealdeck_customer_loyalty_paid_order");
+    }
+    assert.equal(await count("select count(*)::integer total from mealdeck_private.customer_loyalty_ledger"), 0);
+    await assert.rejects(
+      () => db.query("select mealdeck_private.backfill_member_loyalty_since_20261109(101)"),
+      /mealdeck_loyalty_owner_backfill_only/,
+    );
+    const first = (await db.query("select mealdeck_private.backfill_member_loyalty_since_20261109(50) as result")).rows[0].result;
+    assert.equal(first.ordersAwarded, 1);
+    assert.equal(first.ordersConsidered, 1);
+    const second = (await db.query("select mealdeck_private.backfill_member_loyalty_since_20261109(50) as result")).rows[0].result;
+    assert.equal(second.ordersAwarded, 0);
+    assert.equal(
+      await count("select coalesce(sum(points),0)::integer total from mealdeck_private.customer_loyalty_ledger where user_id=$1", [f.customer]),
+      Math.floor(order.totalPence/100),
+    );
+  });
+  await test("verified webhook replays cannot duplicate a backfilled paid award", async () => {
     await f.reconcile(order, { event: "evt_loyaltyfirst", hash: "1".repeat(64) });
     assert.equal(
       await count("select coalesce(sum(points),0)::integer total from mealdeck_private.customer_loyalty_ledger where user_id=$1", [f.customer]),
