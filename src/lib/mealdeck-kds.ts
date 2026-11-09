@@ -1,4 +1,5 @@
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
+import { scheduledKdsTopNote, type ScheduleSlot } from "./mealdeck-scheduled-orders";
 import { isOrderNumber } from "./mealdeck-order-number";
 import { mealComponentsSchema, type MealComponent } from "./mealdeck-meal-components";
 import { parseOwnDriverAddress, type OwnDriverAddress } from "./mealdeck-own-driver-delivery";
@@ -76,6 +77,8 @@ export type KdsOrder = {
   fulfilment: "delivery" | "pickup" | "curbside" | "dine_in";
   notes: string | null;
   group_order: boolean;
+  /** Present only after server-verified full payment and kitchen release. */
+  scheduled?: ScheduleSlot;
   routing_complete: boolean;
   blocked_reason: "routing_incomplete" | null;
   items: KdsOrderItem[];
@@ -394,6 +397,20 @@ function parseOrder(value: unknown): KdsOrder {
   )
     invalid();
   if (v["order_number"] != null && !isOrderNumber(v["order_number"])) invalid();
+  let scheduled: ScheduleSlot | null = null;
+  if (v["scheduled"] != null) {
+    const r = record(v["scheduled"]);
+    scheduled = {
+      serviceDate: text(r["serviceDate"], 10),
+      fulfilment: choice(r["fulfilment"], ["pickup", "curbside", "delivery"] as const),
+      time: text(r["time"], 5),
+      slotAt: timestamp(r["slotAt"]),
+      prepStartsAt: timestamp(r["prepStartsAt"]),
+      preparationMinutes: integer(r["preparationMinutes"], 30) as 30 | 60,
+    };
+    if (scheduled.fulfilment !== fulfilment ||
+        !scheduledKdsTopNote(scheduled, true)) invalid();
+  }
   const deliveryAddress =
     fulfilment === "delivery" ? parseOwnDriverAddress(v["deliveryAddress"]) : null;
   const deliveryContact =
@@ -430,6 +447,7 @@ function parseOrder(value: unknown): KdsOrder {
     fulfilment,
     notes: nullableText(v["notes"], 20000),
     group_order: flag(v["group_order"]),
+    ...(scheduled ? { scheduled } : {}),
     routing_complete: routingComplete,
     blocked_reason: blockedReason,
     items,
