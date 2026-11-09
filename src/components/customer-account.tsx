@@ -57,6 +57,8 @@ import {
   enableCustomerDeviceNotifications,
   readCustomerDeviceNotifications,
   type CustomerDeviceNotifications,
+  type CustomerPushStage,
+  withCustomerPushDeadline,
 } from "@/lib/mealdeck-customer-notifications";
 
 function errorMessage(reason: unknown) {
@@ -553,6 +555,7 @@ function CustomerSettings({
   const [device, setDevice] = useState<CustomerDeviceNotifications>("off");
   const [deviceLoading, setDeviceLoading] = useState(true);
   const [deviceIssue, setDeviceIssue] = useState("");
+  const [pushStage, setPushStage] = useState<CustomerPushStage | null>(null);
   const pushReady = capabilities.pushReady && Boolean(pushPublicKey);
   const preferencesChanged = (Object.keys(preferences) as (keyof CustomerPreferences)[]).some(
     (key) => preferences[key] !== profile.preferences[key],
@@ -597,16 +600,21 @@ function CustomerSettings({
     if (busy) return;
     setBusy(true);
     setDeviceIssue("");
+    setPushStage(null);
     try {
       if (enable) {
         if (!pushPublicKey) throw new CustomerAccountError(
           "unavailable",
           "The notification connection is not ready. Retry the connection first.",
         );
-        await enableCustomerDeviceNotifications(pushPublicKey);
+        await enableCustomerDeviceNotifications(pushPublicKey, setPushStage);
         // A browser permission prompt alone is not enough: confirm the
         // authenticated server now owns this exact device endpoint.
-        if (await readCustomerDeviceNotifications() !== "connected")
+        if (await withCustomerPushDeadline(
+          readCustomerDeviceNotifications(),
+          "Confirming your phone is registered",
+          12_000,
+        ) !== "connected")
           throw new CustomerAccountError(
             "unavailable",
             "Notification permission was accepted, but we could not verify this device. Retry after reloading the app.",
@@ -622,6 +630,7 @@ function CustomerSettings({
       setDeviceIssue(reason instanceof Error ? reason.message : "Device notifications could not be connected.");
       onError(reason);
     } finally {
+      setPushStage(null);
       setBusy(false);
     }
   }
@@ -767,6 +776,19 @@ function CustomerSettings({
               </button>
             )}
           </>
+        )}
+        {pushStage && (
+          <p className="md-account-fine" role="status" aria-live="polite">
+            {pushStage === "permission"
+              ? "Check your browser for the Allow notifications prompt. If it doesn't appear, check the site's permission settings."
+              : pushStage === "worker"
+                ? "Connecting the MealDeck app on this phone…"
+                : pushStage === "subscription"
+                  ? "Creating the secure browser notification connection…"
+                  : pushStage === "saving"
+                    ? "Saving your phone to your verified MealDeck account…"
+                    : "Checking the server confirms this phone is registered…"}
+          </p>
         )}
         {deviceIssue && <p className="md-account-notice md-account-error" role="alert">{deviceIssue}</p>}
       </section>
