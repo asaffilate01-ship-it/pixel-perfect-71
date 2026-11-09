@@ -938,12 +938,15 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 @media (max-width: 1160px) {
   .md-own-driver-offer-inner {
     grid-template-columns: minmax(0, 1fr);
-    padding-inline: 24px;
   }
   .md-own-driver-offer-actions {
     justify-content: flex-start;
     padding-left: 30px;
   }
+}
+
+@media (max-width: 1100px) {
+  .md-own-driver-offer-inner { padding-inline: 24px; }
 }
 
 @media (max-width: 800px) {
