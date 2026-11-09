@@ -15,12 +15,35 @@ export function supportsCustomerPush(): boolean {
 
 async function registration(): Promise<ServiceWorkerRegistration> {
   const worker = await navigator.serviceWorker.getRegistration("/");
-  if (!worker?.active)
-    throw new CustomerAccountError(
-      "unavailable",
-      "MealDeck is still getting ready on this device. Reload, then try again.",
+  if (worker?.active) return worker;
+  // The PWA provider registers /sw.js after hydration. First-use customers
+  // can click Allow while it is installing; wait briefly for activation.
+  return new Promise<ServiceWorkerRegistration>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new CustomerAccountError(
+        "unavailable",
+        "MealDeck notifications are still installing. Reload the app, then try again.",
+      )),
+      7_000,
     );
-  return worker;
+    void navigator.serviceWorker.ready.then(
+      (ready) => {
+        clearTimeout(timer);
+        if (ready.active && new URL(ready.scope).pathname === "/") resolve(ready);
+        else reject(new CustomerAccountError(
+          "unavailable",
+          "Open the MealDeck customer app to enable notifications, then try again.",
+        ));
+      },
+      () => {
+        clearTimeout(timer);
+        reject(new CustomerAccountError(
+          "unavailable",
+          "The notification connection is not ready. Reload and try again.",
+        ));
+      },
+    );
+  });
 }
 
 export async function readCustomerDeviceNotifications(): Promise<CustomerDeviceNotifications> {
