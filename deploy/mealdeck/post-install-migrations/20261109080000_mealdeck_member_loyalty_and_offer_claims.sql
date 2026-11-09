@@ -124,7 +124,7 @@ create table if not exists mealdeck_private.customer_offer_campaigns(
 );
 create table if not exists mealdeck_private.customer_whatsapp_verifications(
   user_id uuid primary key references mealdeck_private.customer_profiles(user_id) on delete cascade,
-  phone text not null unique check(phone~'^[+][1-9][0-9]{7,14}),
+  phone text not null unique check(phone~'^[+][1-9][0-9]{7,14}$'),
   provider_reference text not null check(length(provider_reference) between 8 and 200),
   verified_at timestamptz not null,
   check(verified_at<=clock_timestamp())
@@ -133,144 +133,7 @@ create table if not exists mealdeck_private.customer_offer_claims(
   campaign_id text not null references mealdeck_private.customer_offer_campaigns(campaign_id),
   user_id uuid not null references mealdeck_private.customer_profiles(user_id) on delete cascade,
   email text not null check(email=lower(email) and length(email) between 4 and 254),
-  phone text not null check(phone~'^\\+[1-9][0-9]{7,14}$'),
-  claimed_at timestamptz not null default clock_timestamp(),
-  primary key(campaign_id,user_id),
-  unique(campaign_id,email),
-  unique(campaign_id,phone)
-);
-create index if not exists customer_offer_claim_user
-  on mealdeck_private.customer_offer_claims(user_id,claimed_at desc);
-
-alter table mealdeck_private.customer_offer_campaigns enable row level security;
-alter table mealdeck_private.customer_whatsapp_verifications enable row level security;
-alter table mealdeck_private.customer_offer_claims enable row level security;
-revoke all on mealdeck_private.customer_offer_campaigns,
-  mealdeck_private.customer_whatsapp_verifications,
-  mealdeck_private.customer_offer_claims
-  from public,anon,authenticated,service_role;
-
--- Customer input can NEVER attest WhatsApp verification. The private
--- verifications table is populated only after provider-side proof, via a
--- separately reviewed trusted operator integration (not included here).
-create or replace function public.mealdeck_customer_claim_one_use_offer(p_campaign text)
-returns jsonb language plpgsql security definer set search_path=''
-as $claim$
-declare
-  v_user uuid:=auth.uid();
-  v_member jsonb;
-  v_profile mealdeck_private.customer_profiles%rowtype;
-  v_email text;
-  v_created integer;
-begin
-  if v_user is null then raise exception 'mealdeck_offer_registration_required' using errcode='42501'; end if;
-  v_member:=mealdeck_private.customer_registration_authority(v_user);
-  if v_member is null or v_member->'registered' is distinct from 'true'::jsonb
-    then raise exception 'mealdeck_offer_registration_required' using errcode='42501'; end if;
-  select * into v_profile from mealdeck_private.customer_profiles where user_id=v_user;
-  if not found then raise exception 'mealdeck_offer_registration_required' using errcode='42501'; end if;
-  v_email:=lower(v_member->>'email');
-  -- A supplied WhatsApp number is not proof of WhatsApp ownership.
-  if not exists (
-    select 1 from mealdeck_private.customer_whatsapp_verifications w
-    where w.user_id=v_user and w.phone=v_profile.phone and w.verified_at<=now()
-  ) then raise exception 'mealdeck_offer_whatsapp_verification_required' using errcode='42501'; end if;
-  if p_campaign is null or not exists(
-    select 1 from mealdeck_private.customer_offer_campaigns c
-    where c.campaign_id=p_campaign and c.enabled
-      and now()>=c.starts_at and now()<c.ends_at
-  ) then raise exception 'mealdeck_offer_unavailable' using errcode='42501'; end if;
-
-  -- Atomic unique indexes block repeat claims across accounts sharing an email
-  -- or phone as well as across repeated sessions on the same account.
-  insert into mealdeck_private.customer_offer_claims(campaign_id,user_id,email,phone)
-    values(p_campaign,v_user,v_email,v_profile.phone)
-    on conflict do nothing;
-  get diagnostics v_created=row_count;
-  if v_created<>1 then raise exception 'mealdeck_offer_already_claimed' using errcode='23505'; end if;
-  return jsonb_build_object('claimed',true,'campaign',p_campaign);
-end;
-$claim$;
-revoke all on function public.mealdeck_customer_claim_one_use_offer(text)
-  from public,anon,authenticated,service_role;
-grant execute on function public.mealdeck_customer_claim_one_use_offer(text)
-  to authenticated;
-
-commit;
-),
-  provider_reference text not null check(length(provider_reference) between 8 and 200),
-  verified_at timestamptz not null,
-  check(verified_at<=clock_timestamp())
-);
-create table if not exists mealdeck_private.customer_offer_claims(
-  campaign_id text not null references mealdeck_private.customer_offer_campaigns(campaign_id),
-  user_id uuid not null references mealdeck_private.customer_profiles(user_id) on delete cascade,
-  email text not null check(email=lower(email) and length(email) between 4 and 254),
-  phone text not null check(phone~'^[+][1-9][0-9]{7,14}),
-  claimed_at timestamptz not null default clock_timestamp(),
-  primary key(campaign_id,user_id),
-  unique(campaign_id,email),
-  unique(campaign_id,phone)
-);
-create index if not exists customer_offer_claim_user
-  on mealdeck_private.customer_offer_claims(user_id,claimed_at desc);
-
-alter table mealdeck_private.customer_offer_campaigns enable row level security;
-alter table mealdeck_private.customer_whatsapp_verifications enable row level security;
-alter table mealdeck_private.customer_offer_claims enable row level security;
-revoke all on mealdeck_private.customer_offer_campaigns,
-  mealdeck_private.customer_whatsapp_verifications,
-  mealdeck_private.customer_offer_claims
-  from public,anon,authenticated,service_role;
-
--- Customer input can NEVER attest WhatsApp verification. The private
--- verifications table is populated only after provider-side proof, via a
--- separately reviewed trusted operator integration (not included here).
-create or replace function public.mealdeck_customer_claim_one_use_offer(p_campaign text)
-returns jsonb language plpgsql security definer set search_path=''
-as $claim$
-declare
-  v_user uuid:=auth.uid();
-  v_member jsonb;
-  v_profile mealdeck_private.customer_profiles%rowtype;
-  v_email text;
-  v_created integer;
-begin
-  if v_user is null then raise exception 'mealdeck_offer_registration_required' using errcode='42501'; end if;
-  v_member:=mealdeck_private.customer_registration_authority(v_user);
-  if v_member is null or v_member->'registered' is distinct from 'true'::jsonb
-    then raise exception 'mealdeck_offer_registration_required' using errcode='42501'; end if;
-  select * into v_profile from mealdeck_private.customer_profiles where user_id=v_user;
-  if not found then raise exception 'mealdeck_offer_registration_required' using errcode='42501'; end if;
-  v_email:=lower(v_member->>'email');
-  -- A supplied WhatsApp number is not proof of WhatsApp ownership.
-  if not exists (
-    select 1 from mealdeck_private.customer_whatsapp_verifications w
-    where w.user_id=v_user and w.phone=v_profile.phone and w.verified_at<=now()
-  ) then raise exception 'mealdeck_offer_whatsapp_verification_required' using errcode='42501'; end if;
-  if p_campaign is null or not exists(
-    select 1 from mealdeck_private.customer_offer_campaigns c
-    where c.campaign_id=p_campaign and c.enabled
-      and now()>=c.starts_at and now()<c.ends_at
-  ) then raise exception 'mealdeck_offer_unavailable' using errcode='42501'; end if;
-
-  -- Atomic unique indexes block repeat claims across accounts sharing an email
-  -- or phone as well as across repeated sessions on the same account.
-  insert into mealdeck_private.customer_offer_claims(campaign_id,user_id,email,phone)
-    values(p_campaign,v_user,v_email,v_profile.phone)
-    on conflict do nothing;
-  get diagnostics v_created=row_count;
-  if v_created<>1 then raise exception 'mealdeck_offer_already_claimed' using errcode='23505'; end if;
-  return jsonb_build_object('claimed',true,'campaign',p_campaign);
-end;
-$claim$;
-revoke all on function public.mealdeck_customer_claim_one_use_offer(text)
-  from public,anon,authenticated,service_role;
-grant execute on function public.mealdeck_customer_claim_one_use_offer(text)
-  to authenticated;
-
-commit;
-),
+  phone text not null check(phone~'^[+][1-9][0-9]{7,14}$'),
   claimed_at timestamptz not null default clock_timestamp(),
   primary key(campaign_id,user_id),
   unique(campaign_id,email),
