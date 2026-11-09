@@ -75,7 +75,7 @@ export function customerRequestError(error: unknown): CustomerAccountError {
   if (/registration_deferred/.test(message))
     return new CustomerAccountError(
       "unavailable",
-      "Email registration opens at 1pm Monday 9 November. Order with your name and WhatsApp number for now.",
+      "Email registration is available. Reload and try again; your email must still be verified.",
     );
   if (/email_verification_required/.test(message))
     return new CustomerAccountError("unverified", "Verify your email to finish your registration.");
@@ -218,7 +218,7 @@ export async function requestCustomerEmail(
   if (details && (await getMealDeckCustomerEntryPolicy()).emailRegistrationDeferred)
     throw new CustomerAccountError(
       "unavailable",
-      "Email registration opens at 1pm Monday 9 November. Order with your name and WhatsApp number this weekend.",
+      "Email registration is available. Reload and try again; your email must still be verified.",
     );
   const { error } = await currentClient().auth.signInWithOtp({
     email,
@@ -283,7 +283,7 @@ export async function registerMealDeckCustomer(
   if ((await getMealDeckCustomerEntryPolicy()).emailRegistrationDeferred)
     throw new CustomerAccountError(
       "unavailable",
-      "Email registration opens at 1pm Monday 9 November. Continue as a guest for now.",
+      "Email registration is available. Reload your account page to try again.",
     );
   return acceptedProfile(
     await customerRpc("mealdeck_customer_register", {
