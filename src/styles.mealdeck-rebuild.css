@@ -855,3 +855,106 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
   flex: none;
   object-fit: contain;
 }
+
+/* The yellow membership / free-delivery strip shares the printed menu's
+   1380px canvas. Prevent its copy and links wrapping into misaligned columns. */
+.md-own-driver-offer {
+  width: 100%;
+  background: #fcd34d;
+  color: #18181b;
+  font-size: 14px;
+}
+
+.md-own-driver-offer-inner {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1380px;
+  margin-inline: auto;
+  padding: 12px 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  column-gap: 24px;
+  row-gap: 8px;
+}
+
+.md-own-driver-offer-message {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.md-own-driver-offer-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.md-own-driver-offer-copy {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  text-align: left;
+  line-height: 1.45;
+}
+
+.md-own-driver-offer-copy strong {
+  font-weight: 800;
+}
+
+.md-own-driver-offer-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.md-own-driver-offer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding-block: 6px;
+  color: inherit;
+  font-weight: 750;
+  line-height: 1.3;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.md-site-header .md-own-driver-offer-link:focus-visible {
+  outline: 3px solid #18181b;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (max-width: 1160px) {
+  .md-own-driver-offer-inner {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 24px;
+  }
+  .md-own-driver-offer-actions {
+    justify-content: flex-start;
+    padding-left: 30px;
+  }
+}
+
+@media (max-width: 800px) {
+  .md-own-driver-offer-inner { padding: 10px 20px; }
+  .md-own-driver-offer-message { align-items: flex-start; gap: 9px; }
+  .md-own-driver-offer-icon { margin-top: 2px; }
+  .md-own-driver-offer-copy { display: block; }
+  .md-own-driver-offer-copy strong { margin-right: 5px; }
+  .md-own-driver-offer-actions { padding-left: 27px; gap: 6px 14px; }
+}
+
+@media (max-width: 560px) {
+  .md-own-driver-offer-inner { padding-inline: 16px; }
+}
