@@ -717,7 +717,7 @@ function CustomerSettings({
               : device === "unsupported"
                 ? "On iPhone or iPad, install MealDeck on your home screen and open the app to enable notifications. Some browsers do not support them."
                 : !pushReady
-                  ? "Push sending is not available on this device yet. You can still save your email, offer and order preferences above."
+                  ? "MealDeck has not connected a push key to this browser. Retry notification connection below; your saved message choices are unaffected."
                   : "Allow this device to receive the notification types you choose. You can turn them off at any time."}
         </p>
         {device === "connected" ? (
@@ -749,13 +749,26 @@ function CustomerSettings({
             {(preferencesChanged ||
               (!profile.preferences.pushMarketing && !profile.preferences.orderNotifications)) && (
               <p className="md-account-fine">
-                First tick Order updates or Offers in the app above, then Save details & preferences. Return here to allow notifications on this device.
+                Tick Order status notifications or App offers above, choose Save notification choices,
+                then come back to enable alerts on this device.
               </p>
             )}
           </>
         ) : (
-          <p className="md-account-fine" role="status">Device push setup is not ready. Your email and order communication preferences can still be saved above.</p>
+          <>
+            <p className="md-account-fine" role="status">
+              Device push setup needs reconnecting. Email, SMS, WhatsApp and order choices can
+              still be saved while we check the connection.
+            </p>
+            {capabilities.pushReady && (
+              <button type="button" className="md-account-secondary" disabled={busy}
+                onClick={() => void onRetryPush()}>
+                Retry notification connection
+              </button>
+            )}
+          </>
         )}
+        {deviceIssue && <p className="md-account-notice md-account-error" role="alert">{deviceIssue}</p>}
       </section>
       <section
         className="md-account-panel md-account-privacy"
@@ -1089,6 +1102,16 @@ export function CustomerAccount({
                 profile={profile}
                 capabilities={capabilities}
                 pushPublicKey={pushPublicKey}
+                onRetryPush={async () => {
+                  try {
+                    const config = await getMealDeckCustomerPushConfig();
+                    setPushPublicKey(config.publicKey);
+                    if (config.publicKey) showMessage("Notification connection is ready. Save your app-alert choices, then allow notifications below.");
+                    else showError(new CustomerAccountError("unavailable", "The push key is not available from the MealDeck server yet. Please try again after refreshing."));
+                  } catch {
+                    showError(new CustomerAccountError("unavailable", "Notification setup is temporarily unavailable. Please retry later."));
+                  }
+                }}
                 onSaved={(next) =>
                   setAccount({
                     status: "signed_in",
