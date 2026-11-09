@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
-import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
 import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { MenuInstallPrompt } from "@/components/menus/menu-install-prompt";
 import {
@@ -475,7 +474,6 @@ export function LaunchMenuBrowser({
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
         </div>
-        <OpeningWeekendOffer compact />
         <MenuInstallPrompt />
         <nav
           id="launch-brand-selector"
@@ -802,12 +800,11 @@ export function LaunchMenuBrowser({
                         Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
                       </Link>
                       <p>
-                        Opening offer: 30% off the entire menu during our 6–8 November opening
-                        hours.{" "}
                         {deliveryLive
-                          ? "Collection and kerbside have no minimum; free delivery requires £15 after the discount within 4 km of LU4 8NU."
+                          ? "Collection and kerbside have no minimum; free delivery requires £15 after discounts within 4 km of LU4 8NU."
                           : "No minimum order for collection or kerbside."}{" "}
-                        Guests and members welcome. <Link to="/offers">See all three offers.</Link>
+                        Verified members earn loyalty points on eligible paid orders.{" "}
+                        <Link to="/account">Member benefits</Link>
                         {hasMilkcakeOffer &&
                           " One milkcake per order is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount."}
                       </p>

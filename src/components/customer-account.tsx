@@ -18,6 +18,11 @@ import { CustomerOrders } from "./customer-orders";
 import { useCustomerEntryPolicy } from "./use-customer-entry-policy";
 import { customerReturnTarget, type CustomerReturnTarget } from "@/lib/mealdeck-customer-return";
 import {
+  MEMBER_LOYALTY_RULES,
+  MEMBER_LOYALTY_UNAVAILABLE_MESSAGE,
+  memberLoyaltyView,
+} from "@/lib/mealdeck-member-loyalty";
+import {
   accountAfterAuthPath,
   hasAccountAuthCallback,
   showPublicGuestAccount,
@@ -117,7 +122,7 @@ function Preferences({
         </span>
       </label>
       <p className="md-account-fine">
-        Marketing is never required for registration, the opening offer or loyalty membership.
+        Marketing is never required for registration, ordering or loyalty membership.
         Essential verification and order messages are separate.
       </p>
     </fieldset>
@@ -249,7 +254,7 @@ function CustomerEntry({
       </h2>
       <p>
         {mode === "register"
-          ? "Create your account and verify your email for member offers and optional offer alerts. Guest ordering is also available during our opening hours on 6–8 November."
+          ? "Create your account and verify your email to earn loyalty points on eligible paid orders, with optional offer alerts."
           : usePassword
             ? "Sign in with your email and password."
             : "We’ll email you a secure sign-in link. No password to remember."}
@@ -880,6 +885,7 @@ export function CustomerAccount({
 
   const signedIn = account.status === "signed_in";
   const profile = signedIn ? account.profile : null;
+  const loyaltyView = memberLoyaltyView(profile?.loyalty);
   const publicGuestView = showPublicGuestAccount({
     registrationDeferred,
     signInRequested,
@@ -917,7 +923,7 @@ export function CustomerAccount({
                 ? "Every craving, one order. Choose your food and we’ll take the details we need at checkout."
                 : signInOnly
                   ? "Use your verified account to continue."
-                  : "One account for all your favourite brands. Verify your email and get ready for the Luton launch."}
+                  : "One account for all your favourite brands. Verify your email to start earning loyalty points."}
           </p>
           {signedIn && (
             <button
@@ -1042,23 +1048,22 @@ export function CustomerAccount({
             className="md-account-aside"
             aria-label={
               publicGuestView
-                ? "Opening weekend and the MealDeck app"
+                ? "MealDeck membership and the app"
                 : "Your orders and member benefits"
             }
           >
             {profile?.registered && <CustomerOrders key={profile.userId} />}
             <section className="md-account-benefit">
               <Gift size={25} aria-hidden="true" />
-              <span className="md-account-eyebrow">OPENING WEEKEND</span>
-              <h2>30% off everything.</h2>
+              <span className="md-account-eyebrow">MEALDECK MEMBERSHIP</span>
+              <h2>Every order counts.</h2>
               <p>
-                6–8 November 2026, during opening hours. No minimum order. Luton collection or
-                kerbside pickup, for guests and registered members.
+                Verified members earn loyalty points on eligible paid orders and can see their
+                recent MealDeck orders here.
               </p>
               <p className="md-account-fine">
-                Check <a href="/opening-offer">offer dates and details</a>. The discount applies
-                automatically when the offer is live and your order is eligible. Marketing choices
-                are optional. Guest orders earn no loyalty points.
+                Choose which offer and order alerts you receive. Marketing choices are always
+                optional. Guest orders earn no loyalty points.
               </p>
               <a href="/menus">
                 Explore the menus
@@ -1074,28 +1079,24 @@ export function CustomerAccount({
                   <Gift size={20} aria-hidden="true" />
                   <h2 id="account-loyalty-heading">Loyalty, dealt your way.</h2>
                 </div>
-                {profile?.loyalty.enabled ? (
-                  <>
-                    <strong className="md-account-points">
-                      {profile.loyalty.points.toLocaleString("en-GB")} <span>points</span>
-                    </strong>
-                    <p>{profile.loyalty.terms}</p>
-                  </>
+                {loyaltyView.kind === "live" ? (
+                  <strong className="md-account-points">
+                    {loyaltyView.pointsLabel} <span>points</span>
+                  </strong>
+                ) : profile ? (
+                  <p className="md-account-loyalty-status" role="status">
+                    {MEMBER_LOYALTY_UNAVAILABLE_MESSAGE}
+                  </p>
                 ) : (
-                  <>
-                    <span className="md-account-soon">Points balance coming soon</span>
-                    <p>
-                      Register and spend £15 or more from Monday 9 to Friday 13 November 2026
-                      inclusive for double loyalty points.{" "}
-                      <a href="/offers#double-points">See offer details</a>. Your points balance
-                      will appear here when loyalty is available.
-                    </p>
-                  </>
+                  <p className="md-account-loyalty-status">
+                    Register or sign in to see your points balance.
+                  </p>
                 )}
-                <p className="md-account-fine">
-                  Guest orders earn no loyalty points. No marketing opt-in is needed for loyalty
-                  membership.
-                </p>
+                <ul className="md-account-loyalty-rules">
+                  {MEMBER_LOYALTY_RULES.map((rule) => (
+                    <li key={rule}>{rule}</li>
+                  ))}
+                </ul>
               </section>
             )}
             <section className="md-account-panel md-account-app">

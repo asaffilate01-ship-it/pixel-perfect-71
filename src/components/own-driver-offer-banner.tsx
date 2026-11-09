@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Truck, Gift, Smartphone } from "lucide-react";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { isMealDeckSundayDeliveryPreopen, isMealDeckSundayDeliveryService } from "@/lib/mealdeck-launch-schedule";
+import "@/styles.member-banner.css";
 
 /** Public marketing appears only after the server confirms the driver checkout gate. */
 export function useOwnDriverAvailability() {
@@ -79,14 +80,22 @@ export function OwnDriverOfferBanner() {
   const monday = entry?.serverNow && Date.parse(entry.serverNow) >= Date.parse("2026-11-09T00:00:00Z");
   if (monday) {
     return (
-      <div className="md-own-driver-offer flex flex-wrap items-center justify-center gap-2 bg-amber-300 px-4 py-3 text-center text-sm text-zinc-950" role="status" aria-label="MealDeck member registration and delivery">
-        <Gift size={18} aria-hidden="true" />
-        <strong>{entry?.emailRegistrationDeferred ? "Member registration opens today at 1pm." : "Join MealDeck for member-only offers and loyalty benefits."}</strong>{" "}
-        <span>Verify your email, add your phone number, install the app and enable optional order alerts.{available ? " Free delivery within 4 km of LU4 8NU for orders £15+ after discounts." : ""}</span>{" "}
-        <Link to="/account" className="font-bold underline underline-offset-4">{entry?.emailRegistrationDeferred ? "Explore membership" : "Register"}</Link>
-        <Link to="/account" className="font-bold underline underline-offset-4"><Smartphone size={15} className="inline" aria-hidden="true" /> Install app</Link>
-        {available && <Link to="/delivery-terms" className="font-bold underline underline-offset-4">Delivery terms</Link>}
-      </div>
+      <section className="md-own-driver-offer md-member-banner" aria-label="MealDeck member registration and delivery">
+        <div className="md-member-banner-inner">
+          <div className="md-member-banner-copy">
+            <Gift size={18} className="md-member-banner-icon" aria-hidden="true" />
+            <p>
+              <strong>{entry?.emailRegistrationDeferred ? "Member registration opens today at 1pm." : "Join MealDeck for member-only offers and loyalty benefits."}</strong>{" "}
+              <span>Verify your email, add your phone number, install the app and enable optional order alerts.{available ? " Free delivery within 4 km of LU4 8NU for orders £15+ after discounts." : ""}</span>
+            </p>
+          </div>
+          <nav className="md-member-banner-actions" aria-label="Membership links">
+            <Link to="/account">{entry?.emailRegistrationDeferred ? "Explore membership" : "Register"}</Link>
+            <Link to="/account"><Smartphone size={15} aria-hidden="true" /> Install app</Link>
+            {available && <Link to="/delivery-terms">Delivery terms</Link>}
+          </nav>
+        </div>
+      </section>
     );
   }
   if (!available && !preopen) return null;

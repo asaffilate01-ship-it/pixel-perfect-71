@@ -247,7 +247,7 @@ export function LaunchMenuAppNav({
                 </nav>
                 <PwaInstallCard />
                 <Link to="/offers" onClick={followLink} className="lma-more-note">
-                  Offers · 30% off, 99p milk cake &amp; double points
+                  Offers &amp; member benefits
                 </Link>
                 <p className="lma-more-note">
                   Order for Luton collection or kerbside during kitchen opening hours.
