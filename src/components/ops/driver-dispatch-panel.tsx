@@ -152,15 +152,36 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
             </li>)}
           </ul>
           {canEnrol && <div className="grid gap-3 rounded-xl border p-3 sm:grid-cols-2">
-            <label className="text-sm font-bold">Existing Auth user UUID
-              <input className="md-ops-field mt-1 w-full" value={newDriverId} onChange={e=>setNewDriverId(e.target.value.trim())} placeholder="Driver's MealDeck Auth user ID"/>
+            <div className="sm:col-span-2">
+              <h5 className="font-bold md-ops-ink">Approve a driver in two steps</h5>
+              <p className="text-sm md-ops-muted">
+                First, the driver must create and verify an account at <Link to="/account" target="_blank" className="underline">MealDeck /account</Link>.
+                Then find that exact email below. Only the manager can approve driver access.
+              </p>
+            </div>
+            <label className="text-sm font-bold">Driver's verified email address
+              <input type="email" autoComplete="off" className="md-ops-field mt-1 w-full"
+                value={newDriverEmail} disabled={busy} onChange={e=>{setNewDriverEmail(e.target.value);setVerifiedDriverId(null);}}
+                placeholder="driver@example.com"/>
             </label>
-            <label className="text-sm font-bold">Driver display name
-              <input className="md-ops-field mt-1 w-full" value={newDriverName} onChange={e=>setNewDriverName(e.target.value)} maxLength={100} placeholder="Driver name"/>
-            </label>
-            <button type="button" className="md-ops-button md-ops-primary sm:col-span-2"
-              disabled={busy||!driverId.safeParse(newDriverId).success||newDriverName.trim().length<2}
-              onClick={()=>void enrol()}><UserPlus size={17}/> Approve driver account</button>
+            <button type="button" className="md-ops-button md-ops-secondary self-end"
+              disabled={busy||!/^\S+@\S+\.\S+$/.test(newDriverEmail.trim())}
+              onClick={()=>void findDriverAccount()}>
+              <UserPlus size={17}/> Find verified account
+            </button>
+            {verifiedDriverId && <>
+              <p className="sm:col-span-2 text-sm md-ops-muted" role="status">
+                Verified email found. Approve this person only after confirming they are your driver.
+              </p>
+              <label className="text-sm font-bold">Driver display name
+                <input className="md-ops-field mt-1 w-full" value={newDriverName}
+                  onChange={e=>setNewDriverName(e.target.value)}
+                  disabled={busy} maxLength={100} placeholder="Driver name"/>
+              </label>
+              <button type="button" className="md-ops-button md-ops-primary self-end"
+                disabled={busy||newDriverName.trim().length<2}
+                onClick={()=>void enrol()}><UserPlus size={17}/> Approve driver access</button>
+            </>}
           </div>}
           <p className="flex gap-2 items-center text-xs md-ops-muted"><ShieldCheck size={16}/> Driver app is a separate protected login. Customer payment and final delivery remain staff-authorised.</p>
           <Link to="/driver" className="inline-flex items-center gap-2 underline font-bold" target="_blank">Open driver app</Link>
