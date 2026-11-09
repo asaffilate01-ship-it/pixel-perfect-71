@@ -1,116 +1,100 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CarFront, MapPin, ShoppingBag } from "lucide-react";
+import { ArrowRight, CarFront, Gift, MapPin, ShoppingBag } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { MealDeckOfferCards } from "@/components/marketing/offer-discovery";
-import { LaunchOpeningHours } from "@/components/opening-weekend-offer";
-import {
-  useOwnDriverAvailability,
-  useOwnDriverPreopenNotice,
-  useOwnDriverSundayServiceNotice,
-} from "@/components/own-driver-offer-banner";
+import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { seo } from "@/lib/seo";
 import "@/styles.mealdeck-offers.css";
 
 export const Route = createFileRoute("/offers")({
   head: () =>
     seo({
-      title: "MealDeck Offers — 30% Off, 99p Milk Cake & Double Points",
+      title: "MealDeck member benefits & loyalty | Offers",
       description:
-        "30% off the entire menu, 6–8 November 2026. Milk cake 99p with every order on 8 November. Register and spend £15 or more from 9–13 November inclusive for double loyalty points.",
+        "Opening-weekend discounts have ended. Verified MealDeck members earn one loyalty point per complete £1 paid after discounts on eligible orders. Browse current menus and member benefits.",
       path: "/offers",
     }),
   component: OffersPage,
 });
 
 function OffersPage() {
-  const deliveryLive = useOwnDriverAvailability();
-  const deliveryPreopen = useOwnDriverPreopenNotice();
-  const sundayHours = useOwnDriverSundayServiceNotice();
+  const deliveryAvailable = useOwnDriverAvailability();
   return (
     <div className="md-marketing-shell">
       <SiteHeader />
       <main className="md-offers-page">
         <div className="md-offers-page-inner">
           <header className="md-offers-page-heading">
-            <p className="md-current-offers-kicker">MealDeck · November 2026</p>
+            <p className="md-current-offers-kicker">MealDeck · Member benefits</p>
             <h1>
-              A little more
+              More to enjoy.
               <br />
-              <span>on the table.</span>
+              <span>Every order counts.</span>
             </h1>
             <p>
-              30% off your opening-weekend order. A 99p Sunday treat. Double points for registered
-              members spending £15 or more from Monday 9 to Friday 13 November inclusive.
+              Our opening-weekend 30% discount and Sunday 99p milkcake promotion have ended.
+              Browse current menus, register for points and check this page for future offers
+              when they are officially available.
             </p>
             <div className="md-offers-page-actions">
-              <Link to="/menus" className="md-btn md-btn-red">
-                Explore the menus <ArrowRight size={18} aria-hidden="true" />
+              <Link to="/account" className="md-btn md-btn-red">
+                Register or view your points <ArrowRight size={18} aria-hidden="true" />
               </Link>
-              <Link to="/account" className="md-offers-text-link">
-                Register for member offers <ArrowRight size={17} aria-hidden="true" />
+              <Link to="/menus" className="md-offers-text-link">
+                Order from the menus <ArrowRight size={17} aria-hidden="true" />
               </Link>
             </div>
           </header>
-          <MealDeckOfferCards detailed />
           <div className="md-offers-details-grid">
-            <section className="md-offers-detail" aria-labelledby="offers-pickup-title">
-              <p className="md-current-offers-kicker">
-                <MapPin size={16} aria-hidden="true" /> Luton launches first
-              </p>
-              <h2 id="offers-pickup-title">Your Luton opening-weekend order</h2>
-              <p>314–318 Selbourne Road, Luton, LU4 8NU.</p>
-              <div className="md-offers-fulfilments">
-                <span>
-                  <ShoppingBag size={17} aria-hidden="true" /> Collection
-                </span>
-                <span>
-                  <CarFront size={19} aria-hidden="true" /> Kerbside pickup
-                </span>
-              </div>
-              <LaunchOpeningHours />
-              <p className="md-offers-detail-small">
-                {deliveryLive && sundayHours
-                  ? "Available during Sunday's opening hours, 3pm–11pm, for Luton collection, kerbside pickup and delivery."
-                  : deliveryPreopen
-                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Luton collection and kerbside pickup are also available during Sunday's opening hours."
-                    : sundayHours
-                      ? "Sunday's opening hours are 3pm–11pm. Collection and kerbside are available; delivery is subject to availability at checkout."
-                      : "All opening times are UK local time (Europe/London). Collection, kerbside and eligible delivery depend on checkout availability."}{" "}
-                Delivery is subject to the{" "}
-                <Link to="/delivery-terms" className="md-offers-text-link">
-                  delivery T&amp;Cs
-                </Link>
-                . St Albans and Bedford are coming soon.
-              </p>
-              <Link to="/opening-offer" className="md-offers-text-link">
-                More about the 30% opening offer <ArrowRight size={17} aria-hidden="true" />
-              </Link>
-            </section>
-            <section className="md-offers-detail" aria-labelledby="offers-account-title">
-              <p className="md-current-offers-kicker">Your account, your choice</p>
-              <h2 id="offers-account-title">Join for double points.</h2>
+            <section className="md-offers-detail" aria-labelledby="offers-loyalty-title">
+              <p className="md-current-offers-kicker"><Gift size={16} aria-hidden="true" /> MealDeck membership</p>
+              <h2 id="offers-loyalty-title">£1 paid = 1 loyalty point.</h2>
               <p>
-                You can order as a guest during the opening hours on 6–8 November. An account is not
-                required for the 30% offer or Sunday’s 99p milk cake.
+                From 9 November 2026, registered members with a verified email earn one point
+                for each complete £1 actually paid after discounts on eligible orders.
+                You can view your balance in your account.
               </p>
               <p>
-                For double loyalty points, register and spend £15 or more from Monday 9 to Friday 13
-                November 2026 inclusive. Verify your email and use your MealDeck member account.
-                Guest orders earn no loyalty points.
+                Guest orders earn no points. Refunds, cancellations and disputes can remove
+                points. Points cannot currently be redeemed for cash or purchases.
               </p>
               <p>
-                Registration does not sign you up for marketing. Choose promotional emails and app
-                alerts separately in your account; both are optional.
+                Marketing messages are optional. Joining and earning points never require
+                permission for promotional emails, WhatsApp, SMS or app alerts.
               </p>
               <Link to="/account" className="md-offers-text-link">
-                My account &amp; preferences <ArrowRight size={17} aria-hidden="true" />
+                My membership &amp; preferences <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+            </section>
+            <section className="md-offers-detail" aria-labelledby="offers-luton-title">
+              <p className="md-current-offers-kicker"><MapPin size={16} aria-hidden="true" /> Luton</p>
+              <h2 id="offers-luton-title">Order your favourites.</h2>
+              <p>314–318 Selbourne Road, Luton, LU4 8NU.</p>
+              <div className="md-offers-fulfilments">
+                <span><ShoppingBag size={17} aria-hidden="true" /> Collection</span>
+                <span><CarFront size={19} aria-hidden="true" /> Kerbside</span>
+              </div>
+              <p className="md-offers-detail-small">
+                {deliveryAvailable
+                  ? "Free own-driver delivery may be available within 4 km of LU4 8NU for orders of £15 or more after discounts."
+                  : "Delivery may be unavailable at present."}
+                {" "}Kitchen opening, menu availability and eligible fulfilment are confirmed at checkout.
+                See the{" "}
+                <Link to="/delivery-terms" className="md-offers-text-link">
+                  delivery terms
+                </Link>.
+              </p>
+              <Link to="/menus" className="md-offers-text-link">
+                Browse current menus <ArrowRight size={17} aria-hidden="true" />
               </Link>
             </section>
           </div>
           <p className="md-offers-page-note">
-            Check your order and its final total before paying. The kitchen’s current ordering
-            availability is shown at checkout.
+            The 6–8 November opening promotion is no longer redeemable. Its historical terms
+            remain available on the{" "}
+            <Link to="/opening-offer" className="md-offers-text-link">
+              opening offer information page
+            </Link>. Any future limited-time deal will have its own published dates and conditions.
           </p>
         </div>
       </main>
