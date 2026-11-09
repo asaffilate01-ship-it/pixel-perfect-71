@@ -254,7 +254,8 @@ function CustomerEntry({
       </h2>
       <p>
         {mode === "register"
-          ? "Register with your name, email and mobile number, then verify your email to earn loyalty points. Some offers also require independently verified WhatsApp ownership. Marketing alerts are optional."
+          ? "Register with your name, email and mobile number, then verify your email to earn loyalty points. " +
+            "Some offers require independently verified WhatsApp ownership. Marketing alerts are optional."
           : usePassword
             ? "Sign in with your email and password."
             : "We’ll email you a secure sign-in link. No password to remember."}
@@ -1094,7 +1095,11 @@ export function CustomerAccount({
                     Register or sign in to see your points balance.
                   </p>
                 )}
-                <p className="md-account-fine">Verified registered members earn 1 point for each complete £1 actually paid after discounts on eligible orders from 9 November 2026. Guest orders earn none. Refunds and disputes adjust points.</p>
+                <p className="md-account-fine">
+                  Verified registered members earn 1 point for each complete £1 actually paid after
+                  discounts on eligible orders from 9 November 2026. Guest orders earn none. Refunds
+                  and disputes adjust points.
+                </p>
                 <ul className="md-account-loyalty-rules">
                   {MEMBER_LOYALTY_RULES.map((rule) => (
                     <li key={rule}>{rule}</li>
