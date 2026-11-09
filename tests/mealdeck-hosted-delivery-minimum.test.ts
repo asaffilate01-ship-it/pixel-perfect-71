@@ -11,6 +11,14 @@ describe("MealDeck Luton delivery minimum customer feedback", () => {
     expect(ownDriverShortfallPence(3000)).toBe(0);
   });
 
+  test("member registration and real points remain visible if the entry status request fails", () => {
+    const account = readFileSync(new URL("../src/components/customer-account.tsx", import.meta.url), "utf8");
+    expect(account).toContain("entryPolicy?.emailRegistrationDeferred === true");
+    expect(account).not.toContain("entryPolicy?.emailRegistrationDeferred !== false");
+    expect(account).toContain("memberLoyaltyView(profile?.loyalty)");
+    expect(account).toContain("{loyaltyView.pointsLabel}");
+  });
+
   test("under-minimum baskets show immediate accessible feedback on delivery selection", () => {
     const checkout = readFileSync(new URL("../src/components/launch-checkout.tsx", import.meta.url), "utf8");
     expect(checkout).toContain('fulfilment === "delivery" && deliveryShortfall !== null');
