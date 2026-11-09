@@ -23,7 +23,6 @@ import { usePaymentIdentity } from "@/components/group-payments/use-payment-iden
 import { GroupRoomMenu, GroupRoomChoices } from "@/components/group-room-menu";
 import { GroupRoomSetup, type RoomCreationDetails } from "@/components/group-room-setup";
 import { GroupRoomBilling } from "@/components/group-room-billing";
-import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import {
   receiveRoomChoices,
   roomPersonPicks,
@@ -315,14 +314,12 @@ function RoomRoster({
 
 export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
   const navigate = useNavigate();
-  const entryPolicy = useCustomerEntryPolicy();
-  const newRoomsOpen =
-    !!entryPolicy &&
-    Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
   const identity = usePaymentIdentity();
   const identityRef = useRef(identity);
   identityRef.current = identity;
   const [capabilities, setCapabilities] = useState<GroupOrderCapabilities | null>(null);
+  // New room admission is server-authoritative, not based on registration launch dates.
+  const newRoomsOpen = capabilities?.available === true;
   const [entryReady, setEntryReady] = useState(false);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [invite, setInvite] = useState<GroupOrderInvite | null>(null);
@@ -1038,7 +1035,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             <p>
               {newRoomsOpen
                 ? "MealDeck now uses live rooms. Create a room below and invite everyone to join it."
-                : "New group rooms start on Monday 9 November."}{" "}
+                : "New group rooms are not accepting orders at the moment."}{" "}
               Older reply links cannot add food to this order.
             </p>
           </div>
@@ -1051,12 +1048,19 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
         )}
         {entryReady && !roomId && !invite && !newRoomsOpen && (
           <section className="md-room-card md-room-join" aria-labelledby="group-start-heading">
-            <span className="md-room-kicker">Coming Monday</span>
-            <h2 id="group-start-heading">Their favourites. One collection.</h2>
+            <span className="md-room-kicker">Group room availability</span>
+            <h2 id="group-start-heading">New group rooms are not accepting orders right now.</h2>
             <p>
-              From Monday 9 November, invite your people into one room, choose food from all five
-              menus and pay separately or together. We’ll pack everyone’s food by name.
+              {capabilities?.message || "Checking group room availability. Existing rooms and private invitation links remain accessible."}
             </p>
+            <button
+              type="button"
+              className="md-room-button md-room-button-light"
+              disabled={busy}
+              onClick={() => { void refreshCapabilities(); }}
+            >
+              <RefreshCw size={18} aria-hidden="true" /> Check availability again
+            </button>
             <a href="/menus" className="md-room-button">
               Explore the menus <ArrowRight size={19} aria-hidden="true" />
             </a>
