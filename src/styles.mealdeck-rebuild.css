@@ -559,8 +559,10 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 .md-footer-brand strong { color: var(--md-yellow); font-family: var(--md-display); }
 .md-footer-links { display: grid; grid-template-columns: repeat(3,1fr); gap: 38px; }
 .md-footer-links h3 { margin: 0 0 16px; font-family: var(--md-display); color: var(--md-yellow); font-size: 13px; text-transform: uppercase; letter-spacing: .12em; }
-.md-footer-links a, .md-footer-links p { display: block; margin: 0 0 10px; color: rgba(255,255,255,.67); font-size: 14px; }
-.md-footer-links a:hover { color: white; }
+.md-footer-links a, .md-footer-links p, .md-footer-cookie-settings { display: block; margin: 0 0 10px; color: rgba(255,255,255,.67); font-size: 14px; }
+.md-footer-cookie-settings { background: transparent; padding: 0; border: 0; text-align: left; cursor: pointer; font: inherit; }
+.md-footer-links a:hover, .md-footer-cookie-settings:hover { color: white; }
+.md-footer-cookie-settings:focus-visible { outline: 2px solid var(--md-yellow); outline-offset: 3px; }
 .md-footer-apps { width: min(1440px,calc(100% - 40px)); margin: 0 auto; padding: 26px 0 36px; border-top: 1px solid rgba(255,255,255,.08); }
 .md-footer-apps-copy { margin: 0 0 22px; text-align: center; color: rgba(255,255,255,.6); font-size: 14px; line-height: 1.6; }
 .md-footer-apps-copy strong { color: var(--md-yellow); font-family: var(--md-display); }
