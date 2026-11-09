@@ -24,6 +24,11 @@ describe("post-opening MealDeck offers", () => {
     expect(offers).toContain("£1 paid = 1 loyalty point.");
     expect(offers).toContain('to="/account"');
   });
+  test("historical opening offer fails closed instead of showing 30% when checkout status is missing", () => {
+    const opening = source("src/components/opening-weekend-offer.tsx");
+    expect(opening).toContain('offer.status !== "active" && offer.status !== "upcoming"');
+    expect(opening).toContain("Opening weekend has finished.");
+  });
   test("homepage promotes only the active standard point-earning policy", () => {
     const home = source("src/components/marketing/offer-discovery.tsx");
     expect(home).not.toContain("MEALDECK_OFFERS");
