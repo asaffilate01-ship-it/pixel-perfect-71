@@ -81,9 +81,9 @@ export function OwnDriverOfferBanner() {
     return (
       <div className="md-own-driver-offer flex flex-wrap items-center justify-center gap-2 bg-amber-300 px-4 py-3 text-center text-sm text-zinc-950" role="status" aria-label="MealDeck member registration and delivery">
         <Gift size={18} aria-hidden="true" />
-        <strong>{entry?.emailRegistrationDeferred ? "Member registration opens today at 1pm." : "Join MealDeck for member-only offers and loyalty benefits."}</strong>{" "}
+        <strong>{entry?.emailRegistrationDeferred === true ? "Registration is reopening shortly." : "Register for MealDeck membership, offers and loyalty."}</strong>{" "}
         <span>Verify your email, add your phone number, install the app and enable optional order alerts.{available ? " Free delivery within 4 km of LU4 8NU for orders £15+ after discounts." : ""}</span>{" "}
-        <Link to="/account" className="font-bold underline underline-offset-4">{entry?.emailRegistrationDeferred ? "Explore membership" : "Register"}</Link>
+        <Link to="/account" className="font-bold underline underline-offset-4">{entry?.emailRegistrationDeferred === true ? "Explore membership" : "Register now"}</Link>
         <Link to="/account" className="font-bold underline underline-offset-4"><Smartphone size={15} className="inline" aria-hidden="true" /> Install app</Link>
         {available && <Link to="/delivery-terms" className="font-bold underline underline-offset-4">Delivery terms</Link>}
       </div>
