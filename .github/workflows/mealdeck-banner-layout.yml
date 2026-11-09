@@ -1,0 +1,39 @@
+name: Verify MealDeck desktop banner layout
+
+on:
+  pull_request:
+    paths:
+      - "src/components/own-driver-offer-banner.tsx"
+      - "src/styles.mealdeck-rebuild.css"
+      - "src/styles.launch-menus.css"
+      - "tests/mealdeck-desktop-menu-banner.test.ts"
+      - ".github/workflows/mealdeck-banner-layout.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/components/own-driver-offer-banner.tsx"
+      - "src/styles.mealdeck-rebuild.css"
+      - "tests/mealdeck-desktop-menu-banner.test.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  banner-layout:
+    name: Banner layout and accessibility contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install pinned Bun
+        run: npm install --global bun@1.4.4 --no-audit --no-fund
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Test markup and responsive CSS
+        run: bun test tests/mealdeck-desktop-menu-banner.test.ts
+      - name: Lint banner component and test
+        run: bunx eslint src/components/own-driver-offer-banner.tsx tests/mealdeck-desktop-menu-banner.test.ts --rule 'prettier/prettier: off'
