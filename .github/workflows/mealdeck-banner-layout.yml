@@ -36,4 +36,5 @@ jobs:
       - name: Test markup and responsive CSS
         run: bun test tests/mealdeck-desktop-menu-banner.test.ts
       - name: Lint banner component and test
-        run: bunx eslint src/components/own-driver-offer-banner.tsx tests/mealdeck-desktop-menu-banner.test.ts --rule 'prettier/prettier: off'
+        run: |
+          bunx eslint src/components/own-driver-offer-banner.tsx tests/mealdeck-desktop-menu-banner.test.ts --rule 'prettier/prettier: off'
