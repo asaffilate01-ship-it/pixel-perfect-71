@@ -1,19 +1,24 @@
 name: Own-driver delivery PostgreSQL lifecycle
 on:
   push:
-    branches: ['feat/own-driver-luton-delivery']
+    branches: ['main', 'feat/own-driver-luton-delivery']
     paths:
       - '.github/workflows/local-driver-postgres.yml'
       - 'tests/postgres/local-driver-delivery-behavior.mjs'
       - 'deploy/mealdeck/local-driver-delivery.mjs'
       - 'deploy/mealdeck/post-install-migrations/*local_driver_delivery.sql'
+      - 'deploy/mealdeck/post-install-migrations/*driver_pwa_dispatch.sql'
   pull_request:
     paths:
       - '.github/workflows/local-driver-postgres.yml'
       - 'tests/postgres/local-driver-delivery-behavior.mjs'
       - 'deploy/mealdeck/local-driver-delivery.mjs'
       - 'deploy/mealdeck/post-install-migrations/*local_driver_delivery.sql'
+      - 'deploy/mealdeck/post-install-migrations/*driver_pwa_dispatch.sql'
       - 'src/lib/mealdeck-own-driver*'
+      - 'src/lib/mealdeck-driver*'
+      - 'src/components/driver/**'
+      - 'src/components/ops/driver-dispatch-panel.tsx'
   workflow_dispatch:
 permissions:
   contents: read

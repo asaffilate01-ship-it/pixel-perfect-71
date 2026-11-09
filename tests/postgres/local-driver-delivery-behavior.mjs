@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { uuid_ossp } from "@electric-sql/pglite/contrib/uuid_ossp";
 import { asActor, createDatabase, id } from "./harness.mjs";
 import { setupStaffCashOrdersFixture } from "./staff-cash-orders-fixture.mjs";
@@ -20,6 +21,9 @@ try {
   await db.exec(buildStaffCashOrdersSql());
   await db.exec(buildMealComponentsSql());
   await db.exec(buildLocalDriverDeliverySql());
+  await db.exec(readFileSync(
+    new URL("../../deploy/mealdeck/post-install-migrations/20261108154500_mealdeck_driver_pwa_dispatch.sql",import.meta.url),"utf8"
+  ));
   await setGuestFixtureClock(db, "2026-11-06T16:00:00Z");
   const token = guestTokenHash("isolated-own-driver-guest-one");
   const stranger = guestTokenHash("isolated-own-driver-guest-two");
@@ -260,18 +264,92 @@ try {
     (await card()).pass.version,
     "sealed",
   ]);
+  // Driver authorisation is tied to the owner's verified existing MealDeck Auth user.
+  const driverActor = (functionName,args=[]) =>
+    asActor(db,f.customer,()=>scalar(
+      "select public."+functionName+"("+args.map((_,index)=>"$"+(index+1)).join(",")+")",args
+    ));
+  await check("driver roster and jobs cannot be read as public tables",async()=>{
+    for(const table of ["driver_roster","driver_assignments","driver_action_receipts"]){
+      assert.equal(await scalar("select relrowsecurity from pg_class where oid=$1::regclass",["mealdeck_private."+table]),true);
+      for(const actor of ["anon","authenticated","service_role"]){
+        assert.equal(await scalar("select has_table_privilege($1,$2,'SELECT')",[actor,"mealdeck_private."+table]),false);
+      }
+    }
+    assert.equal(await scalar("select has_function_privilege('anon',$1,'EXECUTE')",[
+      "public.mealdeck_driver_portal()"
+    ]),false);
+    await assert.rejects(()=>driverActor("mealdeck_driver_portal"),/mealdeck_driver_forbidden/);
+  });
+  await check("owner enrols a real driver, who starts shift and sees no unrelated jobs",async()=>{
+    await asActor(db,f.owner,()=>scalar(
+      "select public.mealdeck_ops_driver_enrol($1,$2,$3,$4)",
+      [f.tenantId,f.locationId,f.customer,"Test Driver"]
+    ));
+    const initial=await driverActor("mealdeck_driver_portal");
+    assert.equal(initial.onShift,false);
+    assert.deepEqual(initial.jobs,[]);
+    assert.equal((await driverActor("mealdeck_driver_shift",[true])).onShift,true);
+    const dispatch=await f.staff("mealdeck_ops_driver_dispatch_board",[f.tenantId,f.locationId]);
+    assert.equal(dispatch.orders.some(x=>x.jobId===order.orderId),true);
+  });
+  await check("staff offers once and address remains hidden until driver accepts",async()=>{
+    await f.staff("mealdeck_ops_driver_offer",[f.tenantId,f.locationId,order.orderId,f.customer]);
+    const offered=(await driverActor("mealdeck_driver_portal")).jobs[0];
+    assert.equal(offered.jobId,order.orderId);
+    assert.equal(offered.status,"offered");
+    assert.equal(offered.address,null);
+    assert.equal(offered.customerPhone,null);
+    await assert.rejects(()=>f.staff("mealdeck_ops_driver_offer",[
+      f.tenantId,f.locationId,order.orderId,f.customer
+    ]),/mealdeck_driver_busy/);
+    const acceptArgs=[order.orderId,offered.version,"accept",id(99211)];
+    const accepted=await driverActor("mealdeck_driver_action",acceptArgs);
+    assert.equal(accepted.status,"assigned");
+    assert.deepEqual(await driverActor("mealdeck_driver_action",acceptArgs),accepted);
+    await assert.rejects(()=>driverActor("mealdeck_driver_action",[
+      order.orderId,offered.version,"accept",id(99212)
+    ]),/mealdeck_driver_conflict/);
+    const privateJob=(await driverActor("mealdeck_driver_portal")).jobs[0];
+    assert.deepEqual(privateJob.address,address);
+    assert.equal(privateJob.customerPhone,"+447700900123");
+  });
+  await check("driver cannot collect until KDS staff have confirmed packed handover",async()=>{
+    let active=(await driverActor("mealdeck_driver_portal")).jobs[0];
+    await driverActor("mealdeck_driver_action",[order.orderId,active.version,"arrive_kitchen",id(99213)]);
+    active=(await driverActor("mealdeck_driver_portal")).jobs[0];
+    await assert.rejects(()=>driverActor("mealdeck_driver_action",[
+      order.orderId,active.version,"pickup",id(99214)
+    ]),/mealdeck_driver_handover_pending/);
+    await driver("with_driver");
+    assert.equal((await card()).driverStatus,"with_driver");
+    await driverActor("mealdeck_driver_action",[order.orderId,active.version,"pickup",id(99215)]);
+    active=(await driverActor("mealdeck_driver_portal")).jobs[0];
+    await driverActor("mealdeck_driver_action",[order.orderId,active.version,"arrive_customer",id(99216)]);
+    active=(await driverActor("mealdeck_driver_portal")).jobs[0];
+    await driverActor("mealdeck_driver_action",[order.orderId,active.version,"report_dropoff",id(99217)]);
+    assert.equal((await driverActor("mealdeck_driver_portal")).jobs[0].status,"dropoff_reported");
+    assert.equal((await card()).driverStatus,"with_driver");
+    assert.equal(await scalar("select status::text from public.orders where id=$1",[order.orderId]),"ready");
+  });
+
   await check(
     "driver handover then delivery updates KDS and guest receipt without printing twice",
     async () => {
       const before = await card();
       await driver("with_driver", before.driverVersion);
       assert.equal((await card()).driverStatus, "with_driver");
-      await assert.rejects(() => driver("delivered", before.driverVersion), /conflict/);
+      await assert.rejects(() => driver("delivered", "0".repeat(32)), /conflict/);
       const out = await f.guest.receipt(token, order.orderId);
       assert.ok(out.driverHandoverAt);
       assert.equal(out.deliveredAt, null);
       assert.equal(out.collectionEstimateMinutes, 60);
       await driver("delivered");
+      const completedDriverJob = (await driverActor("mealdeck_driver_portal")).jobs[0];
+      assert.equal(completedDriverJob.status, "delivered");
+      assert.equal(completedDriverJob.address, null);
+      assert.equal(completedDriverJob.customerName, null);
+      assert.equal(completedDriverJob.customerPhone, null);
       assert.equal(
         (await f.board()).orders.some((x) => x.order_id === order.orderId),
         false,

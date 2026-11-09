@@ -376,9 +376,12 @@ describe("One Sunday milkcake at 99p", () => {
           .split(`id="launch-price-${brand.id}-desserts-${flavour}-milkcake"`)[1]
           ?.split("</button>")[0];
         expect(price).toContain("99p");
-        expect(price).toContain("T&amp;Cs apply");
+        // Historical offer details remain outside the Add button as a separate accessible link.
+        expect(price).not.toContain("T&amp;Cs apply");
         expect(price).not.toContain("£3.99");
       }
+      expect(html).toContain('href="/offers#sunday-milk-cake"');
+      expect(html).toContain("T&amp;Cs apply");
       expect(html).toContain("One milkcake per order is 99p after the 30% discount");
       expect(html).toContain("Additional milkcakes are £3.99 each before the usual 30% discount");
       expect(html).not.toContain("£1.29");
