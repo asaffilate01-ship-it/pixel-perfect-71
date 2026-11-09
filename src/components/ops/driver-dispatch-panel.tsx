@@ -26,7 +26,8 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
-  const [newDriverId,setNewDriverId]=useState("");
+  const [newDriverEmail,setNewDriverEmail]=useState("");
+  const [verifiedDriverId,setVerifiedDriverId]=useState<string|null>(null);
   const [newDriverName,setNewDriverName]=useState("");
   const [choices,setChoices]=useState<Record<string,string>>({});
   const refresh=useCallback(async()=>{
@@ -53,14 +54,32 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
     return ()=>window.clearInterval(timer);
   },[expanded,refresh,busy]);
 
+  async function findDriverAccount(){
+    if(!canEnrol||busy||!/^\S+@\S+\.\S+$/.test(newDriverEmail.trim()))return;
+    setBusy(true);setError("");setNotice("");setVerifiedDriverId(null);
+    try {
+      const data=await opsRpc<unknown>("mealdeck_ops_driver_find_verified_email",{
+        p_tenant:tenantId,p_location:locationId,p_email:newDriverEmail.trim().toLowerCase(),
+      });
+      const parsed=z.strictObject({found:z.boolean(),userId:driverId.nullable()}).safeParse(data);
+      if(!parsed.success)throw new Error("Driver account lookup returned an unexpected response.");
+      if(!parsed.data.found||!parsed.data.userId){
+        setError("No verified MealDeck account was found for that email. Ask the driver to register and verify their email under /account, then search again.");
+      } else {
+        setVerifiedDriverId(parsed.data.userId);
+        setNotice("Verified account found. Check the driver's name and email before granting driver access.");
+      }
+    }catch(reason){setError(reason instanceof Error?reason.message:"The verified account lookup is unavailable. Ask the owner to install the driver lookup migration.");}
+    finally{setBusy(false);}
+  }
   async function enrol(){
-    if(!canEnrol||busy||!driverId.safeParse(newDriverId).success||newDriverName.trim().length<2)return;
+    if(!canEnrol||busy||!verifiedDriverId||newDriverName.trim().length<2)return;
     setBusy(true);setError("");setNotice("");
     try{
       await opsRpc("mealdeck_ops_driver_enrol",{p_tenant:tenantId,p_location:locationId,
-        p_user:newDriverId,p_name:newDriverName.trim()});
-      setNotice("Driver approved. They can now sign in and start a shift.");
-      setNewDriverId("");setNewDriverName("");await refresh();
+        p_user:verifiedDriverId,p_name:newDriverName.trim()});
+      setNotice("Driver approved. They can now sign in at /driver using their email code and start a shift.");
+      setVerifiedDriverId(null);setNewDriverEmail("");setNewDriverName("");await refresh();
     }catch(reason){setError(reason instanceof Error?reason.message:"Could not approve the driver.");}
     finally{setBusy(false);}
   }
