@@ -1,8 +1,6 @@
 import { usePublicMenu } from "./use-public-menu";
 import { launchMenuItemDescriptor } from "@/lib/launch-menu-item-descriptor";
 import { PublicMenuStatus } from "./public-menu-status";
-import { MilkcakeOfferTerms } from "./milkcake-offer-terms";
-import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { ArrowRight, ChevronRight, Layers3, Plus, Search, ShoppingBag, X } from "lucide-react";
@@ -62,8 +60,6 @@ import {
 import {
   LAUNCH_PICKS_STORAGE_KEY,
   addLaunchPick,
-  decodeLaunchPicks,
-  encodeLaunchPicks,
   findLaunchMenuItem,
   launchItemGroups,
   launchPickCount,
@@ -130,7 +126,6 @@ function LaunchDessertUpsells({
             </span>
             <span className="lm-dessert-add">
               <strong>{formatLaunchMenuItemPrice(entry.item)}</strong>
-              {isMealDeckMilkcakePromotion(entry.item.promotion) && <small>T&amp;Cs apply</small>}
               <span>
                 <Plus size={16} aria-hidden="true" /> Add
               </span>
@@ -138,11 +133,6 @@ function LaunchDessertUpsells({
           </button>
         ))}
       </div>
-      {recommendations.some((entry) => isMealDeckMilkcakePromotion(entry.item.promotion)) && (
-        <p>
-          <MilkcakeOfferTerms explained />
-        </p>
-      )}
     </section>
   );
 }
@@ -430,7 +420,6 @@ export function LaunchMenuBrowser({
 
   const quantity = launchPickCount(picks);
   const basketPrice = launchMenuOfferBasketDisplayPrice(picks, catalogue);
-  const hasMilkcakeOffer = basketPrice.hasMilkcakeOffer;
   const dessertRecommendations = publicMenu.ready
     ? getLaunchDessertRecommendations(picks, catalogue, brand?.id)
     : [];
@@ -739,12 +728,6 @@ export function LaunchMenuBrowser({
                                   <span className="lm-item-price" id={"launch-price-" + item.id}>
                                     {item.priceVariants?.length ? "From " : ""}
                                     {formatLaunchMenuItemPrice(item)}
-                                    {isMealDeckMilkcakePromotion(item.promotion) && (
-                                      <small className="lm-promotion-label">
-                                        {" "}
-                                        · T&amp;Cs apply
-                                      </small>
-                                    )}
                                     <span className="sr-only"> per item</span>
                                   </span>
                                   <span className="lm-add-label" aria-hidden="true">
@@ -755,13 +738,6 @@ export function LaunchMenuBrowser({
                             </li>
                           ))}
                         </ul>
-                        {section.items.some((item) =>
-                          isMealDeckMilkcakePromotion(item.promotion),
-                        ) && (
-                          <p className="lm-section-description">
-                            <MilkcakeOfferTerms explained />
-                          </p>
-                        )}
                         {section.items.some((item) =>
                           item.optionGroupIds.some((id) => id.endsWith("make-it-a-meal")),
                         ) && (
@@ -824,7 +800,6 @@ export function LaunchMenuBrowser({
                           </small>
                           <span className="lm-pairing-price" id={"pairing-price-" + entry.item.id}>
                             {formatLaunchMenuItemPrice(entry.item)}
-                            {isMealDeckMilkcakePromotion(entry.item.promotion) && " · T&Cs apply"}
                             <span className="sr-only"> per item</span>
                           </span>
                         </span>
