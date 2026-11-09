@@ -208,16 +208,15 @@ function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
       <div className="md-account-icon">
         <UserRound size={26} aria-hidden="true" />
       </div>
-      <h2 id="account-guest-heading">Just your name and WhatsApp number.</h2>
+      <h2 id="account-guest-heading">Continue as a guest.</h2>
       <p>
-        Choose your food and continue as a guest while member registration is being prepared. Enter your name and WhatsApp
-        number at checkout.
+        Continue without registering: choose your food and provide your contact details at checkout.
       </p>
       <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>
         Continue without registering <ArrowRight size={18} aria-hidden="true" />
       </a>
       <p className="md-account-fine md-account-guest-note">
-        Email registration opens at 1pm on Monday 9 November 2026, UK time. Guest orders earn no
+        Member registration is available when the account service is open. Guest orders earn no
         loyalty points.
       </p>
     </section>
@@ -272,20 +271,20 @@ function CustomerEntry({
         </button>
       </div>
       <h2 id="account-entry-heading">
-        {mode === "register" ? "Create your MealDeck account" : "Welcome back."}
+        {mode === "register" ? "Join MealDeck in two steps" : "Welcome back."}
       </h2>
       <p>
         {mode === "register"
-          ? "Enter your details, choose any optional notifications, then verify your email. " +
-            "Earn 1 point for every complete £1 paid on eligible orders."
+          ? "Enter your name, email and phone, then verify using the link or code we send. Notification choices are optional and never affect joining or earning points."
           : usePassword
             ? "Sign in with your email and password."
             : "We’ll email you a secure sign-in link. No password to remember."}
       </p>
       {mode === "register" && (
         <p className="md-account-steps" role="note">
-          <strong>Step 1 of 2:</strong> Your details and notification choices.{" "}
-          <strong>Step 2:</strong> Verify your email to activate membership.
+          <strong>1.</strong> Enter your details.{" "}
+          <strong>2.</strong> Verify your email.{" "}
+          <strong>Done:</strong> Member benefits and loyalty points become available.
         </p>
       )}
       <form
@@ -493,8 +492,8 @@ function FinishRegistration({
       <span className="md-account-verified">
         <ShieldCheck size={17} aria-hidden="true" /> Email verified
       </span>
-      <h2 id="account-finish-heading">One last step.</h2>
-      <p>Confirm your contact details to finish joining MealDeck.</p>
+      <h2 id="account-finish-heading">Confirm your contact details.</h2>
+      <p>Your email is verified. Check your name and phone number, then save. Every optional marketing choice is off until you opt in.</p>
       <p className="md-account-email-address">{account.profile.email}</p>
       <form
         onSubmit={(event) => {
@@ -575,10 +574,6 @@ function CustomerSettings({
         email: profile.email,
         preferences,
       });
-      if (!preferences.pushMarketing && !preferences.orderNotifications) {
-        await disableCustomerDeviceNotifications().catch(() => {});
-        setDevice("off");
-      }
       onSaved(saved);
       onMessage("Your details and preferences are saved.");
     } catch (reason) {
@@ -658,9 +653,12 @@ function CustomerSettings({
       <section className="md-account-panel" id="device-notifications" aria-labelledby="account-device-heading">
         <div className="md-account-section-heading">
           <Bell size={21} aria-hidden="true" />
-          <h2 id="account-device-heading">Turn on phone notifications</h2>
+          <h2 id="account-device-heading">Enable notifications on this phone</h2>
         </div>
-        <p className="md-account-fine">Two steps: save your choices above, then allow notifications on this device. Browser permission is separate from marketing consent.</p>
+        <p className="md-account-fine">
+          First choose and save Order status or App offers above. Then select Allow notifications
+          below. Your browser will request permission; it is separate from marketing consent.
+        </p>
         <p>
           {device === "connected"
             ? "Connected. You’ll receive only the types of notification saved in your preferences."
