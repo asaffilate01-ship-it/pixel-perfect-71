@@ -1,0 +1,57 @@
+name: MealDeck signup and messaging consent
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/mealdeck-registration-consent.yml'
+      - 'src/lib/mealdeck-customer*'
+      - 'src/lib/mealdeck-cookie-consent.ts'
+      - 'src/components/customer-account.tsx'
+      - 'tests/mealdeck-registration-privacy.test.ts'
+      - 'tests/postgres/mealdeck-message-consent-behavior.mjs'
+      - 'deploy/mealdeck/post-install-migrations/*registration_open_now.sql'
+      - 'deploy/mealdeck/post-install-migrations/*message_channel_consent.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  consent-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_consent
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_consent"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked PostgreSQL fixture dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Validate registration, cookie defaults and privacy copy
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun test tests/mealdeck-registration-privacy.test.ts tests/launch-basket-expiration.test.ts
+      - name: Validate private, revocable message consent in PostgreSQL 17
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_consent
+        run: |
+          set -o pipefail
+          node tests/postgres/mealdeck-message-consent-behavior.mjs --native 2>&1 | tee "$RUNNER_TEMP/message-consent.log"
+      - name: Retain verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-message-consent-evidence
+          path: ${{ runner.temp }}/message-consent.log
+          retention-days: 14
+          if-no-files-found: warn

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Instagram, Music2 } from "lucide-react";
 import { WhatsAppOrderLink } from "@/components/whatsapp-order-link";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
+import { MEALDECK_OPEN_COOKIE_SETTINGS } from "@/components/mealdeck-cookie-choices";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 import { MEALDECK_LAUNCH_DAYS } from "@/lib/mealdeck-launch-schedule";
 import deliverooLogo from "@/assets/deliveroo-app.png.asset.json";
@@ -26,9 +27,10 @@ export function SiteFooter() {
             </Link>
             <Link to="/offers">Offers</Link>
             <Link to="/account">My account &amp; preferences</Link>
-            <Link to="/opening-offer">Opening weekend offer</Link>
+            <Link to="/account">Membership &amp; loyalty</Link>
             <Link to="/meta-ad">Your first order</Link>
             <Link to="/privacy">Privacy</Link>
+            <button type="button" className="text-left underline underline-offset-2" onClick={() => window.dispatchEvent(new Event(MEALDECK_OPEN_COOKIE_SETTINGS))}>Cookie settings</button>
             <Link to="/" hash="how">
               How it works
             </Link>
@@ -48,7 +50,7 @@ export function SiteFooter() {
             <h3>Luton collection</h3>
             <p>314–318 Selbourne Road</p>
             <p>Luton · LU4 8NU</p>
-            <p>Opening weekend · 6–8 November 2026</p>
+            <p>Luton collection and eligible local delivery</p>
             {MEALDECK_LAUNCH_DAYS.map((day) => (
               <p key={day.date}>
                 <time dateTime={day.date}>{day.shortLabel}</time> · {day.hoursLabel}
@@ -56,7 +58,7 @@ export function SiteFooter() {
             ))}
             <p>All times are UK local time.</p>
             <p>Order online for collection or kerbside during opening hours.</p>
-            <p>Delivery · Coming soon</p>
+            <p>Free own-driver delivery where checkout confirms eligibility: 4 km radius and £15 minimum after discounts.</p>
             <WhatsAppOrderLink className="md-whatsapp-soon" />
           </div>
         </div>
@@ -64,11 +66,10 @@ export function SiteFooter() {
 
       <div className="md-footer-apps">
         <p className="md-footer-apps-copy">
-          <strong>Luton launches first.</strong> Order as a guest during our opening hours on 6–8
-          November, with no loyalty points on guest orders. See our{" "}
-          <Link to="/offers">three November offers</Link>, including double points when you register
-          and spend £15 or more from Monday 9 to Friday 13 November inclusive. Offer emails and app
-          alerts are optional, separate choices.
+          <strong>MealDeck Luton is open for members.</strong> Register with your name, email and
+          phone number, verify your email and choose optional offers by channel. Registered members
+          can earn loyalty points on eligible paid orders when the programme is enabled; guest
+          orders do not earn points. <Link to="/account">Join MealDeck</Link>.
         </p>
         <div className="md-footer-apps-row" aria-label="Ordering channels and social links">
           <div className="md-footer-social" aria-label="Social links">

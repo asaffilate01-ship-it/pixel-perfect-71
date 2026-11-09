@@ -23,7 +23,7 @@ function PrivacyPage() {
         <article className="md-info-inner">
           <p className="lm-eyebrow">Your details. Your choices.</p>
           <h1>MealDeck privacy notice</h1>
-          <p>Updated 7 November 2026</p>
+          <p>Updated 9 November 2026</p>
           <h2>Who is responsible?</h2>
           <p>
             MealDeck is a trading name of 313 Brands Ltd, the controller responsible for the
@@ -46,11 +46,10 @@ function PrivacyPage() {
           </p>
           <h2>Ordering as a guest</h2>
           <p>
-            During our opening hours on 6–8 November 2026, you can order without registering. We use
-            your name and WhatsApp number to fulfil that order and handle related queries. Email is
-            not required for opening-weekend guest checkout; an email supplied on an earlier order
-            is retained with that order. This does not create a member account or give permission
-            for marketing. Guest orders earn no loyalty points.
+            Where guest checkout is offered, you can order without registering. We use your
+            name and contact details to fulfil that order and handle related queries. This does
+            not create a member account or give permission for marketing. Guest orders earn no
+            loyalty points.
           </p>
           <p>
             A necessary guest session cookie keeps your receipt available to the browser you used to
@@ -117,24 +116,24 @@ function PrivacyPage() {
             required to receive an eligible discount.
           </p>
           <p>
-            The double-points offer requires registration and a spend of £15 or more from Monday 9
-            to Friday 13 November 2026 inclusive. When loyalty is available, your account may hold a
-            points balance and a record of qualifying purchases and adjustments. Earning and
-            redemption details will be shown before points are credited. Promotional updates about
-            rewards remain optional.
+            Registered and email-verified members can earn 1 point per complete £1 actually paid
+            after discounts on qualifying orders once loyalty is active. Refunds and disputes may
+            reduce points. Any bonus-points campaign requires its own announced terms and is not
+            activated merely by registering. Promotional updates remain optional.
           </p>
           <h2>Optional emails and notifications</h2>
           <p>
-            Promotional emails and promotional app notifications are available to registered members
-            who opt in. You choose each separately, and both are off by default. A guest order is
-            not an opt-in. We record your choice, the notice version and when it changed so we can
-            respect and demonstrate your consent.
+            Marketing emails, SMS text offers, WhatsApp promotions and app promotional notifications
+            each require a separate, unchecked opt-in. No permission is inferred from registration,
+            an order, an email verification, or a browser notification prompt. We record the channel,
+            choice, notice version and time of change. SMS and WhatsApp campaigns also depend on a
+            verified provider and approved messaging setup before any promotional send.
           </p>
           <p>
-            You can change these choices in <Link to="/account">your account</Link> or contact us.
-            Marketing emails must include an unsubscribe option. Withdrawing consent stops future
-            marketing through that channel and does not affect your account, order updates or
-            eligibility for offers.
+            You can change or withdraw each choice in <Link to="/account">your account</Link>
+            or contact us. Promotional messages include an appropriate opt-out route. Revoking
+            consent stops promotional messages through the selected channel without cancelling
+            orders, necessary service communications or an eligible offer.
           </p>
           <p>
             App notifications also need permission from your device or browser. We only ask after
@@ -169,16 +168,19 @@ function PrivacyPage() {
             room.
           </p>
           <p>
-            Necessary browser storage keeps you signed in, remembers the basket on your device and
-            remembers an app-install invitation dismissed during your visit. Guest checkout uses a
-            necessary session cookie to protect access to your order. The app’s offline cache
-            contains its public offline screen and artwork; it does not cache account details,
-            payments or live order progress.
+            Necessary browser storage keeps you signed in and remembers basket choices for no
+            longer than five minutes after each quantity is added. Returning to an old tab or
+            checkout does not extend that deadline. It also remembers dismissed app prompts and
+            secure access to guest receipts. The app's offline cache contains only public
+            offline content, not account details, payments or live order progress.
           </p>
           <p>
-            Installing the app is optional and is separate from enabling notifications. This
-            registration and ordering flow does not require advertising cookies or marketing
-            consent.
+            On first use, we let you accept, reject or customise optional analytics and
+            advertising/personalisation cookies. Strictly necessary basket, authentication,
+            security and checkout storage stays available. You can change your choices using
+            Cookie settings in the footer. Optional tracking must not run before the relevant
+            consent. Installing the app is a separate, optional action, and promotional push
+            notifications require an account opt-in and device permission.
           </p>
           <h2>Service providers and sharing</h2>
           <p>
