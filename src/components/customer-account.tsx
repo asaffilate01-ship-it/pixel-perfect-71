@@ -761,6 +761,13 @@ export function CustomerAccount({
     let active = true;
     let unsubscribe = () => {};
     let linkFailed = false;
+    // A broken Auth bootstrap must not leave the registration page on a
+    // perpetual blank/loading state. This timeout only changes presentation.
+    const loadingDeadline = window.setTimeout(() => {
+      if (!active) return;
+      setLoading(false);
+      setConnectionError("The account service is taking too long to respond. You can retry, or enter your details below.");
+    }, 10_000);
     async function refresh() {
       try {
         const next = await readMealDeckCustomerAccount();
@@ -807,11 +814,13 @@ export function CustomerAccount({
       } catch (reason) {
         if (active) setConnectionError(errorMessage(reason));
       } finally {
+        window.clearTimeout(loadingDeadline);
         if (active) setLoading(false);
       }
     })();
     return () => {
       active = false;
+      window.clearTimeout(loadingDeadline);
       unsubscribe();
     };
   }, [attempt, showError, returnTarget]);
