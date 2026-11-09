@@ -1,5 +1,7 @@
-/** Temporary customer experience only; never grants payment or staff authority. */
-export const EMAIL_REGISTRATION_RESUMES_AT = "2026-11-09T13:00:00.000Z";
+/** Registration opens from the owner's 9 Nov 10:35 GMT instruction.
+ * This is display gating only; verified-email signup authority remains in
+ * the independent MealDeck database, not the customer's clock. */
+export const EMAIL_REGISTRATION_RESUMES_AT = "2026-11-09T10:35:00.000Z";
 export const QUICK_CHECKOUT_BEGINS_AT = "2026-11-06T00:00:00.000Z";
 export const KERBSIDE_PARKING_INSTRUCTION =
   "Please park near our location, somewhere safe and legal, and keep your phone nearby.";
