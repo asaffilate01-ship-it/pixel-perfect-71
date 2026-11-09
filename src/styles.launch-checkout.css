@@ -160,6 +160,28 @@
   top: 12px;
   color: #c31721;
 }
+.md-checkout-timing {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #e6d8c6;
+}
+.md-checkout-timing h3 {
+  font: 700 18px/1.25 Outfit, sans-serif;
+  margin: 0 0 12px;
+}
+.md-checkout-timing .md-checkout-methods button {
+  min-height: 104px;
+}
+.md-checkout-timing .md-checkout-methods button:disabled {
+  cursor: not-allowed;
+  border-style: dashed;
+  background: #f5f0e8;
+  color: #615b54;
+}
+.md-checkout-timing .md-checkout-methods button:disabled span {
+  color: #615b54;
+}
+
 .md-checkout-delivery {
   display: flex;
   align-items: center;
