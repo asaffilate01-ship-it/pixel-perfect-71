@@ -118,6 +118,23 @@ export async function opsRpc<T>(
         "Your staff role is not permitted to access this area.",
       );
     }
+    if (name === "mealdeck_ops_driver_find_verified_email") {
+      if (error.code === "PGRST202")
+        throw new OpsRequestError(
+          "unconfigured",
+          "The manager's verified-driver email lookup is not installed. The MealDeck driver approval migration must be deployed first.",
+        );
+      if (/mealdeck_driver_email_invalid/.test(error.message))
+        throw new OpsRequestError(
+          "unavailable",
+          "Enter a complete email address for the driver.",
+        );
+    }
+    if (name === "mealdeck_ops_driver_enrol" && /mealdeck_driver_enrol_invalid/.test(error.message))
+      throw new OpsRequestError(
+        "unavailable",
+        "That verified account cannot be approved. Check the email lookup and driver name, then retry.",
+      );
     if (name === "mealdeck_ops_menu_categories" || name === "mealdeck_ops_update_menu_category") {
       if (error.code === "PGRST202")
         throw new OpsRequestError(
