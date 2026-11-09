@@ -485,14 +485,16 @@ function CheckEmail({
 function FinishRegistration({
   account,
   busy,
+  initial,
   onFinish,
 }: {
   account: Extract<CustomerAccountState, { status: "signed_in" }>;
   busy: boolean;
+  initial?: CustomerRegistration;
   onFinish: (details: CustomerRegistration) => Promise<void>;
 }) {
-  const [name, setName] = useState(account.suggestedName);
-  const [phone, setPhone] = useState(account.suggestedPhone);
+  const [name, setName] = useState(account.suggestedName || initial?.name || "");
+  const [phone, setPhone] = useState(account.suggestedPhone || initial?.phone || "");
   const [preferences, setPreferences] = useState<CustomerPreferences>({
     ...EMPTY_CUSTOMER_PREFERENCES,
   });
@@ -929,11 +931,10 @@ export function CustomerAccount({
     if (!emailPending) return;
     await run(async () => {
       await verifyCustomerEmailCode(emailPending, code);
-      if (draft) await registerMealDeckCustomer(draft);
       setAccount(await readMealDeckCustomerAccount());
       setEmailPending(null);
-      setDraft(undefined);
-      showMessage("Your email is verified.");
+      // Explicit choices and final registration occur only after verification.
+      showMessage("Email verified. Review your details and choose updates to finish.");
     });
   }
 
@@ -997,6 +998,16 @@ export function CustomerAccount({
                   ? "Use your verified account to continue."
                   : "One account for all your favourite brands. Verify your email to start earning loyalty points."}
           </p>
+          {profile?.registered && (
+            <nav className="md-account-quick-links" aria-label="Account shortcuts">
+              <a href="#account-notification-choices">
+                <Bell size={17} aria-hidden="true" /> Notification settings
+              </a>
+              <a href="#account-device-heading">
+                <Smartphone size={17} aria-hidden="true" /> Enable on this device
+              </a>
+            </nav>
+          )}
           {signedIn && (
             <button
               type="button"
@@ -1078,7 +1089,7 @@ export function CustomerAccount({
               registrationDeferred ? (
                 <QuickCheckoutNotice returnTo={returnTarget} />
               ) : (
-                <FinishRegistration account={account} busy={busy} onFinish={finish} />
+                <FinishRegistration account={account} busy={busy} initial={draft} onFinish={finish} />
               )
             ) : emailPending ? (
               <CheckEmail
