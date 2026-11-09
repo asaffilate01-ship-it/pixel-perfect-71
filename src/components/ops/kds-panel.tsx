@@ -1326,9 +1326,10 @@ export function KitchenOrderCard({
   const hasOrderNumber = isOrderNumber(order.order_number);
   const referenceLabel = hasOrderNumber ? "Order" : "Collection code";
   const collection = order.fulfilment === "pickup" || order.fulfilment === "curbside";
-  const scheduledHeadline = order.fulfilment === "dine_in"
-    ? null
-    : scheduledKdsHeadline(order.fulfilment, order.scheduledFor, order.prepStartAt);
+  const scheduledHeadline =
+    order.fulfilment === "dine_in"
+      ? null
+      : scheduledKdsHeadline(order.fulfilment, order.scheduledFor, order.prepStartAt);
   return (
     <article
       ref={cardRef}
@@ -1342,7 +1343,11 @@ export function KitchenOrderCard({
     >
       <header className="md-ops-ticket-heading md-kds-ticket-heading border-b md-ops-divider">
         {scheduledHeadline && (
-          <p role="note" data-testid="scheduled-kds-note" className="mb-3 flex items-center gap-2 rounded-lg border-2 border-amber-500 bg-amber-100 p-3 text-sm font-black uppercase tracking-wide text-amber-950">
+          <p
+            role="note"
+            data-testid="scheduled-kds-note"
+            className="mb-3 flex items-center gap-2 rounded-lg border-2 border-amber-500 bg-amber-100 p-3 text-sm font-black uppercase tracking-wide text-amber-950"
+          >
             <Clock3 className="size-5 shrink-0" aria-hidden="true" />
             <strong>{scheduledHeadline}</strong>
           </p>
