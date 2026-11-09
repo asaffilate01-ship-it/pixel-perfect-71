@@ -14,10 +14,10 @@ export function parseMealDeckCookieConsent(raw: string | null): MealDeckCookieCo
     const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const v = parsed as Record<string, unknown>;
-    if (v.version !== 1 || typeof v.analytics !== "boolean" ||
-      typeof v.marketing !== "boolean" || typeof v.savedAt !== "string" ||
-      !Number.isFinite(Date.parse(v.savedAt))) return null;
-    return { version: 1, analytics: v.analytics, marketing: v.marketing, savedAt: v.savedAt };
+    if (v["version"] !== 1 || typeof v["analytics"] !== "boolean" ||
+      typeof v["marketing"] !== "boolean" || typeof v["savedAt"] !== "string" ||
+      !Number.isFinite(Date.parse(v["savedAt"]))) return null;
+    return { version: 1, analytics: v["analytics"], marketing: v["marketing"], savedAt: v["savedAt"] };
   } catch { return null; }
 }
 
