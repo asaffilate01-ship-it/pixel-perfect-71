@@ -54,7 +54,7 @@ export function OfferDiscovery() {
             </h2>
             <p>
               The opening-weekend discounts and 99p milkcake promotion have finished.
-              Verified members now earn one loyalty point for each complete £1 paid on
+              Verified members earn one point per complete £1 paid after discounts on
               eligible orders. <Link to="/account">Create your account</Link>.
             </p>
           </div>
