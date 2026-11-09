@@ -85,6 +85,8 @@ describe("MealDeck customer contracts", () => {
       emailMarketing: false,
       pushMarketing: false,
       orderNotifications: false,
+      smsMarketing: false,
+      whatsappMarketing: false,
     });
     expect(Object.isFrozen(EMPTY_CUSTOMER_PREFERENCES)).toBe(true);
     expect(
@@ -97,7 +99,16 @@ describe("MealDeck customer contracts", () => {
     expect(parseCustomerPreferences({ emailMarketing: true })).toBeNull();
     expect(
       parseCustomerPreferences({ ...EMPTY_CUSTOMER_PREFERENCES, orderNotifications: true }),
-    ).toEqual({ emailMarketing: false, pushMarketing: false, orderNotifications: true });
+    ).toEqual({
+      emailMarketing: false,
+      pushMarketing: false,
+      orderNotifications: true,
+      smsMarketing: false,
+      whatsappMarketing: false,
+    });
+    expect(
+      parseCustomerPreferences({ ...EMPTY_CUSTOMER_PREFERENCES, smsMarketing: "yes" }),
+    ).toBeNull();
   });
   test("profile parser fails closed for malformed registration and does not fill verification from metadata", () => {
     expect(parseCustomerProfile(profile)).toEqual(profile);
