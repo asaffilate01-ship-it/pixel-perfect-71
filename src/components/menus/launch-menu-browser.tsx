@@ -1,11 +1,8 @@
 import { usePublicMenu } from "./use-public-menu";
 import { launchMenuItemDescriptor } from "@/lib/launch-menu-item-descriptor";
 import { PublicMenuStatus } from "./public-menu-status";
-import { MilkcakeOfferTerms } from "./milkcake-offer-terms";
-import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
-import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { ArrowRight, ChevronRight, Layers3, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SiteHeader } from "@/components/site-header";
@@ -52,10 +49,17 @@ import {
 import "@/styles.launch-prices.css";
 import { prepareLaunchCheckout } from "@/lib/launch-basket-transfer";
 import {
+  LAUNCH_BASKET_EXPIRY_NOTICE,
+  decodeTimedLaunchBasket,
+  emptyTimedLaunchBasket,
+  encodeTimedLaunchBasket,
+  expireTimedLaunchBasket,
+  updateTimedLaunchBasket,
+  type TimedLaunchBasket,
+} from "@/lib/launch-basket-expiration";
+import {
   LAUNCH_PICKS_STORAGE_KEY,
   addLaunchPick,
-  decodeLaunchPicks,
-  encodeLaunchPicks,
   findLaunchMenuItem,
   launchItemGroups,
   launchPickCount,
@@ -122,7 +126,6 @@ function LaunchDessertUpsells({
             </span>
             <span className="lm-dessert-add">
               <strong>{formatLaunchMenuItemPrice(entry.item)}</strong>
-              {isMealDeckMilkcakePromotion(entry.item.promotion) && <small>T&amp;Cs apply</small>}
               <span>
                 <Plus size={16} aria-hidden="true" /> Add
               </span>
@@ -130,11 +133,6 @@ function LaunchDessertUpsells({
           </button>
         ))}
       </div>
-      {recommendations.some((entry) => isMealDeckMilkcakePromotion(entry.item.promotion)) && (
-        <p>
-          <MilkcakeOfferTerms explained />
-        </p>
-      )}
     </section>
   );
 }
@@ -149,19 +147,17 @@ export function LaunchMenuBrowser({
   initialMenu?: MealDeckPublicMenuSnapshot | null | undefined;
 }) {
   const navigate = useNavigate();
-  const entryPolicy = useCustomerEntryPolicy();
   const deliveryLive = useOwnDriverAvailability();
-  const groupOrderingOpen =
-    !!entryPolicy &&
-    Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
   const publicMenu = usePublicMenu(initialMenu);
   const { catalogue } = publicMenu;
   const brand = getLaunchMenuBrand(requestedBrandId ?? "skorch-burgers", catalogue);
   const menuPage = getMealDeckMenuPage(brand?.id);
   const pendingBrand = marketingBrands.find((entry) => entry.id === requestedBrandId);
   const [search, setSearch] = useState("");
-  const [picks, setPicks] = useState<LaunchMenuPick[]>([]);
-  const [clearedPicks, setClearedPicks] = useState<LaunchMenuPick[] | null>(null);
+  const [basket, setBasket] = useState<TimedLaunchBasket>(emptyTimedLaunchBasket);
+  const basketRef = useRef<TimedLaunchBasket>(emptyTimedLaunchBasket());
+  const picks = basket.picks;
+  const [clearedPicks, setClearedPicks] = useState<TimedLaunchBasket | null>(null);
   const [draft, setDraft] = useState<LaunchItemDraft | null>(null);
   const [picksOpen, setPicksOpen] = useState(false);
   const [notice, setNotice] = useState<LaunchBasketUpdate | null>(null);
@@ -172,12 +168,46 @@ export function LaunchMenuBrowser({
   const desktopBasketHeadingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     try {
-      setPicks(decodeLaunchPicks(window.localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY)));
+      // Old v1 baskets lack item age, so they are not silently kept indefinitely.
+      const restored = decodeTimedLaunchBasket(window.localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY));
+      basketRef.current = restored;
+      setBasket(restored);
+      window.localStorage.setItem(LAUNCH_PICKS_STORAGE_KEY, encodeTimedLaunchBasket(restored));
       setStorageStatus("saved");
     } catch {
-      /* Browsing still works when storage is disabled. */
+      /* Browsing still works with ephemeral, five-minute timed picks. */
       setStorageStatus("session");
     }
+  }, []);
+  useEffect(() => {
+    const prune = () => {
+      const before = basketRef.current;
+      const next = expireTimedLaunchBasket(before);
+      if (next === before) return;
+      basketRef.current = next;
+      setBasket(next);
+      setClearedPicks(null);
+      persistPicks(next);
+      setNotice({ message: LAUNCH_BASKET_EXPIRY_NOTICE, tone: "info" });
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== LAUNCH_PICKS_STORAGE_KEY) return;
+      const restored = decodeTimedLaunchBasket(event.newValue);
+      basketRef.current = restored;
+      setBasket(restored);
+      setClearedPicks(null);
+    };
+    const visible = () => { if (document.visibilityState === "visible") prune(); };
+    const timer = window.setInterval(prune, 1000);
+    document.addEventListener("visibilitychange", visible);
+    window.addEventListener("focus", prune);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", visible);
+      window.removeEventListener("focus", prune);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
   useEffect(() => {
     setSearch("");
@@ -186,28 +216,35 @@ export function LaunchMenuBrowser({
     if (picksOpen) basketHeadingRef.current?.focus();
   }, [picksOpen]);
 
-  function persistPicks(next: LaunchMenuPick[]) {
+  function persistPicks(next: TimedLaunchBasket) {
     try {
-      window.localStorage.setItem(LAUNCH_PICKS_STORAGE_KEY, encodeLaunchPicks(next));
+      window.localStorage.setItem(LAUNCH_PICKS_STORAGE_KEY, encodeTimedLaunchBasket(next));
       setStorageStatus("saved");
       return true;
     } catch {
-      /* Keep this session's picks. */
+      /* Keep this session's picks and expiry timestamps. */
       setStorageStatus("session");
       return false;
     }
   }
 
-  function updatePicks(next: LaunchMenuPick[]) {
-    setPicks(next);
-    setClearedPicks(null);
+  function acceptBasket(next: TimedLaunchBasket) {
+    basketRef.current = next;
+    setBasket(next);
     persistPicks(next);
   }
 
+  function updatePicks(next: LaunchMenuPick[]) {
+    acceptBasket(updateTimedLaunchBasket(basketRef.current, next));
+    setClearedPicks(null);
+  }
+
   function retrySave() {
-    // Retry only the latest in-memory basket. Reloading browser storage here
-    // could replace choices made after a failed write with an older basket.
-    const saved = persistPicks(picks);
+    // Retry only this visit's surviving basket and original expiry timestamps.
+    const current = expireTimedLaunchBasket(basketRef.current);
+    basketRef.current = current;
+    setBasket(current);
+    const saved = persistPicks(current);
     setNotice({
       message: saved ? "Basket saved on this device." : "Your basket is still here for this visit.",
       tone: saved ? "success" : "info",
@@ -216,17 +253,22 @@ export function LaunchMenuBrowser({
   }
 
   function emptyBasket() {
-    if (!picks.length) return;
-    const previous = picks;
+    const previous = expireTimedLaunchBasket(basketRef.current);
+    if (!previous.picks.length) return;
     updatePicks([]);
     setClearedPicks(previous);
     setNotice({ message: "Basket emptied." });
   }
 
   function undoEmptyBasket() {
-    if (!clearedPicks || picks.length) return;
-    updatePicks(clearedPicks);
-    setNotice({ message: "Your basket has been restored." });
+    if (!clearedPicks || basketRef.current.picks.length) return;
+    const restored = expireTimedLaunchBasket(clearedPicks);
+    acceptBasket(restored);
+    setClearedPicks(null);
+    setNotice({
+      message: restored.picks.length ? "Your remaining basket items have been restored." : LAUNCH_BASKET_EXPIRY_NOTICE,
+      tone: restored.picks.length ? "success" : "info",
+    });
   }
 
   function browse(brandId: string, sectionId?: string, target: "brand" | "items" = "brand") {
@@ -280,10 +322,11 @@ export function LaunchMenuBrowser({
       findLaunchMenuItem(draft.brand.id, draft.item.id, catalogue)?.item.available === false
     )
       return;
+    const livePicks = expireTimedLaunchBasket(basketRef.current).picks;
     const next = draft.existing
-      ? updateLaunchPick(picks, draft.existing.key, selections, quantity, crossSelections)
-      : addLaunchPick(picks, draft.brand.id, draft.item.id, selections, quantity, crossSelections);
-    if (next === picks) {
+      ? updateLaunchPick(livePicks, draft.existing.key, selections, quantity, crossSelections)
+      : addLaunchPick(livePicks, draft.brand.id, draft.item.id, selections, quantity, crossSelections);
+    if (next === livePicks) {
       setSaveError(
         "Your basket can hold up to 20 of a dish and 60 selections in total. Check your choices or reduce a quantity to continue.",
       );
@@ -312,8 +355,9 @@ export function LaunchMenuBrowser({
       (candidate) => candidate.item.id === entry.item.id,
     );
     if (!current) return;
-    const next = addLaunchPick(picks, current.brand.id, current.item.id, {}, 1);
-    if (next === picks) return;
+    const livePicks = expireTimedLaunchBasket(basketRef.current).picks;
+    const next = addLaunchPick(livePicks, current.brand.id, current.item.id, {}, 1);
+    if (next === livePicks) return;
     updatePicks(next);
     setNotice({ message: current.item.name + " added to your basket." });
     // The suggestions disappear once a dessert is present. Keep keyboard focus
@@ -354,9 +398,28 @@ export function LaunchMenuBrowser({
     }
   }
 
+  function proceedToCheckout(event: MouseEvent<HTMLAnchorElement>) {
+    const live = expireTimedLaunchBasket(basketRef.current);
+    if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null || !live.picks.length
+      || live.picks.length !== picks.length
+      || live.picks.some((pick, index) => pick.key !== picks[index]?.key || pick.quantity !== picks[index]?.quantity)) {
+      event.preventDefault();
+      acceptBasket(live);
+      setNotice({ message: LAUNCH_BASKET_EXPIRY_NOTICE, tone: "info" });
+      return;
+    }
+    try {
+      prepareLaunchCheckout(live.picks, live);
+      setPicksOpen(false);
+    } catch {
+      event.preventDefault();
+      acceptBasket(expireTimedLaunchBasket(basketRef.current));
+      setNotice({ message: LAUNCH_BASKET_EXPIRY_NOTICE, tone: "info" });
+    }
+  }
+
   const quantity = launchPickCount(picks);
   const basketPrice = launchMenuOfferBasketDisplayPrice(picks, catalogue);
-  const hasMilkcakeOffer = basketPrice.hasMilkcakeOffer;
   const dessertRecommendations = publicMenu.ready
     ? getLaunchDessertRecommendations(picks, catalogue, brand?.id)
     : [];
@@ -414,14 +477,14 @@ export function LaunchMenuBrowser({
     storageStatus,
     onRetrySave: retrySave,
     onQuantity: (key: string, value: number) =>
-      updatePicks(setLaunchPickQuantity(picks, key, value)),
+      updatePicks(setLaunchPickQuantity(expireTimedLaunchBasket(basketRef.current).picks, key, value)),
     onEdit: (pick: LaunchMenuPick) => {
       const entry = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
       if (entry) openItem(entry, pick);
     },
     onRemove: (pick: LaunchMenuPick) => {
       const entry = findLaunchMenuItem(pick.brandId, pick.itemId, catalogue);
-      updatePicks(setLaunchPickQuantity(picks, pick.key, 0));
+      updatePicks(setLaunchPickQuantity(expireTimedLaunchBasket(basketRef.current).picks, pick.key, 0));
       setNotice({ message: (entry?.item.name ?? "Item") + " removed from your basket." });
     },
   };
@@ -465,12 +528,10 @@ export function LaunchMenuBrowser({
         <div className="lm-group-entry">
           <p>
             <strong>Ordering together?</strong>{" "}
-            {groupOrderingOpen
-              ? "Join one room. Choose how you pay."
-              : "Group rooms open on Monday 9 November."}
+            Choose a private room and check whether group ordering is accepting new orders.
           </p>
           <Link to="/group-order">
-            {groupOrderingOpen ? "Start a group" : "Group ordering · Starting 9 November"}{" "}
+            Explore group ordering{" "}
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
         </div>
@@ -667,12 +728,6 @@ export function LaunchMenuBrowser({
                                   <span className="lm-item-price" id={"launch-price-" + item.id}>
                                     {item.priceVariants?.length ? "From " : ""}
                                     {formatLaunchMenuItemPrice(item)}
-                                    {isMealDeckMilkcakePromotion(item.promotion) && (
-                                      <small className="lm-promotion-label">
-                                        {" "}
-                                        · T&amp;Cs apply
-                                      </small>
-                                    )}
                                     <span className="sr-only"> per item</span>
                                   </span>
                                   <span className="lm-add-label" aria-hidden="true">
@@ -683,13 +738,6 @@ export function LaunchMenuBrowser({
                             </li>
                           ))}
                         </ul>
-                        {section.items.some((item) =>
-                          isMealDeckMilkcakePromotion(item.promotion),
-                        ) && (
-                          <p className="lm-section-description">
-                            <MilkcakeOfferTerms explained />
-                          </p>
-                        )}
                         {section.items.some((item) =>
                           item.optionGroupIds.some((id) => id.endsWith("make-it-a-meal")),
                         ) && (
@@ -752,7 +800,6 @@ export function LaunchMenuBrowser({
                           </small>
                           <span className="lm-pairing-price" id={"pairing-price-" + entry.item.id}>
                             {formatLaunchMenuItemPrice(entry.item)}
-                            {isMealDeckMilkcakePromotion(entry.item.promotion) && " · T&Cs apply"}
                             <span className="sr-only"> per item</span>
                           </span>
                         </span>
@@ -789,24 +836,17 @@ export function LaunchMenuBrowser({
                       <Link
                         to="/checkout"
                         className="lm-primary"
-                        onClick={(event) => {
-                          if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null) {
-                            event.preventDefault();
-                            return;
-                          }
-                          prepareLaunchCheckout(picks);
-                        }}
+                        onClick={proceedToCheckout}
                       >
                         Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
                       </Link>
                       <p>
+                        Basket items expire after five minutes.{" "}
                         {deliveryLive
                           ? "Collection and kerbside have no minimum; free delivery requires £15 after discounts within 4 km of LU4 8NU."
                           : "No minimum order for collection or kerbside."}{" "}
-                        Verified members earn loyalty points on eligible paid orders.{" "}
+                        Guests and members welcome. Verified members earn points on eligible paid orders.{" "}
                         <Link to="/account">Member benefits</Link>
-                        {hasMilkcakeOffer &&
-                          " One milkcake per order is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount."}
                       </p>
                     </div>
                   )}
@@ -1005,7 +1045,7 @@ export function LaunchMenuBrowser({
                     ? "Keep this page open: this browser couldn’t save your current basket."
                     : storageStatus === "checking"
                       ? "Checking your saved choices."
-                      : "Your choices are saved on this device."}{" "}
+                      : "Your basket is saved for a maximum of 5 minutes per item."}{" "}
                   Confirm current prices and{" "}
                   {deliveryLive ? "delivery eligibility" : "collection availability"} at checkout.
                 </DialogDescription>
@@ -1028,14 +1068,7 @@ export function LaunchMenuBrowser({
                   <Link
                     to="/checkout"
                     className="lm-primary"
-                    onClick={(event) => {
-                      if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null) {
-                        event.preventDefault();
-                        return;
-                      }
-                      prepareLaunchCheckout(picks);
-                      setPicksOpen(false);
-                    }}
+                    onClick={proceedToCheckout}
                   >
                     Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
                   </Link>

@@ -1,3 +1,4 @@
+import { scheduledKdsHeadline } from "./mealdeck-scheduled-orders";
 import { packingPersonNameSchema } from "./mealdeck-packing-name";
 import { isOrderNumber } from "./mealdeck-order-number";
 import { mealComponentsSchema, type MealComponent } from "./mealdeck-meal-components";
@@ -90,6 +91,9 @@ export type KdsOrder = {
   driverStatus?: "awaiting_driver" | "with_driver" | "delivered" | null;
   driverVersion?: string | null;
   deliveryDeadlineAt?: string | null;
+  /** Verified server schedule; absent for ordinary immediate orders. */
+  scheduledFor?: string | null;
+  prepStartAt?: string | null;
   driverHandoverAt?: string | null;
   deliveredAt?: string | null;
 };
@@ -394,6 +398,14 @@ function parseOrder(value: unknown): KdsOrder {
   )
     invalid();
   if (v["order_number"] != null && !isOrderNumber(v["order_number"])) invalid();
+  const hasSchedule = v["scheduledFor"] !== undefined || v["prepStartAt"] !== undefined;
+  const scheduledFor = hasSchedule ? nullableTimestamp(v["scheduledFor"]) : null;
+  const prepStartAt = hasSchedule ? nullableTimestamp(v["prepStartAt"]) : null;
+  if (hasSchedule) {
+    if (!scheduledFor || !prepStartAt || fulfilment === "dine_in" ||
+      !scheduledKdsHeadline(fulfilment, scheduledFor, prepStartAt))
+      invalid();
+  }
   const deliveryAddress =
     fulfilment === "delivery" ? parseOwnDriverAddress(v["deliveryAddress"]) : null;
   const deliveryContact =
@@ -430,6 +442,7 @@ function parseOrder(value: unknown): KdsOrder {
     fulfilment,
     notes: nullableText(v["notes"], 20000),
     group_order: flag(v["group_order"]),
+    ...(hasSchedule ? { scheduledFor, prepStartAt } : {}),
     routing_complete: routingComplete,
     blocked_reason: blockedReason,
     items,

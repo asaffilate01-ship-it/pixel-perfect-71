@@ -1,0 +1,58 @@
+name: MealDeck verified member loyalty and offer controls
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/mealdeck-member-loyalty.yml'
+      - 'src/lib/mealdeck-loyalty.ts'
+      - 'tests/mealdeck-loyalty.test.ts'
+      - 'tests/postgres/mealdeck-loyalty-behavior.mjs'
+      - 'deploy/mealdeck/post-install-migrations/*member_loyalty_and_offer_claims.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mealdeck-member-loyalty-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  loyalty-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_loyalty
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_loyalty"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked disposable database test dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Validate source policy and points rounding
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun test tests/mealdeck-loyalty.test.ts
+      - name: Validate server-authoritative loyalty and one-use offers in PostgreSQL 17
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_loyalty
+        run: |
+          set -o pipefail
+          node tests/postgres/mealdeck-loyalty-behavior.mjs --native 2>&1 | tee "$RUNNER_TEMP/member-loyalty-postgres.log"
+      - name: Retain database verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-member-loyalty-postgres-evidence
+          path: ${{ runner.temp }}/member-loyalty-postgres.log
+          retention-days: 14
+          if-no-files-found: warn

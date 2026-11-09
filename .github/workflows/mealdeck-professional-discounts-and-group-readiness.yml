@@ -1,0 +1,52 @@
+name: MealDeck verified professional discount guards and live group readiness
+
+on:
+  pull_request:
+    paths:
+      - 'src/lib/mealdeck-professional-discounts.ts'
+      - 'tests/mealdeck-professional-discounts.test.ts'
+      - 'scripts/check-mealdeck-public-group-readiness.mjs'
+      - 'docs/mealdeck-verified-professional-discounts.md'
+      - '.github/workflows/mealdeck-professional-discounts-and-group-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/mealdeck-professional-discounts.ts'
+      - 'tests/mealdeck-professional-discounts.test.ts'
+      - 'scripts/check-mealdeck-public-group-readiness.mjs'
+      - '.github/workflows/mealdeck-professional-discounts-and-group-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  professional-discount-policy:
+    name: Verified staff discount policy and type safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked Bun runtime
+        run: npm install --global bun@1.4.4 --no-audit --no-fund
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Verify disabled-by-default professional offer guardrails
+        run: bun test tests/mealdeck-professional-discounts.test.ts
+      - name: TypeScript validation
+        run: bunx tsc --noEmit
+  public-group-admission:
+    name: Read-only live group-room admission (no payments)
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check canonical MealDeck group-room endpoint without session secrets
+        run: node scripts/check-mealdeck-public-group-readiness.mjs

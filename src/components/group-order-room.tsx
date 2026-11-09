@@ -23,7 +23,6 @@ import { usePaymentIdentity } from "@/components/group-payments/use-payment-iden
 import { GroupRoomMenu, GroupRoomChoices } from "@/components/group-room-menu";
 import { GroupRoomSetup, type RoomCreationDetails } from "@/components/group-room-setup";
 import { GroupRoomBilling } from "@/components/group-room-billing";
-import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import {
   receiveRoomChoices,
   roomPersonPicks,
@@ -315,14 +314,12 @@ function RoomRoster({
 
 export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
   const navigate = useNavigate();
-  const entryPolicy = useCustomerEntryPolicy();
-  const newRoomsOpen =
-    !!entryPolicy &&
-    Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
   const identity = usePaymentIdentity();
   const identityRef = useRef(identity);
   identityRef.current = identity;
   const [capabilities, setCapabilities] = useState<GroupOrderCapabilities | null>(null);
+  // New room admission is server-authoritative, not based on registration launch dates.
+  const newRoomsOpen = capabilities?.available === true;
   const [entryReady, setEntryReady] = useState(false);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [invite, setInvite] = useState<GroupOrderInvite | null>(null);
@@ -393,7 +390,8 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
       setResult(next);
       updateDraft(receiveRoomChoices(choices.current, next.room, saved));
       setPollIssue("");
-      rememberGroupOrderRoom(next.room.roomId);
+      if (next.room.closedAt || next.room.phase === "cancelled") clearRememberedGroupOrderRoom();
+      else rememberGroupOrderRoom(next.room.roomId);
       return true;
     },
     [updateDraft],
@@ -917,13 +915,15 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                   ? "You’re invited to the table."
                   : newRoomsOpen
                     ? "Get the group together."
-                    : "Group ordering · Starting 9 November"}
+                    : capabilities
+                      ? "Group rooms not accepting new orders"
+                      : "Checking group ordering availability"}
             </h1>
             <p>
               {room
                 ? "Choose your food, get ready, pay your way."
                 : !invite && !newRoomsOpen
-                  ? "Your next meal together starts on Monday. Explore the menus and order for yourself today."
+                  ? capabilities?.message || "Checking whether group rooms are available…"
                   : "Everyone chooses their favourites. We bring the whole order together."}
             </p>
           </div>
@@ -945,6 +945,23 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             </button>
           )}
         </header>
+        {room?.unpaidRoomExpiresAt && collecting && (
+          <div className="md-room-notice" role="status">
+            <Clock3 size={18} aria-hidden="true" />
+            <strong>Place the group order within 30 minutes of creating the room.</strong>
+            {" "}Time left: {remainingTime(room.unpaidRoomExpiresAt, now)}. Accepted invitations
+            stay joined, but this unplaced room closes when the timer ends. A locked
+            payment order is protected from this timeout.
+          </div>
+        )}
+        {room?.closedAt && (
+          <div className="md-room-notice" role="status">
+            <strong>{room.closeReason === "fulfilled" ? "Order handed over — group room closed." :
+              room.closeReason === "unpaid_timeout" ? "This unplaced room expired after 30 minutes." :
+              "This group room is closed."}</strong>
+            {" "}The saved room no longer accepts choices or payments. Paid receipts remain available.
+          </div>
+        )}
         {room && (
           <ol className="md-room-steps" aria-label="Group order progress">
             {["Join", "Choose", "Pay", "Kitchen"].map((label, index) => {
@@ -1004,7 +1021,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             </button>
             {roomId && !room && !invite && !loading && (
               <button type="button" className="md-room-text-button" onClick={startNewRoom}>
-                {newRoomsOpen ? "Start a new room" : "Group ordering · Starting 9 November"}
+                {newRoomsOpen ? "Start a new room" : "Check group room availability"}
               </button>
             )}
           </div>
@@ -1036,7 +1053,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             <p>
               {newRoomsOpen
                 ? "MealDeck now uses live rooms. Create a room below and invite everyone to join it."
-                : "New group rooms start on Monday 9 November."}{" "}
+                : "New group rooms are not accepting orders at the moment."}{" "}
               Older reply links cannot add food to this order.
             </p>
           </div>
@@ -1049,12 +1066,19 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
         )}
         {entryReady && !roomId && !invite && !newRoomsOpen && (
           <section className="md-room-card md-room-join" aria-labelledby="group-start-heading">
-            <span className="md-room-kicker">Coming Monday</span>
-            <h2 id="group-start-heading">Their favourites. One collection.</h2>
+            <span className="md-room-kicker">Group room availability</span>
+            <h2 id="group-start-heading">New group rooms are not accepting orders right now.</h2>
             <p>
-              From Monday 9 November, invite your people into one room, choose food from all five
-              menus and pay separately or together. We’ll pack everyone’s food by name.
+              {capabilities?.message || "Checking group room availability. Existing rooms and private invitation links remain accessible."}
             </p>
+            <button
+              type="button"
+              className="md-room-button md-room-button-light"
+              disabled={busy}
+              onClick={() => { void refreshCapabilities(); }}
+            >
+              <RefreshCw size={18} aria-hidden="true" /> Check availability again
+            </button>
             <a href="/menus" className="md-room-button">
               Explore the menus <ArrowRight size={19} aria-hidden="true" />
             </a>
@@ -1170,18 +1194,20 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
         {room && (
           <div className="md-room-layout">
             <div className="md-room-workspace">
-              {room.phase === "cancelled" || inactive ? (
+              {room.phase === "cancelled" || inactive || !!room.closedAt ? (
                 <>
                   <section className="md-room-card">
                     <h2>
                       {inactive
                         ? "You’re no longer in this order."
-                        : "This group order is cancelled."}
+                        : room.closeReason === "fulfilled"
+                          ? "Your order is complete — room closed."
+                          : "This group order is closed."}
                     </h2>
                     <p>
                       {inactive
                         ? "Your place is closed. The organiser’s room keeps its current participants."
-                        : "The room is closed to new choices and payments."}
+                        : "The room is closed to new choices and payments. Any paid order remains in order history."}
                     </p>
                     <a href="/menus" className="md-room-button md-room-button-light">
                       Browse menus
@@ -1521,7 +1547,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                   I’m not ordering — leave room
                 </button>
               )}
-              {isOrganiser && room.phase !== "cancelled" && (collecting || payment?.canCancel) && (
+              {isOrganiser && !room.closedAt && room.phase !== "cancelled" && (collecting || payment?.canCancel) && (
                 <button
                   type="button"
                   className="md-room-text-button"
@@ -1531,14 +1557,14 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                   Cancel group order
                 </button>
               )}
-              {(room.phase === "cancelled" || inactive || payment?.status === "paid") && (
+              {(room.phase === "cancelled" || inactive || room.closedAt || payment?.status === "paid") && (
                 <button
                   type="button"
                   className="md-room-button md-room-button-light"
                   disabled={busy || !!draft?.dirty}
                   onClick={startNewRoom}
                 >
-                  {newRoomsOpen ? "Start a new room" : "Group ordering · Starting 9 November"}
+                  {newRoomsOpen ? "Start a new room" : "Check group room availability"}
                 </button>
               )}
             </div>

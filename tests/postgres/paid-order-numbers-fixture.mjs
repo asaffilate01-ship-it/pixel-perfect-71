@@ -17,7 +17,7 @@ export async function setupPaidOrderNumbersFixture(db) {
   const ageQuotes = () =>
     db.exec("update mealdeck_private.checkout_quotes set created_at=now()-interval '6 minutes'");
   const staff = (name, args, actor = f.owner, role = "authenticated") => {
-    assert.match(name, /^mealdeck_(?:ops_kds|printer|ops_order_history|customer_orders)/);
+    assert.match(name, /^mealdeck_(?:ops_kds|ops_driver_|printer|ops_order_history|customer_orders)/);
     return asActor(
       db,
       actor,
