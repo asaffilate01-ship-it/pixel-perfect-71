@@ -3,7 +3,6 @@ import { launchMenuItemDescriptor } from "@/lib/launch-menu-item-descriptor";
 import { PublicMenuStatus } from "./public-menu-status";
 import { MilkcakeOfferTerms } from "./milkcake-offer-terms";
 import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
-import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ArrowRight, ChevronRight, Layers3, Plus, Search, ShoppingBag, X } from "lucide-react";
@@ -11,7 +10,6 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
-import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
 import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { MenuInstallPrompt } from "@/components/menus/menu-install-prompt";
 import {
@@ -150,11 +148,7 @@ export function LaunchMenuBrowser({
   initialMenu?: MealDeckPublicMenuSnapshot | null | undefined;
 }) {
   const navigate = useNavigate();
-  const entryPolicy = useCustomerEntryPolicy();
   const deliveryLive = useOwnDriverAvailability();
-  const groupOrderingOpen =
-    !!entryPolicy &&
-    Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
   const publicMenu = usePublicMenu(initialMenu);
   const { catalogue } = publicMenu;
   const brand = getLaunchMenuBrand(requestedBrandId ?? "skorch-burgers", catalogue);
@@ -466,16 +460,13 @@ export function LaunchMenuBrowser({
         <div className="lm-group-entry">
           <p>
             <strong>Ordering together?</strong>{" "}
-            {groupOrderingOpen
-              ? "Join one room. Choose how you pay."
-              : "Group rooms open on Monday 9 November."}
+            Choose a private room and check whether group ordering is accepting new orders.
           </p>
           <Link to="/group-order">
-            {groupOrderingOpen ? "Start a group" : "Group ordering · Starting 9 November"}{" "}
+            Explore group ordering{" "}
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
         </div>
-        <OpeningWeekendOffer compact />
         <MenuInstallPrompt />
         <nav
           id="launch-brand-selector"
@@ -802,12 +793,11 @@ export function LaunchMenuBrowser({
                         Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
                       </Link>
                       <p>
-                        Opening offer: 30% off the entire menu during our 6–8 November opening
-                        hours.{" "}
                         {deliveryLive
-                          ? "Collection and kerbside have no minimum; free delivery requires £15 after the discount within 4 km of LU4 8NU."
+                          ? "Collection and kerbside have no minimum; free delivery requires £15 after discounts within 4 km of LU4 8NU."
                           : "No minimum order for collection or kerbside."}{" "}
-                        Guests and members welcome. <Link to="/offers">See all three offers.</Link>
+                        Guests and members welcome. Verified members earn points on eligible paid orders.{" "}
+                        <Link to="/account">Member benefits</Link>
                         {hasMilkcakeOffer &&
                           " One milkcake per order is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount."}
                       </p>
