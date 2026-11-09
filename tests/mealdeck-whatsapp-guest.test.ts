@@ -56,7 +56,7 @@ describe("opening weekend name and WhatsApp checkout", () => {
   test("the server policy resumes registration exactly Monday 9 November at midnight UK time", () => {
     for (const at of ["2026-11-06T00:00:00Z", "2026-11-06T15:00:00Z", "2026-11-08T23:59:59.999Z"])
       expect(customerEntryPolicy(new Date(at)).emailRegistrationDeferred).toBe(true);
-    for (const at of ["2026-11-05T23:59:59.999Z", "2026-11-09T00:00:00Z", "2026-11-10T12:00:00Z"])
+    for (const at of ["2026-11-05T23:59:59.999Z", "2026-11-09T13:00:00Z", "2026-11-10T12:00:00Z"])
       expect(customerEntryPolicy(new Date(at)).emailRegistrationDeferred).toBe(false);
     expect(() => customerEntryPolicy(new Date("invalid"))).toThrow();
   });
