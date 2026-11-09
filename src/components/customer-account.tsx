@@ -360,7 +360,7 @@ function CustomerEntry({
                 uses my details for membership and order fulfilment. This is not marketing consent.</span>
             </span>
           </label>
-        )
+        )}
         <button className="md-account-primary" type="submit" disabled={busy}>
           <Mail size={18} aria-hidden="true" />{" "}
           {busy
