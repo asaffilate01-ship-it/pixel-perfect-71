@@ -69,7 +69,7 @@ $stamp$;
 drop trigger if exists mealdeck_ordering_draft_expiry_stamp
   on mealdeck_private.ordering_participants;
 create trigger mealdeck_ordering_draft_expiry_stamp
-before insert or update on mealdeck_private.ordering_participants
+before insert or update of picks on mealdeck_private.ordering_participants
 for each row execute function mealdeck_private.ordering_draft_stamp_expiry();
 
 create index if not exists mealdeck_ordering_draft_expiry_pending
