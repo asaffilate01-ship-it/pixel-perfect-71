@@ -1,0 +1,55 @@
+name: MealDeck scheduled slots and group-room lifecycle
+
+on:
+  pull_request:
+    paths:
+      - 'src/lib/mealdeck-scheduled-orders.ts'
+      - 'src/lib/mealdeck-group-rooms.ts'
+      - 'src/lib/mealdeck-group-rooms.server.ts'
+      - 'src/lib/mealdeck-kds.ts'
+      - 'src/components/ops/kds-panel.tsx'
+      - 'src/components/group-order-room.tsx'
+      - 'src/components/group-room-setup.tsx'
+      - 'tests/mealdeck-scheduled-orders.test.ts'
+      - 'tests/mealdeck-group-rooms.test.ts'
+      - 'tests/mealdeck-kds.test.ts'
+      - 'deploy/mealdeck/post-install-migrations/20261109194000_mealdeck_group_room_lifecycle.sql'
+      - 'deploy/mealdeck/post-install-migrations/20261109194100_mealdeck_group_timeout_cron.sql'
+      - '.github/workflows/mealdeck-scheduled-slots-and-rooms.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/mealdeck-scheduled-orders.ts'
+      - 'src/lib/mealdeck-group-rooms.ts'
+      - 'src/lib/mealdeck-group-rooms.server.ts'
+      - 'src/lib/mealdeck-kds.ts'
+      - 'src/components/ops/kds-panel.tsx'
+      - 'src/components/group-order-room.tsx'
+      - 'src/components/group-room-setup.tsx'
+      - 'tests/mealdeck-scheduled-orders.test.ts'
+      - 'tests/mealdeck-group-rooms.test.ts'
+      - 'tests/mealdeck-kds.test.ts'
+      - '.github/workflows/mealdeck-scheduled-slots-and-rooms.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scheduled-slots-and-rooms:
+    name: UK slots, group lifecycle and kitchen types
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked Bun runtime
+        run: npm install --global bun@1.4.4 --no-audit --no-fund
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Run policy and safety tests
+        run: bun test tests/mealdeck-scheduled-orders.test.ts tests/mealdeck-group-rooms.test.ts tests/mealdeck-kds.test.ts
+      - name: Type-check application and UI
+        run: bunx tsc --noEmit

@@ -71,8 +71,8 @@ export function GroupRoomSetup({
             </li>
           </ol>
           <p className="md-room-fine">
-            <Clock3 size={16} aria-hidden="true" /> Only invitations that haven’t been accepted
-            expire. People who join keep their place.
+            <Clock3 size={16} aria-hidden="true" /> Invitations stay open for 3 minutes. A group
+            not yet locked for payment closes 30 minutes after creation, even if people joined.
           </p>
         </div>
       </section>
@@ -330,8 +330,8 @@ export function GroupRoomSetup({
           ) : (
             <>
               <p className="md-room-fine">
-                <Check size={17} aria-hidden="true" /> The 3-minute joining window starts when you
-                create the room.
+                <Check size={17} aria-hidden="true" /> Joining stays open for 3 minutes. Unplaced rooms close 30 minutes
+                after creation.
               </p>
               <button
                 type="submit"

@@ -484,6 +484,21 @@
   margin: 14px 0;
   color: #a60d16;
 }
+.md-account-loyalty-status {
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--account-muted);
+}
+.md-account-loyalty-rules {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--account-muted);
+}
+.md-account-loyalty-rules li + li {
+  margin-top: 4px;
+}
 .md-account-points > span {
   font-size: 17px;
   font-weight: 500;

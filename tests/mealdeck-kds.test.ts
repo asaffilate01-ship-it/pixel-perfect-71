@@ -68,6 +68,21 @@ function board(): KdsBoard {
   };
 }
 
+describe("KDS scheduled instructions remain canonical and strict", () => {
+  test("accepts only matching, fully supplied paid kitchen schedule fields", () => {
+    const value = board();
+    value.orders[0]!.scheduledFor = "2026-11-09T15:45:00Z";
+    value.orders[0]!.prepStartAt = "2026-11-09T15:15:00Z";
+    const parsed = parseKdsBoard(value, scope).orders[0]!;
+    expect(parsed.scheduledFor).toBe("2026-11-09T15:45:00Z");
+    expect(parsed.prepStartAt).toBe("2026-11-09T15:15:00Z");
+    value.orders[0]!.prepStartAt = "2026-11-09T15:14:00Z";
+    expect(() => parseKdsBoard(value, scope)).toThrow();
+    value.orders[0]!.prepStartAt = undefined;
+    expect(() => parseKdsBoard(value, scope)).toThrow();
+  });
+});
+
 describe("MealDeck canonical KDS response boundaries", () => {
   test("retains canonical meal components without inferring them from mutable labels", () => {
     const value = board();

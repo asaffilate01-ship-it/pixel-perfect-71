@@ -390,7 +390,8 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
       setResult(next);
       updateDraft(receiveRoomChoices(choices.current, next.room, saved));
       setPollIssue("");
-      rememberGroupOrderRoom(next.room.roomId);
+      if (next.room.closedAt || next.room.phase === "cancelled") clearRememberedGroupOrderRoom();
+      else rememberGroupOrderRoom(next.room.roomId);
       return true;
     },
     [updateDraft],
@@ -944,6 +945,23 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             </button>
           )}
         </header>
+        {room?.unpaidRoomExpiresAt && collecting && (
+          <div className="md-room-notice" role="status">
+            <Clock3 size={18} aria-hidden="true" />
+            <strong>Place the group order within 30 minutes of creating the room.</strong>
+            {" "}Time left: {remainingTime(room.unpaidRoomExpiresAt, now)}. Accepted invitations
+            stay joined, but this unplaced room closes when the timer ends. A locked
+            payment order is protected from this timeout.
+          </div>
+        )}
+        {room?.closedAt && (
+          <div className="md-room-notice" role="status">
+            <strong>{room.closeReason === "fulfilled" ? "Order handed over — group room closed." :
+              room.closeReason === "unpaid_timeout" ? "This unplaced room expired after 30 minutes." :
+              "This group room is closed."}</strong>
+            {" "}The saved room no longer accepts choices or payments. Paid receipts remain available.
+          </div>
+        )}
         {room && (
           <ol className="md-room-steps" aria-label="Group order progress">
             {["Join", "Choose", "Pay", "Kitchen"].map((label, index) => {
@@ -1176,18 +1194,20 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
         {room && (
           <div className="md-room-layout">
             <div className="md-room-workspace">
-              {room.phase === "cancelled" || inactive ? (
+              {room.phase === "cancelled" || inactive || !!room.closedAt ? (
                 <>
                   <section className="md-room-card">
                     <h2>
                       {inactive
                         ? "You’re no longer in this order."
-                        : "This group order is cancelled."}
+                        : room.closeReason === "fulfilled"
+                          ? "Your order is complete — room closed."
+                          : "This group order is closed."}
                     </h2>
                     <p>
                       {inactive
                         ? "Your place is closed. The organiser’s room keeps its current participants."
-                        : "The room is closed to new choices and payments."}
+                        : "The room is closed to new choices and payments. Any paid order remains in order history."}
                     </p>
                     <a href="/menus" className="md-room-button md-room-button-light">
                       Browse menus
@@ -1527,7 +1547,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                   I’m not ordering — leave room
                 </button>
               )}
-              {isOrganiser && room.phase !== "cancelled" && (collecting || payment?.canCancel) && (
+              {isOrganiser && !room.closedAt && room.phase !== "cancelled" && (collecting || payment?.canCancel) && (
                 <button
                   type="button"
                   className="md-room-text-button"
@@ -1537,7 +1557,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                   Cancel group order
                 </button>
               )}
-              {(room.phase === "cancelled" || inactive || payment?.status === "paid") && (
+              {(room.phase === "cancelled" || inactive || room.closedAt || payment?.status === "paid") && (
                 <button
                   type="button"
                   className="md-room-button md-room-button-light"

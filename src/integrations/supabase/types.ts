@@ -2818,17 +2818,24 @@ export type Database = {
         Returns: Json
       }
       mealdeck_customer_capabilities: { Args: never; Returns: Json }
+      mealdeck_customer_claim_one_use_offer: {
+        Args: { p_campaign: string }
+        Returns: Json
+      }
       mealdeck_customer_export: { Args: never; Returns: Json }
+      mealdeck_customer_export_with_messages: { Args: never; Returns: Json }
       mealdeck_customer_has_push: {
         Args: { p_endpoint: string }
         Returns: Json
       }
+      mealdeck_customer_message_preferences: { Args: never; Returns: Json }
       mealdeck_customer_order_receipt: {
         Args: { p_customer: string; p_order: string }
         Returns: Json
       }
       mealdeck_customer_orders: { Args: never; Returns: Json }
       mealdeck_customer_profile: { Args: never; Returns: Json }
+      mealdeck_customer_profile_with_messages: { Args: never; Returns: Json }
       mealdeck_customer_register: {
         Args: {
           p_consent_version: string
@@ -2838,6 +2845,20 @@ export type Database = {
           p_phone: string
           p_privacy_version: string
           p_push_marketing: boolean
+        }
+        Returns: Json
+      }
+      mealdeck_customer_register_with_messages: {
+        Args: {
+          p_consent_version: string
+          p_email_marketing: boolean
+          p_name: string
+          p_order_notifications: boolean
+          p_phone: string
+          p_privacy_version: string
+          p_push_marketing: boolean
+          p_sms_marketing: boolean
+          p_whatsapp_marketing: boolean
         }
         Returns: Json
       }
@@ -2858,6 +2879,29 @@ export type Database = {
           p_order_notifications: boolean
           p_phone: string
           p_push_marketing: boolean
+        }
+        Returns: Json
+      }
+      mealdeck_customer_update_message_preferences: {
+        Args: {
+          p_notice_version: string
+          p_sms: boolean
+          p_source: string
+          p_whatsapp: boolean
+        }
+        Returns: Json
+      }
+      mealdeck_customer_update_with_messages: {
+        Args: {
+          p_consent_version: string
+          p_email_marketing: boolean
+          p_expected_updated_at: string
+          p_name: string
+          p_order_notifications: boolean
+          p_phone: string
+          p_push_marketing: boolean
+          p_sms_marketing: boolean
+          p_whatsapp_marketing: boolean
         }
         Returns: Json
       }
@@ -3377,6 +3421,16 @@ export type Database = {
           tenant_name: string
         }[]
       }
+      mealdeck_ops_order_comms: {
+        Args: {
+          p_action?: string
+          p_body?: string
+          p_location: string
+          p_order: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
       mealdeck_ops_order_history: {
         Args: {
           p_from: string
@@ -3665,6 +3719,19 @@ export type Database = {
           p_unit: string
         }
         Returns: string
+      }
+      mealdeck_order_comms_customer: {
+        Args: {
+          p_action: string
+          p_body?: string
+          p_customer: string
+          p_guest: string
+          p_latitude?: number
+          p_longitude?: number
+          p_order: string
+          p_parking_note?: string
+        }
+        Returns: Json
       }
       mealdeck_order_payment_collection: {
         Args: { p_account: string; p_collection: string; p_livemode: boolean }

@@ -38,6 +38,65 @@ export const MEALDECK_LAUNCH_HOURS_PROSE =
   MEALDECK_LAUNCH_DAYS.map((day) => `${day.label}, ${day.hoursLabel}`).join("; ") +
   ". All times are UK local time.";
 
+/**
+ * Owner-confirmed regular Luton hours from 9 November 2026 (Europe/London).
+ * Display and preview only: real checkout availability stays with the server
+ * and the staff Online / Busy / Pause / Closed controls.
+ */
+export const MEALDECK_LUTON_WEEKLY_HOURS = Object.freeze([
+  Object.freeze({
+    days: "Monday to Thursday",
+    shortDays: "Mon–Thu",
+    isoWeekdays: Object.freeze([1, 2, 3, 4]),
+    schemaDays: Object.freeze(["Monday", "Tuesday", "Wednesday", "Thursday"]),
+    opens: "17:00",
+    closes: "23:00",
+    hoursLabel: "5pm–11pm",
+  }),
+  Object.freeze({
+    days: "Friday to Sunday",
+    shortDays: "Fri–Sun",
+    isoWeekdays: Object.freeze([5, 6, 7]),
+    schemaDays: Object.freeze(["Friday", "Saturday", "Sunday"]),
+    opens: "16:00",
+    closes: "23:00",
+    hoursLabel: "4pm–11pm",
+  }),
+] as const);
+
+export const MEALDECK_LUTON_HOURS_LABEL =
+  MEALDECK_LUTON_WEEKLY_HOURS.map((row) => `${row.shortDays} ${row.hoursLabel}`).join(" · ") +
+  " · UK time";
+
+export const MEALDECK_LUTON_HOURS_PROSE =
+  MEALDECK_LUTON_WEEKLY_HOURS.map((row) => `${row.days}, ${row.hoursLabel}`).join("; ") +
+  ". All times are UK local time.";
+
+const londonParts = new Intl.DateTimeFormat("en-GB", {
+  timeZone: MEALDECK_LAUNCH_TIME_ZONE,
+  weekday: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+const ISO_WEEKDAY: Record<string, number> = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
+
+/** Whether the regular Luton hours cover this instant, in UK local time. */
+export function isMealDeckLutonRegularHoursAt(now: Date | number): boolean {
+  const timestamp = now instanceof Date ? now.getTime() : now;
+  if (!Number.isFinite(timestamp)) return false;
+  const parts = Object.fromEntries(
+    londonParts.formatToParts(new Date(timestamp)).map((part) => [part.type, part.value]),
+  );
+  const weekday = ISO_WEEKDAY[parts["weekday"] ?? ""];
+  const minutes = Number(parts["hour"]) * 60 + Number(parts["minute"]);
+  const toMinutes = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+  return MEALDECK_LUTON_WEEKLY_HOURS.some((row) => {
+    if (!weekday || !(row.isoWeekdays as readonly number[]).includes(weekday)) return false;
+    return minutes >= toMinutes(row.opens) && minutes < toMinutes(row.closes);
+  });
+}
+
 /** Marketing-only Sunday pre-opening notice. It never grants checkout or delivery access. */
 export function isMealDeckSundayDeliveryPreopen(now: number): boolean {
   const sunday = MEALDECK_LAUNCH_DAYS[2];
