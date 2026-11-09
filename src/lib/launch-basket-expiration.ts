@@ -94,33 +94,33 @@ export function decodeTimedLaunchBasket(
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object" || Array.isArray(value)) return empty;
     const payload = value as Record<string, unknown>;
-    if (payload.version !== 2 || typeof payload.basket !== "string"
-      || !Array.isArray(payload.batches) || payload.batches.length > MAX_LAUNCH_PICKS)
+    if (payload["version"] !== 2 || typeof payload["basket"] !== "string"
+      || !Array.isArray(payload["batches"]) || payload["batches"].length > MAX_LAUNCH_PICKS)
       return empty;
-    const picks = decodeLaunchPicks(payload.basket);
-    if (encodeLaunchPicks(picks) !== payload.basket || picks.length !== payload.batches.length)
+    const picks = decodeLaunchPicks(payload["basket"]);
+    if (encodeLaunchPicks(picks) !== payload["basket"] || picks.length !== payload["batches"].length)
       return empty;
     const batches: Record<string, Batch[]> = {};
     for (let index = 0; index < picks.length; index++) {
-      const batchItem = payload.batches[index];
+      const batchItem = payload["batches"][index];
       if (!batchItem || typeof batchItem !== "object" || Array.isArray(batchItem)) return empty;
       const row = batchItem as Record<string, unknown>;
-      if (row.key !== picks[index]!.key
-        || !Array.isArray(row.entries)
-        || row.entries.length < 1
-        || row.entries.length > MAX_LAUNCH_PICK_QUANTITY) return empty;
+      if (row["key"] !== picks[index]!.key
+        || !Array.isArray(row["entries"])
+        || row["entries"].length < 1
+        || row["entries"].length > MAX_LAUNCH_PICK_QUANTITY) return empty;
       let total = 0;
       const entries: Batch[] = [];
-      for (const untrusted of row.entries) {
+      for (const untrusted of row["entries"]) {
         if (!untrusted || typeof untrusted !== "object" || Array.isArray(untrusted)) return empty;
         const e = untrusted as Record<string, unknown>;
-        if (!Number.isSafeInteger(e.quantity) || (e.quantity as number) < 1
-          || (e.quantity as number) > MAX_LAUNCH_PICK_QUANTITY
-          || !Number.isSafeInteger(e.expiresAt)
-          || (e.expiresAt as number) < 0
-          || (e.expiresAt as number) > at + LAUNCH_BASKET_TTL_MS) return empty;
-        total += e.quantity as number;
-        entries.push({ quantity: e.quantity as number, expiresAt: e.expiresAt as number });
+        if (!Number.isSafeInteger(e["quantity"]) || (e["quantity"] as number) < 1
+          || (e["quantity"] as number) > MAX_LAUNCH_PICK_QUANTITY
+          || !Number.isSafeInteger(e["expiresAt"])
+          || (e["expiresAt"] as number) < 0
+          || (e["expiresAt"] as number) > at + LAUNCH_BASKET_TTL_MS) return empty;
+        total += e["quantity"] as number;
+        entries.push({ quantity: e["quantity"] as number, expiresAt: e["expiresAt"] as number });
       }
       if (total !== picks[index]!.quantity) return empty;
       batches[picks[index]!.key] = entries;
@@ -132,6 +132,6 @@ export function decodeTimedLaunchBasket(
 }
 
 export function nextLaunchBasketExpiry(basket: TimedLaunchBasket): number | null {
-  const deadlines = Object.values(basket.batches).flatMap((entries) => entries.map((e) => e.expiresAt));
+  const deadlines = Object.values(basket.batches).flatMap((entries) => entries.map((e) => e["expiresAt"]));
   return deadlines.length ? Math.min(...deadlines) : null;
 }
