@@ -533,6 +533,7 @@ function CustomerSettings({
   profile,
   capabilities,
   pushPublicKey,
+  onRetryPush,
   onSaved,
   onError,
   onMessage,
@@ -540,6 +541,7 @@ function CustomerSettings({
   profile: MealDeckCustomerProfile;
   capabilities: CustomerCapabilities;
   pushPublicKey: string | null;
+  onRetryPush: () => Promise<void>;
   onSaved: (profile: MealDeckCustomerProfile) => void;
   onError: (reason: unknown) => void;
   onMessage: (value: string) => void;
@@ -550,6 +552,7 @@ function CustomerSettings({
   const [busy, setBusy] = useState(false);
   const [device, setDevice] = useState<CustomerDeviceNotifications>("off");
   const [deviceLoading, setDeviceLoading] = useState(true);
+  const [deviceIssue, setDeviceIssue] = useState("");
   const pushReady = capabilities.pushReady && Boolean(pushPublicKey);
   const preferencesChanged = (Object.keys(preferences) as (keyof CustomerPreferences)[]).some(
     (key) => preferences[key] !== profile.preferences[key],
@@ -591,17 +594,32 @@ function CustomerSettings({
   }
 
   async function changeDevice(enable: boolean) {
+    if (busy) return;
     setBusy(true);
+    setDeviceIssue("");
     try {
-      if (enable && pushPublicKey) await enableCustomerDeviceNotifications(pushPublicKey);
-      else await disableCustomerDeviceNotifications();
-      setDevice(enable ? "connected" : "off");
-      onMessage(
-        enable
-          ? "This device is connected for the notification types you chose."
-          : "Notifications are off on this device.",
-      );
+      if (enable) {
+        if (!pushPublicKey) throw new CustomerAccountError(
+          "unavailable",
+          "The notification connection is not ready. Retry the connection first.",
+        );
+        await enableCustomerDeviceNotifications(pushPublicKey);
+        // A browser permission prompt alone is not enough: confirm the
+        // authenticated server now owns this exact device endpoint.
+        if (await readCustomerDeviceNotifications() !== "connected")
+          throw new CustomerAccountError(
+            "unavailable",
+            "Notification permission was accepted, but we could not verify this device. Retry after reloading the app.",
+          );
+        setDevice("connected");
+        onMessage("Notifications are connected on this device. You'll receive only the categories you saved.");
+      } else {
+        await disableCustomerDeviceNotifications();
+        setDevice("off");
+        onMessage("Notifications are off on this device.");
+      }
     } catch (reason) {
+      setDeviceIssue(reason instanceof Error ? reason.message : "Device notifications could not be connected.");
       onError(reason);
     } finally {
       setBusy(false);
