@@ -917,13 +917,15 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                   ? "You’re invited to the table."
                   : newRoomsOpen
                     ? "Get the group together."
-                    : "Group ordering · Starting 9 November"}
+                    : capabilities
+                      ? "Group rooms not accepting new orders"
+                      : "Checking group ordering availability"}
             </h1>
             <p>
               {room
                 ? "Choose your food, get ready, pay your way."
                 : !invite && !newRoomsOpen
-                  ? "Your next meal together starts on Monday. Explore the menus and order for yourself today."
+                  ? capabilities?.message || "Checking whether group rooms are available…"
                   : "Everyone chooses their favourites. We bring the whole order together."}
             </p>
           </div>
@@ -1004,7 +1006,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             </button>
             {roomId && !room && !invite && !loading && (
               <button type="button" className="md-room-text-button" onClick={startNewRoom}>
-                {newRoomsOpen ? "Start a new room" : "Group ordering · Starting 9 November"}
+                {newRoomsOpen ? "Start a new room" : "Check group room availability"}
               </button>
             )}
           </div>
@@ -1538,7 +1540,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                   disabled={busy || !!draft?.dirty}
                   onClick={startNewRoom}
                 >
-                  {newRoomsOpen ? "Start a new room" : "Group ordering · Starting 9 November"}
+                  {newRoomsOpen ? "Start a new room" : "Check group room availability"}
                 </button>
               )}
             </div>
