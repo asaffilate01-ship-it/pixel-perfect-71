@@ -53,6 +53,7 @@ describe("MealDeck menu desktop banner alignment", () => {
     expect(css).toContain("@media (max-width: 800px)");
     expect(css).toContain("@media (max-width: 560px)");
     expect(css).toContain(".md-site-header .md-own-driver-offer-link:focus-visible");
+    expect(css).toContain(".md-own-driver-offer a.md-own-driver-offer-link {");
     expect(css).toContain("white-space: nowrap;");
   });
 });
