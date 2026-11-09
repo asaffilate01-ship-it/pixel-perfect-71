@@ -14,6 +14,28 @@ export const EMPTY_CUSTOMER_PREFERENCES: CustomerPreferences = Object.freeze({
   orderNotifications: false,
 });
 
+/** Separate, optional SMS and WhatsApp marketing consent; never proof of phone ownership. */
+export type CustomerMessagePreferences = {
+  smsMarketing: boolean;
+  whatsappMarketing: boolean;
+};
+
+export const EMPTY_CUSTOMER_MESSAGE_PREFERENCES: CustomerMessagePreferences = Object.freeze({
+  smsMarketing: false,
+  whatsappMarketing: false,
+});
+
+export function parseCustomerMessagePreferences(value: unknown): CustomerMessagePreferences | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const entry = value as Record<string, unknown>;
+  if (typeof entry["smsMarketing"] !== "boolean" ||
+      typeof entry["whatsappMarketing"] !== "boolean") return null;
+  return {
+    smsMarketing: entry["smsMarketing"],
+    whatsappMarketing: entry["whatsappMarketing"],
+  };
+}
+
 export type MealDeckCustomerProfile = {
   registered: boolean;
   userId: string;
@@ -23,6 +45,7 @@ export type MealDeckCustomerProfile = {
   phone: string | null;
   updatedAt: string | null;
   preferences: CustomerPreferences;
+  messagePreferences?: CustomerMessagePreferences;
   loyalty: { enabled: boolean; points: number; terms: string | null };
 };
 
@@ -31,6 +54,7 @@ export type CustomerRegistration = {
   email: string;
   phone: string;
   preferences: CustomerPreferences;
+  messagePreferences?: CustomerMessagePreferences;
 };
 
 export type CustomerCapabilities = {
@@ -113,7 +137,19 @@ export function validateCustomerRegistration(value: CustomerRegistration): Custo
     );
   if (!preferences)
     throw new CustomerAccountError("invalid", "Please review your communication preferences.");
-  return { name, email, phone, preferences };
+  const messages =
+    value.messagePreferences === undefined
+      ? undefined
+      : parseCustomerMessagePreferences(value.messagePreferences);
+  if (value.messagePreferences !== undefined && !messages)
+    throw new CustomerAccountError("invalid", "Please review your SMS and WhatsApp choices.");
+  return {
+    name,
+    email,
+    phone,
+    preferences,
+    ...(messages ? { messagePreferences: messages } : {}),
+  };
 }
 
 export function parseCustomerCapabilities(value: unknown): CustomerCapabilities | null {
@@ -138,6 +174,13 @@ export function parseCustomerProfile(value: unknown): MealDeckCustomerProfile | 
   const entry = object(value);
   if (!entry) return null;
   const preferences = parseCustomerPreferences(entry["preferences"]);
+  const rawPreferences = object(entry["preferences"]);
+  const messagesPresent =
+    rawPreferences !== null &&
+    ("smsMarketing" in rawPreferences || "whatsappMarketing" in rawPreferences);
+  const messagePreferences = messagesPresent
+    ? parseCustomerMessagePreferences(rawPreferences)
+    : null;
   const loyalty = object(entry["loyalty"]);
   if (
     typeof entry["registered"] !== "boolean" ||
@@ -151,6 +194,7 @@ export function parseCustomerProfile(value: unknown): MealDeckCustomerProfile | 
     !(entry["phone"] === null || typeof entry["phone"] === "string") ||
     !(entry["updatedAt"] === null || typeof entry["updatedAt"] === "string") ||
     !preferences ||
+    (messagesPresent && !messagePreferences) ||
     !loyalty ||
     typeof loyalty["enabled"] !== "boolean" ||
     !Number.isSafeInteger(loyalty["points"]) ||
@@ -177,6 +221,7 @@ export function parseCustomerProfile(value: unknown): MealDeckCustomerProfile | 
     phone: entry["phone"],
     updatedAt: entry["updatedAt"],
     preferences,
+    ...(messagePreferences ? { messagePreferences } : {}),
     loyalty: {
       enabled: loyalty["enabled"],
       points: loyalty["points"] as number,
