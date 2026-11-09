@@ -77,12 +77,11 @@ function Preferences({
   return (
     <fieldset className="md-account-preferences" disabled={disabled}>
       <legend>
-        Make it your deck <span>Optional</span>
+        Notification preferences <span>All optional</span>
       </legend>
       <p>
-        As a registered member, choose what you hear from MealDeck, a trading name of 313 Brands
-        Ltd. Offer emails and app alerts need your separate opt-in. You can change these choices at
-        any time.
+        Choose which messages you want. All three options start off. You can register and earn
+        loyalty points without selecting any of them. Change your choices in your account later.
       </p>
       <label>
         <input
@@ -91,7 +90,7 @@ function Preferences({
           onChange={(event) => onChange({ ...value, emailMarketing: event.target.checked })}
         />
         <span>
-          <strong>Offers by email</strong>
+          <strong>Email me offers and discounts</strong>
           <small>Send me MealDeck promotions, loyalty offers and menu news by email.</small>
         </span>
       </label>
@@ -102,7 +101,7 @@ function Preferences({
           onChange={(event) => onChange({ ...value, pushMarketing: event.target.checked })}
         />
         <span>
-          <strong>Offers in the app</strong>
+          <strong>Send offers to my phone (app notifications)</strong>
           <small>
             Send me promotional push notifications. This needs a separate device permission.
           </small>
@@ -115,14 +114,14 @@ function Preferences({
           onChange={(event) => onChange({ ...value, orderNotifications: event.target.checked })}
         />
         <span>
-          <strong>Order progress alerts</strong>
+          <strong>Send updates about my orders</strong>
           <small>
             Use push notifications for updates about my orders. These are separate from promotions.
           </small>
         </span>
       </label>
       <p className="md-account-fine">
-        Marketing is never required for registration, ordering or loyalty membership.
+        You do not need to accept marketing to register, order or earn loyalty points.
         Essential verification and order messages are separate.
       </p>
     </fieldset>
@@ -250,16 +249,22 @@ function CustomerEntry({
         </button>
       </div>
       <h2 id="account-entry-heading">
-        {mode === "register" ? "Your seat at the table." : "Welcome back."}
+        {mode === "register" ? "Create your MealDeck account" : "Welcome back."}
       </h2>
       <p>
         {mode === "register"
-          ? "Register with your name, email and mobile number, then verify your email to earn loyalty points. " +
-            "Some offers require independently verified WhatsApp ownership. Marketing alerts are optional."
+          ? "Enter your details, choose any optional notifications, then verify your email. " +
+            "Earn 1 point for every complete £1 paid on eligible orders."
           : usePassword
             ? "Sign in with your email and password."
             : "We’ll email you a secure sign-in link. No password to remember."}
       </p>
+      {mode === "register" && (
+        <p className="md-account-steps" role="note">
+          <strong>Step 1 of 2:</strong> Your details and notification choices.{" "}
+          <strong>Step 2:</strong> Verify your email to activate membership.
+        </p>
+      )}
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -338,7 +343,13 @@ function CustomerEntry({
           </button>
         )}
         {mode === "register" && (
-          <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
+          <div id="registration-notifications">
+            <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
+            <p className="md-account-fine">
+              App notification permission is requested only after verification and sign-in.
+              Email and order messages are separate from promotional alerts.
+            </p>
+          </div>
         )}
         <p className="md-account-fine">
           We ask for an address only when you choose delivery. See how we use your details in our{" "}
@@ -351,7 +362,7 @@ function CustomerEntry({
               ? "Signing in…"
               : "Sending…"
             : mode === "register"
-              ? "Verify my email"
+              ? "Send verification email"
               : usePassword
                 ? "Sign in"
                 : "Email me a sign-in link"}
@@ -388,14 +399,14 @@ function CheckEmail({
       <span className="md-account-icon">
         <Mail size={26} aria-hidden="true" />
       </span>
-      <h2 id="account-email-heading">Check your inbox.</h2>
+      <h2 id="account-email-heading">Step 2: Verify your email</h2>
       <p>
-        If this address can receive a sign-in email, a secure link is on its way to{" "}
+        We have requested a secure verification or sign-in email for{" "}
         <strong className="md-account-email-address">{email}</strong>.
       </p>
-      <p>Open the link on this device to verify your email. Check your spam folder too.</p>
+      <p>Open the newest MealDeck email and tap Verify email, or enter the code below. Check spam or junk if it has not arrived. You can then manage notifications in your account.</p>
       <details className="md-account-code">
-        <summary>My email includes a verification code</summary>
+        <summary>Enter the code from my email instead</summary>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -478,7 +489,7 @@ function FinishRegistration({
         <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
         <p className="md-account-fine">
           By completing registration, you acknowledge our <a href="/privacy">privacy notice</a>.
-          Your optional communication choices do not affect the opening offer.
+          Optional marketing choices do not affect your membership or loyalty points.
         </p>
         <button type="submit" className="md-account-primary" disabled={busy}>
           {busy ? "Saving…" : "Finish registration"}
@@ -596,7 +607,7 @@ function CustomerSettings({
       <section className="md-account-panel" aria-labelledby="account-details-heading">
         <div className="md-account-section-heading">
           <UserRound size={20} aria-hidden="true" />
-          <h2 id="account-details-heading">Your details</h2>
+          <h2 id="account-details-heading">Your details and message choices</h2>
         </div>
         <p className="md-account-email-address">
           {profile.email}{" "}
@@ -612,18 +623,21 @@ function CustomerSettings({
             setPhone={setPhone}
             disabled={busy}
           />
-          <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
+          <div id="notification-preferences">
+            <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
+          </div>
           <button type="submit" className="md-account-primary" disabled={busy}>
             {busy ? "Saving…" : "Save details & preferences"}
             <Check size={18} aria-hidden="true" />
           </button>
         </form>
       </section>
-      <section className="md-account-panel" aria-labelledby="account-device-heading">
+      <section className="md-account-panel" id="device-notifications" aria-labelledby="account-device-heading">
         <div className="md-account-section-heading">
           <Bell size={21} aria-hidden="true" />
-          <h2 id="account-device-heading">Notifications on this device</h2>
+          <h2 id="account-device-heading">Turn on phone notifications</h2>
         </div>
+        <p className="md-account-fine">Two steps: save your choices above, then allow notifications on this device. Browser permission is separate from marketing consent.</p>
         <p>
           {device === "connected"
             ? "Connected. You’ll receive only the types of notification saved in your preferences."
@@ -632,7 +646,7 @@ function CustomerSettings({
               : device === "unsupported"
                 ? "On iPhone or iPad, install MealDeck on your home screen and open the app to enable notifications. Some browsers do not support them."
                 : !pushReady
-                  ? "App notifications are coming soon. Your communication choices are saved separately, and no device permission is requested yet."
+                  ? "Push sending is not available on this device yet. You can still save your email, offer and order preferences above."
                   : "Allow this device to receive the notification types you choose. You can turn them off at any time."}
         </p>
         {device === "connected" ? (
@@ -664,12 +678,12 @@ function CustomerSettings({
             {(preferencesChanged ||
               (!profile.preferences.pushMarketing && !profile.preferences.orderNotifications)) && (
               <p className="md-account-fine">
-                Choose and save an app notification type above first.
+                First tick Order updates or Offers in the app above, then Save details & preferences. Return here to allow notifications on this device.
               </p>
             )}
           </>
         ) : (
-          <span className="md-account-soon">Coming soon</span>
+          <p className="md-account-fine" role="status">Device push setup is not ready. Your email and order communication preferences can still be saved above.</p>
         )}
       </section>
       <section
@@ -921,13 +935,18 @@ export function CustomerAccount({
           </h1>
           <p>
             {profile?.registered
-              ? "Your details, your preferences and a place in the MealDeck family."
+              ? "Manage your details, loyalty points and notification preferences in one place."
               : publicGuestView
                 ? "Every craving, one order. Choose your food and we’ll take the details we need at checkout."
                 : signInOnly
                   ? "Use your verified account to continue."
                   : "One account for all your favourite brands. Verify your email to start earning loyalty points."}
           </p>
+          {profile?.registered && (
+            <a className="md-account-notification-shortcut" href="#notification-preferences">
+              <Bell size={18} aria-hidden="true" /> Notification settings
+            </a>
+          )}
           {signedIn && (
             <button
               type="button"
