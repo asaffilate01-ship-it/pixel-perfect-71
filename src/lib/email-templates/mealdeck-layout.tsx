@@ -25,7 +25,7 @@ export const BRAND = {
   muted: '#8A7F79',
   panel: '#FBF6EE',
   siteUrl: 'https://mealdeck.co.uk',
-  logoUrl: 'https://mealdeck.co.uk/email/mealdeck-card-logo.png',
+  logoUrl: 'https://mealdeck.co.uk/email/mealdeck-card-logo-v2.png',
   supportEmail: 'info@mealdeck.co.uk',
 }
 
