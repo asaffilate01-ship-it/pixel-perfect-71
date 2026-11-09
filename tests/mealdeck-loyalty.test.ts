@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import {
   MEALDECK_LOYALTY_START,
   MEALDECK_LOYALTY_TERMS,
@@ -39,5 +40,24 @@ describe("MealDeck one point per completed pound after discounts", () => {
     expect(mealdeckOrderEarnsPoints({ ...eligible, paidAt: "2026-11-08T23:59:59.999Z" })).toBe(false);
     expect(mealdeckOrderEarnsPoints({ ...eligible, paymentStatus: "partially_refunded" })).toBe(true);
     expect(MEALDECK_LOYALTY_TERMS).toContain("1 point per complete £1");
+  });
+});
+
+
+describe("MealDeck release guards", () => {
+  test("loyalty migration contains one atomic transaction and one claim authority", () => {
+    const sql = readFileSync(new URL("../deploy/mealdeck/post-install-migrations/20261109080000_mealdeck_member_loyalty_and_offer_claims.sql", import.meta.url), "utf8");
+    expect(sql.match(/^begin;$/gm)).toHaveLength(1);
+    expect(sql.match(/^commit;$/gm)).toHaveLength(1);
+    expect(sql.trim().endsWith("commit;")).toBe(true);
+    expect(sql.match(/create or replace function public\\.mealdeck_customer_claim_one_use_offer\\(/g)).toHaveLength(1);
+    expect(sql).toContain("unique(campaign_id,user_id)");
+  });
+  test("customer account copy never promotes the expired weekend or unapproved double points", () => {
+    const account = readFileSync(new URL("../src/components/customer-account.tsx", import.meta.url), "utf8");
+    expect(account).not.toContain("30% off everything.");
+    expect(account).not.toContain("inclusive for double loyalty points.");
+    expect(account).not.toContain("Guest ordering is also available during our opening hours on 6–8 November.");
+    expect(account).toContain("1 point for each");
   });
 });
