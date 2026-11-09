@@ -31,7 +31,6 @@ import {
 } from "@/lib/launch-menu-display-prices";
 import {
   addLaunchPick,
-  decodeLaunchPicks,
   findLaunchMenuItem,
   LAUNCH_PICKS_STORAGE_KEY,
   launchPickCount,
@@ -46,6 +45,7 @@ import {
   type LaunchCrossSelection,
 } from "@/lib/launch-menu-upsells";
 import { prepareGroupCheckout } from "@/lib/launch-basket-transfer";
+import { decodeTimedLaunchBasket } from "@/lib/launch-basket-expiration";
 import {
   acceptGroupReply,
   addGroupPerson,
@@ -332,7 +332,7 @@ function GroupMenuComposer({
     savedBasketOpener.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     try {
-      const next = decodeLaunchPicks(localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY));
+      const next = decodeTimedLaunchBasket(localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY)).picks;
       if (!next.length) {
         setNotice("There are no saved menu choices on this browser yet.");
         return;
