@@ -1129,7 +1129,7 @@ export function CustomerAccount({
                 </p>
               </section>
             )}
-            <section className="md-account-panel md-account-app">
+            <section id="install-mealdeck-app" className="md-account-panel md-account-app">
               <div className="md-account-section-heading">
                 <Smartphone size={20} aria-hidden="true" />
                 <h2>Keep your deck close.</h2>
