@@ -8,6 +8,7 @@ import type { CustomerReturnTarget } from "./mealdeck-customer-return";
 import {
   CUSTOMER_CONSENT_VERSION,
   CUSTOMER_PRIVACY_VERSION,
+  EMPTY_CUSTOMER_MESSAGE_PREFERENCES,
   CustomerAccountError,
   normalizeCustomerEmail,
   parseCustomerCapabilities,
@@ -77,7 +78,7 @@ export function customerRequestError(error: unknown): CustomerAccountError {
   if (/registration_deferred/.test(message))
     return new CustomerAccountError(
       "unavailable",
-      "Email registration opens at 1pm Monday 9 November. Order with your name and WhatsApp number for now.",
+      "Registration is temporarily unavailable. Please try again or continue as a guest.",
     );
   if (/email_verification_required/.test(message))
     return new CustomerAccountError("unverified", "Verify your email to finish your registration.");
@@ -183,7 +184,7 @@ export async function readMealDeckCustomerAccount(): Promise<CustomerAccountStat
   const user = data.user!;
   if (!user.email_confirmed_at || user.is_anonymous || !user.email)
     return { status: "unverified", email: user.email ?? "" };
-  const profile = parseCustomerProfile(await customerRpc("mealdeck_customer_profile"));
+  const profile = parseCustomerProfile(await customerRpc("mealdeck_customer_profile_with_messages"));
   if (!profile || profile.userId !== user.id)
     throw new CustomerAccountError(
       "unavailable",
@@ -220,7 +221,7 @@ export async function requestCustomerEmail(
   if (details && (await getMealDeckCustomerEntryPolicy()).emailRegistrationDeferred)
     throw new CustomerAccountError(
       "unavailable",
-      "Email registration opens at 1pm Monday 9 November. Order with your name and WhatsApp number this weekend.",
+      "Registration is temporarily unavailable. You can continue as a guest.",
     );
   // Branded MealDeck email via Resend; Auth still issues and verifies the token.
   throwCustomerEmailResult(
@@ -331,10 +332,11 @@ export async function registerMealDeckCustomer(
   if ((await getMealDeckCustomerEntryPolicy()).emailRegistrationDeferred)
     throw new CustomerAccountError(
       "unavailable",
-      "Email registration opens at 1pm Monday 9 November. Continue as a guest for now.",
+      "Registration is temporarily unavailable. Continue as a guest or try again.",
     );
+  const messages = clean.messagePreferences ?? EMPTY_CUSTOMER_MESSAGE_PREFERENCES;
   return acceptedProfile(
-    await customerRpc("mealdeck_customer_register", {
+    await customerRpc("mealdeck_customer_register_with_messages", {
       p_name: clean.name,
       p_phone: clean.phone,
       p_email_marketing: clean.preferences.emailMarketing,
@@ -342,6 +344,8 @@ export async function registerMealDeckCustomer(
       p_order_notifications: clean.preferences.orderNotifications,
       p_privacy_version: CUSTOMER_PRIVACY_VERSION,
       p_consent_version: CUSTOMER_CONSENT_VERSION,
+      p_sms_marketing: messages.smsMarketing,
+      p_whatsapp_marketing: messages.whatsappMarketing,
     }),
   );
 }
@@ -351,8 +355,10 @@ export async function updateMealDeckCustomer(
   details: CustomerRegistration,
 ): Promise<MealDeckCustomerProfile> {
   const clean = validateCustomerRegistration(details);
+  const messages =
+    clean.messagePreferences ?? profile.messagePreferences ?? EMPTY_CUSTOMER_MESSAGE_PREFERENCES;
   return acceptedProfile(
-    await customerRpc("mealdeck_customer_update", {
+    await customerRpc("mealdeck_customer_update_with_messages", {
       p_name: clean.name,
       p_phone: clean.phone,
       p_email_marketing: clean.preferences.emailMarketing,
@@ -360,6 +366,8 @@ export async function updateMealDeckCustomer(
       p_order_notifications: clean.preferences.orderNotifications,
       p_expected_updated_at: profile.updatedAt,
       p_consent_version: CUSTOMER_CONSENT_VERSION,
+      p_sms_marketing: messages.smsMarketing,
+      p_whatsapp_marketing: messages.whatsappMarketing,
     }),
   );
 }
@@ -396,5 +404,5 @@ export async function signOutMealDeckCustomer(): Promise<void> {
 }
 
 export async function exportMealDeckCustomerData(): Promise<unknown> {
-  return customerRpc("mealdeck_customer_export");
+  return customerRpc("mealdeck_customer_export_with_messages");
 }
