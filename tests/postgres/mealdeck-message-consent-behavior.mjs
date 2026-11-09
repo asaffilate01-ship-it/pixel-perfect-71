@@ -80,7 +80,8 @@ try {
     ))).rows[0].result;
     assert.equal(exported.messagePreferences.smsMarketing,false);
     assert.ok(Array.isArray(exported.messageConsentHistory));
-    assert.equal(exported.messageConsentHistory.length,2);
+    assert.equal(exported.messageConsentHistory.length,4);
+    assert.equal(exported.messageConsentHistory.filter(e => !e.allowed).length,2);
   });
   console.log(checks+" independent message consent tests passed.");
 } finally {await db.close();}
