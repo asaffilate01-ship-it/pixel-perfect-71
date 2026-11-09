@@ -23,6 +23,10 @@ export function DriverWorkspace() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginMethod, setLoginMethod] = useState<"code" | "password">("code");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
   const [authError, setAuthError] = useState("");
   const [busyAuth, setBusyAuth] = useState(false);
   const [portal, setPortal] = useState<DriverPortal | null>(null);
@@ -109,12 +113,35 @@ export function DriverWorkspace() {
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!db || busyAuth) return;
+    if (!db || busyAuth || !online) return;
     setBusyAuth(true);
     setAuthError("");
+    setAuthMessage("");
     try {
+      if (loginMethod === "code") {
+        if (!codeSent) {
+          const { error } = await db.auth.signInWithOtp({
+            email: email.trim(),
+            options: { shouldCreateUser: false },
+          });
+          if (error) throw new Error("We couldn't email a sign-in code. Check your address or ask the manager to create and approve the account.");
+          setCodeSent(true);
+          setAuthMessage("Check your MealDeck email for a one-time code. Only approved drivers can access delivery jobs.");
+          return;
+        }
+        const { data, error } = await db.auth.verifyOtp({
+          email: email.trim(),
+          token: verificationCode.trim(),
+          type: "email",
+        });
+        if (error || !data.user) throw new Error("That code could not be verified. Check the latest email or request a new one.");
+        setUserId(data.user.id);
+        setVerificationCode("");
+        setCodeSent(false);
+        return;
+      }
       const { data, error } = await db.auth.signInWithPassword({ email: email.trim(), password });
-      if (error || !data.user) throw new Error("Email or password not accepted.");
+      if (error || !data.user) throw new Error("Email or password not accepted. Try an email code instead.");
       setUserId(data.user.id);
       setPassword("");
     } catch (reason) {
