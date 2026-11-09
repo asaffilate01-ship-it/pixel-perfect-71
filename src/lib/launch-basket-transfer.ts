@@ -5,13 +5,22 @@ import {
   type LaunchMenuPick,
 } from "./launch-menu-picks";
 import { z } from "zod";
+import {
+  LAUNCH_BASKET_EXPIRY_NOTICE,
+  decodeTimedLaunchBasket,
+  encodeTimedLaunchBasket,
+  expireTimedLaunchBasket,
+  type TimedLaunchBasket,
+} from "./launch-basket-expiration";
 import { validateGroupPicks, type GroupCheckoutTransfer } from "./mealdeck-group-plan";
 
 export const CHECKOUT_BASKET_HANDOFF_KEY = "mealdeck-checkout-picks-v1";
 export const CHECKOUT_GROUP_HANDOFF_KEY = "mealdeck-checkout-group-v1";
+export const CHECKOUT_TIMED_BASKET_KEY = "mealdeck-checkout-basket-timed-v2";
 // Memory carries the current basket across a same-tab route change even when
 // both storage APIs are blocked. It is never a server quote or durable backup.
 let current: string | null = null;
+let currentTimed: string | null = null;
 let currentGroup: string | null = null;
 
 const groupHandoffSchema = z.strictObject({
@@ -75,14 +84,20 @@ export function parseLaunchCheckoutGroup(
   }
 }
 
-export function prepareLaunchCheckout(picks: LaunchMenuPick[]) {
+export function prepareLaunchCheckout(picks: LaunchMenuPick[], timed?: TimedLaunchBasket) {
+  const safe = timed ? expireTimedLaunchBasket(timed) : null;
+  if (safe && encodeLaunchPicks(safe.picks) !== encodeLaunchPicks(picks))
+    throw new Error(LAUNCH_BASKET_EXPIRY_NOTICE);
   current = encodeLaunchPicks(picks);
   currentGroup = null;
+  currentTimed = safe ? encodeTimedLaunchBasket(safe) : null;
   try {
     sessionStorage.removeItem(CHECKOUT_GROUP_HANDOFF_KEY);
     sessionStorage.setItem(CHECKOUT_BASKET_HANDOFF_KEY, current);
+    if (currentTimed) sessionStorage.setItem(CHECKOUT_TIMED_BASKET_KEY, currentTimed);
+    else sessionStorage.removeItem(CHECKOUT_TIMED_BASKET_KEY);
   } catch {
-    /* Memory remains. */
+    /* Memory remains; no expiry is extended when storage is blocked. */
   }
 }
 
@@ -129,10 +144,12 @@ export type LaunchCheckoutTransfer = {
 export function readLaunchCheckoutTransfer(expectGroup = false): LaunchCheckoutTransfer {
   let raw = current;
   let rawGroup = currentGroup;
+  let timedRaw = currentTimed;
   if (raw === null) {
     try {
       raw = sessionStorage.getItem(CHECKOUT_BASKET_HANDOFF_KEY);
       rawGroup = sessionStorage.getItem(CHECKOUT_GROUP_HANDOFF_KEY);
+      timedRaw = sessionStorage.getItem(CHECKOUT_TIMED_BASKET_KEY);
     } catch {
       /* A group URL still fails closed when same-tab storage was lost. */
     }
@@ -157,13 +174,24 @@ export function readLaunchCheckoutTransfer(expectGroup = false): LaunchCheckoutT
       return invalid;
     }
   }
-  if (raw !== null) return { picks: decodeLaunchPicks(raw), group: null, issue: null };
+  if (raw !== null) {
+    if (!timedRaw) return { picks: [], group: null, issue: LAUNCH_BASKET_EXPIRY_NOTICE };
+    try {
+      const saved: unknown = JSON.parse(timedRaw);
+      if (!saved || typeof saved !== "object" || Array.isArray(saved)
+        || (saved as Record<string, unknown>)["basket"] !== raw)
+        return { picks: [], group: null, issue: LAUNCH_BASKET_EXPIRY_NOTICE };
+      const picks = decodeTimedLaunchBasket(timedRaw).picks;
+      if (encodeLaunchPicks(picks) !== raw)
+        return { picks, group: null, issue: LAUNCH_BASKET_EXPIRY_NOTICE };
+      return { picks, group: null, issue: null };
+    } catch {
+      return { picks: [], group: null, issue: LAUNCH_BASKET_EXPIRY_NOTICE };
+    }
+  }
   try {
-    return {
-      picks: decodeLaunchPicks(localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY)),
-      group: null,
-      issue: null,
-    };
+    const picks = decodeTimedLaunchBasket(localStorage.getItem(LAUNCH_PICKS_STORAGE_KEY)).picks;
+    return { picks, group: null, issue: null };
   } catch {
     return { picks: [], group: null, issue: null };
   }
@@ -172,9 +200,11 @@ export function readLaunchCheckoutTransfer(expectGroup = false): LaunchCheckoutT
 export function clearLaunchCheckoutTransfer() {
   current = null;
   currentGroup = null;
+  currentTimed = null;
   try {
     sessionStorage.removeItem(CHECKOUT_BASKET_HANDOFF_KEY);
     sessionStorage.removeItem(CHECKOUT_GROUP_HANDOFF_KEY);
+    sessionStorage.removeItem(CHECKOUT_TIMED_BASKET_KEY);
   } catch {
     /* No durable transfer. */
   }
