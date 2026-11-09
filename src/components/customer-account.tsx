@@ -75,8 +75,8 @@ function Preferences({
       </legend>
       <p>
         As a registered member, choose what you hear from MealDeck, a trading name of 313 Brands
-        Ltd. Offer emails and app alerts need your separate opt-in. You can change these choices at
-        any time.
+        Ltd. Email, SMS, WhatsApp and app offers each need a separate opt-in. You can change
+        these choices at any time. Verification and essential order messages are separate.
       </p>
       <label>
         <input
@@ -87,6 +87,28 @@ function Preferences({
         <span>
           <strong>Offers by email</strong>
           <small>Send me MealDeck promotions, loyalty offers and menu news by email.</small>
+        </span>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={value.smsMarketing === true}
+          onChange={(event) => onChange({ ...value, smsMarketing: event.target.checked })}
+        />
+        <span>
+          <strong>Offers by SMS text</strong>
+          <small>I opt in to promotional text messages from 313 Brands Ltd trading as MealDeck at my saved mobile number. Not required for orders.</small>
+        </span>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={value.whatsappMarketing === true}
+          onChange={(event) => onChange({ ...value, whatsappMarketing: event.target.checked })}
+        />
+        <span>
+          <strong>Offers by WhatsApp</strong>
+          <small>I opt in to promotional WhatsApp messages from MealDeck at my saved number. Provider verification and approved messaging are separate. Order-only chats are unaffected.</small>
         </span>
       </label>
       <label>
@@ -219,6 +241,7 @@ function CustomerEntry({
   const [preferences, setPreferences] = useState<CustomerPreferences>({
     ...EMPTY_CUSTOMER_PREFERENCES,
   });
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   return (
     <section className="md-account-panel" aria-labelledby="account-entry-heading">
       <div className="md-account-tabs" aria-label="Account action">
@@ -322,9 +345,22 @@ function CustomerEntry({
           <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
         )}
         <p className="md-account-fine">
-          We ask for an address only when you choose delivery. See how we use your details in our{" "}
-          <a href="/privacy">privacy notice</a>.
+          We ask for an address only when you choose delivery. Your name, verified email and phone
+          number are used for your account and orders, not automatically for marketing.
+          You can withdraw each optional marketing choice at any time.
+          Read our <a href="/privacy">privacy notice</a>.
         </p>
+        {mode === "register" && (
+          <label className="md-account-field">
+            <span className="flex items-start gap-2">
+              <input type="checkbox" required checked={privacyAcknowledged}
+                onChange={(event) => setPrivacyAcknowledged(event.target.checked)}
+                disabled={busy} />
+              <span>I have read the <a href="/privacy">privacy notice</a> and understand how MealDeck
+                uses my details for membership and order fulfilment. This is not marketing consent.</span>
+            </span>
+          </label>
+        )
         <button className="md-account-primary" type="submit" disabled={busy}>
           <Mail size={18} aria-hidden="true" />{" "}
           {busy
