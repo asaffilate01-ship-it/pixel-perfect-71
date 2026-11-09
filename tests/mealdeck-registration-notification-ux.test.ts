@@ -21,7 +21,7 @@ describe("MealDeck registration clarity and notifications", () => {
     expect(account).toContain("Send offers to my phone (app notifications)");
     expect(account).toContain("Send updates about my orders");
     expect(account).toContain('id="registration-notifications"');
-    expect(account).toContain("Marketing alerts are optional");
+    expect(account).toContain("You can register and earn");
   });
 
   test("signed-in account has a discoverable notification shortcut and permission instructions", () => {
