@@ -25,7 +25,7 @@ export const BRAND = {
   muted: '#8A7F79',
   panel: '#FBF6EE',
   siteUrl: 'https://mealdeck.co.uk',
-  logoUrl: 'https://mealdeck.co.uk/email/mealdeck-logo.png',
+  logoUrl: 'https://mealdeck.co.uk/email/mealdeck-card-logo.png',
   supportEmail: 'info@mealdeck.co.uk',
 }
 
@@ -49,7 +49,7 @@ export const MealDeckEmail = ({ preview, heading, children, footerNote }: MealDe
       <Container style={container}>
         <Section style={header}>
           <Link href={BRAND.siteUrl}>
-            <Img src={BRAND.logoUrl} width="148" height="111" alt="MealDeck" style={logo} />
+            <Img src={BRAND.logoUrl} width="180" height="180" alt="MealDeck" style={logo} />
           </Link>
         </Section>
         <Hr style={goldRule} />
