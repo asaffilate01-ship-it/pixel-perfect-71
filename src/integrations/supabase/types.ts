@@ -3377,6 +3377,16 @@ export type Database = {
           tenant_name: string
         }[]
       }
+      mealdeck_ops_order_comms: {
+        Args: {
+          p_action?: string
+          p_body?: string
+          p_location: string
+          p_order: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
       mealdeck_ops_order_history: {
         Args: {
           p_from: string
@@ -3665,6 +3675,19 @@ export type Database = {
           p_unit: string
         }
         Returns: string
+      }
+      mealdeck_order_comms_customer: {
+        Args: {
+          p_action: string
+          p_body?: string
+          p_customer: string
+          p_guest: string
+          p_latitude?: number
+          p_longitude?: number
+          p_order: string
+          p_parking_note?: string
+        }
+        Returns: Json
       }
       mealdeck_order_payment_collection: {
         Args: { p_account: string; p_collection: string; p_livemode: boolean }
