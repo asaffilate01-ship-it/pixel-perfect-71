@@ -710,7 +710,9 @@ export function CustomerAccount({
 }) {
   const returnTarget = customerReturnTarget(returnTo);
   const entryPolicy = useCustomerEntryPolicy();
-  const registrationDeferred = entryPolicy?.emailRegistrationDeferred !== false;
+  // A missing status response must not hide registration and loyalty behind a guest-only page.
+  // Database/Auth remains the sole authority to accept any new registration.
+  const registrationDeferred = entryPolicy?.emailRegistrationDeferred === true;
   const [account, setAccount] = useState<CustomerAccountState>({ status: "signed_out" });
   const [capabilities, setCapabilities] = useState<CustomerCapabilities | null>(null);
   const [pushPublicKey, setPushPublicKey] = useState<string | null>(null);

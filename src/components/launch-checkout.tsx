@@ -73,7 +73,7 @@ import {
 } from "@/lib/mealdeck-customer-browser";
 import { parseKerbsideVehicle, type MealDeckOpeningOffer } from "@/lib/mealdeck-opening-offer";
 import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timing";
-import { normaliseUkPostcode, parseOwnDriverAddress } from "@/lib/mealdeck-own-driver-delivery";
+import { normaliseUkPostcode, ownDriverShortfallPence, parseOwnDriverAddress } from "@/lib/mealdeck-own-driver-delivery";
 import { deliveryAreaRejectionMessage } from "@/lib/mealdeck-delivery-postcode-notice";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
@@ -906,6 +906,10 @@ function LaunchCheckoutView({
   const { catalogue } = publicMenu;
   const basketPrice = launchMenuOfferBasketDisplayPrice(picks, catalogue);
   const displayTotal = basketPrice.itemsSubtotalPence;
+  // The basket can prove an order is below the minimum. A trusted checkout quote
+  // confirms the final payable amount after all promotions.
+  const deliveryShortfall = ownDriverShortfallPence(displayTotal);
+  const deliveryUnderMinimum = fulfilment === "delivery" && deliveryShortfall !== null && deliveryShortfall > 0;
   const hasMilkcakeOffer = quote
     ? !!appliedMilkcakePromotion(quote.lines)
     : basketPrice.hasMilkcakeOffer;
@@ -1430,6 +1434,10 @@ function LaunchCheckoutView({
       setIssue(
         "Payment has already been started for this WhatsApp order. Use Resume secure payment to continue the original checkout.",
       );
+      return;
+    }
+    if (fulfilment === "delivery" && deliveryUnderMinimum) {
+      setIssue("Your basket is below £15. Delivery is only available for orders of £15 or more after discounts. Add at least " + formatLaunchMenuPrice(deliveryShortfall ?? 0) + " in items, then review your final total.");
       return;
     }
     if (fulfilment === "delivery" && !deliveryReady) {
@@ -2098,6 +2106,34 @@ function LaunchCheckoutView({
                       {fulfilment === "delivery" && <Check size={17} />}
                     </button>
                   )}
+                  {deliveryUnderMinimum && (
+                    <p className="md-checkout-notice md-checkout-error" role="alert" aria-live="polite">
+                      Your basket is below £15. Delivery is only available for orders of
+                      <strong> £15 or more after discounts</strong>. Add at least{" "}
+                      <strong>{formatLaunchMenuPrice(deliveryShortfall ?? 0)}</strong> in items, or choose
+                      collection or kerbside. Final discounted totals are checked before payment.
+                    </p>
+                  )}
+                  <div className="md-checkout-timing" aria-label="When would you like your order?">
+                    <h3>When would you like your order?</h3>
+                    <div className="md-checkout-methods" role="group" aria-label="Order timing">
+                      <button type="button" disabled={busy} aria-pressed="true">
+                        <Clock3 size={21} />
+                        <strong>As soon as possible</strong>
+                        <span>Based on current kitchen availability</span>
+                      </button>
+                      <button type="button" disabled aria-describedby="mealdeck-schedule-not-ready">
+                        <Clock3 size={21} />
+                        <strong>Schedule for later</strong>
+                        <span>Not available to book yet</span>
+                      </button>
+                    </div>
+                    <p className="md-checkout-muted" id="mealdeck-schedule-not-ready">
+                      Scheduled 15-minute collection, kerbside and delivery slots will be offered once
+                      they are verified by the payment system and kitchen. You cannot reserve a
+                      scheduled time or pay for one yet.
+                    </p>
+                  </div>
                 </section>
               )}
               {fulfilment && (
@@ -2428,9 +2464,9 @@ function LaunchCheckoutView({
                     </label>
                   </div>
                   <p className="md-checkout-muted">
-                    Delivery is free when your final payable total is at least £15, after the 30%
-                    discount where applicable. If you are short, we will show the exact extra amount
-                    required.
+                    Delivery is only available when your final payable total is £15 or more after
+                    all discounts. If your final total is lower, we will show the amount required
+                    before payment. Collection and kerbside have no £15 minimum.
                   </p>
                 </section>
               )}

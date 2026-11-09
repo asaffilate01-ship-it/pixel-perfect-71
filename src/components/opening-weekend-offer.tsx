@@ -93,7 +93,8 @@ export function OpeningWeekendOffer({ compact = false }: { compact?: boolean }) 
     };
   }, []);
 
-  if (offer.status === "ended") {
+  // Fail closed: missing checkout status must never resurrect an expired offer.
+  if (offer.status !== "active" && offer.status !== "upcoming") {
     return (
       <section
         className={`md-opening-offer md-opening-offer-ended${compact ? " is-compact" : ""}`}
