@@ -6,7 +6,7 @@ This source implements MealDeck-owned order ingestion, a separate marketplace or
 
 **Source implementation and fixture verification do not establish a live connection.** No Uber Eats account, Just Eat account or Sunmi device was connected during development. No real order was imported, accepted, changed, charged or handed over. All shipped connection examples are disabled and have no store ID, credentials or production selectors.
 
-The owner has confirmed two separate Sunmi terminals: one running Uber Eats and one running Just Eat. The remaining commissioning inputs are each terminal's model, Android version, merchant app version and permitted device access, exact storefront identifiers, reviewed screen selectors and status mappings, and observed acceptance on those actual screens. A browser login or Android hardware brand alone is not proof that automation is permitted or compatible.
+The owner has confirmed two separate Sunmi terminals: one running Uber Eats and one running Just Eat. Photos supplied on 9 November identify the Uber terminal as SUNMI V3 PLUS (`V3_PLUS`) with Android 14; see the [sanitised device evidence record](mealdeck-marketplace-device-evidence.md). Its merchant app version/package, permitted device access, exact storefront and stable order identifiers, complete screen extraction and action readback remain unverified. Just Eat device details remain pending. A photograph, visible button, browser login or Android hardware brand alone does not establish a live connection.
 
 ## What is implemented
 
