@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createDatabase, asActor } from "./harness.mjs";
 import { setupStripeCheckoutFixture } from "./stripe-checkout-fixture.mjs";
+import { buildKitchenPrinterSql } from "../../deploy/mealdeck/kitchen-printer.mjs";
 import { buildGuestCheckoutSql } from "../../deploy/mealdeck/guest-checkout.mjs";
 
 const db = await createDatabase(process.argv.includes("--native"));
@@ -19,6 +20,9 @@ const count = async (sql, params = []) => (await db.query(sql, params)).rows[0].
 
 try {
   const f = await setupStripeCheckoutFixture(db);
+  // Guest checkout requires receipt_jobs from the independently installed
+  // kitchen/printer extension; mirror that production migration order.
+  await db.exec(buildKitchenPrinterSql());
   await db.exec(buildGuestCheckoutSql());
   const migration = await readFile(
     new URL("../../deploy/mealdeck/post-install-migrations/20261109080000_mealdeck_member_loyalty_and_offer_claims.sql", import.meta.url),
