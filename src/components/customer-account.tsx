@@ -622,10 +622,38 @@ function CustomerSettings({
 
   return (
     <>
-      <section className="md-account-panel" aria-labelledby="account-details-heading">
+      <section
+        id="notification-preferences"
+        className="md-account-panel md-account-notification-settings"
+        aria-labelledby="account-messages-heading"
+      >
+        <div className="md-account-section-heading">
+          <Bell size={21} aria-hidden="true" />
+          <h2 id="account-messages-heading">Notifications and offers</h2>
+        </div>
+        <p>
+          Your choices are saved separately. All offers are optional; none is needed
+          to register, order, or earn loyalty points.
+        </p>
+        <form onSubmit={(event) => void save(event)}>
+          <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
+          <button type="submit" className="md-account-primary" disabled={busy}>
+            {busy ? "Saving…" : "Save notification choices"}
+            <Check size={18} aria-hidden="true" />
+          </button>
+        </form>
+        <p className="md-account-fine">
+          For alerts on this phone, choose Order status or App offers, save your choices, then
+          enable phone notifications. Email, SMS and WhatsApp choices do not require browser permission.
+        </p>
+        <a className="md-account-text" href="#device-notifications">
+          Next: enable notifications on this phone <ChevronRight size={17} aria-hidden="true" />
+        </a>
+      </section>
+      <section id="account-details" className="md-account-panel" aria-labelledby="account-details-heading">
         <div className="md-account-section-heading">
           <UserRound size={20} aria-hidden="true" />
-          <h2 id="account-details-heading">Your details and message choices</h2>
+          <h2 id="account-details-heading">Your contact details</h2>
         </div>
         <p className="md-account-email-address">
           {profile.email}{" "}
@@ -641,11 +669,8 @@ function CustomerSettings({
             setPhone={setPhone}
             disabled={busy}
           />
-          <div id="notification-preferences">
-            <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
-          </div>
           <button type="submit" className="md-account-primary" disabled={busy}>
-            {busy ? "Saving…" : "Save details & preferences"}
+            {busy ? "Saving…" : "Save contact details"}
             <Check size={18} aria-hidden="true" />
           </button>
         </form>
