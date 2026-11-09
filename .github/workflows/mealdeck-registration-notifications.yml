@@ -1,0 +1,63 @@
+name: MealDeck registration, branded email and notification consent
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/mealdeck-registration-notifications.yml'
+      - 'src/components/customer-account.tsx'
+      - 'src/styles.customer-account.css'
+      - 'src/lib/mealdeck-customer*.ts'
+      - 'src/lib/mealdeck-auth-email-templates.ts'
+      - 'src/lib/email-templates/**'
+      - 'emails/auth/**'
+      - 'tests/mealdeck-registration-notification-ux.test.ts'
+      - 'tests/mealdeck-customer.test.ts'
+      - 'tests/mealdeck-auth-email.test.ts'
+      - 'tests/postgres/mealdeck-message-consent-behavior.mjs'
+      - 'deploy/mealdeck/post-install-migrations/*message_channel_consent.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  registration-notification-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_consent
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_consent"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked dependencies
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun install --frozen-lockfile
+          npm ci --prefix tests/postgres
+      - name: Validate customer signup, preferences, push fallback and card-logo emails
+        run: |
+          bun test tests/mealdeck-registration-notification-ux.test.ts tests/mealdeck-customer.test.ts tests/mealdeck-auth-email.test.ts
+      - name: Validate actual consent RPCs and access control on disposable PostgreSQL
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_consent
+        run: |
+          set -o pipefail
+          node tests/postgres/mealdeck-message-consent-behavior.mjs --native 2>&1 | tee "$RUNNER_TEMP/message-consent.log"
+      - name: Retain disposable consent test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-registered-message-consent-evidence
+          path: ${{ runner.temp }}/message-consent.log
+          retention-days: 14
+          if-no-files-found: warn

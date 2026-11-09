@@ -183,7 +183,7 @@ export async function readMealDeckCustomerAccount(): Promise<CustomerAccountStat
   const user = data.user!;
   if (!user.email_confirmed_at || user.is_anonymous || !user.email)
     return { status: "unverified", email: user.email ?? "" };
-  const profile = parseCustomerProfile(await customerRpc("mealdeck_customer_profile"));
+  const profile = parseCustomerProfile(await customerRpc("mealdeck_customer_profile_with_messages"));
   if (!profile || profile.userId !== user.id)
     throw new CustomerAccountError(
       "unavailable",
@@ -334,7 +334,7 @@ export async function registerMealDeckCustomer(
       "Email registration opens at 1pm Monday 9 November. Continue as a guest for now.",
     );
   return acceptedProfile(
-    await customerRpc("mealdeck_customer_register", {
+    await customerRpc("mealdeck_customer_register_with_messages", {
       p_name: clean.name,
       p_phone: clean.phone,
       p_email_marketing: clean.preferences.emailMarketing,
@@ -342,6 +342,8 @@ export async function registerMealDeckCustomer(
       p_order_notifications: clean.preferences.orderNotifications,
       p_privacy_version: CUSTOMER_PRIVACY_VERSION,
       p_consent_version: CUSTOMER_CONSENT_VERSION,
+      p_sms_marketing: clean.preferences.smsMarketing === true,
+      p_whatsapp_marketing: clean.preferences.whatsappMarketing === true,
     }),
   );
 }
@@ -352,7 +354,7 @@ export async function updateMealDeckCustomer(
 ): Promise<MealDeckCustomerProfile> {
   const clean = validateCustomerRegistration(details);
   return acceptedProfile(
-    await customerRpc("mealdeck_customer_update", {
+    await customerRpc("mealdeck_customer_update_with_messages", {
       p_name: clean.name,
       p_phone: clean.phone,
       p_email_marketing: clean.preferences.emailMarketing,
@@ -360,6 +362,8 @@ export async function updateMealDeckCustomer(
       p_order_notifications: clean.preferences.orderNotifications,
       p_expected_updated_at: profile.updatedAt,
       p_consent_version: CUSTOMER_CONSENT_VERSION,
+      p_sms_marketing: clean.preferences.smsMarketing === true,
+      p_whatsapp_marketing: clean.preferences.whatsappMarketing === true,
     }),
   );
 }
@@ -396,5 +400,5 @@ export async function signOutMealDeckCustomer(): Promise<void> {
 }
 
 export async function exportMealDeckCustomerData(): Promise<unknown> {
-  return customerRpc("mealdeck_customer_export");
+  return customerRpc("mealdeck_customer_export_with_messages");
 }

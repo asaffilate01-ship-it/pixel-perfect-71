@@ -77,12 +77,13 @@ function Preferences({
   return (
     <fieldset className="md-account-preferences" disabled={disabled}>
       <legend>
-        Notification preferences <span>All optional</span>
+        Choose your notifications <span>Optional — all off by default</span>
       </legend>
       <p>
-        Choose which messages you want. All three options start off. You can register and earn
-        loyalty points without selecting any of them. Change your choices in your account later.
+        Select the messages you want from MealDeck. Each option is separate and off by default.
+        Email verification and essential order updates do not require marketing consent.
       </p>
+      <p className="md-account-preference-group-title">Choose the channels you want</p>
       <label>
         <input
           type="checkbox"
@@ -90,8 +91,30 @@ function Preferences({
           onChange={(event) => onChange({ ...value, emailMarketing: event.target.checked })}
         />
         <span>
-          <strong>Email me offers and discounts</strong>
+          <strong>Offers by email</strong>
           <small>Send me MealDeck promotions, loyalty offers and menu news by email.</small>
+        </span>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={value.smsMarketing === true}
+          onChange={(event) => onChange({ ...value, smsMarketing: event.target.checked })}
+        />
+        <span>
+          <strong>Offers by SMS text</strong>
+          <small>I opt in to promotional text messages from 313 Brands Ltd trading as MealDeck at my saved mobile number. Not required for orders.</small>
+        </span>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={value.whatsappMarketing === true}
+          onChange={(event) => onChange({ ...value, whatsappMarketing: event.target.checked })}
+        />
+        <span>
+          <strong>Offers by WhatsApp</strong>
+          <small>I opt in to promotional WhatsApp messages from MealDeck at my saved number. Provider verification and approved messaging are separate. Order-only chats are unaffected.</small>
         </span>
       </label>
       <label>
@@ -101,7 +124,7 @@ function Preferences({
           onChange={(event) => onChange({ ...value, pushMarketing: event.target.checked })}
         />
         <span>
-          <strong>Send offers to my phone (app notifications)</strong>
+          <strong>App offers and promotions</strong>
           <small>
             Send me promotional push notifications. This needs a separate device permission.
           </small>
@@ -114,14 +137,14 @@ function Preferences({
           onChange={(event) => onChange({ ...value, orderNotifications: event.target.checked })}
         />
         <span>
-          <strong>Send updates about my orders</strong>
+          <strong>Order status notifications</strong>
           <small>
             Use push notifications for updates about my orders. These are separate from promotions.
           </small>
         </span>
       </label>
       <p className="md-account-fine">
-        You do not need to accept marketing to register, order or earn loyalty points.
+        Marketing consent is optional and is not required for registration or loyalty points.
         Essential verification and order messages are separate.
       </p>
     </fieldset>
@@ -185,16 +208,15 @@ function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
       <div className="md-account-icon">
         <UserRound size={26} aria-hidden="true" />
       </div>
-      <h2 id="account-guest-heading">Just your name and WhatsApp number.</h2>
+      <h2 id="account-guest-heading">Continue as a guest.</h2>
       <p>
-        Choose your food and continue as a guest while member registration is being prepared. Enter your name and WhatsApp
-        number at checkout.
+        Continue without registering: choose your food and provide your contact details at checkout.
       </p>
       <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>
         Continue without registering <ArrowRight size={18} aria-hidden="true" />
       </a>
       <p className="md-account-fine md-account-guest-note">
-        Email registration opens at 1pm on Monday 9 November 2026, UK time. Guest orders earn no
+        Member registration is available when the account service is open. Guest orders earn no
         loyalty points.
       </p>
     </section>
@@ -249,20 +271,20 @@ function CustomerEntry({
         </button>
       </div>
       <h2 id="account-entry-heading">
-        {mode === "register" ? "Create your MealDeck account" : "Welcome back."}
+        {mode === "register" ? "Join MealDeck in two steps" : "Welcome back."}
       </h2>
       <p>
         {mode === "register"
-          ? "Enter your details, choose any optional notifications, then verify your email. " +
-            "Earn 1 point for every complete £1 paid on eligible orders."
+          ? "Enter your name, email and phone, then verify using the link or code we send. Notification choices are optional and never affect joining or earning points."
           : usePassword
             ? "Sign in with your email and password."
             : "We’ll email you a secure sign-in link. No password to remember."}
       </p>
       {mode === "register" && (
         <p className="md-account-steps" role="note">
-          <strong>Step 1 of 2:</strong> Your details and notification choices.{" "}
-          <strong>Step 2:</strong> Verify your email to activate membership.
+          <strong>1.</strong> Enter your details.{" "}
+          <strong>2.</strong> Verify your email.{" "}
+          <strong>Done:</strong> Member benefits and loyalty points become available.
         </p>
       )}
       <form
@@ -374,6 +396,7 @@ function CustomerEntry({
 
 function CheckEmail({
   email,
+  purpose,
   busy,
   resendAt,
   onResend,
@@ -381,6 +404,7 @@ function CheckEmail({
   onBack,
 }: {
   email: string;
+  purpose: "register" | "signin";
   busy: boolean;
   resendAt: number;
   onResend: () => Promise<void>;
@@ -399,14 +423,19 @@ function CheckEmail({
       <span className="md-account-icon">
         <Mail size={26} aria-hidden="true" />
       </span>
-      <h2 id="account-email-heading">Step 2: Verify your email</h2>
+      <h2 id="account-email-heading">
+        {purpose === "register" ? "Step 2: Verify your email" : "Check your email to sign in"}
+      </h2>
       <p>
-        We have requested a secure verification or sign-in email for{" "}
+        We have requested a secure MealDeck email for{" "}
         <strong className="md-account-email-address">{email}</strong>.
       </p>
-      <p>Open the newest MealDeck email and tap Verify email, or enter the code below. Check spam or junk if it has not arrived. You can then manage notifications in your account.</p>
-      <details className="md-account-code">
-        <summary>Enter the code from my email instead</summary>
+      <p>
+        Open the newest MealDeck email and use its secure button, or enter the code below.
+        Check spam or junk if needed. The email may take a moment to arrive.
+      </p>
+      <div className="md-account-code">
+        <h3>Enter the code from your email</h3>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -433,7 +462,7 @@ function CheckEmail({
             <ArrowRight size={18} aria-hidden="true" />
           </button>
         </form>
-      </details>
+      </div>
       <div className="md-account-actions">
         <button
           type="button"
@@ -470,8 +499,8 @@ function FinishRegistration({
       <span className="md-account-verified">
         <ShieldCheck size={17} aria-hidden="true" /> Email verified
       </span>
-      <h2 id="account-finish-heading">One last step.</h2>
-      <p>Confirm your contact details to finish joining MealDeck.</p>
+      <h2 id="account-finish-heading">Confirm your contact details.</h2>
+      <p>Your email is verified. Check your name and phone number, then save. Every optional marketing choice is off until you opt in.</p>
       <p className="md-account-email-address">{account.profile.email}</p>
       <form
         onSubmit={(event) => {
@@ -552,10 +581,6 @@ function CustomerSettings({
         email: profile.email,
         preferences,
       });
-      if (!preferences.pushMarketing && !preferences.orderNotifications) {
-        await disableCustomerDeviceNotifications().catch(() => {});
-        setDevice("off");
-      }
       onSaved(saved);
       onMessage("Your details and preferences are saved.");
     } catch (reason) {
@@ -604,10 +629,38 @@ function CustomerSettings({
 
   return (
     <>
-      <section className="md-account-panel" aria-labelledby="account-details-heading">
+      <section
+        id="notification-preferences"
+        className="md-account-panel md-account-notification-settings"
+        aria-labelledby="account-messages-heading"
+      >
+        <div className="md-account-section-heading">
+          <Bell size={21} aria-hidden="true" />
+          <h2 id="account-messages-heading">Notifications and offers</h2>
+        </div>
+        <p>
+          Your choices are saved separately. All offers are optional; none is needed
+          to register, order, or earn loyalty points.
+        </p>
+        <form onSubmit={(event) => void save(event)}>
+          <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
+          <button type="submit" className="md-account-primary" disabled={busy}>
+            {busy ? "Saving…" : "Save notification choices"}
+            <Check size={18} aria-hidden="true" />
+          </button>
+        </form>
+        <p className="md-account-fine">
+          For alerts on this phone, choose Order status or App offers, save your choices, then
+          enable phone notifications. Email, SMS and WhatsApp choices do not require browser permission.
+        </p>
+        <a className="md-account-text" href="#device-notifications">
+          Next: enable notifications on this phone <ChevronRight size={17} aria-hidden="true" />
+        </a>
+      </section>
+      <section id="account-details" className="md-account-panel" aria-labelledby="account-details-heading">
         <div className="md-account-section-heading">
           <UserRound size={20} aria-hidden="true" />
-          <h2 id="account-details-heading">Your details and message choices</h2>
+          <h2 id="account-details-heading">Your contact details</h2>
         </div>
         <p className="md-account-email-address">
           {profile.email}{" "}
@@ -623,11 +676,8 @@ function CustomerSettings({
             setPhone={setPhone}
             disabled={busy}
           />
-          <div id="notification-preferences">
-            <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
-          </div>
           <button type="submit" className="md-account-primary" disabled={busy}>
-            {busy ? "Saving…" : "Save details & preferences"}
+            {busy ? "Saving…" : "Save contact details"}
             <Check size={18} aria-hidden="true" />
           </button>
         </form>
@@ -635,9 +685,12 @@ function CustomerSettings({
       <section className="md-account-panel" id="device-notifications" aria-labelledby="account-device-heading">
         <div className="md-account-section-heading">
           <Bell size={21} aria-hidden="true" />
-          <h2 id="account-device-heading">Turn on phone notifications</h2>
+          <h2 id="account-device-heading">Enable notifications on this phone</h2>
         </div>
-        <p className="md-account-fine">Two steps: save your choices above, then allow notifications on this device. Browser permission is separate from marketing consent.</p>
+        <p className="md-account-fine">
+          First choose and save Order status or App offers above. Then select Allow notifications
+          below. Your browser will request permission; it is separate from marketing consent.
+        </p>
         <p>
           {device === "connected"
             ? "Connected. You’ll receive only the types of notification saved in your preferences."
@@ -782,13 +835,18 @@ export function CustomerAccount({
       setConnectionError("");
       try {
         await initializeMealDeckCustomerClient(attempt > 0);
-        const [ready, push] = await Promise.all([
-          readCustomerCapabilities(),
-          getMealDeckCustomerPushConfig(),
-        ]);
+        // The push sender is optional: an outage must never hide registration,
+        // account settings or existing loyalty points.
+        const ready = await readCustomerCapabilities();
         if (!active) return;
         setCapabilities(ready);
-        setPushPublicKey(push.publicKey);
+        void getMealDeckCustomerPushConfig()
+          .then((push) => {
+            if (active) setPushPublicKey(push.publicKey);
+          })
+          .catch(() => {
+            if (active) setPushPublicKey(null);
+          });
         const status = await refresh();
         // An email link that couldn't sign in (opened in another browser or app,
         // already used, or expired) used to land silently on Register.
@@ -1033,6 +1091,7 @@ export function CustomerAccount({
             ) : emailPending ? (
               <CheckEmail
                 email={emailPending}
+                purpose={draft ? "register" : "signin"}
                 busy={busy}
                 resendAt={resendAt}
                 onResend={() => request(emailPending, draft)}

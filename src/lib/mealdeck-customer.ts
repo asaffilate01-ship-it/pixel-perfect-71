@@ -6,12 +6,17 @@ export type CustomerPreferences = {
   emailMarketing: boolean;
   pushMarketing: boolean;
   orderNotifications: boolean;
+  /** Optional separate PECR consent. Never infer these from having a phone number. */
+  smsMarketing?: boolean;
+  whatsappMarketing?: boolean;
 };
 
 export const EMPTY_CUSTOMER_PREFERENCES: CustomerPreferences = Object.freeze({
   emailMarketing: false,
   pushMarketing: false,
   orderNotifications: false,
+  smsMarketing: false,
+  whatsappMarketing: false,
 });
 
 export type MealDeckCustomerProfile = {
@@ -89,13 +94,21 @@ export function parseCustomerPreferences(value: unknown): CustomerPreferences | 
     !entry ||
     typeof entry["emailMarketing"] !== "boolean" ||
     typeof entry["pushMarketing"] !== "boolean" ||
-    typeof entry["orderNotifications"] !== "boolean"
+    typeof entry["orderNotifications"] !== "boolean" ||
+    (entry["smsMarketing"] !== undefined && typeof entry["smsMarketing"] !== "boolean") ||
+    (entry["whatsappMarketing"] !== undefined && typeof entry["whatsappMarketing"] !== "boolean")
   )
     return null;
   return {
     emailMarketing: entry["emailMarketing"],
     pushMarketing: entry["pushMarketing"],
     orderNotifications: entry["orderNotifications"],
+    ...(typeof entry["smsMarketing"] === "boolean"
+      ? { smsMarketing: entry["smsMarketing"] }
+      : {}),
+    ...(typeof entry["whatsappMarketing"] === "boolean"
+      ? { whatsappMarketing: entry["whatsappMarketing"] }
+      : {}),
   };
 }
 
