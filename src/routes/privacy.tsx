@@ -169,16 +169,19 @@ function PrivacyPage() {
             room.
           </p>
           <p>
-            Necessary browser storage keeps you signed in, remembers the basket on your device and
-            remembers an app-install invitation dismissed during your visit. Guest checkout uses a
-            necessary session cookie to protect access to your order. The app’s offline cache
-            contains its public offline screen and artwork; it does not cache account details,
-            payments or live order progress.
+            Necessary browser storage keeps you signed in and remembers basket choices for no
+            longer than five minutes after each quantity is added. Returning to an old tab or
+            checkout does not extend that deadline. It also remembers dismissed app prompts and
+            secure access to guest receipts. The app's offline cache contains only public
+            offline content, not account details, payments or live order progress.
           </p>
           <p>
-            Installing the app is optional and is separate from enabling notifications. This
-            registration and ordering flow does not require advertising cookies or marketing
-            consent.
+            On first use, we let you accept, reject or customise optional analytics and
+            advertising/personalisation cookies. Strictly necessary basket, authentication,
+            security and checkout storage stays available. You can change your choices using
+            Cookie settings in the footer. Optional tracking must not run before the relevant
+            consent. Installing the app is a separate, optional action, and promotional push
+            notifications require an account opt-in and device permission.
           </p>
           <h2>Service providers and sharing</h2>
           <p>
