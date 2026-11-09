@@ -6,6 +6,8 @@ import {
   isMealDeckSundayDeliveryService,
   MEALDECK_LAUNCH_DAYS,
   MEALDECK_LAUNCH_TIME_ZONE,
+  isMealDeckLutonRegularHoursAt,
+  MEALDECK_LUTON_HOURS_LABEL,
 } from "../src/lib/mealdeck-launch-schedule";
 
 describe("MealDeck's confirmed Luton launch hours", () => {
@@ -86,5 +88,31 @@ describe("MealDeck's confirmed Luton launch hours", () => {
       new Date(Number.NaN),
     ])
       expect(isMealDeckGuestCheckoutWindow(invalid)).toBe(false);
+  });
+});
+
+
+describe("regular Luton hours (owner update 9 Nov 2026)", () => {
+  test("Monday to Thursday opens 5pm and closes 11pm UK time", () => {
+    // Mon 9 Nov 2026 (GMT)
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-11-09T16:59:59Z"))).toBe(false);
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-11-09T17:00:00Z"))).toBe(true);
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-11-12T22:59:59Z"))).toBe(true);
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-11-12T23:00:00Z"))).toBe(false);
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-11-12T16:30:00Z"))).toBe(false);
+  });
+  test("Friday to Sunday opens 4pm and closes 11pm UK time", () => {
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-11-13T15:59:59Z"))).toBe(false);
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-11-13T16:00:00Z"))).toBe(true);
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-11-15T16:30:00Z"))).toBe(true);
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-11-15T23:00:00Z"))).toBe(false);
+  });
+  test("uses UK summer time", () => {
+    // Fri 5 Jun 2026, BST: 4pm local = 15:00Z
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-06-05T15:00:00Z"))).toBe(true);
+    expect(isMealDeckLutonRegularHoursAt(Date.parse("2026-06-05T14:59:59Z"))).toBe(false);
+  });
+  test("shows the confirmed label", () => {
+    expect(MEALDECK_LUTON_HOURS_LABEL).toBe("Mon–Thu 5pm–11pm · Fri–Sun 4pm–11pm · UK time");
   });
 });

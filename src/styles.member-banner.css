@@ -1,0 +1,94 @@
+/*
+ * Member registration banner. The inner row shares the /menus content width
+ * (1380px with 34px desktop gutters) so the message lines up with the menu.
+ * Left: icon + text. Right: action links. Stacks below 1160px.
+ */
+.md-member-banner {
+  background: #fcd34d;
+  color: #18181b;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.md-member-banner-inner {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 32px;
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 12px 34px;
+}
+.md-member-banner-copy {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  text-align: left;
+}
+.md-member-banner-icon {
+  flex: none;
+  margin-top: 1px;
+}
+.md-member-banner-copy p {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.md-member-banner-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px 20px;
+}
+.md-member-banner-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  border-radius: 6px;
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  white-space: nowrap;
+}
+.md-member-banner a:focus-visible {
+  outline: 3px solid #18181b;
+  outline-offset: 2px;
+}
+@media (max-width: 1160px) {
+  .md-member-banner-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 12px 24px;
+  }
+  .md-member-banner-actions {
+    justify-content: flex-start;
+    padding-left: 28px;
+  }
+}
+@media (max-width: 800px) {
+  .md-member-banner-inner {
+    padding: 11px 20px;
+  }
+}
+@media (max-width: 560px) {
+  .md-member-banner {
+    font-size: 13px;
+  }
+  .md-member-banner-inner {
+    padding: 10px 16px;
+  }
+  .md-member-banner-actions {
+    padding-left: 0;
+    gap: 0 18px;
+  }
+  .md-member-banner-actions a {
+    min-height: 44px;
+  }
+}

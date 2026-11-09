@@ -3,8 +3,8 @@ import { LocationPage } from "@/components/location-page";
 import { useOwnDriverAvailability, useOwnDriverPreopenNotice } from "@/components/own-driver-offer-banner";
 import { ldScript, lutonBusiness, seo } from "@/lib/seo";
 import {
-  MEALDECK_LAUNCH_HOURS_LABEL,
-  MEALDECK_LAUNCH_HOURS_PROSE,
+  MEALDECK_LUTON_HOURS_LABEL,
+  MEALDECK_LUTON_HOURS_PROSE,
 } from "@/lib/mealdeck-launch-schedule";
 
 export const Route = createFileRoute("/luton")({
@@ -27,7 +27,7 @@ function LutonPage() {
     <LocationPage
       town="Luton"
       intro="Our five Luton menus bring Skorch smash burgers, Tavo chicken wings and tenders, Souvano doner and lamb chops, Load’d loaded fries and mac and cheese, and Moktl mocktails into one takeaway order. Collect from Selbourne Road or choose kerbside pickup."
-      hours={MEALDECK_LAUNCH_HOURS_LABEL}
+      hours={MEALDECK_LUTON_HOURS_LABEL}
       fulfilment={deliveryLive ? "Collection · Kerbside · Free delivery" : "Collection · Kerbside"}
       areas={[
         "Collection and kerbside from 314–318 Selbourne Road, Luton, LU4 8NU",
@@ -44,8 +44,8 @@ function LutonPage() {
           a: "Yes. Our name is written MealDeck, and this is the official MealDeck Luton website. Our collection kitchen is at 314–318 Selbourne Road, Luton, LU4 8NU. Browse the five menus and place one order for collection or kerbside during kitchen opening hours.",
         },
         {
-          q: "When is MealDeck opening in Luton?",
-          a: `Our opening weekend is 6–8 November 2026. ${MEALDECK_LAUNCH_HOURS_PROSE} Order online for Luton collection or kerbside during kitchen opening hours.`,
+          q: "What are MealDeck Luton's opening hours?",
+          a: `${MEALDECK_LUTON_HOURS_PROSE} Order online for Luton collection or kerbside during kitchen opening hours.`,
         },
         {
           q: "Which brands are in the first launch?",

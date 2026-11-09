@@ -60,13 +60,13 @@ const directBenefits = [
   },
   {
     icon: WalletCards,
-    title: "Group ordering · 9 November",
-    copy: "Starting 9 November. Pay for your own food, or let the organiser pay for everyone.",
+    title: "Group order planning",
+    copy: "Check availability before creating a shared order or requesting separate payments.",
   },
   {
     icon: Star,
-    title: "Double points offer",
-    copy: "Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive.",
+    title: "Member loyalty points",
+    copy: "Verified members earn one point per complete £1 paid after discounts on eligible orders.",
   },
   {
     icon: MapPin,
@@ -238,7 +238,7 @@ function LandingPage() {
             <h2>One room. Everyone’s favourites.</h2>
             {!groupOrderingOpen && (
               <p>
-                <strong>Group ordering · Starting 9 November</strong>
+                <strong>Group ordering is subject to live checkout availability</strong>
               </p>
             )}
             <ul>
@@ -261,7 +261,7 @@ function LandingPage() {
               an itemised bill for each person.
             </p>
             <Link to="/group-order" className="md-btn md-btn-yellow">
-              {groupOrderingOpen ? "Start a group order" : "Group ordering · Starting 9 November"}{" "}
+              {groupOrderingOpen ? "Check group order availability" : "Group ordering availability"}{" "}
               <ArrowRight />
             </Link>
           </article>
@@ -529,9 +529,9 @@ function LandingPage() {
           <p className="md-kicker md-kicker-light">Different cuisines. One checkout.</p>
           <h2>Ready to play your cravings right?</h2>
           <p>
-            Guests and members get 30% off the entire menu during our 6–8 November opening hours.
-            Register and spend £15 or more from Monday 9 to Friday 13 November inclusive for double
-            loyalty points. Marketing updates are optional.
+            Our 6–8 November opening discounts have ended. Verified registered members earn
+            one loyalty point per complete £1 paid after discounts on eligible orders.
+            Guest orders earn none; marketing updates are optional.
           </p>
           <div>
             <Link to="/account" className="md-btn md-btn-yellow">

@@ -353,7 +353,7 @@ describe("Auth email content and provider token mapping", () => {
     expect(link.searchParams.get("type")).toBe("signup");
     expect(link.searchParams.get("redirect_to")).toBe(event.email_data.redirect_to);
     expect(messages[0]!.text).toContain("123456");
-    expect(messages[0]!.html).toContain("https://mealdeck.co.uk/email/mealdeck-logo.png");
+    expect(messages[0]!.html).toContain("https://mealdeck.co.uk/email/mealdeck-card-logo.png");
     expect(messages[0]!.html).not.toContain("email_confirmed_at");
   });
   test("secure email changes send both correctly paired OTPs/hashes in one batch", async () => {

@@ -1,8 +1,10 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { getMealDeckPublicBackend } from "./mealdeck-backend.functions";
 import { getMealDeckCustomerEntryPolicy } from "./mealdeck-customer.functions";
+import { requestMealDeckCustomerEmail } from "./mealdeck-customer-email.functions";
+import type { CustomerEmailResult } from "./mealdeck-customer-email.server";
 import { createMealDeckBackendClientCache } from "./mealdeck-backend-client-cache";
-import { customerEmailReturnPath, type CustomerReturnTarget } from "./mealdeck-customer-return";
+import type { CustomerReturnTarget } from "./mealdeck-customer-return";
 import {
   CUSTOMER_CONSENT_VERSION,
   CUSTOMER_PRIVACY_VERSION,
@@ -220,14 +222,60 @@ export async function requestCustomerEmail(
       "unavailable",
       "Email registration opens at 1pm Monday 9 November. Order with your name and WhatsApp number this weekend.",
     );
-  const { error } = await currentClient().auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: Boolean(details),
-      emailRedirectTo: new URL(customerEmailReturnPath(returnTo), window.location.origin).href,
-      ...(details ? { data: { mealdeck_name: details.name, mealdeck_phone: details.phone } } : {}),
-    },
-  });
+  // Branded MealDeck email via Resend; Auth still issues and verifies the token.
+  throwCustomerEmailResult(
+    await requestMealDeckCustomerEmail({
+      data: details
+        ? { kind: "register", email, name: details.name, phone: details.phone, returnTo }
+        : { kind: "signin", email, returnTo },
+    }),
+  );
+}
+
+function throwCustomerEmailResult(result: CustomerEmailResult) {
+  if (result.ok) return;
+  if (result.reason === "cooldown")
+    throw new CustomerAccountError(
+      "rate_limited",
+      "Please wait a minute before requesting another email.",
+    );
+  if (result.reason === "no_account")
+    throw new CustomerAccountError(
+      "invalid",
+      "We couldn’t find an account for that email. Choose Register to create one.",
+    );
+  if (result.reason === "deferred")
+    throw new CustomerAccountError("unavailable", "Email registration isn’t open yet.");
+  throw new CustomerAccountError(
+    "unavailable",
+    "We couldn’t send your email just now. Please try again in a moment.",
+  );
+}
+
+/** Same neutral reply whether or not the address has an account. */
+export async function requestCustomerPasswordReset(emailInput: string): Promise<void> {
+  const email = normalizeCustomerEmail(emailInput);
+  if (!email) throw new CustomerAccountError("invalid", "Enter your email address first.");
+  throwCustomerEmailResult(
+    await requestMealDeckCustomerEmail({ data: { kind: "recovery", email, returnTo: "/menus" } }),
+  );
+}
+
+/** Used by the email confirmation page after a deliberate Continue press. */
+export async function verifyCustomerEmailLink(
+  tokenHash: string,
+  type: "signup" | "magiclink" | "recovery",
+): Promise<void> {
+  const client = await initializeMealDeckCustomerClient();
+  const { error } = await client.auth.verifyOtp({ token_hash: tokenHash, type });
+  if (error) throw customerRequestError(error);
+}
+
+export async function setCustomerPassword(password: string): Promise<void> {
+  if (password.length < 8 || password.length > 128)
+    throw new CustomerAccountError("invalid", "Choose a password of 8–128 characters.");
+  const client = await initializeMealDeckCustomerClient();
+  const { error } = await client.auth.updateUser({ password });
   if (error) throw customerRequestError(error);
 }
 

@@ -52,3 +52,8 @@ Last reviewed: **5 November 2026**. This is the current checklist; numbered phas
 ## Release discipline
 
 Work through the GitHub repository and native publication; do not spend Lovable AI build credits. Preserve all published Git/Lovable history. Verify source, database installation, publication and actual payment/device acceptance as separate outcomes. The historical hosting branch currently tracked by Lovable is `feature/dishbee-play-food-cards`; keep it aligned with the reviewed main release without force pushes.
+
+## 9 November 2026 requests
+
+- [x] Show Luton opening hours as Mon–Thu 5pm–11pm, Fri–Sun 4pm–11pm (display; ordering still opened/closed by staff controls).
+- [x] Branded customer sign-up, sign-in and password-reset emails sent through Resend from info@mealdeck.co.uk (needs publishing to go live).

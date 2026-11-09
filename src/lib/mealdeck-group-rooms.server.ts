@@ -232,6 +232,10 @@ export function orderingRoomForBrowser(data: PaymentJson): GroupOrderRoom {
     phase: data["phase"],
     paymentMode: data["paymentMode"],
     joinDeadline: data["joinDeadline"],
+    ...(data["unpaidRoomExpiresAt"] !== undefined
+      ? { unpaidRoomExpiresAt: data["unpaidRoomExpiresAt"] } : {}),
+    ...(data["closedAt"] !== undefined ? { closedAt: data["closedAt"] } : {}),
+    ...(data["closeReason"] !== undefined ? { closeReason: data["closeReason"] } : {}),
     invitationsClosed: data["invitationsClosed"],
     serverNow: data["serverNow"],
     createdAt: data["createdAt"],
@@ -420,6 +424,10 @@ export async function handleGroupOrdersRequest(
       // A private room is still visible before payer sign-in. Its money actions
       // are enabled only for the selected payment mode and the actual owner.
       if (payment) {
+        if (room.closedAt) {
+          payment.canPay = false;
+          payment.canCancel = false;
+        }
         if (room.paymentMode === "organiser" && room.viewer.role !== "organiser")
           payment.canPay = false;
         payment.canCancel = payment.canCancel && hasIdentity;

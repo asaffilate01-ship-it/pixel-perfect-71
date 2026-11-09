@@ -3,7 +3,7 @@ import { Instagram, Music2 } from "lucide-react";
 import { WhatsAppOrderLink } from "@/components/whatsapp-order-link";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
-import { MEALDECK_LAUNCH_DAYS } from "@/lib/mealdeck-launch-schedule";
+import { MEALDECK_LUTON_WEEKLY_HOURS } from "@/lib/mealdeck-launch-schedule";
 import deliverooLogo from "@/assets/deliveroo-app.png.asset.json";
 import uberEatsLogo from "@/assets/ubereats-app.png.asset.json";
 import justEatLogo from "@/assets/justeat-app.png.asset.json";
@@ -48,10 +48,10 @@ export function SiteFooter() {
             <h3>Luton collection</h3>
             <p>314–318 Selbourne Road</p>
             <p>Luton · LU4 8NU</p>
-            <p>Opening weekend · 6–8 November 2026</p>
-            {MEALDECK_LAUNCH_DAYS.map((day) => (
-              <p key={day.date}>
-                <time dateTime={day.date}>{day.shortLabel}</time> · {day.hoursLabel}
+            <p>Opening hours</p>
+            {MEALDECK_LUTON_WEEKLY_HOURS.map((row) => (
+              <p key={row.shortDays}>
+                {row.shortDays} · {row.hoursLabel}
               </p>
             ))}
             <p>All times are UK local time.</p>

@@ -18,6 +18,11 @@ import { CustomerOrders } from "./customer-orders";
 import { useCustomerEntryPolicy } from "./use-customer-entry-policy";
 import { customerReturnTarget, type CustomerReturnTarget } from "@/lib/mealdeck-customer-return";
 import {
+  MEMBER_LOYALTY_RULES,
+  MEMBER_LOYALTY_UNAVAILABLE_MESSAGE,
+  memberLoyaltyView,
+} from "@/lib/mealdeck-member-loyalty";
+import {
   accountAfterAuthPath,
   hasAccountAuthCallback,
   showPublicGuestAccount,
@@ -39,6 +44,7 @@ import {
   registerMealDeckCustomer,
   signInMealDeckCustomerWithPassword,
   requestCustomerEmail,
+  requestCustomerPasswordReset,
   signOutMealDeckCustomer,
   subscribeMealDeckCustomerAuth,
   updateMealDeckCustomer,
@@ -116,7 +122,7 @@ function Preferences({
         </span>
       </label>
       <p className="md-account-fine">
-        Marketing consent is optional and is not required for registration or loyalty points.
+        Marketing is never required for registration, ordering or loyalty membership.
         Essential verification and order messages are separate.
       </p>
     </fieldset>
@@ -199,12 +205,14 @@ function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
 function CustomerEntry({
   onRequest,
   onPassword,
+  onReset,
   busy,
   registrationDeferred,
   signInOnly,
 }: {
   onRequest: (email: string, registration?: CustomerRegistration) => Promise<void>;
   onPassword: (email: string, password: string) => Promise<void>;
+  onReset: (email: string) => Promise<void>;
   busy: boolean;
   registrationDeferred: boolean;
   signInOnly: boolean;
@@ -246,7 +254,7 @@ function CustomerEntry({
       </h2>
       <p>
         {mode === "register"
-          ? "Register with your email and mobile number, then verify your email. Eligible offers may require separate WhatsApp number verification; offer alerts are always optional."
+          ? "Register with your name, email and mobile number, then verify your email to earn loyalty points. Some offers also require independently verified WhatsApp ownership. Marketing alerts are optional."
           : usePassword
             ? "Sign in with your email and password."
             : "We’ll email you a secure sign-in link. No password to remember."}
@@ -304,6 +312,16 @@ function CustomerEntry({
               disabled={busy}
             />
           </label>
+        )}
+        {mode === "signin" && usePassword && (
+          <button
+            type="button"
+            className="md-account-text"
+            disabled={busy}
+            onClick={() => void onReset(email)}
+          >
+            Forgot password?
+          </button>
         )}
         {mode === "signin" && (
           <button
@@ -692,7 +710,9 @@ export function CustomerAccount({
 }) {
   const returnTarget = customerReturnTarget(returnTo);
   const entryPolicy = useCustomerEntryPolicy();
-  const registrationDeferred = entryPolicy?.emailRegistrationDeferred !== false;
+  // A missing status response must not hide registration and loyalty behind a guest-only page.
+  // Database/Auth remains the sole authority to accept any new registration.
+  const registrationDeferred = entryPolicy?.emailRegistrationDeferred === true;
   const [account, setAccount] = useState<CustomerAccountState>({ status: "signed_out" });
   const [capabilities, setCapabilities] = useState<CustomerCapabilities | null>(null);
   const [pushPublicKey, setPushPublicKey] = useState<string | null>(null);
@@ -808,6 +828,15 @@ export function CustomerAccount({
     });
   }
 
+  async function passwordReset(email: string) {
+    await run(async () => {
+      await requestCustomerPasswordReset(email);
+      showMessage(
+        "If that email has a MealDeck account, we’ve sent a link to reset your password. Check your inbox.",
+      );
+    });
+  }
+
   async function passwordSignIn(email: string, password: string) {
     await run(async () => {
       await signInMealDeckCustomerWithPassword(email, password);
@@ -858,6 +887,7 @@ export function CustomerAccount({
 
   const signedIn = account.status === "signed_in";
   const profile = signedIn ? account.profile : null;
+  const loyaltyView = memberLoyaltyView(profile?.loyalty);
   const publicGuestView = showPublicGuestAccount({
     registrationDeferred,
     signInRequested,
@@ -895,7 +925,7 @@ export function CustomerAccount({
                 ? "Every craving, one order. Choose your food and we’ll take the details we need at checkout."
                 : signInOnly
                   ? "Use your verified account to continue."
-                  : "One account for all your favourite brands. Verify your email and get ready for the Luton launch."}
+                  : "One account for all your favourite brands. Verify your email to start earning loyalty points."}
           </p>
           {signedIn && (
             <button
@@ -1010,6 +1040,7 @@ export function CustomerAccount({
                 busy={busy}
                 onRequest={request}
                 onPassword={passwordSignIn}
+                onReset={passwordReset}
                 registrationDeferred={registrationDeferred}
                 signInOnly={signInOnly}
               />
@@ -1027,15 +1058,14 @@ export function CustomerAccount({
             <section className="md-account-benefit">
               <Gift size={25} aria-hidden="true" />
               <span className="md-account-eyebrow">MEALDECK MEMBERSHIP</span>
-              <h2>Every craving, one order.</h2>
+              <h2>Every order counts.</h2>
               <p>
-                Register with a verified email and mobile number to access eligible member benefits.
-                Earn loyalty points when the programme is enabled, discover new offers and keep
-                up with your collection, kerbside or delivery order.
+                Verified members earn loyalty points on eligible paid orders and can see their
+                recent MealDeck orders here.
               </p>
               <p className="md-account-fine">
-                Member offers have their own eligibility rules and end dates. Some require a verified
-                WhatsApp number. Marketing alerts are optional; guest orders earn no loyalty points.
+                Choose which offer and order alerts you receive. Marketing choices are always
+                optional. Guest orders earn no loyalty points.
               </p>
               <a href="/menus">
                 Explore the menus
@@ -1051,28 +1081,25 @@ export function CustomerAccount({
                   <Gift size={20} aria-hidden="true" />
                   <h2 id="account-loyalty-heading">Loyalty, dealt your way.</h2>
                 </div>
-                {profile?.loyalty.enabled ? (
-                  <>
-                    <strong className="md-account-points">
-                      {profile.loyalty.points.toLocaleString("en-GB")} <span>points</span>
-                    </strong>
-                    <p>{profile.loyalty.terms}</p>
-                  </>
+                {loyaltyView.kind === "live" ? (
+                  <strong className="md-account-points">
+                    {loyaltyView.pointsLabel} <span>points</span>
+                  </strong>
+                ) : profile ? (
+                  <p className="md-account-loyalty-status" role="status">
+                    {MEMBER_LOYALTY_UNAVAILABLE_MESSAGE}
+                  </p>
                 ) : (
-                  <>
-                    <span className="md-account-soon">Loyalty activation pending</span>
-                    <p>
-                      Once enabled, registered members with verified email earn 1 point for each
-                      complete £1 actually paid after discounts on eligible orders. Your balance
-                      will appear here when loyalty is available. No additional bonus-point
-                      campaign is active by default.
-                    </p>
-                  </>
+                  <p className="md-account-loyalty-status">
+                    Register or sign in to see your points balance.
+                  </p>
                 )}
-                <p className="md-account-fine">
-                  Guest orders earn no loyalty points. No marketing opt-in is needed for loyalty
-                  membership.
-                </p>
+                <p className="md-account-fine">Verified registered members earn 1 point for each complete £1 actually paid after discounts on eligible orders from 9 November 2026. Guest orders earn none. Refunds and disputes adjust points.</p>
+                <ul className="md-account-loyalty-rules">
+                  {MEMBER_LOYALTY_RULES.map((rule) => (
+                    <li key={rule}>{rule}</li>
+                  ))}
+                </ul>
               </section>
             )}
             <section className="md-account-panel md-account-app">
