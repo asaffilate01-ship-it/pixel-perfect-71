@@ -70,7 +70,9 @@ export function londonClockAt(instant: string): {
   if (!year || !month || !day || !Number.isInteger(hour) ||
       !Number.isInteger(minute) || hour < 0 || hour > 23 ||
       minute < 0 || minute > 59) return null;
-  return { date: `${year}-${month}-${day}`, minutes: hour * 60 + minute };
+  // Preserve seconds and milliseconds: a payment at 18:30:59 cannot claim a
+  // 19:00 pickup slot (it has less than the full 30 minutes of prep time).
+  return { date: `${year}-${month}-${day}`, minutes: hour * 60 + minute + (ms % 60_000) / 60_000 };
 }
 
 /** Resolve UK evening slots across summer and winter time, without using device TZ. */
@@ -202,7 +204,9 @@ export function scheduledKdsTopNote(
       !Number.isFinite(instantMs(slot.prepStartsAt)) ||
       instantMs(slot.slotAt) - instantMs(slot.prepStartsAt) !== preparationMinutes(slot.fulfilment) * 60_000 ||
       londonClockAt(slot.slotAt)?.date !== slot.serviceDate ||
-      londonClockAt(slot.slotAt)?.minutes % 15 !== 0)
+      londonClockAt(slot.slotAt)?.minutes % 15 !== 0 ||
+      slot.time !== hhmm(londonClockAt(slot.slotAt)!.minutes) ||
+      slot.preparationMinutes !== preparationMinutes(slot.fulfilment))
     return null;
   const destination = slot.fulfilment === "delivery" ? "DELIVERY" :
     slot.fulfilment === "curbside" ? "KERBSIDE PICKUP" : "COLLECTION";
