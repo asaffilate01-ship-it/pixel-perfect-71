@@ -915,7 +915,8 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
   gap: 8px 16px;
 }
 
-.md-own-driver-offer-link {
+/* Override the general marketing-shell anchor reset with a visible CTA. */
+.md-own-driver-offer a.md-own-driver-offer-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
