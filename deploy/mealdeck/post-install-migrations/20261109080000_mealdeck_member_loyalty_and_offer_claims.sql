@@ -196,4 +196,92 @@ revoke all on function public.mealdeck_customer_claim_one_use_offer(text)
 grant execute on function public.mealdeck_customer_claim_one_use_offer(text)
   to authenticated;
 
+-- Optional operator-run reconciliation for eligible payments since the 9 Nov
+-- policy start that were confirmed before this trigger was installed.
+-- This function is NEVER called by the migration: the independent MealDeck DB
+-- owner must review counts and invoke it in batches after verifying the target.
+-- It changes only customer_loyalty_ledger, never the payment/order/printer/KDS.
+create or replace function mealdeck_private.backfill_member_loyalty_since_20261109(p_batch_size integer default 50)
+returns jsonb language plpgsql security definer set search_path=''
+as $backfill$
+declare
+  v_order public.orders%rowtype;
+  v_stripe mealdeck_private.stripe_orders%rowtype;
+  v_member jsonb;
+  v_target integer;
+  v_count integer;
+  v_considered integer:=0;
+  v_awarded integer:=0;
+begin
+  if p_batch_size is null or p_batch_size not between 1 and 100
+    or session_user in ('anon','authenticated','service_role','authenticator')
+  then raise exception 'mealdeck_loyalty_owner_backfill_only' using errcode='42501'; end if;
+  if not exists(select 1 from mealdeck_private.installation i
+                where i.singleton and i.profile='mealdeck-independent-v1')
+    or not exists(select 1 from mealdeck_private.customer_features f
+                  where f.singleton and f.loyalty_enabled)
+  then raise exception 'mealdeck_loyalty_backfill_unavailable' using errcode='42501'; end if;
+
+  -- Same lock order as verified Stripe reconciliation (order, then provider row).
+  -- SKIP LOCKED avoids waiting on an in-flight payment, and a unique event key
+  -- protects against a second invocation or webhook replay.
+  for v_order in
+    select o.* from public.orders o
+    join mealdeck_private.stripe_orders s on s.order_id=o.id
+      and s.customer_id=o.customer_id and s.guest_id is null
+    join mealdeck_private.customer_profiles p on p.user_id=o.customer_id
+    join auth.users u on u.id=o.customer_id
+      and u.email_confirmed_at is not null and not coalesce(u.is_anonymous,false)
+      and u.deleted_at is null and (u.banned_until is null or u.banned_until<=now())
+    where o.source::text='mealdeck' and not coalesce(o.guest_checkout,false)
+      and o.group_order_room_id is null
+      and o.paid_at>=timestamptz '2026-11-09 00:00:00+00'
+      and o.paid_at<=now() and o.total_pence>0
+      and o.payment_status::text in ('paid','partially_refunded')
+      and o.status::text not in ('cancelled','refunded')
+      and s.verified_at is not null and s.captured_pence=o.total_pence
+      and s.refunded_pence between 0 and s.captured_pence
+      and (s.captured_pence-s.refunded_pence)>=100
+      and coalesce(s.void_reason,'')<>'dispute'
+      and s.payment_intent_id=o.payment_reference
+      and exists(select 1 from mealdeck_private.stripe_events e where e.order_id=o.id)
+      and not exists(
+        select 1 from mealdeck_private.customer_loyalty_ledger l
+        where l.user_id=o.customer_id
+          and l.event_key like 'mealdeck:order:'||o.id::text||':loyalty:%'
+      )
+    order by o.paid_at,o.id
+    limit p_batch_size
+    for update of o skip locked
+  loop
+    v_considered:=v_considered+1;
+    select * into v_stripe from mealdeck_private.stripe_orders s
+      where s.order_id=v_order.id and s.customer_id=v_order.customer_id
+      for share;
+    if not found or v_stripe.verified_at is null
+      or v_stripe.captured_pence<>v_order.total_pence
+      or v_stripe.refunded_pence not between 0 and v_stripe.captured_pence
+      or coalesce(v_stripe.void_reason,'')='dispute'
+    then continue; end if;
+    v_member:=mealdeck_private.customer_registration_authority(v_order.customer_id);
+    if v_member is null or v_member->'registered' is distinct from 'true'::jsonb
+    then continue; end if;
+    v_target:=(v_stripe.captured_pence-v_stripe.refunded_pence)/100;
+    if v_target<=0 then continue; end if;
+    insert into mealdeck_private.customer_loyalty_ledger(user_id,event_key,points,reason)
+      values(v_order.customer_id,
+             'mealdeck:order:'||v_order.id::text||':loyalty:1',
+             v_target,'Verified MealDeck paid order points (owner backfill)')
+      on conflict(event_key) do nothing;
+    get diagnostics v_count=row_count;
+    v_awarded:=v_awarded+v_count;
+  end loop;
+  return jsonb_build_object(
+    'ordersConsidered',v_considered,'ordersAwarded',v_awarded,
+    'batchLimit',p_batch_size,'source','verified_mealdeck_stripe_only');
+end;
+$backfill$;
+revoke all on function mealdeck_private.backfill_member_loyalty_since_20261109(integer)
+  from public,anon,authenticated,service_role;
+
 commit;
