@@ -31,7 +31,7 @@ describe("MealDeck secure driver deployment surface", () => {
     expect(backend).toContain("o.payment_status='paid'");
     expect(backend).toContain("kds_release_evidence");
     expect(backend).toContain("driver_status='with_driver'");
-    expect(backend).toContain("The existing protected");
+    expect(backend).toContain("the existing protected");
     expect(backend).not.toMatch(/update public\.orders set status\s*=\s*'fulfilled'/);
   });
 });
