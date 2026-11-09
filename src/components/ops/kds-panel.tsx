@@ -38,6 +38,7 @@ import { KdsOrderComms } from "./kds-order-comms";
 import { KdsMealComponents } from "./kds-meal-components";
 import { KdsTicketGrid } from "./kds-ticket-grid";
 import { KdsOrderNavigator } from "./kds-order-navigator";
+import { OpsDriverDispatchPanel } from "./driver-dispatch-panel";
 import {
   kdsFlavourHighlight,
   kdsTavoChickenPreparation,
@@ -509,6 +510,13 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
         />
       )}
 
+      {board?.readiness === "ready" && can("orders.status") && (
+        <OpsDriverDispatchPanel
+          tenantId={tenantId}
+          locationId={locationId}
+          canEnrol={can("staff.manage")}
+        />
+      )}
       <StaffSoundUnlock alerts={alerts} />
       {alerts.notice > 0 && (
         <div className="md-kds-new-orders" role="status">
