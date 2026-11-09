@@ -43,5 +43,9 @@ describe("MealDeck post-opening UI and group availability", () => {
     expect(group).toContain("Checking group ordering availability");
     expect(group).toContain("capabilities?.message");
     expect(group).toContain("Check group room availability");
+    expect(group).toContain("const newRoomsOpen = capabilities?.available === true;");
+    expect(group).toContain("Check availability again");
+    expect(group).not.toContain("Coming Monday");
+    expect(group).not.toContain("New group rooms start on Monday 9 November.");
   });
 });
