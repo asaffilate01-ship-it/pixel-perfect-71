@@ -524,6 +524,19 @@ describe("Confirmation interstitial redirects", () => {
     expect(route).toContain("no-store, private");
     expect(route).toContain("no-referrer");
   });
+  test("all exported Auth email templates use the current approved MealDeck card logo", () => {
+    const currentLogo = AUTH_EMAIL_SITE_ORIGIN + "/email/mealdeck-card-logo.png";
+    const retiredLogo = AUTH_EMAIL_SITE_ORIGIN + "/email/mealdeck-logo.png";
+    for (const kind of AUTH_EMAIL_KINDS) {
+      const exportedHtml = readFileSync(new URL(`../emails/auth/${kind}.html`, import.meta.url), "utf8");
+      const renderedHtml = renderMealDeckAuthEmail(kind).html;
+      for (const html of [exportedHtml, renderedHtml]) {
+        expect(html).toContain(`src="${currentLogo}"`);
+        expect(html).not.toContain(`src="${retiredLogo}"`);
+      }
+    }
+  });
+
   test("SMTP templates preserve provider variables while keeping GET links on the interstitial", () => {
     const html = readFileSync(new URL("../emails/auth/signup.html", import.meta.url), "utf8");
     expect(html).toContain("#confirmation_url={{ .ConfirmationURL | urlquery }}");

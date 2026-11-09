@@ -12,7 +12,8 @@ Prefer **Resend SMTP plus the provider's email templates** when the current Auth
 
 - `emails/auth/manifest.json`: subjects and HTML/text filenames for six authentication messages and seven optional security notifications.
 - `emails/auth/*.html` and `*.txt`: generated templates ready for review and supported SMTP-template configuration.
-- `public/email/mealdeck-logo.png`: unchanged copy of the approved `src/assets/mealdeck-logo.png` artwork.
+- `public/email/mealdeck-card-logo.png`: current approved MealDeck stacked-card artwork, used in all rendered and exported authentication emails.
+- `public/email/mealdeck-logo.png`: retained solely for links in older messages; do not use in newly generated authentication emails.
 - `src/lib/mealdeck-auth-email-templates.ts`: common wording and email-safe inline layout used by SMTP output and the hook.
 - `src/lib/mealdeck-auth-email.server.ts`: disabled-by-default signed hook at `POST /api/auth/email`.
 - `src/routes/auth.confirm.tsx`: explicit confirmation screen; no token consumption on page load.
