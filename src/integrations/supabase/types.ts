@@ -2818,6 +2818,10 @@ export type Database = {
         Returns: Json
       }
       mealdeck_customer_capabilities: { Args: never; Returns: Json }
+      mealdeck_customer_claim_one_use_offer: {
+        Args: { p_campaign: string }
+        Returns: Json
+      }
       mealdeck_customer_export: { Args: never; Returns: Json }
       mealdeck_customer_export_with_messages: { Args: never; Returns: Json }
       mealdeck_customer_has_push: {
