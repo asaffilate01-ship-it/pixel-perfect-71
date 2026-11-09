@@ -222,15 +222,13 @@ function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
       </div>
       <h2 id="account-guest-heading">Just your name and WhatsApp number.</h2>
       <p>
-        Choose your food and continue as a guest while member registration is being prepared. Enter your name and WhatsApp
-        number at checkout.
+        You can order without creating an account. Enter your name and contact number at checkout.
       </p>
       <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>
         Continue without registering <ArrowRight size={18} aria-hidden="true" />
       </a>
       <p className="md-account-fine md-account-guest-note">
-        Email registration opens at 1pm on Monday 9 November 2026, UK time. Guest orders earn no
-        loyalty points.
+        Guests can place eligible orders, but loyalty points and member-only offers require a verified account.
       </p>
     </section>
   );
@@ -253,14 +251,12 @@ function CustomerEntry({
 }) {
   const [requestedMode, setMode] = useState<"register" | "signin">("register");
   const mode = registrationDeferred || signInOnly ? "signin" : requestedMode;
-  const [usePassword, setUsePassword] = useState(signInOnly);
+  // Most MealDeck accounts are passwordless. Email-link sign-in is the default.
+  const [usePassword, setUsePassword] = useState(false);
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [preferences, setPreferences] = useState<CustomerPreferences>({
-    ...EMPTY_CUSTOMER_PREFERENCES,
-  });
   return (
     <section className="md-account-panel" aria-labelledby="account-entry-heading">
       <div className="md-account-tabs" aria-label="Account action">
@@ -284,15 +280,15 @@ function CustomerEntry({
         </button>
       </div>
       <h2 id="account-entry-heading">
-        {mode === "register" ? "Your seat at the table." : "Welcome back."}
+        {mode === "register" ? "Create your MealDeck account" : "Sign in to MealDeck"}
       </h2>
       <p>
         {mode === "register"
-          ? "Register with your name, email and mobile number, then verify your email to earn loyalty points. " +
-            "Some offers require independently verified WhatsApp ownership. Marketing alerts are optional."
+          ? "Enter your details, verify your email, then choose optional updates. " +
+            "Loyalty requires a verified account — no marketing permission is required."
           : usePassword
             ? "Sign in with your email and password."
-            : "We’ll email you a secure sign-in link. No password to remember."}
+            : "We’ll email you a secure sign-in link. No password needed."}
       </p>
       <form
         onSubmit={(event) => {
@@ -303,7 +299,15 @@ function CustomerEntry({
           }
           void onRequest(
             email,
-            mode === "register" ? { name, email, phone, preferences } : undefined,
+            mode === "register"
+              ? {
+                  name,
+                  email,
+                  phone,
+                  preferences: { ...EMPTY_CUSTOMER_PREFERENCES },
+                  messagePreferences: { ...EMPTY_CUSTOMER_MESSAGE_PREFERENCES },
+                }
+              : undefined,
           );
         }}
       >
@@ -372,7 +376,10 @@ function CustomerEntry({
           </button>
         )}
         {mode === "register" && (
-          <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
+          <p className="md-account-fine">
+            Next: check your inbox and confirm your email. Then choose any order, email, app,
+            SMS or WhatsApp updates. All marketing switches start off.
+          </p>
         )}
         <p className="md-account-fine">
           We ask for an address only when you choose delivery. See how we use your details in our{" "}
@@ -385,7 +392,7 @@ function CustomerEntry({
               ? "Signing in…"
               : "Sending…"
             : mode === "register"
-              ? "Verify my email"
+              ? "Send my verification email"
               : usePassword
                 ? "Sign in"
                 : "Email me a sign-in link"}
