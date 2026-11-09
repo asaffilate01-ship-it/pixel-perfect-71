@@ -7,6 +7,7 @@ export const notificationCampaignSchema = z.object({
   body: z.string().min(1).max(180),
   path: z.enum(["/offers", "/menus"]),
   expiresAt: z.string().refine((value) => Number.isFinite(Date.parse(value))),
+  createdAt: z.string().refine((value) => Number.isFinite(Date.parse(value))),
   // Unknown future states can be displayed, but can never enable a send action.
   status: z.string().min(1).max(40),
   eligibleDevices: count,
@@ -104,6 +105,8 @@ export function canConfirmNotificationCampaign(
     campaign.status === "draft" &&
     campaign.eligibleDevices > 0 &&
     Number.isFinite(now) &&
+    Date.parse(campaign.createdAt) <= now &&
+    Date.parse(campaign.createdAt) + 15 * 60_000 > now &&
     Date.parse(campaign.expiresAt) > now
   );
 }
