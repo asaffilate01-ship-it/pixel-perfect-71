@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Instagram, Music2 } from "lucide-react";
 import { WhatsAppOrderLink } from "@/components/whatsapp-order-link";
+import { MEALDECK_OPEN_COOKIE_SETTINGS } from "@/components/mealdeck-cookie-choices";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { MEALDECK_BUSINESS } from "@/lib/business-identity";
 import { MEALDECK_LUTON_WEEKLY_HOURS } from "@/lib/mealdeck-launch-schedule";
@@ -29,6 +30,13 @@ export function SiteFooter() {
             <Link to="/opening-offer">Opening weekend offer</Link>
             <Link to="/meta-ad">Your first order</Link>
             <Link to="/privacy">Privacy</Link>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(MEALDECK_OPEN_COOKIE_SETTINGS))}
+              className="md-footer-cookie-settings"
+            >
+              Cookie settings
+            </button>
             <Link to="/" hash="how">
               How it works
             </Link>
