@@ -56,4 +56,4 @@ Work through the GitHub repository and native publication; do not spend Lovable 
 ## 9 November 2026 requests
 
 - [x] Show Luton opening hours as Mon–Thu 5pm–11pm, Fri–Sun 4pm–11pm (display; ordering still opened/closed by staff controls).
-- [ ] Branded sign-up/reset emails: Resend is verified for info@mealdeck.co.uk; waiting for the owner to choose between moving DNS to Cloudflare (Lovable branded emails) or a site-run Resend sign-up/reset flow.
+- [x] Branded customer sign-up, sign-in and password-reset emails sent through Resend from info@mealdeck.co.uk (needs publishing to go live).

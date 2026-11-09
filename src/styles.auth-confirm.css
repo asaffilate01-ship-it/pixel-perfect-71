@@ -72,6 +72,28 @@
   opacity: 0.6;
   cursor: wait;
 }
+.md-auth-confirm form {
+  display: grid;
+  gap: 16px;
+}
+.md-auth-confirm form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+.md-auth-confirm form input {
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid #b9ab9b;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #111111;
+  font: inherit;
+}
+.md-auth-confirm form input:focus-visible {
+  outline: 3px solid #111111;
+  outline-offset: 2px;
+}
 @media (max-width: 380px) {
   .md-auth-confirm-content {
     padding: 24px 18px;

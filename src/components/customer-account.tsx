@@ -39,6 +39,7 @@ import {
   registerMealDeckCustomer,
   signInMealDeckCustomerWithPassword,
   requestCustomerEmail,
+  requestCustomerPasswordReset,
   signOutMealDeckCustomer,
   subscribeMealDeckCustomerAuth,
   updateMealDeckCustomer,
@@ -199,12 +200,14 @@ function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
 function CustomerEntry({
   onRequest,
   onPassword,
+  onReset,
   busy,
   registrationDeferred,
   signInOnly,
 }: {
   onRequest: (email: string, registration?: CustomerRegistration) => Promise<void>;
   onPassword: (email: string, password: string) => Promise<void>;
+  onReset: (email: string) => Promise<void>;
   busy: boolean;
   registrationDeferred: boolean;
   signInOnly: boolean;
@@ -304,6 +307,16 @@ function CustomerEntry({
               disabled={busy}
             />
           </label>
+        )}
+        {mode === "signin" && usePassword && (
+          <button
+            type="button"
+            className="md-account-text"
+            disabled={busy}
+            onClick={() => void onReset(email)}
+          >
+            Forgot password?
+          </button>
         )}
         {mode === "signin" && (
           <button
@@ -808,6 +821,15 @@ export function CustomerAccount({
     });
   }
 
+  async function passwordReset(email: string) {
+    await run(async () => {
+      await requestCustomerPasswordReset(email);
+      showMessage(
+        "If that email has a MealDeck account, we’ve sent a link to reset your password. Check your inbox.",
+      );
+    });
+  }
+
   async function passwordSignIn(email: string, password: string) {
     await run(async () => {
       await signInMealDeckCustomerWithPassword(email, password);
@@ -1010,6 +1032,7 @@ export function CustomerAccount({
                 busy={busy}
                 onRequest={request}
                 onPassword={passwordSignIn}
+                onReset={passwordReset}
                 registrationDeferred={registrationDeferred}
                 signInOnly={signInOnly}
               />

@@ -1,3 +1,4 @@
 # src/lib notes
 
 - Own-driver 4 km coverage resolves exact unit postcodes from the generated server-only OS Code-Point Open store (`src/lib/mealdeck-luton-postcode-store.ts`, complete to 5 km of LU4 8NU), loaded by dynamic import; remote postcode APIs are only a fallback for postcodes outside it, and a fallback failure refuses delivery — the Worker runtime could not reach those APIs reliably. Regenerate the store from a new OS release rather than hand-editing.
+- Customer sign-up, sign-in and password-reset emails are generated server-side with Auth admin links and delivered through the Resend connector gateway (`mealdeck-customer-email*.ts`); Auth still issues/verifies every token via `/auth/confirm`. Lovable Cloud offers no Resend SMTP/hook for Auth, and the owner's DNS host cannot delegate the managed sender subdomain.
