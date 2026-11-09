@@ -15,7 +15,9 @@ import java.util.Locale;
 public final class ReceiptLayout {
     public static final int WIDTH = 384;
     public static final int MAX_HEIGHT = 16_000;
-    public static final int FINAL_PAPER_TAIL = 180;
+    // The H10S service advances paper separately with NEXT_LINE (4 lines).
+    // A 180-pixel white bitmap tail caused a second, unnecessary feed.
+    public static final int FINAL_PAPER_TAIL = 16;
     public static final int MARGIN = 12;
     public static final int LOGO_WIDTH = 256;
     public static final int LOGO_HEIGHT = 258;
