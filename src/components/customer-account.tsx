@@ -77,12 +77,13 @@ function Preferences({
   return (
     <fieldset className="md-account-preferences" disabled={disabled}>
       <legend>
-        Notification preferences <span>All optional</span>
+        Choose your notifications <span>Optional — all off by default</span>
       </legend>
       <p>
-        Choose which messages you want. All three options start off. You can register and earn
-        loyalty points without selecting any of them. Change your choices in your account later.
+        Select the messages you want from MealDeck. Each option is separate and off by default.
+        Email verification and essential order updates do not require marketing consent.
       </p>
+      <p className="md-account-preference-group-title">Choose the channels you want</p>
       <label>
         <input
           type="checkbox"
@@ -90,8 +91,30 @@ function Preferences({
           onChange={(event) => onChange({ ...value, emailMarketing: event.target.checked })}
         />
         <span>
-          <strong>Email me offers and discounts</strong>
+          <strong>Offers by email</strong>
           <small>Send me MealDeck promotions, loyalty offers and menu news by email.</small>
+        </span>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={value.smsMarketing === true}
+          onChange={(event) => onChange({ ...value, smsMarketing: event.target.checked })}
+        />
+        <span>
+          <strong>Offers by SMS text</strong>
+          <small>I opt in to promotional text messages from 313 Brands Ltd trading as MealDeck at my saved mobile number. Not required for orders.</small>
+        </span>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={value.whatsappMarketing === true}
+          onChange={(event) => onChange({ ...value, whatsappMarketing: event.target.checked })}
+        />
+        <span>
+          <strong>Offers by WhatsApp</strong>
+          <small>I opt in to promotional WhatsApp messages from MealDeck at my saved number. Provider verification and approved messaging are separate. Order-only chats are unaffected.</small>
         </span>
       </label>
       <label>
@@ -101,7 +124,7 @@ function Preferences({
           onChange={(event) => onChange({ ...value, pushMarketing: event.target.checked })}
         />
         <span>
-          <strong>Send offers to my phone (app notifications)</strong>
+          <strong>App offers and promotions</strong>
           <small>
             Send me promotional push notifications. This needs a separate device permission.
           </small>
@@ -114,14 +137,14 @@ function Preferences({
           onChange={(event) => onChange({ ...value, orderNotifications: event.target.checked })}
         />
         <span>
-          <strong>Send updates about my orders</strong>
+          <strong>Order status notifications</strong>
           <small>
             Use push notifications for updates about my orders. These are separate from promotions.
           </small>
         </span>
       </label>
       <p className="md-account-fine">
-        You do not need to accept marketing to register, order or earn loyalty points.
+        Marketing consent is optional and is not required for registration or loyalty points.
         Essential verification and order messages are separate.
       </p>
     </fieldset>
