@@ -1,0 +1,56 @@
+name: MealDeck five-minute unpaid group room draft expiry
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/mealdeck/ordering-draft-expiry.mjs'
+      - 'tests/postgres/ordering-draft-expiry-behavior.mjs'
+      - '.github/workflows/mealdeck-group-draft-expiry.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/mealdeck/ordering-draft-expiry.mjs'
+      - 'tests/postgres/ordering-draft-expiry-behavior.mjs'
+      - '.github/workflows/mealdeck-group-draft-expiry.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  group-unpaid-draft-expiry:
+    name: Independent PostgreSQL 17 room expiry and payment safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_kds_test_group_expiry
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_kds_test_group_expiry"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked disposable test dependencies
+        run: npm ci --prefix tests/postgres
+      - name: Verify unpaid draft-only expiry in PostgreSQL
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_group_expiry
+        run: |
+          set -o pipefail
+          node tests/postgres/ordering-draft-expiry-behavior.mjs --native 2>&1 | tee "$RUNNER_TEMP/group-draft-expiry-postgres.log"
+      - name: Retain expiry verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-group-expiry-verification
+          path: ${{ runner.temp }}/group-draft-expiry-postgres.log
+          retention-days: 14
+          if-no-files-found: warn
