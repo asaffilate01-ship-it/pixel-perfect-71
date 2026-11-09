@@ -11,6 +11,7 @@ const campaign = {
   body: "Check the offers page for current terms.",
   path: "/offers" as const,
   expiresAt: "2026-11-07T18:00:00Z",
+  createdAt: "2026-11-07T11:59:00Z",
   status: "draft",
   eligibleDevices: 12,
   queued: 0,
@@ -56,6 +57,8 @@ describe("marketing draft transport and reviewed send state", () => {
     expect(canConfirmNotificationCampaign({ ...campaign, eligibleDevices: 0 }, true, now)).toBe(
       false,
     );
+    expect(canConfirmNotificationCampaign(campaign, true, now + 16 * 60_000)).toBe(false);
+    expect(canConfirmNotificationCampaign({ ...campaign, createdAt: "invalid" }, true, now)).toBe(false);
     expect(canConfirmNotificationCampaign(campaign, true, Date.parse(campaign.expiresAt))).toBe(
       false,
     );

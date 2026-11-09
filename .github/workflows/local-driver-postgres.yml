@@ -8,6 +8,7 @@ on:
       - 'deploy/mealdeck/local-driver-delivery.mjs'
       - 'deploy/mealdeck/post-install-migrations/*local_driver_delivery.sql'
       - 'deploy/mealdeck/post-install-migrations/*driver_pwa_dispatch.sql'
+      - 'deploy/mealdeck/post-install-migrations/*driver_verified_email_lookup.sql'
   pull_request:
     paths:
       - '.github/workflows/local-driver-postgres.yml'
@@ -15,6 +16,7 @@ on:
       - 'deploy/mealdeck/local-driver-delivery.mjs'
       - 'deploy/mealdeck/post-install-migrations/*local_driver_delivery.sql'
       - 'deploy/mealdeck/post-install-migrations/*driver_pwa_dispatch.sql'
+      - 'deploy/mealdeck/post-install-migrations/*driver_verified_email_lookup.sql'
       - 'src/lib/mealdeck-own-driver*'
       - 'src/lib/mealdeck-driver*'
       - 'src/components/driver/**'
@@ -47,6 +49,11 @@ jobs:
           node-version: '22'
       - name: Install locked isolated database test dependencies
         run: npm ci --prefix tests/postgres
+      - name: Verify driver email onboarding and staff campaign guards
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun install --frozen-lockfile
+          bun test tests/mealdeck-driver-push-onboarding.test.ts tests/mealdeck-notification-campaigns-browser.test.ts
       - name: Verify discounted threshold, guest privacy, receipt and complete driver lifecycle
         env:
           MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_own_driver
