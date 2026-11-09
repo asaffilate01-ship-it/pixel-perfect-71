@@ -431,12 +431,12 @@ function CheckEmail({
       </span>
       <h2 id="account-email-heading">Check your inbox.</h2>
       <p>
-        If this address can receive a sign-in email, a secure link is on its way to{" "}
+        We’ve requested a secure verification or sign-in email for{" "}
         <strong className="md-account-email-address">{email}</strong>.
       </p>
-      <p>Open the link on this device to verify your email. Check your spam folder too.</p>
-      <details className="md-account-code">
-        <summary>My email includes a verification code</summary>
+      <p>Step 1: open the newest MealDeck email. Step 2: choose Verify email, or enter its code below. Check spam or junk if needed.</p>
+      <section className="md-account-code" aria-label="Enter verification code">
+        <h3>Have a verification code?</h3>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -447,6 +447,7 @@ function CheckEmail({
             Email code
             <input
               name="one-time-code"
+              aria-label="Email verification code"
               inputMode="numeric"
               autoComplete="one-time-code"
               pattern="[0-9]{6,8}"
@@ -459,11 +460,11 @@ function CheckEmail({
             />
           </label>
           <button type="submit" className="md-account-primary" disabled={busy}>
-            {busy ? "Verifying…" : "Verify and continue"}
+            {busy ? "Verifying…" : "Verify code and continue"}
             <ArrowRight size={18} aria-hidden="true" />
           </button>
         </form>
-      </details>
+      </section>
       <div className="md-account-actions">
         <button
           type="button"
@@ -495,18 +496,21 @@ function FinishRegistration({
   const [preferences, setPreferences] = useState<CustomerPreferences>({
     ...EMPTY_CUSTOMER_PREFERENCES,
   });
+  const [messages, setMessages] = useState<CustomerMessagePreferences>({
+    ...EMPTY_CUSTOMER_MESSAGE_PREFERENCES,
+  });
   return (
     <section className="md-account-panel" aria-labelledby="account-finish-heading">
       <span className="md-account-verified">
         <ShieldCheck size={17} aria-hidden="true" /> Email verified
       </span>
-      <h2 id="account-finish-heading">One last step.</h2>
-      <p>Confirm your contact details to finish joining MealDeck.</p>
+      <h2 id="account-finish-heading">Finish setting up your account</h2>
+      <p>Your email is verified. Check your contact details, choose any notifications you want, then save. All marketing is optional.</p>
       <p className="md-account-email-address">{account.profile.email}</p>
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          void onFinish({ name, phone, email: account.profile.email, preferences });
+          void onFinish({ name, phone, email: account.profile.email, preferences, messagePreferences: messages });
         }}
       >
         <ContactFields
@@ -516,13 +520,19 @@ function FinishRegistration({
           setPhone={setPhone}
           disabled={busy}
         />
-        <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
+        <Preferences
+          value={preferences}
+          onChange={setPreferences}
+          messagePreferences={messages}
+          onMessageChange={setMessages}
+          disabled={busy}
+        />
         <p className="md-account-fine">
           By completing registration, you acknowledge our <a href="/privacy">privacy notice</a>.
-          Your optional communication choices do not affect the opening offer.
+          Your communication choices do not affect loyalty points or order eligibility.
         </p>
         <button type="submit" className="md-account-primary" disabled={busy}>
-          {busy ? "Saving…" : "Finish registration"}
+          {busy ? "Saving…" : "Save and finish registration"}
           <Check size={18} aria-hidden="true" />
         </button>
       </form>
