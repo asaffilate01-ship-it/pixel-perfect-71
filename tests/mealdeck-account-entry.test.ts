@@ -22,7 +22,8 @@ describe("account opening-weekend presentation", () => {
       ["2026-11-06T16:00:00Z", true],
       ["2026-11-08T23:59:59.999Z", true],
       ["2026-11-09T00:00:00Z", true],
-      ["2026-11-09T12:59:59.999Z", true],
+      ["2026-11-09T10:34:59.999Z", true],
+      ["2026-11-09T10:35:00Z", false],
       ["2026-11-09T13:00:00Z", false],
     ] as const) {
       const policy = customerEntryPolicy(new Date(at));
