@@ -396,6 +396,7 @@ function CustomerEntry({
 
 function CheckEmail({
   email,
+  purpose,
   busy,
   resendAt,
   onResend,
@@ -403,6 +404,7 @@ function CheckEmail({
   onBack,
 }: {
   email: string;
+  purpose: "register" | "signin";
   busy: boolean;
   resendAt: number;
   onResend: () => Promise<void>;
@@ -421,14 +423,19 @@ function CheckEmail({
       <span className="md-account-icon">
         <Mail size={26} aria-hidden="true" />
       </span>
-      <h2 id="account-email-heading">Step 2: Verify your email</h2>
+      <h2 id="account-email-heading">
+        {purpose === "register" ? "Step 2: Verify your email" : "Check your email to sign in"}
+      </h2>
       <p>
-        We have requested a secure verification or sign-in email for{" "}
+        We have requested a secure MealDeck email for{" "}
         <strong className="md-account-email-address">{email}</strong>.
       </p>
-      <p>Open the newest MealDeck email and tap Verify email, or enter the code below. Check spam or junk if it has not arrived. You can then manage notifications in your account.</p>
-      <details className="md-account-code">
-        <summary>Enter the code from my email instead</summary>
+      <p>
+        Open the newest MealDeck email and use its secure button, or enter the code below.
+        Check spam or junk if needed. The email may take a moment to arrive.
+      </p>
+      <div className="md-account-code">
+        <h3>Enter the code from your email</h3>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -455,7 +462,7 @@ function CheckEmail({
             <ArrowRight size={18} aria-hidden="true" />
           </button>
         </form>
-      </details>
+      </div>
       <div className="md-account-actions">
         <button
           type="button"
@@ -1079,6 +1086,7 @@ export function CustomerAccount({
             ) : emailPending ? (
               <CheckEmail
                 email={emailPending}
+                purpose={draft ? "register" : "signin"}
                 busy={busy}
                 resendAt={resendAt}
                 onResend={() => request(emailPending, draft)}
