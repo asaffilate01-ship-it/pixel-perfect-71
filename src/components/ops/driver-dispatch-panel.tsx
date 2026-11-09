@@ -26,7 +26,8 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
-  const [newDriverId,setNewDriverId]=useState("");
+  const [newDriverEmail,setNewDriverEmail]=useState("");
+  const [verifiedDriverId,setVerifiedDriverId]=useState<string|null>(null);
   const [newDriverName,setNewDriverName]=useState("");
   const [choices,setChoices]=useState<Record<string,string>>({});
   const refresh=useCallback(async()=>{
@@ -53,14 +54,32 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
     return ()=>window.clearInterval(timer);
   },[expanded,refresh,busy]);
 
+  async function findDriverAccount(){
+    if(!canEnrol||busy||!/^\S+@\S+\.\S+$/.test(newDriverEmail.trim()))return;
+    setBusy(true);setError("");setNotice("");setVerifiedDriverId(null);
+    try {
+      const data=await opsRpc<unknown>("mealdeck_ops_driver_find_verified_email",{
+        p_tenant:tenantId,p_location:locationId,p_email:newDriverEmail.trim().toLowerCase(),
+      });
+      const parsed=z.strictObject({found:z.boolean(),userId:driverId.nullable()}).safeParse(data);
+      if(!parsed.success)throw new Error("Driver account lookup returned an unexpected response.");
+      if(!parsed.data.found||!parsed.data.userId){
+        setError("No verified MealDeck account was found for that email. Ask the driver to register and verify their email under /account, then search again.");
+      } else {
+        setVerifiedDriverId(parsed.data.userId);
+        setNotice("Verified account found. Check the driver's name and email before granting driver access.");
+      }
+    }catch(reason){setError(reason instanceof Error?reason.message:"The verified account lookup is unavailable. Ask the owner to install the driver lookup migration.");}
+    finally{setBusy(false);}
+  }
   async function enrol(){
-    if(!canEnrol||busy||!driverId.safeParse(newDriverId).success||newDriverName.trim().length<2)return;
+    if(!canEnrol||busy||!verifiedDriverId||newDriverName.trim().length<2)return;
     setBusy(true);setError("");setNotice("");
     try{
       await opsRpc("mealdeck_ops_driver_enrol",{p_tenant:tenantId,p_location:locationId,
-        p_user:newDriverId,p_name:newDriverName.trim()});
-      setNotice("Driver approved. They can now sign in and start a shift.");
-      setNewDriverId("");setNewDriverName("");await refresh();
+        p_user:verifiedDriverId,p_name:newDriverName.trim()});
+      setNotice("Driver approved. They can now sign in at /driver using their email code and start a shift.");
+      setVerifiedDriverId(null);setNewDriverEmail("");setNewDriverName("");await refresh();
     }catch(reason){setError(reason instanceof Error?reason.message:"Could not approve the driver.");}
     finally{setBusy(false);}
   }
@@ -133,15 +152,36 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
             </li>)}
           </ul>
           {canEnrol && <div className="grid gap-3 rounded-xl border p-3 sm:grid-cols-2">
-            <label className="text-sm font-bold">Existing Auth user UUID
-              <input className="md-ops-field mt-1 w-full" value={newDriverId} onChange={e=>setNewDriverId(e.target.value.trim())} placeholder="Driver's MealDeck Auth user ID"/>
+            <div className="sm:col-span-2">
+              <h5 className="font-bold md-ops-ink">Approve a driver in two steps</h5>
+              <p className="text-sm md-ops-muted">
+                First, the driver must create and verify an account at <Link to="/account" target="_blank" className="underline">MealDeck /account</Link>.
+                Then find that exact email below. Only the manager can approve driver access.
+              </p>
+            </div>
+            <label className="text-sm font-bold">Driver's verified email address
+              <input type="email" autoComplete="off" className="md-ops-field mt-1 w-full"
+                value={newDriverEmail} disabled={busy} onChange={e=>{setNewDriverEmail(e.target.value);setVerifiedDriverId(null);}}
+                placeholder="driver@example.com"/>
             </label>
-            <label className="text-sm font-bold">Driver display name
-              <input className="md-ops-field mt-1 w-full" value={newDriverName} onChange={e=>setNewDriverName(e.target.value)} maxLength={100} placeholder="Driver name"/>
-            </label>
-            <button type="button" className="md-ops-button md-ops-primary sm:col-span-2"
-              disabled={busy||!driverId.safeParse(newDriverId).success||newDriverName.trim().length<2}
-              onClick={()=>void enrol()}><UserPlus size={17}/> Approve driver account</button>
+            <button type="button" className="md-ops-button md-ops-secondary self-end"
+              disabled={busy||!/^\S+@\S+\.\S+$/.test(newDriverEmail.trim())}
+              onClick={()=>void findDriverAccount()}>
+              <UserPlus size={17}/> Find verified account
+            </button>
+            {verifiedDriverId && <>
+              <p className="sm:col-span-2 text-sm md-ops-muted" role="status">
+                Verified email found. Approve this person only after confirming they are your driver.
+              </p>
+              <label className="text-sm font-bold">Driver display name
+                <input className="md-ops-field mt-1 w-full" value={newDriverName}
+                  onChange={e=>setNewDriverName(e.target.value)}
+                  disabled={busy} maxLength={100} placeholder="Driver name"/>
+              </label>
+              <button type="button" className="md-ops-button md-ops-primary self-end"
+                disabled={busy||newDriverName.trim().length<2}
+                onClick={()=>void enrol()}><UserPlus size={17}/> Approve driver access</button>
+            </>}
           </div>}
           <p className="flex gap-2 items-center text-xs md-ops-muted"><ShieldCheck size={16}/> Driver app is a separate protected login. Customer payment and final delivery remain staff-authorised.</p>
           <Link to="/driver" className="inline-flex items-center gap-2 underline font-bold" target="_blank">Open driver app</Link>

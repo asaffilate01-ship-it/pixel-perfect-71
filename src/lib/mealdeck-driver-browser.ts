@@ -36,8 +36,11 @@ export async function driverRpc<T>(functionName: string, args: Record<string, un
     const message = error.message || "";
     if (error.code === "PGRST202" || /driver_app_not_installed/.test(message))
       throw new Error("Driver dispatch is not installed for this kitchen yet.");
-    if (error.code === "42501" || /mealdeck_driver_forbidden|not_authenticated/.test(message))
-      throw new Error("This account is not an approved MealDeck driver, or the session has expired.");
+    if (error.code === "PGRST301" || error.code === "PGRST302" ||
+        /jwt.*expired|not_authenticated|session.*expired/.test(message))
+      throw new Error("Your driver session has expired. Sign out and sign in again.");
+    if (/mealdeck_driver_forbidden/.test(message) || error.code === "42501")
+      throw new Error("Your signed-in account has not been approved for MealDeck Driver. Ask your kitchen manager to approve your verified email in Operations → Driver dispatch, then sign in again.");
     if (/mealdeck_driver_conflict|mealdeck_driver_offer_expired/.test(message))
       throw new Error("This delivery changed. Refresh the job before taking another action.");
     if (/mealdeck_driver_handover_pending/.test(message))

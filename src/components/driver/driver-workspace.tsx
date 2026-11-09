@@ -23,6 +23,10 @@ export function DriverWorkspace() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginMethod, setLoginMethod] = useState<"code" | "password">("code");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
   const [authError, setAuthError] = useState("");
   const [busyAuth, setBusyAuth] = useState(false);
   const [portal, setPortal] = useState<DriverPortal | null>(null);
@@ -109,12 +113,35 @@ export function DriverWorkspace() {
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!db || busyAuth) return;
+    if (!db || busyAuth || !online) return;
     setBusyAuth(true);
     setAuthError("");
+    setAuthMessage("");
     try {
+      if (loginMethod === "code") {
+        if (!codeSent) {
+          const { error } = await db.auth.signInWithOtp({
+            email: email.trim(),
+            options: { shouldCreateUser: false },
+          });
+          if (error) throw new Error("We couldn't email a sign-in code. Check your address or ask the manager to create and approve the account.");
+          setCodeSent(true);
+          setAuthMessage("Check your MealDeck email for a one-time code. Only approved drivers can access delivery jobs.");
+          return;
+        }
+        const { data, error } = await db.auth.verifyOtp({
+          email: email.trim(),
+          token: verificationCode.trim(),
+          type: "email",
+        });
+        if (error || !data.user) throw new Error("That code could not be verified. Check the latest email or request a new one.");
+        setUserId(data.user.id);
+        setVerificationCode("");
+        setCodeSent(false);
+        return;
+      }
       const { data, error } = await db.auth.signInWithPassword({ email: email.trim(), password });
-      if (error || !data.user) throw new Error("Email or password not accepted.");
+      if (error || !data.user) throw new Error("Email or password not accepted. Try an email code instead.");
       setUserId(data.user.id);
       setPassword("");
     } catch (reason) {
@@ -187,13 +214,24 @@ export function DriverWorkspace() {
         {!loadingAuth && !userId && (
           <section className="md-driver-panel md-driver-signin" aria-label="Driver sign in">
             <h2>Driver sign in</h2>
-            <p>For drivers approved by the MealDeck kitchen manager. No public registration.</p>
+            <p>Only kitchen-approved drivers can view delivery jobs. Use your verified MealDeck email. A kitchen manager must separately approve driver access.</p>
+            <div className="md-driver-login-method" role="group" aria-label="Driver sign-in method">
+              <button type="button" className={loginMethod === "code" ? "md-driver-primary" : "md-driver-secondary"} aria-pressed={loginMethod === "code"} disabled={busyAuth} onClick={() => { setLoginMethod("code"); setCodeSent(false); setAuthError(""); setAuthMessage(""); }}>Email code</button>
+              <button type="button" className={loginMethod === "password" ? "md-driver-primary" : "md-driver-secondary"} aria-pressed={loginMethod === "password"} disabled={busyAuth} onClick={() => { setLoginMethod("password"); setCodeSent(false); setAuthError(""); setAuthMessage(""); }}>Password</button>
+            </div>
             <form onSubmit={(event) => void signIn(event)}>
-              <label>Email address<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-              <label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
-              <button className="md-driver-primary" type="submit" disabled={busyAuth || !online || !db}>{busyAuth ? "Signing in…" : "Sign in securely"}</button>
+              <label>Email address<input type="email" autoComplete="username" required value={email} onChange={(event) => { setEmail(event.target.value); setCodeSent(false); setVerificationCode(""); setAuthMessage(""); }} /></label>
+              {loginMethod === "password" ? (
+                <label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+              ) : codeSent ? (
+                <label>Code from your MealDeck email<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6,8}" minLength={6} maxLength={8} required value={verificationCode} onChange={(event) => setVerificationCode(event.target.value.replace(/[^0-9]/g, ""))} /></label>
+              ) : null}
+              <button className="md-driver-primary" type="submit" disabled={busyAuth || !online || !db}>{busyAuth ? "Checking…" : loginMethod === "password" ? "Sign in securely" : codeSent ? "Verify code and sign in" : "Email me a sign-in code"}</button>
             </form>
+            {codeSent && loginMethod === "code" && <button type="button" className="md-driver-secondary" disabled={busyAuth || !online} onClick={() => { setCodeSent(false); setVerificationCode(""); setAuthMessage(""); }}>Request a new code</button>}
+            {authMessage && <p className="md-driver-info" role="status">{authMessage}</p>}
             {authError && <p className="md-driver-error" role="alert">{authError}</p>}
+            <p className="md-driver-info">New driver? <Link to="/account">Create and verify your MealDeck account</Link>, then ask a kitchen manager to approve your email in Operations → Driver dispatch. Signing in never grants delivery permissions by itself.</p>
           </section>
         )}
         {userId && (

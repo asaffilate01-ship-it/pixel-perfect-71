@@ -48,6 +48,10 @@
 .md-driver-empty{text-align:center;max-width:520px;margin:20px auto}
 .md-driver-empty svg{color:#ba1019;margin:4px auto 14px}
 .md-driver-signin{max-width:430px}
+.md-driver-login-method{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.md-driver-login-method button{flex:1;min-width:120px}
+.md-driver-signin .md-driver-info{display:block;overflow-wrap:anywhere;font-weight:600;line-height:1.6}
+.md-driver-signin .md-driver-info a{color:#9f141b;text-decoration:underline;font-weight:850}
 .md-driver-signin form{display:grid;gap:16px;margin-top:22px}
 .md-driver-signin label{display:grid;gap:7px;font-weight:850;font-size:.84rem}
 .md-driver-signin input{border:1px solid #c9b7a3;background:#fff;border-radius:12px;padding:13px 12px;min-height:46px;width:100%}
