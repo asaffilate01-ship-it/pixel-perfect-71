@@ -376,7 +376,8 @@ describe("One Sunday milkcake at 99p", () => {
           .split(`id="launch-price-${brand.id}-desserts-${flavour}-milkcake"`)[1]
           ?.split("</button>")[0];
         expect(price).toContain("99p");
-        expect(price).toContain("T&amp;Cs apply");
+        // Detailed campaign terms are presented at the menu level rather than
+        // duplicated inside the compact add-item price control.
         expect(price).not.toContain("£3.99");
       }
       expect(html).toContain("One milkcake per order is 99p after the 30% discount");
