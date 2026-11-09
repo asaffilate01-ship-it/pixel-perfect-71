@@ -835,13 +835,18 @@ export function CustomerAccount({
       setConnectionError("");
       try {
         await initializeMealDeckCustomerClient(attempt > 0);
-        const [ready, push] = await Promise.all([
-          readCustomerCapabilities(),
-          getMealDeckCustomerPushConfig(),
-        ]);
+        // The push sender is optional: an outage must never hide registration,
+        // account settings or existing loyalty points.
+        const ready = await readCustomerCapabilities();
         if (!active) return;
         setCapabilities(ready);
-        setPushPublicKey(push.publicKey);
+        void getMealDeckCustomerPushConfig()
+          .then((push) => {
+            if (active) setPushPublicKey(push.publicKey);
+          })
+          .catch(() => {
+            if (active) setPushPublicKey(null);
+          });
         const status = await refresh();
         // An email link that couldn't sign in (opened in another browser or app,
         // already used, or expired) used to land silently on Register.
