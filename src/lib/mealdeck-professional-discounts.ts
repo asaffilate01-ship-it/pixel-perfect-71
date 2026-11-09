@@ -106,7 +106,7 @@ export function evaluateVerifiedProfessionalDiscount(input: {
   if (!campaign?.enabled || !campaign.providerIntegrationApproved)
     return denied("campaign_not_approved");
   if (!validInstant(serverNow) || !validInstant(campaign.startsAt) ||
-      !validInstant(campaign.endsAt) || campaign.startsAt >= campaign.endsAt ||
+      !validInstant(campaign.endsAt) || Date.parse(campaign.startsAt) >= Date.parse(campaign.endsAt) ||
       Date.parse(serverNow) < Date.parse(campaign.startsAt) ||
       Date.parse(serverNow) >= Date.parse(campaign.endsAt))
     return denied("campaign_outside_window");
