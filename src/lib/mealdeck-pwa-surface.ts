@@ -10,6 +10,15 @@ export function mealDeckPwaSurface(pathname: string) {
       scope: "/printer",
     } as const;
   }
+  if (path === "/driver" || path.startsWith("/driver/")) {
+    return {
+      kind: "driver",
+      name: "MealDeck Driver",
+      manifest: "/driver.webmanifest",
+      worker: "/driver-sw.js",
+      scope: "/driver",
+    } as const;
+  }
   if (path === "/kds" || path.startsWith("/kds/")) {
     return {
       kind: "kds",
@@ -29,7 +38,7 @@ export function mealDeckPwaSurface(pathname: string) {
 }
 
 export function isMealDeckStaffPath(pathname: string) {
-  return ["/ops", "/kds", "/printer"].some(
+  return ["/ops", "/kds", "/printer", "/driver"].some(
     (prefix) => pathname === prefix || pathname.startsWith(prefix + "/"),
   );
 }
