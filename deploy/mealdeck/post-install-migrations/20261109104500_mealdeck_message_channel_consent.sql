@@ -74,7 +74,7 @@ begin
   if v_user is null then raise exception 'mealdeck_customer_unauthenticated' using errcode='42501'; end if;
   if p_sms is null or p_whatsapp is null
     or p_notice_version is distinct from 'mealdeck-message-consent-2026-11-09'
-    or p_source not in ('registration','account')
+    or p_source is null or p_source not in ('registration','account')
   then raise exception 'mealdeck_customer_message_preferences_invalid'; end if;
   v_member:=mealdeck_private.customer_registration_authority(v_user);
   if v_member is null or v_member->'registered' is distinct from 'true'::jsonb
