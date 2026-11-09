@@ -269,7 +269,8 @@ public final class ReceiptLayoutTest {
         require(first(layout, "footer.trading").y > artwork.bottom(), "Full footer follows the promotion");
         equal("ONE ORDER. EVERY CRAVING.", text(layout, "footer.slogan"), "Original final footer");
         require(layout.contentHeight == last(layout, "footer.slogan").bottom(), "No content after final footer");
-        require(layout.totalHeight - layout.contentHeight == 180, "Final blank paper tail exactly 180 pixels");
+        require(layout.totalHeight - layout.contentHeight == ReceiptLayout.FINAL_PAPER_TAIL,
+            "Final bitmap tail matches the minimal configured H10S feed allowance");
         require(role(layout, "promotion.image").size() == 1, "Exactly one rotation slot per receipt");
         int paintedUntil = 0;
         for (ReceiptLayout.Element element : layout.elements) {
