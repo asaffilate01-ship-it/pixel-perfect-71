@@ -64,6 +64,30 @@ async function db(
   const { data, error } = await client.rpc(name, params);
   if (error) {
     const message = String(error.message ?? "");
+    if (/mealdeck_push_mfa_required/.test(message))
+      throw new CheckoutProblem(
+        "mfa_required",
+        "Complete your MealDeck staff multi-factor verification and refresh Operations before sending app notifications.",
+        403,
+      );
+    if (/mealdeck_push_mfa_unavailable/.test(message))
+      throw new CheckoutProblem(
+        "notifications_unavailable",
+        "Staff MFA verification is not available. Contact the MealDeck administrator before sending.",
+        503,
+      );
+    if (/mealdeck_push_campaign_forbidden/.test(message))
+      throw new CheckoutProblem(
+        "not_permitted",
+        "Only an approved MealDeck owner/admin with Finance read and manage permissions can send promotional app notifications.",
+        403,
+      );
+    if (/mealdeck_push_campaign_expired/.test(message))
+      throw new CheckoutProblem(
+        "notification_changed",
+        "This notification draft is too old to send. Create and review a fresh draft; drafts must be confirmed within 15 minutes.",
+        409,
+      );
     if (/scope|forbidden|permission|unauthor|mfa/.test(message))
       throw new CheckoutProblem(
         "not_permitted",
