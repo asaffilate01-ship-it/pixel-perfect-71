@@ -214,13 +214,24 @@ export function DriverWorkspace() {
         {!loadingAuth && !userId && (
           <section className="md-driver-panel md-driver-signin" aria-label="Driver sign in">
             <h2>Driver sign in</h2>
-            <p>For drivers approved by the MealDeck kitchen manager. No public registration.</p>
+            <p>Only kitchen-approved drivers can view delivery jobs. Use your verified MealDeck email. A kitchen manager must separately approve driver access.</p>
+            <div className="md-driver-login-method" role="group" aria-label="Driver sign-in method">
+              <button type="button" className={loginMethod === "code" ? "md-driver-primary" : "md-driver-secondary"} aria-pressed={loginMethod === "code"} disabled={busyAuth} onClick={() => { setLoginMethod("code"); setCodeSent(false); setAuthError(""); setAuthMessage(""); }}>Email code</button>
+              <button type="button" className={loginMethod === "password" ? "md-driver-primary" : "md-driver-secondary"} aria-pressed={loginMethod === "password"} disabled={busyAuth} onClick={() => { setLoginMethod("password"); setCodeSent(false); setAuthError(""); setAuthMessage(""); }}>Password</button>
+            </div>
             <form onSubmit={(event) => void signIn(event)}>
-              <label>Email address<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-              <label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
-              <button className="md-driver-primary" type="submit" disabled={busyAuth || !online || !db}>{busyAuth ? "Signing in…" : "Sign in securely"}</button>
+              <label>Email address<input type="email" autoComplete="username" required value={email} onChange={(event) => { setEmail(event.target.value); setCodeSent(false); setVerificationCode(""); setAuthMessage(""); }} /></label>
+              {loginMethod === "password" ? (
+                <label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+              ) : codeSent ? (
+                <label>Code from your MealDeck email<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6,8}" minLength={6} maxLength={8} required value={verificationCode} onChange={(event) => setVerificationCode(event.target.value.replace(/[^0-9]/g, ""))} /></label>
+              ) : null}
+              <button className="md-driver-primary" type="submit" disabled={busyAuth || !online || !db}>{busyAuth ? "Checking…" : loginMethod === "password" ? "Sign in securely" : codeSent ? "Verify code and sign in" : "Email me a sign-in code"}</button>
             </form>
+            {codeSent && loginMethod === "code" && <button type="button" className="md-driver-secondary" disabled={busyAuth || !online} onClick={() => { setCodeSent(false); setVerificationCode(""); setAuthMessage(""); }}>Request a new code</button>}
+            {authMessage && <p className="md-driver-info" role="status">{authMessage}</p>}
             {authError && <p className="md-driver-error" role="alert">{authError}</p>}
+            <p className="md-driver-info">New driver? <Link to="/account">Create and verify your MealDeck account</Link>, then ask a kitchen manager to approve your email in Operations → Driver dispatch. Signing in never grants delivery permissions by itself.</p>
           </section>
         )}
         {userId && (
