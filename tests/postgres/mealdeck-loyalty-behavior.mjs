@@ -62,13 +62,13 @@ try {
   });
   await f.bind(order.orderId);
   await test("verified payment earns one point per complete £1 after discounts, exactly once", async () => {
-    await f.reconcile(order, { event: "evt_loyalty_first", hash: "1".repeat(64) });
+    await f.reconcile(order, { event: "evt_loyaltyfirst", hash: "1".repeat(64) });
     assert.equal(
       await count("select coalesce(sum(points),0)::integer total from mealdeck_private.customer_loyalty_ledger where user_id=$1", [f.customer]),
       Math.floor(order.totalPence/100),
     );
-    await f.reconcile(order, { event: "evt_loyalty_first", hash: "1".repeat(64) });
-    await f.reconcile(order, { event: "evt_loyalty_replay", hash: "2".repeat(64) });
+    await f.reconcile(order, { event: "evt_loyaltyfirst", hash: "1".repeat(64) });
+    await f.reconcile(order, { event: "evt_loyaltyreplay", hash: "2".repeat(64) });
     assert.equal(await count(
       "select count(*)::integer total from mealdeck_private.customer_loyalty_ledger where user_id=$1",
       [f.customer],
@@ -76,7 +76,7 @@ try {
   });
   await test("partial refunds adjust net points without duplicating on webhook replays", async () => {
     await f.reconcile(order, {
-      event: "evt_loyalty_partial", hash: "3".repeat(64),
+      event: "evt_loyaltypartial", hash: "3".repeat(64),
       type: "charge.refunded", refunded: 350,
     });
     assert.equal(
@@ -84,7 +84,7 @@ try {
       Math.floor((order.totalPence-350)/100),
     );
     await f.reconcile(order, {
-      event: "evt_loyalty_partial_replay", hash: "4".repeat(64),
+      event: "evt_loyaltypartialreplay", hash: "4".repeat(64),
       type: "charge.refunded", refunded: 350,
     });
     assert.equal(
@@ -94,7 +94,7 @@ try {
   });
   await test("full refunds remove previously earned points", async () => {
     await f.reconcile(order, {
-      event: "evt_loyalty_full", hash: "5".repeat(64),
+      event: "evt_loyaltyfull", hash: "5".repeat(64),
       type: "charge.refunded", refunded: order.totalPence,
     });
     assert.equal(
