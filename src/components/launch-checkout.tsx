@@ -31,6 +31,7 @@ import { SiteFooter } from "./site-footer";
 import { MealDeckLogo } from "./mealdeck-logo";
 import { GroupPaymentChoice } from "./group-payments/payment-choice";
 import { OrderNotificationsCard } from "./order-notifications-card";
+import { CustomerOrderComms } from "./customer-order-comms";
 import {
   sharedPaymentRoomPath,
   type SharedPaymentCapabilities,
@@ -1962,6 +1963,16 @@ function LaunchCheckoutView({
                     )}
                   </section>
                   {receipt.verifiedPaid && <ReceiptProgress receipt={receipt} />}
+                  {receipt.verifiedPaid && !receipt.completedAt && !receipt.held &&
+                    receipt.paymentStatus !== "refunded" &&
+                    (receipt.fulfilment === "pickup" || receipt.fulfilment === "curbside") && (
+                      <CustomerOrderComms
+                        key={receipt.orderId + ":" + checkoutMode}
+                        orderId={receipt.orderId}
+                        fulfilment={receipt.fulfilment}
+                        mode={checkoutMode}
+                      />
+                    )}
                   {receipt.verifiedPaid &&
                     !receipt.completedAt &&
                     !receipt.held &&
