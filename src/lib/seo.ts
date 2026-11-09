@@ -1,5 +1,5 @@
 import { MEALDECK_BUSINESS } from "./business-identity";
-import { MEALDECK_LAUNCH_DAYS } from "./mealdeck-launch-schedule";
+import { MEALDECK_LAUNCH_DAYS, MEALDECK_LUTON_WEEKLY_HOURS } from "./mealdeck-launch-schedule";
 import { MEALDECK_MENU_PAGES, type MealDeckMenuPage } from "./mealdeck-menu-seo";
 
 export const SITE_URL = "https://mealdeck.co.uk";
@@ -111,8 +111,13 @@ export const lutonBusiness = {
     postalCode: "LU4 8NU",
     addressCountry: "GB",
   },
-  // These confirmed dates describe one opening weekend, not recurring daily
-  // hours or permission to place an order. Static SEO cannot assert live ordering.
+  // Regular weekly hours. Static SEO cannot assert live ordering availability.
+  openingHoursSpecification: MEALDECK_LUTON_WEEKLY_HOURS.map((row) => ({
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: [...row.schemaDays],
+    opens: `${row.opens}:00`,
+    closes: `${row.closes}:00`,
+  })),
   specialOpeningHoursSpecification: MEALDECK_LAUNCH_DAYS.map((day) => ({
     "@type": "OpeningHoursSpecification",
     validFrom: day.date,

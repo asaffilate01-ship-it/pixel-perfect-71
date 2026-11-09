@@ -1,5 +1,5 @@
 import { MEALDECK_OFFERS } from "./mealdeck-offers";
-import { MEALDECK_LAUNCH_HOURS_PROSE } from "./mealdeck-launch-schedule";
+import { MEALDECK_LUTON_HOURS_PROSE } from "./mealdeck-launch-schedule";
 
 export type Post = {
   slug: string;
@@ -70,7 +70,7 @@ export const posts: Post[] = [
       })),
       {
         h: "Opening hours",
-        p: `${MEALDECK_LAUNCH_HOURS_PROSE} Check the Offers page for the full details and checkout for current ordering availability.`,
+        p: `${MEALDECK_LUTON_HOURS_PROSE} Check the Offers page for the full details and checkout for current ordering availability.`,
       },
     ],
   },

@@ -17,7 +17,11 @@ import brandNusara from "@/assets/brand-nusara.jpg";
 import brandRise from "@/assets/brand-rise-griddle.jpg";
 import brandSouvano from "@/assets/brand-souvano.jpg";
 import { cafe1Menu, coreMenu } from "./sample-menus";
-import { MEALDECK_LAUNCH_HOURS_LABEL, mealDeckLaunchWindowAt } from "./mealdeck-launch-schedule";
+import {
+  MEALDECK_LUTON_HOURS_LABEL,
+  isMealDeckLutonRegularHoursAt,
+  mealDeckLaunchWindowAt,
+} from "./mealdeck-launch-schedule";
 import {
   isMealDeckLaunchFulfilment,
   isMealDeckLaunchLocation,
@@ -264,7 +268,7 @@ export const locations: MealDeckLocation[] = [
     key: "luton",
     name: "MealDeck Luton",
     town: "Luton",
-    hoursLabel: MEALDECK_LAUNCH_HOURS_LABEL,
+    hoursLabel: MEALDECK_LUTON_HOURS_LABEL,
     primaryBrandIds,
     addonBrandIds,
     allowedFulfilments: ["delivery", "pickup", "curbside"],
@@ -297,7 +301,7 @@ export function sampleLocationOpen(location: LocationKey, now = new Date()): boo
   if (!isMealDeckLaunchLocation(location)) return false;
   // Preview only. Real orders still require the configured backend's channel,
   // accepted payment integration and server-side opening-hours checks.
-  return mealDeckLaunchWindowAt(now) !== null;
+  return mealDeckLaunchWindowAt(now) !== null || isMealDeckLutonRegularHoursAt(now);
 }
 
 export function resolveSampleServiceability(
