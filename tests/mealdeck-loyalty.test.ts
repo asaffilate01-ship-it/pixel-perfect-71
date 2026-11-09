@@ -50,8 +50,8 @@ describe("MealDeck release guards", () => {
     expect(sql.match(/^begin;$/gm)).toHaveLength(1);
     expect(sql.match(/^commit;$/gm)).toHaveLength(1);
     expect(sql.trim().endsWith("commit;")).toBe(true);
-    expect(sql.match(/create or replace function public\\.mealdeck_customer_claim_one_use_offer\\(/g)).toHaveLength(1);
-    expect(sql).toContain("unique(campaign_id,user_id)");
+    expect(sql.split("create or replace function public.mealdeck_customer_claim_one_use_offer(")).toHaveLength(2);
+    expect(sql).toContain("primary key(campaign_id,user_id)");
   });
   test("customer account copy never promotes the expired weekend or unapproved double points", () => {
     const account = readFileSync(new URL("../src/components/customer-account.tsx", import.meta.url), "utf8");
