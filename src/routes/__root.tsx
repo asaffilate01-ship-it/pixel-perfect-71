@@ -1,4 +1,5 @@
 import { MobileTabBar } from "@/components/mobile-tab-bar";
+import { MealDeckCookieChoices } from "@/components/mealdeck-cookie-choices";
 import { BackToTop } from "@/components/back-to-top";
 import { SkipToMainContent } from "@/components/skip-to-main-content";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -218,6 +219,7 @@ function RootComponent() {
         </div>
         {!internal && !basketPage && <BackToTop />}
         {!internal && <MobileTabBar />}
+        {!internal && <MealDeckCookieChoices />}
         <Toaster position="top-center" />
       </PwaProvider>
     </QueryClientProvider>
