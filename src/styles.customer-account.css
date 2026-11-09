@@ -369,13 +369,15 @@
   padding: 0 16px;
   margin: 20px 0;
 }
-.md-account-code summary {
-  cursor: pointer;
+.md-account-code summary,
+.md-account-code h3 {
   min-height: 50px;
   padding: 14px 0;
+  margin: 0;
   font-size: 14px;
   font-weight: 700;
 }
+.md-account-code summary { cursor: pointer; }
 .md-account-code form {
   padding: 4px 0 16px;
 }
@@ -712,4 +714,16 @@
   width: 21px;
   height: 21px;
   flex: 0 0 auto;
+}
+
+/* Make account notification settings distinct and easy to reach on small screens. */
+.md-account-notification-settings > p { margin: 0 0 15px; line-height: 1.6; }
+.md-account-notification-settings .md-account-preferences { margin-bottom: 16px; }
+.md-account-notification-settings .md-account-primary { margin: 4px 0 16px; }
+.md-account-notification-settings > a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 14px; }
+.md-account-preference-group-title { font-weight: 700; color: var(--account-ink); margin: 15px 0 5px; }
+#notification-preferences, #device-notifications { scroll-margin-top: 90px; }
+@media (max-width: 600px) {
+  .md-account-notification-settings .md-account-primary { width: 100%; }
+  .md-account-preferences label { min-height: 60px; }
 }
