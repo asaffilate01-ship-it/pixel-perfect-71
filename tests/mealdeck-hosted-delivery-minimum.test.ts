@@ -19,5 +19,8 @@ describe("MealDeck Luton delivery minimum customer feedback", () => {
     expect(checkout).toContain("£15 or more after discounts");
     expect(checkout).toContain("collection or kerbside");
     expect(checkout).toContain('if (fulfilment === "delivery" && deliveryUnderMinimum)');
+    expect(checkout).toContain("Schedule for later");
+    expect(checkout).toContain("You cannot reserve a");
+    expect(checkout).toContain("disabled aria-describedby=\"mealdeck-schedule-not-ready\"");
   });
 });
