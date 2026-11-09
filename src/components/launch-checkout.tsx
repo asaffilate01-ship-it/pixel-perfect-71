@@ -2114,6 +2114,26 @@ function LaunchCheckoutView({
                       collection or kerbside. Final discounted totals are checked before payment.
                     </p>
                   )}
+                  <div className="md-checkout-timing" aria-label="When would you like your order?">
+                    <h3>When would you like your order?</h3>
+                    <div className="md-checkout-methods" role="group" aria-label="Order timing">
+                      <button type="button" disabled={busy} aria-pressed="true">
+                        <Clock3 size={21} />
+                        <strong>As soon as possible</strong>
+                        <span>Based on current kitchen availability</span>
+                      </button>
+                      <button type="button" disabled aria-describedby="mealdeck-schedule-not-ready">
+                        <Clock3 size={21} />
+                        <strong>Schedule for later</strong>
+                        <span>Not available to book yet</span>
+                      </button>
+                    </div>
+                    <p className="md-checkout-muted" id="mealdeck-schedule-not-ready">
+                      Scheduled 15-minute collection, kerbside and delivery slots will be offered once
+                      they are verified by the payment system and kitchen. You cannot reserve a
+                      scheduled time or pay for one yet.
+                    </p>
+                  </div>
                 </section>
               )}
               {fulfilment && (
