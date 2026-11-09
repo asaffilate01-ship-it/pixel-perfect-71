@@ -182,14 +182,14 @@ function QuickCheckoutNotice({ returnTo }: { returnTo: CustomerReturnTarget }) {
       </div>
       <h2 id="account-guest-heading">Just your name and WhatsApp number.</h2>
       <p>
-        Choose your food and continue as a guest while member registration is being prepared. Enter your name and WhatsApp
-        number at checkout.
+        Choose your food and continue as a guest, or register to get member benefits after verifying
+        your email. Enter your name and phone number at checkout.
       </p>
       <a className="md-account-primary" href={returnTo === "/menus" ? "/checkout" : returnTo}>
         Continue without registering <ArrowRight size={18} aria-hidden="true" />
       </a>
       <p className="md-account-fine md-account-guest-note">
-        Email registration opens at 1pm on Monday 9 November 2026, UK time. Guest orders earn no
+        Registration is available with your name, email and phone number. Guest orders earn no
         loyalty points.
       </p>
     </section>
@@ -459,7 +459,7 @@ function FinishRegistration({
         <Preferences value={preferences} onChange={setPreferences} disabled={busy} />
         <p className="md-account-fine">
           By completing registration, you acknowledge our <a href="/privacy">privacy notice</a>.
-          Your optional communication choices do not affect the opening offer.
+          Your optional marketing choices do not affect registration or basic order updates.
         </p>
         <button type="submit" className="md-account-primary" disabled={busy}>
           {busy ? "Saving…" : "Finish registration"}
@@ -692,7 +692,9 @@ export function CustomerAccount({
 }) {
   const returnTarget = customerReturnTarget(returnTo);
   const entryPolicy = useCustomerEntryPolicy();
-  const registrationDeferred = entryPolicy?.emailRegistrationDeferred !== false;
+  // Missing entry-status data must not silently replace signup with a guest-only page.
+  // The dedicated DB and Auth still make the actual registration decision.
+  const registrationDeferred = entryPolicy?.emailRegistrationDeferred === true;
   const [account, setAccount] = useState<CustomerAccountState>({ status: "signed_out" });
   const [capabilities, setCapabilities] = useState<CustomerCapabilities | null>(null);
   const [pushPublicKey, setPushPublicKey] = useState<string | null>(null);
@@ -895,7 +897,7 @@ export function CustomerAccount({
                 ? "Every craving, one order. Choose your food and we’ll take the details we need at checkout."
                 : signInOnly
                   ? "Use your verified account to continue."
-                  : "One account for all your favourite brands. Verify your email and get ready for the Luton launch."}
+                  : "One account for all your favourite brands. Enter your name, email and phone number, then confirm your email."}
           </p>
           {signedIn && (
             <button
@@ -942,21 +944,28 @@ export function CustomerAccount({
                 <p role="status">Connecting to your MealDeck account…</p>
               </section>
             ) : connectionError ? (
-              <section className="md-account-panel">
-                <h2>We’re getting your account ready.</h2>
-                <p>{connectionError}</p>
-                <button
-                  type="button"
-                  className="md-account-secondary"
-                  onClick={() => setAttempt((value) => value + 1)}
-                >
-                  Try again
-                </button>
-                <a href="/menus" className="md-account-text">
-                  Keep exploring the menus
-                  <ChevronRight size={17} aria-hidden="true" />
-                </a>
-              </section>
+              <>
+                <section className="md-account-panel" role="alert">
+                  <h2>Account connection needs attention</h2>
+                  <p>{connectionError}</p>
+                  <button
+                    type="button"
+                    className="md-account-secondary"
+                    onClick={() => setAttempt((value) => value + 1)}
+                  >
+                    Retry account connection
+                  </button>
+                </section>
+                {!signedIn && (
+                  <CustomerEntry
+                    busy={busy}
+                    onRequest={request}
+                    onPassword={passwordSignIn}
+                    registrationDeferred={registrationDeferred}
+                    signInOnly={signInOnly}
+                  />
+                )}
+              </>
             ) : profile?.registered && capabilities ? (
               <CustomerSettings
                 key={profile.updatedAt}
