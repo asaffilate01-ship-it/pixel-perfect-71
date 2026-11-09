@@ -37,7 +37,8 @@ import org.junit.runner.RunWith;
  * local recording Binder only. No activity, vendor service or order API runs. */
 @RunWith(AndroidJUnit4.class)
 public final class ReceiptBitmapInstrumentedTest {
-    private static final int PAPER_TAIL = 180;
+    // Bitmap height includes only the minimal quiet tail; the H10S service
+    // performs its own fixed, separately tested four-line paper advance.
 
     @Test public void representativeReceiptsSurviveOneBitmapSendWithQrAndFooter() throws Exception {
         Context target = InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -211,7 +212,7 @@ public final class ReceiptBitmapInstrumentedTest {
     private static void assertReceiptRaster(Context context, Bitmap bitmap, ReceiptLayout layout) throws Exception {
         assertEquals(384, bitmap.getWidth());
         assertTrue(bitmap.getHeight() <= 16_000);
-        assertEquals(layout.contentHeight + PAPER_TAIL, bitmap.getHeight());
+        assertEquals(layout.contentHeight + ReceiptLayout.FINAL_PAPER_TAIL, bitmap.getHeight());
         int[] pixels = new int[bitmap.getWidth() * bitmap.getHeight()];
         bitmap.getPixels(pixels, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
@@ -291,7 +292,7 @@ public final class ReceiptBitmapInstrumentedTest {
             assertHasInk(pixels, bitmap.getWidth(), footer);
         }
         for (int index = layout.contentHeight * bitmap.getWidth(); index < pixels.length; index++)
-            assertEquals("Final 180px paper feed must be white", Color.WHITE, pixels[index]);
+            assertEquals("Minimal final bitmap tail must be white", Color.WHITE, pixels[index]);
     }
 
     private static ReceiptLayout.Element element(ReceiptLayout layout, String role) {

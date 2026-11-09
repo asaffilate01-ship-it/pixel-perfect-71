@@ -269,8 +269,16 @@ public final class ReceiptLayoutTest {
         require(first(layout, "footer.trading").y > artwork.bottom(), "Full footer follows the promotion");
         equal("ONE ORDER. EVERY CRAVING.", text(layout, "footer.slogan"), "Original final footer");
         require(layout.contentHeight == last(layout, "footer.slogan").bottom(), "No content after final footer");
-        require(layout.totalHeight - layout.contentHeight == 180, "Final blank paper tail exactly 180 pixels");
+        require(layout.totalHeight - layout.contentHeight == ReceiptLayout.FINAL_PAPER_TAIL,
+            "Final bitmap tail matches the minimal configured H10S feed allowance");
         require(role(layout, "promotion.image").size() == 1, "Exactly one rotation slot per receipt");
+        int paintedUntil = 0;
+        for (ReceiptLayout.Element element : layout.elements) {
+            require(element.y - paintedUntil <= 24,
+                "Unexpected internal whitespace before " + element.role + ": " + (element.y - paintedUntil));
+            paintedUntil = Math.max(paintedUntil, element.bottom());
+        }
+        require(layout.totalHeight - paintedUntil <= 24, "Receipt must not add a large blank trailing image");
     }
     private static List<ReceiptLayout.Element> role(ReceiptLayout layout, String name) {
         return layout.elements.stream().filter(element -> element.role.equals(name)).toList();

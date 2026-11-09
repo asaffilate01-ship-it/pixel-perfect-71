@@ -116,7 +116,7 @@ function Preferences({
         </span>
       </label>
       <p className="md-account-fine">
-        Marketing is never required for registration, the opening offer or loyalty membership.
+        Marketing consent is optional and is not required for registration or loyalty points.
         Essential verification and order messages are separate.
       </p>
     </fieldset>
@@ -246,7 +246,7 @@ function CustomerEntry({
       </h2>
       <p>
         {mode === "register"
-          ? "Create your account and verify your email for member offers and optional offer alerts. Guest ordering is also available during our opening hours on 6–8 November."
+          ? "Register with your email and mobile number, then verify your email. Eligible offers may require separate WhatsApp number verification; offer alerts are always optional."
           : usePassword
             ? "Sign in with your email and password."
             : "We’ll email you a secure sign-in link. No password to remember."}
@@ -1019,23 +1019,23 @@ export function CustomerAccount({
             className="md-account-aside"
             aria-label={
               publicGuestView
-                ? "Opening weekend and the MealDeck app"
+                ? "MealDeck membership and the app"
                 : "Your orders and member benefits"
             }
           >
             {profile?.registered && <CustomerOrders key={profile.userId} />}
             <section className="md-account-benefit">
               <Gift size={25} aria-hidden="true" />
-              <span className="md-account-eyebrow">OPENING WEEKEND</span>
-              <h2>30% off everything.</h2>
+              <span className="md-account-eyebrow">MEALDECK MEMBERSHIP</span>
+              <h2>Every craving, one order.</h2>
               <p>
-                6–8 November 2026, during opening hours. No minimum order. Luton collection or
-                kerbside pickup, for guests and registered members.
+                Register with a verified email and mobile number to access eligible member benefits.
+                Earn loyalty points when the programme is enabled, discover new offers and keep
+                up with your collection, kerbside or delivery order.
               </p>
               <p className="md-account-fine">
-                Check <a href="/opening-offer">offer dates and details</a>. The discount applies
-                automatically when the offer is live and your order is eligible. Marketing choices
-                are optional. Guest orders earn no loyalty points.
+                Member offers have their own eligibility rules and end dates. Some require a verified
+                WhatsApp number. Marketing alerts are optional; guest orders earn no loyalty points.
               </p>
               <a href="/menus">
                 Explore the menus
@@ -1060,12 +1060,12 @@ export function CustomerAccount({
                   </>
                 ) : (
                   <>
-                    <span className="md-account-soon">Points balance coming soon</span>
+                    <span className="md-account-soon">Loyalty activation pending</span>
                     <p>
-                      Register and spend £15 or more from Monday 9 to Friday 13 November 2026
-                      inclusive for double loyalty points.{" "}
-                      <a href="/offers#double-points">See offer details</a>. Your points balance
-                      will appear here when loyalty is available.
+                      Once enabled, registered members with verified email earn 1 point for each
+                      complete £1 actually paid after discounts on eligible orders. Your balance
+                      will appear here when loyalty is available. No additional bonus-point
+                      campaign is active by default.
                     </p>
                   </>
                 )}
