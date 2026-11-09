@@ -56,6 +56,7 @@ import {
   readLaunchCheckoutPicks,
   type LaunchCheckoutGroup,
 } from "@/lib/launch-basket-transfer";
+import { LAUNCH_BASKET_EXPIRY_NOTICE } from "@/lib/launch-basket-expiration";
 import type { MealDeckPackingPlan } from "@/lib/mealdeck-checkout-selection";
 import { formatPackingBagName } from "@/lib/mealdeck-packing-name";
 import {
@@ -990,6 +991,37 @@ function LaunchCheckoutView({
     );
   }, [groupExpected, whatsAppDraft]);
 
+  /** Expire unpaid browser baskets even while checkout remains open.
+   * Paid orders and WhatsApp-bound payment attempts are never edited here. */
+  useEffect(() => {
+    if (orderId || whatsAppDraft || whatsAppPaymentAttempt || groupExpected || !basketLoaded) return;
+    const check = () => {
+      const transfer = readLaunchCheckoutTransfer(false);
+      if (!transfer.issue && encodeLaunchPicks(transfer.picks) === encodeLaunchPicks(picks)) return;
+      if (transfer.issue === basketIssue && encodeLaunchPicks(transfer.picks) === encodeLaunchPicks(picks))
+        return;
+      setPicks(transfer.picks);
+      setBasketIssue(transfer.issue || LAUNCH_BASKET_EXPIRY_NOTICE);
+      setQuote(null);
+      setReviewConfirmed(false);
+      attempt.current = null;
+      setSeparateBags(false);
+      setBagCount(1);
+      setBagQuantities(Object.fromEntries(transfer.picks.map((pick, index) =>
+        ["line-" + (index + 1), [pick.quantity]],
+      )));
+    };
+    const visible = () => { if (document.visibilityState === "visible") check(); };
+    const interval = window.setInterval(check, 1000);
+    document.addEventListener("visibilitychange", visible);
+    window.addEventListener("focus", check);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", visible);
+      window.removeEventListener("focus", check);
+    };
+  }, [orderId, whatsAppDraft, whatsAppPaymentAttempt, groupExpected, basketLoaded, picks, basketIssue]);
+
   useEffect(() => {
     try {
       if (!whatsAppDraft) {
@@ -1424,8 +1456,21 @@ function LaunchCheckoutView({
     attempt.current = null;
     roomAttempt.current = null;
   }
+  function browserBasketStillValid() {
+    if (orderId || whatsAppDraft || whatsAppPaymentAttempt || groupExpected) return true;
+    const transfer = readLaunchCheckoutTransfer(false);
+    if (!transfer.issue && encodeLaunchPicks(transfer.picks) === encodeLaunchPicks(picks)) return true;
+    setPicks(transfer.picks);
+    setBasketIssue(transfer.issue || LAUNCH_BASKET_EXPIRY_NOTICE);
+    setQuote(null);
+    setReviewConfirmed(false);
+    attempt.current = null;
+    setIssue(LAUNCH_BASKET_EXPIRY_NOTICE);
+    return false;
+  }
+
   async function reviewTotal() {
-    if (!fulfilment || busy || !canCheckout) return;
+    if (!fulfilment || busy || !canCheckout || !browserBasketStillValid()) return;
     if (whatsAppPaymentAttempt) {
       setIssue(
         "Payment has already been started for this WhatsApp order. Use Resume secure payment to continue the original checkout.",
@@ -1504,7 +1549,7 @@ function LaunchCheckoutView({
     }
   }
   async function pay(quoteId: string) {
-    if (busy || !canCheckout) return;
+    if (busy || !canCheckout || !browserBasketStillValid()) return;
     const requestId = ++checkoutRequestId.current;
     setBusy(true);
     setPaymentPending(true);
@@ -1602,6 +1647,7 @@ function LaunchCheckoutView({
   }
 
   async function createPaymentRoom(quoteId: string) {
+    if (!browserBasketStillValid()) return;
     if (
       busy ||
       !canCheckout ||
