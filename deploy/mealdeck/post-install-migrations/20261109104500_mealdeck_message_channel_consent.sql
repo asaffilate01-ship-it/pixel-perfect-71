@@ -106,4 +106,85 @@ revoke all on function public.mealdeck_customer_update_message_preferences(boole
   from public,anon,authenticated,service_role;
 grant execute on function public.mealdeck_customer_update_message_preferences(boolean,boolean,text,text)
   to authenticated;
+
+-- Atomic wrappers: existing email/push choices and new message permissions
+-- commit or roll back together. No browser-supplied profile grants identity.
+create or replace function public.mealdeck_customer_profile_with_messages()
+returns jsonb language plpgsql stable security definer set search_path=''
+as $profile$
+declare v jsonb; m jsonb;
+begin
+  v:=public.mealdeck_customer_profile();
+  if v->'registered' is distinct from 'true'::jsonb then return v; end if;
+  m:=public.mealdeck_customer_message_preferences();
+  return jsonb_set(v,'{preferences}',(v->'preferences')||m);
+end;
+$profile$;
+revoke all on function public.mealdeck_customer_profile_with_messages()
+  from public,anon,authenticated,service_role;
+grant execute on function public.mealdeck_customer_profile_with_messages() to authenticated;
+
+create or replace function public.mealdeck_customer_register_with_messages(
+  p_name text,p_phone text,p_email_marketing boolean,p_push_marketing boolean,
+  p_order_notifications boolean,p_privacy_version text,p_consent_version text,
+  p_sms_marketing boolean,p_whatsapp_marketing boolean)
+returns jsonb language plpgsql security definer set search_path=''
+as $register$
+begin
+  perform public.mealdeck_customer_register(
+    p_name,p_phone,p_email_marketing,p_push_marketing,p_order_notifications,
+    p_privacy_version,p_consent_version);
+  perform public.mealdeck_customer_update_message_preferences(
+    p_sms_marketing,p_whatsapp_marketing,'mealdeck-message-consent-2026-11-09','registration');
+  return public.mealdeck_customer_profile_with_messages();
+end;
+$register$;
+revoke all on function public.mealdeck_customer_register_with_messages(
+  text,text,boolean,boolean,boolean,text,text,boolean,boolean)
+  from public,anon,authenticated,service_role;
+grant execute on function public.mealdeck_customer_register_with_messages(
+  text,text,boolean,boolean,boolean,text,text,boolean,boolean) to authenticated;
+
+create or replace function public.mealdeck_customer_update_with_messages(
+  p_name text,p_phone text,p_email_marketing boolean,p_push_marketing boolean,
+  p_order_notifications boolean,p_expected_updated_at timestamptz,p_consent_version text,
+  p_sms_marketing boolean,p_whatsapp_marketing boolean)
+returns jsonb language plpgsql security definer set search_path=''
+as $update$
+begin
+  perform public.mealdeck_customer_update(
+    p_name,p_phone,p_email_marketing,p_push_marketing,p_order_notifications,
+    p_expected_updated_at,p_consent_version);
+  perform public.mealdeck_customer_update_message_preferences(
+    p_sms_marketing,p_whatsapp_marketing,'mealdeck-message-consent-2026-11-09','account');
+  return public.mealdeck_customer_profile_with_messages();
+end;
+$update$;
+revoke all on function public.mealdeck_customer_update_with_messages(
+  text,text,boolean,boolean,boolean,timestamptz,text,boolean,boolean)
+  from public,anon,authenticated,service_role;
+grant execute on function public.mealdeck_customer_update_with_messages(
+  text,text,boolean,boolean,boolean,timestamptz,text,boolean,boolean) to authenticated;
+
+create or replace function public.mealdeck_customer_export_with_messages()
+returns jsonb language plpgsql stable security definer set search_path=''
+as $export$
+declare v jsonb; audit_events jsonb;
+begin
+  v:=public.mealdeck_customer_export();
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'channel',e.channel,'allowed',e.allowed,
+    'previousAllowed',e.previous_allowed,'noticeVersion',e.notice_version,
+    'source',e.source,'occurredAt',e.occurred_at)
+    order by e.occurred_at,e.id),'[]'::jsonb)
+    into audit_events
+    from mealdeck_private.customer_message_consent_events e where e.user_id=auth.uid();
+  return v||jsonb_build_object(
+    'messagePreferences',public.mealdeck_customer_message_preferences(),
+    'messageConsentHistory',audit_events);
+end;
+$export$;
+revoke all on function public.mealdeck_customer_export_with_messages()
+  from public,anon,authenticated,service_role;
+grant execute on function public.mealdeck_customer_export_with_messages() to authenticated;
 commit;
