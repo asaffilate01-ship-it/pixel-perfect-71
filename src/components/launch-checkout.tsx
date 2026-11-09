@@ -908,7 +908,8 @@ function LaunchCheckoutView({
   const basketPrice = launchMenuOfferBasketDisplayPrice(picks, catalogue);
   const displayTotal = basketPrice.itemsSubtotalPence;
   const deliveryShortfall = ownDriverShortfallPence(displayTotal);
-  const deliveryUnderMinimum = fulfilment === "delivery" && deliveryShortfall !== null && deliveryShortfall > 0;
+  const deliveryUnderMinimum =
+    fulfilment === "delivery" && deliveryShortfall !== null && deliveryShortfall > 0;
   const hasMilkcakeOffer = quote
     ? !!appliedMilkcakePromotion(quote.lines)
     : basketPrice.hasMilkcakeOffer;
@@ -1480,7 +1481,10 @@ function LaunchCheckoutView({
       return;
     }
     if (fulfilment === "delivery" && deliveryUnderMinimum) {
-      setIssue("Delivery requires a final payable order total of £15 or more after discounts. Your current basket is below the minimum. Add more items and review your total.");
+      setIssue(
+        "Delivery requires a final payable total of £15 or more after discounts. " +
+          "Your current basket is below the minimum. Add more items and review your total.",
+      );
       return;
     }
     if (fulfilment === "delivery" && !deliveryReady) {
