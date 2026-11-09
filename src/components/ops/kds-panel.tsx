@@ -28,6 +28,7 @@ import { StaffMobileNav, StaffMobileSheet } from "./staff-mobile-navigation";
 import type { OpsPermission } from "@/lib/mealdeck-ops-access";
 import { OpsRequestError, opsRpc } from "@/lib/mealdeck-ops-browser";
 import { parseKdsMutation, type KdsOrder } from "@/lib/mealdeck-kds";
+import { scheduledKdsHeadline } from "@/lib/mealdeck-scheduled-orders";
 import {
   parseKdsWorkflowBoard,
   type KdsWorkflowBoard as KdsBoard,
@@ -1325,6 +1326,9 @@ export function KitchenOrderCard({
   const hasOrderNumber = isOrderNumber(order.order_number);
   const referenceLabel = hasOrderNumber ? "Order" : "Collection code";
   const collection = order.fulfilment === "pickup" || order.fulfilment === "curbside";
+  const scheduledHeadline = order.fulfilment === "dine_in"
+    ? null
+    : scheduledKdsHeadline(order.fulfilment, order.scheduledFor, order.prepStartAt);
   return (
     <article
       ref={cardRef}
@@ -1337,6 +1341,12 @@ export function KitchenOrderCard({
       aria-busy={saving}
     >
       <header className="md-ops-ticket-heading md-kds-ticket-heading border-b md-ops-divider">
+        {scheduledHeadline && (
+          <p role="note" data-testid="scheduled-kds-note" className="mb-3 flex items-center gap-2 rounded-lg border-2 border-amber-500 bg-amber-100 p-3 text-sm font-black uppercase tracking-wide text-amber-950">
+            <Clock3 className="size-5 shrink-0" aria-hidden="true" />
+            <strong>{scheduledHeadline}</strong>
+          </p>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="md-kds-fulfilment">
             {fulfilmentLabels[order.fulfilment]}
