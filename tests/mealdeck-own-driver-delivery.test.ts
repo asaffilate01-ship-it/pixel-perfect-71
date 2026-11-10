@@ -60,12 +60,19 @@ describe("MealDeck own-driver delivery safeguards", () => {
       parseOwnDriverAddress({ postcode: "LU4 8NU", doorNumber: "12", roadName: "Road\u202e" }),
     ).toBeNull();
   });
-  test("£15 minimum uses payable amount not original price", () => {
-    expect(ownDriverShortfallPence(1499)).toBe(1);
-    expect(ownDriverShortfallPence(999)).toBe(501);
-    expect(ownDriverShortfallPence(1500)).toBe(0);
-    expect(ownDriverShortfallPence(2000)).toBe(0);
-    expect(ownDriverShortfallPence(-1)).toBeNull();
+  test("November £15 minimum uses payable food after discounts, not original price", () => {
+    const november = "2026-11-09T18:00:00Z";
+    expect(ownDriverShortfallPence(1499, november)).toBe(1);
+    expect(ownDriverShortfallPence(999, november)).toBe(501);
+    expect(ownDriverShortfallPence(1500, november)).toBe(0);
+    expect(ownDriverShortfallPence(2000, november)).toBe(0);
+    expect(ownDriverShortfallPence(-1, november)).toBeNull();
+  });
+  test("from December the minimum becomes £10; courier fee is quoted separately", () => {
+    const december = "2026-12-01T18:00:00Z";
+    expect(ownDriverShortfallPence(999, december)).toBe(1);
+    expect(ownDriverShortfallPence(1000, december)).toBe(0);
+    expect(ownDriverShortfallPence(1500, december)).toBe(0);
   });
   test("4 km radius has a precise boundary", () => {
     expect(OWN_DRIVER_RADIUS_METRES).toBe(4000);
