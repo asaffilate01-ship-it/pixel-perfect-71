@@ -354,7 +354,7 @@
 }
 
 .lmb-dock-clearance {
-  height: calc(112px + env(safe-area-inset-bottom, 0px));
+  height: calc(112px + var(--md-mobile-safe-bottom));
   flex: 0 0 auto;
 }
 
@@ -362,7 +362,7 @@
   position: fixed;
   z-index: 70;
   right: max(24px, env(safe-area-inset-right, 0px));
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(20px + var(--md-mobile-safe-bottom));
   width: 360px;
   max-width: calc(100vw - 48px);
 }
@@ -478,7 +478,7 @@
 @media (max-width: 1023px) {
   .lmb-dock {
     right: max(12px, env(safe-area-inset-right, 0px));
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(12px + var(--md-mobile-safe-bottom));
     left: max(12px, env(safe-area-inset-left, 0px));
     width: auto;
     max-width: none;
@@ -490,7 +490,7 @@
   }
 
   .lmb-dock-clearance {
-    height: calc(100px + env(safe-area-inset-bottom, 0px));
+    height: calc(100px + var(--md-mobile-safe-bottom));
   }
 }
 
@@ -549,7 +549,7 @@
   .lm-dialog.lm-basket-dialog {
     top: auto;
     right: 0;
-    bottom: 0;
+    bottom: var(--md-mobile-safe-bottom);
     left: 0;
     /* The CSS compiler may fold translate:none into transform. Reset the
        dialog's native Tailwind translate variables as well. */
@@ -557,7 +557,7 @@
     --tw-translate-y: 0px;
     width: 100%;
     max-width: 800px;
-    max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)));
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)) - var(--md-mobile-safe-bottom));
     margin: 0 auto;
     border-bottom: 0;
     border-radius: 24px 24px 0 0;
@@ -610,7 +610,7 @@
     grid-template-columns: auto minmax(0, 1fr);
     gap: 8px 12px;
     padding: 12px max(16px, env(safe-area-inset-right, 0px))
-      max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+      12px max(16px, env(safe-area-inset-left, 0px));
   }
 
   .lm-basket-dialog .lm-basket-footer > a.lm-primary {
