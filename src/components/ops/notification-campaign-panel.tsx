@@ -163,6 +163,11 @@ export function NotificationCampaignPanel({
   }, [refresh]);
   const selectedId = selected?.campaignId;
   const selectedStatus = selected?.status;
+  const noEligiblePhones =
+    loaded &&
+    available &&
+    campaigns.length > 0 &&
+    campaigns.every((campaign) => campaign.eligibleDevices === 0);
   const draftTooOld = Boolean(
     selected?.status === "draft" && Date.parse(selected.createdAt) + 15 * 60_000 <= Date.now(),
   );
@@ -238,13 +243,12 @@ export function NotificationCampaignPanel({
           connection gets ready. Sending is currently unavailable.
         </p>
       )}
-      {loaded && available && campaigns.length > 0 && campaigns.every((c) => c.eligibleDevices === 0) ? (
+      {noEligiblePhones && (
         <p className="md-notification-campaigns-unavailable" role="status">
-          No subscribed phones can receive offers. Members must enable App offers,
-          save preferences and then allow notifications on their phones.
-          Prepare a fresh campaign after a device connects.
+          <strong>No opted-in phone is subscribed.</strong>{" "}
+          Members must enable App offers and allow phone notifications.
         </p>
-      ) : null}
+      )}
       {selected ? (
         <div
           className="md-notification-campaign-review"
@@ -287,14 +291,12 @@ export function NotificationCampaignPanel({
               </p>
               {selected.eligibleDevices === 0 && (
                 <p role="status">
-                  No eligible devices are subscribed. Members must enable App offers
-                  and phone notifications. Prepare a fresh draft once connected.
+                  No eligible devices are subscribed. Members must enable App offers and phone
+                  notifications. Prepare a fresh draft once connected.
                 </p>
               )}
               {draftTooOld && (
-                <p role="status">
-                  This draft has expired. Create and review a new draft to send.
-                </p>
+                <p role="status">This draft has expired. Create and review a new draft to send.</p>
               )}
               <div className="md-notification-campaign-actions">
                 <button
