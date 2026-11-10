@@ -46,8 +46,21 @@ function dishDescription(section: DescriptorSection, item: Pick<LaunchMenuItem, 
 export function launchMenuItemDescriptor(
   brand: Pick<LaunchMenuBrand, "id">,
   section: DescriptorSection,
-  item: Pick<LaunchMenuItem, "description"> & Partial<Pick<LaunchMenuItem, "id">>,
+  item: Pick<LaunchMenuItem, "description"> & Partial<Pick<LaunchMenuItem, "id" | "name">>,
 ): string {
+  // The live Load’d catalogue now publishes The Blackjack under a SKU once
+  // used by Double Deck. The item name and confirmed recipe must override
+  // that historical SKU subtitle, without changing Double Deck copy.
+  if (
+    brand.id === "loadd" &&
+    section.id === "full-house" &&
+    item.name?.trim().toLowerCase() === "the blackjack"
+  ) {
+    const actualRecipe = dishDescription(section, item);
+    return /\bsmash(?:ed)? beef\b/i.test(actualRecipe) && /\bfried chicken\b/i.test(actualRecipe)
+      ? "Smash beef and fried chicken · loaded fries + mac ’n cheese"
+      : "Loaded fries + mac ’n cheese";
+  }
   const ownerLine = item.id ? ownerDishLines[item.id] : undefined;
   if (ownerLine) return ownerLine;
   const description = dishDescription(section, item);
