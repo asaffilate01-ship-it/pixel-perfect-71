@@ -45,8 +45,8 @@ export function assessDriverGpsReadiness(
   }
   // Accuracy is approximate and rounded for display. The exact coordinates
   // never leave this local function.
-  const accuracyMetres = Math.max(5, Math.round(sample.coords.accuracy / 5) * 5);
-  return accuracyMetres <= DRIVER_GPS_MAX_ACCURACY_METRES
+  const accuracyMetres = Math.max(5, Math.ceil(sample.coords.accuracy / 5) * 5);
+  return sample.coords.accuracy <= DRIVER_GPS_MAX_ACCURACY_METRES
     ? { status: "ready", accuracyMetres }
     : { status: "inaccurate", accuracyMetres };
 }
