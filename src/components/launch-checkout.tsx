@@ -75,6 +75,7 @@ import {
 import { parseKerbsideVehicle, type MealDeckOpeningOffer } from "@/lib/mealdeck-opening-offer";
 import { customerOrderElapsedMinutes } from "@/lib/mealdeck-customer-order-timing";
 import { normaliseUkPostcode, ownDriverShortfallPence, parseOwnDriverAddress } from "@/lib/mealdeck-own-driver-delivery";
+import { mealDeckDeliveryPolicy } from "@/lib/mealdeck-delivery-pricing-policy";
 import { deliveryAreaRejectionMessage } from "@/lib/mealdeck-delivery-postcode-notice";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
@@ -881,9 +882,15 @@ function LaunchCheckoutView({
     status.kitchen.collectionEstimateMinutes !== null;
   const guestEligible = orderingAvailable && status?.guestCheckout.eligible === true;
   const canViewReceipt = checkoutMode === "guest" ? Boolean(guestSession) : registered;
+  // The Luton merchant courier fee is zero until 30 November 2026.
+  // Starting December a trusted live provider quote must be shown and confirmed
+  // before payment; do not allow the old free-delivery checkout to undercharge.
+  const deliveryPricingPolicy = mealDeckDeliveryPolicy(new Date().toISOString());
+  const needsCourierFeeQuote = deliveryPricingPolicy?.phase === "quoted_delivery";
+  const minimumFoodText = formatLaunchMenuPrice(deliveryPricingPolicy?.minimumFoodPence ?? 1_500);
   const deliveryReady =
     fulfilment !== "delivery" ||
-    (status?.fulfilments?.includes("delivery") === true &&
+    (!needsCourierFeeQuote && status?.fulfilments?.includes("delivery") === true &&
       parseOwnDriverAddress(deliveryAddress) !== null &&
       deliveryArea?.eligible === true &&
       deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode));
@@ -1480,10 +1487,16 @@ function LaunchCheckoutView({
       );
       return;
     }
+    if (fulfilment === "delivery" && needsCourierFeeQuote) {
+      setIssue(
+        "From 1 December delivery requires at least £10 of food after discounts, plus a live courier fee quoted and confirmed before payment. Courier pricing is not connected yet; choose collection for now.",
+      );
+      return;
+    }
     if (fulfilment === "delivery" && deliveryUnderMinimum) {
       setIssue(
-        "Delivery requires a final payable total of £15 or more after discounts. " +
-          "Your current basket is below the minimum. Add more items and review your total.",
+        "Delivery requires at least " + minimumFoodText + " of food after discounts. " +
+          "Add more items and review your final total.",
       );
       return;
     }
@@ -2139,16 +2152,17 @@ function LaunchCheckoutView({
                     <button
                       className="md-checkout-delivery"
                       type="button"
-                      disabled={busy}
+                      disabled={busy || needsCourierFeeQuote}
                       aria-pressed={fulfilment === "delivery"}
                       onClick={() => chooseFulfilment("delivery")}
                     >
                       <Truck size={19} />
                       <span>
-                        Free delivery{" "}
+                        {needsCourierFeeQuote ? "Delivery · fee quoted before payment" : "Free delivery"}
                         <small>
-                          Due to popular demand · within 4 km of LU4 8NU · £15 minimum after
-                          discounts · up to 60 minutes
+                          {needsCourierFeeQuote
+                            ? "From 1 December · £10 food minimum after discounts · live courier fee required"
+                            : "November offer · within 4 km of LU4 8NU · £15 minimum after discounts · up to 60 minutes"}
                         </small>
                       </span>
                       {fulfilment === "delivery" && <Check size={17} />}
@@ -2156,10 +2170,16 @@ function LaunchCheckoutView({
                   )}
                   {deliveryUnderMinimum && (
                     <p className="md-checkout-notice md-checkout-error" role="alert" aria-live="polite">
-                      Your basket is below £15. Delivery is only available for orders of
-                      <strong> £15 or more after discounts</strong>. Add at least{" "}
-                      <strong>{formatLaunchMenuPrice(deliveryShortfall ?? 0)}</strong> in items, or choose
-                      collection or kerbside. Final discounted totals are checked before payment.
+                      Your basket is below the <strong>{minimumFoodText} food minimum after discounts</strong>.
+                      Add at least <strong>{formatLaunchMenuPrice(deliveryShortfall ?? 0)}</strong> in items
+                      or choose collection or kerbside. Final discounted totals are checked before payment.
+                    </p>
+                  )}
+                  {needsCourierFeeQuote && (
+                    <p className="md-checkout-notice" role="status">
+                      From 1 December: minimum food order £10 after discounts, plus a delivery
+                      fee based on a verified courier quote. Delivery checkout is paused until
+                      live prices and provider booking are connected. Collection is still available.
                     </p>
                   )}
                   <div className="md-checkout-timing" aria-label="When would you like your order?">
@@ -2427,9 +2447,9 @@ function LaunchCheckoutView({
                     <span className="md-checkout-step">3</span>Delivery address
                   </h2>
                   <p className="md-checkout-muted">
-                    Due to popular demand: FREE delivery within a 4 km radius of LU4 8NU for orders
-                    of £15 or more after discounts. Estimated delivery within 60 minutes of payment,
-                    using our own driver.
+                    {needsCourierFeeQuote
+                      ? "From 1 December, delivery needs at least £10 of food after discounts and a verified, pre-payment courier fee quote. Delivery checkout remains paused until providers are connected."
+                      : "November offer: FREE delivery within 4 km of LU4 8NU for food orders of £15 or more after discounts. Estimated own-driver delivery within 60 minutes of payment."}
                   </p>
                   <div className="md-checkout-vehicle">
                     <label>
@@ -2512,9 +2532,11 @@ function LaunchCheckoutView({
                     </label>
                   </div>
                   <p className="md-checkout-muted">
-                    Delivery is only available when your final payable total is £15 or more after
-                    all discounts. If the total falls below £15, we will show the shortfall
-                    before payment. Collection and kerbside have no £15 minimum.
+                    Delivery food minimum: {minimumFoodText} after discounts.
+                    {needsCourierFeeQuote
+                      ? " A separate courier fee must be quoted and accepted before any payment."
+                      : " November delivery is free."}
+                    Collection and kerbside have no delivery minimum.
                   </p>
                 </section>
               )}
@@ -2954,7 +2976,9 @@ function LaunchCheckoutView({
                         ? "One milkcake is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount, applied above with the other eligible items and extras."
                         : "30% off every item and upgrade."}{" "}
                       {fulfilment === "delivery"
-                        ? "Free delivery when £15+ after discount."
+                        ? needsCourierFeeQuote
+                          ? "A verified courier fee is required before payment from 1 December."
+                          : "Free delivery in November when £15+ after discount."
                         : "No minimum order."}
                     </p>
                   ) : !quote && status?.openingOffer.status === "active" ? (
