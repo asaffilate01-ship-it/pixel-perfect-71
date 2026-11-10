@@ -58,15 +58,15 @@ create index ordering_choices_expiry_idx
 create function mealdeck_private.stamp_ordering_choices_saved_at()
 returns trigger language plpgsql security definer set search_path='' as $$
 begin
-  if old.picks is distinct from new.picks then
-    new.choices_saved_at:=case
-      when new.state in ('joined','ready')
-        and jsonb_typeof(new.picks)='array' and jsonb_array_length(new.picks)>0
-      then clock_timestamp()
-      else null end;
-  end if;
+  -- An explicit successful Save refreshes this person's TTL even when they
+  -- save identical picks; the existing versioned RPC remains authoritative.
+  new.choices_saved_at:=case
+    when new.state in ('joined','ready')
+      and jsonb_typeof(new.picks)='array' and jsonb_array_length(new.picks)>0
+    then clock_timestamp()
+    else null end;
   return new;
-end $$;
+end $;
 create trigger mealdeck_ordering_choices_saved_at
 before update of picks on mealdeck_private.ordering_participants
 for each row execute function mealdeck_private.stamp_ordering_choices_saved_at();
