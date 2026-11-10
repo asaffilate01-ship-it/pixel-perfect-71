@@ -60,3 +60,11 @@
 @media(max-width:750px){.md-driver-main{padding:22px 14px calc(96px + var(--md-mobile-safe-bottom))}.md-driver-header-inner{padding:10px 14px;min-height:64px}.md-driver-dashboard,.md-driver-jobs{grid-template-columns:1fr}.md-driver-panel{padding:18px}.md-driver-jobs-heading{align-items:flex-start}.md-driver-jobs-heading button{flex-shrink:0}.md-driver-header-action{font-size:.75rem;padding:9px}.md-driver-header-inner span{font-size:.72rem}}
 @media(max-width:380px){.md-driver-jobs-heading{flex-direction:column}.md-driver-header-inner{gap:7px}.md-driver-header-action svg{display:none}}
 @media(prefers-reduced-motion:reduce){.md-driver-root *{transition:none!important}}
+
+.md-driver-gps-panel{max-width:100%;margin:0 0 24px}
+.md-driver-gps-panel h2{display:flex;align-items:center;gap:9px}
+.md-driver-gps-panel>.md-driver-secondary{margin:4px 0 8px}
+.md-driver-gps-panel .md-driver-gps-result{border-left:3px solid #ba1019;padding:8px 12px;background:#fff4e6;margin:10px 0;font-weight:650;color:#4c3e32}
+.md-driver-gps-panel .md-driver-gps-note{font-weight:700;margin:8px 0;color:#735e38}
+.md-driver-gps-panel .md-driver-gps-privacy{display:flex;align-items:flex-start;gap:9px;font-size:.84rem;color:#59534f;margin-bottom:0}
+.md-driver-gps-privacy svg{flex:0 0 auto;margin-top:2px;color:#166534}
