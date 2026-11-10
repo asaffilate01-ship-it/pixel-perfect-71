@@ -17,8 +17,8 @@ const item = brand.sections.find(s=>s.id==="mocktail-lounge")!.items[0]!;
 const first = () => addLaunchPick([], brand.id, item.id, {}, 1);
 const change = (qty: number) => setLaunchPickQuantity(first(), first()[0]!.key, qty);
 
-describe("MealDeck five-minute browser basket expiration", () => {
-  test("expires at exactly five minutes, including while the site was closed", () => {
+describe("MealDeck 20-minute individual browser basket expiration", () => {
+  test("expires at exactly 20 minutes, including while the site was closed", () => {
     const initial = updateTimedLaunchBasket(emptyTimedLaunchBasket(), first(), start);
     const raw = encodeTimedLaunchBasket(initial);
     expect(decodeTimedLaunchBasket(raw, start+LAUNCH_BASKET_TTL_MS-1).picks).toHaveLength(1);
