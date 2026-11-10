@@ -1,8 +1,10 @@
 import { z } from "zod";
+import { mealDeckDeliveryPolicy } from "./mealdeck-delivery-pricing-policy";
 
 /** Luton own-driver launch rules. Distances use postcode centroids, not road routes. */
 export const OWN_DRIVER_BASE_POSTCODE = "LU4 8NU";
 export const OWN_DRIVER_RADIUS_METRES = 4_000;
+/** Historical November free-delivery minimum; dynamic policy takes over in December. */
 export const OWN_DRIVER_MINIMUM_PENCE = 1_500;
 export const OWN_DRIVER_MAX_MINUTES = 60;
 
@@ -48,10 +50,14 @@ export function parseOwnDriverAddress(value: unknown): OwnDriverAddress | null {
   return { postcode, doorNumber, roadName, addressLine2 };
 }
 
-/** Server-calculated amount AFTER all promotions, never the menu subtotal. */
-export function ownDriverShortfallPence(payablePence: number): number | null {
-  if (!Number.isSafeInteger(payablePence) || payablePence < 0) return null;
-  return Math.max(0, OWN_DRIVER_MINIMUM_PENCE - payablePence);
+/** Server-calculated food amount AFTER all promotions, never including courier fees. */
+export function ownDriverShortfallPence(
+  payablePence: number,
+  fulfilmentAtIso = new Date().toISOString(),
+): number | null {
+  const policy = mealDeckDeliveryPolicy(fulfilmentAtIso);
+  if (!policy || !Number.isSafeInteger(payablePence) || payablePence < 0) return null;
+  return Math.max(0, policy.minimumFoodPence - payablePence);
 }
 
 type Coordinates = { latitude: number; longitude: number };

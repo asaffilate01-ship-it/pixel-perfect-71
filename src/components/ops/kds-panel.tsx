@@ -40,6 +40,7 @@ import { KdsMealComponents } from "./kds-meal-components";
 import { KdsTicketGrid } from "./kds-ticket-grid";
 import { KdsOrderNavigator } from "./kds-order-navigator";
 import { OpsDriverDispatchPanel } from "./driver-dispatch-panel";
+import { OpsCourierSwitchboardPanel } from "./courier-switchboard-panel";
 import {
   kdsFlavourHighlight,
   kdsTavoChickenPreparation,
@@ -516,6 +517,13 @@ function ScopedKitchenBoard({ tenantId, locationId, can, mobileNavigation = fals
           tenantId={tenantId}
           locationId={locationId}
           canEnrol={can("staff.manage")}
+        />
+      )}
+      {board?.readiness === "ready" && can("orders.status") && (
+        <OpsCourierSwitchboardPanel
+          tenantId={tenantId}
+          locationId={locationId}
+          canManage={can("staff.manage")}
         />
       )}
       <StaffSoundUnlock alerts={alerts} />

@@ -2,6 +2,40 @@ import { CustomerAccountError, isWebPushPublicKey } from "./mealdeck-customer";
 import { customerRpc } from "./mealdeck-customer-browser";
 
 export type CustomerDeviceNotifications = "unsupported" | "blocked" | "off" | "connected";
+export type CustomerPushStage = "permission" | "worker" | "subscription" | "saving" | "verifying";
+
+export class CustomerPushTimeoutError extends CustomerAccountError {
+  constructor(stage: string) {
+    super("unavailable", stage + " is taking too long. Check your browser permission or internet connection, then retry.");
+    this.name = "CustomerPushTimeoutError";
+  }
+}
+
+/** A stalled browser prompt, PushManager or network call must not leave the UI spinning forever.
+ * The browser may finish an in-flight request later; a retry reuses the same subscription
+ * rather than creating a second send or changing customer marketing choices.
+ */
+export async function withCustomerPushDeadline<T>(
+  action: Promise<T>,
+  stage: string,
+  milliseconds = 15_000,
+): Promise<T> {
+  if (!Number.isSafeInteger(milliseconds) || milliseconds < 1) throw new Error("Invalid push deadline");
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      action,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new CustomerPushTimeoutError(stage)),
+          milliseconds,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
 
 export function supportsCustomerPush(): boolean {
   return (
@@ -14,8 +48,12 @@ export function supportsCustomerPush(): boolean {
 }
 
 async function registration(): Promise<ServiceWorkerRegistration> {
-  const worker = await navigator.serviceWorker.getRegistration("/");
-  if (worker?.active) return worker;
+  const worker = await withCustomerPushDeadline(
+    navigator.serviceWorker.getRegistration("/"),
+    "Finding the MealDeck customer app",
+    8_000,
+  );
+  if (worker?.active && new URL(worker.scope).pathname === "/") return worker;
   // The PWA provider registers /sw.js after hydration. First-use customers
   // can click Allow while it is installing; wait briefly for activation.
   return new Promise<ServiceWorkerRegistration>((resolve, reject) => {
@@ -49,17 +87,33 @@ async function registration(): Promise<ServiceWorkerRegistration> {
 export async function readCustomerDeviceNotifications(): Promise<CustomerDeviceNotifications> {
   if (!supportsCustomerPush()) return "unsupported";
   if (Notification.permission === "denied") return "blocked";
-  const worker = await navigator.serviceWorker.getRegistration("/");
-  const subscription = await worker?.pushManager.getSubscription();
+  // First-time visitors have no permission or endpoint. Do not wait for a
+  // browser service worker or network call just to enable the Allow button.
+  if (Notification.permission !== "granted") return "off";
+  const worker = await withCustomerPushDeadline(
+    navigator.serviceWorker.getRegistration("/"),
+    "Checking the MealDeck app",
+    8_000,
+  );
+  const subscription = worker
+    ? await withCustomerPushDeadline(worker.pushManager.getSubscription(), "Checking device alerts", 8_000)
+    : null;
   if (!subscription || Notification.permission !== "granted") return "off";
-  const result = await customerRpc<{ connected: boolean }>("mealdeck_customer_has_push", {
-    p_endpoint: subscription.endpoint,
-  });
+  const result = await withCustomerPushDeadline(
+    customerRpc<{ connected: boolean }>("mealdeck_customer_has_push", {
+      p_endpoint: subscription.endpoint,
+    }),
+    "Checking your saved notification device",
+    8_000,
+  );
   return result?.connected === true ? "connected" : "off";
 }
 
 /** Call directly from a customer's click, after they save their separate choices. */
-export async function enableCustomerDeviceNotifications(publicKey: string): Promise<void> {
+export async function enableCustomerDeviceNotifications(
+  publicKey: string,
+  onStage?: (stage: CustomerPushStage) => void,
+): Promise<void> {
   if (!isWebPushPublicKey(publicKey))
     throw new CustomerAccountError("unconfigured", "App notifications are coming soon.");
   if (!supportsCustomerPush())
@@ -72,18 +126,31 @@ export async function enableCustomerDeviceNotifications(publicKey: string): Prom
       "unavailable",
       "Notifications are blocked in your browser settings. You can change that permission there.",
     );
+  onStage?.("permission");
+  // Request permission while still in the original user-click activation.
   const permission =
-    Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    Notification.permission === "granted"
+      ? "granted"
+      : await withCustomerPushDeadline(
+          Notification.requestPermission(),
+          "Browser notification permission",
+          20_000,
+        );
   if (permission !== "granted")
     throw new CustomerAccountError(
       "unavailable",
       "Notifications remain off. You can enable them later from your account.",
     );
+  onStage?.("worker");
   const worker = await registration();
   const bytes = Uint8Array.from(atob(publicKey.replace(/-/g, "+").replace(/_/g, "/") + "="), (c) =>
     c.charCodeAt(0),
   );
-  let subscription = await worker.pushManager.getSubscription();
+  onStage?.("subscription");
+  let subscription = await withCustomerPushDeadline(
+    worker.pushManager.getSubscription(),
+    "Checking your phone's existing notification connection",
+  );
   if (subscription?.options.applicationServerKey) {
     const existing = new Uint8Array(subscription.options.applicationServerKey);
     if (
@@ -95,10 +162,14 @@ export async function enableCustomerDeviceNotifications(publicKey: string): Prom
     }
   }
   const created = !subscription;
-  subscription ??= await worker.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: bytes,
-  });
+  subscription ??= await withCustomerPushDeadline(
+    worker.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: bytes,
+    }),
+    "Connecting your phone to push notifications",
+    20_000,
+  );
   const keys = subscription.toJSON().keys;
   try {
     if (!keys?.["p256dh"] || !keys["auth"])
@@ -106,19 +177,28 @@ export async function enableCustomerDeviceNotifications(publicKey: string): Prom
         "unavailable",
         "Your browser could not create a notification connection. Please try again.",
       );
-    const result = await customerRpc<{ saved: boolean }>("mealdeck_customer_save_push", {
-      p_endpoint: subscription.endpoint,
-      p_p256dh: keys["p256dh"],
-      p_auth: keys["auth"],
-    });
+    onStage?.("saving");
+    const result = await withCustomerPushDeadline(
+      customerRpc<{ saved: boolean }>("mealdeck_customer_save_push", {
+        p_endpoint: subscription.endpoint,
+        p_p256dh: keys["p256dh"],
+        p_auth: keys["auth"],
+      }),
+      "Saving your device's notification connection",
+    );
     if (result?.saved !== true)
       throw new CustomerAccountError(
         "unavailable",
         "Your notification choice could not be saved. Please try again.",
       );
+    onStage?.("verifying");
   } catch (error) {
-    // Never call the browser permission alone a successful server subscription.
-    if (created) await subscription.unsubscribe().catch(() => false);
+    // A timed-out server write is uncertain: it may still have succeeded.
+    // Preserve the endpoint for an idempotent retry/reconciliation rather than
+    // unregistering a device that the server has already saved.
+    if (created && !(error instanceof CustomerPushTimeoutError)) {
+      await subscription.unsubscribe().catch(() => false);
+    }
     throw error;
   }
 }

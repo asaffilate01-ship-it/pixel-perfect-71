@@ -27,6 +27,9 @@ try {
   await db.exec(readFileSync(
     new URL("../../deploy/mealdeck/post-install-migrations/20261109234500_mealdeck_driver_verified_email_lookup.sql",import.meta.url),"utf8"
   ));
+  await db.exec(readFileSync(
+    new URL("../../deploy/mealdeck/post-install-migrations/20261109235500_mealdeck_courier_switchboard.sql",import.meta.url),"utf8"
+  ));
   await setGuestFixtureClock(db, "2026-11-06T16:00:00Z");
   const token = guestTokenHash("isolated-own-driver-guest-one");
   const stranger = guestTokenHash("isolated-own-driver-guest-two");
@@ -390,6 +393,34 @@ try {
       );
     },
   );
+  await check("courier switches default only own fleet on and require manager permission",async()=>{
+    const board=await f.staff("mealdeck_ops_courier_switchboard",[f.tenantId,f.locationId]);
+    assert.equal(board.automatedDispatchReady,false);
+    assert.deepEqual(board.providers.map((p)=>[p.provider,p.enabled]),[
+      ["own_fleet",true],["uber_direct",false],["deliveroo_express",false],
+      ["just_eat_go",false],["stuart",false],
+    ]);
+    assert.equal(await scalar("select has_function_privilege('anon',$1,'EXECUTE')",[
+      "public.mealdeck_ops_courier_set_enabled(uuid,uuid,text,boolean)"
+    ]),false);
+    await assert.rejects(()=>asActor(db,f.customer,()=>scalar(
+      "select public.mealdeck_ops_courier_set_enabled($1,$2,$3,$4)",
+      [f.tenantId,f.locationId,"stuart",true],
+    )),/forbidden|permission|scope/i);
+    const change=(provider,enabled)=>asActor(db,f.owner,()=>scalar(
+      "select public.mealdeck_ops_courier_set_enabled($1,$2,$3,$4)",
+      [f.tenantId,f.locationId,provider,enabled],
+    ));
+    const switched=await change("stuart",true);
+    assert.equal(switched.providers.find(x=>x.provider==="stuart").enabled,true);
+    assert.equal(switched.providers.find(x=>x.provider==="stuart").connected,false);
+    const disabled=await change("own_fleet",false);
+    assert.equal(disabled.providers.find(x=>x.provider==="own_fleet").enabled,false);
+    assert.equal(await scalar("select mealdeck_private.courier_provider_enabled($1,$2,'own_fleet')",[
+      f.tenantId,f.locationId,
+    ]),false);
+    await assert.rejects(()=>change("other",true),/invalid_switch/);
+  });
   console.log(`Verified ${passed} complete own-driver delivery behavior groups.`);
 } catch (error) {
   console.error("Own-driver delivery verification failed:", error.message, error.where ?? "");
