@@ -86,13 +86,13 @@ export function OwnDriverOfferBanner() {
             <Gift size={18} className="md-member-banner-icon" aria-hidden="true" />
             <p>
               <strong>{entry?.emailRegistrationDeferred ? "Member registration opens today at 1pm." : "Join MealDeck for member-only offers and loyalty benefits."}</strong>{" "}
-              <span>Verify your email, add your phone number, install the app and enable optional order alerts.{available ? " Free delivery within 4 km of LU4 8NU for orders £15+ after discounts." : ""}</span>
+              <span>Verify your email, add your phone number, install the app and enable optional order alerts. Free direct delivery within 4 km of LU4 8NU on £15+ after discounts, subject to checkout availability.</span>
             </p>
           </div>
           <nav className="md-member-banner-actions" aria-label="Membership links">
             <Link to="/account">{entry?.emailRegistrationDeferred ? "Explore membership" : "Register"}</Link>
             <Link to="/account"><Smartphone size={15} aria-hidden="true" /> Install app</Link>
-            {available && <Link to="/delivery-terms">Delivery terms</Link>}
+            <Link to="/delivery-terms">Delivery terms</Link>
           </nav>
         </div>
       </section>
