@@ -69,7 +69,9 @@ describe("MealDeck verified push and staff campaigns", () => {
     expect(backend).toContain("mealdeck_push_mfa_required");
     expect(backend).toContain("mealdeck_push_campaign_forbidden");
     expect(backend).toContain("mealdeck_push_campaign_expired");
-    expect(panel).toContain("no opted-in phone is subscribed");
+    expect(panel).toContain("No saved draft has opted-in devices.");
+    expect(panel).toContain("refreshing a saved draft");
+    expect(panel).toContain("No opted-in devices for this draft");
     expect(panel).toContain("15-minute approval window");
   });
 });

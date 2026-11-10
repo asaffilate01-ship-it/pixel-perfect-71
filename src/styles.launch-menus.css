@@ -1307,7 +1307,7 @@ h2.lm-basket-title-brand {
     position: fixed;
     left: 16px;
     right: 16px;
-    bottom: calc(16px + env(safe-area-inset-bottom));
+    bottom: calc(16px + var(--md-mobile-safe-bottom));
     z-index: 70;
     border: 1px solid #ffffff22;
     border-radius: 13px;
@@ -1340,7 +1340,7 @@ h2.lm-basket-title-brand {
     padding: 5px;
   }
   .lm-shell:has(.lm-mobile-picks) {
-    padding-bottom: 100px;
+    padding-bottom: calc(100px + var(--md-mobile-safe-bottom));
   }
 }
 @media (max-width: 560px) {

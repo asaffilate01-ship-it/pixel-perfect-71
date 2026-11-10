@@ -6,7 +6,7 @@
 .md-driver-header-inner strong{font-family:Outfit,system-ui,sans-serif;font-size:1.15rem}
 .md-driver-header-inner span{color:#e2ded3;font-size:.79rem}
 .md-driver-header-action{display:flex;align-items:center;gap:8px;border:1px solid #aaa8;color:#fff;border-radius:12px;padding:11px 12px;font-weight:700}
-.md-driver-main{max-width:1000px;margin:auto;padding:30px 20px 72px}
+.md-driver-main{max-width:1000px;margin:auto;padding:30px 20px calc(72px + var(--md-mobile-safe-bottom))}
 .md-driver-eyebrow{font-weight:900;font-size:.72rem;color:#ac1820;letter-spacing:.12em}
 .md-driver-intro h1{font-family:Outfit,system-ui,sans-serif;font-size:clamp(1.8rem,5vw,3rem);font-weight:900;letter-spacing:-.04em;line-height:1.12;margin:8px 0 8px}
 .md-driver-intro>p:last-child{color:#61574e;margin-bottom:24px}
@@ -57,6 +57,6 @@
 .md-driver-signin input{border:1px solid #c9b7a3;background:#fff;border-radius:12px;padding:13px 12px;min-height:46px;width:100%}
 .md-driver-install{max-width:520px;margin-top:40px}
 .md-driver-footer{display:flex;align-items:center;gap:8px;color:#76685c;margin-top:30px;font-size:.8rem;max-width:540px}
-@media(max-width:750px){.md-driver-main{padding:22px 14px 96px}.md-driver-header-inner{padding:10px 14px;min-height:64px}.md-driver-dashboard,.md-driver-jobs{grid-template-columns:1fr}.md-driver-panel{padding:18px}.md-driver-jobs-heading{align-items:flex-start}.md-driver-jobs-heading button{flex-shrink:0}.md-driver-header-action{font-size:.75rem;padding:9px}.md-driver-header-inner span{font-size:.72rem}}
+@media(max-width:750px){.md-driver-main{padding:22px 14px calc(96px + var(--md-mobile-safe-bottom))}.md-driver-header-inner{padding:10px 14px;min-height:64px}.md-driver-dashboard,.md-driver-jobs{grid-template-columns:1fr}.md-driver-panel{padding:18px}.md-driver-jobs-heading{align-items:flex-start}.md-driver-jobs-heading button{flex-shrink:0}.md-driver-header-action{font-size:.75rem;padding:9px}.md-driver-header-inner span{font-size:.72rem}}
 @media(max-width:380px){.md-driver-jobs-heading{flex-direction:column}.md-driver-header-inner{gap:7px}.md-driver-header-action svg{display:none}}
 @media(prefers-reduced-motion:reduce){.md-driver-root *{transition:none!important}}

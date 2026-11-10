@@ -63,7 +63,7 @@ jobs:
           deploy/mealdeck/included-drink-stock.mjs tests/postgres/included-drink-stock-behavior.mjs
           --rule 'prettier/prettier: off'
       - name: Installable app cache isolation and offline behavior
-        run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
+        run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts tests/mealdeck-mobile-safe-area.test.ts
       - name: MealDeck own-driver PWA state and privacy contract
         run: bun test tests/mealdeck-driver-app-view.test.ts tests/mealdeck-driver-app-contract.test.ts
       - name: Driver UI contract and dispatch implementation lint
@@ -77,7 +77,7 @@ jobs:
           node --check public/sw.js
           node --check public/kds-sw.js
           node --check public/printer-sw.js
-          bunx eslint src/components/pwa-provider.tsx src/components/pwa-install-card.tsx src/lib/mealdeck-pwa-context.ts tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts
+          bunx eslint src/components/pwa-provider.tsx src/components/pwa-install-card.tsx src/lib/mealdeck-pwa-context.ts tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts tests/mealdeck-mobile-safe-area.test.ts
       - name: Verified customer checkout, packing, receipt printing and distinct staff alerts
         run: >-
           bun test tests/mealdeck-order-number.test.ts tests/mealdeck-order-notes.test.ts tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
