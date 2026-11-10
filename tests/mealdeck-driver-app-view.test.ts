@@ -32,7 +32,12 @@ describe("MealDeck driver application",()=>{
     expect(driverDirectionsUrl(base)).toBeNull();
     expect(driverDirectionsUrl({...base,address:addr})).toBeNull();
     const url=driverDirectionsUrl({...base,status:"assigned",address:addr});
-    expect(url).toContain("google.com/maps/search");
-    expect(url).toContain("Example%20Road");
+    expect(url).toContain("google.com/maps/dir/");
+    expect(url).toContain("destination=12%2C%20Example%20Road%2C%20LU4%208NU%2C%20UK");
+    expect(url).toContain("travelmode=driving");
+    expect(url).toContain("dir_action=navigate");
+    expect(url).not.toContain("origin=");
+    expect(url).not.toContain("token=");
+    expect(driverDirectionsUrl({...base,status:"declined",address:addr})).toBeNull();
   });
 });
