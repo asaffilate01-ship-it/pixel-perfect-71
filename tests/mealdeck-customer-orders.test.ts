@@ -65,6 +65,51 @@ describe("private customer order summaries", () => {
     ).toBeNull();
     expect(parseCustomerOrders({ orders: [{ ...order, fulfilment: "dine_in" }] })).toBeNull();
   });
+  test("only paid private delivery orders show safe staff-verified driver handoff", () => {
+    const delivery = { ...order, fulfilment: "delivery", readyForCollectionAt: order.createdAt };
+    for (const [status, label] of [
+      ["awaiting_driver", "Packed · awaiting driver"],
+      ["with_driver", "With your driver"],
+      ["delivered", "Delivery confirmation pending"],
+    ] as const) {
+      const parsed = parseCustomerOrders({
+        orders: [{ ...delivery, localDriverStatus: status, latitude: 51.88, route: "private" }],
+      });
+      expect(parsed).not.toBeNull();
+      expect(customerOrderStatus(parsed![0]!)).toBe(label);
+      expect(parsed![0]).not.toHaveProperty("latitude");
+      expect(parsed![0]).not.toHaveProperty("route");
+    }
+    const done = parseCustomerOrders({
+      orders: [{ ...delivery, localDriverStatus: "delivered", completedAt: order.createdAt }],
+    })![0]!;
+    expect(customerOrderStatus(done)).toBe("Delivered");
+    expect(customerOrderStatus({ ...done, held: true })).toBe("Needs team review");
+    expect(customerOrderStatus({ ...done, verifiedPaid: false })).toBe("Awaiting payment");
+    // A driver status alone never asserts collection without the canonical pass.
+    expect(customerOrderStatus({ ...done, completedAt: null, readyForCollectionAt: null })).not.toBe(
+      "With your driver",
+    );
+  });
+  test("rejects fake driver progress on collection, pending, held and malformed orders", () => {
+    for (const value of [
+      { ...order, localDriverStatus: "with_driver" },
+      { ...order, fulfilment: "delivery", localDriverStatus: "driver_on_map" },
+      { ...order, fulfilment: "delivery", localDriverStatus: 1 },
+      { ...order, fulfilment: "delivery", localDriverStatus: "with_driver", held: true },
+      {
+        ...order,
+        fulfilment: "delivery",
+        localDriverStatus: "with_driver",
+        verifiedPaid: false,
+        paidAt: null,
+        handoffCode: null,
+      },
+    ])
+      expect(parseCustomerOrders({ orders: [value] })).toBeNull();
+    expect(parseCustomerOrders({ orders: [{ ...order, localDriverStatus: null }] })?.[0]?.localDriverStatus)
+      .toBeNull();
+  });
   test("shows verified progress and gives payment holds precedence over stale readiness", () => {
     const base = parseCustomerOrders({ orders: [order] })![0]!;
     expect(customerOrderStatus(base)).toBe("Order placed");
