@@ -562,12 +562,24 @@ function CustomerSettings({
   );
   useEffect(() => {
     let active = true;
-    void readCustomerDeviceNotifications()
+    // Checking an old browser subscription must not leave the Enable button
+    // disabled forever. A first-time visitor returns "off" immediately.
+    void withCustomerPushDeadline(
+      readCustomerDeviceNotifications(),
+      "Checking this device's notification status",
+      9_000,
+    )
       .then((value) => {
-        if (active) setDevice(value);
+        if (active) { setDevice(value); setDeviceIssue(""); }
       })
-      .catch(() => {
-        if (active) setDevice("off");
+      .catch((reason) => {
+        if (!active) return;
+        setDevice("off");
+        setDeviceIssue(
+          reason instanceof Error
+            ? reason.message
+            : "Could not check this device. You can try enabling notifications again.",
+        );
       })
       .finally(() => {
         if (active) setDeviceLoading(false);
@@ -747,13 +759,25 @@ function CustomerSettings({
                 busy ||
                 deviceLoading ||
                 device === "blocked" ||
-                device === "unsupported" ||
-                preferencesChanged ||
-                (!profile.preferences.pushMarketing && !profile.preferences.orderNotifications)
+                device === "unsupported"
               }
-              onClick={() => void changeDevice(true)}
+              onClick={() => {
+                if (preferencesChanged ||
+                  (!profile.preferences.pushMarketing && !profile.preferences.orderNotifications)) {
+                  setDeviceIssue(
+                    "Choose Order status notifications or App offers, then tap Save notification choices first. " +
+                    "Return here to allow this device.",
+                  );
+                  document.getElementById("notification-preferences")?.scrollIntoView({
+                    behavior: "smooth", block: "start",
+                  });
+                  return;
+                }
+                void changeDevice(true);
+              }}
             >
-              <Bell size={18} aria-hidden="true" /> Allow notifications
+              <Bell size={18} aria-hidden="true" />
+              {deviceLoading ? "Checking this device…" : "Enable notifications on this phone"}
             </button>
             {(preferencesChanged ||
               (!profile.preferences.pushMarketing && !profile.preferences.orderNotifications)) && (
