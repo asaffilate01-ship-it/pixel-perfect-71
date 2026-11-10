@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CarFront, Gift, MapPin, ShoppingBag } from "lucide-react";
+import { ArrowRight, Bike, CarFront, Gift, MapPin, ShoppingBag } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { seo } from "@/lib/seo";
 import "@/styles.mealdeck-offers.css";
 
@@ -18,7 +17,6 @@ export const Route = createFileRoute("/offers")({
 });
 
 function OffersPage() {
-  const deliveryAvailable = useOwnDriverAvailability();
   return (
     <div className="md-marketing-shell">
       <SiteHeader />
@@ -73,11 +71,10 @@ function OffersPage() {
               <div className="md-offers-fulfilments">
                 <span><ShoppingBag size={17} aria-hidden="true" /> Collection</span>
                 <span><CarFront size={19} aria-hidden="true" /> Kerbside</span>
+                <span><Bike size={18} aria-hidden="true" /> Local delivery</span>
               </div>
               <p className="md-offers-detail-small">
-                {deliveryAvailable
-                  ? "Free own-driver delivery may be available within 4 km of LU4 8NU for orders of £15 or more after discounts."
-                  : "Delivery may be unavailable at present."}
+                Free direct delivery is offered within 4 km of LU4 8NU for orders of £15 or more after discounts.
                 {" "}Kitchen opening, menu availability and eligible fulfilment are confirmed at checkout.
                 See the{" "}
                 <Link to="/delivery-terms" className="md-offers-text-link">

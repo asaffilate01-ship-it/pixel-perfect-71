@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Truck, Gift, Smartphone } from "lucide-react";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
@@ -71,6 +71,38 @@ export function useOwnDriverSundayServiceNotice() {
   return sundayHours;
 }
 
+/** Shared responsive two-column banner for delivery notices and aligned menu CTAs. */
+export function OfferBannerLayout({
+  label,
+  icon,
+  title,
+  details,
+  actions,
+}: {
+  label: string;
+  icon: ReactNode;
+  title: ReactNode;
+  details: ReactNode;
+  actions: ReactNode;
+}) {
+  return (
+    <section className="md-own-driver-offer" role="status" aria-label={label}>
+      <div className="md-own-driver-offer-inner">
+        <div className="md-own-driver-offer-message">
+          <span className="md-own-driver-offer-icon">{icon}</span>
+          <div className="md-own-driver-offer-copy">
+            <strong>{title}</strong>
+            <span>{details}</span>
+          </div>
+        </div>
+        <nav className="md-own-driver-offer-actions" aria-label="Delivery information and ordering links">
+          {actions}
+        </nav>
+      </div>
+    </section>
+  );
+}
+
 export function OwnDriverOfferBanner() {
   const available = useOwnDriverAvailability();
   const preopen = useOwnDriverPreopenNotice();
@@ -86,13 +118,13 @@ export function OwnDriverOfferBanner() {
             <Gift size={18} className="md-member-banner-icon" aria-hidden="true" />
             <p>
               <strong>{entry?.emailRegistrationDeferred ? "Member registration opens today at 1pm." : "Join MealDeck for member-only offers and loyalty benefits."}</strong>{" "}
-              <span>Verify your email, add your phone number, install the app and enable optional order alerts.{available ? " Free delivery within 4 km of LU4 8NU for orders £15+ after discounts." : ""}</span>
+              <span>Verify your email, add your phone number, install the app and enable optional order alerts. Free direct delivery within 4 km of LU4 8NU on £15+ after discounts, subject to checkout availability.</span>
             </p>
           </div>
           <nav className="md-member-banner-actions" aria-label="Membership links">
             <Link to="/account">{entry?.emailRegistrationDeferred ? "Explore membership" : "Register"}</Link>
             <Link to="/account"><Smartphone size={15} aria-hidden="true" /> Install app</Link>
-            {available && <Link to="/delivery-terms">Delivery terms</Link>}
+            <Link to="/delivery-terms">Delivery terms</Link>
           </nav>
         </div>
       </section>
@@ -100,40 +132,30 @@ export function OwnDriverOfferBanner() {
   }
   if (!available && !preopen) return null;
   return (
-    <div
-      className="md-own-driver-offer flex flex-wrap items-center justify-center gap-2 bg-amber-300 px-4 py-3 text-center text-sm text-zinc-950 sm:gap-4"
-      role="status"
-      aria-label={available ? "Luton free delivery offer" : "Luton delivery launch announcement"}
-    >
-      <Truck size={18} aria-hidden="true" />
-      <span>
-        {available ? (
-          <>
-            <strong>
-              {sundayHours
-                ? "Due to popular demand: FREE delivery from 3pm to 11pm today!"
-                : "Due to popular demand: FREE delivery is now available!"}
-            </strong>{" "}
-            {sundayHours
-              ? "Available during Sunday's opening hours, 3pm–11pm, for Luton collection, kerbside pickup and delivery."
-              : "Order for delivery, collection or kerbside pickup during Luton opening hours."}{" "}
-            Free delivery within 4 km of LU4 8NU on orders paying £15+ after discounts.
-          </>
-        ) : (
-          <>
-            <strong>Due to popular demand: FREE delivery from 3pm to 11pm today!</strong>{" "}
-            Luton collection and kerbside pickup are also available during Sunday's opening hours.
-            Free delivery within 4 km of LU4 8NU on orders paying £15+ after discounts.
-          </>
-        )}
-        {" "}
-        <Link to="/delivery-terms" className="font-bold underline underline-offset-4">
-          Delivery T&amp;Cs apply
-        </Link>
-      </span>
-      <Link to="/menus" className="font-bold underline underline-offset-4">
-        {available ? "Order delivery" : "Explore menus"}
-      </Link>
-    </div>
+    <OfferBannerLayout
+      label={available ? "Luton free delivery offer" : "Luton delivery launch announcement"}
+      icon={<Truck size={18} aria-hidden="true" />}
+      title={
+        available
+          ? sundayHours
+            ? "Due to popular demand: FREE delivery from 3pm to 11pm today!"
+            : "Due to popular demand: FREE delivery is now available!"
+          : "Due to popular demand: FREE delivery from 3pm to 11pm today!"
+      }
+      details={
+        "Within 4 km of LU4 8NU on orders paying £15+ after discounts. " +
+        "Current kitchen and driver availability is always confirmed at checkout."
+      }
+      actions={
+        <>
+          <Link to="/delivery-terms" className="md-own-driver-offer-link">
+            Delivery T&amp;Cs apply
+          </Link>
+          <Link to="/menus" className="md-own-driver-offer-link">
+            {available ? "Order delivery" : "Explore menus"}
+          </Link>
+        </>
+      }
+    />
   );
 }

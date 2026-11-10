@@ -27,7 +27,7 @@ import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import { OfferDiscovery } from "@/components/marketing/offer-discovery";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
-import { useOwnDriverAvailability, useOwnDriverPreopenNotice } from "@/components/own-driver-offer-banner";
+import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { suitArtwork } from "@/lib/food-suit-artwork";
 import { ldScript, orgJsonLd, seo, SITE_DESCRIPTION } from "@/lib/seo";
@@ -79,7 +79,7 @@ const steps = [
   {
     n: "01",
     title: "Choose your order method",
-    copy: "Collect at our Luton kitchen, choose kerbside, or check free local delivery when enabled.",
+    copy: "Choose delivery within our eligible 4 km Luton area, collection or kerbside. Checkout confirms availability.",
   },
   { n: "02", title: "Mix your cuisines", copy: "Build one basket from different MealDeck brands." },
   {
@@ -97,7 +97,6 @@ const steps = [
 function LandingPage() {
   const entryPolicy = useCustomerEntryPolicy();
   const deliveryLive = useOwnDriverAvailability();
-  const deliveryPreopen = useOwnDriverPreopenNotice();
   const groupOrderingOpen =
     !!entryPolicy &&
     Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
@@ -110,10 +109,7 @@ function LandingPage() {
           <div className="md-hero-inner">
             <div className="md-hero-copy">
               <p className="md-kicker">
-                MealDeck · Luton{" "}
-                {deliveryLive
-                  ? "free local delivery, collection & kerbside"
-                  : "collection & kerbside"}
+                MealDeck · Luton delivery, collection &amp; kerbside
               </p>
               <h1>
                 Food in Luton.
@@ -123,8 +119,7 @@ function LandingPage() {
               <p className="md-hero-lead">
                 Skorch smash burgers, Tavo chicken wings and tenders, Souvano Greek and Turkish
                 food, Load’d loaded fries and mac and cheese, and Moktl mocktails. Five menus, one
-                basket for{" "}
-                {deliveryLive ? "free delivery, collection or kerbside" : "collection or kerbside"}.
+                basket for eligible local delivery, collection or kerbside.
               </p>
               <p className="md-hero-foods">
                 Smash burgers · Chicken wings · Loaded fries · Doner · Mocktails · Milk cake
@@ -134,16 +129,18 @@ function LandingPage() {
                 <Link to="/menus" className="md-btn md-btn-yellow">
                   Order from our menus <ArrowRight />
                 </Link>
-                <Link to="/" hash="brands" className="md-btn md-btn-outline-light">
-                  See all brands
-                </Link>
+                <a
+                  href="https://www.ubereats.com/gb/store/meal-deck-luton/IWmoPuRPWUW1kbGPDpKswg?diningMode=DELIVERY"
+                  className="md-btn md-btn-outline-light"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Order MealDeck Luton on Uber Eats (opens in a new tab)"
+                >
+                  Also on Uber Eats
+                </a>
               </div>
               <p className="md-hero-soon">
-                {deliveryLive
-                  ? "Due to popular demand: FREE delivery now available within 4 km of LU4 8NU on orders paying £15+ after discounts."
-                  : deliveryPreopen
-                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 4 km of LU4 8NU on orders paying £15+ after discounts."
-                    : "Luton collection and kerbside, from our kitchen to you."}
+                Free direct delivery within 4 km of LU4 8NU on £15+ after discounts. Enter your postcode at checkout to check live availability.
               </p>
               <div className="md-hero-proof">
                 <span>
@@ -170,9 +167,7 @@ function LandingPage() {
             <span>ORDER DIRECT.</span>
             <strong>
               Five menus. One order.{" "}
-              {deliveryLive
-                ? "Free Luton local delivery, collection and kerbside."
-                : "Luton collection and kerbside."}
+              Free Luton local delivery (4 km, £15+), collection and kerbside.
             </strong>
           </div>
           <div className="md-direct-grid">
@@ -195,11 +190,8 @@ function LandingPage() {
               <h2>Your first five menus are here.</h2>
               <p>
                 Find your Luton takeaway favourites, from beef smash burgers and chicken wings to
-                loaded fries, doner and mocktails. Mix your picks and order for{" "}
-                {deliveryLive
-                  ? "free local delivery, collection or kerbside"
-                  : "collection or kerbside"}
-                .
+                loaded fries, doner and mocktails. Mix your picks for eligible free local delivery,
+                collection or kerbside. Checkout confirms availability.
               </p>
             </div>
             <Link to="/menus" className="md-btn md-btn-red">
@@ -297,24 +289,18 @@ function LandingPage() {
           <div className="md-section-heading md-section-heading-light">
             <p className="md-kicker">
               MealDeck ordering ·{" "}
-              {deliveryLive ? "Delivery, collection & kerbside" : "Collection & kerbside"}
+              Delivery, collection &amp; kerbside
             </p>
             <h2>
-              {deliveryLive
-                ? "Free delivery, collection or kerbside. Your choice."
-                : "Collection or kerbside. Your choice."}
+              Free delivery, collection or kerbside. Your choice.
             </h2>
           </div>
           <div className="md-fulfilment-grid">
             <article>
               <Bike />
-              <h3>{deliveryLive ? "Free local delivery · Live" : deliveryPreopen ? "Free delivery · 3pm–11pm today" : "Delivery · Coming soon"}</h3>
+              <h3>{deliveryLive ? "Free local delivery · Available now" : "Free local delivery · Check availability"}</h3>
               <p>
-                {deliveryLive
-                  ? "Due to popular demand: free own-driver delivery within 4 km of LU4 8NU for £15+ after discounts. Estimated within one hour, without GPS tracking."
-                  : deliveryPreopen
-                    ? "Due to popular demand: FREE delivery from 3pm to 11pm today! Within 4 km of LU4 8NU on orders paying at least £15 after discounts. Delivery T&Cs apply."
-                    : "Delivery is not available at the moment. Please select collection or kerbside."}
+                MealDeck offers free own-driver delivery within 4 km of LU4 8NU for £15+ after discounts. The kitchen and driver must be accepting deliveries at checkout. The order page shows progress; live driver GPS tracking is not yet available.
               </p>
             </article>
             <article>
@@ -361,19 +347,15 @@ function LandingPage() {
           <div className="md-collection-band">
             <div>
               <p className="md-kicker md-kicker-light">
-                {deliveryLive
-                  ? "Luton pickup / kerbside / free delivery"
-                  : "Luton pickup / kerbside"}
+                Luton free delivery / pickup / kerbside
               </p>
               <h3>314–318 Selbourne Road, Luton, LU4 8NU</h3>
               <p>
-                Order online during kitchen opening hours.{" "}
-                {deliveryLive &&
-                  "Free delivery is available to eligible postcodes within 4 km with £15 payable after discounts."}
+                Order online during kitchen opening hours. Free direct delivery within 4 km with £15 payable after discounts, subject to live availability at checkout.
               </p>
             </div>
             <Link to="/menus" className="md-btn md-btn-yellow">
-              {deliveryLive ? "Order for delivery" : "Order for collection"} <ArrowRight />
+              {deliveryLive ? "Order for delivery" : "Browse our menus"} <ArrowRight />
             </Link>
           </div>
         </section>

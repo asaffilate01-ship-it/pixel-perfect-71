@@ -39,18 +39,17 @@ function DeliveryTermsPage() {
           <h2>Minimum order and delivery fee</h2>
           <p>
             Delivery is free (£0 delivery charge) with a minimum payable order total of £15.00
-            <strong> after all discounts and offers</strong>. For example, when the 30% opening
-            discount applies, the total after that discount must still be at least £15.00.
-            If your final total is lower, add more items or choose collection or kerbside pickup,
-            which have no delivery minimum.
+            <strong> after all discounts and offers</strong>. This minimum is checked after any active discount, not against the original menu
+            subtotal. If your final total is lower, add more items or choose collection or
+            kerbside pickup, which have no delivery minimum.
           </p>
 
           <h2>Opening hours and availability</h2>
           <p>
-            On Sunday 8 November 2026, the Luton kitchen's opening hours are
-            <strong> 3pm–11pm UK time</strong>. Collection, kerbside pickup and eligible delivery
-            are offered during applicable opening hours only when the corresponding method is
-            available at checkout. Kitchen availability may change during service.
+            Check the current Luton weekly opening hours on our <Link to="/luton">location page</Link>.
+            Collection, kerbside pickup and eligible delivery are offered during applicable opening
+            hours only when the corresponding method is available at checkout. Kitchen and driver
+            availability may change during service.
           </p>
 
           <h2>Address and contact details</h2>

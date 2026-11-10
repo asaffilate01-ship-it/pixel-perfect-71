@@ -291,15 +291,19 @@ try {
     const fn="public.mealdeck_ops_driver_find_verified_email(uuid,uuid,text)";
     assert.equal(await scalar("select has_function_privilege('anon',$1,'EXECUTE')",[fn]),false);
     await db.query("update auth.users set email_confirmed_at=now() where id=$1",[f.customer]);
+    // The shared fixture creates the actual Auth email from the driver's UUID.
+    // Use that verified account; never assume a hard-coded unrelated mailbox.
+    const verifiedEmail = await scalar("select email from auth.users where id=$1",[f.customer]);
+    assert.match(verifiedEmail,/^fixture-[0-9a-f-]+@example[.]invalid$/);
     const lookup=(email)=>asActor(db,f.owner,()=>scalar(
       "select public.mealdeck_ops_driver_find_verified_email($1,$2,$3)",
       [f.tenantId,f.locationId,email]
     ));
-    assert.deepEqual(await lookup("fixture-109@example.invalid"),{found:true,userId:f.customer});
+    assert.deepEqual(await lookup(verifiedEmail.toUpperCase()),{found:true,userId:f.customer});
     assert.deepEqual(await lookup("not-a-driver@example.invalid"),{found:false,userId:null});
     await assert.rejects(()=>asActor(db,f.customer,()=>scalar(
       "select public.mealdeck_ops_driver_find_verified_email($1,$2,$3)",
-      [f.tenantId,f.locationId,"fixture-109@example.invalid"]
+      [f.tenantId,f.locationId,verifiedEmail]
     )),/mealdeck_ops_forbidden/);
     await assert.rejects(()=>lookup("not-an-email"),/mealdeck_driver_email_invalid/);
   });

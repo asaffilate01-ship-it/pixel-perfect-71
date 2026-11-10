@@ -1,8 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-const source = (path: string) =>
-  readFileSync(new URL("../" + path, import.meta.url), "utf8");
+const source = (path: string) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
 
 describe("Samsung / Android installed PWA bottom safe area", () => {
   test("all customer surfaces share a standalone fallback alongside the reported device inset", () => {
@@ -31,8 +30,12 @@ describe("Samsung / Android installed PWA bottom safe area", () => {
     const legacy = source("src/styles.launch-menus.css");
     expect(basket).toContain("bottom: calc(12px + var(--md-mobile-safe-bottom))");
     expect(basket).toContain("bottom: var(--md-mobile-safe-bottom)");
-    expect(basket).toContain("max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)) - var(--md-mobile-safe-bottom))");
-    expect(menu).toContain("max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)) - var(--md-mobile-safe-bottom))");
+    expect(basket).toContain(
+      "max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)) - var(--md-mobile-safe-bottom))",
+    );
+    expect(menu).toContain(
+      "max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)) - var(--md-mobile-safe-bottom))",
+    );
     expect(legacy).toContain("padding-bottom: calc(100px + var(--md-mobile-safe-bottom))");
   });
 
