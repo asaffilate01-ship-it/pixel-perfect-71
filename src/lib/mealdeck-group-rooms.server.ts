@@ -222,6 +222,10 @@ export function orderingRoomForBrowser(data: PaymentJson): GroupOrderRoom {
           person["picks"] !== undefined
             ? { picks: person["picks"] }
             : {}),
+          ...((owner || person["participantId"] === viewer["participantId"]) &&
+          person["choicesExpiresAt"] !== undefined
+            ? { choicesExpiresAt: person["choicesExpiresAt"] }
+            : {}),
         };
       })
     : [];

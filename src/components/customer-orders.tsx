@@ -62,7 +62,11 @@ export function CustomerOrders() {
         <ShoppingBag size={22} aria-hidden="true" />
         <h2 id="customer-orders-title">Your orders</h2>
       </div>
-      <p>Open an order to see its progress, numbered bags and full receipt.</p>
+      <p>
+        Open an order to see its progress, numbered bags and full receipt. Delivery progress
+        updates from the kitchen and driver handoff; live GPS maps and arrival times are not yet
+        available.
+      </p>
       {issue && (
         <p className="md-account-fine" role="status">
           We couldn’t refresh your orders just now.{" "}

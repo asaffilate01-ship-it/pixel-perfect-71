@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { asActor, createDatabase } from "./harness.mjs";
 import { paymentHash } from "./shared-terminal-payments-fixture.mjs";
 import { setupOrderingRoomsFixture, orderingRpcNames } from "./ordering-rooms-fixture.mjs";
@@ -846,6 +847,130 @@ try {
   });
 
   if (db.native) await orderingRoomConcurrencyTests(db, f, test);
+  // Install the dated group-room lifecycle before the additive per-person
+  // expiry migration. This is an isolated disposable test database only.
+  await db.exec(readFileSync(
+    new URL("../../deploy/mealdeck/post-install-migrations/20261109194000_mealdeck_group_room_lifecycle.sql", import.meta.url),
+    "utf8",
+  ));
+  await db.exec(readFileSync(
+    new URL("../../deploy/mealdeck/post-install-migrations/20261110113000_mealdeck_group_saved_choices_ttl.sql", import.meta.url),
+    "utf8",
+  ));
+
+  await test("server-owned five-minute expiry never modifies an unrelated joined person", async () => {
+    const room = await o.room({ inviteCount: 2 });
+    await o.accept(room, 1);
+    await o.accept(room, 2);
+    for (let i = 0; i < 3; i++) {
+      await o.choose(room, i, [o.pick(i + 1)]);
+      await o.ready(room, i);
+    }
+    const before = await o.status(room);
+    assert.equal(before.canFinalize, true);
+    const first = before.people[1];
+    const second = before.people[2];
+    assert.ok(first.choicesExpiresAt);
+    assert.ok(second.choicesExpiresAt);
+    assert.equal(before.people[0].choicesExpiresAt != null, true);
+    const stranger = await o.status(room, 2);
+    assert.equal(stranger.people[1].choicesExpiresAt, undefined);
+    const version = first.version;
+    await db.query(
+      "update mealdeck_private.ordering_participants set choices_saved_at=clock_timestamp()-interval '6 minutes' where id=$1",
+      [first.participantId],
+    );
+    const expired = await o.status(room);
+    assert.equal(expired.people[1].state, "joined");
+    assert.deepEqual(expired.people[1].picks, []);
+    assert.equal(expired.people[1].choicesExpiresAt, null);
+    assert.equal(expired.people[1].version, version + 1);
+    assert.deepEqual(expired.people[2].picks, second.picks);
+    assert.equal(expired.people[2].version, second.version);
+    assert.equal(expired.canFinalize, false);
+    assert.equal(expired.readyCount, before.readyCount - 1);
+    await assert.rejects(
+      () => o.rpc("mealdeck_update_ordering_choices", [
+        room.roomId, room.actors[1], version, JSON.stringify([o.pick()]),
+      ]),
+      /version_conflict/,
+    );
+    const recovered = await o.choose(room, 1, [o.pick()]);
+    assert.equal(o.ownPerson(recovered).state, "joined");
+    assert.ok(o.ownPerson(recovered).choicesExpiresAt);
+  });
+
+  await test("explicitly saving unchanged choices refreshes only that participant's deadline", async () => {
+    const room = await o.room();
+    await o.accept(room, 1);
+    await o.choose(room, 0, [o.pick(2)]);
+    await o.choose(room, 1, [o.pick()]);
+    const before = await o.status(room);
+    const participant = before.people[1];
+    const organiser = before.people[0];
+    await db.query(
+      "update mealdeck_private.ordering_participants set choices_saved_at=clock_timestamp()-interval '4 minutes' where id=$1",
+      [participant.participantId],
+    );
+    const refreshed = await o.choose(room, 1, [o.pick()]);
+    const own = o.ownPerson(refreshed);
+    assert.equal(own.version, participant.version + 1);
+    assert.ok(Date.parse(own.choicesExpiresAt) > Date.now() + 4 * 60_000);
+    assert.equal(refreshed.people[0].version, organiser.version);
+    assert.equal(refreshed.people[0].choicesExpiresAt, organiser.choicesExpiresAt);
+  });
+
+  await test("unattended worker expires only unfrozen choices; frozen group payments remain immutable", async () => {
+    const room = await o.readyRoom();
+    const actor = (await o.status(room)).people[1];
+    await db.query(
+      "update mealdeck_private.ordering_participants set choices_saved_at=clock_timestamp()-interval '6 minutes' where id=$1",
+      [actor.participantId],
+    );
+    const before = await o.status(room);
+    // A normal client read already triggers the same server-owned expiry.
+    assert.equal(before.people[1].picks.length, 0);
+    const unattended = await o.readyRoom();
+    const unattendedPerson = (await o.status(unattended)).people[1];
+    await db.query(
+      "update mealdeck_private.ordering_participants set choices_saved_at=clock_timestamp()-interval '6 minutes' where id=$1",
+      [unattendedPerson.participantId],
+    );
+    assert.equal(await scalar("select mealdeck_private.expire_unpaid_ordering_rooms()"), 0);
+    const after = await o.status(unattended);
+    assert.deepEqual(after.people[1].picks, []);
+    assert.equal(after.people[1].state, "joined");
+    const frozen = await o.readyRoom();
+    const frozenResult = await o.freeze(frozen);
+    assert.equal(frozenResult.snapshot.phase, "payment");
+    const frozenPerson = (await o.status(frozen)).people[1];
+    await db.query(
+      "update mealdeck_private.ordering_participants set choices_saved_at=clock_timestamp()-interval '6 minutes' where id=$1",
+      [frozenPerson.participantId],
+    );
+    const frozenBefore = await o.status(frozen);
+    await scalar("select mealdeck_private.expire_unpaid_ordering_rooms()");
+    const frozenAfter = await o.status(frozen);
+    assert.deepEqual(frozenAfter.people[1].picks, frozenBefore.people[1].picks);
+    assert.equal(frozenAfter.people[1].version, frozenBefore.people[1].version);
+    assert.equal(frozenAfter.orderId, frozenBefore.orderId);
+    assert.equal(frozenAfter.paymentRoomId, frozenBefore.paymentRoomId);
+    assert.equal(frozenAfter.phase, "payment");
+  });
+
+  await test("choice-expiry functions and private table retain deny-by-default grants", async () => {
+    assert.equal(
+      await scalar("select has_table_privilege('anon','mealdeck_private.ordering_participants','SELECT')"),
+      false,
+    );
+    for (const fn of [
+      "mealdeck_private.expire_ordering_saved_choices(uuid)",
+      "mealdeck_private.stamp_ordering_choices_saved_at()",
+    ]) {
+      for (const role of ["anon", "authenticated", "service_role"])
+        assert.equal(await scalar("select has_function_privilege($1,$2,'EXECUTE')", [role, fn]), false);
+    }
+  });
   console.log(
     `PASS ${checks} ordering-room checks (${db.native ? "native PostgreSQL" : "PGlite"})`,
   );

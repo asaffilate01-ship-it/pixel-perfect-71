@@ -72,6 +72,8 @@ export const groupOrderPersonSchema = z.strictObject({
   bagNumber: z.number().int().min(1).max(10).nullable(),
   shareId: uuid.nullable(),
   picks: picks.optional(),
+  /** Server-owned expiry for saved unpaid choices; absent on old installations. */
+  choicesExpiresAt: instant.nullable().optional(),
   paymentState: z
     .enum(["unpaid", "processing", "paid", "refund_review", "cancelled"])
     .nullable()
@@ -154,7 +156,8 @@ export const groupOrderRoomSchema = z
     if (
       room.viewer.role !== "organiser" &&
       room.people.some(
-        (entry) => entry.participantId !== room.viewer.participantId && entry.picks !== undefined,
+        (entry) => entry.participantId !== room.viewer.participantId &&
+          (entry.picks !== undefined || entry.choicesExpiresAt !== undefined),
       )
     )
       invalid("Another person's private draft was included.");
