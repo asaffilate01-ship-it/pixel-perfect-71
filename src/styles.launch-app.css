@@ -40,11 +40,11 @@
   z-index: 120;
   top: auto;
   right: 0;
-  bottom: 0;
+  bottom: var(--md-mobile-safe-bottom);
   left: 0;
   width: 100%;
   max-width: 800px;
-  max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)));
+  max-height: calc(100dvh - max(12px, env(safe-area-inset-top, 0px)) - var(--md-mobile-safe-bottom));
   margin: 0 auto;
   padding: 0;
   overflow: hidden;
@@ -67,7 +67,7 @@
   overscroll-behavior: contain;
   scroll-padding-block: 16px;
   padding: 12px max(16px, env(safe-area-inset-right, 0px))
-    max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    20px max(16px, env(safe-area-inset-left, 0px));
 }
 
 .lma-sheet > button:last-child {
@@ -224,19 +224,19 @@
 
   .lma-nav-clearance {
     display: block;
-    height: calc(86px + env(safe-area-inset-bottom, 0px));
+    height: calc(86px + var(--md-mobile-safe-bottom));
   }
   .lm-shell .lma-app-nav {
     position: fixed;
     z-index: 70;
     right: 0;
-    bottom: 0;
+    bottom: var(--md-mobile-safe-bottom);
     left: 0;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
     padding: 8px max(12px, env(safe-area-inset-right, 0px))
-      calc(8px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+      8px max(12px, env(safe-area-inset-left, 0px));
     border-top: 1px solid var(--lma-line);
     background: var(--lma-paper);
     box-shadow: 0 -4px 18px #1111110d;
