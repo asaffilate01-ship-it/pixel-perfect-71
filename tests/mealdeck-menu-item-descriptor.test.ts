@@ -33,6 +33,39 @@ describe("prominent customer menu explanations", () => {
     );
   });
 
+  test("The Blackjack subtitle shows smash beef AND fried chicken, not its reused Double Deck SKU", () => {
+    const brand = { id: "loadd" } as const;
+    const section = {
+      id: "full-house",
+      title: "The Full House",
+      description:
+        "The best of both worlds. Loaded fries and mac ’n cheese together in one box, topped with cheese, Algerian sauce, spring onions and crispy fried onions.",
+    };
+    // The published The Blackjack reuses the older Double Deck catalogue SKU,
+    // so a SKU-only label incorrectly claims it is grilled chicken.
+    const item = {
+      id: "loadd-full-house-queen-of-hearts",
+      name: "The Blackjack",
+      description:
+        section.description +
+        "\\n\\nSmash Beef & Fried Chicken, loaded fries and mac ’n cheese.",
+    };
+    expect(launchMenuItemDescriptor(brand, section, item)).toBe(
+      "Smash beef and fried chicken · loaded fries + mac ’n cheese",
+    );
+    // Do not affect the earlier menu entry when it is still named Double Deck.
+    expect(descriptor("loadd", "full-house", "Double Deck")).toBe(
+      "Grilled Chicken Loaded Fries & Mac ’n Cheese",
+    );
+    // When the item recipe no longer confirms both proteins, never assert them.
+    expect(
+      launchMenuItemDescriptor(brand, section, {
+        ...item,
+        description: section.description + "\\n\\nRecipe under review.",
+      }),
+    ).toBe("Loaded fries + mac ’n cheese");
+  });
+
   test("shows actual Tavo fillet counts and cooking methods", () => {
     expect(descriptor("tavo-chicken", "burgers", "Cruncher")).toBe(
       "1 buttermilk fried chicken fillet in bun",
