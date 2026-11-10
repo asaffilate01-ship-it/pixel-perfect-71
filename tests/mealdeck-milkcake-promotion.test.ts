@@ -380,10 +380,8 @@ describe("One Sunday milkcake at 99p", () => {
         expect(price).not.toContain("T&amp;Cs apply");
         expect(price).not.toContain("£3.99");
       }
-      expect(html).toContain('href="/offers#sunday-milk-cake"');
-      expect(html).toContain("T&amp;Cs apply");
-      expect(html).toContain("One milkcake per order is 99p after the 30% discount");
-      expect(html).toContain("Additional milkcakes are £3.99 each before the usual 30% discount");
+      // The opening-weekend terms remain historical, not promoted as active menu offers.
+      expect(html).not.toContain('href="/offers#sunday-milk-cake"');
       expect(html).not.toContain("£1.29");
     }
     client.clear();
