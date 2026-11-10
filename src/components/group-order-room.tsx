@@ -269,7 +269,7 @@ function RoomRoster({
           );
         })}
       </ul>
-      {collecting && (
+      {collecting && room.people.some((person) => person.choicesExpiresAt !== undefined) && (
         <p className="md-room-muted">
           Unpaid saved food choices last five minutes from their last save; the person stays joined and can choose again. The room has a separate 30-minute limit.
         </p>
