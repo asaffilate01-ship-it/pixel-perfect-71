@@ -6,7 +6,11 @@ export type CustomerPushStage = "permission" | "worker" | "subscription" | "savi
 
 export class CustomerPushTimeoutError extends CustomerAccountError {
   constructor(stage: string) {
-    super("unavailable", stage + " is taking too long. Check your browser permission or internet connection, then retry.");
+    super(
+      "unavailable",
+      stage +
+        " is taking too long. Check your browser permission or internet connection, then retry.",
+    );
     this.name = "CustomerPushTimeoutError";
   }
 }
@@ -20,16 +24,14 @@ export async function withCustomerPushDeadline<T>(
   stage: string,
   milliseconds = 15_000,
 ): Promise<T> {
-  if (!Number.isSafeInteger(milliseconds) || milliseconds < 1) throw new Error("Invalid push deadline");
+  if (!Number.isSafeInteger(milliseconds) || milliseconds < 1)
+    throw new Error("Invalid push deadline");
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       action,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new CustomerPushTimeoutError(stage)),
-          milliseconds,
-        );
+        timer = setTimeout(() => reject(new CustomerPushTimeoutError(stage)), milliseconds);
       }),
     ]);
   } finally {
@@ -58,27 +60,35 @@ async function registration(): Promise<ServiceWorkerRegistration> {
   // can click Allow while it is installing; wait briefly for activation.
   return new Promise<ServiceWorkerRegistration>((resolve, reject) => {
     const timer = setTimeout(
-      () => reject(new CustomerAccountError(
-        "unavailable",
-        "MealDeck notifications are still installing. Reload the app, then try again.",
-      )),
+      () =>
+        reject(
+          new CustomerAccountError(
+            "unavailable",
+            "MealDeck notifications are still installing. Reload the app, then try again.",
+          ),
+        ),
       7_000,
     );
     void navigator.serviceWorker.ready.then(
       (ready) => {
         clearTimeout(timer);
         if (ready.active && new URL(ready.scope).pathname === "/") resolve(ready);
-        else reject(new CustomerAccountError(
-          "unavailable",
-          "Open the MealDeck customer app to enable notifications, then try again.",
-        ));
+        else
+          reject(
+            new CustomerAccountError(
+              "unavailable",
+              "Open the MealDeck customer app to enable notifications, then try again.",
+            ),
+          );
       },
       () => {
         clearTimeout(timer);
-        reject(new CustomerAccountError(
-          "unavailable",
-          "The notification connection is not ready. Reload and try again.",
-        ));
+        reject(
+          new CustomerAccountError(
+            "unavailable",
+            "The notification connection is not ready. Reload and try again.",
+          ),
+        );
       },
     );
   });
@@ -96,7 +106,11 @@ export async function readCustomerDeviceNotifications(): Promise<CustomerDeviceN
     8_000,
   );
   const subscription = worker
-    ? await withCustomerPushDeadline(worker.pushManager.getSubscription(), "Checking device alerts", 8_000)
+    ? await withCustomerPushDeadline(
+        worker.pushManager.getSubscription(),
+        "Checking device alerts",
+        8_000,
+      )
     : null;
   if (!subscription || Notification.permission !== "granted") return "off";
   const result = await withCustomerPushDeadline(

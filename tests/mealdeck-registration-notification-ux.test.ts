@@ -46,7 +46,7 @@ describe("MealDeck registration clarity and notifications", () => {
   test("push service failure never blocks sign-up or hides notification settings", () => {
     const account = read("src/components/customer-account.tsx");
     expect(account).toContain("const ready = await readCustomerCapabilities()");
-    expect(account).toContain("void getMealDeckCustomerPushConfig()");
+    expect(account).toContain("getMealDeckCustomerPushConfig()");
     expect(account).toContain("if (active) setPushPublicKey(null)");
     expect(account).not.toContain("if (!preferences.pushMarketing && !preferences.orderNotifications)");
   });

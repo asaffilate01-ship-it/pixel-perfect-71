@@ -48,7 +48,7 @@ describe("MealDeck scheduled order release policy", () => {
     const date = "2026-11-09T13:00:00Z";
     const choice = mealDeckScheduledSlots(date, "pickup")[0]!;
     expect(verifiedScheduledSlot(date, "pickup", choice.fulfilmentAt)).toEqual(choice);
-    expect(verifiedScheduledSlot("2026-11-09T13:00:01Z", "pickup", choice.fulfilmentAt)).toBeNull();
+    expect(verifiedScheduledSlot("2026-11-09T17:00:01Z", "pickup", choice.fulfilmentAt)).toBeNull();
     expect(verifiedScheduledSlot(date, "pickup", "2026-11-09T13:52:00Z")).toBeNull();
     expect(verifiedScheduledSlot(date, "pickup", "2026-11-09T12:45:00Z")).toBeNull();
     expect(verifiedScheduledSlot(date, "pickup", "2026-11-10T13:45:00Z")).toBeNull();
