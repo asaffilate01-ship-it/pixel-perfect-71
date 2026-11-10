@@ -44,6 +44,22 @@ describe("post-opening MealDeck offers", () => {
     expect(menu).not.toContain("One milkcake per order is 99p");
     expect(menu).not.toContain("<MilkcakeOfferTerms");
   });
+  test("desktop and mobile both explain the 20-minute individual basket timeout", () => {
+    const menu = source("src/components/menus/launch-menu-browser.tsx");
+    const basket = source("src/components/menus/launch-basket.tsx");
+    expect(LAUNCH_BASKET_TTL_MS).toBe(20 * 60_000);
+    expect(menu).toContain("Basket items expire after 20 minutes.");
+    expect(menu).toContain("a maximum of 20 minutes per item.");
+    expect(basket).toContain("Saved for up to 20 minutes");
+    expect(basket).toContain("each item still expires after 20 minutes.");
+    expect(basket).toContain("up to 20 minutes from when added.");
+    expect(menu).not.toMatch(/basket is saved for a maximum of 5 minutes/i);
+    expect(basket).not.toMatch(/saved for up to 5 minutes/i);
+    // Group rooms have separate server-owned unpaid choice and invitation timers.
+    const group = source("src/components/group-order-room.tsx");
+    expect(group).toContain("Unpaid saved food choices last five minutes");
+  });
+
   test("unpaid checkout rechecks expiry before quote, payment and creating a shared payment room", () => {
     const checkout = source("src/components/launch-checkout.tsx");
     expect(checkout).toContain("browserBasketStillValid()");
