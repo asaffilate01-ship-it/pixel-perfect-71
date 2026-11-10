@@ -900,6 +900,26 @@ try {
     assert.ok(o.ownPerson(recovered).choicesExpiresAt);
   });
 
+  await test("explicitly saving unchanged choices refreshes only that participant's deadline", async () => {
+    const room = await o.room();
+    await o.accept(room, 1);
+    await o.choose(room, 0, [o.pick(2)]);
+    await o.choose(room, 1, [o.pick()]);
+    const before = await o.status(room);
+    const participant = before.people[1];
+    const organiser = before.people[0];
+    await db.query(
+      "update mealdeck_private.ordering_participants set choices_saved_at=clock_timestamp()-interval '4 minutes' where id=$1",
+      [participant.participantId],
+    );
+    const refreshed = await o.choose(room, 1, [o.pick()]);
+    const own = o.ownPerson(refreshed);
+    assert.equal(own.version, participant.version + 1);
+    assert.ok(Date.parse(own.choicesExpiresAt) > Date.now() + 4 * 60_000);
+    assert.equal(refreshed.people[0].version, organiser.version);
+    assert.equal(refreshed.people[0].choicesExpiresAt, organiser.choicesExpiresAt);
+  });
+
   await test("unattended worker expires only unfrozen choices; frozen group payments remain immutable", async () => {
     const room = await o.readyRoom();
     const actor = (await o.status(room)).people[1];
