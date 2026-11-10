@@ -12,6 +12,7 @@ on:
       - 'src/components/group-room-setup.tsx'
       - 'tests/mealdeck-scheduled-orders.test.ts'
       - 'tests/mealdeck-group-rooms.test.ts'
+      - 'tests/mealdeck-group-choice-ttl-sql.test.ts'
       - 'tests/postgres/ordering-rooms-behavior.mjs'
       - 'deploy/mealdeck/post-install-migrations/20261110113000_mealdeck_group_saved_choices_ttl.sql'
       - 'tests/mealdeck-kds.test.ts'
@@ -30,6 +31,7 @@ on:
       - 'src/components/group-room-setup.tsx'
       - 'tests/mealdeck-scheduled-orders.test.ts'
       - 'tests/mealdeck-group-rooms.test.ts'
+      - 'tests/mealdeck-group-choice-ttl-sql.test.ts'
       - 'tests/postgres/ordering-rooms-behavior.mjs'
       - 'deploy/mealdeck/post-install-migrations/20261110113000_mealdeck_group_saved_choices_ttl.sql'
       - 'tests/mealdeck-kds.test.ts'
@@ -54,7 +56,7 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
       - name: Run policy and safety tests
-        run: bun test tests/mealdeck-scheduled-orders.test.ts tests/mealdeck-group-rooms.test.ts tests/mealdeck-kds.test.ts
+        run: bun test tests/mealdeck-scheduled-orders.test.ts tests/mealdeck-group-rooms.test.ts tests/mealdeck-group-choice-ttl-sql.test.ts tests/mealdeck-kds.test.ts
       - name: Install isolated PostgreSQL test dependencies
         run: npm ci --prefix tests/postgres
       - name: Verify private group room expiry on disposable PGlite
