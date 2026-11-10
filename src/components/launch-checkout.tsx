@@ -914,7 +914,8 @@ function LaunchCheckoutView({
   const { catalogue } = publicMenu;
   const basketPrice = launchMenuOfferBasketDisplayPrice(picks, catalogue);
   const displayTotal = basketPrice.itemsSubtotalPence;
-  const deliveryShortfall = ownDriverShortfallPence(displayTotal);
+  const deliveryShortfall =
+    displayTotal === null ? null : ownDriverShortfallPence(displayTotal);
   const deliveryUnderMinimum =
     fulfilment === "delivery" && deliveryShortfall !== null && deliveryShortfall > 0;
   const hasMilkcakeOffer = quote
