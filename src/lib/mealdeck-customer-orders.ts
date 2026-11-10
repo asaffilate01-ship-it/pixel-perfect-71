@@ -46,9 +46,13 @@ export function parseCustomerOrders(value: unknown): CustomerOrderSummary[] | nu
       typeof entry["verifiedPaid"] !== "boolean" ||
       (entry["localDriverStatus"] !== undefined &&
         entry["localDriverStatus"] !== null &&
-        !["awaiting_driver", "with_driver", "delivered"].includes(String(entry["localDriverStatus"]))) ||
+        !["awaiting_driver", "with_driver", "delivered"].includes(
+          String(entry["localDriverStatus"]),
+        )) ||
       (entry["localDriverStatus"] != null &&
-        (entry["fulfilment"] !== "delivery" || entry["verifiedPaid"] !== true || entry["held"] !== false)) ||
+        (entry["fulfilment"] !== "delivery" ||
+          entry["verifiedPaid"] !== true ||
+          entry["held"] !== false)) ||
       typeof entry["held"] !== "boolean" ||
       typeof entry["paymentSessionExpired"] !== "boolean" ||
       !["pickup", "curbside", "delivery"].includes(String(entry["fulfilment"])) ||
@@ -81,9 +85,11 @@ export function parseCustomerOrders(value: unknown): CustomerOrderSummary[] | nu
       fulfilment: entry["fulfilment"] as "pickup" | "curbside" | "delivery",
       totalPence: entry["totalPence"] as number,
       createdAt: entry["createdAt"],
-      ...(entry["localDriverStatus"] === undefined ? {} : {
-        localDriverStatus: entry["localDriverStatus"] as CustomerOrderSummary["localDriverStatus"],
-      }),
+      ...(entry["localDriverStatus"] === undefined
+        ? {}
+        : {
+            localDriverStatus: entry["localDriverStatus"] as CustomerOrderSummary["localDriverStatus"],
+          }),
       ...Object.fromEntries(timestamps.map((key) => [key, entry[key]])),
     } as CustomerOrderSummary);
   }
