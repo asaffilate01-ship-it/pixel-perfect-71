@@ -71,6 +71,7 @@ describe("MealDeck verified push and staff campaigns", () => {
     expect(backend).toContain("mealdeck_push_campaign_forbidden");
     expect(backend).toContain("mealdeck_push_campaign_expired");
     expect(panel).toContain("no opted-in phone is subscribed");
-    expect(panel).toContain("15-minute approval window");
+    expect(panel).toContain("15 * 60_000");
+    expect(panel).toContain("This draft has expired.");
   });
 });
