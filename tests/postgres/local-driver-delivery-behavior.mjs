@@ -403,9 +403,10 @@ try {
     assert.equal(await scalar("select has_function_privilege('anon',$1,'EXECUTE')",[
       "public.mealdeck_ops_courier_set_enabled(uuid,uuid,text,boolean)"
     ]),false);
-    await assert.rejects(()=>f.staff("mealdeck_ops_courier_set_enabled",[
-      f.tenantId,f.locationId,"stuart",true,
-    ]),/forbidden|permission/i);
+    await assert.rejects(()=>asActor(db,f.customer,()=>scalar(
+      "select public.mealdeck_ops_courier_set_enabled($1,$2,$3,$4)",
+      [f.tenantId,f.locationId,"stuart",true],
+    )),/forbidden|permission|scope/i);
     const change=(provider,enabled)=>asActor(db,f.owner,()=>scalar(
       "select public.mealdeck_ops_courier_set_enabled($1,$2,$3,$4)",
       [f.tenantId,f.locationId,provider,enabled],
