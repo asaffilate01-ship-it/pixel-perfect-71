@@ -811,7 +811,9 @@ function CustomerSettings({
                   ? "Creating the secure browser notification connection…"
                   : pushStage === "saving"
                     ? "Saving your phone to your verified MealDeck account…"
-                    : "Checking the server confirms this phone is registered…"}
+                    : pushStage === "verifying"
+                      ? "Checking the server confirms this phone is registered…"
+                      : "Checking your notification connection…"}
           </p>
         )}
         {deviceIssue && <p className="md-account-notice md-account-error" role="alert">{deviceIssue}</p>}

@@ -45,14 +45,14 @@ export function TrackingComingSoonPage() {
         <p className="text-sm font-bold uppercase tracking-widest text-[var(--md-red-deep)]">Track your order</p>
         <h1 className="my-5 font-display text-4xl font-black sm:text-5xl">Delivery tracking<br />coming soon.</h1>
         <p className="text-lg leading-8 text-[var(--md-muted)]">
-          Luton collection and kerbside ordering are available during kitchen opening hours.
-          Delivery and live courier tracking are coming soon.
+          Luton collection, kerbside and eligible free direct delivery are offered during kitchen opening hours when available at checkout.
+          Live, turn-by-turn GPS tracking of our driver is still in development.
         </p>
         <section className="mt-8 rounded-2xl border border-[var(--md-line)] bg-[var(--md-paper)] p-6 text-left" aria-labelledby="collection-progress-heading">
-          <h2 id="collection-progress-heading" className="font-display text-xl font-bold">Already placed a collection order?</h2>
+          <h2 id="collection-progress-heading" className="font-display text-xl font-bold">Already placed an order?</h2>
           <p className="mt-2 leading-7 text-[var(--md-muted)]">
-            Keep your payment confirmation page open. It shows your kitchen progress,
-            order number and collection code, including when your food is ready.
+            Keep your private payment confirmation page open. It shows your kitchen progress,
+            order number and handover code, and delivery handover updates where applicable.
           </p>
         </section>
         <Link to="/menus" className="md-btn md-btn-red mt-8">Browse menus</Link>

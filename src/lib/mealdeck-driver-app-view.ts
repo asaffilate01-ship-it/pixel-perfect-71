@@ -54,6 +54,11 @@ export function driverActions(job: DriverJobCard, now: number): { action: Driver
 export function driverDirectionsUrl(job: DriverJobCard): string | null {
   if (!job.address || job.status === "offered" || job.status === "declined") return null;
   const { doorNumber, roadName, addressLine2, postcode } = job.address;
-  return "https://www.google.com/maps/search/?api=1&query=" +
-    encodeURIComponent([doorNumber, roadName, addressLine2, postcode, "UK"].filter(Boolean).join(", "));
+  const destination = encodeURIComponent(
+    [doorNumber, roadName, addressLine2, postcode, "UK"].filter(Boolean).join(", "),
+  );
+  // Start turn-by-turn navigation on the driver's own phone without collecting
+  // background GPS or exposing a customer's address to an unaccepted driver.
+  return "https://www.google.com/maps/dir/?api=1&destination=" +
+    destination + "&travelmode=driving&dir_action=navigate";
 }

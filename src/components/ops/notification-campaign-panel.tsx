@@ -245,8 +245,8 @@ export function NotificationCampaignPanel({
       )}
       {noEligiblePhones && (
         <p className="md-notification-campaigns-unavailable" role="status">
-          <strong>No opted-in phone is subscribed.</strong>{" "}
-          Members must enable App offers and allow phone notifications.
+          <strong>Currently, no opted-in phone is subscribed.</strong>{" "}
+          <span>Members must enable App offers and allow phone notifications.</span>
         </p>
       )}
       {selected ? (
