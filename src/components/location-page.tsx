@@ -66,9 +66,21 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
                 {isLuton ? "Browse Luton’s launch menus" : "Preview the Luton launch deck"}{" "}
                 <ArrowRight />
               </Link>
-              <Link to="/" hash="brands" className="md-btn md-btn-outline-light">
-                See the full brand deck
-              </Link>
+              {isLuton ? (
+                <a
+                  href="https://www.ubereats.com/gb/store/meal-deck-luton/IWmoPuRPWUW1kbGPDpKswg?diningMode=DELIVERY"
+                  className="md-btn md-btn-outline-light"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Order MealDeck Luton on Uber Eats (opens in a new tab)"
+                >
+                  Also on Uber Eats
+                </a>
+              ) : (
+                <Link to="/" hash="brands" className="md-btn md-btn-outline-light">
+                  See the full brand deck
+                </Link>
+              )
             </div>
           </div>
           <div className="md-location-hero-card">
