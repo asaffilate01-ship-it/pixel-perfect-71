@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { customerOrderStatus, parseCustomerOrders } from "../src/lib/mealdeck-customer-orders";
 const order = {
   orderId: "00000000-0000-4000-8000-000000000001",
@@ -15,6 +16,29 @@ const order = {
   readyForCollectionAt: null,
   completedAt: null,
 };
+describe("member delivery status SQL boundary", () => {
+  test("preserves customer authentication and denies public status/GPS access", () => {
+    const sql = readFileSync(
+      new URL(
+        "../deploy/mealdeck/post-install-migrations/20261110120000_mealdeck_member_local_driver_status.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    expect(sql).toContain("customer uuid:=auth.uid()");
+    expect(sql).toContain("customer_registration_authority(customer)");
+    expect(sql).toContain("owned.customer_id=customer");
+    expect(sql).toContain("d.tenant_id=owned.tenant_id and d.location_id=owned.location_id");
+    expect(sql).toContain("receipt->>'verifiedPaid'='true'");
+    expect(sql).toContain("receipt->>'held'='false'");
+    expect(sql).toContain("end $function$;");
+    expect(sql).toContain("from public,anon,service_role;");
+    expect(sql).not.toContain("latitude");
+    expect(sql).not.toContain("longitude");
+    expect(sql).not.toContain("trackingUrl");
+  });
+});
+
 describe("private customer order summaries", () => {
   test("retains a validated display number separately from the collection credential", () => {
     for (const orderNumber of ["0001", "10000", null]) {
