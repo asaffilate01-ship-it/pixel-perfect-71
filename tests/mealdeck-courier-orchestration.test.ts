@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   COURIER_PROVIDERS, collectCourierQuotes, chooseCheapestCourier,
-  type CourierProviderSetting, type CourierQuoteRequest,
+  type CourierProviderSetting, type CourierQuoteRequest, dispatchSelectedCourier,
 } from "../src/lib/mealdeck-courier-orchestration";
 import type { DeliveryQuote } from "../src/lib/mealdeck-delivery-selection";
 import type { CourierBookingContext } from "../src/lib/mealdeck-courier-booking-guard";
@@ -121,6 +121,54 @@ describe("MealDeck cheapest eligible courier routing", () => {
       });
     expect(result.selected?.provider).toBe("own_fleet");
     expect(result.results.find(r => r.provider === "uber_direct")?.status).toBe("unavailable");
+  });
+
+  test("only the reserved lowest-cost courier is called once, without fallback booking", async () => {
+    const decision = await chooseCheapestCourier(context, request,
+      [enabled("uber_direct"), enabled("stuart")], {
+        uber_direct: async () => quote("uber_direct", 399),
+        stuart: async () => quote("stuart", 250),
+      });
+    let reservations = 0, bookings = 0;
+    const reserve = async () => { reservations++; return true; };
+    const booked = await dispatchSelectedCourier(decision, reserve, async (intent) => {
+      bookings++;
+      expect(intent.provider).toBe("stuart");
+      return { status: "booked" as const, providerBookingId: "stuart_booking_1" };
+    });
+    expect(booked).toEqual({
+      status: "booked", provider: "stuart", providerBookingId: "stuart_booking_1",
+    });
+    expect([reservations, bookings]).toEqual([1, 1]);
+    const duplicate = await dispatchSelectedCourier(decision,
+      async () => false, async () => { bookings++; return {status: "rejected"} as const; });
+    expect(duplicate.status).toBe("locked");
+    expect(bookings).toBe(1);
+  });
+
+  test("a provider failure is held for manual review, never dispatched to another courier", async () => {
+    const decision = await chooseCheapestCourier(context, request,
+      [enabled("uber_direct"), enabled("own_fleet")], {
+        uber_direct: async () => quote("uber_direct", 200),
+        own_fleet: async () => quote("own_fleet", 400),
+      });
+    let bookings = 0;
+    const outcome = await dispatchSelectedCourier(decision,
+      async () => true,
+      async () => { bookings++; throw new Error("provider request timed out"); },
+    );
+    expect(outcome).toEqual({status: "manual_review", provider: "uber_direct"});
+    expect(bookings).toBe(1);
+  });
+
+  test("an unpaid or unverified decision can never send a courier", async () => {
+    let booked = 0;
+    const decision = await chooseCheapestCourier({...context, allKitchenStationsReady: false},
+      request, [enabled("own_fleet")], {own_fleet: async()=>quote("own_fleet", 300)});
+    const result = await dispatchSelectedCourier(decision,
+      async()=>true, async()=>{booked++;return {status:"rejected"} as const;});
+    expect(result).toEqual({status:"not_ready",provider:null});
+    expect(booked).toBe(0);
   });
 
   test("times out stalled provider quotes without a false availability claim", async () => {
