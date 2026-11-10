@@ -10,17 +10,20 @@ describe("MealDeck Luton ordering links in the footer", () => {
       'href="https://www.ubereats.com/gb/store/meal-deck-luton/IWmoPuRPWUW1kbGPDpKswg?diningMode=DELIVERY"',
     );
     expect(footer).toContain('aria-label="Order MealDeck Luton on Uber Eats"');
-    const uberLink = footer.match(
-      /<a\\s+className="md-app-logo"[^>]*href="https:\\/\\/www\\.ubereats\\.com[^>]*>[\\s\\S]*?<\\/a>/,
-    )?.[0];
-    expect(uberLink).toBeDefined();
-    // A direct user-initiated HTTPS navigation gives verified iOS Universal
-    // Links / Android App Links a chance to reach an installed app. Do not
-    // force a browser new tab or an unofficial app-only URI with no fallback.
-    expect(uberLink).not.toContain('target="_blank"');
-    expect(uberLink).not.toContain("onClick=");
-    expect(uberLink).not.toContain('href="ubereats://');
-    expect(uberLink).toContain('rel="noopener noreferrer"');
+    const storeHref = 'href="https://www.ubereats.com/gb/store/meal-deck-luton/IWmoPuRPWUW1kbGPDpKswg?diningMode=DELIVERY"';
+    const hrefIndex = footer.indexOf(storeHref);
+    expect(hrefIndex).toBeGreaterThan(0);
+    const anchorStart = footer.lastIndexOf("<a", hrefIndex);
+    const anchorEnd = footer.indexOf(">", hrefIndex);
+    const uberAnchor = footer.slice(anchorStart, anchorEnd + 1);
+    expect(uberAnchor).toContain('className="md-app-logo"');
+    // A direct user-initiated HTTPS navigation gives supported iOS Universal
+    // Links and Android App Links a chance to open the installed app. Do not
+    // force a browser new tab or an unofficial scheme without a web fallback.
+    expect(uberAnchor).not.toContain('target="_blank"');
+    expect(uberAnchor).not.toContain("onClick=");
+    expect(uberAnchor).not.toContain('href="ubereats://');
+    expect(uberAnchor).toContain('rel="noopener noreferrer"');
     expect(footer).not.toContain("Uber Eats platform website — coming soon");
     expect(footer).not.toContain("Six Car Hire");
     expect(footer).not.toContain("referenceType");
