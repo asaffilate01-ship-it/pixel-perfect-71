@@ -101,12 +101,14 @@ export function SiteFooter() {
             <div className="md-app-logo" aria-label="Deliveroo platform website — coming soon">
               <img src={deliverooLogo.url} alt="Deliveroo" />
             </div>
+            {/* Direct HTTPS lets iOS/Android hand supported restaurant links to
+                Uber Eats, while the official store page remains the fallback.
+                Avoid new-tab/window.open and unverified ubereats:// schemes. */}
             <a
               className="md-app-logo"
               href="https://www.ubereats.com/gb/store/meal-deck-luton/IWmoPuRPWUW1kbGPDpKswg?diningMode=DELIVERY"
-              target="_blank"
               rel="noopener noreferrer"
-              aria-label="Order MealDeck Luton on Uber Eats (opens in a new tab)"
+              aria-label="Order MealDeck Luton on Uber Eats"
             >
               <img src={uberEatsLogo.url} alt="Uber Eats" />
             </a>
