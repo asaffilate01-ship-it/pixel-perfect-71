@@ -6,6 +6,7 @@ import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { PwaInstallCard } from "@/components/pwa-install-card";
 import { driverClient, driverRpc, initialiseDriverClient } from "@/lib/mealdeck-driver-browser";
 import { driverActions, driverDirectionsUrl, parseDriverPortal, type DriverJobCard, type DriverJobAction, type DriverPortal } from "@/lib/mealdeck-driver-app-view";
+import { DriverGpsReadiness } from "./driver-gps-readiness";
 import "./driver-workspace.css";
 
 const ACTION_REFRESH_MS = 12_000;
@@ -248,6 +249,7 @@ export function DriverWorkspace() {
                 <a href="https://www.google.com/maps/search/?api=1&query=314-318%20Selbourne%20Road%20Luton%20LU4%208NU" target="_blank" rel="noopener noreferrer"><Navigation size={17}/> Navigate to kitchen</a>
               </section>
             </div>
+            {portal && <DriverGpsReadiness userId={userId} onShift={portal.onShift} online={online} />}
             <div className="md-driver-jobs-heading">
               <div><h2>Your assigned deliveries</h2><p>New offers expire quickly. Refresh when returning to the app.</p></div>
               <button type="button" className="md-driver-secondary" onClick={() => void refresh()} disabled={!online || !!actionBusy || reading}><RefreshCw size={17} /> {reading ? "Checking…" : "Refresh"}</button>
