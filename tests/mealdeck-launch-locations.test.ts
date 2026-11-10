@@ -109,7 +109,22 @@ describe("the first MealDeck launch is Luton only", () => {
       "https://mealdeck.co.uk/menus/moktl",
     ]);
     expect(lutonBusiness).not.toHaveProperty("potentialAction");
-    expect(lutonBusiness).not.toHaveProperty("openingHoursSpecification");
+    // Weekly opening hours are publicly confirmed. Schema markup describes
+    // that schedule only; checkout and staff controls decide live availability.
+    expect(lutonBusiness.openingHoursSpecification).toEqual([
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday"],
+        opens: "17:00:00",
+        closes: "23:00:00",
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Friday", "Saturday", "Sunday"],
+        opens: "16:00:00",
+        closes: "23:00:00",
+      },
+    ]);
     expect(
       lutonBusiness.specialOpeningHoursSpecification.map((hours) => [
         hours.validFrom,

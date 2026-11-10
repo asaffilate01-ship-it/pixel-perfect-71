@@ -177,8 +177,12 @@ export function readLaunchCheckoutTransfer(expectGroup = false): LaunchCheckoutT
     if (!timedRaw) return { picks: [], group: null, issue: LAUNCH_BASKET_EXPIRY_NOTICE };
     try {
       const saved: unknown = JSON.parse(timedRaw);
-      if (!saved || typeof saved !== "object" || Array.isArray(saved)
-        || (saved as Record<string, unknown>)["basket"] !== raw)
+      if (
+        !saved ||
+        typeof saved !== "object" ||
+        Array.isArray(saved) ||
+        (saved as Record<string, unknown>)["basket"] !== raw
+      )
         return { picks: [], group: null, issue: LAUNCH_BASKET_EXPIRY_NOTICE };
       const picks = decodeTimedLaunchBasket(timedRaw).picks;
       if (encodeLaunchPicks(picks) !== raw)
