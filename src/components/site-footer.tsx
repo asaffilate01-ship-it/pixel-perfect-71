@@ -101,9 +101,15 @@ export function SiteFooter() {
             <div className="md-app-logo" aria-label="Deliveroo platform website — coming soon">
               <img src={deliverooLogo.url} alt="Deliveroo" />
             </div>
-            <div className="md-app-logo" aria-label="Uber Eats platform website — coming soon">
+            <a
+              className="md-app-logo"
+              href="https://www.ubereats.com/gb/store/meal-deck-luton/IWmoPuRPWUW1kbGPDpKswg?diningMode=DELIVERY"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Order MealDeck Luton on Uber Eats (opens in a new tab)"
+            >
               <img src={uberEatsLogo.url} alt="Uber Eats" />
-            </div>
+            </a>
             <div className="md-app-logo" aria-label="Just Eat platform website — coming soon">
               <img src={justEatLogo.url} alt="Just Eat" />
             </div>

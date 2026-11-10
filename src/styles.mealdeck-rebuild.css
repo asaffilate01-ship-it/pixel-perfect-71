@@ -578,6 +578,8 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 .md-footer-apps-logos { display: flex; align-items: center; justify-content: center; gap: 14px; }
 .md-app-logo { display: flex; align-items: center; justify-content: center; transition: transform .2s ease, filter .2s ease; }
 .md-app-logo:hover { transform: translateY(-2px); filter: drop-shadow(0 8px 16px rgba(0,0,0,.45)); }
+.md-app-logo[href] { min-width: 44px; min-height: 44px; border-radius: 14px; }
+.md-app-logo[href]:focus-visible { outline: 3px solid var(--md-yellow); outline-offset: 3px; }
 .md-app-logo img { height: 64px; width: auto; border-radius: 14px; display: block; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
 .md-footer-bottom { padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 28px; border-top: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.65); font-size: 12px; line-height: 1.6; text-align: center; }
 
