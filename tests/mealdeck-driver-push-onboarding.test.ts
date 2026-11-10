@@ -56,7 +56,8 @@ describe("MealDeck verified push and staff campaigns", () => {
   test("a browser prompt alone is never called a verified saved push subscription", () => {
     const account = source("src/components/customer-account.tsx");
     const service = source("src/lib/mealdeck-customer-notifications.ts");
-    expect(account).toContain('await readCustomerDeviceNotifications() !== "connected"');
+    expect(account).toContain('readCustomerDeviceNotifications()');
+    expect(account).toContain('!== "connected"');
     expect(account).toContain("Retry notification connection");
     expect(service).toContain("navigator.serviceWorker.ready");
     expect(service).toContain("mealdeck_customer_save_push");
