@@ -175,7 +175,7 @@ export function LaunchMenuBrowser({
       window.localStorage.setItem(LAUNCH_PICKS_STORAGE_KEY, encodeTimedLaunchBasket(restored));
       setStorageStatus("saved");
     } catch {
-      /* Browsing still works with ephemeral, five-minute timed picks. */
+      /* Browsing still works with ephemeral, twenty-minute timed picks. */
       setStorageStatus("session");
     }
   }, []);
@@ -841,7 +841,7 @@ export function LaunchMenuBrowser({
                         Review &amp; checkout <ArrowRight size={18} aria-hidden="true" />
                       </Link>
                       <p>
-                        Basket items expire after five minutes.{" "}
+                        Basket items expire after 20 minutes.{" "}
                         {deliveryLive
                           ? "Collection and kerbside have no minimum; free delivery requires £15 after discounts within 4 km of LU4 8NU."
                           : "No minimum order for collection or kerbside."}{" "}
@@ -1045,7 +1045,7 @@ export function LaunchMenuBrowser({
                     ? "Keep this page open: this browser couldn’t save your current basket."
                     : storageStatus === "checking"
                       ? "Checking your saved choices."
-                      : "Your basket is saved for a maximum of 5 minutes per item."}{" "}
+                      : "Your basket is saved for a maximum of 20 minutes per item."}{" "}
                   Confirm current prices and{" "}
                   {deliveryLive ? "delivery eligibility" : "collection availability"} at checkout.
                 </DialogDescription>

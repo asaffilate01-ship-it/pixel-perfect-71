@@ -17,14 +17,33 @@ const item = brand.sections.find(s=>s.id==="mocktail-lounge")!.items[0]!;
 const first = () => addLaunchPick([], brand.id, item.id, {}, 1);
 const change = (qty: number) => setLaunchPickQuantity(first(), first()[0]!.key, qty);
 
-describe("MealDeck five-minute browser basket expiration", () => {
-  test("expires at exactly five minutes, including while the site was closed", () => {
+describe("MealDeck 20-minute individual browser basket expiration", () => {
+  test("expires at exactly 20 minutes, including while the site was closed", () => {
+    expect(LAUNCH_BASKET_TTL_MS).toBe(20 * 60 * 1000);
     const initial = updateTimedLaunchBasket(emptyTimedLaunchBasket(), first(), start);
     const raw = encodeTimedLaunchBasket(initial);
     expect(decodeTimedLaunchBasket(raw, start+LAUNCH_BASKET_TTL_MS-1).picks).toHaveLength(1);
     expect(decodeTimedLaunchBasket(raw, start+LAUNCH_BASKET_TTL_MS).picks).toEqual([]);
     expect(nextLaunchBasketExpiry(initial)).toBe(start+LAUNCH_BASKET_TTL_MS);
   });
+  test("a personal basket survives five minutes without purchase but empties after twenty", () => {
+    const basket = updateTimedLaunchBasket(emptyTimedLaunchBasket(), first(), start);
+    const raw = encodeTimedLaunchBasket(basket);
+    expect(decodeTimedLaunchBasket(raw, start + 5 * 60_000).picks).toEqual(first());
+    expect(decodeTimedLaunchBasket(raw, start + 19 * 60_000 + 59_999).picks).toEqual(first());
+    expect(decodeTimedLaunchBasket(raw, start + 20 * 60_000).picks).toEqual([]);
+    expect(expireTimedLaunchBasket(basket, start + 20 * 60_000).picks).toEqual([]);
+  });
+
+  test("older five-minute baskets do not gain extra life during an upgrade", () => {
+    const basket = updateTimedLaunchBasket(emptyTimedLaunchBasket(), first(), start);
+    const saved = JSON.parse(encodeTimedLaunchBasket(basket)) as {
+      batches: { entries: { expiresAt: number }[] }[];
+    };
+    saved.batches[0]!.entries[0]!.expiresAt = start + 5 * 60_000;
+    expect(decodeTimedLaunchBasket(JSON.stringify(saved), start + 5 * 60_000).picks).toEqual([]);
+  });
+
   test("additional quantities have independent deadlines", () => {
     const firstBatch = updateTimedLaunchBasket(emptyTimedLaunchBasket(), first(), start);
     const secondBatch = updateTimedLaunchBasket(firstBatch, change(3), start+60_000);
