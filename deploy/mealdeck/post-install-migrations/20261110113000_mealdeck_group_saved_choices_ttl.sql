@@ -66,7 +66,7 @@ begin
     then clock_timestamp()
     else null end;
   return new;
-end $;
+end $$;
 create trigger mealdeck_ordering_choices_saved_at
 before update of picks on mealdeck_private.ordering_participants
 for each row execute function mealdeck_private.stamp_ordering_choices_saved_at();

@@ -382,6 +382,7 @@ jobs:
           bun test tests/mealdeck-group-rooms.test.ts
           tests/mealdeck-group-room-ui-state.test.ts
           tests/mealdeck-packing-name.test.ts
+          tests/mealdeck-group-choice-ttl-sql.test.ts
 
       - name: Ordering room implementation and migration checks
         run: >-
