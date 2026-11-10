@@ -917,7 +917,11 @@ export function CustomerAccount({
         const ready = await readCustomerCapabilities();
         if (!active) return;
         setCapabilities(ready);
-        void getMealDeckCustomerPushConfig()
+        void withCustomerPushDeadline(
+          getMealDeckCustomerPushConfig(),
+          "Loading MealDeck push availability",
+          10_000,
+        )
           .then((push) => {
             if (active) setPushPublicKey(push.publicKey);
           })
@@ -1150,7 +1154,11 @@ export function CustomerAccount({
                 pushPublicKey={pushPublicKey}
                 onRetryPush={async () => {
                   try {
-                    const config = await getMealDeckCustomerPushConfig();
+                    const config = await withCustomerPushDeadline(
+                      getMealDeckCustomerPushConfig(),
+                      "Retrying MealDeck push availability",
+                      10_000,
+                    );
                     setPushPublicKey(config.publicKey);
                     if (config.publicKey) showMessage("Notification connection is ready. Save your app-alert choices, then allow notifications below.");
                     else showError(new CustomerAccountError("unavailable", "The push key is not available from the MealDeck server yet. Please try again after refreshing."));
