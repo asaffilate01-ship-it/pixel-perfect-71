@@ -138,3 +138,49 @@ export async function chooseCheapestCourier(
     selected: null, reason: "no_verified_quote", results, bookingIntent: null,
   };
 }
+
+/** Booking protocol for commissioned provider connectors. The reservation callback
+ * MUST atomically persist a unique per-order request in the independent database
+ * before any external booking or own-driver offer is attempted.
+ * This deliberately never tries the second-cheapest courier after an uncertain call:
+ * doing so could cause two drivers to collect the same order.
+ */
+export type CourierDispatchConfirmation =
+  | { status: "booked"; providerBookingId: string }
+  | { status: "uncertain" }
+  | { status: "rejected" };
+export type CourierDispatchOutcome =
+  | { status: "not_ready"; provider: null }
+  | { status: "locked"; provider: CourierProvider }
+  | { status: "booked"; provider: CourierProvider; providerBookingId: string }
+  | { status: "manual_review"; provider: CourierProvider };
+export async function dispatchSelectedCourier(
+  decision: CheapestCourierDecision,
+  reserveOrderBooking: (intent: NonNullable<CheapestCourierDecision["bookingIntent"]>) => Promise<boolean>,
+  book: (intent: NonNullable<CheapestCourierDecision["bookingIntent"]>) => Promise<CourierDispatchConfirmation>,
+): Promise<CourierDispatchOutcome> {
+  const intent = decision.bookingIntent;
+  if (decision.reason !== "selected" || !decision.selected || !intent ||
+      intent.provider !== decision.selected.provider ||
+      intent.quoteId !== decision.selected.quoteId ||
+      intent.amountPence !== decision.selected.amountPence)
+    return { status: "not_ready", provider: null };
+  // Reservation is the linearisation point across workers and browser retries.
+  // A failure or uncertainty must stop here. Never book another provider.
+  try {
+    if (!await reserveOrderBooking(intent))
+      return { status: "locked", provider: intent.provider };
+  } catch {
+    return { status: "manual_review", provider: intent.provider };
+  }
+  try {
+    const confirmation = await book(intent);
+    if (confirmation.status === "booked" &&
+        /^[A-Za-z0-9_-]{1,120}$/.test(confirmation.providerBookingId))
+      return { status: "booked", provider: intent.provider,
+        providerBookingId: confirmation.providerBookingId };
+    return { status: "manual_review", provider: intent.provider };
+  } catch {
+    return { status: "manual_review", provider: intent.provider };
+  }
+}
