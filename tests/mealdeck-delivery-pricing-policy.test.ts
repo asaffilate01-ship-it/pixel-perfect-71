@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import {
   mealDeckDeliveryPolicy, priceMealDeckDelivery,
 } from "../src/lib/mealdeck-delivery-pricing-policy";
@@ -86,6 +87,28 @@ describe("MealDeck monthly delivery pricing policy", () => {
         trustedCourierQuote: bad,
       })).toMatchObject({ ready: false, reason: "quote_required" });
     }
+  });
+
+  test("December payment authority rejects old unquoted Luton delivery orders", () => {
+    const sql = readFileSync(new URL(
+      "../deploy/mealdeck/post-install-migrations/20261109235501_mealdeck_december_delivery_paid_quote_gate.sql",
+      import.meta.url,
+    ), "utf8");
+    expect(sql).toContain("2026-12-01 00:00:00+00");
+    expect(sql).toContain("new.source='mealdeck'");
+    expect(sql).toContain("new.fulfilment='delivery'");
+    expect(sql).toContain("mealdeck_delivery_verified_courier_quote_required");
+    expect(sql).toContain("before insert or update of fulfilment,delivery_pence on public.orders");
+    expect(sql).toContain("create trigger mealdeck_december_paid_quote_gate");
+  });
+
+  test("checkout never silently offers December delivery at the old zero fee", () => {
+    const jsx = readFileSync(new URL("../src/components/launch-checkout.tsx", import.meta.url), "utf8");
+    expect(jsx).toContain('const needsCourierFeeQuote = deliveryPricingPolicy?.phase === "quoted_delivery"');
+    expect(jsx).toContain("disabled={busy || needsCourierFeeQuote}");
+    expect(jsx).toContain("Delivery checkout is paused until");
+    expect(jsx).toContain("From 1 December");
+    expect(jsx).toContain("£10");
   });
 
   test("London date controls the boundary, not a device-local date", () => {
