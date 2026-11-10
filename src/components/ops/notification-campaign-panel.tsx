@@ -239,9 +239,10 @@ export function NotificationCampaignPanel({
       )}
       {loaded && available && campaigns.length > 0 && campaigns.every((c) => c.eligibleDevices === 0) && (
         <p className="md-notification-campaigns-unavailable" role="status">
-          The push worker is connected, but no opted-in phone is subscribed. Ask a registered
-          member to turn on App offers, save their preferences and enable notifications on their
-          phone. Refresh campaigns after a real device joins; no messages can be sent yet.
+          No saved draft has opted-in devices. Ask a registered member to turn on App offers,
+          save their preferences and enable notifications on their phone. Once a device is
+          connected, discard the old draft and create a fresh one — refreshing a saved draft
+          does not change its original recipient count.
         </p>
       )}
       {selected ? (
@@ -286,12 +287,13 @@ export function NotificationCampaignPanel({
               </p>
               {selected.eligibleDevices === 0 && (
                 <p role="status">
-                  Nobody can receive this campaign yet. A verified member must opt in to App
-                  offers and enable notifications on a real phone; refresh after they connect.
+                  This draft was prepared with zero eligible devices. A verified member must
+                  enable App offers and notifications on a real phone. Discard this draft and
+                  prepare a new one after the device is connected.
                 </p>
               )}
               {draftTooOld && (
-                <p role="status">This draft has passed the 15-minute approval window. Create and review a new draft instead.</p>
+                <p role="status">This draft has passed the 15-minute approval window. Discard it and create a new draft to send.</p>
               )}
               <div className="md-notification-campaign-actions">
                 <button
@@ -308,7 +310,15 @@ export function NotificationCampaignPanel({
                   }}
                 >
                   <Send size={17} aria-hidden="true" />
-                  {busy === "confirm" ? "Queueing campaign…" : "Send to opted-in devices"}
+                  {busy === "confirm"
+                    ? "Queueing campaign…"
+                    : !available
+                      ? "Push sending unavailable"
+                      : selected.eligibleDevices === 0
+                        ? "No opted-in devices for this draft"
+                        : draftTooOld
+                          ? "Draft expired — create a new one"
+                          : "Send to opted-in devices"}
                 </button>
                 <button
                   type="button"
