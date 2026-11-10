@@ -80,7 +80,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
                 <Link to="/" hash="brands" className="md-btn md-btn-outline-light">
                   See the full brand deck
                 </Link>
-              )
+              )}
             </div>
           </div>
           <div className="md-location-hero-card">
@@ -161,7 +161,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               </p>
               <h2>314–318 Selbourne Road, Luton, LU4 8NU</h2>
               <p>
-                "Free local delivery is offered within 4 km of LU4 8NU for £15+ after discounts when available at checkout. Collection and kerbside remain options during kitchen opening hours."
+                Free local delivery is offered within 4 km of LU4 8NU for £15+ after discounts when available at checkout. Collection and kerbside remain options during kitchen opening hours.
               </p>
             </div>
             <div className="md-collection-icons">
