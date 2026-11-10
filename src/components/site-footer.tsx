@@ -15,7 +15,7 @@ export function SiteFooter() {
       <div className="md-footer-main">
         <div className="md-footer-brand">
           <MealDeckLogo loading="lazy" />
-          <p>Different cuisines. One basket. One collection.</p>
+          <p>Different cuisines. One basket. Your way.</p>
           <strong>{MEALDECK_BUSINESS.tagline}</strong>
         </div>
 
@@ -53,7 +53,7 @@ export function SiteFooter() {
             <Link to="/menus">Order Now</Link>
           </div>
           <div>
-            <h3>Luton collection</h3>
+            <h3>MealDeck Luton</h3>
             <p>314–318 Selbourne Road</p>
             <p>Luton · LU4 8NU</p>
             <p>Opening hours</p>
@@ -63,8 +63,8 @@ export function SiteFooter() {
               </p>
             ))}
             <p>All times are UK local time.</p>
-            <p>Order online for collection or kerbside during opening hours.</p>
-            <p>Delivery · Coming soon</p>
+            <p>Order direct for collection, kerbside or eligible local delivery during opening hours.</p>
+            <p>Free direct delivery within 4 km of LU4 8NU on orders of £15+ after discounts. Check current availability at checkout.</p>
             <WhatsAppOrderLink className="md-whatsapp-soon" />
           </div>
         </div>
