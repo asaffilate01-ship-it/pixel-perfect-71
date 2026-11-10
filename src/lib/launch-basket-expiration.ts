@@ -7,9 +7,9 @@ import {
 } from "./launch-menu-picks";
 
 /** Browser draft only. The database still prices and validates every order. */
-export const LAUNCH_BASKET_TTL_MS = 5 * 60 * 1000;
+export const LAUNCH_BASKET_TTL_MS = 20 * 60 * 1000;
 export const LAUNCH_BASKET_EXPIRY_NOTICE =
-  "Basket items are removed 5 minutes after they are added. Please add any expired items again.";
+  "Basket items are removed 20 minutes after they are added. Please add any expired items again.";
 type Batch = Readonly<{ quantity: number; expiresAt: number }>;
 export type TimedLaunchBasket = Readonly<{
   picks: LaunchMenuPick[];
