@@ -367,12 +367,12 @@ export function LaunchBasket({
               ? "Here for this visit"
               : storageStatus === "checking"
                 ? "Checking your saved basket"
-                : "Saved for up to 5 minutes"}
+                : "Saved for up to 20 minutes"}
           </strong>
           <p>
             {storageStatus === "session"
-              ? "This browser couldn’t save your basket. Keep this page open; each item still expires after 5 minutes."
-              : "Items are saved on this device for up to 5 minutes from when added. Current availability and prices are rechecked before payment."}
+              ? "This browser couldn’t save your basket. Keep this page open; each item still expires after 20 minutes."
+              : "Items are saved on this device for up to 20 minutes from when added. Current availability and prices are rechecked before payment."}
           </p>
           {storageStatus === "session" && (
             <button

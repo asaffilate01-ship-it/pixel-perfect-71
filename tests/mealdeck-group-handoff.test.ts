@@ -55,7 +55,7 @@ const personalPicks = addLaunchPick(
   "skorch-burgers-beef-smash-deck-the-ace",
   {},
 );
-// Personal baskets have had a strict, per-quantity five-minute deadline since 9 Nov.
+// Personal baskets now have a strict, per-quantity 20-minute deadline.
 // Group-room snapshots keep their independent frozen/payment rules.
 const timed = (picks: LaunchMenuPick[], at = Date.now()) =>
   updateTimedLaunchBasket(emptyTimedLaunchBasket(), picks, at);
