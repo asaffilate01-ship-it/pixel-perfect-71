@@ -17,6 +17,13 @@ import {
   type LaunchMenuPick,
 } from "../src/lib/launch-menu-picks";
 import {
+  emptyTimedLaunchBasket,
+  encodeTimedLaunchBasket,
+  updateTimedLaunchBasket,
+  LAUNCH_BASKET_EXPIRY_NOTICE,
+  LAUNCH_BASKET_TTL_MS,
+} from "../src/lib/launch-basket-expiration";
+import {
   acceptGroupReply,
   addGroupPerson,
   buildGroupCheckout,
@@ -48,7 +55,11 @@ const personalPicks = addLaunchPick(
   "skorch-burgers-beef-smash-deck-the-ace",
   {},
 );
-const personalRaw = encodeLaunchPicks(personalPicks);
+// Personal baskets have had a strict, per-quantity five-minute deadline since 9 Nov.
+// Group-room snapshots keep their independent frozen/payment rules.
+const timed = (picks: LaunchMenuPick[], at = Date.now()) =>
+  updateTimedLaunchBasket(emptyTimedLaunchBasket(), picks, at);
+let personalRaw: string;
 
 class TestStorage implements Storage {
   values = new Map<string, string>();
@@ -94,6 +105,7 @@ beforeEach(() => {
   // A successful save resets this module's intentionally persistent memory fallback.
   saveStoredGroupPlan(createGroupPlan(id(9999)), null, true);
   local.clear();
+  personalRaw = encodeTimedLaunchBasket(timed(personalPicks));
   local.setItem(LAUNCH_PICKS_STORAGE_KEY, personalRaw);
   local.setItem("unrelated-preference", "preserved");
 });
@@ -185,7 +197,7 @@ describe("group checkout handoff remains separate from the personal basket", () 
   test("an ordinary checkout clears group metadata and clearing a handoff preserves personal picks", () => {
     prepareGroupCheckout(buildGroupCheckout(planWithBags()));
     const ordinary = drink(2, mojito);
-    prepareLaunchCheckout(ordinary);
+    prepareLaunchCheckout(ordinary, timed(ordinary));
     expect(readLaunchCheckoutPicks()).toEqual(ordinary);
     expect(readLaunchCheckoutGroup(ordinary)).toBeNull();
     expect(session.getItem(CHECKOUT_GROUP_HANDOFF_KEY)).toBeNull();
@@ -197,8 +209,19 @@ describe("group checkout handoff remains separate from the personal basket", () 
     expectPersonalUntouched();
   });
 
+  test("expired ordinary items cannot be resurrected from a valid group handoff", () => {
+    const group = buildGroupCheckout(planWithBags());
+    prepareGroupCheckout(group);
+    const ordinary = drink(1, mojito);
+    expect(() =>
+      prepareLaunchCheckout(ordinary, timed(ordinary, Date.now() - LAUNCH_BASKET_TTL_MS - 1)),
+    ).toThrow(LAUNCH_BASKET_EXPIRY_NOTICE);
+    expect(readLaunchCheckoutTransfer(true).picks).toEqual(group.picks);
+    expectPersonalUntouched();
+  });
+
   test("an explicitly empty ordinary handoff never falls back to the saved personal basket", () => {
-    prepareLaunchCheckout([]);
+    prepareLaunchCheckout([], emptyTimedLaunchBasket());
     expect(readLaunchCheckoutPicks()).toEqual([]);
     expect(readLaunchCheckoutTransfer()).toEqual({ picks: [], group: null, issue: null });
     expectPersonalUntouched();
@@ -231,7 +254,7 @@ describe("group checkout handoff remains separate from the personal basket", () 
       issue: null,
     });
     const ordinary = drink(1, mojito);
-    prepareLaunchCheckout(ordinary);
+    prepareLaunchCheckout(ordinary, timed(ordinary));
     expect(readLaunchCheckoutPicks()).toEqual(ordinary);
     expect(readLaunchCheckoutGroup(ordinary)).toBeNull();
     expectPersonalUntouched();

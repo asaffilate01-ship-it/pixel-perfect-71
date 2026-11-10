@@ -217,6 +217,22 @@ describe("structured data reflects confirmed launch facts", () => {
         closes: "23:00:00",
       },
     ]);
+    // Regular hours have since been confirmed for Luton. These schema rows
+    // describe the published schedule, not a claim that checkout is open now.
+    expect(lutonBusiness.openingHoursSpecification).toEqual([
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday"],
+        opens: "17:00:00",
+        closes: "23:00:00",
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Friday", "Saturday", "Sunday"],
+        opens: "16:00:00",
+        closes: "23:00:00",
+      },
+    ]);
     expect(stAlbansPageJsonLd["@type"]).toBe("WebPage");
     expect(stAlbansPageJsonLd.name).toContain("Coming soon");
     for (const unsupported of [
@@ -224,7 +240,6 @@ describe("structured data reflects confirmed launch facts", () => {
       "reviewCount",
       "OrderAction",
       "priceRange",
-      "openingHoursSpecification",
     ])
       expect(JSON.stringify(orgJsonLd)).not.toContain('"' + unsupported + '"');
   });
