@@ -10,6 +10,7 @@ on:
       - 'deploy/mealdeck/post-install-migrations/*driver_pwa_dispatch.sql'
       - 'deploy/mealdeck/post-install-migrations/*driver_verified_email_lookup.sql'
       - 'deploy/mealdeck/post-install-migrations/*courier_switchboard.sql'
+      - 'deploy/mealdeck/post-install-migrations/*december_delivery_paid_quote_gate.sql'
   pull_request:
     paths:
       - '.github/workflows/local-driver-postgres.yml'
@@ -19,6 +20,7 @@ on:
       - 'deploy/mealdeck/post-install-migrations/*driver_pwa_dispatch.sql'
       - 'deploy/mealdeck/post-install-migrations/*driver_verified_email_lookup.sql'
       - 'deploy/mealdeck/post-install-migrations/*courier_switchboard.sql'
+      - 'deploy/mealdeck/post-install-migrations/*december_delivery_paid_quote_gate.sql'
       - 'src/lib/mealdeck-own-driver*'
       - 'src/lib/mealdeck-driver*'
       - 'src/components/driver/**'
@@ -56,9 +58,9 @@ jobs:
           npm install --global bun@1.4.4 --no-audit --no-fund
           bun install --frozen-lockfile
           bun test tests/mealdeck-driver-push-onboarding.test.ts tests/mealdeck-notification-campaigns-browser.test.ts
-      - name: Verify independent provider quote selection and bounded push approval
+      - name: Verify independent courier policy, monthly delivery pricing and bounded push approval
         run: |
-          bun test tests/mealdeck-courier-orchestration.test.ts tests/mealdeck-push-deadline.test.ts
+          bun test tests/mealdeck-courier-orchestration.test.ts tests/mealdeck-push-deadline.test.ts tests/mealdeck-delivery-pricing-policy.test.ts tests/mealdeck-own-driver-delivery.test.ts
       - name: Verify discounted threshold, guest privacy, receipt and complete driver lifecycle
         env:
           MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_kds_test_own_driver
