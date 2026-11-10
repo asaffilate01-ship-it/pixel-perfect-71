@@ -61,8 +61,7 @@ begin
         else null end));
   end loop;
   return jsonb_build_object('orders',orders);
-end $function$
-
+end $function$;
 
 -- Preserve the exact authenticated member authority; no anonymous or service
 -- role can call the user-scoped history RPC directly.
