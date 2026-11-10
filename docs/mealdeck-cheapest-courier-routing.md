@@ -1,12 +1,35 @@
 # MealDeck Luton — cheapest eligible courier dispatch
 
-## Customer-facing delivery rules remain unchanged
+## Customer-facing pricing, November 2026 and December onwards
 
 Orders continue through MealDeck checkout and Stripe's verified paid-order authority.
-**Free delivery** applies only when the final payable basket after discounts is
-**at least £15**, to a supported address within **4 km of LU4 8NU**.
-A provider's merchant-side fee is **not** automatically passed to the customer.
-Never confirm an unpaid delivery or advertise an unavailable courier.
+The coverage radius stays **4 km from LU4 8NU** unless the owner changes it.
+
+| Period (Europe/London fulfilment date) | Minimum food spend AFTER discounts | Delivery fee |
+| --- | --- | --- |
+| Until 30 November 2026, inclusive | £15.00 | **Free to the customer**; MealDeck funds any courier cost |
+| From 1 December 2026 | £10.00 | A separately itemised fee based on the **verified, current courier price**; an initially exact pass-through, not an invented flat fee |
+
+The £10/£15 minimum applies to **food after discounts, excluding the delivery fee**.
+A customer must see the delivery fee and final total BEFORE paying.
+A live quote and courier availability must be confirmed for the same
+collection/delivery details, currency, pickup window, merchant and address.
+The charge is locked into the authorised payment/receipt. Once paid, changes
+to the provider's actual cost are MealDeck's responsibility, NOT an
+unannounced extra charge to the customer. For accurate comparisons the
+fee adapters must normalise tax and service fees on an all-in basis.
+
+**Go-live limitation:** Uber Direct, Deliveroo Express, Just Eat Go and Stuart
+do not yet have approved production quote/booking adapters connected to this
+project. No merchant fee can legitimately be inferred from generic website
+prices. The December checkout currently fails closed rather than collecting
+£0 delivery fees; the new database trigger
+`20261109235501_mealdeck_december_delivery_paid_quote_gate.sql`
+refuses new unquoted MealDeck Luton delivery materialisations from
+1 December. This temporary gate must be replaced with an authorised
+signed-quote-and-booking transaction before paid December delivery can open.
+Do not disable it merely to expose a button. The November promotion continues
+without a delivery charge or customer minimum change.
 
 ## Delivery sequence
 
@@ -15,9 +38,11 @@ Never confirm an unpaid delivery or advertise an unavailable courier.
 2. Kitchen accepts and prepares every constituent brand. KDS must show all
    purchased extras, flavours and packing instructions. No courier may
    collect until the order is fully prepared and bags are sealed.
-3. Immediately before courier dispatch, recheck the order's canonical paid,
+3. At checkout in December, obtain the **customer-facing** live delivery
+   quote in time to show its fee before taking payment. After the kitchen
+   prepares all brands and seals the bags, recheck the order's canonical paid,
    ready and private address state under a server-side order lock. Request
-   *real* cost and ETA quotes in parallel from switched-on, connected providers:
+   *fresh real* cost and ETA quotes from switched-on, connected providers:
    MealDeck approved own driver, Uber Direct, Deliveroo Express, Just Eat Go,
    and Stuart. An external API must use production-authorised credentials,
    and the own-driver calculation must use a manager-approved real operating
@@ -26,7 +51,10 @@ Never confirm an unpaid delivery or advertise an unavailable courier.
    currency, past-deadline or malformed quotes. Sort by merchant cost in
    pence, then ETA, then stable provider order. No synthetic fares, fake
    availability or implicit £0 own-driver cost.
-5. Reserve one unique booking key for the paid order in a durable private
+5. Only book the cheapest eligible **ready-time** provider. If the
+   latest price differs from the fee already collected, MealDeck absorbs
+   that difference; NEVER amend an already captured customer payment.
+   Reserve one unique booking key for the paid order in a durable private
    database transaction **before** calling the winning provider. If a
    booking response is uncertain, HOLD for status lookup/manual review.
    Never automatically book the second-cheapest provider while the first
