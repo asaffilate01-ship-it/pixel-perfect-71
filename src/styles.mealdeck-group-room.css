@@ -602,6 +602,12 @@
   color: var(--room-muted);
   font-size: 0.72rem;
 }
+.md-room-person-copy .md-room-saved-choice-clock {
+  color: #7c2e14;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
 .md-room-status {
   display: inline-flex;
   align-items: center;
