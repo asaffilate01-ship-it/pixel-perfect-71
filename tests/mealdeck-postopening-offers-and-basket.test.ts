@@ -53,7 +53,7 @@ describe("post-opening MealDeck offers", () => {
   });
 });
 
-describe("five minute expiration keeps paid receipt evidence untouched", () => {
+describe("20-minute personal-basket expiration keeps paid receipt evidence untouched", () => {
   test("old saved baskets cannot silently reappear or extend their original deadline", () => {
     const menu = getLaunchMenuBrand("moktl")!;
     const item = menu.sections.flatMap(s => s.items)[0]!;
