@@ -4,6 +4,13 @@ import { customerRpc } from "./mealdeck-customer-browser";
 export type CustomerDeviceNotifications = "unsupported" | "blocked" | "off" | "connected";
 export type CustomerPushStage = "permission" | "worker" | "subscription" | "saving" | "verifying";
 
+export class CustomerPushTimeoutError extends CustomerAccountError {
+  constructor(stage: string) {
+    super("unavailable", stage + " is taking too long. Check your browser permission or internet connection, then retry.");
+    this.name = "CustomerPushTimeoutError";
+  }
+}
+
 /** A stalled browser prompt, PushManager or network call must not leave the UI spinning forever.
  * The browser may finish an in-flight request later; a retry reuses the same subscription
  * rather than creating a second send or changing customer marketing choices.
@@ -20,10 +27,7 @@ export async function withCustomerPushDeadline<T>(
       action,
       new Promise<never>((_, reject) => {
         timer = setTimeout(
-          () => reject(new CustomerAccountError(
-            "unavailable",
-            stage + " is taking too long. Check your browser permission or internet connection, then retry.",
-          )),
+          () => reject(new CustomerPushTimeoutError(stage)),
           milliseconds,
         );
       }),
@@ -44,8 +48,12 @@ export function supportsCustomerPush(): boolean {
 }
 
 async function registration(): Promise<ServiceWorkerRegistration> {
-  const worker = await navigator.serviceWorker.getRegistration("/");
-  if (worker?.active) return worker;
+  const worker = await withCustomerPushDeadline(
+    navigator.serviceWorker.getRegistration("/"),
+    "Finding the MealDeck customer app",
+    8_000,
+  );
+  if (worker?.active && new URL(worker.scope).pathname === "/") return worker;
   // The PWA provider registers /sw.js after hydration. First-use customers
   // can click Allow while it is installing; wait briefly for activation.
   return new Promise<ServiceWorkerRegistration>((resolve, reject) => {
@@ -79,6 +87,9 @@ async function registration(): Promise<ServiceWorkerRegistration> {
 export async function readCustomerDeviceNotifications(): Promise<CustomerDeviceNotifications> {
   if (!supportsCustomerPush()) return "unsupported";
   if (Notification.permission === "denied") return "blocked";
+  // First-time visitors have no permission or endpoint. Do not wait for a
+  // browser service worker or network call just to enable the Allow button.
+  if (Notification.permission !== "granted") return "off";
   const worker = await withCustomerPushDeadline(
     navigator.serviceWorker.getRegistration("/"),
     "Checking the MealDeck app",
@@ -88,9 +99,13 @@ export async function readCustomerDeviceNotifications(): Promise<CustomerDeviceN
     ? await withCustomerPushDeadline(worker.pushManager.getSubscription(), "Checking device alerts", 8_000)
     : null;
   if (!subscription || Notification.permission !== "granted") return "off";
-  const result = await customerRpc<{ connected: boolean }>("mealdeck_customer_has_push", {
-    p_endpoint: subscription.endpoint,
-  });
+  const result = await withCustomerPushDeadline(
+    customerRpc<{ connected: boolean }>("mealdeck_customer_has_push", {
+      p_endpoint: subscription.endpoint,
+    }),
+    "Checking your saved notification device",
+    8_000,
+  );
   return result?.connected === true ? "connected" : "off";
 }
 
@@ -178,8 +193,12 @@ export async function enableCustomerDeviceNotifications(
       );
     onStage?.("verifying");
   } catch (error) {
-    // Never call the browser permission alone a successful server subscription.
-    if (created) await subscription.unsubscribe().catch(() => false);
+    // A timed-out server write is uncertain: it may still have succeeded.
+    // Preserve the endpoint for an idempotent retry/reconciliation rather than
+    // unregistering a device that the server has already saved.
+    if (created && !(error instanceof CustomerPushTimeoutError)) {
+      await subscription.unsubscribe().catch(() => false);
+    }
     throw error;
   }
 }
