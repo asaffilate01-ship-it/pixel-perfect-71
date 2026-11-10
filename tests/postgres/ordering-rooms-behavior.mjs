@@ -917,7 +917,11 @@ try {
     assert.equal(own.version, participant.version + 1);
     assert.ok(Date.parse(own.choicesExpiresAt) > Date.now() + 4 * 60_000);
     assert.equal(refreshed.people[0].version, organiser.version);
-    assert.equal(refreshed.people[0].choicesExpiresAt, organiser.choicesExpiresAt);
+    // A participant cannot read the organiser's private food-choice deadline.
+    assert.equal(refreshed.people[0].choicesExpiresAt, undefined);
+    const ownerView = await o.status(room);
+    assert.equal(ownerView.people[0].choicesExpiresAt, organiser.choicesExpiresAt);
+    assert.equal(ownerView.people[0].version, organiser.version);
   });
 
   await test("unattended worker expires only unfrozen choices; frozen group payments remain immutable", async () => {
