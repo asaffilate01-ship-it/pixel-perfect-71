@@ -95,8 +95,8 @@ function useRoomClock(serverNow?: string) {
   return now;
 }
 
-function remainingTime(deadline: string, now: number) {
-  if (!now) return "3:00";
+function remainingTime(deadline: string, now: number, initialSeconds = 180) {
+  if (!now) return `${Math.floor(initialSeconds / 60)}:00`;
   const seconds = Math.max(0, Math.ceil((Date.parse(deadline) - now) / 1000));
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
@@ -229,6 +229,13 @@ function RoomRoster({
                         ? "Bag " + person.bagNumber
                         : "Group member"}
                   </small>
+                  {collecting && person.choicesExpiresAt && (own || organiser) && (
+                    <small className="md-room-saved-choice-clock" role="status">
+                      {now && now >= Date.parse(person.choicesExpiresAt)
+                        ? "Saved food time elapsed · refresh to confirm"
+                        : `Saved food expires in ${remainingTime(person.choicesExpiresAt, now, 300)}`}
+                    </small>
+                  )}
                 </div>
                 <span
                   className={
@@ -262,6 +269,11 @@ function RoomRoster({
           );
         })}
       </ul>
+      {collecting && (
+        <p className="md-room-muted">
+          Unpaid saved food choices last five minutes from their last save; the person stays joined and can choose again. The room has a separate 30-minute limit.
+        </p>
+      )}
       {collecting && (
         <p className="md-room-muted">
           {room.readyCount} of {room.joinedCount} joined people ready
