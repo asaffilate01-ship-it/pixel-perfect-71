@@ -57,6 +57,8 @@ import {
   enableCustomerDeviceNotifications,
   readCustomerDeviceNotifications,
   type CustomerDeviceNotifications,
+  type CustomerPushStage,
+  withCustomerPushDeadline,
 } from "@/lib/mealdeck-customer-notifications";
 
 function errorMessage(reason: unknown) {
@@ -553,18 +555,31 @@ function CustomerSettings({
   const [device, setDevice] = useState<CustomerDeviceNotifications>("off");
   const [deviceLoading, setDeviceLoading] = useState(true);
   const [deviceIssue, setDeviceIssue] = useState("");
+  const [pushStage, setPushStage] = useState<CustomerPushStage | null>(null);
   const pushReady = capabilities.pushReady && Boolean(pushPublicKey);
   const preferencesChanged = (Object.keys(preferences) as (keyof CustomerPreferences)[]).some(
     (key) => preferences[key] !== profile.preferences[key],
   );
   useEffect(() => {
     let active = true;
-    void readCustomerDeviceNotifications()
+    // Checking an old browser subscription must not leave the Enable button
+    // disabled forever. A first-time visitor returns "off" immediately.
+    void withCustomerPushDeadline(
+      readCustomerDeviceNotifications(),
+      "Checking this device's notification status",
+      9_000,
+    )
       .then((value) => {
-        if (active) setDevice(value);
+        if (active) { setDevice(value); setDeviceIssue(""); }
       })
-      .catch(() => {
-        if (active) setDevice("off");
+      .catch((reason) => {
+        if (!active) return;
+        setDevice("off");
+        setDeviceIssue(
+          reason instanceof Error
+            ? reason.message
+            : "Could not check this device. You can try enabling notifications again.",
+        );
       })
       .finally(() => {
         if (active) setDeviceLoading(false);
@@ -597,16 +612,21 @@ function CustomerSettings({
     if (busy) return;
     setBusy(true);
     setDeviceIssue("");
+    setPushStage(null);
     try {
       if (enable) {
         if (!pushPublicKey) throw new CustomerAccountError(
           "unavailable",
           "The notification connection is not ready. Retry the connection first.",
         );
-        await enableCustomerDeviceNotifications(pushPublicKey);
+        await enableCustomerDeviceNotifications(pushPublicKey, setPushStage);
         // A browser permission prompt alone is not enough: confirm the
         // authenticated server now owns this exact device endpoint.
-        if (await readCustomerDeviceNotifications() !== "connected")
+        if (await withCustomerPushDeadline(
+          readCustomerDeviceNotifications(),
+          "Confirming your phone is registered",
+          12_000,
+        ) !== "connected")
           throw new CustomerAccountError(
             "unavailable",
             "Notification permission was accepted, but we could not verify this device. Retry after reloading the app.",
@@ -622,6 +642,7 @@ function CustomerSettings({
       setDeviceIssue(reason instanceof Error ? reason.message : "Device notifications could not be connected.");
       onError(reason);
     } finally {
+      setPushStage(null);
       setBusy(false);
     }
   }
@@ -738,13 +759,25 @@ function CustomerSettings({
                 busy ||
                 deviceLoading ||
                 device === "blocked" ||
-                device === "unsupported" ||
-                preferencesChanged ||
-                (!profile.preferences.pushMarketing && !profile.preferences.orderNotifications)
+                device === "unsupported"
               }
-              onClick={() => void changeDevice(true)}
+              onClick={() => {
+                if (preferencesChanged ||
+                  (!profile.preferences.pushMarketing && !profile.preferences.orderNotifications)) {
+                  setDeviceIssue(
+                    "Choose Order status notifications or App offers, then tap Save notification choices first. " +
+                    "Return here to allow this device.",
+                  );
+                  document.getElementById("notification-preferences")?.scrollIntoView({
+                    behavior: "smooth", block: "start",
+                  });
+                  return;
+                }
+                void changeDevice(true);
+              }}
             >
-              <Bell size={18} aria-hidden="true" /> Allow notifications
+              <Bell size={18} aria-hidden="true" />
+              {deviceLoading ? "Checking this device…" : "Enable notifications on this phone"}
             </button>
             {(preferencesChanged ||
               (!profile.preferences.pushMarketing && !profile.preferences.orderNotifications)) && (
@@ -767,6 +800,19 @@ function CustomerSettings({
               </button>
             )}
           </>
+        )}
+        {pushStage && (
+          <p className="md-account-fine" role="status" aria-live="polite">
+            {pushStage === "permission"
+              ? "Check your browser for the Allow notifications prompt. If it doesn't appear, check the site's permission settings."
+              : pushStage === "worker"
+                ? "Connecting the MealDeck app on this phone…"
+                : pushStage === "subscription"
+                  ? "Creating the secure browser notification connection…"
+                  : pushStage === "saving"
+                    ? "Saving your phone to your verified MealDeck account…"
+                    : "Checking the server confirms this phone is registered…"}
+          </p>
         )}
         {deviceIssue && <p className="md-account-notice md-account-error" role="alert">{deviceIssue}</p>}
       </section>
@@ -871,7 +917,11 @@ export function CustomerAccount({
         const ready = await readCustomerCapabilities();
         if (!active) return;
         setCapabilities(ready);
-        void getMealDeckCustomerPushConfig()
+        void withCustomerPushDeadline(
+          getMealDeckCustomerPushConfig(),
+          "Loading MealDeck push availability",
+          10_000,
+        )
           .then((push) => {
             if (active) setPushPublicKey(push.publicKey);
           })
@@ -1104,7 +1154,11 @@ export function CustomerAccount({
                 pushPublicKey={pushPublicKey}
                 onRetryPush={async () => {
                   try {
-                    const config = await getMealDeckCustomerPushConfig();
+                    const config = await withCustomerPushDeadline(
+                      getMealDeckCustomerPushConfig(),
+                      "Retrying MealDeck push availability",
+                      10_000,
+                    );
                     setPushPublicKey(config.publicKey);
                     if (config.publicKey) showMessage("Notification connection is ready. Save your app-alert choices, then allow notifications below.");
                     else showError(new CustomerAccountError("unavailable", "The push key is not available from the MealDeck server yet. Please try again after refreshing."));
