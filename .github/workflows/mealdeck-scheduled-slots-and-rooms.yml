@@ -63,3 +63,33 @@ jobs:
         run: node tests/postgres/ordering-rooms-behavior.mjs
       - name: Type-check application and UI
         run: bunx tsc --noEmit
+
+  group-choice-native-postgres17:
+    name: Native PostgreSQL 17 — unpaid group choices and frozen payments
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: mealdeck_disposable_ci_only
+          POSTGRES_DB: mealdeck_group_choice_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mealdeck_group_choice_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned PostgreSQL test harness
+        run: npm ci --prefix tests/postgres
+      - name: Verify private choice TTL, participant isolation and frozen payments
+        env:
+          MEALDECK_KDS_TEST_DATABASE_URL: postgresql://postgres:mealdeck_disposable_ci_only@127.0.0.1:5432/mealdeck_group_choice_test
+        run: node tests/postgres/ordering-rooms-behavior.mjs --native
