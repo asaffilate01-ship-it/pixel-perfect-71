@@ -163,8 +163,9 @@ export function NotificationCampaignPanel({
   }, [refresh]);
   const selectedId = selected?.campaignId;
   const selectedStatus = selected?.status;
-  const draftTooOld = Boolean(selected?.status === "draft" &&
-    Date.parse(selected.createdAt) + 15 * 60_000 <= Date.now());
+  const draftTooOld = Boolean(
+    selected?.status === "draft" && Date.parse(selected.createdAt) + 15 * 60_000 <= Date.now(),
+  );
   useEffect(() => {
     if (selectedId) previewRef.current?.focus();
   }, [selectedId, selectedStatus]);
@@ -237,13 +238,13 @@ export function NotificationCampaignPanel({
           connection gets ready. Sending is currently unavailable.
         </p>
       )}
-      {loaded && available && campaigns.length > 0 && campaigns.every((c) => c.eligibleDevices === 0) && (
+      {loaded && available && campaigns.length > 0 && campaigns.every((c) => c.eligibleDevices === 0) ? (
         <p className="md-notification-campaigns-unavailable" role="status">
-          The push worker is connected, but no opted-in phone is subscribed. Ask a registered
-          member to turn on App offers, save their preferences and enable notifications on their
-          phone. Refresh campaigns after a real device joins; no messages can be sent yet.
+          No subscribed phones can receive offers. Members must enable App offers,
+          save preferences and then allow notifications on their phones.
+          Prepare a fresh campaign after a device connects.
         </p>
-      )}
+      ) : null}
       {selected ? (
         <div
           className="md-notification-campaign-review"
@@ -286,12 +287,14 @@ export function NotificationCampaignPanel({
               </p>
               {selected.eligibleDevices === 0 && (
                 <p role="status">
-                  Nobody can receive this campaign yet. A verified member must opt in to App
-                  offers and enable notifications on a real phone; refresh after they connect.
+                  No eligible devices are subscribed. Members must enable App offers
+                  and phone notifications. Prepare a fresh draft once connected.
                 </p>
               )}
               {draftTooOld && (
-                <p role="status">This draft has passed the 15-minute approval window. Create and review a new draft instead.</p>
+                <p role="status">
+                  This draft has expired. Create and review a new draft to send.
+                </p>
               )}
               <div className="md-notification-campaign-actions">
                 <button
@@ -373,8 +376,15 @@ export function NotificationCampaignPanel({
               onClick={() => {
                 restoreEditorFocus.current = true;
                 setSelected(null);
-                if (draftTooOld) { setTitle(""); setBody(""); }
-                setMessage(draftTooOld ? "Create a new draft. The previous one cannot be sent." : "Draft kept. You can review it again below.");
+                if (draftTooOld) {
+                  setTitle("");
+                  setBody("");
+                }
+                setMessage(
+                  draftTooOld
+                    ? "Create a new draft. The previous one cannot be sent."
+                    : "Draft kept. You can review it again below.",
+                );
               }}
             >
               {draftTooOld ? "Start a fresh draft" : "Keep draft for later"}
