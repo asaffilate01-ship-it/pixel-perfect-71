@@ -118,12 +118,15 @@ describe("one room has strict choices, membership and financial bindings", () =>
         actorHash: secret,
         email: "private@example.invalid",
         picks: [pick],
+        choicesExpiresAt: "2026-11-06T16:05:00Z",
         paymentState: "pending",
       })),
     };
     const projected = orderingRoomForBrowser(raw);
     expect(projected.people[0]!.picks).toBeUndefined();
+    expect(projected.people[0]!.choicesExpiresAt).toBeUndefined();
     expect(projected.people[1]!.picks).toEqual([pick]);
+    expect(projected.people[1]!.choicesExpiresAt).toBe("2026-11-06T16:05:00Z");
     expect(projected.people[0]!.paymentState).toBe("processing");
     expect(projected.vehicle).toBeUndefined();
     expect(JSON.stringify(projected)).not.toMatch(/private@example|actorHash|tokenHash/);
