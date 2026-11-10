@@ -107,8 +107,10 @@ describe("private customer order summaries", () => {
       },
     ])
       expect(parseCustomerOrders({ orders: [value] })).toBeNull();
-    expect(parseCustomerOrders({ orders: [{ ...order, localDriverStatus: null }] })?.[0]?.localDriverStatus)
-      .toBeNull();
+    expect(
+      parseCustomerOrders({ orders: [{ ...order, localDriverStatus: null }] })?.[0]
+        ?.localDriverStatus,
+    ).toBeNull();
   });
   test("shows verified progress and gives payment holds precedence over stale readiness", () => {
     const base = parseCustomerOrders({ orders: [order] })![0]!;
