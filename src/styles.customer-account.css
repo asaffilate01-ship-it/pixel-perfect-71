@@ -9,7 +9,8 @@
   background: #faf6ed;
   color: var(--account-ink);
   font-family: "DM Sans", sans-serif;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  /* The floating five-tab navigation must not cover account actions. */
+  padding-bottom: calc(128px + var(--md-mobile-safe-bottom));
 }
 .md-account-page * {
   box-sizing: border-box;

@@ -1,3 +1,18 @@
+/* Shared bottom clearance for edge-to-edge Android and installed PWAs.
+   Some installed Android browsers report a zero safe-area inset even when the
+   system gesture/navigation strip overlays the app. Keep controls outside it.
+   Moving fixed bars with bottom (not scroll-linked padding) avoids layout churn. */
+:root {
+  --md-standalone-navigation-fallback: 0px;
+  --md-mobile-safe-bottom: max(
+    env(safe-area-inset-bottom, 0px),
+    var(--md-standalone-navigation-fallback)
+  );
+}
+@media (display-mode: standalone) and (pointer: coarse) {
+  :root { --md-standalone-navigation-fallback: 32px; }
+}
+
 .md-install-card {
   padding: 20px;
   border: 1px solid var(--md-line, #e4d8c7);

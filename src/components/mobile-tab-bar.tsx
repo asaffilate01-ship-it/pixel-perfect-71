@@ -66,11 +66,15 @@ export function MobileTabBar() {
 
   return (
     <>
-      <div className="h-24 lg:hidden" aria-hidden />
+      <div
+        className="lg:hidden"
+        aria-hidden="true"
+        style={{ height: "calc(116px + var(--md-mobile-safe-bottom))" }}
+      />
       <nav
         aria-label="Primary"
-        className="fixed inset-x-3 bottom-3 z-50 lg:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        className="fixed inset-x-3 z-50 lg:hidden"
+        style={{ bottom: "calc(12px + var(--md-mobile-safe-bottom))" }}
       >
         <div className="relative flex items-stretch rounded-[1.75rem] border border-border/70 bg-card px-1 shadow-2xl">
           {left.map(item)}

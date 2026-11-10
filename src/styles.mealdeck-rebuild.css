@@ -836,7 +836,7 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
     max-height: min(70dvh, 620px);
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding-bottom: max(20px, var(--md-mobile-safe-bottom));
   }
 }
 @media (prefers-reduced-motion: reduce) {
