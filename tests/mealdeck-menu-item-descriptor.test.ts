@@ -48,7 +48,7 @@ describe("prominent customer menu explanations", () => {
       name: "The Blackjack",
       description:
         section.description +
-        "\\n\\nSmash Beef & Fried Chicken, loaded fries and mac ’n cheese.",
+        "\n\nSmash Beef & Fried Chicken, loaded fries and mac ’n cheese.",
     };
     expect(launchMenuItemDescriptor(brand, section, item)).toBe(
       "Smash beef and fried chicken · loaded fries + mac ’n cheese",
@@ -61,7 +61,7 @@ describe("prominent customer menu explanations", () => {
     expect(
       launchMenuItemDescriptor(brand, section, {
         ...item,
-        description: section.description + "\\n\\nRecipe under review.",
+        description: section.description + "\n\nRecipe under review.",
       }),
     ).toBe("Loaded fries + mac ’n cheese");
   });
