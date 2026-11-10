@@ -163,8 +163,9 @@ export function NotificationCampaignPanel({
   }, [refresh]);
   const selectedId = selected?.campaignId;
   const selectedStatus = selected?.status;
-  const draftTooOld = Boolean(selected?.status === "draft" &&
-    Date.parse(selected.createdAt) + 15 * 60_000 <= Date.now());
+  const draftTooOld = Boolean(
+    selected?.status === "draft" && Date.parse(selected.createdAt) + 15 * 60_000 <= Date.now(),
+  );
   useEffect(() => {
     if (selectedId) previewRef.current?.focus();
   }, [selectedId, selectedStatus]);
@@ -237,14 +238,13 @@ export function NotificationCampaignPanel({
           connection gets ready. Sending is currently unavailable.
         </p>
       )}
-      {loaded && available && campaigns.length > 0 && campaigns.every((c) => c.eligibleDevices === 0) && (
+      {loaded && available && campaigns.length > 0 && campaigns.every((c) => c.eligibleDevices === 0) ? (
         <p className="md-notification-campaigns-unavailable" role="status">
-          No saved draft has opted-in devices. Ask a registered member to turn on App offers,
-          save their preferences and enable notifications on their phone. Once a device is
-          connected, discard the old draft and create a fresh one — refreshing a saved draft
-          does not change its original recipient count.
+          No subscribed phones can receive offers. Members must enable App offers,
+          save preferences and then allow notifications on their phones.
+          Prepare a fresh campaign after a device connects.
         </p>
-      )}
+      ) : null}
       {selected ? (
         <div
           className="md-notification-campaign-review"
@@ -287,13 +287,14 @@ export function NotificationCampaignPanel({
               </p>
               {selected.eligibleDevices === 0 && (
                 <p role="status">
-                  This draft was prepared with zero eligible devices. A verified member must
-                  enable App offers and notifications on a real phone. Discard this draft and
-                  prepare a new one after the device is connected.
+                  No eligible devices are subscribed. Members must enable App offers
+                  and phone notifications. Prepare a fresh draft once connected.
                 </p>
               )}
               {draftTooOld && (
-                <p role="status">This draft has passed the 15-minute approval window. Discard it and create a new draft to send.</p>
+                <p role="status">
+                  This draft has expired. Create and review a new draft to send.
+                </p>
               )}
               <div className="md-notification-campaign-actions">
                 <button
@@ -310,15 +311,7 @@ export function NotificationCampaignPanel({
                   }}
                 >
                   <Send size={17} aria-hidden="true" />
-                  {busy === "confirm"
-                    ? "Queueing campaign…"
-                    : !available
-                      ? "Push sending unavailable"
-                      : selected.eligibleDevices === 0
-                        ? "No opted-in devices for this draft"
-                        : draftTooOld
-                          ? "Draft expired — create a new one"
-                          : "Send to opted-in devices"}
+                  {busy === "confirm" ? "Queueing campaign…" : "Send to opted-in devices"}
                 </button>
                 <button
                   type="button"
@@ -383,8 +376,15 @@ export function NotificationCampaignPanel({
               onClick={() => {
                 restoreEditorFocus.current = true;
                 setSelected(null);
-                if (draftTooOld) { setTitle(""); setBody(""); }
-                setMessage(draftTooOld ? "Create a new draft. The previous one cannot be sent." : "Draft kept. You can review it again below.");
+                if (draftTooOld) {
+                  setTitle("");
+                  setBody("");
+                }
+                setMessage(
+                  draftTooOld
+                    ? "Create a new draft. The previous one cannot be sent."
+                    : "Draft kept. You can review it again below.",
+                );
               }}
             >
               {draftTooOld ? "Start a fresh draft" : "Keep draft for later"}

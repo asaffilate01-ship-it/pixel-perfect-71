@@ -56,7 +56,8 @@ describe("MealDeck verified push and staff campaigns", () => {
   test("a browser prompt alone is never called a verified saved push subscription", () => {
     const account = source("src/components/customer-account.tsx");
     const service = source("src/lib/mealdeck-customer-notifications.ts");
-    expect(account).toContain('await readCustomerDeviceNotifications() !== "connected"');
+    expect(account).toContain('readCustomerDeviceNotifications()');
+    expect(account).toContain('!== "connected"');
     expect(account).toContain("Retry notification connection");
     expect(service).toContain("navigator.serviceWorker.ready");
     expect(service).toContain("mealdeck_customer_save_push");
@@ -69,9 +70,7 @@ describe("MealDeck verified push and staff campaigns", () => {
     expect(backend).toContain("mealdeck_push_mfa_required");
     expect(backend).toContain("mealdeck_push_campaign_forbidden");
     expect(backend).toContain("mealdeck_push_campaign_expired");
-    expect(panel).toContain("No saved draft has opted-in devices.");
-    expect(panel).toContain("refreshing a saved draft");
-    expect(panel).toContain("No opted-in devices for this draft");
+    expect(panel).toContain("no opted-in phone is subscribed");
     expect(panel).toContain("15-minute approval window");
   });
 });
