@@ -4,7 +4,7 @@ import { mealDeckDeliveryPolicy } from "./mealdeck-delivery-pricing-policy";
 /** Luton own-driver launch rules. Distances use postcode centroids, not road routes. */
 export const OWN_DRIVER_BASE_POSTCODE = "LU4 8NU";
 export const OWN_DRIVER_RADIUS_METRES = 4_000;
-/** Historical November free-delivery minimum; dynamic policy takes over in December. */
+/** Ongoing free own-driver minimum after discounts; never reduced by a calendar date. */
 export const OWN_DRIVER_MINIMUM_PENCE = 1_500;
 export const OWN_DRIVER_MAX_MINUTES = 60;
 
