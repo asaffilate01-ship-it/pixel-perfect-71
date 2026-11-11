@@ -20,6 +20,28 @@ describe("MealDeck approved driver onboarding", () => {
     expect(browser).toContain("not been approved for MealDeck Driver");
   });
 
+  test("managers can explicitly revoke or restore verified drivers without touching paid orders", () => {
+    const panel = source("src/components/ops/driver-dispatch-panel.tsx");
+    const backend = source("src/lib/mealdeck-ops-browser.ts");
+    const sql = source("deploy/mealdeck/post-install-migrations/20261108154500_mealdeck_driver_pwa_dispatch.sql");
+    expect(panel).toContain("mealdeck_ops_driver_set_enabled");
+    expect(panel).toContain("Confirm disable");
+    expect(panel).toContain("Confirm enable");
+    expect(panel).toContain("pendingAccess?.driverId===d.driverId");
+    expect(panel).toContain("if(!canEnrol||busy||!pendingAccess");
+    expect(panel).toContain("Refresh and review the latest roster");
+    expect(panel).toContain("No approved drivers.");
+    expect(panel).toContain("No approved driver is on shift.");
+    expect(panel).toContain("Do not offer jobs until an available driver is listed");
+    expect(panel).toContain("This does not cancel any paid customer order.");
+    expect(backend).toContain("mealdeck_driver_active_job");
+    expect(backend).toContain("Kitchen staff must resolve it before access can be disabled");
+    expect(sql).toContain("kds_assert_scope(p_tenant,p_location,'staff.manage')");
+    expect(sql).toContain("and d.driver_status<>'delivered'");
+    expect(sql).toContain("on_shift=case when p_enabled then on_shift else false end");
+    expect(sql).toContain("'driver.enable'");
+  });
+
   test("manager approval needs a verified exact email and explicit confirmation", () => {
     const panel = source("src/components/ops/driver-dispatch-panel.tsx");
     const sql = source("deploy/mealdeck/post-install-migrations/20261109234500_mealdeck_driver_verified_email_lookup.sql");
