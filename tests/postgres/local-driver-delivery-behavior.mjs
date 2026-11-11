@@ -7,6 +7,7 @@ import { guestTokenHash, setGuestFixtureClock } from "./guest-checkout-fixture.m
 import { buildStaffCashOrdersSql } from "../../deploy/mealdeck/staff-cash-orders.mjs";
 import { buildMealComponentsSql } from "../../deploy/mealdeck/meal-components.mjs";
 import { buildLocalDriverDeliverySql } from "../../deploy/mealdeck/local-driver-delivery.mjs";
+import { buildCustomerPushSql } from "../../deploy/mealdeck/customer-push.mjs";
 
 // The harness refuses remote/nonempty databases. No real provider or live orders.
 const db = await createDatabase(process.argv.includes("--native"), { uuid_ossp });
@@ -30,6 +31,12 @@ try {
   await db.exec(readFileSync(
     new URL("../../deploy/mealdeck/post-install-migrations/20261109235500_mealdeck_courier_switchboard.sql",import.meta.url),"utf8"
   ));
+  await db.exec(buildCustomerPushSql());
+  await db.exec(readFileSync(
+    new URL("../../deploy/mealdeck/post-install-migrations/20261111100000_mealdeck_verified_driver_push.sql",import.meta.url),"utf8"
+  ));
+  // Test-only opt-in activation, no provider/network connection.
+  await db.exec("update mealdeck_private.customer_features set push_enabled=true where singleton");
   await setGuestFixtureClock(db, "2026-11-06T16:00:00Z");
   const token = guestTokenHash("isolated-own-driver-guest-one");
   const stranger = guestTokenHash("isolated-own-driver-guest-two");
@@ -221,6 +228,22 @@ try {
     },
   );
   await f.accept(order.orderId);
+  await check("guest explicitly opts into delivery order alerts after canonical paid acceptance", async () => {
+    const subscription=await f.service(()=>scalar(
+      "select public.mealdeck_push_order_subscription($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+      [f.tenantId,f.locationId,order.orderId,null,token,"subscribe",
+       "https://fcm.googleapis.com/fcm/send/driver-handover-fixture",
+       "B"+"a".repeat(86),"a".repeat(22)],
+    ));
+    assert.equal(subscription.connected,true);
+    assert.equal(await scalar(
+      "select count(*)::int from mealdeck_private.order_push_subscriptions where order_id=$1 and enabled",
+      [order.orderId],
+    ),1);
+    assert.equal(await scalar("select has_function_privilege('anon', $1, 'EXECUTE')",[
+      "mealdeck_private.push_capture_verified_driver_pickup()"
+    ]),false);
+  });
   await check("acceptance creates exactly one complete delivery receipt", async () => {
     assert.equal(
       await scalar("select count(*)::int from mealdeck_private.receipt_jobs where order_id=$1", [
@@ -354,13 +377,53 @@ try {
     ]),/mealdeck_driver_handover_pending/);
     await driver("with_driver");
     assert.equal((await card()).driverStatus,"with_driver");
+    assert.equal(await scalar(
+      "select count(*)::int from mealdeck_private.push_events where order_id=$1 and stage='with_driver'",
+      [order.orderId],
+    ),0);
     await driverActor("mealdeck_driver_action",[order.orderId,active.version,"pickup",id(99215)]);
+    assert.equal(await scalar(
+      "select mealdeck_private.push_current_order_stage($1)",[order.orderId],
+    ),"with_driver");
+    assert.equal(await scalar(
+      "select count(*)::int from mealdeck_private.push_events where order_id=$1 and stage='with_driver'",
+      [order.orderId],
+    ),1);
+    assert.equal(await scalar(
+      "select count(*)::int from mealdeck_private.push_outbox where event_id=("+
+      "select id from mealdeck_private.push_events where order_id=$1 and stage='with_driver')",
+      [order.orderId],
+    ),1);
+    const claimed=await f.service(()=>scalar(
+      "select public.mealdeck_push_claim($1,$2,$3)",[f.tenantId,f.locationId,50],
+    ));
+    const pickupJob=await scalar(
+      "select id from mealdeck_private.push_outbox where event_id=("+
+      "select id from mealdeck_private.push_events where order_id=$1 and stage='with_driver')",
+      [order.orderId],
+    );
+    const leased=claimed.jobs.find(j=>j.jobId===pickupJob);
+    assert.ok(leased);
+    const readyToSend=await f.service(()=>scalar(
+      "select public.mealdeck_push_preflight($1,$2,$3,$4)",
+      [f.tenantId,f.locationId,leased.jobId,leased.leaseToken],
+    ));
+    assert.equal(readyToSend.send,true);
+    assert.equal(readyToSend.payload.stage,"with_driver");
+    assert.equal(readyToSend.payload.fulfilment,"delivery");
+    assert.equal(readyToSend.payload.checkoutMode,"guest");
+    assert.equal(JSON.stringify(readyToSend.payload).includes("driver-handover-fixture"),false);
+    assert.equal(JSON.stringify(readyToSend.payload).includes("Test Road"),false);
     active=(await driverActor("mealdeck_driver_portal")).jobs[0];
     await driverActor("mealdeck_driver_action",[order.orderId,active.version,"arrive_customer",id(99216)]);
     active=(await driverActor("mealdeck_driver_portal")).jobs[0];
     await driverActor("mealdeck_driver_action",[order.orderId,active.version,"report_dropoff",id(99217)]);
     assert.equal((await driverActor("mealdeck_driver_portal")).jobs[0].status,"dropoff_reported");
     assert.equal((await card()).driverStatus,"with_driver");
+    assert.equal(await scalar(
+      "select count(*)::int from mealdeck_private.push_events where order_id=$1 and stage='with_driver'",
+      [order.orderId],
+    ),1);
     assert.equal(await scalar("select status::text from public.orders where id=$1",[order.orderId]),"ready");
   });
 
