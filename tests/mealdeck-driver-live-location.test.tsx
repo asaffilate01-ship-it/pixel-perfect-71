@@ -102,6 +102,10 @@ describe("opt-in foreground driver GPS and member-only projection", () => {
     expect(sql).toContain("p.enabled and p.latitude is not null");
     expect(sql).toContain("driver_location_authorised(p_order,v.driver_id)");
     expect(sql).toContain("driver_location_points enable row level security");
+    expect(sql).toContain("driver_location_runtime enable row level security");
+    expect(sql).toContain("values(true,false)");
+    expect(sql).toContain("where cfg.singleton and cfg.enabled");
+    expect(sql).toContain("consent_at<=clock_timestamp()-interval '24 hours'");
     expect(sql).toContain("grant execute on function public.mealdeck_driver_location_consent");
     expect(sql).not.toMatch(/grant\s+select\s+on\s+mealdeck_private\.driver_location_points/i);
     expect(sql).toContain("clear_stale_driver_locations()");
