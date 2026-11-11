@@ -15,6 +15,8 @@ begin
     or to_regclass('mealdeck_private.local_driver_orders') is null
     or to_regclass('mealdeck_private.order_push_subscriptions') is null
     or to_regclass('mealdeck_private.push_outbox') is null
+    or to_regprocedure('mealdeck_private.push_order_recipients(uuid)') is null
+    or to_regprocedure('public.mealdeck_push_preflight(uuid,uuid,uuid,uuid)') is null
     or to_regprocedure('mealdeck_private.push_current_order_stage(uuid)') is null
     or (select md5(prosrc) from pg_proc where oid=
        to_regprocedure('mealdeck_private.push_current_order_stage(uuid)'))
