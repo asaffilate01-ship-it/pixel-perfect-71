@@ -336,6 +336,11 @@ try {
     await assert.rejects(()=>driverActor("mealdeck_driver_action",[
       order.orderId,offered.version,"accept",id(99212)
     ]),/mealdeck_driver_conflict/);
+    // A manager cannot revoke an accepted active paid-delivery assignment.
+    await assert.rejects(()=>asActor(db,f.owner,()=>scalar(
+      "select public.mealdeck_ops_driver_set_enabled($1,$2,$3,$4)",
+      [f.tenantId,f.locationId,f.customer,false]
+    )),/mealdeck_driver_active_job/);
     const privateJob=(await driverActor("mealdeck_driver_portal")).jobs[0];
     assert.deepEqual(privateJob.address,address);
     assert.equal(privateJob.customerPhone,"+447700900123");
@@ -397,6 +402,42 @@ try {
       );
     },
   );
+  await check("manager can disable or restore driver access only after a delivery completes",async()=>{
+    const fn="public.mealdeck_ops_driver_set_enabled(uuid,uuid,uuid,boolean)";
+    assert.equal(await scalar("select has_function_privilege('anon',$1,'EXECUTE')",[fn]),false);
+    await assert.rejects(()=>asActor(db,f.customer,()=>scalar(
+      "select public.mealdeck_ops_driver_set_enabled($1,$2,$3,$4)",
+      [f.tenantId,f.locationId,f.customer,false]
+    )),/mealdeck_ops_forbidden/);
+    const manager=(enabled)=>asActor(db,f.owner,()=>scalar(
+      "select public.mealdeck_ops_driver_set_enabled($1,$2,$3,$4)",
+      [f.tenantId,f.locationId,f.customer,enabled]
+    ));
+    const disabled=await manager(false);
+    assert.deepEqual(disabled,{ok:true,enabled:false});
+    assert.equal(await scalar(
+      "select enabled from mealdeck_private.driver_roster where user_id=$1",[f.customer]
+    ),false);
+    assert.equal(await scalar(
+      "select on_shift from mealdeck_private.driver_roster where user_id=$1",[f.customer]
+    ),false);
+    await assert.rejects(()=>driverActor("mealdeck_driver_portal"),/mealdeck_driver_forbidden/);
+    await assert.rejects(()=>driverActor("mealdeck_driver_shift",[true]),/mealdeck_driver_forbidden/);
+    const restored=await manager(true);
+    assert.deepEqual(restored,{ok:true,enabled:true});
+    const portal=await driverActor("mealdeck_driver_portal");
+    assert.equal(portal.onShift,false);
+    assert.equal(portal.jobs[0].status,"delivered");
+    assert.deepEqual((await f.staff("mealdeck_ops_driver_dispatch_board",[
+      f.tenantId,f.locationId
+    ])).drivers.find(d=>d.driverId===f.customer),{
+      driverId:f.customer,name:"Test Driver",onShift:false,enabled:true,
+    });
+    assert.equal(await scalar(
+      "select count(*)::int from public.mealdeck_ops_audit_log where action='driver.enable' and entity_id=$1",
+      [f.customer]
+    ),2);
+  });
   await check("courier switches default only own fleet on and require manager permission",async()=>{
     const board=await f.staff("mealdeck_ops_courier_switchboard",[f.tenantId,f.locationId]);
     assert.equal(board.automatedDispatchReady,false);

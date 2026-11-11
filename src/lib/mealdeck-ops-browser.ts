@@ -135,6 +135,18 @@ export async function opsRpc<T>(
         "unavailable",
         "That verified account cannot be approved. Check the email lookup and driver name, then retry.",
       );
+    if (name === "mealdeck_ops_driver_set_enabled") {
+      if (error.code === "PGRST202")
+        throw new OpsRequestError(
+          "unconfigured",
+          "Driver access management is not installed for this kitchen.",
+        );
+      if (/mealdeck_driver_active_job/.test(error.message))
+        throw new OpsRequestError(
+          "conflict",
+          "This driver has an unfinished accepted delivery. Kitchen staff must resolve it before access can be disabled.",
+        );
+    }
     if (name === "mealdeck_ops_menu_categories" || name === "mealdeck_ops_update_menu_category") {
       if (error.code === "PGRST202")
         throw new OpsRequestError(
