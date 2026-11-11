@@ -12,7 +12,7 @@
 
 ## Implementation
 
-- `deploy/mealdeck/post-install-migrations/20261111113000_mealdeck_private_driver_location.sql` — private table, RLS, denied direct API grants, owner-scoped writer/reader RPCs, explicit stop, 30-second point expiry, single-point retention, pg_cron purge. Source-only until native PostgreSQL security/regression tests pass.
+- `deploy/mealdeck/post-install-migrations/20261111113000_mealdeck_private_driver_location.sql` — private table, RLS, denied direct API grants, owner-scoped writer/reader RPCs, explicit stop, 30-second point expiry, single-point retention, pg_cron purge, and a **private server-side activation switch OFF by default**. This switch has no public/staff API to activate it. Old consent markers are deleted after 24 hours. Source-only until native PostgreSQL security/regression tests pass.
 - `src/lib/mealdeck-driver-live-location.ts` — strict age, accuracy, location and response validation; no storage or ETA calculation.
 - `src/components/driver/driver-live-location.tsx` — explicit per-delivery Start/Stop, foreground-only `watchPosition`, visible/offline/permissions cleanup, server revocation best effort, no location disclosure in logs.
 - `src/components/customer-driver-position.tsx` — registered-customer private order viewer with server polling only while visible and click-gated Google Maps link.
