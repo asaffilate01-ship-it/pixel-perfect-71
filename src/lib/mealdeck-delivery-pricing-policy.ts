@@ -1,14 +1,17 @@
 import type { DeliveryQuote } from "./mealdeck-delivery-selection";
 
 /**
- * Effective date: fulfilment date in Europe/London (not a browser-local clock).
- * During the remaining November 2026 promotion the customer pays no delivery
- * fee when their discounted FOOD basket is at least £15.
- * Starting 1 December 2026, the minimum becomes £10 and a genuine
- * provider-cost-derived delivery fee must be confirmed before payment.
- * A missing quote NEVER becomes an automatic free delivery.
+ * The owner-approved Luton own-driver offer continues: free delivery for £15+
+ * discounted food within the independent server-verified 4 km area, while the
+ * checkout and driver capacity are enabled. The November promotion has NO
+ * automatic 1 December switch to paid/£10 delivery.
+ *
+ * Trusted courier pricing remains an explicit FUTURE integration mode; merely
+ * reaching a calendar date must never change the customer's payable amount.
+ * A quote is not proof of payment, delivery serviceability, or a booking.
+ * Effective service day is parsed in Europe/London, not device-local time.
  */
-export type DeliveryPricingPhase = "november_free" | "quoted_delivery";
+export type DeliveryPricingPhase = "own_driver_free" | "quoted_delivery";
 export type DeliveryPricingPolicy = {
   phase: DeliveryPricingPhase;
   minimumFoodPence: number;
@@ -27,14 +30,18 @@ function londonDate(iso: string): string | null {
   const year = get("year"), month = get("month"), day = get("day");
   return year && month && day ? year + "-" + month + "-" + day : null;
 }
-export function mealDeckDeliveryPolicy(fulfilmentAtIso: string): DeliveryPricingPolicy | null {
+export function mealDeckDeliveryPolicy(
+  fulfilmentAtIso: string,
+  /** Only a reviewed server-side integration may deliberately enable quoted pricing. */
+  phase: DeliveryPricingPhase = "own_driver_free",
+): DeliveryPricingPolicy | null {
   const day = londonDate(fulfilmentAtIso);
-  if (!day) return null;
-  const promotional = day >= "2026-11-01" && day <= "2026-11-30";
+  if (!day || day < "2026-11-01" ||
+    (phase !== "own_driver_free" && phase !== "quoted_delivery")) return null;
   return {
-    phase: promotional ? "november_free" : "quoted_delivery",
-    minimumFoodPence: promotional ? 1_500 : 1_000,
-    deliveryFeeMode: promotional ? "free" : "trusted_quote_required",
+    phase,
+    minimumFoodPence: phase === "own_driver_free" ? 1_500 : 1_000,
+    deliveryFeeMode: phase === "own_driver_free" ? "free" : "trusted_quote_required",
     effectiveLocalDate: day,
   };
 }
@@ -50,8 +57,9 @@ export type DeliveryCheckoutPrice =
 /**
  * Called with a server-verified selected quote after checking enabled provider,
  * serviceability, origin/destination, pickup window, currency and expiry.
- * For December, the initial pricing basis is the real quoted courier fee,
- * before any separately authorised markup/rounding policy is introduced.
+ * Only when a trusted server-controlled integration explicitly selects
+ * "quoted_delivery" is the real courier fee considered. There is no
+ * date-based auto-transition. Future markup needs separately approved policy.
  * If actual booking later costs more, MealDeck bears the difference rather
  * than changing the price of a fully paid order.
  */
@@ -59,8 +67,10 @@ export function priceMealDeckDelivery(input: {
   fulfilmentAtIso: string;
   foodAfterDiscountPence: number;
   trustedCourierQuote?: DeliveryQuote | null;
+  /** Not a browser/checkout setting; future trusted pricing integration only. */
+  pricingMode?: DeliveryPricingPhase;
 }): DeliveryCheckoutPrice {
-  const policy = mealDeckDeliveryPolicy(input.fulfilmentAtIso);
+  const policy = mealDeckDeliveryPolicy(input.fulfilmentAtIso, input.pricingMode);
   const food = input.foodAfterDiscountPence;
   if (!policy || !Number.isSafeInteger(food) || food < 0)
     return { ready: false, reason: "invalid", minimumFoodPence: null,
@@ -69,7 +79,7 @@ export function priceMealDeckDelivery(input: {
   if (shortfall) return { ready: false, reason: "below_minimum",
     minimumFoodPence: policy.minimumFoodPence, shortfallPence: shortfall,
     phase: policy.phase };
-  if (policy.phase === "november_free") return {
+  if (policy.phase === "own_driver_free") return {
     ready: true, foodPence: food, minimumFoodPence: policy.minimumFoodPence,
     deliveryPence: 0, payablePence: food, phase: policy.phase,
     quoteId: null, courier: null,
