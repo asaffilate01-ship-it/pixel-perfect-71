@@ -2517,9 +2517,8 @@ function LaunchCheckoutView({
                     </label>
                   </div>
                   <p className="md-checkout-muted">
-                    Delivery food minimum: {minimumFoodText} after discounts.
-                    {" Delivery is free (£0) when available."}
-                    Collection and kerbside have no delivery minimum.
+                    Delivery food minimum: {minimumFoodText} after discounts. Delivery is free
+                    (£0) when available. Collection and kerbside have no delivery minimum.
                   </p>
                 </section>
               )}
