@@ -53,7 +53,7 @@ revoke all on mealdeck_private.driver_location_points from public,anon,authentic
 -- Dispatch offer, assigned, at_kitchen, dropoff report, pause and completed order
 -- are never eligible for a location update or a customer position.
 create function mealdeck_private.driver_location_authorised(p_order uuid,p_driver uuid)
-returns boolean language sql stable security definer set search_path='' as $$
+returns boolean language sql security definer set search_path='' as $
  select exists(
    select 1 from mealdeck_private.driver_assignments a
    join mealdeck_private.driver_roster r on r.user_id=a.driver_id
@@ -67,7 +67,7 @@ returns boolean language sql stable security definer set search_path='' as $$
    where a.order_id=p_order and a.driver_id=p_driver and p_driver is not null
      and r.enabled and r.on_shift and a.state in ('collected','at_customer')
      and d.driver_status='with_driver' and d.handed_to_driver_at is not null
-     and o.source='mealdeck' and o.fulfilment='delivery' and not o.guest_checkout is null
+     and o.source='mealdeck' and o.fulfilment='delivery'
      and o.payment_status='paid' and o.status='ready'
      and o.created_at>clock_timestamp()-interval '24 hours'
      and mealdeck_ops_private.kds_release_evidence(o.id) is not null
@@ -145,7 +145,7 @@ end $$;
 -- Only a registered, authenticated member may see their own verified paid
 -- order's recent consented point; no guest cookie, 4-digit code or public URL.
 create function public.mealdeck_customer_driver_position(p_order uuid)
-returns jsonb language plpgsql stable security definer set search_path='' as $$
+returns jsonb language plpgsql security definer set search_path='' as $
 declare viewer uuid:=auth.uid();v mealdeck_private.driver_location_points%rowtype;
 begin
   if viewer is null or p_order is null
