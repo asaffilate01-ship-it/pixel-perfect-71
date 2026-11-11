@@ -240,7 +240,7 @@ export function OrderNotificationsCard({
           ? "Checking notifications on this device…"
           : state === "enabled"
             ? config?.available
-              ? "Order alerts are on. We’ll send updates when the kitchen accepts your order, starts preparing it and has it ready for handover."
+              ? "Order alerts are on. Kitchen updates include acceptance, preparation and handover readiness. For own-driver deliveries, a verified driver pickup can also send an update."
               : updateNeeded
                 ? "Your order alert choice is saved. Update MealDeck to finish setting up alerts on this device. You can follow the live progress here."
                 : "Your order alert choice is saved. Sending is temporarily unavailable; follow the live progress on this page."
@@ -254,7 +254,7 @@ export function OrderNotificationsCard({
                     ? "This browser does not support app notifications. Keep this page available to follow your order’s progress."
                     : state === "error"
                       ? "You can keep following the live progress here while notifications reconnect."
-                      : "Get updates when your order is accepted, preparing and ready for handover, even when you leave this page."}
+                      : "Get kitchen updates, and for supported own-driver deliveries an alert after verified driver collection, even when you leave this page."}
       </p>
       {(state === "off" || state === "enabled") && (
         <p className="md-order-notifications-note">
