@@ -18,6 +18,8 @@ jobs:
           npm install --global bun@1.4.4 --no-audit --no-fund
           test "$(bun --version)" = "1.4.4"
       - run: bun install --frozen-lockfile
+      - name: Ongoing free own-driver delivery and December cutoff regressions
+        run: bun test tests/mealdeck-delivery-pricing-policy.test.ts tests/mealdeck-hosted-delivery-minimum.test.ts
       - name: Luton own-driver delivery migration safety contract
         run: node --test tests/delivery-migration-source.test.mjs
       - name: WhatsApp conversation, transport and private checkout boundaries

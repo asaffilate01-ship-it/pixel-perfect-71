@@ -882,15 +882,14 @@ function LaunchCheckoutView({
     status.kitchen.collectionEstimateMinutes !== null;
   const guestEligible = orderingAvailable && status?.guestCheckout.eligible === true;
   const canViewReceipt = checkoutMode === "guest" ? Boolean(guestSession) : registered;
-  // The Luton merchant courier fee is zero until 30 November 2026.
-  // Starting December a trusted live provider quote must be shown and confirmed
-  // before payment; do not allow the old free-delivery checkout to undercharge.
+  // Free own-driver delivery continues while the server advertises it.
+  // Postcode eligibility, discounted £15 minimum and payment are rechecked
+  // by the independent MealDeck backend; the browser cannot enable a courier.
   const deliveryPricingPolicy = mealDeckDeliveryPolicy(new Date().toISOString());
-  const needsCourierFeeQuote = deliveryPricingPolicy?.phase === "quoted_delivery";
   const minimumFoodText = formatLaunchMenuPrice(deliveryPricingPolicy?.minimumFoodPence ?? 1_500);
   const deliveryReady =
     fulfilment !== "delivery" ||
-    (!needsCourierFeeQuote && status?.fulfilments?.includes("delivery") === true &&
+    (status?.fulfilments?.includes("delivery") === true &&
       parseOwnDriverAddress(deliveryAddress) !== null &&
       deliveryArea?.eligible === true &&
       deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode));
@@ -1485,12 +1484,6 @@ function LaunchCheckoutView({
     if (whatsAppPaymentAttempt) {
       setIssue(
         "Payment has already been started for this WhatsApp order. Use Resume secure payment to continue the original checkout.",
-      );
-      return;
-    }
-    if (fulfilment === "delivery" && needsCourierFeeQuote) {
-      setIssue(
-        "From 1 December delivery requires at least £10 of food after discounts, plus a live courier fee quoted and confirmed before payment. Courier pricing is not connected yet; choose collection for now.",
       );
       return;
     }
@@ -2153,17 +2146,15 @@ function LaunchCheckoutView({
                     <button
                       className="md-checkout-delivery"
                       type="button"
-                      disabled={busy || needsCourierFeeQuote}
+                      disabled={busy}
                       aria-pressed={fulfilment === "delivery"}
                       onClick={() => chooseFulfilment("delivery")}
                     >
                       <Truck size={19} />
                       <span>
-                        {needsCourierFeeQuote ? "Delivery · fee quoted before payment" : "Free delivery"}
+                        Free delivery
                         <small>
-                          {needsCourierFeeQuote
-                            ? "From 1 December · £10 food minimum after discounts · live courier fee required"
-                            : "November offer · within 4 km of LU4 8NU · £15 minimum after discounts · up to 60 minutes"}
+                          Within 4 km of LU4 8NU · £15 minimum after discounts · up to 60 minutes
                         </small>
                       </span>
                       {fulfilment === "delivery" && <Check size={17} />}
@@ -2174,13 +2165,6 @@ function LaunchCheckoutView({
                       Your basket is below the <strong>{minimumFoodText} food minimum after discounts</strong>.
                       Add at least <strong>{formatLaunchMenuPrice(deliveryShortfall ?? 0)}</strong> in items
                       or choose collection or kerbside. Final discounted totals are checked before payment.
-                    </p>
-                  )}
-                  {needsCourierFeeQuote && (
-                    <p className="md-checkout-notice" role="status">
-                      From 1 December: minimum food order £10 after discounts, plus a delivery
-                      fee based on a verified courier quote. Delivery checkout is paused until
-                      live prices and provider booking are connected. Collection is still available.
                     </p>
                   )}
                   <div className="md-checkout-timing" aria-label="When would you like your order?">
@@ -2448,9 +2432,9 @@ function LaunchCheckoutView({
                     <span className="md-checkout-step">3</span>Delivery address
                   </h2>
                   <p className="md-checkout-muted">
-                    {needsCourierFeeQuote
-                      ? "From 1 December, delivery needs at least £10 of food after discounts and a verified, pre-payment courier fee quote. Delivery checkout remains paused until providers are connected."
-                      : "November offer: FREE delivery within 4 km of LU4 8NU for food orders of £15 or more after discounts. Estimated own-driver delivery within 60 minutes of payment."}
+                    FREE own-driver delivery within 4 km of LU4 8NU for eligible food orders of
+                    £15 or more after discounts. Estimated delivery is up to 60 minutes from
+                    verified payment, subject to kitchen and driver availability.
                   </p>
                   <div className="md-checkout-vehicle">
                     <label>
@@ -2533,11 +2517,8 @@ function LaunchCheckoutView({
                     </label>
                   </div>
                   <p className="md-checkout-muted">
-                    Delivery food minimum: {minimumFoodText} after discounts.
-                    {needsCourierFeeQuote
-                      ? " A separate courier fee must be quoted and accepted before any payment."
-                      : " November delivery is free."}
-                    Collection and kerbside have no delivery minimum.
+                    Delivery food minimum: {minimumFoodText} after discounts. Delivery is free
+                    (£0) when available. Collection and kerbside have no delivery minimum.
                   </p>
                 </section>
               )}
@@ -2977,9 +2958,7 @@ function LaunchCheckoutView({
                         ? "One milkcake is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount, applied above with the other eligible items and extras."
                         : "30% off every item and upgrade."}{" "}
                       {fulfilment === "delivery"
-                        ? needsCourierFeeQuote
-                          ? "A verified courier fee is required before payment from 1 December."
-                          : "Free delivery in November when £15+ after discount."
+                        ? "Free delivery when £15+ after discount within the eligible 4 km area."
                         : "No minimum order."}
                     </p>
                   ) : !quote && status?.openingOffer.status === "active" ? (
