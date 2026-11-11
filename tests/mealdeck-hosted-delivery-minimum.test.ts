@@ -3,15 +3,16 @@ import { readFileSync } from "node:fs";
 import { ownDriverShortfallPence, OWN_DRIVER_MINIMUM_PENCE } from "../src/lib/mealdeck-own-driver-delivery";
 
 describe("MealDeck Luton delivery minimum customer feedback", () => {
-  test("November is £15 free and December £10 requires a live courier fee", () => {
+  test("free £15 minimum continues through December without an automatic courier surcharge", () => {
     expect(OWN_DRIVER_MINIMUM_PENCE).toBe(1500);
     const november = "2026-11-09T18:00:00Z";
     const december = "2026-12-01T18:00:00Z";
     expect(ownDriverShortfallPence(0, november)).toBe(1500);
     expect(ownDriverShortfallPence(1499, november)).toBe(1);
     expect(ownDriverShortfallPence(1500, november)).toBe(0);
-    expect(ownDriverShortfallPence(999, december)).toBe(1);
-    expect(ownDriverShortfallPence(1000, december)).toBe(0);
+    expect(ownDriverShortfallPence(999, december)).toBe(501);
+    expect(ownDriverShortfallPence(1000, december)).toBe(500);
+    expect(ownDriverShortfallPence(1500, december)).toBe(0);
   });
 
   test("member registration and real points remain visible if the entry status request fails", () => {
@@ -28,8 +29,8 @@ describe("MealDeck Luton delivery minimum customer feedback", () => {
     expect(checkout).toContain('role="alert" aria-live="polite"');
     expect(checkout).toContain("Your basket is below the");
     expect(checkout).toContain("£15 minimum after discounts");
-    expect(checkout).toContain("From 1 December");
-    expect(checkout).toContain("£10");
+    expect(checkout).not.toContain("From 1 December");
+    expect(checkout).not.toContain("needsCourierFeeQuote");
     expect(checkout).toContain("collection or kerbside");
     expect(checkout).toContain('if (fulfilment === "delivery" && deliveryUnderMinimum)');
     const styles = readFileSync(new URL("../src/styles.launch-checkout.css", import.meta.url), "utf8");

@@ -68,11 +68,13 @@ describe("MealDeck own-driver delivery safeguards", () => {
     expect(ownDriverShortfallPence(2000, november)).toBe(0);
     expect(ownDriverShortfallPence(-1, november)).toBeNull();
   });
-  test("from December the minimum becomes £10; courier fee is quoted separately", () => {
-    const december = "2026-12-01T18:00:00Z";
-    expect(ownDriverShortfallPence(999, december)).toBe(1);
-    expect(ownDriverShortfallPence(1000, december)).toBe(0);
-    expect(ownDriverShortfallPence(1500, december)).toBe(0);
+  test("free own-driver delivery stays £15 after discounts through December and January", () => {
+    for (const at of ["2026-12-01T18:00:00Z", "2027-01-11T18:00:00Z"]) {
+      expect(ownDriverShortfallPence(999, at)).toBe(501);
+      expect(ownDriverShortfallPence(1000, at)).toBe(500);
+      expect(ownDriverShortfallPence(1499, at)).toBe(1);
+      expect(ownDriverShortfallPence(1500, at)).toBe(0);
+    }
   });
   test("4 km radius has a precise boundary", () => {
     expect(OWN_DRIVER_RADIUS_METRES).toBe(4000);
