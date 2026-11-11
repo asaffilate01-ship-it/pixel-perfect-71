@@ -95,7 +95,7 @@ end $$;
 -- expiry and provider preflight still decide if a notification can be sent.
 create function mealdeck_private.push_capture_verified_driver_pickup()
 returns trigger language plpgsql security definer set search_path='' as $$
-declare o public.orders%rowtype; event_id uuid;
+declare o public.orders%rowtype; v_event_id uuid;
 begin
   if old.state is not distinct from new.state or new.state<>'collected'
     or old.driver_id is distinct from new.driver_id
@@ -115,11 +115,11 @@ begin
   ) values (
     o.tenant_id,o.location_id,'order_update',o.id,'with_driver',
     clock_timestamp()+interval '20 minutes'
-  ) on conflict(order_id,stage) do nothing returning id into event_id;
-  if event_id is not null then
+  ) on conflict(order_id,stage) do nothing returning id into v_event_id;
+  if v_event_id is not null then
     insert into mealdeck_private.push_outbox(
       tenant_id,location_id,event_id,source_type,subscription_id,endpoint_hash
-    ) select o.tenant_id,o.location_id,event_id,r.source_type,r.subscription_id,r.endpoint_hash
+    ) select o.tenant_id,o.location_id,v_event_id,r.source_type,r.subscription_id,r.endpoint_hash
       from mealdeck_private.push_order_recipients(o.id) r
       on conflict(event_id,endpoint_hash) do nothing;
   end if;
