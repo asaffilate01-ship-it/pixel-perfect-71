@@ -80,7 +80,7 @@ describe("opt-in foreground driver GPS and member-only projection", () => {
     }));
     expect(html).toContain("Start sharing");
     expect(html).toContain("disabled");
-    expect(html).toContain("foreground");
+    expect(html).toContain("Not background turn-by-turn tracking");
     expect(html).not.toContain("51.8973");
   });
 
