@@ -1,12 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import {
-  mealDeckDeliveryPolicy, priceMealDeckDelivery,
+  mealDeckDeliveryPolicy,
+  priceMealDeckDelivery,
 } from "../src/lib/mealdeck-delivery-pricing-policy";
 import { ownDriverShortfallPence } from "../src/lib/mealdeck-own-driver-delivery";
 
 const nov = "2026-11-30T23:59:59Z";
 const dec = "2026-12-01T00:00:00Z";
+const jan = "2027-01-11T18:00:00Z";
 const quote = {
   provider: "uber_direct" as const,
   quoteId: "live_uber_1",
@@ -17,63 +19,74 @@ const quote = {
   expiresAt: "2026-12-01T00:09:00Z",
 };
 
-describe("MealDeck monthly delivery pricing policy", () => {
-  test("November keeps free delivery with £15 food minimum after discounts", () => {
-    expect(mealDeckDeliveryPolicy(nov)).toEqual({
-      phase: "november_free",
+describe("MealDeck ongoing free own-driver delivery policy", () => {
+  test("£15 after discounts and £0 delivery persist after 30 November without a calendar switch", () => {
+    for (const at of [nov, dec, jan, "2027-07-09T12:00:00Z"]) {
+      const policy = mealDeckDeliveryPolicy(at);
+      expect(policy).toMatchObject({
+        phase: "own_driver_free",
+        minimumFoodPence: 1500,
+        deliveryFeeMode: "free",
+      });
+      expect(ownDriverShortfallPence(1499, at)).toBe(1);
+      expect(ownDriverShortfallPence(1500, at)).toBe(0);
+      const priced = priceMealDeckDelivery({
+        fulfilmentAtIso: at,
+        foodAfterDiscountPence: 1500,
+        // An unrelated courier quote must never add a surprise fee to own delivery.
+        trustedCourierQuote: { ...quote, amountPence: 999 },
+      });
+      expect(priced).toEqual({
+        ready: true,
+        phase: "own_driver_free",
+        minimumFoodPence: 1500,
+        foodPence: 1500,
+        deliveryPence: 0,
+        payablePence: 1500,
+        quoteId: null,
+        courier: null,
+      });
+    }
+  });
+
+  test("a delivery minimum applies to discounted food rather than courier fees", () => {
+    expect(priceMealDeckDelivery({
+      fulfilmentAtIso: dec,
+      foodAfterDiscountPence: 1499,
+      trustedCourierQuote: quote,
+    })).toEqual({
+      ready: false,
+      reason: "below_minimum",
       minimumFoodPence: 1500,
-      deliveryFeeMode: "free",
-      effectiveLocalDate: "2026-11-30",
-    });
-    expect(ownDriverShortfallPence(1499, nov)).toBe(1);
-    expect(ownDriverShortfallPence(1500, nov)).toBe(0);
-    const price = priceMealDeckDelivery({
-      fulfilmentAtIso: nov, foodAfterDiscountPence: 1500,
-      trustedCourierQuote: { ...quote, amountPence: 999 },
-    });
-    expect(price).toEqual({
-      ready: true, phase: "november_free", minimumFoodPence: 1500,
-      foodPence: 1500, deliveryPence: 0, payablePence: 1500,
-      quoteId: null, courier: null,
+      shortfallPence: 1,
+      phase: "own_driver_free",
     });
   });
 
-  test("from 1 December food minimum is £10, with verified courier charge", () => {
-    expect(mealDeckDeliveryPolicy(dec)).toEqual({
+  test("future quoted-courier pricing is opt-in, not enabled by reaching December", () => {
+    expect(mealDeckDeliveryPolicy(dec, "quoted_delivery")).toEqual({
       phase: "quoted_delivery",
       minimumFoodPence: 1000,
       deliveryFeeMode: "trusted_quote_required",
       effectiveLocalDate: "2026-12-01",
     });
-    expect(ownDriverShortfallPence(999, dec)).toBe(1);
-    expect(ownDriverShortfallPence(1000, dec)).toBe(0);
-    expect(priceMealDeckDelivery({
-      fulfilmentAtIso: dec, foodAfterDiscountPence: 1000,
-    })).toEqual({
+    const requested = {
+      fulfilmentAtIso: dec,
+      foodAfterDiscountPence: 1000,
+      pricingMode: "quoted_delivery" as const,
+    };
+    expect(priceMealDeckDelivery(requested)).toEqual({
       ready: false, reason: "quote_required", minimumFoodPence: 1000,
       shortfallPence: null, phase: "quoted_delivery",
     });
-    expect(priceMealDeckDelivery({
-      fulfilmentAtIso: dec, foodAfterDiscountPence: 1000,
-      trustedCourierQuote: quote,
-    })).toEqual({
-      ready: true, phase: "quoted_delivery",
-      minimumFoodPence: 1000, foodPence: 1000,
-      deliveryPence: 485, payablePence: 1485,
+    expect(priceMealDeckDelivery({ ...requested, trustedCourierQuote: quote })).toEqual({
+      ready: true, phase: "quoted_delivery", minimumFoodPence: 1000,
+      foodPence: 1000, deliveryPence: 485, payablePence: 1485,
       quoteId: "live_uber_1", courier: "uber_direct",
     });
   });
 
-  test("minimum is based on discounted food, NOT paid delivery charges", () => {
-    expect(priceMealDeckDelivery({
-      fulfilmentAtIso: dec, foodAfterDiscountPence: 999, trustedCourierQuote: quote,
-    })).toEqual({
-      ready: false, reason: "below_minimum", minimumFoodPence: 1000,
-      shortfallPence: 1, phase: "quoted_delivery",
-    });
-  });
-
-  test("no invented, expired or unserviceable quote can produce a December payment", () => {
+  test("explicit future courier pricing rejects forged, expired and unserviceable quotes", () => {
     for (const bad of [
       { ...quote, expiresAt: dec },
       { ...quote, serviceable: false },
@@ -84,38 +97,43 @@ describe("MealDeck monthly delivery pricing policy", () => {
     ]) {
       expect(priceMealDeckDelivery({
         fulfilmentAtIso: dec, foodAfterDiscountPence: 2000,
-        trustedCourierQuote: bad,
+        pricingMode: "quoted_delivery", trustedCourierQuote: bad,
       })).toMatchObject({ ready: false, reason: "quote_required" });
     }
   });
 
-  test("December payment authority rejects old unquoted Luton delivery orders", () => {
+  test("approved corrective SQL drops only the exact future Luton gate, not payment controls", () => {
     const sql = readFileSync(new URL(
-      "../deploy/mealdeck/post-install-migrations/20261109235501_mealdeck_december_delivery_paid_quote_gate.sql",
+      "../deploy/mealdeck/post-install-migrations/20261111070000_mealdeck_keep_free_own_driver_delivery.sql",
       import.meta.url,
     ), "utf8");
-    expect(sql).toContain("2026-12-01 00:00:00+00");
-    expect(sql).toContain("new.source='mealdeck'");
-    expect(sql).toContain("new.fulfilment='delivery'");
-    expect(sql).toContain("mealdeck_delivery_verified_courier_quote_required");
-    expect(sql).toContain("before insert or update of fulfilment,delivery_pence on public.orders");
-    expect(sql).toContain("create trigger mealdeck_december_paid_quote_gate");
+    expect(sql).toContain("profile='mealdeck-independent-v1'");
+    expect(sql).toContain("b30716663152ef181423c903058d28e3");
+    expect(sql).toContain("mealdeck_december_paid_quote_gate");
+    expect(sql).toContain("drop trigger mealdeck_december_paid_quote_gate on public.orders;");
+    expect(sql).toContain("mealdeck_free_delivery_unexpected_december_gate");
+    expect(sql).not.toMatch(/\b(?:update|delete|truncate|alter table)\s+public\.orders\b/i);
+    expect(sql).not.toMatch(/\bdrop\s+(?:function|schema|table)\b/i);
+    expect(sql.trimEnd().endsWith("commit;")).toBe(true);
   });
 
-  test("checkout never silently offers December delivery at the old zero fee", () => {
+  test("checkout uses server availability and does not invent a December surcharge", () => {
     const jsx = readFileSync(new URL("../src/components/launch-checkout.tsx", import.meta.url), "utf8");
-    expect(jsx).toContain('const needsCourierFeeQuote = deliveryPricingPolicy?.phase === "quoted_delivery"');
-    expect(jsx).toContain("disabled={busy || needsCourierFeeQuote}");
-    expect(jsx).toContain("Delivery checkout is paused until");
-    expect(jsx).toContain("From 1 December");
-    expect(jsx).toContain("£10");
+    expect(jsx).toContain('status?.fulfilments?.includes("delivery") === true');
+    expect(jsx).toContain("deliveryArea?.eligible === true");
+    expect(jsx).toContain("ownDriverShortfallPence(displayTotal)");
+    expect(jsx).toContain("£15 minimum after discounts");
+    expect(jsx).toContain("Free delivery");
+    expect(jsx).not.toContain("From 1 December");
+    expect(jsx).not.toContain("needsCourierFeeQuote");
   });
 
-  test("London date controls the boundary, not a device-local date", () => {
-    const octoberUtc = "2027-03-28T00:30:00Z";
-    expect(mealDeckDeliveryPolicy(octoberUtc)?.effectiveLocalDate).toBe("2027-03-28");
-    expect(mealDeckDeliveryPolicy("2026-11-30T23:30:00Z")?.phase).toBe("november_free");
-    expect(mealDeckDeliveryPolicy("2026-12-01T00:00:00Z")?.phase).toBe("quoted_delivery");
+  test("Europe/London civil date remains trustworthy across DST and year boundaries", () => {
+    expect(mealDeckDeliveryPolicy("2027-03-28T00:30:00Z")?.effectiveLocalDate).toBe("2027-03-28");
+    expect(mealDeckDeliveryPolicy(nov)?.effectiveLocalDate).toBe("2026-11-30");
+    expect(mealDeckDeliveryPolicy(dec)?.effectiveLocalDate).toBe("2026-12-01");
     expect(mealDeckDeliveryPolicy("invalid")).toBeNull();
+    expect(mealDeckDeliveryPolicy("2026-10-30T12:00:00Z")).toBeNull();
+    expect(mealDeckDeliveryPolicy(dec, "free" as never)).toBeNull();
   });
 });
