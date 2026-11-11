@@ -35,6 +35,22 @@ try {
   await db.exec(readFileSync(
     new URL("../../deploy/mealdeck/post-install-migrations/20261111100000_mealdeck_verified_driver_push.sql",import.meta.url),"utf8"
   ));
+  // Native CI has no pg_cron extension. The isolated stub records only the
+  // retention schedule and cannot connect to any actual production scheduler.
+  await db.exec(`
+    create schema cron;
+    create table cron.jobs(name text primary key,schedule text,command text);
+    create function cron.schedule(job_name text,schedule text,command text)
+    returns bigint language plpgsql set search_path='' as $
+    begin
+      insert into cron.jobs(name,schedule,command) values(job_name,schedule,command)
+      on conflict(name) do update set schedule=excluded.schedule,command=excluded.command;
+      return 1;
+    end $;
+  `);
+  await db.exec(readFileSync(
+    new URL("../../deploy/mealdeck/post-install-migrations/20261111113000_mealdeck_private_driver_location.sql",import.meta.url),"utf8"
+  ));
   // Test-only opt-in activation, no provider/network connection.
   await db.exec("update mealdeck_private.customer_features set push_enabled=true where singleton");
   await setGuestFixtureClock(db, "2026-11-06T16:00:00Z");
@@ -377,6 +393,11 @@ try {
     ]),/mealdeck_driver_handover_pending/);
     await driver("with_driver");
     assert.equal((await card()).driverStatus,"with_driver");
+    // KDS handover alone cannot start driver location sharing: driver's own
+    // authenticated pickup action is a separate required proof.
+    await assert.rejects(()=>driverActor("mealdeck_driver_location_consent",[
+      order.orderId,true
+    ]),/mealdeck_driver_location_ineligible/);
     assert.equal(await scalar(
       "select count(*)::int from mealdeck_private.push_events where order_id=$1 and stage='with_driver'",
       [order.orderId],
@@ -412,6 +433,55 @@ try {
     assert.equal(readyToSend.payload.stage,"with_driver");
     assert.equal(readyToSend.payload.fulfilment,"delivery");
     assert.equal(readyToSend.payload.checkoutMode,"guest");
+    // No sharing without an explicit consent RPC, even for an approved on-shift driver.
+    await assert.rejects(()=>driverActor("mealdeck_driver_location_point",[
+      order.orderId,51.8973,-0.4461,18,new Date().toISOString(),
+    ]),/mealdeck_driver_location_ineligible/);
+    assert.deepEqual(await driverActor("mealdeck_driver_location_consent",[
+      order.orderId,true,
+    ]),{sharing:true});
+    await assert.rejects(()=>driverActor("mealdeck_driver_location_point",[
+      order.orderId,51.8973,-0.4461,101,new Date().toISOString(),
+    ]),/mealdeck_driver_location_invalid/);
+    await assert.rejects(()=>driverActor("mealdeck_driver_location_point",[
+      order.orderId,0,0,18,new Date().toISOString(),
+    ]),/mealdeck_driver_location_invalid/);
+    assert.deepEqual(await driverActor("mealdeck_driver_location_point",[
+      order.orderId,51.8973,-0.4461,18,new Date().toISOString(),
+    ]),{saved:true});
+    assert.deepEqual(await driverActor("mealdeck_driver_location_point",[
+      order.orderId,51.8973,-0.4461,18,new Date().toISOString(),
+    ]),{saved:false,reason:"throttled"});
+    assert.equal(await scalar(
+      "select count(*)::int from mealdeck_private.driver_location_points where order_id=$1 and latitude is not null",
+      [order.orderId]
+    ),1);
+    assert.deepEqual(await asActor(db,f.customer,()=>scalar(
+      "select public.mealdeck_customer_driver_position($1)",[order.orderId]
+    )),{available:false}); // A guest order is NOT an authenticated member order.
+    for(const table of ["driver_location_points"]) {
+      for(const actor of ["anon","authenticated","service_role"])
+        assert.equal(await scalar("select has_table_privilege($1,$2,'SELECT')",[
+          actor,"mealdeck_private."+table
+        ]),false);
+    }
+    assert.equal(await scalar("select has_function_privilege('anon',$1,'EXECUTE')",[
+      "public.mealdeck_customer_driver_position(uuid)"
+    ]),false);
+    const schedule=await db.query("select * from cron.jobs where name='mealdeck-driver-location-retention'");
+    assert.equal(schedule.rows[0].schedule,"* * * * *");
+    // The private retention sweeper purges expired coordinates without
+    // leaking or retaining a route history.
+    await db.query("update mealdeck_private.driver_location_points set expires_at=clock_timestamp()-interval '1 second' where order_id=$1",[
+      order.orderId
+    ]);
+    assert.equal(await scalar("select mealdeck_private.clear_stale_driver_locations()"),1);
+    assert.equal(await scalar("select latitude is null from mealdeck_private.driver_location_points where order_id=$1",[
+      order.orderId
+    ]),true);
+    assert.deepEqual(await driverActor("mealdeck_driver_location_consent",[
+      order.orderId,false
+    ]),{sharing:false});
     assert.equal(JSON.stringify(readyToSend.payload).includes("driver-handover-fixture"),false);
     assert.equal(JSON.stringify(readyToSend.payload).includes("Test Road"),false);
     active=(await driverActor("mealdeck_driver_portal")).jobs[0];
