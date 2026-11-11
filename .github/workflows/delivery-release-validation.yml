@@ -8,6 +8,11 @@ on:
       - 'scripts/prepare-printer-v023.mjs'
       - 'src/lib/mealdeck-own-driver*'
       - 'tests/mealdeck-own-driver*'
+      - 'src/lib/mealdeck-delivery-pricing-policy.ts'
+      - 'src/components/launch-checkout.tsx'
+      - 'tests/mealdeck-delivery-pricing-policy.test.ts'
+      - 'tests/mealdeck-hosted-delivery-minimum.test.ts'
+      - 'deploy/mealdeck/post-install-migrations/20261111070000_mealdeck_keep_free_own_driver_delivery.sql'
       - 'src/routeTree.gen.ts'
       - 'src/routes/delivery-terms.tsx'
       - 'src/lib/launch-menu-item-descriptor.ts'
@@ -25,6 +30,11 @@ on:
       - '.github/workflows/publish-printer-v023.yml'
       - 'src/lib/mealdeck-own-driver*'
       - 'tests/mealdeck-own-driver*'
+      - 'src/lib/mealdeck-delivery-pricing-policy.ts'
+      - 'src/components/launch-checkout.tsx'
+      - 'tests/mealdeck-delivery-pricing-policy.test.ts'
+      - 'tests/mealdeck-hosted-delivery-minimum.test.ts'
+      - 'deploy/mealdeck/post-install-migrations/20261111070000_mealdeck_keep_free_own_driver_delivery.sql'
       - 'src/routeTree.gen.ts'
       - 'src/routes/delivery-terms.tsx'
       - 'src/lib/launch-menu-item-descriptor.ts'
@@ -85,6 +95,7 @@ jobs:
             tail -n 30 "$RUNNER_TEMP/delivery-results/$label.log"
           }
           check migration node --test tests/delivery-migration-source.test.mjs
+          check delivery-pricing bun test tests/mealdeck-delivery-pricing-policy.test.ts tests/mealdeck-hosted-delivery-minimum.test.ts
           check focused bun test tests/mealdeck-own-driver*.test.ts tests/mealdeck-kds*.test.ts tests/mealdeck-guest-checkout.test.ts tests/mealdeck-whatsapp*.test.ts tests/mealdeck-prelaunch-status.test.ts tests/mealdeck-online-checkout.test.ts tests/mealdeck-printer*.test.ts
           check receipt node --test tools/receipt-bridge/test/*.test.mjs
           check types bunx tsc --noEmit
