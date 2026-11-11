@@ -29,6 +29,10 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
   const [newDriverEmail,setNewDriverEmail]=useState("");
   const [verifiedDriverId,setVerifiedDriverId]=useState<string|null>(null);
   const [newDriverName,setNewDriverName]=useState("");
+  // Revocation/restoration requires a second, named manager confirmation.
+  const [pendingAccess,setPendingAccess]=useState<{
+    driverId:string;name:string;nextEnabled:boolean;
+  }|null>(null);
   const [choices,setChoices]=useState<Record<string,string>>({});
   const refresh=useCallback(async()=>{
     setLoading(true);setError("");
@@ -83,6 +87,33 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
     }catch(reason){setError(reason instanceof Error?reason.message:"Could not approve the driver.");}
     finally{setBusy(false);}
   }
+  async function confirmDriverAccess(){
+    if(!canEnrol||busy||!pendingAccess||!driverId.safeParse(pendingAccess.driverId).success)return;
+    const currentlyListed=board?.drivers.find(d=>d.driverId===pendingAccess.driverId);
+    if(!currentlyListed||currentlyListed.enabled===pendingAccess.nextEnabled){
+      setPendingAccess(null);setError("Driver access has changed. Refresh and review the latest roster.");
+      return;
+    }
+    setBusy(true);setError("");setNotice("");
+    try {
+      const result=await opsRpc<unknown>("mealdeck_ops_driver_set_enabled",{
+        p_tenant:tenantId,p_location:locationId,
+        p_user:pendingAccess.driverId,p_enabled:pendingAccess.nextEnabled,
+      });
+      const confirmed=z.strictObject({ok:z.literal(true),enabled:z.boolean()}).safeParse(result);
+      if(!confirmed.success||confirmed.data.enabled!==pendingAccess.nextEnabled)
+        throw new Error("Driver access could not be verified. Refresh before retrying.");
+      const changedName=pendingAccess.name;
+      const nowEnabled=pendingAccess.nextEnabled;
+      setPendingAccess(null);
+      await refresh();
+      setNotice(nowEnabled
+        ? changedName+" can now sign in and start a shift. No job is assigned automatically."
+        : changedName+" can no longer access driver jobs. Their shift was ended.");
+    }catch(reason){
+      setError(reason instanceof Error?reason.message:"Driver access could not be changed. Refresh and check the roster.");
+    }finally{setBusy(false);}
+  }
   async function offer(orderId:string){
     const driver=choices[orderId];
     if(!driver||!driverId.safeParse(driver).success||busy)return;
@@ -118,6 +149,10 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
       {!board && !error && <p role="status">Checking authorised driver dispatch…</p>}
       {board && <>
         <p className="text-sm font-bold md-ops-ink">{board.drivers.filter(d=>d.enabled&&d.onShift).length} driver(s) on shift · {board.orders.length} ready delivery job(s)</p>
+        {board.drivers.filter(d=>d.enabled&&d.onShift).length===0 && <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" role="status">
+          No approved driver is on shift. Ask an approved driver to sign in at <Link to="/driver" target="_blank" rel="noopener noreferrer" className="underline font-bold">/driver</Link> and start a shift.
+          Do not offer jobs until an available driver is listed; KDS staff still verify sealed-bag handover.
+        </p>}
         {board.orders.length===0 && <p className="text-sm md-ops-muted">No fully packed, paid delivery jobs awaiting assignment.</p>}
         <div className="grid gap-3 lg:grid-cols-2">
           {board.orders.map(order=>{
@@ -144,11 +179,43 @@ export function OpsDriverDispatchPanel({ tenantId, locationId, canEnrol }:{
         </div>
         <div className="border-t pt-4 space-y-3">
           <h4 className="font-bold md-ops-ink">Approved drivers</h4>
-          {board.drivers.length===0 && <p className="text-sm md-ops-muted">No drivers registered. A manager must add an existing MealDeck Auth account.</p>}
+          {board.drivers.length===0 && <div className="rounded-xl border bg-amber-50 p-3 text-sm text-amber-950" role="status">
+            No approved drivers. To enable dispatch: verify the driver's email in MealDeck /account,
+            find that exact email below, approve their account, then ask them to sign in at /driver and start a shift.
+            Approving access does not assign a job or enable delivery payments.
+          </div>}
           <ul className="space-y-2 text-sm">
-            {board.drivers.map(d=><li key={d.driverId} className="flex justify-between gap-3">
-              <span className="font-semibold">{d.name}</span>
-              <span>{!d.enabled?"Disabled":d.onShift?"On shift":"Off shift"}</span>
+            {board.drivers.map(d=><li key={d.driverId} className="flex flex-col gap-2 rounded-xl border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold md-ops-ink">{d.name}</span>
+                <span className="text-xs md-ops-muted">{!d.enabled?"Access disabled":d.onShift?"On shift":"Off shift"}</span>
+                {canEnrol && <button type="button" className="md-ops-button md-ops-secondary"
+                  disabled={busy||loading}
+                  aria-label={(d.enabled?"Disable":"Enable")+" driver access for "+d.name}
+                  onClick={()=>{setError("");setNotice("");setPendingAccess({
+                    driverId:d.driverId,name:d.name,nextEnabled:!d.enabled,
+                  });}}>
+                  {d.enabled?"Disable driver":"Enable driver"}
+                </button>}
+              </div>
+              {canEnrol&&pendingAccess?.driverId===d.driverId && <div className="rounded-lg border border-amber-400 bg-amber-50 p-3 space-y-2">
+                <p className="text-sm font-semibold text-amber-950" role="status">
+                  Confirm {pendingAccess.nextEnabled?"restoring":"revoking"} driver access for {d.name}?
+                </p>
+                <p className="text-xs text-amber-900">
+                  {pendingAccess.nextEnabled
+                    ? "Access can be restored, but the driver must start a shift themselves."
+                    : "Active deliveries cannot be revoked until the kitchen finishes or resolves the job. This does not cancel any paid customer order."}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="md-ops-button md-ops-primary" disabled={busy}
+                    onClick={()=>void confirmDriverAccess()}>
+                    {busy?"Checking…":pendingAccess.nextEnabled?"Confirm enable":"Confirm disable"}
+                  </button>
+                  <button type="button" className="md-ops-button md-ops-secondary" disabled={busy}
+                    onClick={()=>setPendingAccess(null)}>Cancel</button>
+                </div>
+              </div>}
             </li>)}
           </ul>
           {canEnrol && <div className="grid gap-3 rounded-xl border p-3 sm:grid-cols-2">
