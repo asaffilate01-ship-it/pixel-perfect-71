@@ -51,6 +51,16 @@ try {
   await db.exec(readFileSync(
     new URL("../../deploy/mealdeck/post-install-migrations/20261111113000_mealdeck_private_driver_location.sql",import.meta.url),"utf8"
   ));
+  // The GPS feature is unusable even through authenticated RPCs until the
+  // independent server-side switch is explicitly enabled after QA.
+  assert.equal(await scalar(
+    "select enabled from mealdeck_private.driver_location_runtime where singleton"
+  ),false);
+  for(const role of ["anon","authenticated","service_role"]){
+    assert.equal(await scalar("select has_table_privilege($1,$2,'SELECT')",[
+      role,"mealdeck_private.driver_location_runtime"
+    ]),false);
+  }
   // Test-only opt-in activation, no provider/network connection.
   await db.exec("update mealdeck_private.customer_features set push_enabled=true where singleton");
   await setGuestFixtureClock(db, "2026-11-06T16:00:00Z");
@@ -437,6 +447,11 @@ try {
     await assert.rejects(()=>driverActor("mealdeck_driver_location_point",[
       order.orderId,51.8973,-0.4461,18,new Date().toISOString(),
     ]),/mealdeck_driver_location_ineligible/);
+    await assert.rejects(()=>driverActor("mealdeck_driver_location_consent",[
+      order.orderId,true,
+    ]),/mealdeck_driver_location_ineligible/);
+    // A disposable owner-only beta activation: never enabled by a PR/deploy.
+    await db.exec("update mealdeck_private.driver_location_runtime set enabled=true where singleton");
     assert.deepEqual(await driverActor("mealdeck_driver_location_consent",[
       order.orderId,true,
     ]),{sharing:true});
