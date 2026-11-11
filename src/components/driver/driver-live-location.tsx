@@ -161,6 +161,11 @@ export function DriverLiveLocation({
       if (request !== generation.current) return;
       clearWatch();
       setState("off");
+      // A failed watch/permission request may follow a successful database
+      // consent. Revoke it, rather than leaving an accidental active marker.
+      if (online) void driverRpc("mealdeck_driver_location_consent", {
+        p_order: orderId, p_enabled: false,
+      }).catch(() => {});
       setMessage("Location sharing could not be authorised for this delivery. Ask the kitchen to check the assignment.");
     }
   }
