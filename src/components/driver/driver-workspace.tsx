@@ -283,7 +283,7 @@ export function DriverWorkspace() {
                   {DRIVER_LOCATION_BETA && portal.onShift &&
                     job.driverStatus === "with_driver" &&
                     (job.status === "collected" || job.status === "at_customer") &&
-                    <DriverLiveLocation orderId={job.jobId} userId={userId}
+                    <DriverLiveLocation orderId={job.jobId} userId={userId ?? ""}
                       onShift={portal.onShift} online={online} />}
                   {job.status === "dropoff_reported" && <p className="md-driver-info"><ShieldCheck size={18}/> Your report is saved. Only kitchen staff can mark the paid order delivered.</p>}
                   {job.status === "at_kitchen" && job.driverStatus !== "with_driver" && <p className="md-driver-info">Wait for staff to confirm the sealed-bag handover in KDS.</p>}
