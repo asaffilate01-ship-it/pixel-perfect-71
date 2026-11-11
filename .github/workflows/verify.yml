@@ -67,7 +67,7 @@ jobs:
       - name: Installable app cache isolation and offline behavior
         run: bun test tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts tests/mealdeck-mobile-safe-area.test.ts
       - name: MealDeck own-driver PWA state and privacy contract
-        run: bun test tests/mealdeck-driver-app-view.test.ts tests/mealdeck-driver-app-contract.test.ts tests/mealdeck-driver-gps-readiness.test.ts
+        run: bun test tests/mealdeck-driver-app-view.test.ts tests/mealdeck-driver-app-contract.test.ts tests/mealdeck-driver-gps-readiness.test.ts tests/mealdeck-driver-live-location.test.tsx
       - name: Driver UI contract and dispatch implementation lint
         run: |
           node --check public/driver-sw.js
