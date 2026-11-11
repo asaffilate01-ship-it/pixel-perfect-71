@@ -24,6 +24,18 @@ begin
   then raise exception 'mealdeck_driver_location_independent_readiness_required';end if;
 end $guard$;
 
+-- Independent server-side activation gate, OFF on every fresh installation.
+-- No browser or staff RPC can toggle this table. A separate owner-controlled
+-- release and physical-device acceptance are required before enabling.
+create table mealdeck_private.driver_location_runtime (
+  singleton boolean primary key default true check(singleton),
+  enabled boolean not null default false,
+  updated_at timestamptz not null default clock_timestamp()
+);
+insert into mealdeck_private.driver_location_runtime(singleton,enabled) values(true,false);
+alter table mealdeck_private.driver_location_runtime enable row level security;
+revoke all on mealdeck_private.driver_location_runtime from public,anon,authenticated,service_role;
+
 create table mealdeck_private.driver_location_points (
   order_id uuid primary key references mealdeck_private.driver_assignments(order_id) on delete restrict,
   tenant_id uuid not null,
@@ -65,6 +77,8 @@ returns boolean language sql security definer set search_path='' as $
    join mealdeck_private.installation i on i.singleton and i.business_id=o.tenant_id
      and i.profile='mealdeck-independent-v1'
    where a.order_id=p_order and a.driver_id=p_driver and p_driver is not null
+     and exists(select 1 from mealdeck_private.driver_location_runtime cfg
+       where cfg.singleton and cfg.enabled)
      and r.enabled and r.on_shift and a.state in ('collected','at_customer')
      and d.driver_status='with_driver' and d.handed_to_driver_at is not null
      and o.source='mealdeck' and o.fulfilment='delivery'
@@ -176,11 +190,21 @@ returns integer language plpgsql security definer set search_path='' as $$
 declare changed integer;
 begin
   update mealdeck_private.driver_location_points
-    set latitude=null,longitude=null,accuracy_metres=null,fixed_at=null,
+    set enabled=case
+          when consent_at<=clock_timestamp()-interval '24 hours'
+            or not mealdeck_private.driver_location_authorised(order_id,driver_id)
+          then false else enabled end,
+        latitude=null,longitude=null,accuracy_metres=null,fixed_at=null,
         expires_at=null,updated_at=clock_timestamp()
-    where latitude is not null and (expires_at<=clock_timestamp()
-      or not mealdeck_private.driver_location_authorised(order_id,driver_id));
+    where (latitude is not null and (expires_at<=clock_timestamp()
+      or not mealdeck_private.driver_location_authorised(order_id,driver_id)))
+      or (enabled and (consent_at<=clock_timestamp()-interval '24 hours'
+        or not mealdeck_private.driver_location_authorised(order_id,driver_id)));
   get diagnostics changed=row_count;
+  -- No expired/ended delivery metadata is kept indefinitely. This is not an
+  -- operational receipt or payment record; it contains only GPS consent.
+  delete from mealdeck_private.driver_location_points
+    where consent_at<=clock_timestamp()-interval '24 hours';
   return changed;
 end $$;
 revoke all on function mealdeck_private.clear_stale_driver_locations()
