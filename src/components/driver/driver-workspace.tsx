@@ -12,7 +12,7 @@ import "./driver-workspace.css";
 
 const ACTION_REFRESH_MS = 12_000;
 // Explicit opt-in beta: no GPS broadcast merely because a driver is assigned.
-const DRIVER_LOCATION_BETA = import.meta.env?.VITE_MEALDECK_DRIVER_LOCATION_BETA === "true";
+const DRIVER_LOCATION_BETA = import.meta.env?.["VITE_MEALDECK_DRIVER_LOCATION_BETA"] === "true";
 const stageNames: Record<DriverJobCard["status"], string> = {
   offered: "New delivery offer", assigned: "Head to the kitchen",
   at_kitchen: "Waiting for sealed bags", collected: "On the way",
