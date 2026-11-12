@@ -487,16 +487,16 @@ jobs:
       - name: "Phase 19–21: penny-accurate group splits, AI tool limits, order review"
         run: >-
           bun test tests/mealdeck-group-allocation.test.ts
-          tests/mealdeck-agent-guardrails.test.ts
+          tests/mealdeck-agent-guardrails.test.ts tests/mealdeck-agent-menu-grounding.test.ts
           tests/mealdeck-ops-alerts.test.ts
 
       - name: "Phase 19–21 source, tests and preview lint"
         run: >-
           bunx eslint src/lib/mealdeck-group-allocation.ts
-          src/lib/mealdeck-agent-guardrails.ts
+          src/lib/mealdeck-agent-guardrails.ts src/lib/mealdeck-agent-menu-grounding.ts
           src/lib/mealdeck-ops-alerts.ts
           tests/mealdeck-group-allocation.test.ts
-          tests/mealdeck-agent-guardrails.test.ts
+          tests/mealdeck-agent-guardrails.test.ts tests/mealdeck-agent-menu-grounding.test.ts
           tests/mealdeck-ops-alerts.test.ts
           src/components/coming-soon.tsx
           --rule 'prettier/prettier: off'
