@@ -306,7 +306,7 @@ describe("order notification identity and readiness", () => {
   });
 });
 
-test("verified paid-order notification opt-in appears before optional long progress and kitchen messages", () => {
+test("paid receipt offers push opt-in before progress and messages", () => {
   const source = readFileSync(
     new URL("../src/components/launch-checkout.tsx", import.meta.url),
     "utf8",
