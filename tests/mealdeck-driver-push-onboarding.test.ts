@@ -58,6 +58,38 @@ describe("MealDeck approved driver onboarding", () => {
   });
 });
 
+describe("MealDeck verified pickup delivery alerts", () => {
+  test("the new trigger captures only real driver pickup and uses consent-scoped recipients", () => {
+    const sql = source(
+      "deploy/mealdeck/post-install-migrations/20261111100000_mealdeck_verified_driver_push.sql",
+    );
+    const worker = source("public/sw.js");
+    expect(sql).toContain("profile='mealdeck-independent-v1'");
+    expect(sql).toContain("430986ee742a413f4fb3d0aa24a76946");
+    expect(sql).toContain("old.state is not distinct from new.state or new.state<>'collected'");
+    expect(sql).toContain("old.driver_id is distinct from new.driver_id");
+    expect(sql).toContain("o.payment_status<>'paid'");
+    expect(sql).toContain("d.driver_status='with_driver'");
+    expect(sql).toContain("a.state in ('collected','at_customer','dropoff_reported')");
+    expect(sql).toContain("mealdeck_private.push_order_recipients(o.id)");
+    expect(sql).toContain("on conflict(order_id,stage) do nothing");
+    expect(sql).toContain("after update of state on mealdeck_private.driver_assignments");
+    expect(sql).not.toContain("http_post(");
+    expect(sql).not.toContain("latitude");
+    expect(sql).not.toContain("longitude");
+    expect(sql).not.toContain("customer_phone");
+    expect(worker).toContain('with_driver: ["With your driver", "Your driver has collected your order."]');
+    expect(worker).toContain('payload.fulfilment === "delivery"');
+  });
+
+  test("the opt-in order card distinguishes handover alerts from live tracking", () => {
+    const card = source("src/components/order-notifications-card.tsx");
+    expect(card).toContain("verified driver pickup can also send an update");
+    expect(card).toContain("supported own-driver deliveries");
+    expect(card).not.toContain("Watch the driver live on a map");
+  });
+});
+
 describe("MealDeck verified push and staff campaigns", () => {
   const now = Date.parse("2026-11-09T21:00:00Z");
   const campaign = notificationCampaignSchema.parse({

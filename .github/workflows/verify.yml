@@ -29,7 +29,7 @@ jobs:
           node --check apps/mealdeck-whatsapp-worker/worker.mjs
           bunx eslint src/lib/mealdeck-whatsapp*.ts src/routes/api.whatsapp*.ts src/routes/api.ops.whatsapp.ts src/routes/whatsapp.checkout.tsx src/components/whatsapp*.tsx src/components/ops/whatsapp-inbox-panel.tsx tests/mealdeck-whatsapp*.test.ts deploy/mealdeck/whatsapp-ordering.mjs tests/postgres/whatsapp-ordering-behavior.mjs --rule 'prettier/prettier: off'
       - name: Launch menu prices, basket arithmetic and cross-brand choices
-        run: bun test tests/launch-menu-catalogue.test.ts tests/mealdeck-menu-item-descriptor.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-desserts.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-display-prices.test.ts tests/launch-basket-feedback.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
+        run: bun test tests/launch-menu-catalogue.test.ts tests/mealdeck-menu-item-descriptor.test.ts tests/launch-menu-picks.test.ts tests/launch-menu-upsells.test.ts tests/launch-menu-desserts.test.ts tests/launch-menu-navigation.test.ts tests/launch-menu-search.test.ts tests/launch-menu-display-prices.test.ts tests/launch-basket-feedback.test.ts tests/mealdeck-public-menu.test.ts tests/mealdeck-public-menu-server.test.ts
       - name: Sunday milkcakes show the exact final promotional amount
         run: bun test tests/mealdeck-milkcake-promotion.test.ts
       - name: Sunday milkcake promotion implementation lint
@@ -50,14 +50,14 @@ jobs:
           src/lib/brand-logos.ts src/components/mealdeck-logo.tsx
           src/components/menus/launch-menu-browser.tsx src/routes/menus.tsx
           src/components/menus/launch-basket.tsx src/components/menus/launch-item-customiser.tsx
-          src/components/menus/launch-menu-mobile-nav.tsx src/lib/launch-menu-navigation.ts src/routes/menu.tsx
+          src/components/menus/launch-menu-mobile-nav.tsx src/lib/launch-menu-navigation.ts src/lib/launch-menu-search.ts src/routes/menu.tsx
           src/components/menus/launch-menu-app-nav.tsx
           src/components/ui/dialog.tsx src/components/ui/sheet.tsx
           src/components/menus/launch-basket-feedback.tsx
           tests/launch-menu-catalogue.test.ts tests/mealdeck-menu-item-descriptor.test.ts tests/launch-menu-picks.test.ts
           tests/launch-menu-upsells.test.ts
           tests/launch-menu-desserts.test.ts
-          tests/launch-menu-navigation.test.ts
+          tests/launch-menu-navigation.test.ts tests/launch-menu-search.test.ts
           tests/launch-menu-display-prices.test.ts
           tests/launch-basket-feedback.test.ts
           deploy/mealdeck/public-menu-read.mjs tests/postgres/public-menu-read-behavior.mjs
@@ -487,16 +487,16 @@ jobs:
       - name: "Phase 19–21: penny-accurate group splits, AI tool limits, order review"
         run: >-
           bun test tests/mealdeck-group-allocation.test.ts
-          tests/mealdeck-agent-guardrails.test.ts
+          tests/mealdeck-agent-guardrails.test.ts tests/mealdeck-agent-menu-grounding.test.ts
           tests/mealdeck-ops-alerts.test.ts
 
       - name: "Phase 19–21 source, tests and preview lint"
         run: >-
           bunx eslint src/lib/mealdeck-group-allocation.ts
-          src/lib/mealdeck-agent-guardrails.ts
+          src/lib/mealdeck-agent-guardrails.ts src/lib/mealdeck-agent-menu-grounding.ts
           src/lib/mealdeck-ops-alerts.ts
           tests/mealdeck-group-allocation.test.ts
-          tests/mealdeck-agent-guardrails.test.ts
+          tests/mealdeck-agent-guardrails.test.ts tests/mealdeck-agent-menu-grounding.test.ts
           tests/mealdeck-ops-alerts.test.ts
           src/components/coming-soon.tsx
           --rule 'prettier/prettier: off'
