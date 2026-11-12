@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import {
   disableOrderNotifications,
   enableOrderNotifications,
@@ -303,6 +304,21 @@ describe("order notification identity and readiness", () => {
     ).toEqual({ available: false, enabled: true });
     await disableOrderNotifications("guest", orderId, endpoint, async () => null, request);
   });
+});
+
+test("verified paid-order notification opt-in appears before optional long progress and kitchen messages", () => {
+  const source = readFileSync(
+    new URL("../src/components/launch-checkout.tsx", import.meta.url),
+    "utf8",
+  );
+  const optIn = source.indexOf("<OrderNotificationsCard");
+  const progress = source.indexOf("<ReceiptProgress receipt={receipt}");
+  const messages = source.indexOf("<CustomerOrderComms");
+  expect(optIn).toBeGreaterThan(0);
+  expect(optIn).toBeLessThan(progress);
+  expect(optIn).toBeLessThan(messages);
+  expect(source.match(/<OrderNotificationsCard/g)).toHaveLength(1);
+  expect(source).toContain('receipt.paymentStatus !== "refunded"');
 });
 
 describe("order notification permission and subscription lifecycle", () => {
