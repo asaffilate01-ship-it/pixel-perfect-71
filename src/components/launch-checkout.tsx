@@ -2025,6 +2025,16 @@ function LaunchCheckoutView({
                       </div>
                     )}
                   </section>
+                  {receipt.verifiedPaid &&
+                    !receipt.completedAt &&
+                    !receipt.held &&
+                    receipt.paymentStatus !== "refunded" && (
+                      <OrderNotificationsCard
+                        key={checkoutMode + ":" + receipt.orderId}
+                        orderId={receipt.orderId}
+                        mode={checkoutMode}
+                      />
+                    )}
                   {receipt.verifiedPaid && <ReceiptProgress receipt={receipt} />}
                   {receipt.verifiedPaid && !receipt.completedAt && !receipt.held &&
                     receipt.paymentStatus !== "refunded" &&
@@ -2033,16 +2043,6 @@ function LaunchCheckoutView({
                         key={receipt.orderId + ":" + checkoutMode}
                         orderId={receipt.orderId}
                         fulfilment={receipt.fulfilment}
-                        mode={checkoutMode}
-                      />
-                    )}
-                  {receipt.verifiedPaid &&
-                    !receipt.completedAt &&
-                    !receipt.held &&
-                    receipt.paymentStatus !== "refunded" && (
-                      <OrderNotificationsCard
-                        key={checkoutMode + ":" + receipt.orderId}
-                        orderId={receipt.orderId}
                         mode={checkoutMode}
                       />
                     )}
