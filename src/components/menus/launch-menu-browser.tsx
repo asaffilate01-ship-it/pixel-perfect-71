@@ -35,6 +35,7 @@ import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
 import { getMealDeckMenuPage } from "@/lib/mealdeck-menu-seo";
 import { getLaunchMenuScrollTarget } from "@/lib/launch-menu-navigation";
+import { matchesLaunchMenuSearch } from "@/lib/launch-menu-search";
 import type { MealDeckPublicMenuSnapshot } from "@/lib/mealdeck-public-menu";
 import {
   getLaunchMenuBrand,
@@ -426,29 +427,27 @@ export function LaunchMenuBrowser({
   const activeSection = brand?.sections.some((section) => section.id === requestedSectionId)
     ? requestedSectionId
     : undefined;
-  const query = search.trim().toLocaleLowerCase("en-GB");
+  const query = search.trim();
   const sections = (brand?.sections ?? [])
     .filter((section) => !activeSection || section.id === activeSection)
     .map((section) => ({
       ...section,
       items: section.items
         .filter((item) => item.available !== false)
-        .filter((item) =>
-          [
-            item.name,
-            item.description,
-            section.title,
-            section.description,
-            ...(brand
-              ? launchItemGroups(brand, item).flatMap((group) =>
-                  group.options.map((option) => option.label),
-                )
-              : []),
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLocaleLowerCase("en-GB")
-            .includes(query),
+        .filter(
+          (item) =>
+            !query ||
+            matchesLaunchMenuSearch(query, [
+              item.name,
+              item.description,
+              section.title,
+              section.description,
+              ...(brand
+                ? launchItemGroups(brand, item).flatMap((group) =>
+                    group.options.map((option) => option.label),
+                  )
+                : []),
+            ]),
         ),
     }))
     .filter((section) => section.items.length > 0);
