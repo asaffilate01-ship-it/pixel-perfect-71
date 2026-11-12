@@ -96,10 +96,11 @@ export async function waitForOrderPushWorker(
       "not-ready",
       "MealDeck is still getting ready on this device. Reload this order, then try again.",
     );
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30_000)
-    throw notReady();
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30_000) throw notReady();
   const expectedScope = new URL("/", origin).href;
-  const valid = (worker: OrderWorkerRegistration | undefined): worker is OrderWorkerRegistration => {
+  const valid = (
+    worker: OrderWorkerRegistration | undefined,
+  ): worker is OrderWorkerRegistration => {
     if (!worker?.active || worker.scope !== expectedScope) return false;
     try {
       const script = new URL(worker.active.scriptURL);
