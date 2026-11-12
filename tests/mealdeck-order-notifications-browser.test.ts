@@ -7,6 +7,7 @@ import {
   readOrderPushConfig,
   readOrderPushDevice,
   requestOrderNotifications,
+  waitForOrderPushWorker,
   type OrderPushDevice,
   type OrderPushSupport,
 } from "../src/lib/mealdeck-order-notifications-browser";
@@ -181,6 +182,79 @@ describe("order notification identity and readiness", () => {
     expect(state.subscription?.endpoint).toBe(endpoint);
     expect(f.events).toEqual(["registration", "getSubscription"]);
     expect(f.counters.subscriptions).toBe(0);
+  });
+
+  test("first-time customers see opt-in without an active worker or prior permission", async () => {
+    const f = fixture({ permission: "default" });
+    f.device.registration = async () => {
+      throw new Error("The service worker has not finished installing");
+    };
+    expect(await readOrderPushDevice(f.device)).toEqual({
+      support: "supported",
+      permission: "default",
+      subscription: null,
+      updateReady: false,
+    });
+    expect(f.events).toEqual([]);
+    expect(f.requests).toHaveLength(0);
+
+    // A denied device also needs no worker or permission request.
+    const denied = fixture({ permission: "denied" });
+    denied.device.registration = f.device.registration;
+    expect((await readOrderPushDevice(denied.device)).permission).toBe("denied");
+    expect(denied.events).toEqual([]);
+  });
+
+  test("a granted first-use push waits for /sw.js to activate and rejects foreign workers", async () => {
+    const root = "https://mealdeck.co.uk/";
+    const registration = (scope: string, scriptURL: string) =>
+      ({
+        scope,
+        active: { scriptURL },
+        waiting: null,
+        pushManager: {},
+      }) as unknown as ServiceWorkerRegistration;
+    const correct = registration(root, root + "sw.js");
+    let readyCalls = 0;
+    const resolved = await waitForOrderPushWorker(
+      async () => undefined,
+      async () => {
+        readyCalls++;
+        return correct;
+      },
+      root,
+      100,
+    );
+    expect(resolved).toBe(correct);
+    expect(readyCalls).toBe(1);
+
+    const reuse = await waitForOrderPushWorker(
+      async () => correct,
+      async () => {
+        throw new Error("Already active: no wait required");
+      },
+      root,
+      100,
+    );
+    expect(reuse).toBe(correct);
+
+    for (const wrong of [
+      registration(root, "https://outside.example/sw.js"),
+      registration("https://outside.example/", root + "sw.js"),
+      registration(root, root + "staff-sw.js"),
+    ]) {
+      await expect(
+        waitForOrderPushWorker(async () => wrong, async () => wrong, root, 100),
+      ).rejects.toThrow("still getting ready");
+    }
+    await expect(
+      waitForOrderPushWorker(
+        async () => undefined,
+        () => new Promise<ServiceWorkerRegistration>(() => {}),
+        root,
+        10,
+      ),
+    ).rejects.toThrow("still getting ready");
   });
 
   test("a saved device is available only for its currently configured application key", () => {
