@@ -444,7 +444,9 @@ export function LaunchMenuBrowser({
               section.description,
               ...(brand
                 ? launchItemGroups(brand, item).flatMap((group) =>
-                    group.options.map((option) => option.label),
+                    group.options
+                      .filter((option) => option.available !== false)
+                      .map((option) => option.label),
                   )
                 : []),
             ]),
