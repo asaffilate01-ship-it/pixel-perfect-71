@@ -74,23 +74,65 @@ export type OrderPushDevice = {
   >;
 };
 
+type OrderWorkerRegistration = Pick<
+  ServiceWorkerRegistration,
+  "active" | "scope" | "waiting" | "pushManager"
+>;
+
+/**
+ * The PWA provider can still be activating /sw.js on a fresh paid-order page.
+ * Waiting is allowed only AFTER the user has explicitly granted permission.
+ * The timeout prevents a missing or foreign worker from hanging checkout.
+ * This never registers a new worker or requests browser permission.
+ */
+export async function waitForOrderPushWorker(
+  current: () => Promise<OrderWorkerRegistration | undefined>,
+  ready: () => Promise<OrderWorkerRegistration>,
+  origin: string,
+  timeoutMs = 8_000,
+): Promise<OrderWorkerRegistration> {
+  const notReady = () =>
+    new OrderNotificationsError(
+      "not-ready",
+      "MealDeck is still getting ready on this device. Reload this order, then try again.",
+    );
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30_000)
+    throw notReady();
+  const expectedScope = new URL("/", origin).href;
+  const valid = (worker: OrderWorkerRegistration | undefined): worker is OrderWorkerRegistration => {
+    if (!worker?.active || worker.scope !== expectedScope) return false;
+    try {
+      const script = new URL(worker.active.scriptURL);
+      return script.origin === new URL(expectedScope).origin && script.pathname === "/sw.js";
+    } catch {
+      return false;
+    }
+  };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(notReady()), timeoutMs);
+  });
+  try {
+    const existing = await Promise.race([current(), deadline]);
+    if (valid(existing)) return existing;
+    const activated = await Promise.race([ready(), deadline]);
+    if (!valid(activated)) throw notReady();
+    return activated;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 const browserDevice: OrderPushDevice = {
   support: orderPushSupport,
   permission: () => Notification.permission,
   requestPermission: () => Notification.requestPermission(),
-  registration: async () => {
-    const worker = await navigator.serviceWorker.getRegistration("/");
-    if (
-      !worker?.active ||
-      worker.scope !== new URL("/", window.location.origin).href ||
-      new URL(worker.active.scriptURL).pathname !== "/sw.js"
-    )
-      throw new OrderNotificationsError(
-        "not-ready",
-        "MealDeck is still getting ready on this device. Reload this order, then try again.",
-      );
-    return worker;
-  },
+  registration: () =>
+    waitForOrderPushWorker(
+      () => navigator.serviceWorker.getRegistration("/"),
+      () => navigator.serviceWorker.ready,
+      window.location.origin,
+    ),
 };
 
 function object(value: unknown): Record<string, unknown> {
@@ -189,7 +231,10 @@ export async function readOrderPushDevice(device: OrderPushDevice = browserDevic
   if (support !== "supported")
     return { support, permission: "default", subscription: null, updateReady: false };
   const permission = device.permission();
-  if (permission === "denied")
+  // New customers have not consented yet: do not require an installed SW just
+  // to show the "Notify me about this order" choice. A user click first
+  // requests permission, then waits for the correct /sw.js to activate.
+  if (permission !== "granted")
     return { support, permission, subscription: null, updateReady: false };
   const worker = await device.registration();
   return {
