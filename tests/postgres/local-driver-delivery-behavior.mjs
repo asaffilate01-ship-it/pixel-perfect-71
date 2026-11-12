@@ -41,12 +41,12 @@ try {
     create schema cron;
     create table cron.jobs(name text primary key,schedule text,command text);
     create function cron.schedule(job_name text,schedule text,command text)
-    returns bigint language plpgsql set search_path='' as $
+    returns bigint language plpgsql set search_path='' as $$
     begin
       insert into cron.jobs(name,schedule,command) values(job_name,schedule,command)
       on conflict(name) do update set schedule=excluded.schedule,command=excluded.command;
       return 1;
-    end $;
+    end $$;
   `);
   await db.exec(readFileSync(
     new URL("../../deploy/mealdeck/post-install-migrations/20261111113000_mealdeck_private_driver_location.sql",import.meta.url),"utf8"
