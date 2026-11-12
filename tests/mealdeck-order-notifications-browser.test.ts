@@ -244,7 +244,12 @@ describe("order notification identity and readiness", () => {
       registration(root, root + "staff-sw.js"),
     ]) {
       await expect(
-        waitForOrderPushWorker(async () => wrong, async () => wrong, root, 100),
+        waitForOrderPushWorker(
+          async () => wrong,
+          async () => wrong,
+          root,
+          100,
+        ),
       ).rejects.toThrow("still getting ready");
     }
     await expect(
