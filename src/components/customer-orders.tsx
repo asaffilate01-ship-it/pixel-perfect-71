@@ -11,7 +11,7 @@ import {
   type CustomerOrderSummary,
 } from "@/lib/mealdeck-customer-orders";
 
-const DRIVER_LOCATION_BETA = import.meta.env?.VITE_MEALDECK_DRIVER_LOCATION_BETA === "true";
+const DRIVER_LOCATION_BETA = import.meta.env?.["VITE_MEALDECK_DRIVER_LOCATION_BETA"] === "true";
 
 /** Private, network-only account history. The RPC derives the signed-in user. */
 export function CustomerOrders() {
