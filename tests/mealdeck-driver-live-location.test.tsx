@@ -70,7 +70,7 @@ describe("opt-in foreground driver GPS and member-only projection", () => {
     expect(ui).not.toContain("sessionStorage");
     expect(ui).not.toContain("Notification.requestPermission");
     expect(ui).not.toContain("backgroundSync");
-    expect(workspace).toContain('VITE_MEALDECK_DRIVER_LOCATION_BETA === "true"');
+    expect(workspace).toContain('import.meta.env?.["VITE_MEALDECK_DRIVER_LOCATION_BETA"] === "true"');
     expect(workspace).toContain('job.status === "collected" || job.status === "at_customer"');
     expect(workspace).toContain('job.driverStatus === "with_driver"');
     const html = renderToStaticMarkup(createElement(DriverLiveLocation, {
@@ -90,7 +90,7 @@ describe("opt-in foreground driver GPS and member-only projection", () => {
     const sql = source(
       "deploy/mealdeck/post-install-migrations/20261111113000_mealdeck_private_driver_location.sql",
     );
-    expect(account).toContain('VITE_MEALDECK_DRIVER_LOCATION_BETA === "true"');
+    expect(account).toContain('import.meta.env?.["VITE_MEALDECK_DRIVER_LOCATION_BETA"] === "true"');
     expect(account).toContain('order.verifiedPaid && !order.held && !order.completedAt');
     expect(ui).toContain("mealdeck_customer_driver_position");
     expect(ui).toContain("google.com/maps/search/");
