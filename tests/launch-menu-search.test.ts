@@ -46,5 +46,6 @@ describe("MealDeck real-menu desktop/mobile search quality", () => {
     expect(source).toContain("matchesLaunchMenuSearch(query, [");
     expect(source).toContain(".filter((item) => item.available !== false)");
     expect(source).toContain("!query ||");
+    expect(source).toContain(".filter((option) => option.available !== false)");
   });
 });
