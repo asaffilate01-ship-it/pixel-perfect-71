@@ -68,3 +68,13 @@
 .md-driver-gps-panel .md-driver-gps-note{font-weight:700;margin:8px 0;color:#735e38}
 .md-driver-gps-panel .md-driver-gps-privacy{display:flex;align-items:flex-start;gap:9px;font-size:.84rem;color:#59534f;margin-bottom:0}
 .md-driver-gps-privacy svg{flex:0 0 auto;margin-top:2px;color:#166534}
+
+/* Per-order, opt-in, foreground-only driver tracking beta. */
+.md-driver-live-location{border:1px solid #dfb87a;background:#fff8ec;border-radius:15px;padding:16px;margin-top:6px;display:grid;gap:8px}
+.md-driver-live-location-heading{display:flex;align-items:center;gap:9px;color:#8b1919;font-weight:900;letter-spacing:-.01em}
+.md-driver-live-location>p{font-size:.84rem;line-height:1.5;margin:0;color:#584739}
+.md-driver-live-location .md-driver-job-actions{margin:3px 0}
+.md-driver-live-location .md-driver-job-actions button{min-height:46px;max-width:270px}
+.md-driver-live-location .md-driver-gps-result{background:#fff;border-radius:9px;padding:10px;color:#322620}
+.md-driver-live-location .md-driver-gps-privacy{font-size:.78rem;display:flex;align-items:flex-start;gap:7px}
+@media(max-width:560px){.md-driver-live-location{padding:14px}.md-driver-live-location .md-driver-job-actions button{max-width:none;width:100%}}

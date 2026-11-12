@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, RefreshCw, ShoppingBag } from "lucide-react";
+import { CustomerDriverPosition } from "@/components/customer-driver-position";
 import { customerRpc } from "@/lib/mealdeck-customer-browser";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { visibleCustomerConfirmationCode } from "@/lib/mealdeck-customer-confirmation";
@@ -9,6 +10,8 @@ import {
   parseCustomerOrders,
   type CustomerOrderSummary,
 } from "@/lib/mealdeck-customer-orders";
+
+const DRIVER_LOCATION_BETA = import.meta.env?.["VITE_MEALDECK_DRIVER_LOCATION_BETA"] === "true";
 
 /** Private, network-only account history. The RPC derives the signed-in user. */
 export function CustomerOrders() {
@@ -88,6 +91,13 @@ export function CustomerOrders() {
           </Link>
         </div>
       )}
+      {DRIVER_LOCATION_BETA && orders?.some(order =>
+        order.verifiedPaid && !order.held && !order.completedAt &&
+        order.fulfilment === "delivery" && order.localDriverStatus === "with_driver"
+      ) && <CustomerDriverPosition orderId={orders.find(order =>
+        order.verifiedPaid && !order.held && !order.completedAt &&
+        order.fulfilment === "delivery" && order.localDriverStatus === "with_driver"
+      )!.orderId} />}
       {!!orders?.length && (
         <ul>
           {orders.map((order) => (
