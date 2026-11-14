@@ -147,7 +147,7 @@ export function LaunchMenuAppNav({
         <button
           type="button"
           className="lma-tab"
-          data-active={active === "more"
+          data-active={active === "more"}
           aria-haspopup="dialog"
           aria-expanded={sheetOpen && sheet === "more"}
           aria-controls={sheetOpen && sheet === "more" ? sheetId : undefined}
