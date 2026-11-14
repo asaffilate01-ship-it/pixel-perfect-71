@@ -827,6 +827,17 @@ export function LaunchMenuBrowser({
                     </h2>
                     <span>{quantity}</span>
                   </div>
+                  {quantity > 0 && (
+                    <div className="lm-desktop-fast-checkout">
+                      <p>
+                        <strong>{quantity} {quantity === 1 ? "item" : "items"}</strong>
+                        <span>{formatLaunchMenuPrice(basketPrice.itemsSubtotalPence)} subtotal</span>
+                      </p>
+                      <Link to="/checkout" className="lm-primary" onClick={proceedToCheckout}>
+                        Checkout <ArrowRight size={17} aria-hidden="true" />
+                      </Link>
+                    </div>
+                  )}
                   <LaunchBasket {...pickProps} />
                   <LaunchDessertUpsells
                     recommendations={dessertRecommendations}
@@ -974,6 +985,7 @@ export function LaunchMenuBrowser({
         }}
         onBrand={(id) => browse(id)}
         onBasket={openBasket}
+        onCheckout={proceedToCheckout}
       />
       <LaunchBasketFeedback
         update={notice}

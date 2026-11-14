@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { WhatsAppOrderLink } from "@/components/whatsapp-order-link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
 import {
   ArrowUpRight,
+  ArrowRight,
   Check,
   Ellipsis,
   Gamepad2,
@@ -32,6 +33,7 @@ export function LaunchMenuAppNav({
   onMenus,
   onBrand,
   onBasket,
+  onCheckout,
 }: {
   brands: readonly AppBrand[];
   brandId: string | undefined;
@@ -41,6 +43,7 @@ export function LaunchMenuAppNav({
   onMenus: () => void;
   onBrand: (id: string) => void;
   onBasket: () => void;
+  onCheckout: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const entryPolicy = useCustomerEntryPolicy();
   const groupOrderingOpen =
@@ -82,7 +85,7 @@ export function LaunchMenuAppNav({
   return (
     <>
       <div className="lma-nav-clearance" aria-hidden="true" />
-      <nav className="lma-app-nav" aria-label="Ordering navigation" hidden={dialogOpen || sheetOpen}>
+      <nav className="lma-app-nav" aria-label="Ordering navigation" data-has-checkout={count > 0} hidden={dialogOpen || sheetOpen}>
         <button
           type="button"
           className="lma-tab"
@@ -128,10 +131,23 @@ export function LaunchMenuAppNav({
           </span>
           <span>Basket</span>
         </button>
+        {count > 0 && (
+          <Link
+            to="/checkout"
+            className="lma-tab lma-tab-checkout"
+            onClick={onCheckout}
+            aria-label={"Continue to checkout with " + count + (count === 1 ? " item" : " items")}
+          >
+            <span className="lma-tab-icon">
+              <ArrowRight size={22} aria-hidden="true" />
+            </span>
+            <span>Checkout</span>
+          </Link>
+        )}
         <button
           type="button"
           className="lma-tab"
-          data-active={active === "more"}
+          data-active={active === "more"
           aria-haspopup="dialog"
           aria-expanded={sheetOpen && sheet === "more"}
           aria-controls={sheetOpen && sheet === "more" ? sheetId : undefined}

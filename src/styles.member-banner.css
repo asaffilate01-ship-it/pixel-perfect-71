@@ -92,3 +92,88 @@
     min-height: 44px;
   }
 }
+
+/* A one-visit announcement replaces the permanent full-width header strip. */
+.md-announcement-popover {
+  position: fixed;
+  z-index: 105;
+  top: 94px;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  width: min(440px, calc(100vw - 32px));
+  max-height: min(370px, calc(100dvh - 124px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #c29b34;
+  border-radius: 18px;
+  background: #fcd34d;
+  color: #18181b;
+  box-shadow: 0 14px 48px #0d0d0d40;
+  animation: md-announcement-enter 220ms ease-out;
+}
+.md-announcement-popover :is(.md-member-banner, .md-own-driver-offer) {
+  width: 100%;
+  background: transparent;
+  color: inherit;
+}
+.md-announcement-popover :is(.md-member-banner-inner, .md-own-driver-offer-inner) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  max-width: none;
+  padding: 18px;
+}
+.md-announcement-popover :is(.md-member-banner-copy, .md-own-driver-offer-message) {
+  align-items: flex-start;
+  padding-right: 34px;
+}
+.md-announcement-popover .md-own-driver-offer-copy { display: block; }
+.md-announcement-popover .md-own-driver-offer-copy strong { display: block; margin-bottom: 5px; }
+.md-announcement-popover :is(.md-member-banner-actions, .md-own-driver-offer-actions) {
+  justify-content: flex-start;
+  gap: 5px 14px;
+  padding-left: 0;
+}
+.md-announcement-popover :is(.md-member-banner-actions, .md-own-driver-offer-actions) a {
+  min-height: 40px;
+  white-space: normal;
+}
+.md-announcement-close {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #18181b;
+  cursor: pointer;
+}
+.md-announcement-close:hover { background: #18181b17; }
+.md-announcement-close:focus-visible { outline: 3px solid #18181b; outline-offset: -5px; }
+@keyframes md-announcement-enter {
+  from { opacity: 0; transform: translateY(-9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 560px) {
+  .md-announcement-popover {
+    top: calc(74px + env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    left: max(12px, env(safe-area-inset-left, 0px));
+    width: auto;
+    max-height: min(340px, 45dvh);
+  }
+  .md-announcement-popover :is(.md-member-banner-inner, .md-own-driver-offer-inner) {
+    padding: 12px 14px;
+  }
+  .md-announcement-popover :is(.md-member-banner-copy, .md-own-driver-offer-message) {
+    padding-right: 32px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .md-announcement-popover { animation: none; }
+}
