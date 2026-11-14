@@ -24,7 +24,7 @@ describe("MealDeck temporary notice and shorter checkout path", () => {
   test("mobile checkout reuses the validated basket transfer and retains basket", () => {
     const nav = source("src/components/menus/launch-menu-app-nav.tsx");
     const menu = source("src/components/menus/launch-menu-browser.tsx");
-    expect(nav).toContain('to="/checkout"');
+    expect(nav).toContain('href="/checkout"');
     expect(nav).toContain("count > 0");
     expect(nav).toContain("onClick={onCheckout}");
     expect(nav).toContain("onBasket");
