@@ -338,3 +338,22 @@
     background: #f8ead8;
   }
 }
+
+@media (max-width: 800px) {
+  .lm-shell .lma-app-nav[data-has-checkout="true"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .lm-shell .lma-tab-checkout {
+    background: var(--md-yellow, #ffd51f);
+    color: var(--lma-ink);
+    font-weight: 850;
+    text-decoration: none;
+  }
+  .lma-tab-checkout .lma-tab-icon { width: 32px; }
+}
+@media (max-width: 359px) {
+  .lm-shell .lma-app-nav[data-has-checkout="true"] .lma-tab {
+    font-size: 10px;
+    padding-inline: 1px;
+  }
+}

@@ -7,6 +7,7 @@ on:
       - "src/styles.mealdeck-rebuild.css"
       - "src/styles.launch-menus.css"
       - "tests/mealdeck-desktop-menu-banner.test.ts"
+      - "tests/mealdeck-ordering-ui-clarity.test.ts"
       - ".github/workflows/mealdeck-banner-layout.yml"
   push:
     branches: [main]
@@ -14,6 +15,7 @@ on:
       - "src/components/own-driver-offer-banner.tsx"
       - "src/styles.mealdeck-rebuild.css"
       - "tests/mealdeck-desktop-menu-banner.test.ts"
+      - "tests/mealdeck-ordering-ui-clarity.test.ts"
   workflow_dispatch:
 
 permissions:
@@ -34,7 +36,7 @@ jobs:
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
       - name: Test markup and responsive CSS
-        run: bun test tests/mealdeck-desktop-menu-banner.test.ts
+        run: bun test tests/mealdeck-desktop-menu-banner.test.ts tests/mealdeck-ordering-ui-clarity.test.ts
       - name: Lint banner component and test
         run: |
           bunx eslint src/components/own-driver-offer-banner.tsx tests/mealdeck-desktop-menu-banner.test.ts --rule 'prettier/prettier: off'

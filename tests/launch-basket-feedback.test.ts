@@ -111,6 +111,7 @@ describe("one basket opener with separate change feedback", () => {
           onMenus: () => {},
           onBrand: () => {},
           onBasket: () => {},
+          onCheckout: () => {},
         }),
       );
     const closed = renderNav(false);

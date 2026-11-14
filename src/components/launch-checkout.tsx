@@ -1729,7 +1729,7 @@ function LaunchCheckoutView({
                 ? "Your MealDeck order"
                 : whatsAppDraft
                   ? "Your WhatsApp checkout."
-                  : "Let's make it yours."}
+                  : "Checkout"}
             </h1>
             <p>
               {orderId
@@ -1738,11 +1738,18 @@ function LaunchCheckoutView({
                   : "One kitchen. All your favourites. One collection."
                 : whatsAppDraft
                   ? "Confirm your checkout details, review the total and pay securely."
-                  : "Choose delivery, collection or kerbside and pay securely without registering."}
+                  : "Choose your order method, add your details, then review and pay securely. No account required."}
             </p>
           </div>
           <MealDeckLogo className="md-checkout-logo" />
         </header>
+        {!orderId && !whatsAppDraft && (
+          <ol className="md-checkout-journey" aria-label="Checkout in three steps">
+            <li><span aria-hidden="true">1</span> Collection or delivery</li>
+            <li><span aria-hidden="true">2</span> Your details</li>
+            <li><span aria-hidden="true">3</span> Review &amp; pay</li>
+          </ol>
+        )}
         {whatsAppCheckout?.paused && (
           <section className="md-checkout-notice" role="status">
             <h2>Staff need to review this order</h2>
