@@ -132,8 +132,8 @@ export function LaunchMenuAppNav({
           <span>Basket</span>
         </button>
         {count > 0 && (
-          <Link
-            to="/checkout"
+          <a
+            href="/checkout"
             className="lma-tab lma-tab-checkout"
             onClick={onCheckout}
             aria-label={"Continue to checkout with " + count + (count === 1 ? " item" : " items")}
@@ -142,7 +142,7 @@ export function LaunchMenuAppNav({
               <ArrowRight size={22} aria-hidden="true" />
             </span>
             <span>Checkout</span>
-          </Link>
+          </a>
         )}
         <button
           type="button"
