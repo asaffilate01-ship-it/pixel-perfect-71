@@ -92,3 +92,89 @@
     min-height: 44px;
   }
 }
+
+/* An unobtrusive, non-modal notice: it never pushes the page or obscures checkout. */
+.md-member-popup {
+  position: fixed;
+  z-index: 110;
+  top: calc(94px + env(safe-area-inset-top, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 110px);
+  overflow-y: auto;
+  border: 1px solid #7e621f;
+  border-radius: 16px;
+  background: #fcd34d;
+  color: #18181b;
+  box-shadow: 0 10px 30px #00000029;
+  overscroll-behavior: contain;
+}
+.md-member-popup .md-own-driver-offer {
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+.md-member-popup .md-member-banner-inner,
+.md-member-popup .md-own-driver-offer-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 16px 18px;
+}
+.md-member-popup .md-member-banner-copy,
+.md-member-popup .md-own-driver-offer-message {
+  min-width: 0;
+  padding-right: 36px;
+}
+.md-member-popup .md-member-banner-actions,
+.md-member-popup .md-own-driver-offer-actions {
+  justify-content: flex-start;
+  padding-left: 0;
+  gap: 4px 16px;
+}
+.md-member-popup .md-member-banner-actions a,
+.md-member-popup .md-own-driver-offer-actions a {
+  min-height: 44px;
+}
+.md-member-popup-close {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #796023;
+  border-radius: 50%;
+  background: #fff6d1;
+  color: #18181b;
+  cursor: pointer;
+}
+.md-member-popup-close:hover {
+  background: #fffdf2;
+}
+.md-member-popup-close:focus-visible {
+  outline: 3px solid #18181b;
+  outline-offset: 2px;
+}
+@media (max-width: 560px) {
+  .md-member-popup {
+    top: calc(90px + env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    left: max(12px, env(safe-area-inset-left, 0px));
+    width: auto;
+    max-height: min(55dvh, 300px);
+    font-size: 13px;
+  }
+  .md-member-popup .md-member-banner-inner,
+  .md-member-popup .md-own-driver-offer-inner {
+    gap: 6px;
+    padding: 14px 12px;
+  }
+  .md-member-popup .md-member-banner-actions {
+    flex-wrap: wrap;
+    gap: 0 12px;
+  }
+}
