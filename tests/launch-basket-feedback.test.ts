@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { LaunchBasketFeedback } from "../src/components/menus/launch-basket-feedback";
 import { LaunchBasketDock } from "../src/components/menus/launch-basket";
 import { LaunchMenuAppNav } from "../src/components/menus/launch-menu-app-nav";
@@ -99,24 +105,39 @@ describe("one basket opener with separate change feedback", () => {
     expect(html).not.toContain("aria-live");
   });
 
-  test("mobile navigation has one basket tab and yields to the open dialog", () => {
-    const renderNav = (dialogOpen: boolean) =>
-      renderToStaticMarkup(
-        createElement(LaunchMenuAppNav, {
-          brands: [],
-          brandId: undefined,
-          count: 3,
-          basketOpen: dialogOpen,
-          dialogOpen,
-          onMenus: () => {},
-          onBrand: () => {},
-          onBasket: () => {},
-        }),
-      );
-    const closed = renderNav(false);
+  test("mobile navigation has one basket tab, a routed checkout link and yields to the open dialog", async () => {
+    // Real router context is necessary for the new <Link to="/checkout">.
+    // Rendering a Link outside RouterProvider used to fail the entire CI run.
+    const renderNav = async (dialogOpen: boolean) => {
+      const root = createRootRoute({
+        component: () =>
+          createElement(LaunchMenuAppNav, {
+            brands: [],
+            brandId: undefined,
+            count: 3,
+            basketOpen: dialogOpen,
+            dialogOpen,
+            onMenus: () => {},
+            onBrand: () => {},
+            onBasket: () => {},
+            onCheckout: () => {},
+          }),
+      });
+      const router = createRouter({
+        routeTree: root,
+        history: createMemoryHistory({ initialEntries: ["/"] }),
+        origin: "https://mealdeck.co.uk",
+        isServer: true,
+      });
+      await router.load();
+      return renderToStaticMarkup(createElement(RouterProvider, { router }));
+    };
+    const closed = await renderNav(false);
     expect(closed.match(/aria-label="View basket, 3 selections"/g)).toHaveLength(1);
     expect(closed.match(/<button\b/g)).toHaveLength(4);
+    expect(closed).toContain('href="/checkout"');
+    expect(closed).toContain("Review and checkout 3 items");
     expect(closed).not.toContain('aria-label="Ordering navigation" hidden');
-    expect(renderNav(true)).toContain('aria-label="Ordering navigation" hidden=""');
+    expect(await renderNav(true)).toContain('aria-label="Ordering navigation" hidden=""');
   });
 });
