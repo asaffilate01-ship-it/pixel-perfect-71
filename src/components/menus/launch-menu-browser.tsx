@@ -303,6 +303,19 @@ export function LaunchMenuBrowser({
 
   function openItem(entry: LaunchMenuEntry, existing?: LaunchMenuPick) {
     if (!publicMenu.ready || entry.item.available === false) return;
+    // Simple dishes with no selectable modifiers can be added in one tap.
+    // Products with choices retain their complete customisation and validation.
+    if (!existing && launchItemGroups(entry.brand, entry.item).length === 0) {
+      const livePicks = expireTimedLaunchBasket(basketRef.current).picks;
+      const next = addLaunchPick(livePicks, entry.brand.id, entry.item.id, {}, 1);
+      if (next !== livePicks) {
+        updatePicks(next);
+        setNotice({ message: entry.item.name + " added to your basket." });
+      } else {
+        setNotice({ message: "Your basket is full. Review your choices to continue.", tone: "info" });
+      }
+      return;
+    }
     if (!picksOpen)
       returnFocusRef.current =
         document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -974,6 +987,7 @@ export function LaunchMenuBrowser({
         }}
         onBrand={(id) => browse(id)}
         onBasket={openBasket}
+        onCheckout={proceedToCheckout}
       />
       <LaunchBasketFeedback
         update={notice}
