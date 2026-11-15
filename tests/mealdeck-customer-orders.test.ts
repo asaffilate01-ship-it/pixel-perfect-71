@@ -147,9 +147,10 @@ describe("private customer order summaries", () => {
         readyForCollectionAt: order.createdAt,
       }),
     ).toBe("Needs team review");
-    expect(customerOrderStatus({ ...base, verifiedPaid: false, paymentSessionExpired: true })).toBe(
-      "Payment session expired",
-    );
+    expect(customerOrderStatus({
+      ...base, verifiedPaid: false, paymentSessionExpired: true,
+      paidAt: null, handoffCode: null,
+    })).toBe("Payment not completed — checkout expired");
     expect(customerOrderStatus({ ...base, readyForCollectionAt: order.createdAt })).toBe(
       "Ready to collect",
     );
