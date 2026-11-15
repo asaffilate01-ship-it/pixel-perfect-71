@@ -241,6 +241,9 @@
     background: var(--lma-paper);
     box-shadow: 0 -4px 18px #1111110d;
   }
+  .lma-app-nav[data-has-checkout="true"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
   .lma-tab {
     display: flex;
     min-width: 0;
@@ -284,6 +287,19 @@
   .lma-tab-basket[data-active="true"] .lma-tab-icon {
     background: var(--lma-red);
     color: #fff;
+  }
+  /* The direct checkout step is prominent without stealing basket review. */
+  .lma-tab-checkout {
+    background: #ffd51f;
+    color: #18181b;
+    font-weight: 850;
+    text-decoration: none;
+  }
+  .lma-tab-checkout .lma-tab-icon {
+    color: #18181b;
+  }
+  .lma-tab-checkout:hover {
+    background: #ffe47b;
   }
   .lma-basket-count {
     position: absolute;

@@ -57,3 +57,42 @@ describe("MealDeck menu desktop banner alignment", () => {
     expect(css).toContain("white-space: nowrap;");
   });
 });
+
+describe("MealDeck low-friction ordering UX regressions", () => {
+  const source = (path: string) =>
+    readFileSync(new URL("../" + path, import.meta.url), "utf8");
+
+  test("promotions auto-dismiss, have a close button and stay off payment pages", () => {
+    const banner = source("src/components/own-driver-offer-banner.tsx");
+    const css = source("src/styles.member-banner.css");
+    expect(banner).toContain('className="md-member-popup-close"');
+    expect(banner).toContain('aria-label="Close MealDeck announcement"');
+    expect(banner).toContain("window.setTimeout(() => setVisible(false), 8_000)");
+    expect(banner).toContain('pathname === "/" || pathname === "/luton" || pathname === "/offers"');
+    expect(banner).toContain("window.sessionStorage.setItem(MEMBER_NOTICE_SESSION_KEY");
+    expect(css).toContain(".md-member-popup {");
+    expect(css).toContain("position: fixed;");
+    expect(css).toContain("max-height: min(55dvh, 300px);");
+  });
+
+  test("central mobile Order Now control keeps its logo without decorative burgers", () => {
+    const tabs = source("src/components/mobile-tab-bar.tsx");
+    expect(tabs).toContain('<MealDeckLogo decorative className="h-8 w-8" />');
+    expect(tabs).toContain('aria-label="Order Now — browse MealDeck menus"');
+    expect(tabs).not.toContain("suitArtwork.burger");
+  });
+
+  test("one-tap checkout remains attached to the existing validated handoff", () => {
+    const nav = source("src/components/menus/launch-menu-app-nav.tsx");
+    const browser = source("src/components/menus/launch-menu-browser.tsx");
+    const css = source("src/styles.launch-app.css");
+    expect(nav).toContain('className="lma-tab lma-tab-checkout"');
+    expect(nav).toContain('to="/checkout"');
+    expect(nav).toContain("count > 0 && (");
+    expect(nav).toContain("onClick={onCheckout}");
+    expect(browser).toContain("onCheckout={proceedToCheckout}");
+    expect(browser).toContain("prepareLaunchCheckout(live.picks, live)");
+    expect(browser).toContain("launchItemGroups(entry.brand, entry.item).length === 0");
+    expect(css).toContain('grid-template-columns: repeat(5, minmax(0, 1fr));');
+  });
+});

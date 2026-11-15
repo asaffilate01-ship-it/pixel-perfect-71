@@ -20,6 +20,15 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Ongoing free own-driver delivery and December cutoff regressions
         run: bun test tests/mealdeck-delivery-pricing-policy.test.ts tests/mealdeck-hosted-delivery-minimum.test.ts
+      - name: Expired unpaid checkout labels and strict KDS payment release contract
+        run: bun test tests/mealdeck-expired-checkout.test.ts tests/mealdeck-customer-orders.test.ts
+      - name: Expired checkout and staff history lint
+        run: >-
+          bunx eslint src/lib/mealdeck-expired-checkout.ts
+          src/lib/mealdeck-customer-orders.ts src/components/launch-checkout.tsx
+          src/components/ops/ops-panels.tsx tests/mealdeck-expired-checkout.test.ts
+          tests/mealdeck-customer-orders.test.ts
+          --rule 'prettier/prettier: off'
       - name: Luton own-driver delivery migration safety contract
         run: node --test tests/delivery-migration-source.test.mjs
       - name: WhatsApp conversation, transport and private checkout boundaries

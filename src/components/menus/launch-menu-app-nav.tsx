@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { WhatsAppOrderLink } from "@/components/whatsapp-order-link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
 import {
   ArrowUpRight,
   Check,
   Ellipsis,
+  ArrowRight,
   Gamepad2,
   Home,
   LayoutGrid,
@@ -32,6 +33,7 @@ export function LaunchMenuAppNav({
   onMenus,
   onBrand,
   onBasket,
+  onCheckout,
 }: {
   brands: readonly AppBrand[];
   brandId: string | undefined;
@@ -41,6 +43,7 @@ export function LaunchMenuAppNav({
   onMenus: () => void;
   onBrand: (id: string) => void;
   onBasket: () => void;
+  onCheckout: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const entryPolicy = useCustomerEntryPolicy();
   const groupOrderingOpen =
@@ -82,7 +85,7 @@ export function LaunchMenuAppNav({
   return (
     <>
       <div className="lma-nav-clearance" aria-hidden="true" />
-      <nav className="lma-app-nav" aria-label="Ordering navigation" hidden={dialogOpen || sheetOpen}>
+      <nav className="lma-app-nav" aria-label="Ordering navigation" data-has-checkout={count > 0} hidden={dialogOpen || sheetOpen}>
         <button
           type="button"
           className="lma-tab"
@@ -128,6 +131,19 @@ export function LaunchMenuAppNav({
           </span>
           <span>Basket</span>
         </button>
+        {count > 0 && (
+          <Link
+            to="/checkout"
+            className="lma-tab lma-tab-checkout"
+            aria-label={`Review and checkout ${count} ${count === 1 ? "item" : "items"}`}
+            onClick={onCheckout}
+          >
+            <span className="lma-tab-icon">
+              <ArrowRight size={23} aria-hidden="true" />
+            </span>
+            <span>Checkout</span>
+          </Link>
+        )}
         <button
           type="button"
           className="lma-tab"
