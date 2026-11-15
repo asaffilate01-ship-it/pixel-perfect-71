@@ -6,6 +6,10 @@ import {
 import {opsRpc} from "@/lib/mealdeck-ops-browser";
 import {reviewOrderExceptions} from "@/lib/mealdeck-ops-alerts";
 import {orderDisplayNumber} from "@/lib/mealdeck-order-number";
+import {
+  opsCheckoutDisplayStatus,
+  parseOpsCheckoutExpirations,
+} from "@/lib/mealdeck-expired-checkout";
 import {OPS_PERMISSIONS,type OpsPermission} from "@/lib/mealdeck-ops-access";
 import {penceToPounds,poundsToPence,packCostPerBaseUnit,estimatedRecipeMargin,cleanDailySeries} from "@/lib/mealdeck-ops-math";
 import type {
@@ -65,6 +69,45 @@ export function OpsOrdersPanel({
   const[lines,setLines]=useState<OpsOrderLine[]>([]);
   const[loading,setLoading]=useState(false);
   const[error,setError]=useState("");
+  // Only the independent database can confirm an expired, unpaid checkout.
+  // Do not infer it from the order's age, or mutate the canonical payment status.
+  const pendingIds = orders
+    .filter(row => row.source==="mealdeck" && row.status==="payment_pending" &&
+      row.paid_at===null && /^[a-f0-9-]{36}$/i.test(row.order_id))
+    .map(row => row.order_id);
+  const pendingKey = pendingIds.slice(0,500).join(",");
+  const scopeKey = tenantId + ":" + locationId + ":" + pendingKey;
+  const[expiryResult,setExpiryResult]=useState<{
+    scopeKey:string; expired:ReadonlySet<string>; unavailable:boolean;
+  } | null>(null);
+  useEffect(()=>{
+    let mounted=true;
+    if(!pendingKey){
+      setExpiryResult({scopeKey,expired:new Set(),unavailable:false});
+      return;
+    }
+    setExpiryResult(null);
+    const refresh=async()=>{
+      try{
+        const ids=pendingKey.split(",");
+        const response=await opsRpc<unknown>("mealdeck_ops_checkout_expirations",{
+          p_tenant:tenantId,p_location:locationId,p_orders:ids,
+        });
+        const expired=parseOpsCheckoutExpirations(response,ids);
+        if(mounted) setExpiryResult({
+          scopeKey,expired:expired??new Set(),unavailable:expired===null,
+        });
+      }catch{
+        if(mounted) setExpiryResult({scopeKey,expired:new Set(),unavailable:true});
+      }
+    };
+    void refresh();
+    const timer=window.setInterval(()=>{
+      if(document.visibilityState!=="hidden") void refresh();
+    },60_000);
+    return()=>{mounted=false;window.clearInterval(timer);};
+  },[scopeKey,tenantId,locationId,pendingKey]);
+  const expiryReady=expiryResult?.scopeKey===scopeKey ? expiryResult : null;
   const alerts=reviewOrderExceptions(orders,new Date().toISOString(),{limit:8});
   const orderLabel=(id:string)=>orderDisplayNumber(orders.find(row=>row.order_id===id)?.order_number,id.slice(0,8).toUpperCase());
   async function showLines(id:string){
@@ -83,7 +126,17 @@ export function OpsOrdersPanel({
     <div className="flex items-start gap-3">
       <ClipboardList className="mt-1 size-6 md-ops-accent"/>
       <div><h2 className="text-xl font-black">Order history</h2>
-        <p className="mt-1 text-sm md-ops-muted">MealDeck order records. Payment pending is not a completed sale; marketplace order numbers and delivery proofs require verified provider records.</p>
+        <p className="mt-1 text-sm md-ops-muted">MealDeck order records. An expired unpaid checkout is not a sale and never releases an order to KDS. Status labels use the private server payment ledger, not an order-age guess.</p>
+        {expiryReady?.unavailable && pendingIds.length>0 && (
+          <p className="mt-2 text-xs md-ops-muted" role="status">
+            Expiry verification is unavailable. Pending orders remain labelled as pending until the dedicated MealDeck database is checked.
+          </p>
+        )}
+        {pendingIds.length>500 && (
+          <p className="mt-2 text-xs md-ops-muted">
+            Showing expiry checks for the first 500 pending records only; narrow the reporting dates to inspect the rest.
+          </p>
+        )}
       </div>
     </div>
     <section aria-label="Order review watchlist" className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
@@ -115,7 +168,9 @@ export function OpsOrdersPanel({
           <td className="whitespace-nowrap px-3 py-4">{new Date(row.created_at).toLocaleString("en-GB")}</td>
           <td className="px-3 py-4">{row.item_count}</td>
           <td className="whitespace-nowrap px-3 py-4 font-bold">{penceToPounds(row.total_pence)}</td>
-          <td className="px-3 py-4"><Status label={row.status}/></td>
+          <td className="px-3 py-4"><Status label={opsCheckoutDisplayStatus(
+            row,expiryReady?.expired.has(row.order_id)===true,
+          )}/></td>
           <td className="px-3 py-4">{row.paid_at?"Recorded paid":"Not recorded"}</td>
           <td className="px-3 py-4"><button type="button" className={secondary}
             aria-expanded={selected===row.order_id}
