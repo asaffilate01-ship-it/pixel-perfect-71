@@ -1,4 +1,5 @@
 import { isOrderNumber } from "./mealdeck-order-number";
+import { EXPIRED_CHECKOUT_LABEL } from "./mealdeck-expired-checkout";
 
 export type CustomerOrderSummary = {
   orderId: string;
@@ -98,7 +99,9 @@ export function parseCustomerOrders(value: unknown): CustomerOrderSummary[] | nu
 export function customerOrderStatus(order: CustomerOrderSummary) {
   if (order.held) return "Needs team review";
   if (!order.verifiedPaid)
-    return order.paymentSessionExpired ? "Payment session expired" : "Awaiting payment";
+    return order.paymentSessionExpired && !order.paidAt
+      ? EXPIRED_CHECKOUT_LABEL
+      : "Awaiting payment";
   if (order.completedAt)
     return order.fulfilment === "delivery" && order.localDriverStatus === "delivered"
       ? "Delivered"
