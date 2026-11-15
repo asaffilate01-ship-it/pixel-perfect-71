@@ -138,6 +138,6 @@ describe("one basket opener with separate change feedback", () => {
     expect(closed).toContain('href="/checkout"');
     expect(closed).toContain("Review and checkout 3 items");
     expect(closed).not.toContain('aria-label="Ordering navigation" hidden');
-    expect(await renderNav(true)).toContain('aria-label="Ordering navigation" hidden=""');
+    expect(await renderNav(true)).toMatch(/aria-label="Ordering navigation"[^>]*hidden=""/);
   });
 });
