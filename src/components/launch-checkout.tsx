@@ -79,6 +79,10 @@ import { mealDeckDeliveryPolicy } from "@/lib/mealdeck-delivery-pricing-policy";
 import { deliveryAreaRejectionMessage } from "@/lib/mealdeck-delivery-postcode-notice";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import {
+  isExpiredUnpaidReceipt,
+  EXPIRED_CHECKOUT_LABEL,
+} from "@/lib/mealdeck-expired-checkout";
+import {
   customerConfirmationInstruction,
   visibleCustomerConfirmationCode,
 } from "@/lib/mealdeck-customer-confirmation";
@@ -917,6 +921,7 @@ function LaunchCheckoutView({
     displayTotal === null ? null : ownDriverShortfallPence(displayTotal);
   const deliveryUnderMinimum =
     fulfilment === "delivery" && deliveryShortfall !== null && deliveryShortfall > 0;
+  const expiredUnpaid = receipt !== null && isExpiredUnpaidReceipt(receipt);
   const hasMilkcakeOffer = quote
     ? !!appliedMilkcakePromotion(quote.lines)
     : basketPrice.hasMilkcakeOffer;
@@ -1902,14 +1907,18 @@ function LaunchCheckoutView({
                         ? "PAYMENT CONFIRMED"
                         : receipt.held
                           ? "ORDER NEEDS ATTENTION"
-                          : "PAYMENT NOT YET CONFIRMED"}
+                          : expiredUnpaid
+                            ? "PAYMENT NOT COMPLETED"
+                            : "PAYMENT NOT YET CONFIRMED"}
                     </p>
                     <h2>
                       {receipt.verifiedPaid
                         ? "Thanks — you're on the deck."
-                        : cancelled
-                          ? "Your basket is waiting for you."
-                          : "We're checking your payment."}
+                        : expiredUnpaid
+                          ? EXPIRED_CHECKOUT_LABEL
+                          : cancelled
+                            ? "Your basket is waiting for you."
+                            : "We're checking your payment."}
                     </h2>
                     {visibleCustomerConfirmationCode(receipt) && (
                       <div
@@ -1981,20 +1990,27 @@ function LaunchCheckoutView({
                         )}
                       </>
                     )}
-                    {receipt.paymentSessionExpired && !receipt.verifiedPaid && (
-                      <p>
-                        This payment session has expired.{" "}
-                        {whatsAppDraft ? (
-                          "Return to your MealDeck WhatsApp conversation for help with this order."
-                        ) : (
-                          <>
-                            <Link to="/checkout" search={{}}>
-                              Review your basket again
-                            </Link>
-                            .
-                          </>
+                    {expiredUnpaid && (
+                      <div className="md-checkout-notice" role="status">
+                        <p>
+                          This secure payment session expired without a confirmed payment.
+                          No unpaid order is released to the kitchen display.
+                        </p>
+                        <p>
+                          {whatsAppCheckout
+                            ? "Return to your MealDeck WhatsApp conversation for help with this order."
+                            : "The original payment link cannot be reused. Start a fresh basket and review current prices before paying."}
+                        </p>
+                        {!whatsAppCheckout && (
+                          <Link to="/menus" className="md-checkout-primary">
+                            <ShoppingBag size={18} aria-hidden="true" /> Start a new order
+                          </Link>
                         )}
-                      </p>
+                        <p>
+                          If your bank shows a charge, contact MealDeck with the order
+                          reference below before attempting another payment.
+                        </p>
+                      </div>
                     )}
                     {receipt.held && (
                       <p>
