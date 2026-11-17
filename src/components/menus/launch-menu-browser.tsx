@@ -61,6 +61,7 @@ import {
 import {
   LAUNCH_PICKS_STORAGE_KEY,
   addLaunchPick,
+  canQuickAddLaunchItem,
   findLaunchMenuItem,
   launchItemGroups,
   launchPickCount,
@@ -305,7 +306,7 @@ export function LaunchMenuBrowser({
     if (!publicMenu.ready || entry.item.available === false) return;
     // Simple dishes with no selectable modifiers can be added in one tap.
     // Products with choices retain their complete customisation and validation.
-    if (!existing && launchItemGroups(entry.brand, entry.item).length === 0) {
+    if (!existing && canQuickAddLaunchItem(entry.item)) {
       const livePicks = expireTimedLaunchBasket(basketRef.current).picks;
       const next = addLaunchPick(livePicks, entry.brand.id, entry.item.id, {}, 1);
       if (next !== livePicks) {
