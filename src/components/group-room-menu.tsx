@@ -20,6 +20,7 @@ import {
 import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
 import {
   addLaunchPick,
+  canQuickAddLaunchItem,
   findLaunchMenuItem,
   launchItemGroups,
   launchPickCount,
@@ -160,11 +161,7 @@ export function GroupRoomMenu({
     // A simple, fixed-price item can join the draft with a single tap. Dishes
     // with price variants or modifier groups still require full customisation.
     // Nothing is committed to the shared room until the person explicitly saves.
-    if (
-      !existing &&
-      !entry.item.priceVariants?.length &&
-      launchItemGroups(entry.brand, entry.item).length === 0
-    ) {
+    if (!existing && canQuickAddLaunchItem(entry.item)) {
       const next = addLaunchPick(picks, entry.brand.id, entry.item.id, {}, 1);
       if (next === picks) {
         setNotice("Your bag is full. Review or remove a choice before adding more.");
@@ -314,7 +311,7 @@ export function GroupRoomMenu({
                   </span>
                   <Plus size={19} aria-hidden="true" />
                   <span className="sr-only">
-                    {!item.priceVariants?.length && launchItemGroups(brand, item).length === 0
+                    {canQuickAddLaunchItem(item)
                       ? "Add " + item.name + " to my group choices"
                       : "Choose options for " + item.name}
                   </span>
