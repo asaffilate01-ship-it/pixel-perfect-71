@@ -1254,7 +1254,7 @@
     padding: 14px;
     margin-left: -4px;
     margin-right: -4px;
-    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    bottom: calc(8px + var(--md-mobile-safe-bottom, env(safe-area-inset-bottom, 0px)));
   }
   .md-room-save-bar .md-room-button {
     padding: 11px;
