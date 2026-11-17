@@ -9,6 +9,7 @@ on:
       - 'src/lib/mealdeck-kds.ts'
       - 'src/components/ops/kds-panel.tsx'
       - 'src/components/group-order-room.tsx'
+      - 'src/components/mobile-tab-bar.tsx'
       - 'src/components/group-room-setup.tsx'
       - 'src/components/group-room-menu.tsx'
       - 'src/components/menus/launch-menu-browser.tsx'
@@ -35,6 +36,7 @@ on:
       - 'src/lib/mealdeck-kds.ts'
       - 'src/components/ops/kds-panel.tsx'
       - 'src/components/group-order-room.tsx'
+      - 'src/components/mobile-tab-bar.tsx'
       - 'src/components/group-room-setup.tsx'
       - 'src/components/group-room-menu.tsx'
       - 'src/components/menus/launch-menu-browser.tsx'
@@ -75,7 +77,7 @@ jobs:
         run: |
           bun test tests/mealdeck-group-ordering-ux.test.ts
           node --test tests/mealdeck-group-readiness.test.mjs
-          bunx eslint src/components/group-order-room.tsx src/components/group-room-menu.tsx src/components/menus/launch-menu-browser.tsx src/lib/launch-menu-picks.ts tests/mealdeck-group-ordering-ux.test.ts --rule 'prettier/prettier: off'
+          bunx eslint src/components/group-order-room.tsx src/components/mobile-tab-bar.tsx src/components/group-room-menu.tsx src/components/menus/launch-menu-browser.tsx src/lib/launch-menu-picks.ts tests/mealdeck-group-ordering-ux.test.ts --rule 'prettier/prettier: off'
       - name: Install isolated PostgreSQL test dependencies
         run: npm ci --prefix tests/postgres
       - name: Verify private group room expiry on disposable PGlite
