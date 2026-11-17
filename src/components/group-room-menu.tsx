@@ -1,7 +1,7 @@
 import { usePublicMenu } from "@/components/menus/use-public-menu";
 import { PublicMenuStatus } from "@/components/menus/public-menu-status";
 import { useRef, useState, type CSSProperties } from "react";
-import { Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   LaunchItemCustomiser,
@@ -113,10 +113,14 @@ export function GroupRoomMenu({
   picks,
   onChange,
   disabled,
+  unsaved,
+  onReviewSave,
 }: {
   picks: LaunchMenuPick[];
   onChange: (next: LaunchMenuPick[]) => void;
   disabled: boolean;
+  unsaved: boolean;
+  onReviewSave: () => void;
 }) {
   const publicMenu = usePublicMenu();
   const { catalogue } = publicMenu;
@@ -248,6 +252,14 @@ export function GroupRoomMenu({
       <p className="md-room-feedback" role="status">
         {notice}
       </p>
+      {unsaved && (
+        <div className="md-room-save-shortcut" role="status">
+          <strong>Unsaved choices</strong>
+          <button type="button" onClick={onReviewSave} disabled={disabled}>
+            Review &amp; save <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
       <nav className="md-room-brands" aria-label="Choose a menu">
         {brandIds.map((id) => (
           <button
