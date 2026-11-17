@@ -939,7 +939,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                       ? "Group rooms not accepting new orders"
                       : issue
                         ? "Group ordering connection needs attention"
-                        : "Checking group ordering availability"
+                        : "Checking group ordering availability"}
             </h1>
             <p>
               {room
