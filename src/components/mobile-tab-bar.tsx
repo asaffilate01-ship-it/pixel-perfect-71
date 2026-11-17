@@ -27,6 +27,8 @@ export function MobileTabBar() {
   if (
     pathname === "/franchise" ||
     pathname.startsWith("/franchise/") ||
+    pathname === "/group-order" ||
+    pathname === "/group-pay" ||
     isLaunchMenuRoute(pathname)
   )
     return null;
