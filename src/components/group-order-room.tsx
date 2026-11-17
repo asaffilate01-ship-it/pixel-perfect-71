@@ -110,17 +110,19 @@ function RoomInviteLink({ name, url }: { name: string; url: string }) {
         type="button"
         className="md-room-small-button"
         onClick={() => {
-          void navigator.clipboard?.writeText(url).then(
-            () => setNotice("Invitation copied."),
-            () => {
+          void (async () => {
+            try {
+              // Android WebViews and private browsing may expose no clipboard API.
+              // A rejected permission falls back without losing the invitation.
+              if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+              await navigator.clipboard.writeText(url);
+              setManualCopy(false);
+              setNotice("Invitation copied.");
+            } catch {
               setManualCopy(true);
               setNotice("Select and copy the invitation below.");
-            },
-          );
-          if (!navigator.clipboard) {
-            setManualCopy(true);
-            setNotice("Select and copy the invitation below.");
-          }
+            }
+          })();
         }}
       >
         <Copy size={16} aria-hidden="true" /> Copy {name}’s invite
@@ -154,7 +156,13 @@ function RoomInviteLink({ name, url }: { name: string; url: string }) {
       {manualCopy && (
         <label className="md-room-manual-link">
           Private invitation for {name}
-          <input readOnly value={url} onFocus={(event) => event.target.select()} />
+          <input
+            readOnly
+            aria-label={"Private invitation link for " + name}
+            value={url}
+            onClick={(event) => event.currentTarget.select()}
+            onFocus={(event) => event.target.select()}
+          />
         </label>
       )}
       <span className="md-room-fine" role="status">
@@ -929,7 +937,9 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                     ? "Get the group together."
                     : capabilities
                       ? "Group rooms not accepting new orders"
-                      : "Checking group ordering availability"}
+                      : issue
+                        ? "Group ordering connection needs attention"
+                        : "Checking group ordering availability"
             </h1>
             <p>
               {room
