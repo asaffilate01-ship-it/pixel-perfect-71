@@ -1,7 +1,7 @@
 import { usePublicMenu } from "@/components/menus/use-public-menu";
 import { PublicMenuStatus } from "@/components/menus/public-menu-status";
 import { useRef, useState, type CSSProperties } from "react";
-import { Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
+import { ArrowRight, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   LaunchItemCustomiser,
@@ -10,6 +10,7 @@ import {
 } from "@/components/menus/launch-item-customiser";
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { getLaunchMenuBrand, isLaunchBrandPriceApproved } from "@/lib/launch-menu-catalogue";
+import { matchesLaunchMenuSearch } from "@/lib/launch-menu-search";
 import {
   formatLaunchMenuPrice,
   formatLaunchMenuItemPrice,
@@ -19,7 +20,9 @@ import {
 import { isMealDeckMilkcakePromotion } from "@/lib/mealdeck-milkcake-promotion";
 import {
   addLaunchPick,
+  canQuickAddLaunchItem,
   findLaunchMenuItem,
+  launchItemGroups,
   launchPickCount,
   launchSelectionLabels,
   setLaunchPickQuantity,
@@ -111,10 +114,14 @@ export function GroupRoomMenu({
   picks,
   onChange,
   disabled,
+  unsaved,
+  onReviewSave,
 }: {
   picks: LaunchMenuPick[];
   onChange: (next: LaunchMenuPick[]) => void;
   disabled: boolean;
+  unsaved: boolean;
+  onReviewSave: () => void;
 }) {
   const publicMenu = usePublicMenu();
   const { catalogue } = publicMenu;
@@ -126,24 +133,44 @@ export function GroupRoomMenu({
   const returnFocus = useRef<HTMLElement | null>(null);
   const choicesHeading = useRef<HTMLHeadingElement>(null);
   const brand = getLaunchMenuBrand(brandId, catalogue)!;
-  const query = search.trim().toLocaleLowerCase("en-GB");
+  const query = search.trim();
   const sections = brand.sections
     .map((section) => ({
       ...section,
       items: section.items
         .filter((item) => item.available !== false)
         .filter((item) =>
-          [item.name, item.description, section.title]
-            .filter(Boolean)
-            .join(" ")
-            .toLocaleLowerCase("en-GB")
-            .includes(query),
+          !query ||
+          matchesLaunchMenuSearch(query, [
+            item.name,
+            item.description,
+            section.title,
+            section.description,
+            ...launchItemGroups(brand, item).flatMap((group) =>
+              group.options
+                .filter((option) => option.available !== false)
+                .map((option) => option.label),
+            ),
+          ]),
         ),
     }))
     .filter((section) => section.items.length);
 
   function openItem(entry: LaunchMenuEntry, existing?: LaunchMenuPick) {
     if (disabled || !publicMenu.ready || entry.item.available === false) return;
+    // A simple, fixed-price item can join the draft with a single tap. Dishes
+    // with price variants or modifier groups still require full customisation.
+    // Nothing is committed to the shared room until the person explicitly saves.
+    if (!existing && canQuickAddLaunchItem(entry.item)) {
+      const next = addLaunchPick(picks, entry.brand.id, entry.item.id, {}, 1);
+      if (next === picks) {
+        setNotice("Your bag is full. Review or remove a choice before adding more.");
+      } else {
+        onChange(next);
+        setNotice(entry.item.name + " added to your choices. Save before leaving.");
+      }
+      return;
+    }
     returnFocus.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setError("");
@@ -167,7 +194,8 @@ export function GroupRoomMenu({
     }
     onChange(next);
     setNotice(
-      draft.item.name + (draft.existing ? " updated in your choices." : " added to your choices."),
+      draft.item.name + (draft.existing ? " updated in your choices." : " added to your choices.") +
+        " Save before leaving.",
     );
     setDraft(null);
   }
@@ -221,6 +249,14 @@ export function GroupRoomMenu({
       <p className="md-room-feedback" role="status">
         {notice}
       </p>
+      {unsaved && (
+        <div className="md-room-save-shortcut" role="status">
+          <strong>Unsaved choices</strong>
+          <button type="button" onClick={onReviewSave} disabled={disabled}>
+            Review &amp; save <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
       <nav className="md-room-brands" aria-label="Choose a menu">
         {brandIds.map((id) => (
           <button
@@ -274,7 +310,11 @@ export function GroupRoomMenu({
                     </span>
                   </span>
                   <Plus size={19} aria-hidden="true" />
-                  <span className="sr-only">Choose {item.name}</span>
+                  <span className="sr-only">
+                    {canQuickAddLaunchItem(item)
+                      ? "Add " + item.name + " to my group choices"
+                      : "Choose options for " + item.name}
+                  </span>
                 </button>
               ))}
             </div>

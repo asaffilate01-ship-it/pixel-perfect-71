@@ -1,0 +1,22 @@
+name: MealDeck group-ordering live readiness (read only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-group-preflight:
+    name: Verify group-room admission without creating orders
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify probe never needs credentials or makes writes
+        run: node --test tests/mealdeck-group-readiness.test.mjs
+      - name: Check public group-room admission and secure actor cookie
+        run: node scripts/mealdeck-group-readiness.mjs --live
