@@ -1303,6 +1303,17 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                           <GroupRoomMenu
                             picks={draft.picks}
                             disabled={busy || draft.conflict}
+                            unsaved={draft.dirty}
+                            onReviewSave={() => {
+                              document.getElementById("group-order-save-choices")?.scrollIntoView({
+                                block: "center",
+                                behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                                  ? "instant"
+                                  : "smooth",
+                              });
+                              document.getElementById("group-order-save-choices-button")
+                                ?.focus({ preventScroll: true });
+                            }}
                             onChange={(picks) => updateDraft({ ...draft, picks, dirty: true })}
                           />
                           {isOrganiser && draft.picks.length === 0 && (
@@ -1316,7 +1327,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                               <span>I’m just organising — no food for me</span>
                             </label>
                           )}
-                          <div className="md-room-save-bar">
+                          <div className="md-room-save-bar" id="group-order-save-choices">
                             <p role="status">
                               {busy
                                 ? "Saving your change…"
@@ -1339,6 +1350,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                                 type="button"
                                 className="md-room-button"
                                 disabled={readyDisabled}
+                                id="group-order-save-choices-button"
                                 onClick={() => {
                                   void saveChoices(true);
                                 }}
