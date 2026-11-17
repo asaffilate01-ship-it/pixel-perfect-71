@@ -66,6 +66,17 @@ describe("GET-only live group readiness probe", () => {
     }
   });
 
+  it("does not borrow Secure, HttpOnly or SameSite flags from another cookie", async () => {
+    const headers = new Headers({ "content-type": "application/json" });
+    headers.append("set-cookie", "__Host-mealdeck-room-actor=" + "a".repeat(43) + "; Path=/");
+    headers.append("set-cookie", "unrelated=opaque; Path=/; HttpOnly; Secure; SameSite=Lax");
+    const result = await probeGroupReadiness(async () =>
+      new Response(JSON.stringify(open), { status: 200, headers }),
+    );
+    assert.equal(result.ready, false);
+    assert.equal(result.code, "room_cookie_missing_or_insecure");
+  });
+
   it("fails closed for redirects, server failure and incomplete server contracts", async () => {
     assert.equal((await probeGroupReadiness(async () => reply(open, 503))).code, "http_unavailable");
     assert.equal((await probeGroupReadiness(async () => new Response(null, { status: 302 }))).code, "http_unavailable");
