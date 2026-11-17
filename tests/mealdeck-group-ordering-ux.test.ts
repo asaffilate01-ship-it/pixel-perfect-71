@@ -46,13 +46,27 @@ describe("safe single-tap dishes in solo and group menus", () => {
     const menu = source("src/components/group-room-menu.tsx");
     const styles = source("src/styles.mealdeck-group-room.css");
     expect(room).toContain("unsaved={draft.dirty}");
-    expect(room).toContain('id="group-order-save-choices-button"');
+    const buttonId = room.indexOf('id="group-order-save-choices-button"');
+    expect(buttonId).toBeGreaterThan(-1);
+    const buttonStart = room.lastIndexOf("<button", buttonId);
+    const buttonEnd = room.indexOf("</button>", buttonId);
+    const target = room.slice(buttonStart, buttonEnd);
+    expect(target).toContain("void saveChoices(false)");
+    expect(target).toContain("Save choices");
+    expect(target).not.toContain("void saveChoices(true)");
     expect(room).toContain("void saveChoices(true)");
     expect(room).toContain("reviewConfirmed: true");
     expect(menu).toContain('className="md-room-save-shortcut"');
     expect(menu).toContain("onClick={onReviewSave}");
     expect(styles).toContain("position: sticky;");
     expect(styles).toContain("min-height: 44px;");
+    expect(styles).toContain("var(--md-mobile-safe-bottom");
+  });
+
+  test("group and shared-payment pages do not show competing floating site tabs", () => {
+    const tabs = source("src/components/mobile-tab-bar.tsx");
+    expect(tabs).toContain('pathname === "/group-order"');
+    expect(tabs).toContain('pathname === "/group-pay"');
   });
 
   test("private invitations always offer a copy fallback on phones without clipboard access", () => {
