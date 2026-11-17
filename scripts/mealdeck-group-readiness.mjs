@@ -24,13 +24,17 @@ export async function probeGroupReadiness(fetcher = fetch) {
   }
 
   // Cookie *presence and attributes* only; never log or retain the actor token.
-  const cookie = response.headers.get("set-cookie") || "";
-  const hasActorCookie = /(?:^|,\s*)__Host-mealdeck-room-actor=[A-Za-z0-9_-]{43}(?:;|$)/.test(cookie);
-  const secureCookie = hasActorCookie &&
-    /(?:^|;)\s*HttpOnly(?:;|$)/i.test(cookie) &&
-    /(?:^|;)\s*Secure(?:;|$)/i.test(cookie) &&
-    /(?:^|;)\s*SameSite=Lax(?:;|$)/i.test(cookie) &&
-    /(?:^|;)\s*Path=\/(?:;|$)/i.test(cookie);
+  const cookies = typeof response.headers.getSetCookie === "function"
+    ? response.headers.getSetCookie()
+    : (response.headers.get("set-cookie") || "").split(/,(?=\s*[^;,=\s]+=)/);
+  const actorCookie = cookies.find((value) =>
+    /^__Host-mealdeck-room-actor=[A-Za-z0-9_-]{43}(?:;|$)/.test(value.trim()),
+  ) || "";
+  const secureCookie = actorCookie.length > 0 &&
+    /(?:^|;)\s*HttpOnly(?:;|$)/i.test(actorCookie) &&
+    /(?:^|;)\s*Secure(?:;|$)/i.test(actorCookie) &&
+    /(?:^|;)\s*SameSite=Lax(?:;|$)/i.test(actorCookie) &&
+    /(?:^|;)\s*Path=\/(?:;|$)/i.test(actorCookie);
 
   let body;
   try {
