@@ -1350,6 +1350,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                                 type="button"
                                 className="md-room-button md-room-button-light"
                                 disabled={busy || !draft.dirty || draft.conflict}
+                                id="group-order-save-choices-button"
                                 onClick={() => {
                                   void saveChoices(false);
                                 }}
@@ -1360,7 +1361,6 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                                 type="button"
                                 className="md-room-button"
                                 disabled={readyDisabled}
-                                id="group-order-save-choices-button"
                                 onClick={() => {
                                   void saveChoices(true);
                                 }}
