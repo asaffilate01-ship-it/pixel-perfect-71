@@ -12,6 +12,10 @@ import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { getLaunchMenuBrand, isLaunchBrandPriceApproved } from "@/lib/launch-menu-catalogue";
 import { matchesLaunchMenuSearch } from "@/lib/launch-menu-search";
 import {
+  groupChoiceSecondsRemaining,
+  formatGroupChoiceCountdown,
+} from "@/lib/mealdeck-group-choice-clock";
+import {
   formatLaunchMenuPrice,
   formatLaunchMenuItemPrice,
   launchMenuBasketDisplayPrice,
@@ -138,13 +142,8 @@ export function GroupRoomMenu({
   const choicesHeading = useRef<HTMLHeadingElement>(null);
   const brand = getLaunchMenuBrand(brandId, catalogue)!;
   const query = search.trim();
-  const savedChoicesSecondsLeft = savedChoicesExpireAt && now > 0
-    ? Math.max(0, Math.ceil((Date.parse(savedChoicesExpireAt) - now) / 1000))
-    : null;
-  const savedChoicesTimeLeft = savedChoicesSecondsLeft === null
-    ? null
-    : Math.floor(savedChoicesSecondsLeft / 60) + ":" +
-      String(savedChoicesSecondsLeft % 60).padStart(2, "0");
+  const savedChoicesSecondsLeft = groupChoiceSecondsRemaining(savedChoicesExpireAt, now);
+  const savedChoicesTimeLeft = formatGroupChoiceCountdown(savedChoicesSecondsLeft);
   const sections = brand.sections
     .map((section) => ({
       ...section,
