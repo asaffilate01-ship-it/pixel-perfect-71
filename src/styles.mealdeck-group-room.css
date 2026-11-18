@@ -1349,3 +1349,49 @@
     font-size: 12px;
   }
 }
+
+
+/* Stage: put real saved-choice expiry beside the person's bag, not only in the roster. */
+.md-room-choice-expiry {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 14px 0 0;
+  padding: 12px;
+  border: 1px solid #cfb87a;
+  border-radius: 9px;
+  background: #fff7db;
+  color: #3a2a18;
+  font-size: 0.81rem;
+  line-height: 1.45;
+}
+.md-room-choice-expiry svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+.md-room-choice-expiry[data-expired="true"] {
+  border-color: #c96955;
+  background: #fff1eb;
+  color: #722a1c;
+}
+.md-room-search input[type="search"] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.md-room-clear-search {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--room-ink);
+  cursor: pointer;
+}
+.md-room-clear-search:hover { background: #f1e9da; }
+.md-room-clear-search:focus-visible {
+  outline: 3px solid var(--room-red);
+  outline-offset: 2px;
+}

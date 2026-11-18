@@ -12,10 +12,13 @@ on:
       - 'src/components/mobile-tab-bar.tsx'
       - 'src/components/group-room-setup.tsx'
       - 'src/components/group-room-menu.tsx'
+      - 'src/components/menus/launch-menu-app-nav.tsx'
+      - 'src/lib/mealdeck-group-choice-clock.ts'
       - 'src/components/menus/launch-menu-browser.tsx'
       - 'src/lib/launch-menu-picks.ts'
       - 'src/styles.mealdeck-group-room.css'
       - 'tests/mealdeck-group-ordering-ux.test.ts'
+      - 'tests/mealdeck-group-choice-clock.test.ts'
       - 'tests/mealdeck-group-readiness.test.mjs'
       - 'scripts/mealdeck-group-readiness.mjs'
       - 'tests/mealdeck-scheduled-orders.test.ts'
@@ -39,10 +42,13 @@ on:
       - 'src/components/mobile-tab-bar.tsx'
       - 'src/components/group-room-setup.tsx'
       - 'src/components/group-room-menu.tsx'
+      - 'src/components/menus/launch-menu-app-nav.tsx'
+      - 'src/lib/mealdeck-group-choice-clock.ts'
       - 'src/components/menus/launch-menu-browser.tsx'
       - 'src/lib/launch-menu-picks.ts'
       - 'src/styles.mealdeck-group-room.css'
       - 'tests/mealdeck-group-ordering-ux.test.ts'
+      - 'tests/mealdeck-group-choice-clock.test.ts'
       - 'tests/mealdeck-group-readiness.test.mjs'
       - 'scripts/mealdeck-group-readiness.mjs'
       - 'tests/mealdeck-scheduled-orders.test.ts'
@@ -75,9 +81,9 @@ jobs:
         run: bun test tests/mealdeck-scheduled-orders.test.ts tests/mealdeck-group-rooms.test.ts tests/mealdeck-group-choice-ttl-sql.test.ts tests/mealdeck-kds.test.ts
       - name: Group ordering UX and read-only readiness safety
         run: |
-          bun test tests/mealdeck-group-ordering-ux.test.ts
+          bun test tests/mealdeck-group-ordering-ux.test.ts tests/mealdeck-group-choice-clock.test.ts
           node --test tests/mealdeck-group-readiness.test.mjs
-          bunx eslint src/components/group-order-room.tsx src/components/mobile-tab-bar.tsx src/components/group-room-menu.tsx src/components/menus/launch-menu-browser.tsx src/lib/launch-menu-picks.ts tests/mealdeck-group-ordering-ux.test.ts --rule 'prettier/prettier: off'
+          bunx eslint src/lib/mealdeck-group-choice-clock.ts src/components/menus/launch-menu-app-nav.tsx src/components/group-order-room.tsx src/components/mobile-tab-bar.tsx src/components/group-room-menu.tsx src/components/menus/launch-menu-browser.tsx src/lib/launch-menu-picks.ts tests/mealdeck-group-ordering-ux.test.ts --rule 'prettier/prettier: off'
       - name: Install isolated PostgreSQL test dependencies
         run: npm ci --prefix tests/postgres
       - name: Verify private group room expiry on disposable PGlite

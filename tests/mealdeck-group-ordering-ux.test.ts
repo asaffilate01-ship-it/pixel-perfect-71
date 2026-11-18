@@ -85,3 +85,36 @@ describe("safe single-tap dishes in solo and group menus", () => {
     expect(server).toContain("newGroupRoomsAreOpen(serverNow())");
   });
 });
+
+
+describe("next-stage group ordering availability and saved-choice clarity", () => {
+  test("menu link does not pretend a date proves that payments and rooms are live", () => {
+    const menuNav = source("src/components/menus/launch-menu-app-nav.tsx");
+    expect(menuNav).toContain("Group ordering · Check availability");
+    expect(menuNav).not.toContain("groupOrderingOpen");
+    expect(menuNav).not.toContain("Group order · Choose together");
+    expect(menuNav).not.toContain("Group ordering · Starting 9 November");
+    expect(menuNav).toContain('to="/group-order"');
+  });
+
+  test("group composer displays only server-reported unpaid choice expiry", () => {
+    const room = source("src/components/group-order-room.tsx");
+    const composer = source("src/components/group-room-menu.tsx");
+    const css = source("src/styles.mealdeck-group-room.css");
+    expect(room).toContain("savedChoicesExpireAt={own.choicesExpiresAt}");
+    expect(room).toContain("now={now}");
+    expect(composer).toContain("groupChoiceSecondsRemaining(savedChoicesExpireAt, now)");
+    expect(composer).toContain("formatGroupChoiceCountdown(savedChoicesSecondsLeft)");
+    expect(composer).toContain("Saved choices may have expired.");
+    expect(composer).toContain("the room itself has a separate deadline");
+    expect(css).toContain(".md-room-choice-expiry");
+    expect(css).toContain('data-expired="true"');
+  });
+
+  test("search can be cleared without losing the person's food selections", () => {
+    const composer = source("src/components/group-room-menu.tsx");
+    expect(composer).toContain('aria-label="Clear group menu search"');
+    expect(composer).toContain('onClick={() => setSearch("")}');
+    expect(composer).toContain('className="md-room-clear-search"');
+  });
+});

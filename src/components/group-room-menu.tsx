@@ -1,7 +1,7 @@
 import { usePublicMenu } from "@/components/menus/use-public-menu";
 import { PublicMenuStatus } from "@/components/menus/public-menu-status";
 import { useRef, useState, type CSSProperties } from "react";
-import { ArrowRight, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
+import { ArrowRight, Clock3, Plus, Search, ShoppingBag, Trash2, X } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   LaunchItemCustomiser,
@@ -11,6 +11,10 @@ import {
 import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { getLaunchMenuBrand, isLaunchBrandPriceApproved } from "@/lib/launch-menu-catalogue";
 import { matchesLaunchMenuSearch } from "@/lib/launch-menu-search";
+import {
+  groupChoiceSecondsRemaining,
+  formatGroupChoiceCountdown,
+} from "@/lib/mealdeck-group-choice-clock";
 import {
   formatLaunchMenuPrice,
   formatLaunchMenuItemPrice,
@@ -116,12 +120,16 @@ export function GroupRoomMenu({
   disabled,
   unsaved,
   onReviewSave,
+  savedChoicesExpireAt,
+  now,
 }: {
   picks: LaunchMenuPick[];
   onChange: (next: LaunchMenuPick[]) => void;
   disabled: boolean;
   unsaved: boolean;
   onReviewSave: () => void;
+  savedChoicesExpireAt?: string | null;
+  now: number;
 }) {
   const publicMenu = usePublicMenu();
   const { catalogue } = publicMenu;
@@ -134,6 +142,8 @@ export function GroupRoomMenu({
   const choicesHeading = useRef<HTMLHeadingElement>(null);
   const brand = getLaunchMenuBrand(brandId, catalogue)!;
   const query = search.trim();
+  const savedChoicesSecondsLeft = groupChoiceSecondsRemaining(savedChoicesExpireAt, now);
+  const savedChoicesTimeLeft = formatGroupChoiceCountdown(savedChoicesSecondsLeft);
   const sections = brand.sections
     .map((section) => ({
       ...section,
@@ -245,6 +255,17 @@ export function GroupRoomMenu({
         <p className="md-room-fine">
           For planning. The final price and any eligible offer are checked before payment.
         </p>
+        {savedChoicesTimeLeft !== null && (
+          <p className="md-room-choice-expiry" data-expired={savedChoicesSecondsLeft === 0}>
+            <Clock3 size={16} aria-hidden="true" />
+            <span>
+              {savedChoicesSecondsLeft === 0
+                ? "Saved choices may have expired. Refresh the room before marking yourself ready."
+                : "Saved unpaid choices expire in " + savedChoicesTimeLeft +
+                  ". Saving again refreshes the timer; the room itself has a separate deadline."}
+            </span>
+          </p>
+        )}
       </section>
       <p className="md-room-feedback" role="status">
         {notice}
@@ -282,6 +303,16 @@ export function GroupRoomMenu({
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
+        {search && (
+          <button
+            type="button"
+            className="md-room-clear-search"
+            aria-label="Clear group menu search"
+            onClick={() => setSearch("")}
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        )}
       </label>
       {sections.length ? (
         sections.map((section) => (

@@ -1314,6 +1314,8 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                             picks={draft.picks}
                             disabled={busy || draft.conflict}
                             unsaved={draft.dirty}
+                            savedChoicesExpireAt={own.choicesExpiresAt}
+                            now={now}
                             onReviewSave={() => {
                               document.getElementById("group-order-save-choices")?.scrollIntoView({
                                 block: "center",
