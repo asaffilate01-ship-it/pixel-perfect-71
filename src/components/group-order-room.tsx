@@ -31,6 +31,7 @@ import {
 } from "@/components/group-order-room-state";
 import {
   groupOrderWirePicks,
+  groupInvitationWindowOpen,
   type GroupOrderCapabilities,
   type GroupOrderInvite,
   type GroupOrderInvitationPreview,
@@ -350,6 +351,8 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [issue, setIssue] = useState("");
+  // Transport/readiness errors are distinct from failed room mutations.
+  const [availabilityError, setAvailabilityError] = useState("");
   const [pollIssue, setPollIssue] = useState("");
   const [notice, setNotice] = useState("");
   const [legacyLink, setLegacyLink] = useState(false);
@@ -389,6 +392,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
   );
   const inactive = !!own && ["left", "removed", "expired"].includes(own.state);
   const now = useRoomClock(room?.serverNow ?? preview?.serverNow);
+  const invitationOpen = groupInvitationWindowOpen(preview, now);
   const navigation = useBlocker({
     shouldBlockFn: () => !!choices.current?.dirty,
     enableBeforeUnload: () => !!choices.current?.dirty,
@@ -421,10 +425,17 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
     try {
       const next = await initialiseRoomActor();
       actorReady.current = true;
-      if (mounted.current) setCapabilities(next);
+      if (mounted.current) {
+        setCapabilities(next);
+        setAvailabilityError("");
+      }
       return next;
     } catch (problem) {
-      if (mounted.current && !snapshot.current) setIssue(problemMessage(problem));
+      if (mounted.current) {
+        // A failed status fetch must not keep advertising stale room admission.
+        setCapabilities(null);
+        setAvailabilityError(problemMessage(problem));
+      }
       return null;
     }
   }, []);
@@ -937,7 +948,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                     ? "Get the group together."
                     : capabilities
                       ? "Group rooms not accepting new orders"
-                      : issue
+                      : issue || availabilityError
                         ? "Group ordering connection needs attention"
                         : "Checking group ordering availability"}
             </h1>
@@ -945,7 +956,10 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
               {room
                 ? "Choose your food, get ready, pay your way."
                 : !invite && !newRoomsOpen
-                  ? capabilities?.message || "Checking whether group rooms are available…"
+                  ? capabilities?.message ||
+                    (availabilityError
+                      ? "We couldn't verify whether new rooms are available. Check again before creating one."
+                      : "Checking whether group rooms are available…")
                   : "Everyone chooses their favourites. We bring the whole order together."}
             </p>
           </div>
@@ -1008,16 +1022,19 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
             })}
           </ol>
         )}
-        {issue && !dialog && (
+        {(issue || availabilityError) && !dialog && (
           <div ref={errorRef} className="md-room-error" role="alert" tabIndex={-1}>
-            <strong>We couldn’t finish that step.</strong>
-            <p>{issue}</p>
+            <strong>{issue ? "We couldn’t finish that step." : "We couldn’t check group-ordering availability."}</strong>
+            <p>{issue || availabilityError}</p>
             <button
               type="button"
               className="md-room-small-button"
               disabled={busy || loading}
               onClick={() => {
-                if (!capabilities) void refreshCapabilities();
+                // A manual retry clears only the previous mutation message.
+                // Readiness failures stay visible until the next GET succeeds.
+                setIssue("");
+                if ((invite || roomId) && !capabilities) void refreshCapabilities();
                 if (invite) {
                   setLoading(true);
                   const sequence = ++requestSequence.current;
@@ -1089,9 +1106,18 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
         {entryReady && !roomId && !invite && !newRoomsOpen && (
           <section className="md-room-card md-room-join" aria-labelledby="group-start-heading">
             <span className="md-room-kicker">Group room availability</span>
-            <h2 id="group-start-heading">New group rooms are not accepting orders right now.</h2>
+            <h2 id="group-start-heading">
+              {capabilities
+                ? "New group rooms are not accepting orders right now."
+                : availabilityError
+                  ? "We couldn’t confirm group-order availability."
+                  : "Checking group-order availability."}
+            </h2>
             <p>
-              {capabilities?.message || "Checking group room availability. Existing rooms and private invitation links remain accessible."}
+              {capabilities?.message ||
+                (availabilityError
+                  ? "Try checking again before creating a room. Existing room recovery needs its original browser and private link."
+                  : "Checking the kitchen and group-payment status.")}
             </p>
             <button
               type="button"
@@ -1133,19 +1159,27 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
               <Clock3 size={22} aria-hidden="true" />
               <div>
                 <strong>
-                  {preview.joinable ? "Accept your place in the room" : "This invitation is closed"}
+                  {invitationOpen
+                    ? "Accept your place in the room"
+                    : preview.joinable && !now
+                      ? "Checking invitation deadline…"
+                      : "This invitation is closed"}
                 </strong>
                 <p>
-                  {preview.message || "Join now. You can choose your food after you’ve joined."}
+                  {invitationOpen
+                    ? preview.message || "Join now. You can choose your food after you’ve joined."
+                    : preview.joinable && !now
+                      ? "Confirming the server-aligned invitation time."
+                      : "Joining time has ended or this invitation has closed. Ask the organiser to check the room."}
                 </p>
               </div>
-              {preview.joinable && <span>{remainingTime(preview.joinDeadline, now)}</span>}
+              {invitationOpen && <span>{remainingTime(preview.joinDeadline, now)}</span>}
             </div>
-            {preview.joinable && (
+            {invitationOpen && (
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
-                  if (!actorReady.current || loading) return;
+                  if (!invitationOpen || !actorReady.current || loading) return;
                   void run({ action: "join", ...invite, name: joinName.trim() }, true);
                 }}
               >
@@ -1167,7 +1201,7 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
                 <button
                   type="submit"
                   className="md-room-button"
-                  disabled={busy || loading || !capabilities || !joinName.trim()}
+                  disabled={busy || loading || !capabilities || !invitationOpen || !joinName.trim()}
                 >
                   {busy
                     ? "Joining…"

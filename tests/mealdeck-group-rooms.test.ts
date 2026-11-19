@@ -3,6 +3,7 @@ import {
   groupOrderRequestSchema,
   groupOrderResultSchema,
   groupOrderRoomSchema,
+  groupInvitationWindowOpen,
   groupOrderWirePicks,
   type GroupOrderRoom,
 } from "../src/lib/mealdeck-group-rooms";
@@ -397,5 +398,26 @@ describe("room invitations and browser transport do not grant payer identity", (
         maxPeople: 10,
       })) as typeof fetch;
     await expect(fetchGroupOrderCapabilities(undefined, fetcher)).rejects.toThrow();
+  });
+});
+
+
+describe("server-clock invitation admission is never inferred from a stale preview", () => {
+  const preview = { joinable: true, joinDeadline: "2026-11-19T18:03:00Z" };
+  const deadline = Date.parse(preview.joinDeadline);
+
+  test("allows the countdown only while a server-approved invitation remains in time", () => {
+    expect(groupInvitationWindowOpen(preview, deadline - 1)).toBe(true);
+    expect(groupInvitationWindowOpen(preview, deadline)).toBe(false);
+    expect(groupInvitationWindowOpen(preview, deadline + 1)).toBe(false);
+    expect(groupInvitationWindowOpen({ ...preview, joinable: false }, deadline - 10_000)).toBe(false);
+  });
+
+  test("missing or uninitialised server clock cannot promise entry", () => {
+    for (const time of [0, -1, NaN, Infinity, -Infinity])
+      expect(groupInvitationWindowOpen(preview, time)).toBe(false);
+    expect(groupInvitationWindowOpen(null, deadline - 1)).toBe(false);
+    expect(groupInvitationWindowOpen(undefined, deadline - 1)).toBe(false);
+    expect(groupInvitationWindowOpen({ joinable: true, joinDeadline: "invalid" }, deadline - 1)).toBe(false);
   });
 });

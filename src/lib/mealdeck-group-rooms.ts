@@ -180,6 +180,22 @@ export const groupOrderInvitationPreviewSchema = z.strictObject({
 });
 export type GroupOrderInvitationPreview = z.infer<typeof groupOrderInvitationPreviewSchema>;
 
+/**
+ * A preview is not ongoing permission to join. Hide the join action once the
+ * server-aligned clock reaches its signed deadline; the server still enforces
+ * the final admission decision for every POST.
+ */
+export function groupInvitationWindowOpen(
+  preview: Pick<GroupOrderInvitationPreview, "joinable" | "joinDeadline"> | null | undefined,
+  serverAlignedNow: number,
+): boolean {
+  if (!preview?.joinable || !Number.isFinite(serverAlignedNow) || serverAlignedNow <= 0)
+    return false;
+  const deadline = Date.parse(preview.joinDeadline);
+  return Number.isFinite(deadline) && serverAlignedNow < deadline;
+}
+
+
 export const groupOrderRequestSchema = z.discriminatedUnion("action", [
   z.strictObject({
     action: z.literal("create"),
