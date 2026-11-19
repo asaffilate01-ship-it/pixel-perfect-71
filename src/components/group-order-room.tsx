@@ -1031,6 +1031,9 @@ export function GroupOrderRoom({ routeRoomId }: { routeRoomId?: string }) {
               className="md-room-small-button"
               disabled={busy || loading}
               onClick={() => {
+                // A manual retry clears only the previous mutation message.
+                // Readiness failures stay visible until the next GET succeeds.
+                setIssue("");
                 if ((invite || roomId) && !capabilities) void refreshCapabilities();
                 if (invite) {
                   setLoading(true);
