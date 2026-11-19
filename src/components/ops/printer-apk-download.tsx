@@ -1,5 +1,6 @@
 import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
+import { H10S_RELEASE_VERSION, isVerifiedH10SReleaseManifest } from "@/lib/mealdeck-printer-release";
 
 export function PrinterApkDownload({ headingLevel = "h2" }: { headingLevel?: "h2" | "h3" }) {
   const Heading = headingLevel;
@@ -14,8 +15,8 @@ export function PrinterApkDownload({ headingLevel = "h2" }: { headingLevel?: "h2
     })
       .then(async (response) => {
         if (!response.ok) return;
-        const checksum = (await response.text()).trim();
-        if (/^[a-f0-9]{64}  mealdeck-printer-h10s-0\.2\.3\.apk$/.test(checksum))
+        const checksum = await response.text();
+        if (isVerifiedH10SReleaseManifest(checksum))
           setUpdatePublished(true);
       })
       .catch(() => {
@@ -23,7 +24,7 @@ export function PrinterApkDownload({ headingLevel = "h2" }: { headingLevel?: "h2
       });
     return () => controller.abort();
   }, []);
-  const version = updatePublished ? "0.2.3" : "0.2.2";
+  const version = updatePublished ? H10S_RELEASE_VERSION : "0.2.2";
 
   return (
     <section className="md-ops-card space-y-4 p-4 sm:p-5" aria-label="MealDeck H10S receipt app">
@@ -34,6 +35,9 @@ export function PrinterApkDownload({ headingLevel = "h2" }: { headingLevel?: "h2
           </p>
           <Heading className="text-xl font-black">H10S automatic receipts</Heading>
           <p className="text-sm md-ops-muted">Android 13 · sign in with your printer account</p>
+          {updatePublished && (
+            <p className="text-xs md-ops-muted">Signed release manifest matches the reviewed v0.2.3 checksum. Confirm the first receipt on paper after installation.</p>
+          )}
         </div>
         <a
           href={`/downloads/mealdeck-printer-h10s-${version}.apk`}

@@ -101,7 +101,9 @@ describe("next-stage group ordering availability and saved-choice clarity", () =
     const room = source("src/components/group-order-room.tsx");
     const composer = source("src/components/group-room-menu.tsx");
     const css = source("src/styles.mealdeck-group-room.css");
-    expect(room).toContain("savedChoicesExpireAt={own.choicesExpiresAt}");
+    expect(room).toContain("savedChoicesExpireAt={own.choicesExpiresAt ?? null}");
+    // Missing server TTL must render no timer, never pass undefined as an explicit optional prop.
+    expect(room).not.toContain("savedChoicesExpireAt={own.choicesExpiresAt}");
     expect(room).toContain("now={now}");
     expect(composer).toContain("groupChoiceSecondsRemaining(savedChoicesExpireAt, now)");
     expect(composer).toContain("formatGroupChoiceCountdown(savedChoicesSecondsLeft)");
