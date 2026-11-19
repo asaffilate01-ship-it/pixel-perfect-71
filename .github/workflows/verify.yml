@@ -31,6 +31,8 @@ jobs:
           --rule 'prettier/prettier: off'
       - name: Luton own-driver delivery migration safety contract
         run: node --test tests/delivery-migration-source.test.mjs
+      - name: Read-only printer download and delivery preflight contracts (mocked)
+        run: node --test tests/mealdeck-luton-launch-preflight.test.mjs
       - name: WhatsApp conversation, transport and private checkout boundaries
         run: bun test tests/mealdeck-whatsapp-*.test.ts tests/mealdeck-customer-return.test.ts
       - name: WhatsApp implementation lint and worker syntax
@@ -98,6 +100,7 @@ jobs:
           tests/mealdeck-kds-readiness.test.ts tests/mealdeck-printer.test.ts
           tests/mealdeck-printer-auth.test.ts
           tests/mealdeck-printer-config.test.ts
+          tests/mealdeck-printer-release.test.ts
           tests/mealdeck-printer-acceptance.test.ts
           tests/mealdeck-kds-toolbar.test.ts
           tests/mealdeck-staff-alerts.test.ts
@@ -119,10 +122,12 @@ jobs:
           bunx eslint tools/receipt-bridge src/routes/printer.tsx
           src/components/ops/printer-workspace.tsx src/components/ops/receipt-preview.tsx
           src/components/ops/staff-alerts.tsx src/lib/mealdeck-printer.ts
+          src/lib/mealdeck-printer-release.ts src/components/ops/printer-apk-download.tsx
           src/lib/mealdeck-printer-browser.ts src/lib/mealdeck-printer-recovery.ts
           src/lib/mealdeck-printer-auth.ts tests/mealdeck-printer-auth.test.ts
           src/components/ops/printer-pending-orders.tsx src/lib/mealdeck-printer-acceptance.ts
           src/components/ops/printer-receipt-list.tsx src/lib/mealdeck-printer-queue.ts
+          tests/mealdeck-printer-release.test.ts
           tests/mealdeck-printer-acceptance.test.ts
           deploy/mealdeck/printer-acceptance.mjs tests/postgres/printer-acceptance-behavior.mjs
           deploy/mealdeck/receipt-archive.mjs tests/postgres/receipt-archive-behavior.mjs
