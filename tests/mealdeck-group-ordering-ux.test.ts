@@ -120,3 +120,29 @@ describe("next-stage group ordering availability and saved-choice clarity", () =
     expect(composer).toContain('className="md-room-clear-search"');
   });
 });
+
+
+describe("next-stage reliable availability refresh and invitation expiry", () => {
+  test("a failed readiness request cannot advertise stale new-room access", () => {
+    const room = source("src/components/group-order-room.tsx");
+    expect(room).toContain('const [availabilityError, setAvailabilityError] = useState("")');
+    expect(room).toContain('setCapabilities(null);');
+    expect(room).toContain('setAvailabilityError(problemMessage(problem));');
+    expect(room).toContain('setAvailabilityError("");');
+    expect(room).toContain('availabilityError ?');
+    expect(room).toContain('We couldn’t confirm group-order availability.');
+    expect(room).toContain('Group rooms not accepting new orders');
+  });
+
+  test("expired invitations hide join and only the server can accept a room membership", () => {
+    const room = source("src/components/group-order-room.tsx");
+    const policy = source("src/lib/mealdeck-group-rooms.ts");
+    const server = source("src/lib/mealdeck-group-rooms.server.ts");
+    expect(room).toContain("const invitationOpen = groupInvitationWindowOpen(preview, now)");
+    expect(room).toContain("{invitationOpen && (");
+    expect(room).toContain("if (!invitationOpen || !actorReady.current || loading) return;");
+    expect(room).toContain("Joining time has ended or this invitation has closed.");
+    expect(policy).toContain("serverAlignedNow < deadline");
+    expect(server).toContain('"mealdeck_accept_ordering_invitation"');
+  });
+});
