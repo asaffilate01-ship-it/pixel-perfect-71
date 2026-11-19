@@ -7,9 +7,12 @@ import { PwaInstallCard } from "@/components/pwa-install-card";
 import { driverClient, driverRpc, initialiseDriverClient } from "@/lib/mealdeck-driver-browser";
 import { driverActions, driverDirectionsUrl, parseDriverPortal, type DriverJobCard, type DriverJobAction, type DriverPortal } from "@/lib/mealdeck-driver-app-view";
 import { DriverGpsReadiness } from "./driver-gps-readiness";
+import { DriverLiveLocation } from "./driver-live-location";
 import "./driver-workspace.css";
 
 const ACTION_REFRESH_MS = 12_000;
+// Explicit opt-in beta: no GPS broadcast merely because a driver is assigned.
+const DRIVER_LOCATION_BETA = import.meta.env?.["VITE_MEALDECK_DRIVER_LOCATION_BETA"] === "true";
 const stageNames: Record<DriverJobCard["status"], string> = {
   offered: "New delivery offer", assigned: "Head to the kitchen",
   at_kitchen: "Waiting for sealed bags", collected: "On the way",
@@ -277,6 +280,11 @@ export function DriverWorkspace() {
                     {directions && <a href={directions} target="_blank" rel="noopener noreferrer"><Navigation size={17}/> Directions</a>}
                     {job.customerPhone && phone && /^\+?\d{7,15}$/.test(phone) && <a href={"tel:"+phone}><Phone size={17}/> Call customer</a>}
                   </div>
+                  {DRIVER_LOCATION_BETA && portal.onShift &&
+                    job.driverStatus === "with_driver" &&
+                    (job.status === "collected" || job.status === "at_customer") &&
+                    <DriverLiveLocation orderId={job.jobId} userId={userId ?? ""}
+                      onShift={portal.onShift} online={online} />}
                   {job.status === "dropoff_reported" && <p className="md-driver-info"><ShieldCheck size={18}/> Your report is saved. Only kitchen staff can mark the paid order delivered.</p>}
                   {job.status === "at_kitchen" && job.driverStatus !== "with_driver" && <p className="md-driver-info">Wait for staff to confirm the sealed-bag handover in KDS.</p>}
                   {job.status === "offered" && <p className="md-driver-expiry">Offer expires {job.offeredUntil ? new Date(job.offeredUntil).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : "soon"}.</p>}
