@@ -129,7 +129,7 @@ describe("next-stage reliable availability refresh and invitation expiry", () =>
     expect(room).toContain('setCapabilities(null);');
     expect(room).toContain('setAvailabilityError(problemMessage(problem));');
     expect(room).toContain('setAvailabilityError("");');
-    expect(room).toContain('availabilityError ?');
+    expect(room).toContain('setIssue("");');
     expect(room).toContain('We couldn’t confirm group-order availability.');
     expect(room).toContain('Group rooms not accepting new orders');
   });
