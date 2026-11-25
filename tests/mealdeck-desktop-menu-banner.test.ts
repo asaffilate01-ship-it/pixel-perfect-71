@@ -94,7 +94,8 @@ describe("MealDeck low-friction ordering UX regressions", () => {
     expect(nav).toContain("onClick={onCheckout}");
     expect(browser).toContain("onCheckout={proceedToCheckout}");
     expect(browser).toContain("prepareLaunchCheckout(live.picks, live)");
-    expect(browser).toContain("launchItemGroups(entry.brand, entry.item).length === 0");
+    expect(browser).toContain("!existing && canQuickAddLaunchItem(entry.item)");
+    expect(browser).toContain("if (!publicMenu.ready || entry.item.available === false) return;");
     expect(css).toContain('grid-template-columns: repeat(5, minmax(0, 1fr));');
   });
 });
