@@ -175,11 +175,13 @@ export function LaunchMenuAppNav({
             ) {
               trigger.focus({ preventScroll: true });
             } else {
-              document
-                .querySelector<HTMLButtonElement>(
-                  "#launch-brand-selector button[aria-pressed='true']",
-                )
-                ?.focus({ preventScroll: true });
+              const activeBrand = document.querySelector<HTMLAnchorElement>(
+                "#launch-brand-selector a[aria-current='page']",
+              );
+              if (activeBrand?.getClientRects().length &&
+                  window.getComputedStyle(activeBrand).visibility !== "hidden") {
+                activeBrand.focus({ preventScroll: true });
+              }
             }
           }}
         >

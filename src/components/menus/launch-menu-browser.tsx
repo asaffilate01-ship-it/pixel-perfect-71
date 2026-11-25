@@ -2,7 +2,7 @@ import { usePublicMenu } from "./use-public-menu";
 import { launchMenuItemDescriptor } from "@/lib/launch-menu-item-descriptor";
 import { PublicMenuStatus } from "./public-menu-status";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { ArrowRight, ChevronRight, Layers3, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { SiteHeader } from "@/components/site-header";
@@ -35,7 +35,7 @@ import { approvedBrandLogos, type ApprovedBrandId } from "@/lib/brand-logos";
 import { marketingBrands } from "@/lib/marketing-brands";
 import { getMealDeckMenuPage } from "@/lib/mealdeck-menu-seo";
 import { getLaunchMenuScrollTarget } from "@/lib/launch-menu-navigation";
-import { matchesLaunchMenuSearch } from "@/lib/launch-menu-search";
+import { findOtherBrandMenuMatches, matchesLaunchMenuSearch, OTHER_BRAND_SEARCH_LIMIT } from "@/lib/launch-menu-search";
 import type { MealDeckPublicMenuSnapshot } from "@/lib/mealdeck-public-menu";
 import {
   getLaunchMenuBrand,
@@ -443,7 +443,7 @@ export function LaunchMenuBrowser({
     : undefined;
   const query = search.trim();
   const sections = (brand?.sections ?? [])
-    .filter((section) => !activeSection || section.id === activeSection)
+    .filter((section) => !!query || !activeSection || section.id === activeSection)
     .map((section) => ({
       ...section,
       items: section.items
@@ -452,6 +452,7 @@ export function LaunchMenuBrowser({
           (item) =>
             !query ||
             matchesLaunchMenuSearch(query, [
+              brand?.name,
               item.name,
               item.description,
               section.title,
@@ -459,7 +460,10 @@ export function LaunchMenuBrowser({
               ...(brand
                 ? launchItemGroups(brand, item).flatMap((group) =>
                     group.options
-                      .filter((option) => option.available !== false)
+                      .filter((option) =>
+                        option.available !== false &&
+                        (!publicMenu.ready || item.availableOptionIds?.includes(option.id) === true),
+                      )
                       .map((option) => option.label),
                   )
                 : []),
@@ -468,6 +472,13 @@ export function LaunchMenuBrowser({
     }))
     .filter((section) => section.items.length > 0);
   const visibleCount = sections.reduce((total, section) => total + section.items.length, 0);
+  const currentBrandId = brand?.id;
+  const otherMatches = useMemo(
+    () => publicMenu.ready && currentBrandId
+      ? findOtherBrandMenuMatches(query, catalogue, currentBrandId)
+      : [],
+    [query, catalogue, currentBrandId, publicMenu.ready],
+  );
   const pairingSections: Record<string, string> = {
     "skorch-burgers": "beef-smash-deck",
     "tavo-chicken": "burgers",
@@ -484,6 +495,7 @@ export function LaunchMenuBrowser({
       const item = section?.items.find((item) => item.available !== false);
       return pairing && section && item ? [{ brand: pairing, section, item }] : [];
     });
+  const discoveryEntries = query ? otherMatches : pairings;
   const pickProps = {
     picks,
     onClear: emptyBasket,
@@ -634,6 +646,7 @@ export function LaunchMenuBrowser({
               activeSection={activeSection}
               search={search}
               count={visibleCount}
+              otherCount={otherMatches.length}
               onBrand={(id) => browse(id)}
               onSection={(id) => browse(brand.id, id, "items")}
               onSearch={setSearch}
@@ -641,10 +654,11 @@ export function LaunchMenuBrowser({
             <div className="lm-menu-toolbar">
               <label className="lm-search">
                 <Search size={19} aria-hidden="true" />
-                <span className="sr-only">Search {brand.name} menu</span>
+                <span className="sr-only">Search all MealDeck menus</span>
                 <input
                   type="search"
-                  placeholder={"Search " + brand.name + "…"}
+                  placeholder="Search dishes, flavours or brands…"
+                  maxLength={120}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
@@ -659,7 +673,8 @@ export function LaunchMenuBrowser({
                 )}
               </label>
               <span className="lm-result-count" role="status">
-                {visibleCount} {visibleCount === 1 ? "item" : "items"}
+                {visibleCount} {visibleCount === 1 ? "item" : "items"} in {brand.name}
+                {query && otherMatches.length > 0 && ` · ${otherMatches.length}${otherMatches.length === OTHER_BRAND_SEARCH_LIMIT ? "+" : ""} across other menus`}
               </span>
             </div>
             <nav className="lm-category-nav" aria-label={brand.name + " menu sections"}>
@@ -774,8 +789,10 @@ export function LaunchMenuBrowser({
                 ) : (
                   <div className="lm-no-results">
                     <Search size={34} aria-hidden="true" />
-                    <h2>No dishes found</h2>
-                    <p>Try another dish or flavour, or view the full {brand.name} menu.</p>
+                    <h2>{query ? "No matching dishes in " + brand.name : "No dishes found"}</h2>
+                    <p>{otherMatches.length > 0
+                      ? "Matching dishes from other brands are shown below."
+                      : "Try another dish or flavour, or view the full menu."}</p>
                     <button
                       type="button"
                       className="lm-primary"
@@ -789,23 +806,24 @@ export function LaunchMenuBrowser({
                   </div>
                 )}
 
+                {discoveryEntries.length > 0 && (
                 <section className="lm-pairings" aria-labelledby="pairing-title">
                   <div>
                     <span className="lm-eyebrow">Across the deck</span>
-                    <h2 id="pairing-title">Something on the side?</h2>
-                    <p>
-                      Add another brand to your basket. Each dish is a separate extra; meal upgrades
-                      stay with your main.
-                    </p>
+                    <h2 id="pairing-title">{query ? "Matches from other brands" : "Something on the side?"}</h2>
+                    <p>{query
+                      ? "Current dishes across the other menus. Refine your search to see more specific results."
+                      : "Add another brand to your basket. Each dish is a separate extra; meal upgrades stay with your main."}</p>
                   </div>
                   <div className="lm-pairing-grid">
-                    {pairings.map((entry) => (
+                    {discoveryEntries.map((entry) => (
                       <button
                         type="button"
-                        key={entry.brand.id}
+                        key={entry.brand.id + ":" + entry.item.id}
+                        disabled={!publicMenu.ready || entry.item.available === false}
                         onClick={() => openItem(entry)}
                         aria-label={"Add " + entry.item.name + " from " + entry.brand.name}
-                        aria-describedby={"pairing-price-" + entry.item.id}
+                        aria-describedby={"pairing-price-" + entry.brand.id + "-" + entry.item.id}
                       >
                         <img src={logoFor(entry.brand.id)} alt="" width="90" height="65" />
                         <span>
@@ -813,7 +831,8 @@ export function LaunchMenuBrowser({
                           <small>
                             {entry.brand.name} · {entry.section.title}
                           </small>
-                          <span className="lm-pairing-price" id={"pairing-price-" + entry.item.id}>
+                          <span className="lm-pairing-price" id={"pairing-price-" + entry.brand.id + "-" + entry.item.id}>
+                            {entry.item.priceVariants?.length ? "From " : ""}
                             {formatLaunchMenuItemPrice(entry.item)}
                             <span className="sr-only"> per item</span>
                           </span>
@@ -825,6 +844,7 @@ export function LaunchMenuBrowser({
                     ))}
                   </div>
                 </section>
+                )}
               </div>
 
               <aside className="lm-sidebar" aria-label="Your basket and meal upgrades">
@@ -1051,7 +1071,7 @@ export function LaunchMenuBrowser({
                   decorative
                   loading="lazy"
                 />
-                <span className="lm-eyebrow">Your launch-day line-up</span>
+                <span className="lm-eyebrow">Your MealDeck line-up</span>
                 <DialogTitle className="lm-dialog-title" ref={basketHeadingRef} tabIndex={-1}>
                   Your basket <span>({quantity})</span>
                 </DialogTitle>
@@ -1063,7 +1083,7 @@ export function LaunchMenuBrowser({
                       ? "Checking your saved choices."
                       : "Your basket is saved for a maximum of 20 minutes per item."}{" "}
                   Confirm current prices and{" "}
-                  {deliveryLive ? "delivery eligibility" : "collection availability"} at checkout.
+                  fulfilment availability at checkout.
                 </DialogDescription>
               </div>
               <div className="lm-basket-scroll">

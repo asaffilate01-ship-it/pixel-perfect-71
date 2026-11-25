@@ -1,3 +1,5 @@
+import { isLaunchBrandPriceApproved, type LaunchMenuBrand, type LaunchMenuItem, type LaunchMenuSection } from "./launch-menu-catalogue";
+
 /**
  * Shared desktop/mobile menu search. Deterministic discovery over the real
  * published catalogue; NOT a source of pricing, stock, allergen or dietary facts.
@@ -82,4 +84,54 @@ export function matchesLaunchMenuSearch(
     return false;
   }
   return true;
+}
+
+
+export const OTHER_BRAND_SEARCH_LIMIT = 12;
+
+export type OtherBrandMenuMatch = {
+  brand: LaunchMenuBrand;
+  section: LaunchMenuSection;
+  item: LaunchMenuItem;
+};
+
+/** Discovery only: never creates a price, choice, basket or checkout authority. */
+export function findOtherBrandMenuMatches(
+  query: string,
+  catalogue: readonly LaunchMenuBrand[],
+  currentBrandId: string,
+): OtherBrandMenuMatch[] {
+  if (!query.trim() || query.trim().length > 120) return [];
+  const matches: OtherBrandMenuMatch[] = [];
+  for (const brand of catalogue) {
+    if (brand.id === currentBrandId || !isLaunchBrandPriceApproved(brand.id)) continue;
+    for (const section of brand.sections) {
+      for (const item of section.items) {
+        if (
+          item.available !== true ||
+          typeof item.pricePence !== "number" ||
+          !Number.isSafeInteger(item.pricePence) ||
+          item.pricePence < 0
+        ) continue;
+        const optionLabels = brand.optionGroups
+          .filter((group) => item.optionGroupIds.includes(group.id))
+          .flatMap((group) =>
+            group.options
+              .filter((option) => option.available === true && item.availableOptionIds?.includes(option.id))
+              .map((option) => option.label),
+          );
+        if (!matchesLaunchMenuSearch(query, [
+          brand.name,
+          section.title,
+          section.description,
+          item.name,
+          item.description,
+          ...optionLabels,
+        ])) continue;
+        matches.push({ brand, section, item });
+        if (matches.length === OTHER_BRAND_SEARCH_LIMIT) return matches;
+      }
+    }
+  }
+  return matches;
 }
