@@ -524,7 +524,7 @@ export function LaunchMenuBrowser({
           </nav>
         )}
         <div className="lm-page-heading">
-          <span className="lm-eyebrow">The Luton launch deck</span>
+          <span className="lm-eyebrow">MealDeck Luton</span>
           <p>Five menus. Every craving.</p>
           <span className="lm-launch-label">
             <span>
@@ -948,10 +948,10 @@ export function LaunchMenuBrowser({
             One order. <em>Every craving.</em>
           </strong>
           <p>
-            Five Luton launch menus · Item and upgrade prices shown.{" "}
+            Five Luton menus · Item and upgrade prices shown.{" "}
             {deliveryLive
               ? "Free own-driver delivery within 4 km, £15 minimum after discounts; collection and kerbside also available."
-              : "Collection and kerbside pickup; delivery is not available yet."}
+              : "Collection and kerbside pickup; check local delivery availability at checkout."}
           </p>
         </footer>
       </main>

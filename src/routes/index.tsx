@@ -5,7 +5,6 @@ import {
   Bike,
   Check,
   Clock3,
-  Crown,
   Gamepad2,
   MapPin,
   MessageCircle,
@@ -26,7 +25,6 @@ import { LocalMenuDiscovery } from "@/components/marketing/local-menu-discovery"
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import { OfferDiscovery } from "@/components/marketing/offer-discovery";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
-import { OpeningWeekendOffer } from "@/components/opening-weekend-offer";
 import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import { suitArtwork } from "@/lib/food-suit-artwork";
@@ -158,9 +156,6 @@ function LandingPage() {
           </div>
         </section>
 
-        <div className="md-launch-story">
-          <OpeningWeekendOffer />
-        </div>
 
         <section className="md-direct-strip" aria-label="Why order direct">
           <div className="md-direct-strip-title">
@@ -187,7 +182,7 @@ function LandingPage() {
           <div className="md-section-heading md-section-heading-split">
             <div>
               <p className="md-kicker md-kicker-red">Our brands. Your cravings.</p>
-              <h2>Your first five menus are here.</h2>
+              <h2>Five menus. One basket.</h2>
               <p>
                 Find your Luton takeaway favourites, from beef smash burgers and chicken wings to
                 loaded fries, doner and mocktails. Mix your picks for eligible free local delivery,
@@ -377,7 +372,7 @@ function LandingPage() {
             <Link to="/st-albans" className="md-location-card">
               <span>St Albans</span>
               <h3>Weekday breakfast and lunch, one hand.</h3>
-              <p>Coming in a future deck · Luton launches first</p>
+              <p>Coming soon · Opening date to be confirmed</p>
               <strong>
                 Explore St Albans <ArrowRight />
               </strong>
@@ -511,13 +506,13 @@ function LandingPage() {
           <p className="md-kicker md-kicker-light">Different cuisines. One checkout.</p>
           <h2>Ready to play your cravings right?</h2>
           <p>
-            Our 6–8 November opening discounts have ended. Verified registered members earn
-            one loyalty point per complete £1 paid after discounts on eligible orders.
+            Verified registered members earn one loyalty point per complete £1 paid after
+            discounts on eligible orders.
             Guest orders earn none; marketing updates are optional.
           </p>
           <div>
-            <Link to="/account" className="md-btn md-btn-yellow">
-              Get your account ready <Crown />
+            <Link to="/menus" className="md-btn md-btn-yellow">
+              Order now <ArrowRight aria-hidden="true" />
             </Link>
             <Link to="/play/daily" className="md-btn md-btn-outline-light">
               Try today’s free puzzle <Gamepad2 aria-hidden="true" />

@@ -20,7 +20,7 @@ describe("post-opening MealDeck offers", () => {
     expect(offers).not.toContain("MealDeckOfferCards");
     expect(offers).not.toContain("Join for double points");
     expect(offers).not.toContain("99p Milk Cake & Double Points");
-    expect(offers).toContain("promotion have ended");
+    expect(offers).not.toMatch(/opening.weekend|99p|30% off/i);
     expect(offers).toContain("£1 paid = 1 loyalty point.");
     expect(offers).toContain('to="/account"');
   });

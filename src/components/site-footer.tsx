@@ -27,7 +27,6 @@ export function SiteFooter() {
             </Link>
             <Link to="/offers">Offers</Link>
             <Link to="/account">My account &amp; preferences</Link>
-            <Link to="/opening-offer">Opening weekend offer</Link>
             <Link to="/meta-ad">Your first order</Link>
             <Link to="/privacy">Privacy</Link>
             <button
@@ -72,7 +71,7 @@ export function SiteFooter() {
 
       <div className="md-footer-apps">
         <p className="md-footer-apps-copy">
-          <strong>Luton launches first.</strong> Verified members earn loyalty points on eligible
+          <strong>MealDeck Luton.</strong> Verified members earn loyalty points on eligible
           paid orders; guest orders earn none. <Link to="/account">See member benefits</Link>.
           Offer emails and app alerts are optional, separate choices.
         </p>

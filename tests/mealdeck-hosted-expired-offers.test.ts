@@ -6,9 +6,10 @@ const source = (path: string) => readFileSync(new URL(`../${path}`, import.meta.
 describe("MealDeck hosted marketing after 8 November 2026", () => {
   test("current offers page has no three expired/unapproved active campaigns", () => {
     const offers = source("src/routes/offers.tsx");
-    expect(offers).toContain("opening-weekend 30% discount and Sunday 99p milkcake promotion have ended");
+    expect(offers).not.toMatch(/opening.weekend|99p|30% off/i);
+    expect(offers).toContain("£1 paid = 1 loyalty point.");
     expect(offers).not.toMatch(/Double loyalty points|Join for double points|£15 or more from Monday 9/);
-    expect(offers).toContain('to="/opening-offer"');
+    expect(offers).not.toContain('to="/opening-offer"');
     expect(offers).toContain('to="/account"');
   });
 
@@ -19,6 +20,14 @@ describe("MealDeck hosted marketing after 8 November 2026", () => {
     expect(cards).toContain("one point per complete £1");
     expect(cards).not.toContain("MEALDECK_OFFERS.map");
     expect(cards).not.toMatch(/Register for\s+double loyalty points/);
+  });
+
+  test("evergreen public surfaces do not render or link to the retired campaign", () => {
+    for (const path of ["src/routes/index.tsx", "src/routes/meta-ad.tsx", "src/components/site-footer.tsx", "src/components/marketing/offer-discovery.tsx"]) {
+      expect(source(path)).not.toMatch(/OpeningWeekendOffer|opening.weekend|6–8 November|99p|double loyalty points/i);
+    }
+    expect(source("src/routes/opening-offer.tsx")).toContain('redirect({ to: "/offers", statusCode: 301');
+    expect(source("src/lib/mealdeck-sitemap.ts")).not.toContain('"/opening-offer"');
   });
 
   test("server-offer uncertainty fails closed rather than showing an expired 30% advert", () => {

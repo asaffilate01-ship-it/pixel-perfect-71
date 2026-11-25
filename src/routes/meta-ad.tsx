@@ -14,10 +14,9 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { LaunchOpeningHours, OpeningWeekendOffer } from "@/components/opening-weekend-offer";
 import { PwaInstallCard } from "@/components/pwa-install-card";
 import { approvedBrandLogos } from "@/lib/brand-logos";
-import { MEALDECK_LAUNCH_HOURS_PROSE } from "@/lib/mealdeck-launch-schedule";
+import { MEALDECK_LUTON_WEEKLY_HOURS } from "@/lib/mealdeck-launch-schedule";
 import { seo } from "@/lib/seo";
 import "@/styles.first-order.css";
 
@@ -25,7 +24,7 @@ export const Route = createFileRoute("/meta-ad")({
   head: () =>
     seo({
       title: "Your first MealDeck order — how it works",
-      description: `MealDeck Luton opens 6–8 November 2026. ${MEALDECK_LAUNCH_HOURS_PROSE} 30% off, no minimum. Guests welcome; collection or kerbside only.`,
+      description: "Order from five MealDeck brands in one basket. Guests welcome; collection, kerbside or eligible free local delivery in Luton.",
       path: "/meta-ad",
     }),
   component: FirstOrderExplainer,
@@ -63,19 +62,27 @@ function FirstOrderExplainer() {
             <em>One winning hand.</em>
           </h1>
           <p className="md-first-lead">
-            Five brands, one basket and one pickup. Here’s how your first MealDeck order works.
+            Five brands, one basket. Here’s how your first MealDeck order works.
           </p>
-          <div className="md-first-brands" aria-label="The five launch brands">
+          <div className="md-first-brands" aria-label="The five MealDeck brands">
             {brands.map(([name, logo]) => (
               <img key={name} src={logo} alt={name} width={140} height={90} />
             ))}
           </div>
-          <p className="md-first-location">Launching in Luton · 314–318 Selbourne Road, LU4 8NU</p>
+          <p className="md-first-location">MealDeck Luton · 314–318 Selbourne Road, LU4 8NU</p>
           <div className="md-first-confirmed-launch">
-            <p>Opening weekend · 6–8 November 2026 · UK time</p>
-            <LaunchOpeningHours />
+            <p>Opening hours · UK time</p>
+            <dl aria-label="Luton weekly opening hours">
+              {MEALDECK_LUTON_WEEKLY_HOURS.map((row) => (
+                <div key={row.shortDays}>
+                  <dt>{row.shortDays}</dt>
+                  <dd>{row.hoursLabel}</dd>
+                </div>
+              ))}
+            </dl>
             <p className="md-first-launch-note">
-              30% off everything. No minimum order. Guest checkout for our first three days.
+              Guests and members welcome. Free local delivery within 4 km on £15+ after
+              discounts, subject to live availability at checkout.
             </p>
           </div>
           <Link to="/menus" className="md-btn md-btn-red">
@@ -89,7 +96,7 @@ function FirstOrderExplainer() {
             <h2 id="first-order-title">Browse. Build. Pick up.</h2>
             <p>
               Use mealdeck.co.uk in your browser, or add the MealDeck app to your home screen. You
-              can order as a guest during our opening hours on 6–8 November, or sign in as a member.
+              can order as a guest during opening hours, or sign in as a member.
             </p>
           </div>
           <div className="md-first-methods" aria-label="Choose which pickup guide to see">
@@ -125,20 +132,21 @@ function FirstOrderExplainer() {
             </button>
             <button
               type="button"
-              aria-disabled="true"
-              onClick={() => setDeliveryNotice(true)}
-              className="is-unavailable"
+              aria-expanded={deliveryNotice}
+              onClick={() => setDeliveryNotice((visible) => !visible)}
             >
               <Truck size={23} aria-hidden="true" />
               <span>
                 <strong>Delivery</strong>
-                <small>Not available yet</small>
+                <small>Check eligibility</small>
               </span>
             </button>
           </div>
           {deliveryNotice && (
             <p className="md-first-delivery-notice" role="status">
-              Delivery is not available at the moment. Please select collection or kerbside.
+              Free local delivery is offered within 4 km of LU4 8NU on £15+ after discounts.
+              Enter your postcode at checkout to confirm live kitchen and driver availability.{" "}
+              <Link to="/menus">Browse menus</Link>.
             </p>
           )}
 
@@ -180,7 +188,7 @@ function FirstOrderExplainer() {
               </div>
               <h3>Guest or member? You choose.</h3>
               <p>
-                On 6–8 November, enter your <strong>name, email and mobile number</strong> to order
+                Enter your <strong>name, email and mobile number</strong> to order
                 as a guest without registering. Guest orders earn no loyalty points. To become a
                 member, create an account and verify your email. Already a member? Sign in.
               </p>
@@ -261,23 +269,20 @@ function FirstOrderExplainer() {
           </div>
         </section>
 
-        <div className="md-launch-story">
-          <OpeningWeekendOffer />
-        </div>
         <section className="md-first-account">
           <div>
             <p className="md-first-eyebrow">Make yourself at home</p>
             <h2>One account. More to look forward to.</h2>
             <p>
-              Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive for
-              double loyalty points. Offer emails and promotional app alerts are separate, optional
-              choices — saying no does not affect an eligible offer.
+              Verified members earn one loyalty point per complete £1 paid after discounts on
+              eligible orders. Guest orders earn no points. Offer emails and promotional app
+              alerts are separate, optional choices.
             </p>
             <Link to="/account" className="md-btn md-btn-red">
               Create your account <ArrowRight size={18} aria-hidden="true" />
             </Link>
             <p className="md-first-small">
-              <Link to="/offers">See all three offers</Link> ·{" "}
+              <Link to="/offers">See member benefits</Link> ·{" "}
               <Link to="/privacy">Privacy and your choices</Link> · St Albans and Bedford are coming
               in a future deck.
             </p>
