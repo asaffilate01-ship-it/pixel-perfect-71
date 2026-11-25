@@ -108,7 +108,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <p>
                 {isLuton
                   ? `Order Skorch smash burgers, Tavo chicken wings and tenders, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails for Luton eligible free local delivery, collection or kerbside. Availability is confirmed at checkout. More brands join a future deck.`
-                  : `Luton launches first. The ${town} line-up and opening date will be confirmed separately; this is the wider brand collection.`}
+                  : `The ${town} line-up and opening date will be confirmed separately; this is the wider brand collection.`}
               </p>
             </div>
           </div>

@@ -16,7 +16,6 @@ export const MEALDECK_PUBLIC_PATHS = [
   // /order currently renders the same launch menu and canonicalises to /menus.
   ...(!COMING_SOON ? ["/order"] : []),
   "/offers",
-  "/opening-offer",
   "/meta-ad",
   "/play",
   "/play/daily",
