@@ -46,7 +46,7 @@ export function LocalMenuDiscovery() {
       </nav>
       <p className="md-local-menu-desserts">
         Finish with a Biscoff or Oreo milk cake, listed in the Desserts section of every menu. Order
-        your Luton takeaway for collection or kerbside pickup from Selbourne Road.
+        your Luton takeaway for collection, kerbside or eligible local delivery from Selbourne Road.
       </p>
     </section>
   );

@@ -70,6 +70,8 @@ describe("MealDeck low-friction ordering UX regressions", () => {
     expect(banner).toContain("window.setTimeout(() => setVisible(false), 8_000)");
     expect(banner).toContain('pathname === "/" || pathname === "/luton" || pathname === "/offers"');
     expect(banner).toContain("window.sessionStorage.setItem(MEMBER_NOTICE_SESSION_KEY");
+    expect(banner).toContain("App installation and order alerts are optional");
+    expect(banner).not.toContain("delivery launch announcement");
     expect(css).toContain(".md-member-popup {");
     expect(css).toContain("position: fixed;");
     expect(css).toContain("max-height: min(55dvh, 300px);");
