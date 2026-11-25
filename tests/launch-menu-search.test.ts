@@ -78,7 +78,7 @@ describe("Cross-brand search over verified live items", () => {
       menu("tavo-chicken", [
         item("live"),
         item("sold-out", { available: false }),
-        item("unverified", { available: undefined }),
+        (({ available: _available, ...rest }) => rest)(item("unverified")),
         item("no-price", { pricePence: null }),
         item("negative", { pricePence: -1 }),
         item("fraction", { pricePence: 99.5 }),
