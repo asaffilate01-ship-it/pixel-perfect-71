@@ -105,3 +105,38 @@ describe("Cross-brand search over verified live items", () => {
     expect(matches[11]?.item.id).toBe("dish-11");
   });
 });
+
+
+describe("Device-only menu favourites", () => {
+  test("saves only canonical public identifiers, deduplicates and strips private fields", async () => {
+    const { decodeMenuFavourites, encodeMenuFavourites, toggleMenuFavourite, MAX_MENU_FAVOURITES } = await import("../src/lib/mealdeck-menu-favourites");
+    const { launchMenuBrands } = await import("../src/lib/launch-menu-catalogue");
+    const known = launchMenuBrands.flatMap((brand) => brand.sections.flatMap((section) =>
+      section.items.map((item) => ({ brandId: brand.id, itemId: item.id })),
+    ));
+    const first = known[0]!;
+    const payload = JSON.stringify([{ ...first, email: "private", pricePence: 1 }, first, { brandId: "unknown", itemId: "unknown" }]);
+    expect(decodeMenuFavourites(payload)).toEqual([first]);
+    expect(encodeMenuFavourites(decodeMenuFavourites(payload))).toBe(JSON.stringify([first]));
+    expect(decodeMenuFavourites("bad-json")).toEqual([]);
+    expect(decodeMenuFavourites(JSON.stringify(known)).length).toBe(Math.min(MAX_MENU_FAVOURITES, known.length));
+    const saved = toggleMenuFavourite([], first.brandId, first.itemId);
+    expect(saved).toEqual([first]);
+    expect(toggleMenuFavourite(saved, first.brandId, first.itemId)).toEqual([]);
+  });
+
+  test("resolves current catalogue and never orders a stale, unavailable or invalid-priced favourite", async () => {
+    const { resolveMenuFavourites, favouriteCanBeOrdered } = await import("../src/lib/mealdeck-menu-favourites");
+    const { launchMenuBrands } = await import("../src/lib/launch-menu-catalogue");
+    const brand = launchMenuBrands[0]!;
+    const section = brand.sections[0]!;
+    const item = section.items[0]!;
+    const entries = resolveMenuFavourites([{ brandId: brand.id, itemId: item.id }], launchMenuBrands);
+    expect(entries[0]?.item).toBe(item);
+    expect(favouriteCanBeOrdered({ ...item, available: true, pricePence: 499 }, false)).toBe(false);
+    expect(favouriteCanBeOrdered({ ...item, available: false, pricePence: 499 }, true)).toBe(false);
+    expect(favouriteCanBeOrdered({ ...item, available: true, pricePence: null }, true)).toBe(false);
+    expect(favouriteCanBeOrdered({ ...item, available: true, pricePence: 499 }, true)).toBe(true);
+    expect(resolveMenuFavourites([{ brandId: brand.id, itemId: item.id }], [])).toEqual([]);
+  });
+});

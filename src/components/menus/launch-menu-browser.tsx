@@ -1,6 +1,8 @@
 import { usePublicMenu } from "./use-public-menu";
 import { launchMenuItemDescriptor } from "@/lib/launch-menu-item-descriptor";
 import { PublicMenuStatus } from "./public-menu-status";
+import { MenuFavouriteButton, MenuFavourites } from "./menu-favourites";
+import { useMenuFavourites } from "./use-menu-favourites";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { ArrowRight, ChevronRight, Layers3, Plus, Search, ShoppingBag, X } from "lucide-react";
@@ -151,6 +153,7 @@ export function LaunchMenuBrowser({
   const navigate = useNavigate();
   const deliveryLive = useOwnDriverAvailability();
   const publicMenu = usePublicMenu(initialMenu);
+  const favourites = useMenuFavourites();
   const { catalogue } = publicMenu;
   const brand = getLaunchMenuBrand(requestedBrandId ?? "skorch-burgers", catalogue);
   const menuPage = getMealDeckMenuPage(brand?.id);
@@ -701,6 +704,7 @@ export function LaunchMenuBrowser({
 
             <div className="lm-layout">
               <div id="launch-menu-items" className="lm-menu-content">
+                <MenuFavourites favourites={favourites} catalogue={catalogue} liveReady={publicMenu.ready} onChoose={openItem} />
                 {sections.length ? (
                   <div className="lm-section-grid">
                     {sections.map((section) => (
@@ -720,7 +724,7 @@ export function LaunchMenuBrowser({
                         )}
                         <ul>
                           {section.items.map((item) => (
-                            <li key={item.id}>
+                            <li key={item.id} className="lm-dish-row">
                               <button
                                 type="button"
                                 className="lm-dish"
@@ -765,6 +769,7 @@ export function LaunchMenuBrowser({
                                   </span>
                                 </span>
                               </button>
+                              <MenuFavouriteButton favourites={favourites} entry={{ brand, section, item }} />
                             </li>
                           ))}
                         </ul>

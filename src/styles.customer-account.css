@@ -728,3 +728,9 @@
   .md-account-notification-settings .md-account-primary { width: 100%; }
   .md-account-preferences label { min-height: 60px; }
 }
+
+
+.md-account-order-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.md-account-order-filters button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 12px; border: 1px solid #e3d8c8; border-radius: 10px; background: #fffdf8; color: #211b16; font-size: 13px; font-weight: 700; }
+.md-account-order-filters button[aria-pressed="true"] { background: #951018; color: white; border-color: #951018; }
+.md-account-order-filters button span { font-variant-numeric: tabular-nums; }
