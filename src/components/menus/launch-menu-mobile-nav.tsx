@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
+import { OTHER_BRAND_SEARCH_LIMIT } from "@/lib/launch-menu-search";
 
 type MenuChoice = { id: string; name: string };
 
@@ -12,6 +13,7 @@ export function LaunchMenuMobileNav({
   activeSection,
   search,
   count,
+  otherCount = 0,
   onBrand,
   onSection,
   onSearch,
@@ -23,6 +25,7 @@ export function LaunchMenuMobileNav({
   activeSection: string | undefined;
   search: string;
   count: number;
+  otherCount?: number;
   onBrand: (id: string) => void;
   onSection: (id: string | undefined) => void;
   onSearch: (value: string) => void;
@@ -80,7 +83,7 @@ export function LaunchMenuMobileNav({
           type="button"
           className="lm-mobile-search-toggle"
           ref={searchButtonRef}
-          aria-label={searchOpen ? "Close menu search" : "Search this menu"}
+          aria-label={searchOpen ? "Close menu search" : "Search all menus"}
           aria-expanded={searchOpen}
           aria-controls="launch-mobile-search"
           onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
@@ -90,14 +93,15 @@ export function LaunchMenuMobileNav({
       </div>
       <div id="launch-mobile-search" className="lm-mobile-search" hidden={!searchOpen}>
         <label className="lm-search">
-          <span className="sr-only">Search {brandName} menu</span>
+          <span className="sr-only">Search all MealDeck menus</span>
           <Search size={18} aria-hidden="true" />
           <input
             ref={inputRef}
             type="search"
             enterKeyHint="search"
             autoComplete="off"
-            placeholder={"Search " + brandName + "…"}
+            placeholder="Search dishes, flavours or brands…"
+            maxLength={120}
             value={search}
             onChange={(event) => onSearch(event.target.value)}
             onKeyDown={(event) => {
@@ -120,8 +124,8 @@ export function LaunchMenuMobileNav({
         </label>
       </div>
       <p className="lm-mobile-result-count" role="status">
-        {count} {count === 1 ? "item" : "items"}
-        {search && " matching “" + search + "”"}
+        {count} {count === 1 ? "item" : "items"} in {brandName}
+        {search.trim() && otherCount > 0 && ` · ${otherCount}${otherCount === OTHER_BRAND_SEARCH_LIMIT ? "+" : ""} across other menus`}
       </p>
     </div>
   );

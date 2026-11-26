@@ -875,6 +875,14 @@ h2.lm-basket-title-brand {
   text-align: left;
   min-width: 0;
 }
+.lm-pairing-grid > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.lm-pairing-grid > button:focus-visible {
+  outline: 2px solid var(--lm-accent);
+  outline-offset: 3px;
+}
 .lm-pairing-grid img {
   width: 75px;
   height: 65px;
