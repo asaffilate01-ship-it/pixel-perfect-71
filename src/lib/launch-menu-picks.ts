@@ -42,6 +42,21 @@ export function launchItemGroups(brand: LaunchMenuBrand, item: LaunchMenuItem) {
   });
 }
 
+/**
+ * One-tap add is only for confirmed, fixed-price food with no option-group
+ * references whatsoever. An unresolved group ID must not silently become
+ * a plain-price item; live checkout still validates every selection.
+ */
+export function canQuickAddLaunchItem(item: LaunchMenuItem): boolean {
+  return (
+    item.available !== false &&
+    Number.isSafeInteger(item.pricePence) &&
+    (item.pricePence ?? -1) >= 0 &&
+    item.optionGroupIds.length === 0 &&
+    !item.priceVariants?.length
+  );
+}
+
 export function isLaunchGroupActive(
   group: LaunchMenuOptionGroup,
   selections: LaunchMenuSelections,

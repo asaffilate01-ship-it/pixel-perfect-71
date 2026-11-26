@@ -96,7 +96,6 @@ describe("private routes stay out of search discovery", () => {
   test("sitemap includes public offers and games, with unique canonical URLs and no private destinations", () => {
     for (const path of [
       "/offers",
-      "/opening-offer",
       "/meta-ad",
       "/play",
       "/play/daily",
@@ -108,6 +107,7 @@ describe("private routes stay out of search discovery", () => {
       ...ARCADE_GAME_PAGES.map((game) => game.path),
     ])
       expect(MEALDECK_PUBLIC_PATHS).toContain(path);
+    expect(MEALDECK_PUBLIC_PATHS).not.toContain("/opening-offer");
     expect(MEALDECK_PUBLIC_PATHS.some(isPrivateSeoPath)).toBe(false);
     const urls = [...mealDeckSitemap().matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]!);
     expect(urls.length).toBe(MEALDECK_PUBLIC_PATHS.length);

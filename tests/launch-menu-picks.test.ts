@@ -6,6 +6,7 @@ import {
 } from "../src/lib/launch-menu-catalogue";
 import {
   addLaunchPick,
+  canQuickAddLaunchItem,
   cleanLaunchSelections,
   decodeLaunchPicks,
   encodeLaunchPicks,
@@ -408,5 +409,29 @@ describe("Launch menu planning with source-owned choices and catalogue prices", 
       }),
     );
     expect(wrongTarget).toEqual(legacy);
+  });
+});
+
+describe("One-tap fixed-price item safety", () => {
+  const fixed: LaunchMenuItem = {
+    id: "test-fixed",
+    name: "Fixed-price test dish",
+    pricePence: 499,
+    available: true,
+    optionGroupIds: [],
+    sourceRefs: [],
+  };
+
+  test("only available, fixed-price items without groups or price variants can quick-add", () => {
+    expect(canQuickAddLaunchItem(fixed)).toBe(true);
+    expect(canQuickAddLaunchItem({ ...fixed, available: false })).toBe(false);
+    expect(canQuickAddLaunchItem({ ...fixed, pricePence: null })).toBe(false);
+    expect(canQuickAddLaunchItem({ ...fixed, pricePence: -1 })).toBe(false);
+    expect(canQuickAddLaunchItem({ ...fixed, pricePence: 499.5 })).toBe(false);
+    expect(canQuickAddLaunchItem({ ...fixed, optionGroupIds: ["unresolved-group"] })).toBe(false);
+    expect(canQuickAddLaunchItem({
+      ...fixed,
+      priceVariants: [{ groupId: "portion", optionId: "large", label: "Large", selections: { portion: "large" }, pricePence: 599 }],
+    })).toBe(false);
   });
 });

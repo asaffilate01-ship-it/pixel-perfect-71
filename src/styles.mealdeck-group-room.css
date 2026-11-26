@@ -1254,7 +1254,7 @@
     padding: 14px;
     margin-left: -4px;
     margin-right: -4px;
-    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    bottom: calc(8px + var(--md-mobile-safe-bottom, env(safe-area-inset-bottom, 0px)));
   }
   .md-room-save-bar .md-room-button {
     padding: 11px;
@@ -1296,4 +1296,102 @@
   .md-room-spin {
     animation: none;
   }
+}
+
+/* Group choice changes are local until Save; make that explicit on long menus. */
+.md-room-save-shortcut {
+  position: sticky;
+  top: calc(94px + env(safe-area-inset-top, 0px));
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 10px 12px;
+  border: 1px solid #c6a15f;
+  border-radius: 10px;
+  background: #fff0c9;
+  color: #251b13;
+  box-shadow: 0 6px 18px #3d29151c;
+}
+.md-room-save-shortcut strong {
+  font-size: 13px;
+  line-height: 1.3;
+}
+.md-room-save-shortcut button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #931b21;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+}
+.md-room-save-shortcut button:disabled {
+  opacity: .55;
+}
+.md-room-save-bar {
+  scroll-margin-top: 110px;
+}
+@media (max-width: 480px) {
+  .md-room-save-shortcut {
+    gap: 8px;
+    padding: 8px;
+  }
+  .md-room-save-shortcut strong,
+  .md-room-save-shortcut button {
+    font-size: 12px;
+  }
+}
+
+
+/* Stage: put real saved-choice expiry beside the person's bag, not only in the roster. */
+.md-room-choice-expiry {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 14px 0 0;
+  padding: 12px;
+  border: 1px solid #cfb87a;
+  border-radius: 9px;
+  background: #fff7db;
+  color: #3a2a18;
+  font-size: 0.81rem;
+  line-height: 1.45;
+}
+.md-room-choice-expiry svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+.md-room-choice-expiry[data-expired="true"] {
+  border-color: #c96955;
+  background: #fff1eb;
+  color: #722a1c;
+}
+.md-room-search input[type="search"] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.md-room-clear-search {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--room-ink);
+  cursor: pointer;
+}
+.md-room-clear-search:hover { background: #f1e9da; }
+.md-room-clear-search:focus-visible {
+  outline: 3px solid var(--room-red);
+  outline-offset: 2px;
 }

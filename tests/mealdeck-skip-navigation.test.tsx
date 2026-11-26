@@ -21,5 +21,8 @@ describe("MealDeck keyboard navigation", () => {
     expect(tabs).toContain("Order Now — browse MealDeck menus");
     expect(tabs).toContain('aria-current={dealActive ? "page" : undefined}');
     expect(tabs).toContain("focus-visible:outline");
+    expect(tabs).toContain('{ label: "Account", to: "/account", icon: UserRound }');
+    expect(tabs).toContain("isMealDeckNavCurrent(pathname, hash, t)");
+    expect(tabs).not.toContain('{ label: "Track", to: "/track"');
   });
 });

@@ -14,7 +14,7 @@ export function MealDeckOfferCards({ detailed = false }: { detailed?: boolean })
           <Gift size={24} />
         </div>
         <MealDeckLogo className="md-current-offer-logo" decorative loading="lazy" />
-        <p className="md-current-offer-date">MealDeck membership · From 9 November 2026</p>
+        <p className="md-current-offer-date">MealDeck membership</p>
         <p className="md-current-offer-value">1 pt / £1</p>
         <Heading>Earn with every eligible order.</Heading>
         <p className="md-current-offer-copy">
@@ -24,7 +24,7 @@ export function MealDeckOfferCards({ detailed = false }: { detailed?: boolean })
         <p className="md-current-offer-audience">Verified registered members</p>
         {detailed ? (
           <ul className="md-current-offer-terms">
-            <li>Points are issued only for eligible paid orders from 9 November 2026.</li>
+            <li>Points are issued only for eligible paid orders.</li>
             <li>Refunds, cancellations and disputes adjust earned points.</li>
             <li>Points cannot currently be spent or exchanged for cash.</li>
             <li>Marketing consent is optional and is not needed to earn points.</li>
@@ -53,7 +53,6 @@ export function OfferDiscovery() {
               to join the table.
             </h2>
             <p>
-              The opening-weekend discounts and 99p milkcake promotion have finished.
               Verified members earn one point per complete £1 paid after discounts on
               eligible orders. <Link to="/account">Create your account</Link>.
             </p>

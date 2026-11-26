@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { readPublicDeliveryAvailability, publicDeliveryAvailable } from "../src/lib/mealdeck-public-delivery-status";
 import { ownDriverShortfallPence, OWN_DRIVER_MINIMUM_PENCE } from "../src/lib/mealdeck-own-driver-delivery";
 
 describe("MealDeck Luton delivery minimum customer feedback", () => {
@@ -39,5 +40,46 @@ describe("MealDeck Luton delivery minimum customer feedback", () => {
     expect(checkout).toContain("Schedule for later");
     expect(checkout).toContain("You cannot reserve a");
     expect(checkout).toContain("disabled aria-describedby=\"mealdeck-schedule-not-ready\"");
+  });
+});
+
+describe("Shared anonymous delivery availability", () => {
+  test("requires a public open gate and an exact delivery fulfilment", () => {
+    expect(publicDeliveryAvailable({ available: true, fulfilments: ["pickup", "delivery"] })).toBe(true);
+    expect(publicDeliveryAvailable({ available: false, fulfilments: ["delivery"] })).toBe(false);
+    expect(publicDeliveryAvailable({ available: true, fulfilments: "delivery" })).toBe(false);
+    expect(publicDeliveryAvailable({ available: true, fulfilments: ["curbside"] })).toBe(false);
+    expect(publicDeliveryAvailable({ available: "true", fulfilments: ["delivery"] })).toBe(false);
+    expect(publicDeliveryAvailable(null)).toBe(false);
+  });
+
+  test("only returns a boolean and never sends guest cookies or bearer credentials", async () => {
+    const controller = new AbortController();
+    const fetcher = (async (url, init) => {
+      expect(url).toBe("/api/checkout");
+      expect(init?.credentials).toBe("omit");
+      expect(init?.cache).toBe("no-store");
+      expect(init?.signal).toBe(controller.signal);
+      expect(new Headers(init?.headers).has("Authorization")).toBe(false);
+      return Response.json({ available: true, fulfilments: ["delivery"], guestCheckout: { session: "private" } });
+    }) as typeof fetch;
+    expect(await readPublicDeliveryAvailability(controller.signal, fetcher)).toBe(true);
+  });
+
+  test("HTTP and network failures never return true", async () => {
+    const signal = new AbortController().signal;
+    const httpFailure = (async () => new Response("", { status: 503 })) as typeof fetch;
+    const networkFailure = (async () => { throw new Error("Offline"); }) as typeof fetch;
+    await expect(readPublicDeliveryAvailability(signal, httpFailure)).rejects.toThrow();
+    await expect(readPublicDeliveryAvailability(signal, networkFailure)).rejects.toThrow();
+  });
+
+  test("marketing status is a shared, bounded, foreground-only query, not a checkout authorisation", () => {
+    const banner = readFileSync(new URL("../src/components/own-driver-offer-banner.tsx", import.meta.url), "utf8");
+    expect(banner).toContain('queryKey: ["mealdeck-public-delivery-availability", "luton"]');
+    expect(banner).toContain("refetchIntervalInBackground: false");
+    expect(banner).toContain("return query.isSuccess && query.data === true");
+    expect(banner).toContain('if (pathname !== "/" && pathname !== "/luton" && pathname !== "/offers") return null;');
+    expect(banner).not.toContain("Due to popular demand");
   });
 });

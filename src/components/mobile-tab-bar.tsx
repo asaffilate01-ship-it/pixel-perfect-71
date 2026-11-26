@@ -1,11 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, LayoutGrid, Gamepad2, MapPin } from "lucide-react";
+import { Home, LayoutGrid, Gamepad2, UserRound } from "lucide-react";
+import { isMealDeckNavCurrent } from "@/lib/mealdeck-nav-state";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { isLaunchMenuRoute } from "@/lib/launch-menu-navigation";
 
 type Tab = {
   label: string;
-  to: "/" | "/order" | "/menus" | "/track" | "/play";
+  to: "/" | "/order" | "/menus" | "/play" | "/account";
   hash?: string;
   icon: typeof Home;
 };
@@ -16,7 +17,7 @@ const left: Tab[] = [
 ];
 const right: Tab[] = [
   { label: "Play", to: "/play", icon: Gamepad2 },
-  { label: "Track", to: "/track", icon: MapPin },
+  { label: "Account", to: "/account", icon: UserRound },
 ];
 
 export function MobileTabBar() {
@@ -27,12 +28,13 @@ export function MobileTabBar() {
   if (
     pathname === "/franchise" ||
     pathname.startsWith("/franchise/") ||
+    pathname === "/group-order" ||
+    pathname === "/group-pay" ||
     isLaunchMenuRoute(pathname)
   )
     return null;
 
-  const isActive = (t: Tab) =>
-    t.to === pathname && (t.hash ? hash === t.hash : !hash || t.to !== "/");
+  const isActive = (t: Tab) => isMealDeckNavCurrent(pathname, hash, t);
 
   const item = (t: Tab) => {
     const active = isActive(t);
@@ -50,7 +52,7 @@ export function MobileTabBar() {
             active ? "bg-primary/20 text-accent" : "text-muted-foreground"
           }`}
         >
-          <Icon className="size-5" strokeWidth={active ? 2.5 : 2} />
+          <Icon className="size-5" strokeWidth={active ? 2.5 : 2} aria-hidden="true" />
         </span>
         <span
           className={`font-display text-xs font-semibold tracking-wide ${active ? "text-accent" : "text-muted-foreground"}`}

@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PwaInstallCard } from "@/components/pwa-install-card";
-import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
 import "@/styles.launch-app.css";
 
 type AppBrand = { id: string; name: string; logo: string };
@@ -45,10 +44,6 @@ export function LaunchMenuAppNav({
   onBasket: () => void;
   onCheckout: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
-  const entryPolicy = useCustomerEntryPolicy();
-  const groupOrderingOpen =
-    !!entryPolicy &&
-    Date.parse(entryPolicy.serverNow) >= Date.parse(entryPolicy.registrationResumesAt);
   const [sheet, setSheet] = useState<MenuSheet>("brands");
   const [sheetOpen, setSheetOpen] = useState(false);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
@@ -180,11 +175,13 @@ export function LaunchMenuAppNav({
             ) {
               trigger.focus({ preventScroll: true });
             } else {
-              document
-                .querySelector<HTMLButtonElement>(
-                  "#launch-brand-selector button[aria-pressed='true']",
-                )
-                ?.focus({ preventScroll: true });
+              const activeBrand = document.querySelector<HTMLAnchorElement>(
+                "#launch-brand-selector a[aria-current='page']",
+              );
+              if (activeBrand?.getClientRects().length &&
+                  window.getComputedStyle(activeBrand).visibility !== "hidden") {
+                activeBrand.focus({ preventScroll: true });
+              }
             }
           }}
         >
@@ -233,16 +230,12 @@ export function LaunchMenuAppNav({
                 <nav className="lma-more-links" aria-label="Explore MealDeck">
                   <Link to="/group-order" onClick={followLink}>
                     <Users size={21} aria-hidden="true" />
-                    <span>
-                      {groupOrderingOpen
-                        ? "Group order · Choose together"
-                        : "Group ordering · Starting 9 November"}
-                    </span>
+                    <span>Group ordering · Check availability</span>
                     <ArrowUpRight size={18} aria-hidden="true" />
                   </Link>
                   <Link to="/account" onClick={followLink}>
                     <UserRound size={21} aria-hidden="true" />
-                    <span>My account &amp; rewards</span>
+                    <span>My orders &amp; account</span>
                     <ArrowUpRight size={18} aria-hidden="true" />
                   </Link>
                   <Link to="/" onClick={followLink}>
@@ -266,7 +259,7 @@ export function LaunchMenuAppNav({
                   Offers &amp; member benefits
                 </Link>
                 <p className="lma-more-note">
-                  Order for Luton collection or kerbside during kitchen opening hours.
+                  Order for collection, kerbside or eligible local delivery. Check availability at checkout.
                 </p>
                 <WhatsAppOrderLink className="lma-more-note" onClick={followLink} />
               </div>

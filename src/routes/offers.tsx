@@ -10,7 +10,7 @@ export const Route = createFileRoute("/offers")({
     seo({
       title: "MealDeck member benefits & loyalty | Offers",
       description:
-        "Opening-weekend discounts have ended. Verified MealDeck members earn one loyalty point per complete £1 paid after discounts on eligible orders. Browse current menus and member benefits.",
+        "Verified MealDeck members earn one loyalty point per complete £1 paid after discounts on eligible orders. Browse current menus and member benefits.",
       path: "/offers",
     }),
   component: OffersPage,
@@ -30,9 +30,8 @@ function OffersPage() {
               <span>Every order counts.</span>
             </h1>
             <p>
-              Our opening-weekend 30% discount and Sunday 99p milkcake promotion have ended.
-              Browse current menus, register for points and check this page for future offers
-              when they are officially available.
+              Browse current menus, join MealDeck to earn loyalty points and check this page
+              for current member offers.
             </p>
             <div className="md-offers-page-actions">
               <Link to="/account" className="md-btn md-btn-red">
@@ -48,7 +47,7 @@ function OffersPage() {
               <p className="md-current-offers-kicker"><Gift size={16} aria-hidden="true" /> MealDeck membership</p>
               <h2 id="offers-loyalty-title">£1 paid = 1 loyalty point.</h2>
               <p>
-                From 9 November 2026, registered members with a verified email earn one point
+                Registered members with a verified email earn one point
                 for each complete £1 actually paid after discounts on eligible orders.
                 You can view your balance in your account.
               </p>
@@ -87,11 +86,7 @@ function OffersPage() {
             </section>
           </div>
           <p className="md-offers-page-note">
-            The 6–8 November opening promotion is no longer redeemable. Its historical terms
-            remain available on the{" "}
-            <Link to="/opening-offer" className="md-offers-text-link">
-              opening offer information page
-            </Link>. Any future limited-time deal will have its own published dates and conditions.
+            Limited-time offers will appear here with their own published dates and conditions.
           </p>
         </div>
       </main>

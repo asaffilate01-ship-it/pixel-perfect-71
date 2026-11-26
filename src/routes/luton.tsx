@@ -46,7 +46,7 @@ function LutonPage() {
         },
         {
           q: "Where can I find burgers in Luton?",
-          a: "Explore Skorch burgers in Luton for smash burgers, or browse Tavo chicken for chicken burgers, wings and tenders. Both are part of MealDeck’s first five menus, with the exact choices and current prices shown on the menu page.",
+          a: "Explore Skorch burgers in Luton for smash burgers, or browse Tavo chicken for chicken burgers, wings and tenders. Both are part of MealDeck’s five menus, with the exact choices and current prices shown on the menu page.",
         },
         {
           q: "Can I order loaded fries and mac and cheese in Luton?",
