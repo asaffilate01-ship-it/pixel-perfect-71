@@ -381,3 +381,18 @@
     padding: 20px 18px 40px;
   }
 }
+
+/* Keep all three fulfilment guides responsive, including six delivery stages. */
+.md-first-progress-example ol {
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}
+@media (min-width: 701px) {
+  .md-first-progress-example ol:has(li:nth-child(6)) {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .md-first-progress-example ol:has(li:nth-child(6)) {
+    grid-template-columns: 1fr;
+  }
+}

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/blog/")({
     seo({
       title: "The Deck Blog — Food in Luton, Offers & Group Orders | MealDeck",
       description:
-        "Explore food in Luton, MealDeck’s three November offers and group-order guides. Read about the five launch menus and future location plans.",
+        "Explore food in Luton, current member benefits and group-order guides. Read about the five menus and future location plans.",
       path: "/blog",
       keywords: "food in Luton, MealDeck blog, Luton food offers, group food order Luton",
     }),

@@ -72,3 +72,8 @@ describe("Current ordering guides and location pages", () => {
     }
   });
 });
+
+test("blog landing SEO no longer promotes the expired campaigns", () => {
+  expect(source("src/routes/blog.index.tsx")).not.toMatch(/three November offers|five launch menus/i);
+  expect(source("src/routes/blog.$slug.tsx")).toContain("dateModified: loaderData.updatedAt ?? loaderData.date");
+});
