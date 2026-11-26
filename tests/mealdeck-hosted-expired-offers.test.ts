@@ -36,3 +36,18 @@ describe("MealDeck hosted marketing after 8 November 2026", () => {
     expect(offer).toContain("Opening weekend has finished.");
   });
 });
+
+
+describe("Evergreen privacy and checkout communication", () => {
+  test("privacy notice matches the 20-minute basket, device favourites and separate consent choices", () => {
+    const privacy = source("src/routes/privacy.tsx");
+    expect(privacy).toContain("20 minutes after each quantity is added");
+    expect(privacy).toContain("Clear all");
+    expect(privacy).toContain("SMS or WhatsApp messages");
+    expect(privacy).not.toMatch(/6–8 November|double-points offer|five minutes after each quantity/i);
+  });
+  test("guest and registration help does not advertise expired launch promotions", () => {
+    expect(source("src/components/launch-checkout.tsx")).not.toContain("applies during launch hours");
+    expect(source("src/lib/mealdeck-customer-browser.ts")).not.toContain("Email registration opens at 1pm Monday 9 November");
+  });
+});
