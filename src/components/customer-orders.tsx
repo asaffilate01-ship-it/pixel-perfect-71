@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, RefreshCw, ShoppingBag } from "lucide-react";
+import { CustomerDriverPosition } from "@/components/customer-driver-position";
 import { customerRpc } from "@/lib/mealdeck-customer-browser";
 import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { visibleCustomerConfirmationCode } from "@/lib/mealdeck-customer-confirmation";
@@ -11,6 +12,8 @@ import {
   type CustomerOrderBucket,
   type CustomerOrderSummary,
 } from "@/lib/mealdeck-customer-orders";
+
+const DRIVER_LOCATION_BETA = import.meta.env?.["VITE_MEALDECK_DRIVER_LOCATION_BETA"] === "true";
 
 /** Private, network-only account history. The RPC derives the signed-in user. */
 export function CustomerOrders() {
@@ -50,6 +53,10 @@ export function CustomerOrders() {
     };
   }, [retry]);
   const visibleOrders = filterCustomerOrders(orders ?? [], filter);
+  const trackedOrder = !issue && DRIVER_LOCATION_BETA && (filter === "all" || filter === "active")
+    ? visibleOrders.find(order => order.verifiedPaid && !order.held && !order.completedAt &&
+      order.fulfilment === "delivery" && order.localDriverStatus === "with_driver")
+    : undefined;
   const filters = [
     ["all", "All"], ["active", "In progress"], ["attention", "Needs attention"], ["history", "Past"],
   ] as const;
@@ -104,6 +111,7 @@ export function CustomerOrders() {
           ))}
         </div>
       )}
+      {trackedOrder && <CustomerDriverPosition key={trackedOrder.orderId} orderId={trackedOrder.orderId} />}
       {!!orders?.length && !visibleOrders.length && <p role="status">No orders in this view.</p>}
       {!!visibleOrders.length && (
         <ul>
