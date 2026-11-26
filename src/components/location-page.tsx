@@ -44,7 +44,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
           <div className="md-location-hero-shade" aria-hidden="true" />
           <div>
             <p className="md-kicker">
-              MealDeck {town} · {isLuton ? "Our first launch kitchen" : "Coming soon"}
+              MealDeck {town} · {isLuton ? "Local takeaway kitchen" : "Coming soon"}
             </p>
             <h1>
               {isLuton ? "Food in Luton." : "Different cuisines."}
@@ -63,7 +63,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             </div>
             <div className="md-hero-actions">
               <Link to="/menus" className="md-btn md-btn-yellow">
-                {isLuton ? "Browse Luton’s launch menus" : "Preview the Luton launch deck"}{" "}
+                {isLuton ? "Browse Luton’s menus" : "Browse current Luton menus"}{" "}
                 <ArrowRight />
               </Link>
               {isLuton ? (
@@ -102,7 +102,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
           <div className="md-section-heading md-section-heading-split">
             <div>
               <p className="md-kicker md-kicker-red">
-                {isLuton ? "The Luton launch deck" : "The future MealDeck collection"}
+                {isLuton ? "The Luton menus" : "The future MealDeck collection"}
               </p>
               <h2>{isLuton ? "Five brands. One kitchen." : "More flavours to come."}</h2>
               <p>
@@ -148,7 +148,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
             <p>
               {isLuton
                 ? "Order from the five Luton menus for free local delivery, collection or kerbside. Eligible direct delivery is within 4 km of LU4 8NU, for orders of £15 or more after discounts; checkout confirms postcode, kitchen and driver availability. The delivery estimate is normally within 60 minutes. Member loyalty requires a verified account."
-                : `${town} is coming in a future deck. MealDeck is launching in Luton first, with no orders accepted here yet.`}
+                : `${town} is coming in a future deck. Luton ordering is available when its kitchen is open; no orders are accepted here yet.`}
             </p>
           </article>
         </section>
@@ -182,8 +182,7 @@ export function LocationPage({ town, intro, hours, fulfilment, areas, includeCaf
               <p className="md-kicker md-kicker-light">St Albans</p>
               <h2>Café1 · St Albans Crown Court, 6 Bricket Road, St Albans, AL1 3JU</h2>
               <p>
-                St Albans is a future MealDeck location, planned for delivery only. Luton launches
-                first. Café1’s own counter and dine-in services are separate; MealDeck orders are
+                St Albans is a future MealDeck location, planned for delivery only. Luton is the current MealDeck location. Café1’s own counter and dine-in services are separate; MealDeck orders are
                 not being accepted here.
               </p>
             </div>

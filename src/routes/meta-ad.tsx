@@ -37,12 +37,14 @@ const brands = [
   ["Load’d", approvedBrandLogos.loadd],
   ["Moktl", approvedBrandLogos.moktl],
 ] as const;
-const milestones = ["Order placed", "Accepted", "Preparing", "Ready", "Completed"];
+const collectionMilestones = ["Order placed", "Accepted", "Preparing", "Ready", "Completed"];
+const deliveryMilestones = ["Order placed", "Accepted", "Preparing", "Packed", "With driver", "Delivered"];
 
 function FirstOrderExplainer() {
-  const [method, setMethod] = useState<"pickup" | "curbside">("pickup");
-  const [deliveryNotice, setDeliveryNotice] = useState(false);
+  const [method, setMethod] = useState<"pickup" | "curbside" | "delivery">("pickup");
   const kerbside = method === "curbside";
+  const delivery = method === "delivery";
+  const milestones = delivery ? deliveryMilestones : collectionMilestones;
   return (
     <div className="md-marketing-shell md-first-order-shell">
       <SiteHeader
@@ -93,35 +95,29 @@ function FirstOrderExplainer() {
         <section className="md-first-how" aria-labelledby="first-order-title">
           <div className="md-first-section-heading">
             <p className="md-first-eyebrow">A quick guide to your first order</p>
-            <h2 id="first-order-title">Browse. Build. Pick up.</h2>
+            <h2 id="first-order-title">Browse. Build. Enjoy.</h2>
             <p>
               Use mealdeck.co.uk in your browser, or add the MealDeck app to your home screen. You
               can order as a guest during opening hours, or sign in as a member.
             </p>
           </div>
-          <div className="md-first-methods" aria-label="Choose which pickup guide to see">
+          <div className="md-first-methods" role="group" aria-label="Choose an order method guide">
             <button
               type="button"
-              aria-pressed={!kerbside}
-              onClick={() => {
-                setMethod("pickup");
-                setDeliveryNotice(false);
-              }}
+              aria-pressed={method === "pickup"}
+              onClick={() => setMethod("pickup")}
             >
               <ShoppingBag size={22} aria-hidden="true" />
               <span>
                 <strong>Collection</strong>
                 <small>Pop in and pick up</small>
               </span>
-              {!kerbside && <Check size={19} aria-hidden="true" />}
+              {method === "pickup" && <Check size={19} aria-hidden="true" />}
             </button>
             <button
               type="button"
               aria-pressed={kerbside}
-              onClick={() => {
-                setMethod("curbside");
-                setDeliveryNotice(false);
-              }}
+              onClick={() => setMethod("curbside")}
             >
               <CarFront size={23} aria-hidden="true" />
               <span>
@@ -132,17 +128,18 @@ function FirstOrderExplainer() {
             </button>
             <button
               type="button"
-              aria-expanded={deliveryNotice}
-              onClick={() => setDeliveryNotice((visible) => !visible)}
+              aria-pressed={delivery}
+              onClick={() => setMethod("delivery")}
             >
               <Truck size={23} aria-hidden="true" />
               <span>
                 <strong>Delivery</strong>
                 <small>Check eligibility</small>
               </span>
+              {delivery && <Check size={19} aria-hidden="true" />}
             </button>
           </div>
-          {deliveryNotice && (
+          {delivery && (
             <p className="md-first-delivery-notice" role="status">
               Free local delivery is offered within 4 km of LU4 8NU on £15+ after discounts.
               Enter your postcode at checkout to confirm live kitchen and driver availability.{" "}
@@ -169,14 +166,16 @@ function FirstOrderExplainer() {
                 02
               </span>
               <div className="md-first-step-icon">
-                {kerbside ? <CarFront aria-hidden="true" /> : <ShoppingBag aria-hidden="true" />}
+                {delivery ? <Truck aria-hidden="true" /> : kerbside ? <CarFront aria-hidden="true" /> : <ShoppingBag aria-hidden="true" />}
               </div>
-              <h3>Choose {kerbside ? "kerbside." : "collection."}</h3>
+              <h3>Choose {delivery ? "delivery." : kerbside ? "kerbside." : "collection."}</h3>
               <p>
-                When you’re ready to order, choose your pickup method.{" "}
-                {kerbside
-                  ? "Tell us the car make, colour and last four characters of its registration so we can find you."
-                  : "Choose collection from our Luton kitchen. You won’t be asked for a delivery address."}
+                Choose how you want to receive your order at checkout.{" "}
+                {delivery
+                  ? "Enter your postcode and delivery address. Free local delivery is subject to the 4 km area, £15 minimum after discounts and live kitchen and driver availability."
+                  : kerbside
+                    ? "Tell us the car make, colour and last four characters of its registration so we can find you."
+                    : "Choose collection from our Luton kitchen. You won’t be asked for a delivery address."}
               </p>
             </li>
             <li>
@@ -188,9 +187,9 @@ function FirstOrderExplainer() {
               </div>
               <h3>Guest or member? You choose.</h3>
               <p>
-                Enter your <strong>name, email and mobile number</strong> to order
-                as a guest without registering. Guest orders earn no loyalty points. To become a
-                member, create an account and verify your email. Already a member? Sign in.
+                When guest checkout is available, enter your <strong>name and WhatsApp number</strong>.
+                No email registration is required for a guest order, and guests earn no loyalty
+                points. To become a member, create an account and verify your email. Already a member? Sign in.
               </p>
             </li>
             <li>
@@ -216,10 +215,11 @@ function FirstOrderExplainer() {
               </div>
               <h3>Follow your order.</h3>
               <p>
-                After payment is confirmed, you’ll see your <strong>order number</strong> and the
-                kitchen’s estimated pickup time. Follow progress as the team accepts, prepares and
-                finishes your food. If ordering as a guest, keep your receipt page open on this
-                device so you can return to your order.
+                After payment is confirmed, your <strong>order number</strong> and confirmed progress
+                appear on the private order page. {delivery
+                  ? "Follow kitchen preparation and the driver's verified handover stages. Live GPS is not available."
+                  : "Follow kitchen preparation and collection updates."} Guests should keep the receipt page
+                available on the same device.
               </p>
             </li>
             <li>
@@ -229,11 +229,13 @@ function FirstOrderExplainer() {
               <div className="md-first-step-icon">
                 <PackageCheck aria-hidden="true" />
               </div>
-              <h3>{kerbside ? "Stay comfy. We’ll bring it." : "Pick up. Tuck in."}</h3>
+              <h3>{delivery ? "Receive your delivery." : kerbside ? "Stay comfy. We’ll bring it." : "Pick up. Tuck in."}</h3>
               <p>
-                {kerbside
-                  ? "When your order is ready, arrive at the pickup location in the car you registered. Confirm your collection code with the team at handoff."
-                  : "Come to the collection point when your order is ready. Give the team your collection code to collect your food."}{" "}
+                {delivery
+                  ? "Keep your phone available and use the confirmation code shown on your order when receiving your food."
+                  : kerbside
+                    ? "When your order is ready, arrive at the pickup location in the car you registered. Confirm your collection code with the team at handoff."
+                    : "Come to the collection point when your order is ready. Give the team your collection code to collect your food."}{" "}
                 Your receipt comes with your order.
               </p>
             </li>
@@ -246,12 +248,12 @@ function FirstOrderExplainer() {
             <h2 id="first-tracking-title">Your whole order, together.</h2>
             <p>
               The progress bar follows the kitchen. Your order is only ready when every item is
-              ready and the team has packed it for pickup.
+              ready and the team has packed it for your chosen order method.
             </p>
           </div>
           <div
             className="md-first-progress-example"
-            aria-label="Illustration of the five order stages, not a live order"
+            aria-label="Illustration of order stages, not a live order"
           >
             <p>How your order progress will look</p>
             <ol>
@@ -263,8 +265,7 @@ function FirstOrderExplainer() {
               ))}
             </ol>
             <small>
-              Example stages · Your actual order page shows confirmed updates and your pickup
-              estimate.
+              Example stages · Your actual order page shows confirmed kitchen and handover updates.
             </small>
           </div>
         </section>

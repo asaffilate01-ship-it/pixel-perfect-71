@@ -134,7 +134,7 @@ export const stAlbansPageJsonLd = {
   name: "MealDeck St Albans — Coming soon",
   url: `${SITE_URL}/st-albans`,
   description:
-    "St Albans is a future MealDeck location. Its opening date, menu and delivery area will be confirmed separately; Luton launches first.",
+    "St Albans is a future MealDeck location. Its opening date, menu and delivery area will be confirmed separately; Luton is the current MealDeck location.",
   isPartOf: { "@id": `${SITE_URL}/#website` },
 };
 
