@@ -2041,6 +2041,16 @@ function LaunchCheckoutView({
                       </div>
                     )}
                   </section>
+                  {receipt.verifiedPaid &&
+                    !receipt.completedAt &&
+                    !receipt.held &&
+                    receipt.paymentStatus !== "refunded" && (
+                      <OrderNotificationsCard
+                        key={checkoutMode + ":" + receipt.orderId}
+                        orderId={receipt.orderId}
+                        mode={checkoutMode}
+                      />
+                    )}
                   {receipt.verifiedPaid && <ReceiptProgress receipt={receipt} />}
                   {receipt.verifiedPaid && !receipt.completedAt && !receipt.held &&
                     receipt.paymentStatus !== "refunded" &&
@@ -2049,16 +2059,6 @@ function LaunchCheckoutView({
                         key={receipt.orderId + ":" + checkoutMode}
                         orderId={receipt.orderId}
                         fulfilment={receipt.fulfilment}
-                        mode={checkoutMode}
-                      />
-                    )}
-                  {receipt.verifiedPaid &&
-                    !receipt.completedAt &&
-                    !receipt.held &&
-                    receipt.paymentStatus !== "refunded" && (
-                      <OrderNotificationsCard
-                        key={checkoutMode + ":" + receipt.orderId}
-                        orderId={receipt.orderId}
                         mode={checkoutMode}
                       />
                     )}
@@ -2253,8 +2253,8 @@ function LaunchCheckoutView({
                     <div className="md-checkout-guest">
                       <p>
                         Enter your name and WhatsApp number. No email registration or verification
-                        is needed. Guest orders earn no loyalty points. The 30% opening offer
-                        applies during launch hours; other member offers require registration.
+                        is needed. Guest orders earn no loyalty points. Member-only offers require
+                        registration; marketing is always optional.
                       </p>
                       {whatsAppDraft && (
                         <>
@@ -2413,8 +2413,8 @@ function LaunchCheckoutView({
                       <div className="md-checkout-benefit">
                         <ShieldCheck size={21} />
                         <p>
-                          Members and guests receive the 30% opening offer during the promotional
-                          period. Register for future member offers; marketing is optional.
+                          Guest checkout remains available when offered by the kitchen. Register for
+                          member benefits when registration is available; marketing is optional.
                         </p>
                       </div>
                       {accountIssue && (

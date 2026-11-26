@@ -23,7 +23,7 @@ function PrivacyPage() {
         <article className="md-info-inner">
           <p className="lm-eyebrow">Your details. Your choices.</p>
           <h1>MealDeck privacy notice</h1>
-          <p>Updated 7 November 2026</p>
+          <p>Updated 26 November 2026</p>
           <h2>Who is responsible?</h2>
           <p>
             MealDeck is a trading name of 313 Brands Ltd, the controller responsible for the
@@ -46,11 +46,11 @@ function PrivacyPage() {
           </p>
           <h2>Ordering as a guest</h2>
           <p>
-            During our opening hours on 6–8 November 2026, you can order without registering. We use
-            your name and WhatsApp number to fulfil that order and handle related queries. Email is
-            not required for opening-weekend guest checkout; an email supplied on an earlier order
-            is retained with that order. This does not create a member account or give permission
-            for marketing. Guest orders earn no loyalty points.
+            When guest checkout is available, you can order without registering. We use your
+            name and WhatsApp number to fulfil that order and handle related queries. Email
+            registration is not required; an email supplied on an earlier order is retained with
+            that order. This does not create a member account or give permission for marketing.
+            Guest orders earn no loyalty points.
           </p>
           <p>
             A necessary guest session cookie keeps your receipt available to the browser you used to
@@ -74,8 +74,7 @@ function PrivacyPage() {
           <p>
             We process order information to fulfil our contract with you and keep transaction
             records where required for accounting and other legal obligations. Relevant kitchen
-            staff receive the information needed to prepare and hand over your order. If delivery
-            becomes available and you choose it, the delivery provider receives the details needed
+            staff receive the information needed to prepare and hand over your order. If you choose an available delivery option, the delivery provider receives the details needed
             to complete that delivery.
           </p>
           <h2>WhatsApp ordering and assistance</h2>
@@ -109,26 +108,25 @@ function PrivacyPage() {
             and legal obligations. Meta and OpenAI also apply their own service terms and data
             protection arrangements.
           </p>
-          <h2>Opening offers and loyalty</h2>
+          <h2>Offers and loyalty</h2>
           <p>
-            The 6–8 November opening offer is available to guests and members during our published
-            opening hours. We check your order’s fulfilment method and time to confirm eligibility.
+            We check the conditions of any current offer against your order to confirm eligibility.
             Member-only offers require a registered, verified account. Marketing consent is not
             required to receive an eligible discount.
           </p>
           <p>
-            The double-points offer requires registration and a spend of £15 or more from Monday 9
-            to Friday 13 November 2026 inclusive. When loyalty is available, your account may hold a
-            points balance and a record of qualifying purchases and adjustments. Earning and
-            redemption details will be shown before points are credited. Promotional updates about
+            Verified members earn one loyalty point per complete £1 paid after discounts on
+            eligible orders. Your account may hold a points balance and a record of qualifying
+            purchases and adjustments. Refunds, cancellations and disputes can adjust points.
+            Points cannot currently be redeemed for cash or purchases. Promotional updates about
             rewards remain optional.
           </p>
-          <h2>Optional emails and notifications</h2>
+          <h2>Optional marketing and notifications</h2>
           <p>
-            Promotional emails and promotional app notifications are available to registered members
-            who opt in. You choose each separately, and both are off by default. A guest order is
-            not an opt-in. We record your choice, the notice version and when it changed so we can
-            respect and demonstrate your consent.
+            Registered members can choose separately whether to receive promotional emails,
+            app alerts, SMS or WhatsApp messages when those channels are available. All are off by
+            default; a guest order is not an opt-in. We record your choice, the notice version and
+            when it changed so we can respect and demonstrate your consent.
           </p>
           <p>
             You can change these choices in <Link to="/account">your account</Link> or contact us.
@@ -170,10 +168,17 @@ function PrivacyPage() {
           </p>
           <p>
             Necessary browser storage keeps you signed in and remembers basket choices for no
-            longer than five minutes after each quantity is added. Returning to an old tab or
+            longer than 20 minutes after each quantity is added. Returning to an old tab or
             checkout does not extend that deadline. It also remembers dismissed app prompts and
             secure access to guest receipts. The app's offline cache contains only public
             offline content, not account details, payments or live order progress.
+          </p>
+          <p>
+            If you choose to save menu favourites, this browser stores the selected public menu
+            identifiers on this device. Favourites do not include account or payment details and
+            are not synchronised to your account. Remove them individually, use Clear all
+            favourites, or clear your browser storage. They are separate from optional advertising
+            and analytics choices.
           </p>
           <p>
             On first use, we let you accept, reject or customise optional analytics and

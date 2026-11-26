@@ -1,0 +1,25 @@
+name: MealDeck public storefront release readback
+on:
+  pull_request:
+    paths:
+      - 'scripts/mealdeck-storefront-readback.mjs'
+      - 'tests/mealdeck-storefront-readback.test.mjs'
+      - '.github/workflows/mealdeck-storefront-readback.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+jobs:
+  storefront-readback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check no-network release probe contracts
+        run: node --test tests/mealdeck-storefront-readback.test.mjs
+      - name: Read public production surfaces after publication
+        if: github.event_name == 'workflow_dispatch'
+        run: node scripts/mealdeck-storefront-readback.mjs --live
