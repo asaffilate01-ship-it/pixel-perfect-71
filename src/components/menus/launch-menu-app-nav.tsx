@@ -233,7 +233,7 @@ export function LaunchMenuAppNav({
                   </Link>
                   <Link to="/account" onClick={followLink}>
                     <UserRound size={21} aria-hidden="true" />
-                    <span>My account &amp; rewards</span>
+                    <span>My orders &amp; account</span>
                     <ArrowUpRight size={18} aria-hidden="true" />
                   </Link>
                   <Link to="/" onClick={followLink}>
@@ -257,7 +257,7 @@ export function LaunchMenuAppNav({
                   Offers &amp; member benefits
                 </Link>
                 <p className="lma-more-note">
-                  Order for Luton collection or kerbside during kitchen opening hours.
+                  Order for collection, kerbside or eligible local delivery. Check availability at checkout.
                 </p>
                 <WhatsAppOrderLink className="lma-more-note" onClick={followLink} />
               </div>

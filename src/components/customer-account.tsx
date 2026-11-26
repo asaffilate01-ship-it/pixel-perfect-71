@@ -1272,7 +1272,7 @@ export function CustomerAccount({
                 )}
                 <p className="md-account-fine">
                   Verified registered members earn 1 point for each complete £1 actually paid after
-                  discounts on eligible orders from 9 November 2026. Guest orders earn none. Refunds
+                  discounts on eligible orders. Guest orders earn none. Refunds
                   and disputes adjust points.
                 </p>
                 <ul className="md-account-loyalty-rules">
