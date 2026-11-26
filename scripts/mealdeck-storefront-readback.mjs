@@ -29,7 +29,7 @@ const PATHS = [
 ];
 const MENU_PATHS = new Set(["/menus","/menus/skorch-burgers","/menus/tavo-chicken","/menus/souvano","/menus/loadd","/menus/moktl"]);
 const BLOG_PATHS = new Set(["/blog/cash-in-your-chips-loyalty-points","/blog/house-rules-every-offer-explained","/blog/deal-everyone-in-group-food-order-luton","/blog/french-tacos-luton-ace-of-the-deck","/blog/office-lunch-delivery-st-albans","/blog/order-direct-pay-less-than-aggregators"]);
-const EXPIRED = /opening[-\\s]+weekend|opening[-\\s]+offer|6[–—-]8 November|30%\\s*(?:off|·\\s*off)|99p\\s*(?:milk\\s*cake|·\\s*milk\\s*cake)|milk\\s*cake[^.]{0,50}99p|double[-\\s]+(?:loyalty\\s+)?points|three November offers|Luton launches\\s+first|first launch kitchen|Luton launch deck|Luton’s launch menus|Delivery is unavailable for this launch/i;
+const EXPIRED = /opening[-\s]+weekend|opening[-\s]+offer|6[–—-]8 November|30%\s*(?:off|·\s*off)|99p\s*(?:milk\s*cake|·\s*milk\s*cake)|milk\s*cake[^.]{0,50}99p|double[-\s]+(?:loyalty\s+)?points|three November offers|Luton launches\s+first|first launch kitchen|Luton launch deck|Luton’s launch menus|Delivery is unavailable for this launch/i;
 
 function publicMarkup(html) {
   return html.replace(/<!--[\s\S]*?-->/g, "")

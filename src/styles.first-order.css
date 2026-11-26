@@ -382,17 +382,14 @@
   }
 }
 
-/* Keep all three fulfilment guides responsive, including six delivery stages. */
-.md-first-progress-example ol {
-  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-}
-@media (min-width: 701px) {
+/* Keep the existing mobile timeline and fit six delivery stages on wider screens. */
+@media (min-width: 561px) {
   .md-first-progress-example ol:has(li:nth-child(6)) {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
-@media (max-width: 700px) {
-  .md-first-progress-example ol:has(li:nth-child(6)) {
-    grid-template-columns: 1fr;
+@media (max-width: 560px) {
+  .md-first-methods button:last-child {
+    grid-column: 1 / -1;
   }
 }
