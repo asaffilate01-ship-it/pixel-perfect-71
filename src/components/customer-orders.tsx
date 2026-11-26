@@ -6,7 +6,9 @@ import { orderDisplayNumber } from "@/lib/mealdeck-order-number";
 import { visibleCustomerConfirmationCode } from "@/lib/mealdeck-customer-confirmation";
 import {
   customerOrderStatus,
+  filterCustomerOrders,
   parseCustomerOrders,
+  type CustomerOrderBucket,
   type CustomerOrderSummary,
 } from "@/lib/mealdeck-customer-orders";
 
@@ -15,6 +17,7 @@ export function CustomerOrders() {
   const [orders, setOrders] = useState<CustomerOrderSummary[] | null>(null);
   const [issue, setIssue] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [filter, setFilter] = useState<CustomerOrderBucket | "all">("all");
   useEffect(() => {
     let active = true,
       reading = false;
@@ -46,6 +49,10 @@ export function CustomerOrders() {
       window.removeEventListener("online", visible);
     };
   }, [retry]);
+  const visibleOrders = filterCustomerOrders(orders ?? [], filter);
+  const filters = [
+    ["all", "All"], ["active", "In progress"], ["attention", "Needs attention"], ["history", "Past"],
+  ] as const;
   const money = (amount: number) =>
     new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(amount / 100);
   const date = (value: string) =>
@@ -89,8 +96,18 @@ export function CustomerOrders() {
         </div>
       )}
       {!!orders?.length && (
+        <div className="md-account-order-filters" role="group" aria-label="Filter your orders">
+          {filters.map(([value, label]) => (
+            <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>
+              {label} <span>{filterCustomerOrders(orders, value).length}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {!!orders?.length && !visibleOrders.length && <p role="status">No orders in this view.</p>}
+      {!!visibleOrders.length && (
         <ul>
-          {orders.map((order) => (
+          {visibleOrders.map((order) => (
             <li key={order.orderId}>
               <Link to="/checkout" search={{ order: order.orderId }}>
                 <div>

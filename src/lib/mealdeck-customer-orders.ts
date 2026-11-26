@@ -117,3 +117,22 @@ export function customerOrderStatus(order: CustomerOrderSummary) {
   if (order.acceptedAt) return "Accepted";
   return "Order placed";
 }
+
+
+export type CustomerOrderBucket = "active" | "attention" | "history";
+
+/** Presentation only. Do not infer payment or completion from browser time. */
+export function customerOrderBucket(order: CustomerOrderSummary): CustomerOrderBucket {
+  if (order.held) return "attention";
+  if (!order.verifiedPaid) {
+    return order.paymentSessionExpired && !order.paidAt ? "history" : "attention";
+  }
+  return order.completedAt ? "history" : "active";
+}
+
+export function filterCustomerOrders(
+  orders: readonly CustomerOrderSummary[],
+  filter: CustomerOrderBucket | "all",
+): CustomerOrderSummary[] {
+  return orders.filter((order) => filter === "all" || customerOrderBucket(order) === filter);
+}

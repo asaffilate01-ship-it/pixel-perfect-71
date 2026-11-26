@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { customerOrderStatus, parseCustomerOrders } from "../src/lib/mealdeck-customer-orders";
+import { customerOrderBucket, customerOrderStatus, filterCustomerOrders, parseCustomerOrders } from "../src/lib/mealdeck-customer-orders";
 const order = {
   orderId: "00000000-0000-4000-8000-000000000001",
   handoffCode: "4827",
@@ -161,5 +161,28 @@ describe("private customer order summaries", () => {
         completedAt: order.createdAt,
       }),
     ).toBe("Completed");
+  });
+});
+
+
+describe("Customer order history presentation", () => {
+  test("payment holds take precedence and expired attempts stay visible in history", () => {
+    const active = parseCustomerOrders({ orders: [order] })![0]!;
+    const held = { ...active, held: true };
+    const completed = { ...active, completedAt: order.createdAt };
+    const pending = { ...active, verifiedPaid: false, paidAt: null, handoffCode: null };
+    const expired = { ...pending, paymentSessionExpired: true };
+    expect(customerOrderBucket(active)).toBe("active");
+    expect(customerOrderBucket(held)).toBe("attention");
+    expect(customerOrderBucket({ ...completed, held: true })).toBe("attention");
+    expect(customerOrderBucket(completed)).toBe("history");
+    expect(customerOrderBucket(pending)).toBe("attention");
+    expect(customerOrderBucket(expired)).toBe("history");
+    expect(customerOrderBucket({ ...expired, paidAt: order.createdAt })).toBe("attention");
+    const records = [held, completed, active, pending, expired];
+    expect(filterCustomerOrders(records, "all")).toEqual(records);
+    expect(filterCustomerOrders(records, "active")).toEqual([active]);
+    expect(filterCustomerOrders(records, "attention")).toEqual([held, pending]);
+    expect(filterCustomerOrders(records, "history")).toEqual([completed, expired]);
   });
 });
