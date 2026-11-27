@@ -19,3 +19,11 @@ describe("MealDeck primary navigation",()=>{
     expect(isMealDeckNavCurrent("/play","#offers",{to:"/",hash:"offers"})).toBe(false);
   });
 });
+
+test("keeps the Play section active on individual games and arcade subpages",()=>{
+  for(const path of ["/play/feast-2048","/play/daily","/play/receipt","/play/promote"]){
+    expect(isMealDeckNavCurrent(path,"",{to:"/play"})).toBe(true);
+    expect(isMealDeckNavCurrent(path,"",{to:"/"})).toBe(false);
+  }
+  expect(isMealDeckNavCurrent("/playground","",{to:"/play"})).toBe(false);
+});
