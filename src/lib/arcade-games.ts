@@ -248,3 +248,159 @@ export function applyEchoAnswer(round: EchoRound, index: number, target: number,
   const food = Number.isInteger(nextFood) && nextFood >= 0 && nextFood <= 3 ? nextFood : 0;
   return { sequence: [...round.sequence, food], entered: [], cleared: round.sequence.length, tick: step ? 0 : -1, phase: "show" };
 }
+
+
+/** Kitchen Shuffle: local-only saved board, bounded undo and exact-search hints. */
+export const SHUFFLE_SAVE_KEY = "mealdeck-kitchen-shuffle-save-v1";
+export const SHUFFLE_UNDO_LIMIT = 100;
+export type ShuffleSize = 3 | 4;
+export type ShuffleRound = {
+  board: number[];
+  moves: number;
+  history: number[][];
+  date: number;
+  hints: number;
+  message: string;
+};
+export type ShuffleSave = {
+  version: 1;
+  size: ShuffleSize;
+  daily: boolean;
+  board: number[];
+  moves: number;
+  history: number[][];
+  date: number;
+  hints: number;
+};
+
+export function isSolvableShuffleBoard(value: unknown, size: ShuffleSize): value is number[] {
+  if ((size !== 3 && size !== 4) || !Array.isArray(value) || value.length !== size * size ||
+      !value.every(tile => Number.isInteger(tile) && tile >= 0 && tile < size * size) ||
+      new Set(value).size !== size * size) return false;
+  const tiles: number[] = value.filter(tile => tile !== 0);
+  let inversions = 0;
+  for (let i = 0; i < tiles.length; i++) {
+    for (let j = i + 1; j < tiles.length; j++) if (tiles[i]! > tiles[j]!) inversions++;
+  }
+  return size === 3 ? inversions % 2 === 0 :
+    (inversions + size - Math.floor(value.indexOf(0) / size)) % 2 === 1;
+}
+
+function validShuffleDate(value: unknown): value is number {
+  if (typeof value !== "number" || !Number.isInteger(value)) return false;
+  const digits = String(value);
+  if (!/^\d{8}$/.test(digits)) return false;
+  const iso = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6);
+  const date = new Date(iso + "T00:00:00.000Z");
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === iso;
+}
+function validShuffleMetric(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 && value <= 1_000_000;
+}
+function sameShuffleBoard(a: readonly number[], b: readonly number[]): boolean {
+  return a.length === b.length && a.every((tile, i) => tile === b[i]);
+}
+export function advanceShuffleRound(round: ShuffleRound, index: number, size: ShuffleSize): ShuffleRound {
+  if (!round.board.length || puzzleSolved(round.board) || !puzzleMoves(round.board, size).includes(index)) return round;
+  return {
+    ...round,
+    board: slidePuzzle(round.board, index, size),
+    history: [...round.history, round.board].slice(-SHUFFLE_UNDO_LIMIT),
+    moves: round.moves + 1,
+    message: `Tile ${round.board[index]} moved. Empty space: row ${Math.floor(index / size) + 1}, column ${index % size + 1}. Move ${round.moves + 1}.`,
+  };
+}
+export function undoShuffleRound(round: ShuffleRound): ShuffleRound {
+  const board = round.history.at(-1);
+  return board ? { ...round, board, history: round.history.slice(0, -1), moves: Math.max(0, round.moves - 1),
+    message: "Last slide undone. Try a different tile." } : round;
+}
+export function parseShuffleSave(raw: string | null): ShuffleSave | null {
+  if (!raw || raw.length > 16_000) return null;
+  try {
+    const input = JSON.parse(raw) as Record<string, unknown> | null;
+    if (!input || input["version"] !== 1 ||
+        (input["size"] !== 3 && input["size"] !== 4) || typeof input["daily"] !== "boolean" ||
+        !validShuffleDate(input["date"]) || !validShuffleMetric(input["moves"]) || !validShuffleMetric(input["hints"]) ||
+        !Array.isArray(input["history"]) || input["history"].length > SHUFFLE_UNDO_LIMIT ||
+        input["history"].length > input["moves"] || !isSolvableShuffleBoard(input["board"], input["size"])) return null;
+    const size = input["size"];
+    const history: number[][] = [];
+    for (const board of input["history"]) {
+      if (!isSolvableShuffleBoard(board, size)) return null;
+      history.push([...board]);
+    }
+    const board = [...input["board"]];
+    const chain = [...history, board];
+    for (let i = 1; i < chain.length; i++) {
+      const before = chain[i - 1]!;
+      const after = chain[i]!;
+      const target = after.indexOf(0);
+      if (puzzleSolved(before) || !puzzleMoves(before, size).includes(target) ||
+          !sameShuffleBoard(slidePuzzle(before, target, size), after)) return null;
+    }
+    // If all moves remain in the undo history, a daily save must start from that day's original layout.
+    if (input["daily"] && input["moves"] === history.length &&
+        !sameShuffleBoard(chain[0]!, startPuzzle(size, seededRandom(input["date"] + size)))) return null;
+    return { version: 1, size, daily: input["daily"], board, history, date: input["date"],
+      moves: input["moves"], hints: input["hints"] };
+  } catch {
+    return null;
+  }
+}
+export function createShuffleSave(round: ShuffleRound, size: ShuffleSize, daily: boolean): ShuffleSave | null {
+  return parseShuffleSave(JSON.stringify({ version: 1, size, daily, board: round.board, history: round.history,
+    date: round.date, moves: round.moves, hints: round.hints }));
+}
+export function shuffleManhattan(board: readonly number[], size: ShuffleSize): number {
+  return board.reduce((sum, tile, index) => tile === 0 ? sum :
+    sum + Math.abs(Math.floor(index / size) - Math.floor((tile - 1) / size)) +
+      Math.abs(index % size - (tile - 1) % size), 0);
+}
+export type ShuffleHint = { kind: "move"; index: number; remaining: number } |
+  { kind: "complete" | "limit" | "invalid" };
+
+/** IDA* with admissible Manhattan distance and strict node/depth bounds. Only verified solution paths yield hints. */
+export function findShuffleHint(board: readonly number[], size: ShuffleSize, maxNodes = 25_000): ShuffleHint {
+  if (!isSolvableShuffleBoard(board, size)) return { kind: "invalid" };
+  const initial = shuffleManhattan(board, size);
+  if (initial === 0) return { kind: "complete" };
+  const budget = Number.isFinite(maxNodes) ? Math.max(1, Math.min(40_000, Math.floor(maxNodes))) : 25_000;
+  let nodes = 0;
+  let exhausted = false;
+  const path: number[] = [];
+  const seen = new Set<string>([board.join(",")]);
+  let solution: number[] | null = null;
+  function search(current: number[], depth: number, bound: number): number {
+    const distance = shuffleManhattan(current, size);
+    if (depth + distance > bound) return depth + distance;
+    if (nodes >= budget) { exhausted = true; return Infinity; }
+    nodes++;
+    if (!distance) { solution = [...path]; return -1; }
+    let nextBound = Infinity;
+    const choices = puzzleMoves(current, size).map(index => ({ index, board: slidePuzzle(current, index, size) }));
+    choices.sort((a, b) => shuffleManhattan(a.board, size) - shuffleManhattan(b.board, size));
+    for (const next of choices) {
+      const key = next.board.join(",");
+      if (seen.has(key)) continue;
+      path.push(next.index);
+      seen.add(key);
+      const result = search(next.board, depth + 1, bound);
+      seen.delete(key);
+      path.pop();
+      if (result === -1 || exhausted) return result;
+      nextBound = Math.min(nextBound, result);
+    }
+    return nextBound;
+  }
+  let bound = initial;
+  while (!exhausted && bound <= 80) {
+    const result = search([...board], 0, bound);
+    // The recursive search captures the whole path before unwinding.
+    const found = solution as number[] | null;
+    if (result === -1 && found?.length) return { kind: "move", index: found[0]!, remaining: found.length };
+    if (!Number.isFinite(result) || result <= bound) break;
+    bound = result;
+  }
+  return { kind: "limit" };
+}

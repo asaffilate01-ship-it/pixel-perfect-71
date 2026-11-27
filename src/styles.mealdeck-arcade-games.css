@@ -923,3 +923,8 @@
 .md-echo-progress { display:block; width:100%; height:8px; accent-color:var(--game-red); margin:0 0 12px; }
 .md-echo-error { display:block; flex-basis:100%; color:#951018; font-size:12px; font-weight:750; }
 .md-echo-food { touch-action:manipulation; }
+
+.md-shuffle-stats .md-game-stats { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.md-arcade-game .md-shuffle-tile.is-solution-hint:not(:disabled) { outline:3px solid #315c3c; outline-offset:-4px; background:#e3f2de; }
+.md-shuffle-tile { touch-action:manipulation; }
+@media(max-width:580px) { .md-shuffle-stats .md-game-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }

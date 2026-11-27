@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
   applyBentoHint,
+  bentoCandidates,
+  findBentoLogicHint,
+  BENTO_DIFFICULTIES,
   bentoConflicts,
   bentoFocusMove,
   countBentoSolutions,
@@ -261,6 +264,42 @@ describe("keyboard grid navigation", () => {
       expect(bentoFocusMove(size + 1, "Home", size)).toBe(size);
       expect(bentoFocusMove(size + 1, "End", size)).toBe(size * 2 - 1);
       expect(bentoFocusMove(0, "Enter", size)).toBeNull();
+    }
+  });
+});
+
+describe("Bento difficulty and visible-constraint guidance", () => {
+  test("fresh levels retain uniqueness and default daily generation", () => {
+    for (const size of [4,6] as const) {
+      const boards = BENTO_DIFFICULTIES.map(level => createBentoPuzzle(size, 13579, level));
+      for (const puzzle of boards) expect(countBentoSolutions(puzzle.givens,size)).toEqual({count:1,exhausted:false});
+      const blankCounts = boards.map(puzzle => puzzle.givens.filter(value=>value===0).length);
+      expect(blankCounts[0]!).toBeLessThanOrEqual(blankCounts[1]!);
+      expect(blankCounts[1]!).toBeLessThanOrEqual(blankCounts[2]!);
+      expect(boards[1]).toEqual(createBentoPuzzle(size,13579));
+    }
+  });
+  test("candidate marks and selected logic hints use only the current visible grid", () => {
+    expect(bentoCandidates(small.givens,4,0)).toEqual([1]);
+    expect(bentoCandidates(small.givens,4,1)).toEqual([]);
+    expect(findBentoLogicHint(small.givens,4,0)).toEqual({kind:"move",index:0,value:1,reason:"single"});
+    expect(findBentoLogicHint(small.solution,4).kind).toBe("complete");
+    const conflict=[...small.givens]; conflict[0]=2;
+    expect(findBentoLogicHint(conflict,4).kind).toBe("conflict");
+    expect(findBentoLogicHint([1,2,3],4).kind).toBe("invalid");
+    expect(findBentoLogicHint(Array(16).fill(0),4).kind).toBe("none");
+  });
+  test("deductions on generated boards agree with their unique solutions", () => {
+    for (const size of [4,6] as const) for (const seed of [1,17,137,7919,15838]) {
+      const puzzle=createBentoPuzzle(size,seed,"expert");
+      const board=[...puzzle.givens];
+      for(let step=0;step<size*size;step++) {
+        const hint=findBentoLogicHint(board,size);
+        if(hint.kind!=="move") break;
+        expect(board[hint.index]).toBe(0);
+        expect(hint.value).toBe(puzzle.solution[hint.index]!);
+        board[hint.index]=hint.value;
+      }
     }
   });
 });
