@@ -24,6 +24,15 @@ import {
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import {
   chooseFourMove,
+  advanceShuffleRound,
+  undoShuffleRound,
+  createShuffleSave,
+  parseShuffleSave,
+  findShuffleHint,
+  SHUFFLE_SAVE_KEY,
+  SHUFFLE_UNDO_LIMIT,
+  type ShuffleRound,
+  type ShuffleSave,
   applyEchoAnswer,
   type EchoRound,
   fourWinningCells,
@@ -1079,29 +1088,26 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
   );
 }
 
-type ShuffleRound = {
-  board: number[];
-  moves: number;
-  history: number[][];
-  date: number;
-  message: string;
-};
 const emptyShuffle = (): ShuffleRound => ({
   board: [],
   moves: 0,
   history: [],
   date: 0,
+  hints: 0,
   message: "Slide a tile next to the empty space.",
 });
 
-export function KitchenShuffle() {
+export function KitchenShuffle({ suspended = false }: { suspended?: boolean }) {
   const [size, setSize] = useState<3 | 4>(3);
   const [round, setRound] = useState<ShuffleRound>(emptyShuffle);
   const [hint, setHint] = useState(false);
+  const [solutionHint, setSolutionHint] = useState<number | null>(null);
+  const [saved, setSaved] = useState<ShuffleSave | null>(null);
+  const [saveMessage, setSaveMessage] = useState("");
   const [daily, setDaily] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null),
     descriptionId = useId();
-  const { board, moves, history, date } = round;
+  const { board, moves, history, date, hints } = round;
   const started = board.length > 0;
   const won = started && puzzleSolved(board);
   const legal = started ? puzzleMoves(board, size) : [];
@@ -1114,44 +1120,106 @@ export function KitchenShuffle() {
         : direction === "up"
           ? blank - size
           : blank + size;
+  useEffect(() => {
+    function refresh() {
+      try {
+        const raw = localStorage.getItem(SHUFFLE_SAVE_KEY);
+        const next = parseShuffleSave(raw);
+        setSaved(next);
+        if (raw && !next) setSaveMessage("A saved puzzle could not be read. A new save can replace it.");
+      } catch {
+        setSaveMessage("This browser cannot save puzzles. You can still play.");
+      }
+    }
+    refresh();
+    function sync(event: StorageEvent) {
+      if (event.key === SHUFFLE_SAVE_KEY || event.key === null) refresh();
+    }
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
   function reset() {
     setRound(emptyShuffle());
     setHint(false);
+    setSolutionHint(null);
   }
   function start() {
+    if (suspended) return;
     const seed = daily && date ? date : dailySeed();
     setRound({
       board: startPuzzle(size, daily ? seededRandom(seed + size) : Math.random),
       moves: 0,
       history: [],
       date: seed,
+      hints: 0,
       message: "Puzzle ready. Slide an adjacent tile into the empty space.",
     });
     setHint(false);
+    setSolutionHint(null);
+    setSaveMessage("");
     focusBoard(boardRef);
   }
   function move(index: number) {
-    if (won || !legal.includes(index)) return;
-    setRound({
-      ...round,
-      board: slidePuzzle(board, index, size),
-      history: [...history, board],
-      moves: moves + 1,
-      message: `Tile ${board[index]} moved. Empty space: row ${Math.floor(index / size) + 1}, column ${(index % size) + 1}. Move ${moves + 1}.`,
-    });
+    if (suspended || won || !legal.includes(index)) return;
+    setRound(current => advanceShuffleRound(current, index, size));
+    setSolutionHint(null);
     focusBoard(boardRef);
   }
   function undo() {
-    const previous = history.at(-1);
-    if (!previous) return;
-    setRound({
-      ...round,
-      board: previous,
-      history: history.slice(0, -1),
-      moves: Math.max(0, moves - 1),
-      message: "Last slide undone. Try a different tile.",
-    });
+    if (suspended || !history.length) return;
+    setRound(current => undoShuffleRound(current));
+    setSolutionHint(null);
     focusBoard(boardRef);
+  }
+  function showSolutionHint() {
+    if (!started || won || suspended) return;
+    const result = findShuffleHint(board, size);
+    if (result.kind !== "move") {
+      setSolutionHint(null);
+      setRound(current => ({ ...current, message: result.kind === "limit" ?
+        "No complete route found within the hint limit. Try a movable tile or undo a move." : "No solution hint is needed for this board." }));
+      return;
+    }
+    setRound(current => ({ ...current, hints: current.hints + (solutionHint === result.index ? 0 : 1),
+      message: `Hint: slide tile ${board[result.index]} into the space. A verified solution is ${result.remaining} moves away.` }));
+    setSolutionHint(result.index);
+  }
+  function saveAndExit() {
+    if (!started || suspended) return;
+    const snapshot = createShuffleSave(round, size, daily);
+    if (!snapshot) { setSaveMessage("This puzzle could not be saved. Your board is still here."); return; }
+    try {
+      localStorage.setItem(SHUFFLE_SAVE_KEY, JSON.stringify(snapshot));
+      setSaved(snapshot);
+      reset();
+      setSaveMessage("Puzzle saved in this browser, including recent undo history.");
+    } catch {
+      setSaveMessage("Could not save the puzzle. Your current board is still here.");
+    }
+  }
+  function loadSaved() {
+    if (!saved || suspended) return;
+    try {
+      const current = parseShuffleSave(localStorage.getItem(SHUFFLE_SAVE_KEY));
+      if (!current || JSON.stringify(current) !== JSON.stringify(saved)) {
+        setSaved(current);
+        setSaveMessage("The saved puzzle changed in another tab. Check it before loading.");
+        return;
+      }
+      localStorage.removeItem(SHUFFLE_SAVE_KEY);
+      setSaved(null);
+      setSize(current.size);
+      setDaily(current.daily);
+      setRound({ board: current.board, history: current.history, moves: current.moves, hints: current.hints,
+        date: current.date, message: "Saved puzzle loaded. Choose your next tile." });
+      setHint(false);
+      setSolutionHint(null);
+      setSaveMessage("");
+      focusBoard(boardRef);
+    } catch {
+      setSaveMessage("Could not load the saved puzzle. Try again or start a fresh one.");
+    }
   }
   const gridStyle = { "--shuffle-size": size } as CSSProperties;
   const dateLabel = date ? String(date).replace(/^(\d{4})(\d{2})(\d{2})$/, "$1-$2-$3") : "";
@@ -1166,7 +1234,8 @@ export function KitchenShuffle() {
       rules={[
         "Tap a tile beside the empty space to slide it. Put the numbers in order from left to right, top to bottom.",
         "Finish with the empty space in the bottom-right corner. Every puzzle has a solution.",
-        "Undo as often as you like. The daily puzzle is the same for everyone on that UTC date and board size.",
+        "Undo up to 100 recent moves or save and exit. The daily puzzle is the same for everyone on that UTC date and board size.",
+        "Solution hints use bounded search. A difficult board may exceed the search limit.",
       ]}
       keyboard="Focus the board and use arrow keys to move the empty space. Or Tab to an available tile and press Enter or Space. The direction buttons move the space too."
     >
@@ -1199,6 +1268,7 @@ export function KitchenShuffle() {
         </label>
       </div>
       {!started ? (
+        <>
         <Start
           title="Get the kitchen in order"
           action={daily ? "Start daily puzzle" : "Shuffle & play"}
@@ -1208,15 +1278,18 @@ export function KitchenShuffle() {
           Start with the classic board or take on sixteen spaces. No countdown, and undo is always
           there if you need it.
         </Start>
+        {saved && <div className="md-feast-save"><div><strong>Saved shuffle</strong><p>{saved.size} × {saved.size} · {saved.daily ? "Daily" : "Fresh"} · {saved.moves} moves</p></div><button type="button" className="md-game-button is-primary" onClick={loadSaved} disabled={suspended}><Play size={17} aria-hidden="true" /> Load saved puzzle</button><small>One local slot. Loading consumes the slot; save and exit again to keep progress.</small></div>}
+        </>
       ) : (
         <>
-          <Stats
+          <div className="md-shuffle-stats"><Stats
             items={[
               { label: "Moves", value: moves },
               { label: "Board", value: `${size} × ${size}` },
               { label: "Challenge", value: daily ? "Daily" : "Fresh" },
+              { label: "Hints", value: hints },
             ]}
-          />
+          /></div>
           {daily && (
             <p className="md-game-hint">
               Daily puzzle for <strong>{dateLabel} (UTC)</strong>. Start over replays this same
@@ -1254,9 +1327,9 @@ export function KitchenShuffle() {
                   <button
                     key={index}
                     type="button"
-                    className={`md-shuffle-tile ${legal.includes(index) ? "can-move" : ""}`}
-                    disabled={!legal.includes(index) || won}
-                    aria-label={`Tile ${value}, row ${Math.floor(index / size) + 1}, column ${(index % size) + 1}${legal.includes(index) ? ", slide into space" : ", cannot slide"}`}
+                    className={`md-shuffle-tile ${legal.includes(index) ? "can-move" : ""} ${solutionHint === index ? "is-solution-hint" : ""}`}
+                    disabled={!legal.includes(index) || won || suspended}
+                    aria-label={`Tile ${value}, row ${Math.floor(index / size) + 1}, column ${(index % size) + 1}${legal.includes(index) ? ", slide into space" : ", cannot slide"}${solutionHint === index ? ", suggested solution move" : ""}`}
                     onClick={() => move(index)}
                   >
                     <Food index={value - 1} />
@@ -1269,16 +1342,16 @@ export function KitchenShuffle() {
               <p className="md-game-control-label">Move the empty space</p>
               <DirectionPad
                 move={(direction) => move(directionIndex(direction))}
-                canMove={(direction) => !won && legal.includes(directionIndex(direction))}
+                canMove={(direction) => !won && !suspended && legal.includes(directionIndex(direction))}
                 label="Move space"
               />
               <button
                 type="button"
                 className="md-game-button"
-                disabled={!history.length}
+                disabled={!history.length || suspended}
                 onClick={undo}
               >
-                <Undo2 size={18} aria-hidden="true" /> Undo last slide
+                <Undo2 size={18} aria-hidden="true" /> Undo ({history.length}/{SHUFFLE_UNDO_LIMIT})
               </button>
               <button
                 type="button"
@@ -1290,6 +1363,8 @@ export function KitchenShuffle() {
                 <Lightbulb size={18} aria-hidden="true" />{" "}
                 {hint ? "Hide movable tiles" : "Show movable tiles"}
               </button>
+              <button type="button" className="md-game-button" disabled={won || suspended} onClick={showSolutionHint}><Lightbulb size={18} aria-hidden="true" /> Solution hint</button>
+              <button type="button" className="md-game-button" disabled={suspended} onClick={saveAndExit}>{saved ? "Replace saved puzzle & exit" : "Save & exit"}</button>
               {hint && !won && (
                 <p className="md-game-hint">
                   Outlined tiles can move into the space. The outline shows a legal move, not a
@@ -1306,6 +1381,7 @@ export function KitchenShuffle() {
           </div>
         </>
       )}
+      {saveMessage && <p className="md-game-hint" role="status">{saveMessage}</p>}
       <details className="md-game-goal">
         <summary>See the finished layout</summary>
         <div
