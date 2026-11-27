@@ -235,3 +235,16 @@ export function startPuzzle(size: 3 | 4, random: () => number = Math.random): nu
 export function sequencePrefix(sequence: readonly number[], entered: readonly number[]): boolean {
   return entered.length <= sequence.length && entered.every((value, index) => value === sequence[index]);
 }
+
+/** Order Echo: input is applied to the current round, not the render that received a tap. */
+export type EchoPhase = "ready" | "show" | "input" | "over" | "won";
+export type EchoRound = { sequence: number[]; entered: number[]; phase: EchoPhase; tick: number; cleared: number };
+export function applyEchoAnswer(round: EchoRound, index: number, target: number, nextFood: number, step: boolean): EchoRound {
+  if (round.phase !== "input" || !Number.isInteger(index) || index < 0 || index > 3) return round;
+  const entered = [...round.entered, index];
+  if (!sequencePrefix(round.sequence, entered)) return { ...round, entered, phase: "over" };
+  if (entered.length < round.sequence.length) return { ...round, entered };
+  if (round.sequence.length >= target) return { ...round, entered, cleared: round.sequence.length, phase: "won" };
+  const food = Number.isInteger(nextFood) && nextFood >= 0 && nextFood <= 3 ? nextFood : 0;
+  return { sequence: [...round.sequence, food], entered: [], cleared: round.sequence.length, tick: step ? 0 : -1, phase: "show" };
+}
