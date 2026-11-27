@@ -235,9 +235,15 @@ export const ARCADE_HELP: readonly ArcadeHelpEntry[] = [
 ];
 
 export function findArcadeHelp(query: string, game?: ArcadeGameId): ArcadeHelpEntry[] {
-  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const matches = ARCADE_HELP.filter(entry => words.every(word =>
-    (entry.question + " " + entry.answer + " " + (entry.game ?? "")).toLowerCase().includes(word)));
+  const normalise = (text: string) => text.normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const words = normalise(query.slice(0, 160)).split(/\s+/).filter(Boolean);
+  const common = new Set(["a", "an", "the", "i", "my", "can", "do", "how", "does", "is", "are", "to", "for", "and", "or", "with", "please"]);
+  const useful = words.filter(word => !common.has(word));
+  const terms = useful.length ? useful : words;
+  const matches = ARCADE_HELP.filter(entry => {
+    const searchable = normalise(entry.question + " " + entry.answer + " " + (entry.game ?? ""));
+    return terms.every(word => searchable.includes(word));
+  });
   if (!game) return matches;
   return [...matches.filter(entry => entry.game === game), ...matches.filter(entry => entry.game !== game)];
 }
