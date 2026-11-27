@@ -51,3 +51,29 @@ describe("Evergreen privacy and checkout communication", () => {
     expect(source("src/lib/mealdeck-customer-browser.ts")).not.toContain("Email registration opens at 1pm Monday 9 November");
   });
 });
+
+
+describe("Current ordering guides and location pages", () => {
+  test("first-order guide provides three mutually exclusive methods without changing checkout", () => {
+    const guide = source("src/routes/meta-ad.tsx");
+    expect(guide).toContain('useState<"pickup" | "curbside" | "delivery">("pickup")');
+    expect(guide).toContain('aria-pressed={method === "pickup"}');
+    expect(guide).toContain('aria-pressed={delivery}');
+    expect(guide).toContain('onClick={() => setMethod("delivery")}');
+    expect(guide).toContain("name and WhatsApp number");
+    expect(guide).toContain("£15 minimum after discounts");
+    expect(guide).not.toContain("name, email and mobile number");
+    expect(guide).not.toContain("setDeliveryNotice");
+    expect(guide).toContain('delivery ? deliveryMilestones : collectionMilestones');
+  });
+  test("location marketing no longer describes Luton as a launch", () => {
+    for (const path of ["src/routes/luton.tsx", "src/routes/st-albans.tsx", "src/routes/bedford.tsx", "src/components/location-page.tsx", "src/lib/seo.ts"]) {
+      expect(source(path)).not.toMatch(/Luton launches\s+first|launching in Luton first|first launch kitchen|Luton launch deck|Luton’s launch menus/i);
+    }
+  });
+});
+
+test("blog landing SEO no longer promotes the expired campaigns", () => {
+  expect(source("src/routes/blog.index.tsx")).not.toMatch(/three November offers|five launch menus/i);
+  expect(source("src/routes/blog.$slug.tsx")).toContain("dateModified: loaderData.updatedAt ?? loaderData.date");
+});

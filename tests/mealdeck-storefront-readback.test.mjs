@@ -6,8 +6,24 @@ const html = (text) => "<html><main>" + text + "</main></html>";
 const pages = {
   "/": html("Five menus. One basket."),
   "/offers": html("£1 paid = 1 loyalty point."),
-  "/meta-ad": html("Opening hours · UK time"),
+  "/meta-ad": html("Opening hours · UK time. Choose how you want to receive your order. Enter your name and WhatsApp number."),
   "/menus": html("Search all MealDeck menus. Your favourites"),
+  "/privacy": html("20 minutes after each quantity is added. Save menu favourites"),
+  "/luton": html("Local takeaway kitchen. Five brands. One kitchen."),
+  "/st-albans": html("St Albans coming soon"),
+  "/bedford": html("Bedford coming soon"),
+  "/blog": html("MealDeck Loyalty: Earn Points on Eligible Orders. House Rules: MealDeck Offers and Member Benefits"),
+  "/menus/skorch-burgers": html("Search all MealDeck menus. Your favourites"),
+  "/menus/tavo-chicken": html("Search all MealDeck menus. Your favourites"),
+  "/menus/souvano": html("Search all MealDeck menus. Your favourites"),
+  "/menus/loadd": html("Search all MealDeck menus. Your favourites"),
+  "/menus/moktl": html("Search all MealDeck menus. Your favourites"),
+  "/blog/cash-in-your-chips-loyalty-points": html("Updated 26 November 2026. Current food guide."),
+  "/blog/house-rules-every-offer-explained": html("Updated 26 November 2026. Current food guide."),
+  "/blog/deal-everyone-in-group-food-order-luton": html("Updated 26 November 2026. Current food guide."),
+  "/blog/french-tacos-luton-ace-of-the-deck": html("Updated 26 November 2026. Current food guide."),
+  "/blog/office-lunch-delivery-st-albans": html("Updated 26 November 2026. Current food guide."),
+  "/blog/order-direct-pay-less-than-aggregators": html("Updated 26 November 2026. Current food guide."),
   "/sitemap.xml": "<urlset><url><loc>https://mealdeck.co.uk/offers</loc></url></urlset>",
 };
 
@@ -34,13 +50,13 @@ function fixture(overrides = {}) {
 const page = (body, status = 200) => () => new Response(body, { status, headers: { "content-type": "text/html" } });
 
 describe("Production storefront readback", () => {
-  it("checks six public surfaces, not exact commit or operational readiness", async () => {
+  it("checks every specified public surface, not exact commit or operational readiness", async () => {
     const site = fixture();
     const result = await probeStorefrontRelease(site.request);
     assert.equal(result.storefrontContentVerified, true);
     assert.equal(result.exactDeployedCommitVerified, false);
     assert.equal(result.checkoutPaymentAndDeviceAcceptanceVerified, false);
-    assert.deepEqual(site.calls, ["/", "/offers", "/meta-ad", "/menus", "/opening-offer", "/sitemap.xml"]);
+    assert.deepEqual(site.calls, ["/","/offers","/meta-ad","/menus","/opening-offer","/sitemap.xml","/privacy","/luton","/st-albans","/bedford","/blog","/menus/skorch-burgers","/menus/tavo-chicken","/menus/souvano","/menus/loadd","/menus/moktl","/blog/cash-in-your-chips-loyalty-points","/blog/house-rules-every-offer-explained","/blog/deal-everyone-in-group-food-order-luton","/blog/french-tacos-luton-ace-of-the-deck","/blog/office-lunch-delivery-st-albans","/blog/order-direct-pay-less-than-aggregators"]);
   });
   it("rejects stale campaign copy, a stale menu or an old footer link", async () => {
     for (const overrides of [
@@ -48,6 +64,11 @@ describe("Production storefront readback", () => {
       { "/menus": page(html("Search this menu")) },
       { "/offers": page(html('£1 paid = 1 loyalty point. <a href="/opening-offer">Old offer</a>')) },
       { "/": page(html("Five menus. One basket."), 503) },
+      { "/blog": page(html("MealDeck Loyalty: Earn Points on Eligible Orders. House Rules: MealDeck Offers and Member Benefits. Double loyalty points")) },
+      { "/blog/house-rules-every-offer-explained": page(html("Updated 26 November 2026. 99p milk cake promotion.")) },
+      { "/privacy": page(html("Basket expires five minutes after each quantity is added.")) },
+      { "/menus/tavo-chicken": page(html("Search this menu")) },
+      { "/meta-ad": page(html("Opening hours · UK time. Choose how you want to receive your order. Enter your name and WhatsApp number.") + '<meta name="description" content="30% off everything">') },
     ]) assert.equal((await probeStorefrontRelease(fixture(overrides).request)).storefrontContentVerified, false);
   });
   it("does not confuse inert hydration strings with visible expired copy", async () => {
