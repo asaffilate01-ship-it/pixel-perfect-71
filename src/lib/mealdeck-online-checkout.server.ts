@@ -585,7 +585,8 @@ export async function handleOnlineCheckoutRequest(
           ? { p_order: parsed.data.orderId, p_customer: customerId }
           : { ...guestScope(clients, guestToken!), p_order: parsed.data.orderId },
       );
-      if (customerId && typeof receipt["discountPence"] === "number" && receipt["discountPence"] > 0) {
+      if (customerId && typeof receipt["grossPence"] === "number" && receipt["grossPence"] >= 60 &&
+          receipt["discountPence"] === Math.floor(receipt["grossPence"] / 2)) {
         try {
           const marker = await rpc(clients.service, "mealdeck_staff_voucher_order", { p_order: parsed.data.orderId, p_customer: customerId });
           if (marker["applied"] === true) receipt["staffVoucherApplied"] = true;
@@ -782,7 +783,7 @@ export async function handleOnlineCheckoutRequest(
     if (!z.uuid().safeParse(prepared["orderId"]).success || !Array.isArray(prepared["lines"]))
       throw backendProblem({});
     const order = prepared as unknown as PreparedStripeOrder;
-    if (customerId && order.discountPence > 0) {
+    if (customerId && order.grossPence >= 60 && order.discountPence === Math.floor(order.grossPence / 2)) {
       try {
         const marker = await rpc(clients.service, "mealdeck_staff_voucher_order", { p_order: order.orderId, p_customer: customerId });
         if (marker["applied"] === true) order.staffVoucherApplied = true;
