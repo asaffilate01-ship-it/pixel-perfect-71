@@ -4,6 +4,7 @@ import {
   countSortedSkewers,
   createSkewerPuzzle,
   createSkewerState,
+  findSkewerHint,
   isSkewerComplete,
   moveSkewer,
   playSkewerMove,
@@ -248,5 +249,36 @@ describe("rounds, undo and completion", () => {
     expect(isSkewerComplete([[0, 0, 0], [1, 1, 1], [2, 2, 2], []], 3)).toBe(false);
     expect(isSkewerComplete([[], [], [], [], []], 3)).toBe(false);
     expect(isSkewerComplete([[0, 0, 0], [1, 1, 1], [3, 3, 3], [], []], 3)).toBe(false);
+  });
+});
+
+describe("Skewer Sort solution hints", () => {
+  test("hints are legal and following them solves seeded puzzles without altering the input", () => {
+    for (const count of [3, 4] as const) {
+      for (const seed of [1, 137, 8056, 15975, 23894]) {
+        const puzzle = createSkewerPuzzle(count, seed);
+        let board = puzzle.skewers;
+        for (let i = 0; i < 30 && !isSkewerComplete(board, count); i++) {
+          const before = JSON.stringify(board);
+          const hint = findSkewerHint(board, count);
+          expect(hint.kind).toBe("move");
+          if (hint.kind !== "move") throw Error("Expected a move");
+          expect(canMoveSkewer(board, hint.move.from, hint.move.to)).toBe(true);
+          expect(JSON.stringify(board)).toBe(before);
+          const next = moveSkewer(board, hint.move.from, hint.move.to);
+          const follow = findSkewerHint(next, count);
+          if (follow.kind === "move") expect(follow.remaining).toBe(hint.remaining - 1);
+          board = next;
+        }
+        expect(isSkewerComplete(board, count)).toBe(true);
+        expect(findSkewerHint(board, count).kind).toBe("complete");
+      }
+    }
+  });
+  test("bounded search and malformed inventory do not produce misleading hints", () => {
+    const board = createSkewerPuzzle(4, 137).skewers;
+    expect(findSkewerHint(board, 4, 1).kind).toBe("budget");
+    expect(findSkewerHint([[], [], [], [], []], 3).kind).toBe("invalid");
+    expect(findSkewerHint([[0, 0, 0, 0], [1, 1, 1], [2, 2], [], []], 3).kind).toBe("invalid");
   });
 });
