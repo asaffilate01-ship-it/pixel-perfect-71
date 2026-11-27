@@ -7,6 +7,8 @@ import {
   askGoDish, drawGoDishIfEmpty, createBrandSnapRounds, evaluateSnap, isFullHouse,
   makeFullHousePuzzle, stackSolitaireCard, startGoDish, startSolitaire,
   createSnapSession, answerSnap, advanceSnap, snapStatistics, SNAP_LENGTHS,
+  chooseGoDishRank, GO_DISH_DIFFICULTIES, suggestFullHouseCard, toggleFullHouseSelection,
+  createStacksSave, parseStacksSave,
 } from "../src/lib/mealdeck-collection-games";
 
 describe("Kitchen Chaos: free original game", () => {
@@ -187,5 +189,81 @@ describe("Brand Snap quiz and answer integrity", () => {
     expect(session.index).toBe(3);
     expect(snapStatistics(session)).toEqual({ answered: 3, correct: 2, streak: 0, bestStreak: 2, accuracy: 67 });
     expect(advanceSnap(session, 3)).toBe(session);
+  });
+});
+
+
+describe("Full House selection guidance", () => {
+  test("following a hint always yields a valid hand while avoiding needless changes", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const cards = makeFullHousePuzzle(() => seed / 20);
+      let selected = cards.slice(0,5).map(card => card.id);
+      for (let step=0; step<10 && !isFullHouse(cards.filter(card=>selected.includes(card.id))); step++) {
+        const hint=suggestFullHouseCard(cards,selected);
+        expect(hint).not.toBeNull();
+        selected=toggleFullHouseSelection(cards,selected,hint!.cardId);
+        expect(selected.length).toBeLessThanOrEqual(5);
+      }
+      expect(isFullHouse(cards.filter(card=>selected.includes(card.id)))).toBe(true);
+      expect(suggestFullHouseCard(cards,selected)).toBeNull();
+      expect(toggleFullHouseSelection(cards,selected,"unknown")).toBe(selected);
+      expect(toggleFullHouseSelection(cards,selected,cards.find(card=>!selected.includes(card.id))!.id)).toBe(selected);
+    }
+  });
+  test("invalid selections cannot yield an invented card", () => {
+    const cards=makeFullHousePuzzle(()=>0.5);
+    expect(suggestFullHouseCard(cards,["unknown"])).toBeNull();
+    expect(suggestFullHouseCard([],[])).toBeNull();
+  });
+});
+
+describe("Go Dish public-information strategy", () => {
+  test("expert favours a known public request and otherwise chooses the biggest group", () => {
+    const hand=[{id:"burger-1",suit:"burger" as const,rank:1 as const},{id:"cake-2",suit:"cake" as const,rank:2 as const},{id:"chicken-2",suit:"chicken" as const,rank:2 as const}];
+    expect(chooseGoDishRank(hand,"relaxed")).toBe(1);
+    expect(chooseGoDishRank(hand,"classic")).toBe(2);
+    expect(chooseGoDishRank(hand,"expert",1)).toBe(1);
+    expect(chooseGoDishRank(hand,"expert",3)).toBe(2);
+    expect(chooseGoDishRank([],"expert",1)).toBeNull();
+  });
+  test("all strategies preserve the deck and end seeded rounds within 60 turns", () => {
+    for (const level of GO_DISH_DIFFICULTIES) for(let seed=1;seed<=30;seed++) {
+      let value=seed;
+      const random=()=>((value=(value*1664525+1013904223)>>>0)/4294967296);
+      let state=startGoDish(random,level);
+      for(let i=0;i<65&&!state.winner;i++){
+        const rank=chooseGoDishRank(state.player,"expert",state.lastChefRequest??null);
+        state=rank===null?drawGoDishIfEmpty(state):askGoDish(state,rank);
+        const cards=[...state.player,...state.chef,...state.stock];
+        expect(new Set(cards.map(card=>card.id)).size).toBe(cards.length);
+        expect(cards.length+4*(state.playerSets.length+state.chefSets.length)).toBe(12);
+      }
+      expect(state.winner).not.toBeNull();
+      expect(state.turns).toBeLessThanOrEqual(60);
+    }
+  });
+});
+
+describe("Kitchen Stacks validated local snapshot", () => {
+  test("preserves all remaining cards, progress, mistakes, hints and marker preference", () => {
+    let state=startSolitaire(()=>0.3);
+    state=stackSolitaireCard(state,"burger-3");
+    state=stackSolitaireCard(state,"burger-1");
+    state=stackSolitaireCard(state,"burger-2");
+    state={...state,hints:2};
+    const saved=createStacksSave(state,false)!;
+    expect(saved.moves).toBe(3);
+    expect(saved.mistakes).toBe(1);
+    expect(saved.cards.length).toBe(14);
+    expect(saved.progress.burger).toBe(2);
+    expect(saved.hints).toBe(2);
+    expect(saved.showReady).toBe(false);
+    expect(parseStacksSave(JSON.stringify(saved))).toEqual(saved);
+    for(const patch of [
+      {moves:2},{mistakes:-1},{hints:-1},{cards:saved.cards.slice(1)},
+      {cards:[...saved.cards,saved.cards[0]]},{progress:{...saved.progress,burger:4}},
+      {cards:saved.cards.map((card,i)=>i===0?{...card,rank:99}:card)},
+    ]) expect(parseStacksSave(JSON.stringify({...saved,...patch}))).toBeNull();
+    expect(parseStacksSave("invalid")).toBeNull();
   });
 });
