@@ -403,7 +403,7 @@ function RecipeRush() {
           </p>
         </div>
       </div>
-      <details className="md-recipe-hint" key={recipe} onToggle={(event) => {
+      <details className="md-recipe-hint" key={`${size}-${recipe}`} onToggle={(event) => {
         if (event.currentTarget.open && stage === "choosing") setHints(previous => previous.includes(recipe) ? previous : [...previous, recipe]);
       }}>
         <summary>
@@ -492,7 +492,9 @@ function RecipeRush() {
 function ArcadeHelp({ game }: { game?: ArcadeGameId | undefined }) {
   const [query, setQuery] = useState("");
   const inputId = useId();
+  const [expanded, setExpanded] = useState(false);
   const entries = findArcadeHelp(query, game);
+  const visible = query.trim() || expanded ? entries : entries.slice(0, 6);
   return (
     <section className="md-play-help" aria-labelledby={inputId + "-title"}>
       <div className="md-play-recommendations-heading">
@@ -502,16 +504,17 @@ function ArcadeHelp({ game }: { game?: ArcadeGameId | undefined }) {
       <label htmlFor={inputId}>Search questions and answers</label>
       <div className="md-play-search">
         <Search size={17} aria-hidden="true" />
-        <input id={inputId} type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Try hints, friends or save" />
-        {query && <button type="button" aria-label="Clear help search" onClick={() => setQuery("")}><X size={17} aria-hidden="true" /></button>}
+        <input id={inputId} type="search" value={query} onChange={event => { setQuery(event.target.value); setExpanded(false); }} placeholder="Try hints, friends or save" />
+        {query && <button type="button" aria-label="Clear help search" onClick={() => { setQuery(""); setExpanded(false); document.getElementById(inputId)?.focus(); }}><X size={17} aria-hidden="true" /></button>}
       </div>
       <p className="md-play-help-count" role="status">{entries.length} {entries.length === 1 ? "answer" : "answers"}</p>
-      {entries.length ? <div className="md-play-help-grid">{entries.map(entry => (
+      {entries.length ? <div className="md-play-help-grid">{visible.map(entry => (
         <details key={entry.id}>
           <summary>{entry.question}</summary><p>{entry.answer}</p>
           {entry.game && <Link to="/play/$gameId" params={{ gameId: entry.game }} search={{}}>Open game <ArrowRight size={15} aria-hidden="true" /></Link>}
         </details>
       ))}</div> : <p>No matching answers. Try another search or clear the search.</p>}
+      {!query.trim() && entries.length > 6 && <button type="button" className="md-play-button md-play-button--quiet" aria-expanded={expanded} style={{ marginTop: 12 }} onClick={() => setExpanded(value => !value)}>{expanded ? "Show fewer answers" : `Show all ${entries.length} answers`}</button>}
     </section>
   );
 }
