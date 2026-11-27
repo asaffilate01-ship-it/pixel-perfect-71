@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Check, ChefHat, RotateCcw, Shuffle, Undo2, X } from "lucide-react";
+import { Check, ChefHat, Lightbulb, RotateCcw, Shuffle, Undo2, X } from "lucide-react";
 import { useArcadeProgress } from "@/components/play/arcade-progress";
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import { createArcadeRoundId } from "@/lib/mealdeck-play-progress";
@@ -8,6 +8,8 @@ import {
   countSortedSkewers,
   createSkewerPuzzle,
   createSkewerState,
+  findSkewerHint,
+  type SkewerMove,
   isSkewerComplete,
   playSkewerMove,
   skewerDestinations,
@@ -31,6 +33,8 @@ export function SkewerSort() {
   const [foodCount, setFoodCount] = useState<SkewerFoodCount>(3);
   const [round, setRound] = useState<Round | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const [hint, setHint] = useState<SkewerMove | null>(null);
+  const [hintsUsed, setHintsUsed] = useState(0);
   const [focused, setFocused] = useState(0);
   const [message, setMessage] = useState("Select a skewer, then choose where its top food goes.");
   const skewerRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -70,12 +74,13 @@ export function SkewerSort() {
         game: "skewer-sort",
         result: "completed",
         moves: round.state.moves,
+        hints: hintsUsed,
         variant: `${round.puzzle.foodCount}-foods`,
       });
     }
     const frame = requestAnimationFrame(() => resultRef.current?.focus());
     return () => cancelAnimationFrame(frame);
-  }, [round, complete, recordCompletion]);
+  }, [round, complete, hintsUsed, recordCompletion]);
 
   function begin(puzzle?: SkewerPuzzle) {
     const nextPuzzle =
@@ -87,6 +92,8 @@ export function SkewerSort() {
     };
     setRound(next);
     setSelected(null);
+    setHint(null);
+    setHintsUsed(0);
     setFocused(
       Math.max(
         0,
@@ -106,6 +113,7 @@ export function SkewerSort() {
   }
 
   function cancel() {
+    setHint(null);
     setSelected(null);
     setMessage("Selection cleared. Choose a skewer with food.");
   }
@@ -119,6 +127,7 @@ export function SkewerSort() {
       return;
     }
     if (selected === null) {
+      setHint(null);
       const food = target.at(-1);
       if (food === undefined) {
         setMessage(`Skewer ${index + 1} is empty. Select a skewer with food first.`);
@@ -144,6 +153,7 @@ export function SkewerSort() {
     const food = round.state.skewers[selected]?.at(-1);
     const state = playSkewerMove(round.state, selected, index);
     setRound({ ...round, state });
+    setHint(null);
     setSelected(null);
     setMessage(
       `${food === undefined ? "Food" : FOODS[food]?.name} moved from skewer ${selected + 1} to ${index + 1}. Choose your next skewer.`,
@@ -156,9 +166,28 @@ export function SkewerSort() {
     const previous = round.state.history.at(-1);
     if (!previous) return;
     setRound({ ...round, state: undoSkewerMove(round.state) });
+    setHint(null);
     setSelected(null);
     setMessage("Last move undone. The move total is kept.");
     focusSkewer(previous.move.from);
+  }
+
+  function showHint() {
+    if (!round || complete) return;
+    const result = findSkewerHint(round.state.skewers, activeCount);
+    if (result.kind !== "move") {
+      setHint(null);
+      setSelected(null);
+      setMessage(result.kind === "budget" ? "No hint found within the search limit. Try undoing a move." :
+        result.kind === "no-solution" ? "No route to a sorted board was found. Undo a move or restart." : "No hint needed for this board.");
+      return;
+    }
+    if (hint?.from !== result.move.from || hint.to !== result.move.to) {
+      setHintsUsed((value) => value + 1);
+    }
+    setHint(result.move);
+    setSelected(result.move.from);
+    setMessage(`Hint: move the top bite from skewer ${result.move.from + 1} to skewer ${result.move.to + 1}. A solution is ${result.remaining} moves away.`);
   }
 
   function handleKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -282,6 +311,7 @@ export function SkewerSort() {
               <dt>Plate</dt>
               <dd>{activeCount === 3 ? "Small" : "Full"}</dd>
             </div>
+            <div><dt>Hints used</dt><dd>{hintsUsed}</dd></div>
           </dl>
           <ul className="md-skewer-food-key" aria-label="Food symbols">
             {FOODS.slice(0, activeCount).map((food, index) => (
@@ -306,7 +336,8 @@ export function SkewerSort() {
                 .reverse()
                 .map((food) => FOODS[food]?.name.toLowerCase())
                 .join(", ");
-              const stateLabel = isSelected
+              const isHintTarget = hint?.to === index;
+              const stateLabel = isHintTarget ? "Hint destination" : isSelected
                 ? "Selected"
                 : canPlace
                   ? "Move here"
@@ -324,7 +355,7 @@ export function SkewerSort() {
                   ref={(element) => {
                     skewerRefs.current[index] = element;
                   }}
-                  className={`md-skewer-column${isSelected ? " is-selected" : ""}${canPlace ? " is-target" : ""}${sorted ? " is-sorted" : ""}`}
+                  className={`md-skewer-column${isSelected ? " is-selected" : ""}${canPlace ? " is-target" : ""}${sorted ? " is-sorted" : ""}${isHintTarget ? " is-hint-target" : ""}`}
                   tabIndex={focused === index ? 0 : -1}
                   disabled={complete}
                   aria-label={`Skewer ${index + 1}. ${contents ? `From top to bottom: ${contents}.` : "Empty."} ${stateLabel}.`}
@@ -378,6 +409,9 @@ export function SkewerSort() {
                   : "No moves are available. Undo your last move or restart the puzzle to try another route."}
               </p>
               <div className="md-game-actions md-skewer-actions">
+                <button type="button" className="md-game-button" onClick={showHint}>
+                  <Lightbulb size={17} aria-hidden="true" /> Hint
+                </button>
                 <button
                   type="button"
                   className="md-game-button"
@@ -418,7 +452,7 @@ export function SkewerSort() {
                 Every bite in its place.
               </h3>
               <p>
-                You sorted all {activeCount} foods in {round.state.moves} moves.
+                You sorted all {activeCount} foods in {round.state.moves} moves with {hintsUsed} {hintsUsed === 1 ? "hint" : "hints"}.
               </p>
               <div className="md-game-actions">
                 <button type="button" className="md-game-button is-primary" onClick={() => begin()}>
@@ -437,7 +471,7 @@ export function SkewerSort() {
             </div>
           )}
           <p className="md-game-footnote">
-            One top bite per move. Match the food or use an empty skewer. Undo keeps the move total.
+            One top bite per move. Hints suggest a legal route without moving a piece. Undo keeps the move total.
           </p>
         </>
       )}
