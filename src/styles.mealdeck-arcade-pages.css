@@ -422,3 +422,19 @@
   .md-arcade-shell .md-pairs-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .md-pairs-board[data-pair-count="8"] { gap: 6px; }
 }
+
+/* Searchable help and flexible question cards, with no hidden horizontal overflow. */
+.md-play-help { margin-top:24px; padding:clamp(16px,3vw,26px); border:1px solid #e3d6c5; border-radius:20px; background:#fffdf7; }
+.md-arcade-shell[data-focus="on"] .md-play-help { display:none; }
+.md-play-help > label { display:block; font-size:13px; font-weight:750; margin-bottom:8px; }
+.md-play-help .md-play-search { max-width:540px; }
+.md-play-help-count { color:#62594f; font-size:13px; margin:12px 0; }
+.md-play-help-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:10px; }
+.md-play-help-grid details { min-width:0; border:1px solid #e3d6c5; border-radius:12px; padding:0 14px; background:#fff6e8; }
+.md-play-help-grid summary { min-height:44px; padding:13px 0; cursor:pointer; font-weight:750; line-height:1.45; color:#241d17; }
+.md-play-help-grid details[open] { border-color:#a70e19; }
+.md-play-help-grid p { color:#62594f; font-size:14px; line-height:1.65; margin:0 0 14px; }
+.md-play-help-grid a { display:inline-flex; align-items:center; gap:6px; min-height:44px; color:#951018; font-weight:750; font-size:13px; }
+.md-arcade-shell .md-recipe-stats { grid-template-columns:repeat(4,minmax(0,1fr)); }
+@media(max-width:760px){ .md-play-help-grid { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:580px){ .md-arcade-shell .md-recipe-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .md-play-help input { font-size:16px; } }
