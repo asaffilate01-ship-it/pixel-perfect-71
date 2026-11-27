@@ -71,19 +71,105 @@ export const BRAND_FOODS: Record<BrandTheme, readonly [FoodArt, string][]> = {
   vyta: [["drink", "Fresh Juice"], ["cake", "Milk Cake"], ["fries", "Fries"], ["burger", "Burger"], ["paratha", "Paratha"], ["french-taco", "French Taco"]],
 };
 
+export const PAIR_COUNTS = [4, 6, 8] as const;
+export type PairCount = (typeof PAIR_COUNTS)[number];
+const EXTRA_PAIR_FOODS: readonly [FoodArt, string][] = [
+  ["paratha", "Paratha"], ["cheese", "Cheese"], ["lettuce", "Lettuce"],
+  ["drink", "Drink"], ["cake", "Cake"], ["fries", "Fries"],
+  ["salsa", "Salsa"], ["tortilla", "Tortilla"],
+];
+
 /** Shuffling changes only entertainment puzzles, never a reward or redemption. */
-export function makePairs(brand: BrandTheme = "mealdeck"): PairCard[] {
-  const foods = BRAND_FOODS[brand] ?? BRAND_FOODS.mealdeck;
-  const cards = foods.flatMap(([art, label], pair) => [
-    { id: pair * 2, food: art, art, label }, { id: pair * 2 + 1, food: art, art, label },
+export function makePairs(
+  brand: BrandTheme = "mealdeck",
+  count: PairCount = 6,
+  random: () => number = Math.random,
+): PairCard[] {
+  const original = BRAND_FOODS[brand] ?? BRAND_FOODS.mealdeck;
+  const pairCount = PAIR_COUNTS.includes(count) ? count : 6;
+  const foods = [...original];
+  for (const food of EXTRA_PAIR_FOODS) {
+    if (foods.length >= pairCount) break;
+    if (!foods.some(([art]) => art === food[0])) foods.push(food);
+  }
+  const cards = foods.slice(0, pairCount).flatMap(([art, label], pair) => [
+    { id: pair * 2, food: art, art, label },
+    { id: pair * 2 + 1, food: art, art, label },
   ]);
   for (let i = cards.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const sample = random();
+    const j = Math.min(i, Math.max(0, Number.isFinite(sample) ? Math.floor(sample * (i + 1)) : 0));
     const temp = cards[i]!;
     cards[i] = cards[j]!;
     cards[j] = temp;
   }
   return cards;
+}
+
+export type PairRound = {
+  cards: PairCard[];
+  flipped: number[];
+  matched: number[];
+  moves: number;
+  message: string;
+};
+
+export function createPairRound(cards: PairCard[] = []): PairRound {
+  return {
+    cards,
+    flipped: [],
+    matched: [],
+    moves: 0,
+    message: "Choose a card, then find its matching food.",
+  };
+}
+
+export function isPairRoundComplete(round: PairRound): boolean {
+  return round.cards.length > 0 && round.matched.length === round.cards.length;
+}
+
+/** Functional state updates make rapid taps and repeated card events safe. */
+export function revealPairCard(round: PairRound, id: number): PairRound {
+  const card = round.cards.find((item) => item.id === id);
+  if (!card || isPairRoundComplete(round) || round.flipped.length >= 2 ||
+      round.flipped.includes(id) || round.matched.includes(id)) return round;
+  const checking = round.flipped.length === 1;
+  return {
+    ...round,
+    flipped: [...round.flipped, id],
+    moves: round.moves + (checking ? 1 : 0),
+    message: checking ? "Checking your two cards…" : card.label + " revealed. Find its matching card.",
+  };
+}
+
+/** Only settle the two cards in the current round. */
+export function resolvePairTurn(round: PairRound): PairRound {
+  if (round.flipped.length !== 2) return round;
+  const [first, second] = round.flipped;
+  const a = round.cards.find((item) => item.id === first);
+  const b = round.cards.find((item) => item.id === second);
+  if (!a || !b || first === undefined || second === undefined || first === second) return round;
+  const match = a.food === b.food;
+  return {
+    ...round,
+    flipped: [],
+    matched: match ? [...round.matched, first, second] : round.matched,
+    message: match ? a.label + " pair found. Choose your next card." : "No match this time. Remember those foods and try again.",
+  };
+}
+
+/** Best moves is a local entertainment statistic, scoped to one deck and size. */
+export function parsePairBest(raw: string | null, count: PairCount): number | null {
+  if (raw === null || !/^\d{1,6}$/.test(raw)) return null;
+  const moves = Number(raw);
+  return Number.isSafeInteger(moves) && moves >= count && moves <= 100_000 ? moves : null;
+}
+
+export function choosePairBest(previous: number | null, moves: number, count: PairCount): number | null {
+  const candidate = parsePairBest(String(moves), count);
+  const validPrevious = previous === null ? null : parsePairBest(String(previous), count);
+  if (candidate === null) return validPrevious;
+  return validPrevious === null ? candidate : Math.min(validPrevious, candidate);
 }
 
 export const INGREDIENTS = [

@@ -378,3 +378,47 @@
   }
   .md-arcade-shell .md-recipe-actions { flex-direction: column-reverse; }
 }
+
+/* Food Pairs: consistent touch targets and independent board-size choices. */
+.md-pairs-modes {
+  border: 0;
+  padding: 0;
+  margin: 0 0 16px;
+  min-width: 0;
+}
+.md-pairs-modes legend {
+  font-size: 13px;
+  font-weight: 750;
+  color: #241d17;
+  margin-bottom: 8px;
+}
+.md-pairs-modes > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.md-pairs-modes .md-play-button {
+  flex-direction: column;
+  gap: 3px;
+  min-height: 58px;
+  padding: 8px 4px;
+  text-align: center;
+}
+.md-pairs-modes .md-play-button[aria-pressed="true"] {
+  background: #fbe5d9;
+  border-color: #a70e19;
+  color: #86131b;
+}
+.md-pairs-modes .md-play-button small {
+  font-size: 11px;
+  font-weight: 500;
+}
+.md-pairs-modes p { color: #62594f; font-size: 12px; margin: 8px 0 0; }
+.md-arcade-shell .md-pairs-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.md-pairs-board[data-pair-count="4"] { max-width: 440px; }
+.md-pairs-board[data-pair-count="8"] { max-width: 560px; }
+.md-pair-card { touch-action: manipulation; }
+@media (max-width: 580px) {
+  .md-arcade-shell .md-pairs-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md-pairs-board[data-pair-count="8"] { gap: 6px; }
+}
