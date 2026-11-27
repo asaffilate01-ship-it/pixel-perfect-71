@@ -253,3 +253,28 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* A deliberate swipe area, not a page-wide scroll lock. */
+.md-snack__board { touch-action: none; }
+.md-snack__direction { touch-action: manipulation; }
+.md-snack .md-game-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.md-snack__saved {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  margin-top: 14px;
+  border: 1px solid #d4be9c;
+  border-radius: 12px;
+  background: #fff8eb;
+}
+.md-snack__saved > strong { color: #951018; }
+.md-snack__saved > span, .md-snack__saved > small, .md-snack__save-message {
+  color: #62594f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.md-snack__save-message { margin: 14px 0 0; }
+@media (max-width: 580px) {
+  .md-snack .md-game-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md-snack__saved .md-game-button { width: 100%; }
+}
