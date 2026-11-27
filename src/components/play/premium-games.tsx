@@ -19,6 +19,11 @@ import {
   CHAOS_COLOURS,
   CHAOS_SUIT_NAMES,
   canPlayChaos,
+  chooseChaosMove,
+  CHAOS_DIFFICULTIES,
+  CHAOS_TURN_LIMIT,
+  type ChaosDifficulty,
+  type ChaosAdvice,
   drawChaos,
   playChaos,
   startChaos,
@@ -29,14 +34,19 @@ import {
 import {
   askGoDish,
   createBrandSnapRounds,
+  createSnapSession,
+  answerSnap,
+  advanceSnap,
+  snapStatistics,
+  SNAP_LENGTHS,
+  type SnapLength,
+  type SnapSession,
   drawGoDishIfEmpty,
-  evaluateSnap,
   isFullHouse,
   makeFullHousePuzzle,
   stackSolitaireCard,
   startGoDish,
   startSolitaire,
-  type BrandSnapRound,
   type FullHouseCard,
   type GoDishState,
   type SolitaireState,
@@ -264,21 +274,25 @@ function chaosCardDescription(card: ChaosCard) {
 function ChaosPlayingCard({
   card,
   playable = false,
+  hinted = false,
+  suspended = false,
   finished = false,
   onClick,
 }: {
   card: ChaosCard;
   playable?: boolean;
+  hinted?: boolean;
+  suspended?: boolean;
   finished?: boolean;
   onClick?: () => void;
 }) {
   const description = chaosCardDescription(card);
   const suit = card.suit === "wild" ? "Any food" : CHAOS_SUIT_NAMES[card.suit];
-  const className = `md-card-game__food-card md-card-game__chaos-card ${playable ? "is-ready" : ""}`;
+  const className = `md-card-game__food-card md-card-game__chaos-card ${playable ? "is-ready" : ""} ${hinted ? "is-hinted" : ""}`;
   const style = {
     "--food-color": card.suit === "wild" ? "#26221f" : CHAOS_COLOURS[card.suit],
   } as CSSProperties;
-  const status = finished ? "Round over" : playable ? "Play this card" : "No match";
+  const status = finished ? "Round over" : hinted ? "Suggested card" : playable ? "Play this card" : "No match";
   const face = (
     <>
       <span className="md-card-game__card-rank">
@@ -305,8 +319,9 @@ function ChaosPlayingCard({
       type="button"
       className={className}
       style={style}
-      disabled={!playable}
+      disabled={!playable || suspended}
       data-card-action=""
+      data-card-id={card.id}
       onClick={onClick}
       aria-label={`${suit}, ${description}. ${status}.`}
     >
@@ -324,20 +339,34 @@ function ChaosPlayingCard({
   );
 }
 
-export function KitchenChaos() {
+export function KitchenChaos({ suspended = false }: { suspended?: boolean }) {
   const [state, setState] = useState<ChaosState | null>(null);
   const [choice, setChoice] = useState<FoodSuit>("burger");
+  const [difficulty, setDifficulty] = useState<ChaosDifficulty>("classic");
+  const [playableOnly, setPlayableOnly] = useState(false);
+  const [advice, setAdvice] = useState<ChaosAdvice | null>(null);
+  const difficultyId = useId();
   const choiceId = useId();
   const { regionRef, requestFocus } = useNextActionFocus(state);
   useEffect(() => {
     setState(startChaos());
   }, []);
   const restart = () => {
-    setState(startChaos());
+    if (suspended) return;
+    setState(startChaos(Math.random, difficulty));
     setChoice("burger");
+    setPlayableOnly(false);
+    setAdvice(null);
   };
   const top = state?.played[state.played.length - 1];
   const playableCount = state?.player.filter((card) => canPlayChaos(card, state)).length ?? 0;
+  const visibleHand = state ? state.player.filter(card => !playableOnly || state.winner !== null || canPlayChaos(card, state)) : [];
+  function showAdvice() {
+    if (!state || suspended || state.winner) return;
+    const next = chooseChaosMove(state.player, top, state.activeSuit, "expert", state.chef.length);
+    setAdvice(next);
+    if (next && state.player.some(card => card.id === next.cardId && card.suit === "wild")) setChoice(next.declaredSuit);
+  }
   return (
     <section className="md-card-game" aria-label="Kitchen Chaos" ref={regionRef}>
       <Intro
@@ -351,8 +380,14 @@ export function KitchenChaos() {
           "Your Rush +2 gives the chef two cards and another move to you. Your Prep Delay also lets you play again.",
           "Otherwise the chef responds automatically. The chef's Rush +2 adds two cards to your hand; their Prep Delay adds one.",
           "Drawing adds a card to your hand and ends your move. Used cards refill an empty draw pile. The first empty hand wins.",
+          "Choose the house chef’s strategy. A hint suggests a legal card without playing it. If neither hand clears within 120 player moves, the round is a draw.",
         ]}
       />
+      <div className="md-card-game__settings"><label htmlFor={difficultyId}>House chef difficulty</label><select id={difficultyId} value={difficulty} disabled={suspended} onChange={event => {
+        const value = event.target.value as ChaosDifficulty;
+        if (!CHAOS_DIFFICULTIES.includes(value)) return;
+        setDifficulty(value); setState(startChaos(Math.random, value)); setChoice("burger"); setAdvice(null); setPlayableOnly(false);
+      }}><option value="relaxed">Relaxed · first legal match</option><option value="classic">Classic · balanced strategy</option><option value="expert">Expert · tactical chef</option></select><p>Changing difficulty deals a new hand. The chef uses its own cards and public game information.</p></div>
       {!state || !top ? (
         <p className="md-card-game__loading" role="status">
           Preparing your cards…
@@ -364,6 +399,7 @@ export function KitchenChaos() {
               { label: "Your cards", value: state.player.length },
               { label: "Chef's cards", value: state.chef.length },
               { label: "Moves played", value: state.turns },
+              { label: "Playable cards", value: playableCount },
             ]}
           />
           <Result
@@ -372,7 +408,7 @@ export function KitchenChaos() {
                 ? "You cleared your hand!"
                 : state.winner === "chef"
                   ? "The house chef finished first"
-                  : "Your move"
+                  : state.winner === "draw" ? "Round drawn" : "Your move"
             }
             message={
               state.winner
@@ -425,8 +461,10 @@ export function KitchenChaos() {
                 type="button"
                 className="md-card-game__button md-card-game__button--secondary"
                 data-next-action=""
-                disabled={state.winner !== null}
+                disabled={state.winner !== null || suspended}
                 onClick={() => {
+                  if (suspended) return;
+                  setAdvice(null);
                   requestFocus();
                   setState((current) => (current ? drawChaos(current) : current));
                 }}
@@ -444,7 +482,8 @@ export function KitchenChaos() {
               <select
                 id={choiceId}
                 value={choice}
-                onChange={(event) => setChoice(event.target.value as FoodSuit)}
+                disabled={suspended}
+                onChange={(event) => { setAdvice(null); setChoice(event.target.value as FoodSuit); }}
               >
                 {CHAOS_SUITS.map((suit) => (
                   <option value={suit} key={suit}>
@@ -456,17 +495,23 @@ export function KitchenChaos() {
           )}
           <div className="md-card-game__section-heading">
             <h3>Your hand</h3>
-            {!state.winner && <span>Highlighted cards can be played</span>}
+            {!state.winner && <span>{playableCount} of {state.player.length} cards are playable</span>}
           </div>
-          {state.player.length ? (
+          {!state.winner && <div className="md-card-game__hand-tools"><button type="button" className="md-card-game__button md-card-game__button--secondary" aria-pressed={playableOnly} disabled={suspended} onClick={() => setPlayableOnly(value => !value)}>{playableOnly ? "Show all cards" : "Show playable only"}</button><button type="button" className="md-card-game__button md-card-game__button--secondary" onClick={showAdvice} disabled={suspended || !playableCount}><Lightbulb size={16} aria-hidden="true" /> Suggest a card</button><span>{state.turns} / {CHAOS_TURN_LIMIT} moves</span></div>}
+          {advice && !state.winner && <p className="md-card-game__advice" role="status">{advice.reason} {state.player.some(card => card.id === advice.cardId && card.suit === "wild") ? "Suggested food: " + CHAOS_SUIT_NAMES[advice.declaredSuit] + "." : ""} Choose the suggested card to play it.</p>}
+          {visibleHand.length ? (
             <ul className="md-card-game__card-grid" aria-label="Your cards">
-              {state.player.map((card) => (
+              {visibleHand.map((card) => (
                 <li key={card.id}>
                   <ChaosPlayingCard
                     card={card}
                     playable={canPlayChaos(card, state)}
+                    hinted={advice?.cardId === card.id}
+                    suspended={suspended}
                     finished={state.winner !== null}
                     onClick={() => {
+                      if (suspended) return;
+                      setAdvice(null);
                       requestFocus();
                       setState((current) =>
                         current ? playChaos(current, card.id, choice) : current,
@@ -477,7 +522,7 @@ export function KitchenChaos() {
               ))}
             </ul>
           ) : (
-            <p className="md-card-game__empty">Your hand is empty. Round won.</p>
+            <p className="md-card-game__empty">{state.player.length ? "No playable cards. Draw to continue, or show your full hand." : "Your hand is empty. Round won."}</p>
           )}
         </>
       )}
@@ -486,156 +531,97 @@ export function KitchenChaos() {
   );
 }
 
-export function BrandSnap() {
-  const [rounds, setRounds] = useState<BrandSnapRound[]>([]);
-  const [round, setRound] = useState(0);
-  const [correct, setCorrect] = useState(0);
-  const [last, setLast] = useState<{ correct: boolean; message: string } | null>(null);
-  const { regionRef, requestFocus } = useNextActionFocus(
-    `${round}-${last ? "answered" : "choose"}`,
-  );
-  const restart = () => {
-    setRounds(createBrandSnapRounds(brands.map((brand) => brand.id)));
-    setRound(0);
-    setCorrect(0);
-    setLast(null);
+export function BrandSnap({ suspended = false }: { suspended?: boolean }) {
+  const [length, setLength] = useState<SnapLength>(12);
+  const [session, setSession] = useState<SnapSession>(() => createSnapSession([]));
+  const { regionRef, requestFocus } = useNextActionFocus(session);
+  const { rounds, index: round, answers } = session;
+  const stats = snapStatistics(session);
+  const restart = (nextLength: SnapLength = length) => {
+    if (suspended) return;
+    setLength(nextLength);
+    setSession(createSnapSession(createBrandSnapRounds(brands.map(brand => brand.id), nextLength)));
   };
   useEffect(() => {
-    setRounds(createBrandSnapRounds(brands.map((brand) => brand.id)));
+    setSession(createSnapSession(createBrandSnapRounds(brands.map(brand => brand.id))));
   }, []);
   const current = rounds[round];
   const finished = rounds.length > 0 && round >= rounds.length;
   const left = current ? brandMap[current.left] : undefined;
   const right = current ? brandMap[current.right] : undefined;
-  const answered = Math.min(round + (last ? 1 : 0), rounds.length);
+  const last = answers[round];
+  const mistakes = answers.filter(answer => !answer.correct);
   function submit(snap: boolean) {
-    if (!current || last || !left || !right) return;
-    const result = evaluateSnap(current, snap);
-    if (result) setCorrect((value) => value + 1);
+    if (!current || last || !left || !right || suspended) return;
     requestFocus();
-    setLast({
-      correct: result,
-      message: current.match
-        ? `Both cards show ${left.name}. That's a matching pair.`
-        : `${left.name} and ${right.name} are different brands.`,
-    });
+    setSession(value => answerSnap(value, round, snap));
   }
   return (
-    <section className="md-card-game" aria-label="MealDeck Brand Snap" ref={regionRef}>
+    <section className="md-card-game md-card-game--snap" aria-label="MealDeck Brand Snap" ref={regionRef}>
       <Intro
         title="MealDeck Brand Snap"
         goal="Same brand or different brands? Read the two cards and make your call."
-        mode="12 pairs · No time limit"
-        onReset={restart}
+        mode={`${length} pairs · No time limit`}
+        onReset={() => restart()}
         rules={[
           "Choose Same brand when both cards show the same brand. Choose Different brands when they do not.",
-          "Each correct answer adds one to your score. You can check the answer before moving to the next pair.",
-          "There are 12 pairs and no timer. See how many you recognise.",
+          "Each correct answer adds one to your score. Check the answer before advancing.",
+          "Choose a 6, 12 or 24-pair challenge. Every round has equally many matching and different pairs, and no timer.",
+          "Review the pairs you missed at the end. Scores are for fun, not rewards.",
         ]}
       />
-      {rounds.length > 0 && (
-        <>
-          <Stats
-            items={[
-              {
-                label: finished ? "Pairs completed" : "Current pair",
-                value: `${Math.min(round + 1, rounds.length)} / ${rounds.length}`,
-              },
-              { label: "Correct answers", value: correct },
-            ]}
-          />
-          <Progress label="Pairs answered" value={answered} max={rounds.length} />
-        </>
-      )}
-      {finished ? (
-        <>
-          <Result
-            title={correct === rounds.length ? "A perfect round!" : "Round complete"}
-            message={`You recognised ${correct} of ${rounds.length} pairs correctly — ${Math.round((correct / rounds.length) * 100)}% accuracy.`}
-            success={correct === rounds.length}
-            complete
-          />
+      <fieldset className="md-card-game__modes">
+        <legend>Choose a challenge</legend>
+        <div>{SNAP_LENGTHS.map(count => (
+          <button type="button" key={count} className="md-card-game__button md-card-game__button--secondary" aria-pressed={length === count} disabled={suspended} onClick={() => { if (length !== count) restart(count); }}>
+            <strong>{count === 6 ? "Quick" : count === 12 ? "Classic" : "Marathon"}</strong><small>{count} pairs</small>
+          </button>
+        ))}</div>
+        <p>Changing the challenge starts a new quiz.</p>
+      </fieldset>
+      {rounds.length > 0 && <>
+        <Stats items={[
+          { label: finished ? "Pairs completed" : "Current pair", value: `${Math.min(round + 1, rounds.length)} / ${rounds.length}` },
+          { label: "Correct answers", value: stats.correct },
+          { label: "Accuracy", value: stats.answered ? stats.accuracy + "%" : "—" },
+          { label: "Current streak", value: stats.streak },
+        ]} />
+        <Progress label="Pairs answered" value={stats.answered} max={rounds.length} />
+      </>}
+      {finished ? <>
+        <Result title={stats.correct === rounds.length ? "A perfect round!" : "Round complete"}
+          message={`You recognised ${stats.correct} of ${rounds.length} pairs correctly — ${stats.accuracy}% accuracy. Longest streak: ${stats.bestStreak}.`}
+          success={stats.correct === rounds.length} complete />
+        {mistakes.length > 0 && <details className="md-card-game__rules md-snap-review">
+          <summary><span><BookOpen size={17} aria-hidden="true" /> Review {mistakes.length} missed {mistakes.length === 1 ? "pair" : "pairs"}</span><ChevronDown size={17} aria-hidden="true" /></summary>
+          <ol>{mistakes.map(answer => {
+            const pair = rounds[answer.index]!;
+            return <li key={answer.index}><strong>Pair {answer.index + 1}: {brandMap[pair.left]?.name} / {brandMap[pair.right]?.name}</strong><span>Your answer: {answer.calledSnap ? "Same brand" : "Different brands"}. Correct answer: {pair.match ? "Same brand" : "Different brands"}.</span></li>;
+          })}</ol>
+        </details>}
+        <div className="md-card-game__actions">
+          <button type="button" className="md-card-game__button" data-next-action="" disabled={suspended} onClick={() => { requestFocus(); restart(); }}>Play again <RotateCcw size={16} aria-hidden="true" /></button>
+        </div>
+      </> : current && left && right ? <>
+        <div className="md-card-game__snap-board" aria-label={`Pair ${round + 1}`}>
+          {[left, right].map((brand, index) => <div className="md-card-game__brand-card" key={index}>
+            <span className="md-card-game__small-label">{index === 0 ? "First card" : "Second card"}</span>
+            <img src={brand.logo} alt="" draggable={false} /><strong>{brand.name}</strong>
+          </div>)}
+        </div>
+        <div className="md-card-game__actions md-card-game__actions--equal">
+          <button type="button" className="md-card-game__button" data-card-action="" disabled={!!last || suspended} onClick={() => submit(true)}>Snap! Same brand</button>
+          <button type="button" className="md-card-game__button md-card-game__button--secondary" data-card-action="" disabled={!!last || suspended} onClick={() => submit(false)}>Different brands</button>
+        </div>
+        {last ? <>
+          <Result title={last.correct ? "Correct!" : "Not this time"} message={current.match ? `Both cards show ${left.name}. That's a matching pair.` : `${left.name} and ${right.name} are different brands.`} success={last.correct} />
           <div className="md-card-game__actions">
-            <button
-              type="button"
-              className="md-card-game__button"
-              data-next-action=""
-              onClick={() => {
-                requestFocus();
-                restart();
-              }}
-            >
-              Play again <RotateCcw size={16} aria-hidden="true" />
+            <button type="button" className="md-card-game__button" data-next-action="" disabled={suspended} onClick={() => { requestFocus(); setSession(value => advanceSnap(value, round)); }}>
+              {round === rounds.length - 1 ? "See your result" : "Next pair"} <ArrowRight size={16} aria-hidden="true" />
             </button>
           </div>
-        </>
-      ) : left && right ? (
-        <>
-          <div className="md-card-game__snap-board" aria-label={`Pair ${round + 1}`}>
-            {[left, right].map((brand, index) => (
-              <div className="md-card-game__brand-card" key={index}>
-                <span className="md-card-game__small-label">
-                  {index === 0 ? "First card" : "Second card"}
-                </span>
-                <img src={brand.logo} alt="" draggable={false} />
-                <strong>{brand.name}</strong>
-              </div>
-            ))}
-          </div>
-          <div className="md-card-game__actions md-card-game__actions--equal">
-            <button
-              type="button"
-              className="md-card-game__button"
-              data-card-action=""
-              disabled={!!last}
-              onClick={() => submit(true)}
-            >
-              Snap! Same brand
-            </button>
-            <button
-              type="button"
-              className="md-card-game__button md-card-game__button--secondary"
-              data-card-action=""
-              disabled={!!last}
-              onClick={() => submit(false)}
-            >
-              Different brands
-            </button>
-          </div>
-          {last ? (
-            <>
-              <Result
-                title={last.correct ? "Correct!" : "Not this time"}
-                message={last.message}
-                success={last.correct}
-              />
-              <div className="md-card-game__actions">
-                <button
-                  type="button"
-                  className="md-card-game__button"
-                  data-next-action=""
-                  onClick={() => {
-                    requestFocus();
-                    setRound((value) => value + 1);
-                    setLast(null);
-                  }}
-                >
-                  {round === rounds.length - 1 ? "See your result" : "Next pair"}{" "}
-                  <ArrowRight size={16} aria-hidden="true" />
-                </button>
-              </div>
-            </>
-          ) : (
-            <p className="md-card-game__hint">
-              Take your time. Choose one answer to reveal the result.
-            </p>
-          )}
-        </>
-      ) : (
-        <p className="md-card-game__loading" role="status">
-          Preparing your brand cards…
-        </p>
-      )}
+        </> : <p className="md-card-game__hint">Take your time. Choose one answer to reveal the result.</p>}
+      </> : <p className="md-card-game__loading" role="status">Preparing your brand cards…</p>}
       <LocalNote />
     </section>
   );
