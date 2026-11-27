@@ -24,11 +24,21 @@ import {
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import {
   chooseFourMove,
+  fourWinningCells,
+  advanceFeastRound,
+  createFeastRound,
+  createFeastSave,
+  parseFeastSave,
+  undoFeastRound,
+  FEAST_SAVE_KEY,
+  FEAST_UNDO_LIMIT,
+  type FeastRound,
+  type FeastSave,
+  type FourDifficulty,
   dailySeed,
   dropFour,
   fourResult,
   mergeOver,
-  moveMerge,
   puzzleMoves,
   puzzleSolved,
   seededRandom,
@@ -38,7 +48,6 @@ import {
   startPuzzle,
   type Direction,
   type FourBoard,
-  type MergeState,
 } from "@/lib/arcade-games";
 import "@/styles.mealdeck-arcade-games.css";
 
@@ -254,44 +263,94 @@ function DirectionPad({
   );
 }
 
-export function Feast2048() {
-  const [state, setState] = useState<MergeState | null>(null);
-  const [previous, setPrevious] = useState<MergeState | null>(null);
-  const [message, setMessage] = useState("Slide in any direction to make your first move.");
+export function Feast2048({ suspended = false }: { suspended?: boolean }) {
+  const [round, setRound] = useState<FeastRound | null>(null);
+  const [saved, setSaved] = useState<FeastSave | null>(null);
+  const [saveMessage, setSaveMessage] = useState("");
   const boardRef = useRef<HTMLDivElement>(null);
   const pointerStart = useRef<{ x: number; y: number; id: number } | null>(null);
   const descriptionId = useId();
+  const state = round?.state ?? null;
   const best = useBest("2048", state?.score ?? 0);
   const over = state ? mergeOver(state.board) : false;
   const highest = state ? Math.max(...state.board) : 0;
   const won = highest >= 2048;
+
+  useEffect(() => {
+    function refresh() {
+      try {
+        const raw = localStorage.getItem(FEAST_SAVE_KEY);
+        const next = parseFeastSave(raw);
+        setSaved(next);
+        if (raw && !next) setSaveMessage("A saved feast could not be read. A new save can replace it.");
+      } catch {
+        setSaveMessage("This browser cannot save games. You can still play.");
+      }
+    }
+    refresh();
+    function sync(event: StorageEvent) {
+      if (event.key === FEAST_SAVE_KEY || event.key === null) refresh();
+    }
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
+  useEffect(() => {
+    if (suspended) pointerStart.current = null;
+  }, [suspended]);
+
   function start() {
+    if (suspended) return;
     pointerStart.current = null;
-    setState(startMerge());
-    setPrevious(null);
-    setMessage("Two dishes on the board. Slide equal numbers together to begin.");
+    setRound(createFeastRound(startMerge()));
+    setSaveMessage("");
     focusBoard(boardRef);
   }
   function move(direction: Direction) {
-    if (!state || over) return;
-    const next = moveMerge(state, direction);
-    if (next === state) {
-      setMessage(`No tiles can slide ${direction}. Try another direction.`);
-      return;
-    }
-    setPrevious(state);
-    setState(next);
-    const gained = next.score - state.score;
-    setMessage(
-      `Moved ${direction}. ${gained ? `${gained} points added. ` : ""}Score ${next.score}; move ${next.moves}.`,
-    );
+    if (suspended) return;
+    // Sample outside the updater: replaying the updater never spawns a different tile.
+    const seed = Math.floor(Math.random() * 0x1_0000_0000);
+    setRound(current => current ? advanceFeastRound(current, direction, seed) : current);
   }
   function undo() {
-    if (!previous) return;
-    setState(previous);
-    setPrevious(null);
-    setMessage("Last move undone. Try a different direction.");
+    if (suspended) return;
+    setRound(current => current ? undoFeastRound(current) : current);
     focusBoard(boardRef);
+  }
+  function saveAndExit() {
+    if (!round || suspended) return;
+    const snapshot = createFeastSave(round);
+    if (!snapshot) {
+      setSaveMessage("This feast cannot be saved. You can continue playing.");
+      return;
+    }
+    try {
+      localStorage.setItem(FEAST_SAVE_KEY, JSON.stringify(snapshot));
+      setSaved(snapshot);
+      pointerStart.current = null;
+      setRound(null);
+      setSaveMessage("Feast saved in this browser, including its recent undo history.");
+    } catch {
+      setSaveMessage("Could not save the feast. Your current board is still here.");
+    }
+  }
+  function loadSaved() {
+    if (!saved || suspended) return;
+    try {
+      const current = parseFeastSave(localStorage.getItem(FEAST_SAVE_KEY));
+      if (!current || JSON.stringify(current) !== JSON.stringify(saved)) {
+        setSaved(current);
+        setSaveMessage("The saved feast changed in another tab. Check it before loading.");
+        return;
+      }
+      localStorage.removeItem(FEAST_SAVE_KEY);
+      setSaved(null);
+      setRound({ state: current.state, history: current.history, message: "Saved feast loaded. Make your next move." });
+      setSaveMessage("");
+      focusBoard(boardRef);
+    } catch {
+      setSaveMessage("Could not load the saved feast. Try again or start a fresh one.");
+    }
   }
   return (
     <Frame
@@ -303,113 +362,100 @@ export function Feast2048() {
       rules={[
         "Slide the whole board up, down, left or right. Equal numbers combine once per move.",
         "Every valid move adds a new tile. Keep some empty spaces so you have room to merge.",
-        "Reach 2048, then keep playing if you like. You can undo your most recent move.",
+        "Reach 2048, then keep playing. Undo up to five recent moves, or save and exit to continue another time.",
       ]}
       keyboard="Tab to the board and use the arrow keys. The labelled direction buttons work with Enter or Space. You can also swipe the board."
     >
-      <Stats
-        items={[
+      <div className="md-feast-stats">
+        <Stats items={[
           { label: "Score", value: state?.score ?? 0 },
           { label: "Device best", value: best },
           { label: "Moves", value: state?.moves ?? 0 },
-        ]}
-      />
+          { label: "Highest tile", value: highest },
+        ]} />
+      </div>
       {!state && (
-        <Start title="Build your feast" action="Start merging" onStart={start}>
-          Two matching 2s make a 4. Keep combining and see how far you can go. There’s no timer.
-        </Start>
+        <>
+          <Start title="Build your feast" action="Start merging" onStart={start}>
+            Two matching 2s make a 4. Keep combining and see how far you can go. There’s no timer.
+          </Start>
+          {saved && (
+            <div className="md-feast-save">
+              <div><strong>Saved feast</strong><p>{saved.state.score.toLocaleString()} points · {saved.state.moves} moves · {saved.history.length} undo steps</p></div>
+              <button type="button" className="md-game-button is-primary" onClick={loadSaved} disabled={suspended}>
+                <Play size={17} aria-hidden="true" /> Load saved feast
+              </button>
+              <small>One local save slot. Loading uses the slot; save and exit again to keep your progress.</small>
+            </div>
+          )}
+        </>
       )}
-      {state && (
+      {state && round && (
         <>
           <Status tone={won ? "success" : "neutral"}>
-            {over
-              ? `No moves left. Your score is ${state.score}. Undo or start a new feast.`
-              : won
-                ? `2048 served! ${message} Keep going for a bigger feast.`
-                : message}
+            {over ? `No moves left. Your score is ${state.score}. Undo or start a new feast.` :
+              won ? `2048 served! ${round.message} Keep going for a bigger feast.` : round.message}
           </Status>
           <div className="md-game-play-layout">
-            <div
-              className="md-merge-board"
-              ref={boardRef}
-              tabIndex={0}
-              role="group"
-              aria-label="Feast 2048 board"
-              aria-describedby={descriptionId}
-              onPointerDown={(event) => {
-                if (!event.isPrimary || event.button !== 0 || over) return;
-                pointerStart.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
-                event.currentTarget.setPointerCapture(event.pointerId);
-              }}
-              onPointerCancel={() => {
-                pointerStart.current = null;
-              }}
-              onLostPointerCapture={() => {
-                pointerStart.current = null;
-              }}
-              onPointerUp={(event) => {
-                const start = pointerStart.current;
-                pointerStart.current = null;
-                if (!start || start.id !== event.pointerId) return;
-                const dx = event.clientX - start.x,
-                  dy = event.clientY - start.y;
-                if (Math.max(Math.abs(dx), Math.abs(dy)) < 28) return;
-                move(
-                  Math.abs(dx) > Math.abs(dy)
-                    ? dx > 0
-                      ? "right"
-                      : "left"
-                    : dy > 0
-                      ? "down"
-                      : "up",
-                );
-              }}
-              onKeyDown={(event) => {
-                const direction = ARROWS[event.key];
-                if (!direction || event.altKey || event.ctrlKey || event.metaKey) return;
-                event.preventDefault();
-                if (!event.repeat) move(direction);
-              }}
-            >
-              <p className="md-game-sr-only" id={descriptionId}>
-                {boardDescription(state.board, 4)} Arrow keys slide the board.
-              </p>
-              {state.board.map((value, index) => (
-                <div
-                  key={index}
-                  aria-hidden="true"
-                  className={`md-merge-tile ${value ? "is-filled" : ""} ${value >= 128 ? "is-high" : ""} ${value >= 10000 ? "is-long" : ""}`}
-                >
-                  {value > 0 && (
-                    <>
-                      <Food index={Math.log2(value) - 1} />
-                      <strong>{value}</strong>
-                    </>
-                  )}
-                </div>
-              ))}
+            <div>
+              <div className="md-feast-goal"><span>Goal: 2048</span><strong>{won ? "Reached!" : highest + " / 2048"}</strong></div>
+              <progress className="md-feast-progress" value={Math.min(highest, 2048)} max={2048} aria-label="Highest tile towards 2048" />
+              <div
+                className="md-merge-board"
+                data-interactive={!over && !suspended ? "yes" : "no"}
+                ref={boardRef}
+                tabIndex={0}
+                role="group"
+                aria-label="Feast 2048 board"
+                aria-describedby={descriptionId}
+                onPointerDown={(event) => {
+                  if (!event.isPrimary || event.button !== 0 || over || suspended) return;
+                  pointerStart.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                }}
+                onPointerCancel={() => { pointerStart.current = null; }}
+                onLostPointerCapture={() => { pointerStart.current = null; }}
+                onPointerUp={(event) => {
+                  const start = pointerStart.current;
+                  pointerStart.current = null;
+                  if (!start || start.id !== event.pointerId || suspended) return;
+                  const dx = event.clientX - start.x, dy = event.clientY - start.y;
+                  const x = Math.abs(dx), y = Math.abs(dy);
+                  if (Math.max(x, y) < 28 || Math.max(x, y) < Math.min(x, y) * 1.3) return;
+                  move(x > y ? dx > 0 ? "right" : "left" : dy > 0 ? "down" : "up");
+                }}
+                onKeyDown={(event) => {
+                  const direction = ARROWS[event.key];
+                  if (!direction || event.altKey || event.ctrlKey || event.metaKey || suspended) return;
+                  event.preventDefault();
+                  if (!event.repeat) move(direction);
+                }}
+              >
+                <p className="md-game-sr-only" id={descriptionId}>{boardDescription(state.board, 4)} Arrow keys slide the board.</p>
+                {state.board.map((value, index) => (
+                  <div key={index} aria-hidden="true" data-tier={value === 0 ? 0 : Math.min(11, Math.log2(value))}
+                    className={`md-merge-tile ${value ? "is-filled" : ""} ${value >= 128 ? "is-high" : ""} ${value >= 10000 ? "is-long" : ""}`}>
+                    {value > 0 && <div className="md-feast-tile-face" key={value}><Food index={Math.log2(value) - 1} /><strong>{value}</strong></div>}
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="md-game-side-controls">
               <p className="md-game-control-label">Slide the board</p>
-              <DirectionPad move={move} canMove={() => !over} />
-              <button type="button" className="md-game-button" disabled={!previous} onClick={undo}>
-                <Undo2 size={18} aria-hidden="true" /> Undo last move
+              <DirectionPad move={move} canMove={() => !over && !suspended} />
+              <button type="button" className="md-game-button" disabled={!round.history.length || suspended} onClick={undo}>
+                <Undo2 size={18} aria-hidden="true" /> Undo ({round.history.length}/{FEAST_UNDO_LIMIT})
               </button>
-              <p className="md-game-hint">
-                Highest tile <strong>{highest}</strong> · Goal <strong>2048</strong>
-              </p>
-              <p className="md-game-hint">
-                Swipe, use the buttons, or focus the board for arrow keys.
-              </p>
-              {over && (
-                <button type="button" className="md-game-button is-primary" onClick={start}>
-                  Play again <ArrowRight size={18} aria-hidden="true" />
-                </button>
-              )}
+              <button type="button" className="md-game-button" disabled={suspended} onClick={saveAndExit}>
+                {saved ? "Replace saved feast & exit" : "Save & exit"}
+              </button>
+              <p className="md-game-hint">Swipe, use the buttons, or focus the board for arrow keys. Saves stay in this browser.</p>
+              {over && <button type="button" className="md-game-button is-primary" onClick={start}>Play again <ArrowRight size={18} aria-hidden="true" /></button>}
             </div>
           </div>
         </>
       )}
+      {saveMessage && <p className="md-game-hint" role="status">{saveMessage}</p>}
     </Frame>
   );
 }
@@ -429,10 +475,10 @@ const emptyFour = (): FourRound => ({
   last: null,
 });
 
-export function FourToFeast() {
+export function FourToFeast({ suspended = false }: { suspended?: boolean }) {
   const [round, setRound] = useState<FourRound>(emptyFour);
   const [mode, setMode] = useState<"chef" | "local">("chef");
-  const [depth, setDepth] = useState<1 | 3 | 4>(3);
+  const [depth, setDepth] = useState<FourDifficulty>(3);
   const [selected, setSelected] = useState(3);
   const [paused, setPaused] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null),
@@ -443,12 +489,16 @@ export function FourToFeast() {
   const secondCount = board.filter((value) => value === 2).length;
   const player = firstCount === secondCount ? 1 : 2;
   const result = fourResult(board);
+  const winningCells = new Set(fourWinningCells(board));
   const thinking = started && mode === "chef" && player === 2 && result === null;
   const pause = useCallback(() => {
     epoch.current++;
     setPaused(true);
   }, []);
   useHiddenPagePause(started && result === null && !paused, pause);
+  useEffect(() => {
+    if (suspended && started && result === null) pause();
+  }, [suspended, started, result, pause]);
   function reset() {
     epoch.current++;
     setRound(emptyFour());
@@ -463,7 +513,7 @@ export function FourToFeast() {
     focusBoard(boardRef);
   }
   useEffect(() => {
-    if (!thinking || paused) return;
+    if (!thinking || paused || suspended) return;
     const currentEpoch = epoch.current;
     const timer = setTimeout(() => {
       if (currentEpoch !== epoch.current) return;
@@ -471,11 +521,11 @@ export function FourToFeast() {
         pause();
         return;
       }
+      const column = chooseFourMove(board, depth);
+      const next = column === null ? null : dropFour(board, column, 2);
+      if (!next || column === null) return;
       setRound((current) => {
-        if (current.board !== board || !current.started) return current;
-        const column = chooseFourMove(board, depth);
-        const next = column === null ? null : dropFour(board, column, 2);
-        if (!next || column === null) return current;
+        if (current.board !== board || !current.started || currentEpoch !== epoch.current) return current;
         return {
           ...current,
           board: next,
@@ -485,9 +535,9 @@ export function FourToFeast() {
       });
     }, 450);
     return () => clearTimeout(timer);
-  }, [board, depth, thinking, paused, pause]);
+  }, [board, depth, thinking, paused, suspended, pause]);
   function play(column: number) {
-    if (!started || paused || thinking || result !== null) return;
+    if (!started || paused || suspended || thinking || result !== null) return;
     setSelected(column);
     setRound((current) => {
       const nextPlayer =
@@ -569,13 +619,14 @@ export function FourToFeast() {
             <select
               value={depth}
               onChange={(event) => {
-                setDepth(Number(event.target.value) as 1 | 3 | 4);
+                setDepth(Number(event.target.value) as FourDifficulty);
                 reset();
               }}
             >
               <option value={1}>Easy · Commis</option>
               <option value={3}>Medium · Sous chef</option>
               <option value={4}>Hard · Head chef</option>
+              <option value={5}>Expert · Master chef</option>
             </select>
           </label>
         )}
@@ -594,10 +645,10 @@ export function FourToFeast() {
       ) : (
         <>
           <div className="md-four-players">
-            <span>
+            <span className={result === null && player === 1 ? "is-turn" : undefined}>
               <Food index={0} /> <strong>{mode === "chef" ? "You" : "Player 1"}</strong> · Burgers
             </span>
-            <span>
+            <span className={result === null && player === 2 ? "is-turn" : undefined}>
               <Food index={3} /> <strong>{mode === "chef" ? "House chef" : "Player 2"}</strong> ·
               Cakes
             </span>
@@ -620,7 +671,7 @@ export function FourToFeast() {
                   /^[1-7]$/.test(event.key)
                 ) {
                   event.preventDefault();
-                  if (event.repeat || paused || result !== null || thinking) return;
+                  if (event.repeat || paused || suspended || result !== null || thinking) return;
                   if (event.key === "ArrowLeft") setSelected((selected + 6) % 7);
                   else if (event.key === "ArrowRight") setSelected((selected + 1) % 7);
                   else play(/^[1-7]$/.test(event.key) ? Number(event.key) - 1 : selected);
@@ -636,6 +687,7 @@ export function FourToFeast() {
                       .map((value) => (value === 1 ? "burger" : value === 2 ? "cake" : "empty"))
                       .join(", ")}.`,
                 ).join(" ")}
+                {winningCells.size > 0 && " Winning line: " + [...winningCells].map(index => `row ${Math.floor(index / 7) + 1}, column ${index % 7 + 1}`).join("; ") + "."}
               </p>
               {Array.from({ length: 7 }, (_, column) => (
                 <span
@@ -650,7 +702,7 @@ export function FourToFeast() {
                 <div
                   key={index}
                   aria-hidden="true"
-                  className={`md-four-cell player-${value} ${selected === index % 7 ? "is-selected" : ""} ${round.last === index ? "is-last" : ""}`}
+                  className={`md-four-cell player-${value} ${selected === index % 7 ? "is-selected" : ""} ${round.last === index ? "is-last" : ""} ${winningCells.has(index) ? "is-winning" : ""}`}
                 >
                   {value !== 0 && (
                     <>
@@ -669,7 +721,7 @@ export function FourToFeast() {
                   type="button"
                   className="md-game-button"
                   aria-label={`Drop ${player === 1 ? "burger" : "cake"} into column ${column + 1}${board[column] ? ", column full" : ""}`}
-                  disabled={paused || thinking || result !== null || board[column] !== 0}
+                  disabled={paused || suspended || thinking || result !== null || board[column] !== 0}
                   onClick={() => play(column)}
                 >
                   <ArrowDown size={17} aria-hidden="true" />
@@ -682,7 +734,7 @@ export function FourToFeast() {
             <button
               type="button"
               className="md-game-button"
-              disabled={!history.length}
+              disabled={!history.length || suspended}
               onClick={undo}
             >
               <Undo2 size={18} aria-hidden="true" /> Undo turn
@@ -691,6 +743,7 @@ export function FourToFeast() {
               <button
                 type="button"
                 className="md-game-button"
+                disabled={suspended}
                 onClick={() => {
                   if (paused) {
                     setPaused(false);
@@ -714,7 +767,7 @@ export function FourToFeast() {
             <span className="md-game-hint">{firstCount + secondCount} / 42 spaces filled</span>
           </div>
           <p className="md-game-hint">
-            Changing the opponent or difficulty starts a fresh round. Leaving this tab pauses play.
+            Changing the opponent or difficulty starts a fresh round. Leaving this tab or opening a game dialog pauses play.
           </p>
         </>
       )}
