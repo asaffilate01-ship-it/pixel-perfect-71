@@ -312,3 +312,41 @@
     animation: none;
   }
 }
+
+
+/* Device-only history, milestones and game filters. */
+.md-playbook__overview { margin: 18px 0 24px; }
+.md-playbook__metrics {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.md-playbook__metrics > div {
+  min-width: 0;
+  border: 1px solid #e4d8c6;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fffdf7;
+}
+.md-playbook__metrics dt { font-size: 12px; color: #62513e; line-height: 1.45; }
+.md-playbook__metrics dd { margin: 5px 0 0; font-weight: 850; font-size: clamp(19px,3vw,26px); font-variant-numeric: tabular-nums; }
+.md-playbook__milestones,.md-playbook__game-stats { margin-top: 10px; border: 1px solid #e4d8c6; border-radius: 10px; padding: 0 12px; }
+.md-playbook__milestones > summary,.md-playbook__game-stats > summary {
+  min-height: 44px; display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; font-weight:750;
+}
+.md-playbook__milestones > p { font-size:12px; line-height:1.6; color:#62513e; }
+.md-playbook__milestones ul,.md-playbook__game-stats ul { list-style:none; padding:0 0 10px; margin:8px 0 0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.md-playbook__milestones li,.md-playbook__game-stats li { min-width:0; padding:10px; background:#fffdf7; border:1px solid #e4d8c6; border-radius:8px; }
+.md-playbook__milestones li div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 8px; font-size:13px; }
+.md-playbook__milestones li span,.md-playbook__game-stats li span { font-size:12px; color:#62513e; }
+.md-playbook__milestones progress { display:block; width:100%; height:7px; margin:8px 0; accent-color:#911f27; }
+.md-playbook__milestones small { display:block; font-size:12px; color:#62513e; line-height:1.5; }
+.md-playbook__game-stats li { display:flex; justify-content:space-between; flex-wrap:wrap; gap:5px 10px; font-size:13px; }
+.md-playbook__filter { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:13px; font-weight:700; margin:10px 0; }
+.md-playbook__filter select { max-width:100%; min-height:44px; background:#fffdf7; color:#30251e; border:1px solid #b68c79; border-radius:8px; padding:7px 10px; font-size:16px; }
+@media(max-width:580px) {
+  .md-playbook__metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .md-playbook__milestones ul,.md-playbook__game-stats ul { grid-template-columns:minmax(0,1fr); }
+  .md-playbook__filter select { width:100%; }
+}

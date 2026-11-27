@@ -22,6 +22,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
+import { useArcadeRoundTracker } from "@/components/play/arcade-progress";
 import {
   chooseFourMove,
   advanceShuffleRound,
@@ -283,6 +284,7 @@ export function Feast2048({ suspended = false }: { suspended?: boolean }) {
   const state = round?.state ?? null;
   const best = useBest("2048", state?.score ?? 0);
   const over = state ? mergeOver(state.board) : false;
+  const { roundId, beginRound } = useArcadeRoundTracker(over && state ? { game: "feast-2048", result: "completed", moves: state.moves, score: state.score } : null);
   const highest = state ? Math.max(...state.board) : 0;
   const won = highest >= 2048;
 
@@ -312,6 +314,7 @@ export function Feast2048({ suspended = false }: { suspended?: boolean }) {
   function start() {
     if (suspended) return;
     pointerStart.current = null;
+    beginRound();
     setRound(createFeastRound(startMerge()));
     setSaveMessage("");
     focusBoard(boardRef);
@@ -329,7 +332,7 @@ export function Feast2048({ suspended = false }: { suspended?: boolean }) {
   }
   function saveAndExit() {
     if (!round || suspended) return;
-    const snapshot = createFeastSave(round);
+    const snapshot = createFeastSave(round, roundId ?? undefined);
     if (!snapshot) {
       setSaveMessage("This feast cannot be saved. You can continue playing.");
       return;
@@ -355,6 +358,7 @@ export function Feast2048({ suspended = false }: { suspended?: boolean }) {
       }
       localStorage.removeItem(FEAST_SAVE_KEY);
       setSaved(null);
+      beginRound(current.roundId);
       setRound({ state: current.state, history: current.history, message: "Saved feast loaded. Make your next move." });
       setSaveMessage("");
       focusBoard(boardRef);
@@ -499,6 +503,10 @@ export function FourToFeast({ suspended = false }: { suspended?: boolean }) {
   const secondCount = board.filter((value) => value === 2).length;
   const player = firstCount === secondCount ? 1 : 2;
   const result = fourResult(board);
+  const { beginRound } = useArcadeRoundTracker(started && (result === 1 || result === 2 || result === "draw") ? {
+    game: "four-to-feast", result: mode === "local" ? "completed" : result === "draw" ? "draw" : result === 1 ? "win" : "loss",
+    moves: firstCount + secondCount, variant: `${mode}-${depth}`,
+  } : null);
   const winningCells = new Set(fourWinningCells(board));
   const thinking = started && mode === "chef" && player === 2 && result === null;
   const pause = useCallback(() => {
@@ -517,6 +525,7 @@ export function FourToFeast({ suspended = false }: { suspended?: boolean }) {
   }
   function start() {
     epoch.current++;
+    beginRound();
     setRound({ ...emptyFour(), started: true });
     setPaused(false);
     setSelected(3);
@@ -803,6 +812,7 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
   const padRef = useRef<HTMLDivElement>(null),
     epoch = useRef(0);
   const { sequence, entered, phase, tick, cleared } = round;
+  const { beginRound } = useArcadeRoundTracker(phase === "won" || phase === "over" ? { game: "order-echo", result: phase === "won" ? "win" : "loss", score: cleared, variant: `${playback}-${target}` } : null);
   const best = useBest("echo", cleared);
   const inProgress = phase === "show" || phase === "input";
   const pause = useCallback(() => {
@@ -823,6 +833,7 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
     setPaused(false);
   }
   function start() {
+    beginRound();
     epoch.current++;
     setReplays(0);
     setRound({
@@ -1110,6 +1121,7 @@ export function KitchenShuffle({ suspended = false }: { suspended?: boolean }) {
   const { board, moves, history, date, hints } = round;
   const started = board.length > 0;
   const won = started && puzzleSolved(board);
+  const { roundId, beginRound } = useArcadeRoundTracker(won ? { game: "kitchen-shuffle", result: "completed", moves, hints, variant: `${daily ? "daily" : "fresh"}-${size}x${size}` } : null);
   const legal = started ? puzzleMoves(board, size) : [];
   const blank = board.indexOf(0);
   const directionIndex = (direction: Direction) =>
@@ -1146,6 +1158,7 @@ export function KitchenShuffle({ suspended = false }: { suspended?: boolean }) {
   }
   function start() {
     if (suspended) return;
+    beginRound();
     const seed = daily && date ? date : dailySeed();
     setRound({
       board: startPuzzle(size, daily ? seededRandom(seed + size) : Math.random),
@@ -1187,7 +1200,7 @@ export function KitchenShuffle({ suspended = false }: { suspended?: boolean }) {
   }
   function saveAndExit() {
     if (!started || suspended) return;
-    const snapshot = createShuffleSave(round, size, daily);
+    const snapshot = createShuffleSave(round, size, daily, roundId ?? undefined);
     if (!snapshot) { setSaveMessage("This puzzle could not be saved. Your board is still here."); return; }
     try {
       localStorage.setItem(SHUFFLE_SAVE_KEY, JSON.stringify(snapshot));
@@ -1209,6 +1222,7 @@ export function KitchenShuffle({ suspended = false }: { suspended?: boolean }) {
       }
       localStorage.removeItem(SHUFFLE_SAVE_KEY);
       setSaved(null);
+      beginRound(current.roundId);
       setSize(current.size);
       setDaily(current.daily);
       setRound({ board: current.board, history: current.history, moves: current.moves, hints: current.hints,

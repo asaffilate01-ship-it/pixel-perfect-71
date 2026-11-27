@@ -257,8 +257,8 @@ describe("Responsive arcade quick picks", () => {
 
 describe("Reviewed arcade help", () => {
   test("all games have help and every question has a unique ID", () => {
-    expect(ARCADE_HELP).toHaveLength(42);
-    expect(new Set(ARCADE_HELP.map(entry => entry.id)).size).toBe(42);
+    expect(ARCADE_HELP).toHaveLength(45);
+    expect(new Set(ARCADE_HELP.map(entry => entry.id)).size).toBe(45);
     for (const game of ARCADE_GAMES) expect(ARCADE_HELP.some(entry => entry.game === game.id)).toBe(true);
   });
   test("search is case-insensitive, matches every term, and promotes the active game", () => {
@@ -295,4 +295,9 @@ test("expert tray strategy help is discoverable", () => {
 test("fresh puzzle guidance is searchable", () => {
   expect(findArcadeHelp("minimum moves", "sauce-switch").some(entry=>entry.id==="sauce-minimum")).toBe(true);
   expect(findArcadeHelp("menu quest words", "menu-quest").some(entry=>entry.id==="quest-levels")).toBe(true);
+});
+
+test("playbook and personal milestone guidance is searchable",()=>{
+  expect(findArcadeHelp("playbook statistics").some(entry=>entry.id==="playbook-stats")).toBe(true);
+  expect(findArcadeHelp("milestones rewards").some(entry=>entry.id==="milestones")).toBe(true);
 });

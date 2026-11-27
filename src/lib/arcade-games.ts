@@ -1,3 +1,4 @@
+import { isArcadeRoundId } from "./mealdeck-play-progress";
 /** Local entertainment only. Scores have no monetary or loyalty value. */
 export function seededRandom(seed: number): () => number {
   let value = seed >>> 0;
@@ -52,7 +53,7 @@ export function mergeOver(board: readonly number[]): boolean {
 export const FEAST_SAVE_KEY = "mealdeck-feast-2048-save-v1";
 export const FEAST_UNDO_LIMIT = 5;
 export type FeastRound = { state: MergeState; history: MergeState[]; message: string };
-export type FeastSave = { version: 1; state: MergeState; history: MergeState[] };
+export type FeastSave = { version: 1; state: MergeState; history: MergeState[]; roundId?: string };
 
 export function createFeastRound(state: MergeState): FeastRound {
   return { state, history: [], message: "Slide equal numbers together to build your feast." };
@@ -124,14 +125,16 @@ export function parseFeastSave(raw: string | null): FeastSave | null {
     }
     const chain = [...history, state];
     if (chain.some((entry, i) => i > 0 && !validFeastTransition(chain[i - 1]!, entry))) return null;
-    return { version: 1, state, history };
+    const roundId = input["roundId"];
+    if (roundId !== undefined && !isArcadeRoundId(roundId)) return null;
+    return { version: 1, state, history, ...(roundId ? { roundId } : {}) };
   } catch {
     return null;
   }
 }
 
-export function createFeastSave(round: FeastRound): FeastSave | null {
-  return parseFeastSave(JSON.stringify({ version: 1, state: round.state, history: round.history }));
+export function createFeastSave(round: FeastRound, roundId?: string): FeastSave | null {
+  return parseFeastSave(JSON.stringify({ version: 1, state: round.state, history: round.history, roundId }));
 }
 
 export type Counter = 0 | 1 | 2;
@@ -264,6 +267,7 @@ export type ShuffleRound = {
 };
 export type ShuffleSave = {
   version: 1;
+  roundId?: string;
   size: ShuffleSize;
   daily: boolean;
   board: number[];
@@ -342,15 +346,17 @@ export function parseShuffleSave(raw: string | null): ShuffleSave | null {
     // If all moves remain in the undo history, a daily save must start from that day's original layout.
     if (input["daily"] && input["moves"] === history.length &&
         !sameShuffleBoard(chain[0]!, startPuzzle(size, seededRandom(input["date"] + size)))) return null;
+    const roundId = input["roundId"];
+    if (roundId !== undefined && !isArcadeRoundId(roundId)) return null;
     return { version: 1, size, daily: input["daily"], board, history, date: input["date"],
-      moves: input["moves"], hints: input["hints"] };
+      moves: input["moves"], hints: input["hints"], ...(roundId ? { roundId } : {}) };
   } catch {
     return null;
   }
 }
-export function createShuffleSave(round: ShuffleRound, size: ShuffleSize, daily: boolean): ShuffleSave | null {
+export function createShuffleSave(round: ShuffleRound, size: ShuffleSize, daily: boolean, roundId?: string): ShuffleSave | null {
   return parseShuffleSave(JSON.stringify({ version: 1, size, daily, board: round.board, history: round.history,
-    date: round.date, moves: round.moves, hints: round.hints }));
+    date: round.date, moves: round.moves, hints: round.hints, roundId }));
 }
 export function shuffleManhattan(board: readonly number[], size: ShuffleSize): number {
   return board.reduce((sum, tile, index) => tile === 0 ? sum :
