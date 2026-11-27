@@ -257,3 +257,47 @@ export function undoSkewerMove(state: SkewerState): SkewerState {
     ? { ...state, skewers: previous.skewers, history: state.history.slice(0, -1) }
     : state;
 }
+
+export type SkewerHint =
+  | { kind: "move"; move: SkewerMove; remaining: number }
+  | { kind: "complete" | "no-solution" | "budget" | "invalid" };
+
+/** Bounded breadth-first search. Equivalent skewer permutations share a visited key. */
+export function findSkewerHint(
+  board: SkewerBoard,
+  foodCount: SkewerFoodCount,
+  maxNodes = 5000,
+): SkewerHint {
+  if ((foodCount !== 3 && foodCount !== 4) || board.length !== foodCount + 2 ||
+      board.some(stack => stack.length > SKEWER_CAPACITY)) return { kind: "invalid" };
+  const counts = Array<number>(foodCount).fill(0);
+  for (const stack of board) {
+    for (const food of stack) {
+      if (!Number.isInteger(food) || food < 0 || food >= foodCount) return { kind: "invalid" };
+      counts[food] = (counts[food] ?? 0) + 1;
+    }
+  }
+  if (counts.some(count => count !== SKEWER_CAPACITY)) return { kind: "invalid" };
+  if (isSkewerComplete(board, foodCount)) return { kind: "complete" };
+  const budget = Number.isFinite(maxNodes) ? Math.max(1, Math.min(5000, Math.floor(maxNodes))) : 5000;
+  const signature = (b: SkewerBoard) => b.map(stack => stack.join(",")).sort().join("|");
+  type SearchNode = { board: SkewerBoard; first: SkewerMove | null; depth: number };
+  const queue: SearchNode[] = [{ board, first: null, depth: 0 }];
+  const seen = new Set([signature(board)]);
+  for (let cursor = 0; cursor < queue.length; cursor++) {
+    const node = queue[cursor]!;
+    for (let from = 0; from < node.board.length; from++) {
+      for (const to of skewerDestinations(node.board, from)) {
+        const next = moveSkewer(node.board, from, to);
+        const key = signature(next);
+        if (seen.has(key)) continue;
+        if (seen.size >= budget) return { kind: "budget" };
+        const first = node.first ?? { from, to };
+        if (isSkewerComplete(next, foodCount)) return { kind: "move", move: first, remaining: node.depth + 1 };
+        seen.add(key);
+        queue.push({ board: next, first, depth: node.depth + 1 });
+      }
+    }
+  }
+  return { kind: "no-solution" };
+}
