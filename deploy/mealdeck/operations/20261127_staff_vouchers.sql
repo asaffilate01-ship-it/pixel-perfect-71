@@ -41,6 +41,9 @@ create table mealdeck_private.staff_vouchers (
   staff_user_id uuid not null references auth.users(id),
   code_hash text not null unique check(code_hash ~ '^[a-f0-9]{64}$'),
   issued_by uuid not null references auth.users(id),
+  issue_request_id uuid not null,
+  validity_days integer not null check(validity_days between 1 and 30),
+  unique(issued_by,issue_request_id),
   issued_at timestamptz not null default clock_timestamp(),
   expires_at timestamptz not null,
   revoked_by uuid references auth.users(id),
@@ -114,20 +117,29 @@ end $$;
 
 -- Return the random code once, only to the authorised issuer; store a digest.
 -- The UUID generator supplies 122 random bits, not a sequential or guessable code.
-create function public.mealdeck_ops_issue_staff_voucher(p_tenant uuid,p_location uuid,p_staff uuid,p_days integer)
+create function public.mealdeck_ops_issue_staff_voucher(p_tenant uuid,p_location uuid,p_staff uuid,p_days integer,p_request_id uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare code text; v mealdeck_private.staff_vouchers%rowtype; issued timestamptz:=clock_timestamp();
 begin
  perform mealdeck_private.assert_staff_voucher_manager(p_tenant,p_location);
+ if p_request_id is null or p_days is null or p_days not between 1 and 30 then raise exception 'mealdeck_voucher_unavailable'; end if;
+ perform pg_advisory_xact_lock(hashtextextended('staff-voucher-issuer:'||auth.uid()::text,0));
+ -- Recover only the issuance acknowledgement; never reveal or regenerate a lost code.
+ select * into v from mealdeck_private.staff_vouchers where issued_by=auth.uid() and issue_request_id=p_request_id;
+ if found then
+   if v.tenant_id is distinct from p_tenant or v.location_id is distinct from p_location
+     or v.staff_user_id is distinct from p_staff or v.validity_days<>p_days
+     then raise exception 'mealdeck_voucher_request_conflict'; end if;
+   return jsonb_build_object('id',v.id,'alreadyIssued',true,'expiresAt',v.expires_at);
+ end if;
  if not mealdeck_private.staff_voucher_enabled()
    or not mealdeck_private.staff_voucher_member(p_tenant,p_location,p_staff)
-   or p_days is null or p_days not between 1 and 30 then raise exception 'mealdeck_voucher_unavailable'; end if;
- perform pg_advisory_xact_lock(hashtextextended('staff-voucher-issuer:'||auth.uid()::text,0));
+   then raise exception 'mealdeck_voucher_unavailable'; end if;
  if (select count(*) from mealdeck_private.staff_vouchers where issued_by=auth.uid()
       and issued_at>issued-interval '24 hours')>=50 then raise exception 'mealdeck_checkout_retry_later'; end if;
  code:='MD-'||upper(replace(gen_random_uuid()::text,'-',''));
- insert into mealdeck_private.staff_vouchers(tenant_id,location_id,staff_user_id,code_hash,issued_by,issued_at,expires_at)
- values(p_tenant,p_location,p_staff,encode(sha256(convert_to(code,'UTF8')),'hex'),auth.uid(),issued,issued+make_interval(days=>p_days))
+ insert into mealdeck_private.staff_vouchers(tenant_id,location_id,staff_user_id,code_hash,issued_by,issue_request_id,validity_days,issued_at,expires_at)
+ values(p_tenant,p_location,p_staff,encode(sha256(convert_to(code,'UTF8')),'hex'),auth.uid(),p_request_id,p_days,issued,issued+make_interval(days=>p_days))
  returning * into v;
  return jsonb_build_object('id',v.id,'code',code,'expiresAt',v.expires_at);
 end $$;
@@ -138,8 +150,8 @@ begin
  perform mealdeck_private.assert_staff_voucher_manager(p_tenant,p_location);
  return jsonb_build_object('enabled',mealdeck_private.staff_voucher_enabled(),'vouchers',
    coalesce((select jsonb_agg(jsonb_build_object('id',v.id,'staffUserId',v.staff_user_id,
-      'issuedAt',v.issued_at,'expiresAt',v.expires_at,'consumedAt',v.consumed_at,
-      'revokedAt',v.revoked_at,'orderId',s.order_id,'paymentStatus',o.payment_status,
+      'issuedAt',v.issued_at,'issuedBy',v.issued_by,'expiresAt',v.expires_at,'consumedAt',v.consumed_at,
+      'revokedAt',v.revoked_at,'revokedBy',v.revoked_by,'orderId',s.order_id,'paymentStatus',o.payment_status,
       'status',case when v.consumed_at is not null then 'used' when v.revoked_at is not null then 'revoked'
         when v.expires_at<=now() then 'expired' else 'available' end) order by v.issued_at desc,v.id)
     from (select * from mealdeck_private.staff_vouchers where tenant_id=p_tenant and location_id=p_location
@@ -252,13 +264,13 @@ revoke all on function mealdeck_private.staff_voucher_scope(uuid,uuid),
  mealdeck_private.assert_staff_voucher_manager(uuid,uuid),
  mealdeck_private.consume_staff_voucher(uuid,uuid,uuid,uuid,uuid)
  from public,anon,authenticated,service_role;
-revoke all on function public.mealdeck_ops_issue_staff_voucher(uuid,uuid,uuid,integer),
+revoke all on function public.mealdeck_ops_issue_staff_voucher(uuid,uuid,uuid,integer,uuid),
  public.mealdeck_ops_staff_vouchers(uuid,uuid),public.mealdeck_ops_revoke_staff_voucher(uuid,uuid,uuid),
  public.mealdeck_staff_voucher_status(uuid,uuid,uuid),
  public.mealdeck_create_staff_voucher_quote(uuid,uuid,uuid,text,jsonb,jsonb,text,jsonb,text,text),
  public.mealdeck_staff_voucher_order(uuid,uuid)
  from public,anon,authenticated,service_role;
-grant execute on function public.mealdeck_ops_issue_staff_voucher(uuid,uuid,uuid,integer),
+grant execute on function public.mealdeck_ops_issue_staff_voucher(uuid,uuid,uuid,integer,uuid),
  public.mealdeck_ops_staff_vouchers(uuid,uuid),public.mealdeck_ops_revoke_staff_voucher(uuid,uuid,uuid)
  to authenticated;
 grant execute on function public.mealdeck_staff_voucher_status(uuid,uuid,uuid),
