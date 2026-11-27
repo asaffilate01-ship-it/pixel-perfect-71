@@ -2,23 +2,55 @@
 import { CHAOS_SUITS, shuffleDeck, type FoodSuit } from "./kitchen-chaos";
 
 export type BrandSnapRound = { left: string; right: string; match: boolean };
+export const SNAP_LENGTHS = [6, 12, 24] as const;
+export type SnapLength = (typeof SNAP_LENGTHS)[number];
 export function createBrandSnapRounds(
   brandIds: readonly string[], count = 12, random: () => number = Math.random,
 ): BrandSnapRound[] {
   if (new Set(brandIds).size < 2) throw new Error("Brand Snap requires two distinct brands");
+  if (!Number.isInteger(count) || count < 1 || count > 48) throw new RangeError("Choose a quiz length from 1 to 48.");
   const ids = [...new Set(brandIds)];
+  const sampleIndex = (length: number) => {
+    const sample = random();
+    return Math.max(0, Math.min(length - 1, Math.floor((Number.isFinite(sample) ? sample : 0) * length)));
+  };
   const rounds: BrandSnapRound[] = [];
   for (let n = 0; n < count; n += 1) {
-    const leftIndex = Math.floor(random() * ids.length) % ids.length;
+    const leftIndex = sampleIndex(ids.length);
     const left = ids[leftIndex]!;
     const match = n % 2 === 0;
-    const otherIndex = (leftIndex + 1 + (Math.floor(random() * (ids.length - 1)) % (ids.length - 1))) % ids.length;
+    const otherIndex = (leftIndex + 1 + sampleIndex(ids.length - 1)) % ids.length;
     rounds.push({ left, right: match ? left : ids[otherIndex]!, match });
   }
   return shuffleDeck(rounds, random);
 }
 export function evaluateSnap(round: BrandSnapRound, calledSnap: boolean): boolean {
   return round.match === calledSnap;
+}
+
+export type SnapAnswer = { index: number; calledSnap: boolean; correct: boolean };
+export type SnapSession = { rounds: BrandSnapRound[]; index: number; answers: SnapAnswer[] };
+export function createSnapSession(rounds: readonly BrandSnapRound[]): SnapSession {
+  return { rounds: [...rounds], index: 0, answers: [] };
+}
+/** Reject repeated or stale clicks so every displayed question scores at most once. */
+export function answerSnap(session: SnapSession, index: number, calledSnap: boolean): SnapSession {
+  const round = session.rounds[index];
+  if (session.index !== index || !round || session.answers.length !== index) return session;
+  return { ...session, answers: [...session.answers, { index, calledSnap, correct: evaluateSnap(round, calledSnap) }] };
+}
+export function advanceSnap(session: SnapSession, index: number): SnapSession {
+  if (session.index !== index || !session.rounds[index] || session.answers.length !== index + 1) return session;
+  return { ...session, index: index + 1 };
+}
+export function snapStatistics(session: SnapSession) {
+  let correct = 0, streak = 0, bestStreak = 0;
+  for (const answer of session.answers) {
+    if (answer.correct) { correct++; streak++; bestStreak = Math.max(bestStreak, streak); }
+    else streak = 0;
+  }
+  return { answered: session.answers.length, correct, streak, bestStreak,
+    accuracy: session.answers.length ? Math.round(correct / session.answers.length * 100) : 0 };
 }
 
 export type FullHouseCard = { id: string; suit: FoodSuit; rank: number };
