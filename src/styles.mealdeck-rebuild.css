@@ -977,3 +977,9 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
   .md-desktop-nav { gap: 12px; }
   .md-desktop-nav a { font-size: 13px; }
 }
+
+/* First-visit and customised consent panels must remain reachable at 320px and in landscape. */
+.md-cookie-choices { max-height: calc(100vh - 6rem); max-height: calc(100dvh - 6rem - var(--md-mobile-safe-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: 12px; }
+.md-cookie-choices__actions > button { flex: 1 1 130px; }
+.md-cookie-choices :is(button,a,input):focus-visible { outline: 2px solid #f6d98c; outline-offset: 3px; }
+@media (min-width: 640px) { .md-cookie-choices { max-height: calc(100vh - 2.5rem); max-height: calc(100dvh - 2.5rem); } }
