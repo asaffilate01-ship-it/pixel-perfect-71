@@ -5,6 +5,9 @@ on:
     branches: [main, feature/mealdeck-whatsapp-guest-weekend-20261106]
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   contact-only-checkout:
     runs-on: ubuntu-latest
