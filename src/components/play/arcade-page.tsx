@@ -496,7 +496,7 @@ function ArcadeHelp({ game }: { game?: ArcadeGameId | undefined }) {
   const entries = findArcadeHelp(query, game);
   const visible = query.trim() || expanded ? entries : entries.slice(0, 6);
   return (
-    <section className="md-play-help" aria-labelledby={inputId + "-title"}>
+    <section id="arcade-game-help" className="md-play-help" aria-labelledby={inputId + "-title"}>
       <div className="md-play-recommendations-heading">
         <div><h2 id={inputId + "-title"}>Game help &amp; questions</h2><p>Find game rules, controls, saved rounds and quick answers.</p></div>
         <Lightbulb size={23} aria-hidden="true" />
@@ -504,14 +504,20 @@ function ArcadeHelp({ game }: { game?: ArcadeGameId | undefined }) {
       <label htmlFor={inputId}>Search questions and answers</label>
       <div className="md-play-search">
         <Search size={17} aria-hidden="true" />
-        <input id={inputId} type="search" value={query} onChange={event => { setQuery(event.target.value); setExpanded(false); }} placeholder="Try hints, friends or save" />
+        <input id={inputId} type="search" maxLength={160} value={query} onChange={event => { setQuery(event.target.value); setExpanded(false); }} placeholder="Try hints, friends or save" />
         {query && <button type="button" aria-label="Clear help search" onClick={() => { setQuery(""); setExpanded(false); document.getElementById(inputId)?.focus(); }}><X size={17} aria-hidden="true" /></button>}
       </div>
-      <p className="md-play-help-count" role="status">{entries.length} {entries.length === 1 ? "answer" : "answers"}</p>
+      <div className="md-play-help-topics" role="group" aria-label="Popular help topics">
+        {[["All topics", ""], ["Saved games", "save"], ["Friends", "friend"], ["Hints", "hint"], ["Controls", "keyboard"]].map(([label, term]) => (
+          <button key={label} type="button" className="md-play-button md-play-button--quiet"
+            aria-pressed={query === term} onClick={() => { setQuery(term ?? ""); setExpanded(false); }}>{label}</button>
+        ))}
+      </div>
+      <p className="md-play-help-count" role="status">{visible.length < entries.length ? `${visible.length} of ${entries.length}` : entries.length} {entries.length === 1 ? "answer" : "answers"}</p>
       {entries.length ? <div className="md-play-help-grid">{visible.map(entry => (
         <details key={entry.id}>
           <summary>{entry.question}</summary><p>{entry.answer}</p>
-          {entry.game && <Link to="/play/$gameId" params={{ gameId: entry.game }} search={{}}>Open game <ArrowRight size={15} aria-hidden="true" /></Link>}
+          {entry.game && entry.game !== game && <Link to="/play/$gameId" params={{ gameId: entry.game }} search={{}}>Open game <ArrowRight size={15} aria-hidden="true" /></Link>}
         </details>
       ))}</div> : <p>No matching answers. Try another search or clear the search.</p>}
       {!query.trim() && entries.length > 6 && <button type="button" className="md-play-button md-play-button--quiet" aria-expanded={expanded} style={{ marginTop: 12 }} onClick={() => setExpanded(value => !value)}>{expanded ? "Show fewer answers" : `Show all ${entries.length} answers`}</button>}
@@ -1178,6 +1184,7 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
                 <Link to="/play/promote">
                   Share &amp; print kit <Share2 size={16} aria-hidden="true" />
                 </Link>
+                {!focusMode && <a href="#arcade-game-help">Game help &amp; Q&amp;A <Lightbulb size={16} aria-hidden="true" /></a>}
               </nav>
               {latestRound && (
                 <aside className="md-play-share-round" aria-label="Share your latest result">
