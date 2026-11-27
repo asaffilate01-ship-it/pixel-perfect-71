@@ -7,7 +7,7 @@ import {
   cinemaPromoNextTransition,
   cinemaPromoRefreshDelay,
 } from "../src/lib/mealdeck-cinema-promotion";
-import { readCinemaPromoConfig, readCinemaPromoStatus } from "../src/lib/mealdeck-cinema-promotion.server";
+import { readCinemaPromoConfig, readCinemaPromoStatus, readLiveCinemaPromoStatus } from "../src/lib/mealdeck-cinema-promotion.server";
 
 const advertise = Date.parse(schedule.advertiseAt);
 const starts = Date.parse(schedule.startsAt);
@@ -74,7 +74,7 @@ describe("Munchbox cinema promotion scheduled publication", () => {
       expect(status.terms).toBe(approvedFixture.MEALDECK_MUNCHBOX_CINEMA_PROMO_TERMS);
       expect(status.serverNow).toBe(new Date(now).toISOString());
       expect(Object.keys(status).sort()).toEqual(
-        ["phase", "serverNow", "nextTransitionAt", "approved", "terms", "eligibleProducts"].sort(),
+        ["phase", "serverNow", "nextTransitionAt", "approved", "catalogueState", "terms", "eligibleProducts"].sort(),
       );
     }
   });
@@ -97,10 +97,93 @@ describe("Munchbox cinema promotion scheduled publication", () => {
     expect(source("src/routes/offers.tsx")).toContain("<MunchboxCinemaBanner showClosedTerms />");
     expect(banner).toContain('snapshot.phase === "hidden"');
     expect(banner).toContain('snapshot.phase === "ended"');
-    expect(banner).toContain('{!teaser && <Link to="/menus"');
+    expect(banner).toContain('{canBrowseEligibleProducts && <Link to="/menus"');
+    expect(banner).toContain('snapshot.catalogueState === "available"');
+    expect(banner).toContain("existing entries and the closing date are unchanged");
     expect(banner).toContain("Register before entries open");
     expect(banner).toContain("<MealDeckLogo");
     expect(source("src/lib/mealdeck-cinema-promotion.functions.ts")).toContain('setResponseHeader("Cache-Control", "no-store, max-age=0")');
     expect(source(".env.example")).toContain("MEALDECK_MUNCHBOX_CINEMA_PROMO_APPROVED=false");
+  });
+});
+
+
+describe("live catalogue availability guard for the cinema banner", () => {
+  const testBrand = launchMenuBrands.find(brand => brand.sections.some(section =>
+    section.items.some(item => item.optionGroupIds.length === 0 && !item.priceVariants && (item.pricePence ?? 0) > 0)))!;
+  const testItem = testBrand.sections.flatMap(section => section.items).find(item =>
+    item.optionGroupIds.length === 0 && !item.priceVariants && (item.pricePence ?? 0) > 0)!;
+  const env = {
+    ...approvedFixture,
+    MEALDECK_MUNCHBOX_CINEMA_PROMO_SKUS: JSON.stringify([testItem.id]),
+    MEALDECK_SUPABASE_URL: "https://menufixture.supabase.co",
+    MEALDECK_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_menu_fixture_public",
+  };
+  const now = starts + 10_000;
+  const row = {
+    sku: testItem.id, name: testItem.name, description: null, pricePence: 500,
+    options: {}, replacementPricePence: null,
+  };
+  function mock(items: unknown[], checkedAt = new Date(now).toISOString()) {
+    let calls = 0;
+    const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls++;
+      expect(String(input)).toBe("https://menufixture.supabase.co/rest/v1/rpc/mealdeck_public_menu");
+      const headers = new Headers(init?.headers);
+      expect(headers.get("apikey")).toBe(env.MEALDECK_SUPABASE_PUBLISHABLE_KEY);
+      expect(headers.has("Cookie")).toBe(false);
+      return Response.json({available: true, checkedAt, items});
+    }) as typeof fetch;
+    return {fetcher, calls: () => calls};
+  }
+  test("disabled, teaser, hidden and closed phases do not contact the catalogue", async () => {
+    const request = mock([row]);
+    for (const time of [advertise - 1, advertise, starts - 1, ends]) {
+      const result = await readLiveCinemaPromoStatus(env, () => time, request.fetcher);
+      expect(result.catalogueState).toBe("not-checked");
+    }
+    expect((await readLiveCinemaPromoStatus({}, () => now, request.fetcher)).approved).toBe(false);
+    expect(request.calls()).toBe(0);
+  });
+  test("a current orderable reviewed item permits the menu link but does not grant a prize entry", async () => {
+    const request = mock([row]);
+    const result = await readLiveCinemaPromoStatus(env, () => now, request.fetcher);
+    expect(result.phase).toBe("active");
+    expect(result.catalogueState).toBe("available");
+    expect(result.eligibleProducts).toEqual([testItem.name]);
+    expect(result.terms).toBe(env.MEALDECK_MUNCHBOX_CINEMA_PROMO_TERMS);
+    expect(request.calls()).toBe(1);
+    expect(JSON.stringify(result)).not.toContain("sb_publishable");
+  });
+  test("missing, zero-priced or unrelated items withhold the link without removing approved terms", async () => {
+    for (const items of [[], [{...row, pricePence: 0}], [{...row, sku: "unreviewed-synthetic-sku"}]]) {
+      const result = await readLiveCinemaPromoStatus(env, () => now, mock(items).fetcher);
+      expect(result.phase).toBe("active");
+      expect(result.catalogueState).toBe("unavailable");
+      expect(result.terms).toBe(env.MEALDECK_MUNCHBOX_CINEMA_PROMO_TERMS);
+      expect(result.eligibleProducts).toEqual([testItem.name]);
+    }
+  });
+  test("stale, future, invalid and failed catalogue responses cannot show an order CTA", async () => {
+    for (const checkedAt of [new Date(now - 60_001).toISOString(), new Date(now + 5_001).toISOString(), "invalid"]) {
+      expect((await readLiveCinemaPromoStatus(env, () => now, mock([row], checkedAt).fetcher)).catalogueState).toBe("unverified");
+    }
+    const failed = (async () => Response.json({error:"private-provider-error"}, {status:503})) as typeof fetch;
+    expect((await readLiveCinemaPromoStatus(env, () => now, failed)).catalogueState).toBe("unverified");
+    const duplicate = await readLiveCinemaPromoStatus(env, () => now, mock([row,row]).fetcher);
+    expect(duplicate.catalogueState).toBe("unverified");
+  });
+  test("a slow menu response cannot reopen an ended promotion", async () => {
+    let time = ends - 1;
+    const req = mock([row], new Date(time).toISOString());
+    const slow = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const response = await req.fetcher(input, init);
+      time = ends;
+      return response;
+    }) as typeof fetch;
+    const status = await readLiveCinemaPromoStatus(env, () => time, slow);
+    expect(status.phase).toBe("ended");
+    expect(status.catalogueState).toBe("not-checked");
+    expect(status.terms).not.toBeNull();
   });
 });
