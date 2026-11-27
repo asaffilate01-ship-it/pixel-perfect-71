@@ -8,13 +8,37 @@ on:
       - 'src/components/mobile-tab-bar.tsx'
       - 'src/components/mealdeck-cookie-choices.tsx'
       - 'src/styles.mealdeck-rebuild.css'
+      - 'src/lib/mealdeck-cookie-consent.ts'
+      - 'src/lib/mealdeck-nav-state.ts'
+      - 'tests/mealdeck-cookie-consent.test.ts'
+      - 'tests/mealdeck-skip-navigation.test.tsx'
+      - 'tests/mealdeck-nav-state.test.ts'
       - 'scripts/audit-mealdeck-browser.mjs'
       - '.github/workflows/browser-qa.yml'
+      - 'bun.lock'
+      - 'package.json'
+  push:
+    branches: [main]
+    paths:
+      - 'src/components/site-header.tsx'
+      - 'src/components/site-footer.tsx'
+      - 'src/components/mobile-tab-bar.tsx'
+      - 'src/components/mealdeck-cookie-choices.tsx'
+      - 'src/styles.mealdeck-rebuild.css'
+      - 'src/lib/mealdeck-cookie-consent.ts'
+      - 'src/lib/mealdeck-nav-state.ts'
+      - 'tests/mealdeck-cookie-consent.test.ts'
+      - 'tests/mealdeck-skip-navigation.test.tsx'
+      - 'tests/mealdeck-nav-state.test.ts'
+      - 'scripts/audit-mealdeck-browser.mjs'
+      - '.github/workflows/browser-qa.yml'
+      - 'bun.lock'
+      - 'package.json'
 permissions:
   contents: read
 concurrency:
   group: mealdeck-browser-qa-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   browser:
     runs-on: ubuntu-latest
@@ -37,6 +61,8 @@ jobs:
         run: |
           npm install --global bun@1.4.4 --no-audit --no-fund
           bun install --frozen-lockfile
+      - name: Navigation and privacy regression contracts
+        run: bun test tests/mealdeck-nav-state.test.ts tests/mealdeck-skip-navigation.test.tsx tests/mealdeck-cookie-consent.test.ts
       - name: Install isolated pinned browser tooling
         run: |
           mkdir -p "$MEALDECK_BROWSER_QA_PACKAGES"
