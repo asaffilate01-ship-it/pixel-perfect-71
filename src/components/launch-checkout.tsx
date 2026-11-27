@@ -1,3 +1,4 @@
+import "@/styles.mealdeck-staff-vouchers.css";
 import { usePublicMenu } from "@/components/menus/use-public-menu";
 import { MilkcakeOfferTerms } from "@/components/menus/milkcake-offer-terms";
 import {
@@ -161,6 +162,7 @@ type Quote = {
   expiresAt: string;
   grossPence: number;
   discountPence: number;
+  staffVoucherApplied?: boolean;
   totalPence: number;
   collectionEstimateMinutes: number;
   deliveryEstimateMinutes?: number;
@@ -192,6 +194,7 @@ type Receipt = {
   collectionEstimateMinutes: number;
   grossPence: number;
   discountPence: number;
+  staffVoucherApplied?: boolean;
   totalPence: number;
   lines: PricedLine[];
   passStatus: string | null;
@@ -204,6 +207,7 @@ type CheckoutStatus = {
   available: boolean;
   fulfilments?: Fulfilment[];
   prelaunchVerification?: boolean;
+  staffVoucherEligible?: boolean;
   openingOffer: MealDeckOpeningOffer;
   guestCheckout: GuestCheckoutState;
   kitchen: KitchenAvailability | null;
@@ -513,7 +517,7 @@ export function CheckoutPriceSummary({
   total,
   fulfilment,
 }: {
-  total: Pick<Quote, "grossPence" | "discountPence" | "totalPence" | "lines">;
+  total: Pick<Quote, "grossPence" | "discountPence" | "totalPence" | "lines" | "staffVoucherApplied">;
   fulfilment?: Fulfilment | null;
 }) {
   const display = milkcakeQuoteDisplayTotals(total);
@@ -526,7 +530,7 @@ export function CheckoutPriceSummary({
       </div>
       {display.openingDiscountPence > 0 && (
         <div className="md-checkout-discount">
-          <dt>{hasMilkcakeOffer ? "30% off other items & extras" : "Opening weekend · 30% off"}</dt>
+          <dt>{total.staffVoucherApplied === true ? "Staff voucher · 50% off" : hasMilkcakeOffer ? "30% off other items & extras" : total.discountPence === Math.round(total.grossPence * 0.3) ? "Opening weekend · 30% off" : "Order discount"}</dt>
           <dd>−{formatLaunchMenuPrice(display.openingDiscountPence)}</dd>
         </div>
       )}
@@ -820,6 +824,8 @@ function LaunchCheckoutView({
   ]);
   const [guestIssue, setGuestIssue] = useState<string | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
+  const [staffVoucherCode, setStaffVoucherCode] = useState("");
+  const [showStaffVoucher, setShowStaffVoucher] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [issue, setIssue] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -1176,6 +1182,8 @@ function LaunchCheckoutView({
     setQuote(null);
     setReviewConfirmed(false);
     setSpecialRequests(whatsAppDraft?.notes ?? "");
+    setStaffVoucherCode("");
+    setShowStaffVoucher(false);
     setIssue(null);
     attempt.current = null;
   }, [customerIdentity, orderId, whatsAppDraft]);
@@ -1484,8 +1492,19 @@ function LaunchCheckoutView({
     return false;
   }
 
-  async function reviewTotal() {
+  async function reviewTotal(voucherCode?: string) {
     if (!fulfilment || busy || !canCheckout || !browserBasketStillValid()) return;
+    if (voucherCode && (checkoutMode !== "member" || status?.staffVoucherEligible !== true || groupCheckout || whatsAppCheckout || paymentChoice !== "host")) {
+      setStaffVoucherCode("");
+      setIssue("Staff vouchers are available only for verified staff direct website orders.");
+      return;
+    }
+    if (voucherCode) {
+      setStaffVoucherCode("");
+      setReviewConfirmed(false);
+      setQuote(null);
+      attempt.current = null;
+    }
     if (whatsAppPaymentAttempt) {
       setIssue(
         "Payment has already been started for this WhatsApp order. Use Resume secure payment to continue the original checkout.",
@@ -1523,7 +1542,8 @@ function LaunchCheckoutView({
         whatsAppDraft
           ? whatsAppQuoteInput(whatsAppDraft)
           : {
-              action: "quote",
+              action: voucherCode ? "staff_voucher_quote" : "quote",
+              ...(voucherCode ? { staffVoucherCode: voucherCode } : {}),
               fulfilment,
               picks: picks.map(({ brandId, itemId, quantity, selections, crossSelections }) => ({
                 brandId,
@@ -1558,6 +1578,7 @@ function LaunchCheckoutView({
           throw new Error(
             "Your special requests could not be confirmed. Review them and try the final total again.",
           );
+        if (voucherCode && result.quote.staffVoucherApplied !== true) throw new Error("The voucher could not be applied. Review your total again.");
         setQuote(result.quote);
         if (whatsAppCheckout) setWhatsAppBoundMode(checkoutMode);
         setReviewConfirmed(false);
@@ -2970,9 +2991,9 @@ function LaunchCheckoutView({
                   )}
                   {quote?.discountPence ? (
                     <p className="md-checkout-offer">
-                      {hasMilkcakeOffer
+                      {quote.staffVoucherApplied === true ? "Your single-use staff voucher gives 50% off the eligible order subtotal. The code is consumed when your payment attempt is created." : hasMilkcakeOffer
                         ? "One milkcake is 99p with the discount included. Additional milkcakes are £3.99 each before the usual 30% discount, applied above with the other eligible items and extras."
-                        : "30% off every item and upgrade."}{" "}
+                        : "Your order discount is included above."}{" "}
                       {fulfilment === "delivery"
                         ? "Free delivery when £15+ after discount within the eligible 4 km area."
                         : "No minimum order."}
@@ -2984,6 +3005,22 @@ function LaunchCheckoutView({
                         : "Your 30% opening discount will be applied to the verified checkout total."}
                     </p>
                   ) : null}
+                  {registered && checkoutMode === "member" && statusCurrent && status?.staffVoucherEligible === true &&
+                    !groupCheckout && !whatsAppCheckout && paymentChoice === "host" && !orderId && quote && (
+                    <section className="md-staff-voucher" aria-label="Staff voucher">
+                      {quote.staffVoucherApplied === true ? (
+                        <div className="md-staff-voucher__applied"><CheckCircle2 size={18} aria-hidden="true" /><span><strong>Staff voucher applied</strong><small>50% off. Confirm the revised total before payment.</small></span>
+                          <button type="button" disabled={busy} onClick={() => { setQuote(null); setReviewConfirmed(false); attempt.current = null; void reviewTotal(); }}>Remove</button></div>
+                      ) : <>
+                        <button type="button" className="md-staff-voucher__toggle" aria-expanded={showStaffVoucher} disabled={busy} onClick={() => { setShowStaffVoucher(value => !value); setStaffVoucherCode(""); }}><ShieldCheck size={17} aria-hidden="true" /> Have a staff voucher?</button>
+                        {showStaffVoucher && <div className="md-staff-voucher__form">
+                          <label>Single-use staff code<input type="password" autoComplete="off" spellCheck={false} autoCapitalize="characters" maxLength={40} value={staffVoucherCode} disabled={busy} onChange={event => setStaffVoucherCode(event.target.value)} placeholder="MD-…" /></label>
+                          <button type="button" className="md-checkout-primary" disabled={busy || !staffVoucherCode.trim()} onClick={() => void reviewTotal(staffVoucherCode)}>Apply 50% voucher</button>
+                          <small>Assigned staff account only. Cannot be combined with another offer. One payment attempt per code.</small>
+                        </div>}
+                      </>}
+                    </section>
+                  )}
                   <CheckoutActionFeedback issue={issue} paymentPending={paymentPending} />
                   {canCheckout &&
                     fulfilment &&
