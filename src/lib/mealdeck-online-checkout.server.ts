@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { parseCustomerCommsAction } from "./mealdeck-order-comms";
 import { verifyOwnDriverPayment } from "./mealdeck-own-driver-payment.server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -166,6 +167,7 @@ function backendProblem(error: unknown): CheckoutProblem {
       "A dish or choice has changed. Please review your basket.",
       409,
     ],
+    [/staff_voucher_unavailable/, "voucher_unavailable", "This staff voucher cannot be used. Review your total or ask your manager.", 409],
     [/retry_later/, "retry_later", "Please wait a moment before reviewing another total.", 429],
     [
       /order_unavailable|quote_unavailable/,
@@ -243,6 +245,7 @@ export type MealDeckOnlineCheckoutStatus = {
   guestCheckout: GuestCheckoutState;
   kitchen: KitchenAvailability | null;
   prelaunchVerification: boolean;
+  staffVoucherEligible?: boolean;
 };
 
 export async function readOnlineCheckoutStatus(
@@ -337,8 +340,16 @@ export async function readOnlineCheckoutStatus(
         localDeliveryReady = false;
       }
     }
+    let staffVoucherEligible = false;
+    if (available && verifiedCustomerId && clients.service && env["MEALDECK_STAFF_VOUCHERS_ENABLED"] === "true") {
+      try {
+        const result = await rpc(clients.service, "mealdeck_staff_voucher_status", { ...scope, p_customer: verifiedCustomerId });
+        staffVoucherEligible = result["eligible"] === true;
+      } catch { /* Missing operation must not interrupt ordinary ordering. */ }
+    }
     return {
       ...base,
+      ...(staffVoucherEligible ? { staffVoucherEligible: true } : {}),
       fulfilments: localDeliveryReady ? ["pickup", "curbside", "delivery"] : ["pickup", "curbside"],
       openingOffer,
       available,
@@ -574,6 +585,12 @@ export async function handleOnlineCheckoutRequest(
           ? { p_order: parsed.data.orderId, p_customer: customerId }
           : { ...guestScope(clients, guestToken!), p_order: parsed.data.orderId },
       );
+      if (customerId && typeof receipt["discountPence"] === "number" && receipt["discountPence"] > 0) {
+        try {
+          const marker = await rpc(clients.service, "mealdeck_staff_voucher_order", { p_order: parsed.data.orderId, p_customer: customerId });
+          if (marker["applied"] === true) receipt["staffVoucherApplied"] = true;
+        } catch { /* Historical receipt stays readable if extension is absent. */ }
+      }
       return Response.json({ receipt }, { headers: NO_STORE });
     }
     // Order communications must remain accessible after the kitchen closes.
@@ -623,8 +640,21 @@ export async function handleOnlineCheckoutRequest(
       throw backendProblem({});
     const status = await readOnlineCheckoutStatus(env, fetcher, customerId);
     if (!status.available && !whatsappRecovery) throw newOrderingUnavailable(status);
-    if (action === "quote") {
-      const selection = normaliseCheckoutSelection(input, clients.config.tenantId);
+    if (action === "quote" || action === "staff_voucher_quote") {
+      let voucherHash: string | null = null;
+      let selectionInput = input;
+      if (action === "staff_voucher_quote") {
+        if (!customerId || whatsapp || request.headers.has("X-Mealdeck-WhatsApp") ||
+            env["MEALDECK_STAFF_VOUCHERS_ENABLED"] !== "true" || status.staffVoucherEligible !== true)
+          throw new CheckoutProblem("voucher_unavailable", "This staff voucher cannot be used. Ask your manager.", 403);
+        const { staffVoucherCode, ...rest } = object(input) as Json & {staffVoucherCode?: unknown};
+        const code = typeof staffVoucherCode === "string" && staffVoucherCode.length <= 64 ? staffVoucherCode.trim().toUpperCase() : "";
+        if (!/^MD-[A-F0-9]{32}$/.test(code))
+          throw new CheckoutProblem("voucher_unavailable", "Check the staff voucher code and try again.", 400);
+        voucherHash = createHash("sha256").update(code).digest("hex");
+        selectionInput = { ...rest, action: "quote" };
+      }
+      const selection = normaliseCheckoutSelection(selectionInput, clients.config.tenantId);
       let deliveryDistanceMetres: number | null = null;
       if (selection.fulfilment === "delivery") {
         if (!status.fulfilments.includes("delivery") || !selection.deliveryAddress)
@@ -660,7 +690,7 @@ export async function handleOnlineCheckoutRequest(
         : "mealdeck_create_guest_checkout_quote";
       const quote = await rpc(
         clients.service,
-        selection.notes ? quoteRpc + "_with_notes" : quoteRpc,
+        voucherHash ? "mealdeck_create_staff_voucher_quote" : selection.notes ? quoteRpc + "_with_notes" : quoteRpc,
         {
           p_tenant: clients.config.tenantId,
           p_location: clients.config.locationId,
@@ -672,9 +702,13 @@ export async function handleOnlineCheckoutRequest(
           p_selection: selection.lines,
           p_request_hash: selection.requestHash,
           p_packing: selection.packingPlan,
-          ...(selection.notes ? { p_notes: selection.notes } : {}),
+          ...(voucherHash ? { p_notes: selection.notes, p_code_hash: voucherHash } : selection.notes ? { p_notes: selection.notes } : {}),
         },
       );
+      if (voucherHash && quote["staffVoucherApplied"] !== true) {
+        if (quote["staffVoucherRateLimited"] === true) throw new CheckoutProblem("retry_later", "Too many voucher attempts. Try again in ten minutes.", 429);
+        throw new CheckoutProblem("voucher_unavailable", "This voucher is unavailable, expired, already used or cannot be combined with another offer.", 409);
+      }
       if (selection.fulfilment === "delivery") {
         const shortfall = ownDriverShortfallPence(quote["totalPence"] as number);
         if (shortfall === null) throw backendProblem({});
@@ -748,6 +782,12 @@ export async function handleOnlineCheckoutRequest(
     if (!z.uuid().safeParse(prepared["orderId"]).success || !Array.isArray(prepared["lines"]))
       throw backendProblem({});
     const order = prepared as unknown as PreparedStripeOrder;
+    if (customerId && order.discountPence > 0) {
+      try {
+        const marker = await rpc(clients.service, "mealdeck_staff_voucher_order", { p_order: order.orderId, p_customer: customerId });
+        if (marker["applied"] === true) order.staffVoucherApplied = true;
+      } catch { /* The frozen canonical amount remains the authority. */ }
+    }
     // Inspect the actor-scoped canonical order, not browser input. A pending
     // order is not a payment: no Stripe session exists until this guard passes.
     await verifyOwnDriverPayment({
