@@ -187,3 +187,14 @@ describe("live catalogue availability guard for the cinema banner", () => {
     expect(status.terms).not.toBeNull();
   });
 });
+
+// Wiring regression: browser behavioural testing remains a separate release gate.
+test("promotion refresh subscribes to and removes network and history lifecycle listeners", () => {
+  const hook = readFileSync(new URL("../src/components/marketing/use-cinema-promotion.ts", import.meta.url), "utf8");
+  for (const [event, handler] of [["offline", "invalidate"], ["online", "onVisible"], ["pagehide", "invalidate"], ["pageshow", "onVisible"]]) {
+    expect(hook).toContain('window.addEventListener("' + event + '", ' + handler + ')');
+    expect(hook).toContain('window.removeEventListener("' + event + '", ' + handler + ')');
+  }
+  expect(hook).toContain("clearTimeout(requestTimer)");
+  expect(hook).toContain("request !== revision");
+});
