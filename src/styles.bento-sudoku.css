@@ -313,3 +313,8 @@
     animation: none;
   }
 }
+
+.md-bento-candidates { display:grid; width:100%; padding:4px; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1px; font-size:clamp(9px,1.7vw,13px); font-weight:750; color:#51483e; text-align:center; }
+.md-bento-cell,.md-bento-number { touch-action:manipulation; }
+.md-bento-logic-note { margin:14px auto 0; padding:12px; max-width:320px; border:1px solid #8cb28b; border-radius:10px; background:#eaf4e8; color:#315c3c; font-size:13px; line-height:1.5; }
+.md-bento-tools .md-game-button[aria-pressed="true"] { background:#fff0ce; color:#951018; border-color:#951018; }
