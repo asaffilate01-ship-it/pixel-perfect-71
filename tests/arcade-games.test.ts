@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  advanceShuffleRound, undoShuffleRound, createShuffleSave, parseShuffleSave, findShuffleHint, isSolvableShuffleBoard, SHUFFLE_UNDO_LIMIT, type ShuffleRound,
   applyEchoAnswer, type EchoRound, chooseFourMove, dailySeed, dropFour, fourResult, fourWinningCells, mergeLine, mergeOver, moveMerge,
   advanceFeastRound, createFeastRound, createFeastSave, parseFeastSave, undoFeastRound, FEAST_UNDO_LIMIT,
   type Direction,
@@ -181,5 +182,41 @@ describe("Order Echo atomic input", () => {
     expect(applyEchoAnswer(round, 1, 2, 0, true).phase).toBe("won");
     expect(applyEchoAnswer(round, 4, 2, 0, true)).toBe(round);
     expect(applyEchoAnswer(round, 1, 4, 2, true).tick).toBe(0);
+  });
+});
+
+describe("Kitchen Shuffle verified hints and local saves", () => {
+  test("near-solved boards produce legal, exact hints on both sizes", () => {
+    for (const size of [3,4] as const) {
+      const solved = Array.from({ length: size * size }, (_, index) => (index + 1) % (size * size));
+      const board = slidePuzzle(solved, size * size - 2, size);
+      expect(findShuffleHint(board, size)).toEqual({ kind:"move", index:size * size - 1, remaining:1 });
+      expect(findShuffleHint(solved,size)).toEqual({kind:"complete"});
+      const invalid = [...solved]; [invalid[0],invalid[1]] = [invalid[1]!,invalid[0]!];
+      expect(isSolvableShuffleBoard(invalid,size)).toBe(false);
+      expect(findShuffleHint(invalid,size).kind).toBe("invalid");
+      expect(findShuffleHint(board,size,1).kind).toBe("limit");
+    }
+  });
+  test("save keeps daily layout and legal undo chain, rejects tampering", () => {
+    const size=3, date=20261127;
+    let round:ShuffleRound={board:startPuzzle(size,seededRandom(date+size)),moves:0,hints:0,history:[],date,message:""};
+    for(let i=0;i<6;i++) round=advanceShuffleRound(round,puzzleMoves(round.board,size)[0]!,size);
+    const saved=createShuffleSave(round,size,true)!;
+    expect(saved.history.length).toBe(6);
+    expect(parseShuffleSave(JSON.stringify(saved))).toEqual(saved);
+    expect(undoShuffleRound(round).moves).toBe(5);
+    expect(parseShuffleSave(JSON.stringify({...saved,date:20260230}))).toBeNull();
+    expect(parseShuffleSave(JSON.stringify({...saved,date:20261128}))).toBeNull();
+    expect(parseShuffleSave(JSON.stringify({...saved,history:[saved.board]}))).toBeNull();
+    expect(parseShuffleSave(JSON.stringify({...saved,board:Array(9).fill(0)}))).toBeNull();
+    expect(parseShuffleSave(JSON.stringify({...saved,hints:-1}))).toBeNull();
+  });
+  test("undo history is bounded and fresh saves round-trip", () => {
+    const size=4;
+    let round:ShuffleRound={board:startPuzzle(size,seededRandom(10)),moves:0,hints:0,history:[],date:20261127,message:""};
+    for(let i=0;i<SHUFFLE_UNDO_LIMIT+5;i++) round=advanceShuffleRound(round,puzzleMoves(round.board,size)[0]!,size);
+    expect(round.history.length).toBe(SHUFFLE_UNDO_LIMIT);
+    expect(createShuffleSave(round,size,false)).not.toBeNull();
   });
 });
