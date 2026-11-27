@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   arcadeGameLink,
   findArcadeGames,
+  getArcadeSuggestions,
   parseArcadeFavourites,
   parseArcadeSearch,
   parseArcadeSetupSearch,
@@ -234,5 +235,19 @@ describe("Canonical game pages and legacy incoming links", () => {
       expect(canonical.pathname).toBe(`/play/${game}`);
       expect(canonical.searchParams.has("game")).toBe(false);
     }
+  });
+});
+
+describe("Responsive arcade quick picks", () => {
+  test("offers varied first picks and respects device history without duplicate or unknown IDs", () => {
+    expect(getArcadeSuggestions(null).map((game) => game.id)).toEqual(["snack-trail", "bento-sudoku", "four-to-feast"]);
+    expect(getArcadeSuggestions(null, ["unknown", "pairs", "pairs"], ["pairs", "tray-lines"]).map((game) => game.id)).toEqual(["pairs", "tray-lines", "snack-trail"]);
+  });
+
+  test("prioritises related games and never recommends the active game", () => {
+    const related = getArcadeSuggestions("four-to-feast");
+    expect(related).toHaveLength(3);
+    expect(related.every((game) => game.category === "Strategy" && game.id !== "four-to-feast")).toBe(true);
+    expect(new Set(getArcadeSuggestions("snack-trail").map((game) => game.id)).size).toBe(3);
   });
 });
