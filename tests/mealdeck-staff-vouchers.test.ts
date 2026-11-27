@@ -66,7 +66,7 @@ describe("Secure staff voucher transport and checkout price",()=>{
 test("a rejected voucher does not erase the previous reviewed quote or confirm payment",()=>{
  const ui=source("src/components/launch-checkout.tsx");
  const review=ui.slice(ui.indexOf("  async function reviewTotal("),ui.indexOf("  async function pay("));
- const reset=review.match(/if \(voucherCode\) \{[\s\S]*?\n    \}/)?.[0];
+ const reset=review.match(/if \(voucherCode\) \{[\s\S]*?\n {4}\}/)?.[0];
  expect(reset).toBeDefined();
  expect(reset).toContain('setStaffVoucherCode("")');
  expect(reset).toContain("setReviewConfirmed(false)");
