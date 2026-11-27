@@ -68,7 +68,10 @@ export function useCinemaPromotion() {
       invalidate();
       if (document.visibilityState === "visible" && navigator.onLine !== false) void refresh();
     }
+    // A restored back-forward-cache page may not emit a visibility change.
     void refresh();
+    window.addEventListener("pagehide", invalidate);
+    window.addEventListener("pageshow", onVisible);
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("offline", invalidate);
     window.addEventListener("online", onVisible);
@@ -77,6 +80,8 @@ export function useCinemaPromotion() {
       revision++;
       clearTimers();
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pagehide", invalidate);
+      window.removeEventListener("pageshow", onVisible);
       window.removeEventListener("offline", invalidate);
       window.removeEventListener("online", onVisible);
     };
