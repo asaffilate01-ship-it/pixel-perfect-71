@@ -1044,15 +1044,15 @@ export function KitchenStacks({ suspended = false }: { suspended?: boolean }) {
     if (!next) return;
     setHintId(next.id);
     requestFocus(`[data-card-id="${next.id}"]`);
-    setState({
-      ...state,
-      hints: (state.hints ?? 0) + 1,
+    setState(current => current ? {
+      ...current,
+      hints: (current.hints ?? 0) + 1,
       message: `Try ${CHAOS_SUIT_NAMES[next.suit]} ${next.rank}. It is the next card for that food stack.`,
-    });
+    } : current);
   }
   function placeCard(card: FullHouseCard) {
     if (!state || suspended || complete) return;
-    if (card.rank === state.progress[card.suit] + 1) requestFocus('[data-card-ready="true"]:not(:disabled)');
+    if (card.rank === state.progress[card.suit] + 1) requestFocus(showReady ? '[data-card-ready="true"]:not(:disabled)' : '[data-card-action]:not(:disabled)');
     setHintId(null);
     setState(current => {
       if (!current) return current;
