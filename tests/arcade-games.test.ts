@@ -220,3 +220,17 @@ describe("Kitchen Shuffle verified hints and local saves", () => {
     expect(createShuffleSave(round,size,false)).not.toBeNull();
   });
 });
+
+test("saved Feast and Shuffle boards preserve validated optional round identities",()=>{
+  const roundId="round-resume-test";
+  const feast=createFeastRound(startMerge(seededRandom(7)));
+  const fs=createFeastSave(feast,roundId)!;
+  expect(fs.roundId).toBe(roundId);
+  expect(parseFeastSave(JSON.stringify(fs))?.roundId).toBe(roundId);
+  expect(createFeastSave(feast,"bad")).toBeNull();
+  expect(createFeastSave(feast)?.roundId).toBeUndefined();
+  const shuffle:ShuffleRound={board:startPuzzle(3,seededRandom(6)),moves:0,history:[],date:20261127,hints:0,message:""};
+  const ss=createShuffleSave(shuffle,3,false,roundId)!;
+  expect(parseShuffleSave(JSON.stringify(ss))?.roundId).toBe(roundId);
+  expect(createShuffleSave(shuffle,3,false,"bad")).toBeNull();
+});
