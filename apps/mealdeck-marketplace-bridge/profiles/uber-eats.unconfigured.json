@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "platform": "uber_eats",
+  "environment": "live",
+  "profileId": "mealdeck-uber-browser-unconfigured",
+  "profileVersion": "0",
+  "transport": "playwright",
+  "pageUrl": "https://merchants.ubereats.com/orders",
+  "commissioning": {
+    "status": "unconfigured",
+    "accessAuthorizationReference": null,
+    "deviceOrBrowserVersion": null,
+    "verifiedAt": null,
+    "expiresAt": null
+  },
+  "screen": null,
+  "fields": null,
+  "actions": { "accept": null, "preparing": null, "ready": null, "handover": null }
+}
