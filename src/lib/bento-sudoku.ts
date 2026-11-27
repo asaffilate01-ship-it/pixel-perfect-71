@@ -1,6 +1,8 @@
 import { seededRandom } from "./arcade-games";
 
 export type BentoSize = 4 | 6;
+export const BENTO_DIFFICULTIES = ["guided", "classic", "expert"] as const;
+export type BentoDifficulty = (typeof BENTO_DIFFICULTIES)[number];
 export type BentoPuzzle = {
   size: BentoSize;
   givens: readonly number[];
@@ -139,8 +141,8 @@ function shuffle(values: readonly number[], random: () => number): number[] {
 }
 
 /** One finite removal pass from a valid grid, accepting only proven unique boards. */
-export function createBentoPuzzle(size: BentoSize, seed: number): BentoPuzzle {
-  if ((size !== 4 && size !== 6) || !Number.isFinite(seed)) {
+export function createBentoPuzzle(size: BentoSize, seed: number, difficulty: BentoDifficulty = "classic"): BentoPuzzle {
+  if ((size !== 4 && size !== 6) || !Number.isFinite(seed) || !BENTO_DIFFICULTIES.includes(difficulty)) {
     throw new RangeError("Choose a 4×4 or 6×6 board and a finite seed.");
   }
   const random = seededRandom(seed);
@@ -161,7 +163,7 @@ export function createBentoPuzzle(size: BentoSize, seed: number): BentoPuzzle {
     ),
   );
   const givens = [...solution];
-  const targetBlanks = size === 4 ? 8 : 20;
+  const targetBlanks = difficulty === "guided" ? (size === 4 ? 5 : 14) : difficulty === "expert" ? (size === 4 ? 10 : 24) : (size === 4 ? 8 : 20);
   let blanks = 0;
   for (const index of shuffle(range(size * size), random)) {
     if (blanks >= targetBlanks) break;
@@ -269,4 +271,46 @@ export function bentoFocusMove(index: number, key: string, size: BentoSize): num
     default:
       return null;
   }
+}
+
+
+/** Candidate marks reflect visible row, column and box constraints, not the hidden answer. */
+export function bentoCandidates(board: readonly number[], size: BentoSize, index: number): number[] {
+  if ((size !== 4 && size !== 6) || board.length !== size * size ||
+      !Number.isInteger(index) || index < 0 || index >= board.length || board[index] !== 0 ||
+      board.some(value => !Number.isInteger(value) || value < 0 || value > size)) return [];
+  const row = Math.floor(index / size), column = index % size, box = boxIndex(index, size);
+  const used = new Set(board.filter((value, i) => value > 0 &&
+    (Math.floor(i / size) === row || i % size === column || boxIndex(i, size) === box)));
+  return Array.from({ length: size }, (_, i) => i + 1).filter(value => !used.has(value));
+}
+export type BentoLogicHint = { kind: "move"; index: number; value: number; reason: "single" | "row" | "column" | "box" } |
+  { kind: "invalid" | "conflict" | "contradiction" | "complete" | "none" };
+
+/** Visible-constraint singles, with a bounded consistency check. Never read the hidden solution. */
+export function findBentoLogicHint(board: readonly number[], size: BentoSize, selected = -1): BentoLogicHint {
+  if ((size !== 4 && size !== 6) || board.length !== size * size ||
+      board.some(value => !Number.isInteger(value) || value < 0 || value > size)) return { kind: "invalid" };
+  if (bentoConflicts(board, size).size) return { kind: "conflict" };
+  const empty = board.flatMap((value, i) => value === 0 ? [i] : []);
+  if (!empty.length) return { kind: "complete" };
+  const candidates = board.map((_, i) => bentoCandidates(board, size, i));
+  if (empty.some(i => !candidates[i]?.length)) return { kind: "contradiction" };
+  const consistency = countBentoSolutions(board, size, { limit: 1, nodeBudget: 20_000 });
+  if (consistency.exhausted) return { kind: "none" };
+  if (!consistency.count) return { kind: "contradiction" };
+  const ordered = empty.includes(selected) ? [selected, ...empty.filter(i => i !== selected)] : empty;
+  for (const index of ordered) {
+    if (candidates[index]?.length === 1) return { kind: "move", index, value: candidates[index]![0]!, reason: "single" };
+  }
+  for (const reason of ["row", "column", "box"] as const) {
+    const group = (i: number) => reason === "row" ? Math.floor(i / size) : reason === "column" ? i % size : boxIndex(i, size);
+    for (let unit = 0; unit < size; unit++) {
+      for (let value = 1; value <= size; value++) {
+        const places = empty.filter(i => group(i) === unit && candidates[i]?.includes(value));
+        if (places.length === 1) return { kind: "move", index: places[0]!, value, reason };
+      }
+    }
+  }
+  return { kind: "none" };
 }
