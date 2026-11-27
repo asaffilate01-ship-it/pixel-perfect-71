@@ -870,8 +870,10 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
     if (phase !== "input" || paused || suspended) return;
     const nextFood = Math.floor(Math.random() * 4);
     setRound(current => applyEchoAnswer(current, index, target, nextFood, playback === "step"));
-    focusBoard(padRef);
   }
+  useEffect(() => {
+    if (phase === "won" || phase === "over" || (phase === "show" && cleared > 0)) focusBoard(padRef);
+  }, [phase, cleared]);
   function nextStep() {
     if (phase !== "show" || paused || suspended || playback !== "step") return;
     if (shownStep + 1 >= sequence.length) {
