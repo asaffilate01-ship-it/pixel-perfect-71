@@ -33,6 +33,16 @@ import {
 } from "@/lib/kitchen-chaos";
 import {
   askGoDish,
+  chooseGoDishRank,
+  GO_DISH_DIFFICULTIES,
+  type GoDishDifficulty,
+  type GoDishRank,
+  suggestFullHouseCard,
+  toggleFullHouseSelection,
+  createStacksSave,
+  parseStacksSave,
+  STACKS_SAVE_KEY,
+  type StacksSave,
   createBrandSnapRounds,
   createSnapSession,
   answerSnap,
@@ -627,16 +637,21 @@ export function BrandSnap({ suspended = false }: { suspended?: boolean }) {
   );
 }
 
-export function FullHouse() {
+export function FullHouse({ suspended = false }: { suspended?: boolean }) {
   const [cards, setCards] = useState<FullHouseCard[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [message, setMessage] = useState(
     "Select five cards. The food suits matter; the numbers do not.",
   );
   const [solved, setSolved] = useState(false);
+  const [hint, setHint] = useState<ReturnType<typeof suggestFullHouseCard>>(null);
+  const [checks, setChecks] = useState(0);
+  const [hints, setHints] = useState(0);
   const { regionRef, requestFocus } = useNextActionFocus(`${solved}-${selected.length}`);
   useEffect(() => setCards(makeFullHousePuzzle()), []);
   const restart = () => {
+    if (suspended) return;
+    setHint(null); setChecks(0); setHints(0);
     setCards(makeFullHousePuzzle());
     setSelected([]);
     setSolved(false);
@@ -644,18 +659,29 @@ export function FullHouse() {
   };
   const chosen = cards.filter((card) => selected.includes(card.id));
   function selectCard(card: FullHouseCard) {
-    const next = selected.includes(card.id)
-      ? selected.filter((id) => id !== card.id)
-      : [...selected, card.id];
-    if (next.length > 5 || solved) return;
-    setSelected(next);
-    setMessage(
-      next.length === 5
-        ? "Five cards selected. Check your hand, or remove one to change it."
-        : `${5 - next.length} more ${next.length === 4 ? "card" : "cards"} to choose. Aim for three of one food and two of another.`,
-    );
+    if (solved || suspended) return;
+    const next = toggleFullHouseSelection(cards, selected, card.id);
+    if (next === selected) return;
+    setHint(null);
+    setSelected(current => toggleFullHouseSelection(cards, current, card.id));
+    setMessage("Choose three cards of one food and two of another. Check your hand when five are selected.");
+  }
+  function showHint() {
+    if (solved || suspended) return;
+    const next = suggestFullHouseCard(cards, selected);
+    setHint(next);
+    if (!next) {
+      setMessage(isFullHouse(chosen) ? "Your selection already makes a full house. Check your hand." : "No hint is available.");
+      return;
+    }
+    setHints(value => value + 1);
+    const card = cards.find(item => item.id === next.cardId)!;
+    setMessage(`Hint: ${next.action === "add" ? "select" : "remove"} ${CHAOS_SUIT_NAMES[card.suit]} ${card.rank}. Keep as many of your current cards as possible.`);
   }
   function check() {
+    if (suspended || solved || selected.length !== 5) return;
+    setChecks(value => value + 1);
+    setHint(null);
     if (isFullHouse(chosen)) {
       requestFocus();
       setSolved(true);
@@ -685,12 +711,15 @@ export function FullHouse() {
           "Select five cards: three must share one food suit and two must share a different food suit.",
           "The numbers do not matter. For example, three Burger cards and two Cake cards make a full house.",
           "Tap a selected card to remove it. Once you have five, choose Check hand. Every puzzle has a solution.",
+          "A hint suggests one selection change towards a valid hand, preserving as many selected cards as possible.",
         ]}
       />
       <Stats
         items={[
           { label: "Cards selected", value: `${selected.length} / 5` },
           { label: "Target grouping", value: "3 + 2" },
+          { label: "Checks", value: checks },
+          { label: "Hints", value: hints },
         ]}
       />
       <Result
@@ -726,9 +755,10 @@ export function FullHouse() {
                 <FoodCard
                   card={card}
                   selected={isSelected}
-                  disabled={solved || (selected.length === 5 && !isSelected)}
+                  hinted={hint?.cardId === card.id}
+                  disabled={suspended || solved || (selected.length === 5 && !isSelected)}
                   status={
-                    isSelected ? "Selected" : selected.length === 5 ? "Hand full" : "Select card"
+                    hint?.cardId === card.id ? (hint.action === "remove" ? "Remove this card" : "Select this card") : isSelected ? "Selected" : selected.length === 5 ? "Hand full" : "Select card"
                   }
                   onClick={() => selectCard(card)}
                 />
@@ -759,7 +789,7 @@ export function FullHouse() {
             <button
               type="button"
               className="md-card-game__button"
-              disabled={selected.length !== 5}
+              disabled={suspended || selected.length !== 5}
               onClick={check}
             >
               Check hand <CheckCircle2 size={16} aria-hidden="true" />
@@ -767,15 +797,17 @@ export function FullHouse() {
             <button
               type="button"
               className="md-card-game__button md-card-game__button--secondary"
-              disabled={selected.length === 0}
+              disabled={suspended || selected.length === 0}
               onClick={() => {
                 requestFocus();
                 setSelected([]);
+                setHint(null);
                 setMessage("Selection cleared. Choose your five cards.");
               }}
             >
               Clear selection
             </button>
+            <button type="button" className="md-card-game__button md-card-game__button--secondary" disabled={suspended || !cards.length} onClick={showHint}><Lightbulb size={16} aria-hidden="true" /> Suggest a card</button>
           </>
         )}
       </div>
@@ -784,13 +816,19 @@ export function FullHouse() {
   );
 }
 
-export function GoDish() {
+export function GoDish({ suspended = false }: { suspended?: boolean }) {
   const [state, setState] = useState<GoDishState | null>(null);
+  const [difficulty, setDifficulty] = useState<GoDishDifficulty>("classic");
+  const [suggested, setSuggested] = useState<GoDishRank | null>(null);
+  const difficultyId = useId();
   const { regionRef, requestFocus } = useNextActionFocus(state);
   useEffect(() => {
     setState(startGoDish());
   }, []);
-  const restart = () => setState(startGoDish());
+  const restart = () => {
+    if (suspended) return;
+    setSuggested(null); setState(startGoDish(Math.random, difficulty));
+  };
   const rankOptions = state
     ? [...new Set(state.player.map((card) => card.rank))].sort((first, second) => first - second)
     : [];
@@ -805,8 +843,18 @@ export function GoDish() {
           "Ask for a number already in your hand. If the chef has any, you receive all of their cards with that number. Otherwise, you draw a card if any remain.",
           "The chef takes a turn automatically after your request. Four cards with the same number form a completed set and leave your hand.",
           "There are three sets to collect. The round ends when all are collected, no further play is possible, or after 60 turns. The most completed sets wins.",
+          "Expert remembers your public request when choosing its reply; it does not inspect your hidden hand. A suggestion uses your own cards and the chef’s previous request.",
         ]}
       />
+      <div className="md-card-game__settings">
+        <label htmlFor={difficultyId}>House chef difficulty</label>
+        <select id={difficultyId} value={difficulty} disabled={suspended} onChange={event => {
+          const next = event.target.value as GoDishDifficulty;
+          if (!GO_DISH_DIFFICULTIES.includes(next)) return;
+          setDifficulty(next); setSuggested(null); setState(startGoDish(Math.random,next));
+        }}><option value="relaxed">Relaxed · first rank</option><option value="classic">Classic · biggest group</option><option value="expert">Expert · public request strategy</option></select>
+        <p>Changing difficulty starts a new round.</p>
+      </div>
       {!state ? (
         <p className="md-card-game__loading" role="status">
           Dealing cards…
@@ -853,6 +901,7 @@ export function GoDish() {
               </button>
             </div>
           )}
+          <Progress label="Sets collected" value={state.playerSets.length + state.chefSets.length} max={3} />
           <div className="md-card-game__sets" aria-label="Completed sets">
             {([1, 2, 3] as const).map((rank) => (
               <div
@@ -913,16 +962,20 @@ export function GoDish() {
                 <h3>Ask the chef</h3>
                 <span>Choose a number in your hand</span>
               </div>
+              {state.lastChefRequest != null && <p className="md-card-game__hint">Last public request: chef asked for {state.lastChefRequest}s.</p>}
+              {rankOptions.length > 0 && <div className="md-card-game__hand-tools"><button type="button" className="md-card-game__button md-card-game__button--secondary" disabled={suspended} onClick={() => setSuggested(chooseGoDishRank(state.player, "expert", state.lastChefRequest ?? null))}><Lightbulb size={16} aria-hidden="true" /> Suggest a rank</button></div>}
+              {suggested !== null && <p className="md-card-game__advice" role="status">Try asking for {suggested}s. This suggestion uses your hand and public requests, not the chef’s hidden cards.</p>}
               <div className="md-card-game__rank-options">
                 {rankOptions.map((rank) => (
                   <button
-                    className="md-card-game__rank-button"
+                    className={`md-card-game__rank-button ${suggested === rank ? "is-hinted" : ""}`}
                     key={rank}
                     type="button"
                     data-card-action=""
+                    disabled={suspended}
                     onClick={() => {
-                      requestFocus();
-                      setState((current) => (current ? askGoDish(current, rank) : current));
+                      setSuggested(null); requestFocus();
+                      setState((current) => (current && current.turns === state.turns ? askGoDish(current, rank) : current));
                     }}
                   >
                     <strong>Ask for {rank}s</strong>
@@ -937,8 +990,9 @@ export function GoDish() {
                     type="button"
                     className="md-card-game__button"
                     data-next-action=""
+                    disabled={suspended}
                     onClick={() => {
-                      requestFocus();
+                      setSuggested(null); requestFocus();
                       setState((current) => (current ? drawGoDishIfEmpty(current) : current));
                     }}
                   >
@@ -956,41 +1010,83 @@ export function GoDish() {
   );
 }
 
-export function KitchenStacks() {
+export function KitchenStacks({ suspended = false }: { suspended?: boolean }) {
   const [state, setState] = useState<SolitaireState | null>(null);
   const [hintId, setHintId] = useState<string | null>(null);
+  const [showReady, setShowReady] = useState(true);
+  const [saved, setSaved] = useState<StacksSave | null>(null);
+  const [saveMessage, setSaveMessage] = useState("");
   const { regionRef, requestFocus } = useNextActionFocus(state);
   useEffect(() => {
     setState(startSolitaire());
+    function refresh() {
+      try {
+        const raw = localStorage.getItem(STACKS_SAVE_KEY);
+        const next = parseStacksSave(raw);
+        setSaved(next);
+        if (raw && !next) setSaveMessage("The saved stack puzzle could not be read.");
+      } catch { setSaveMessage("Browser storage is unavailable. You can still play."); }
+    }
+    refresh();
+    function sync(event: StorageEvent) { if (event.key === STACKS_SAVE_KEY || event.key === null) refresh(); }
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
   }, []);
   const restart = () => {
+    if (suspended) return;
     setState(startSolitaire());
     setHintId(null);
   };
   const complete = !!state && state.cards.length === 0;
   function showHint() {
-    if (!state || complete) return;
+    if (!state || complete || suspended) return;
     const next = state.cards.find((card) => card.rank === state.progress[card.suit] + 1);
     if (!next) return;
     setHintId(next.id);
     requestFocus(`[data-card-id="${next.id}"]`);
     setState({
       ...state,
+      hints: (state.hints ?? 0) + 1,
       message: `Try ${CHAOS_SUIT_NAMES[next.suit]} ${next.rank}. It is the next card for that food stack.`,
     });
   }
   function placeCard(card: FullHouseCard) {
-    if (!state) return;
-    const ready = card.rank === state.progress[card.suit] + 1;
-    if (ready) requestFocus('[data-card-ready="true"]:not(:disabled)');
+    if (!state || suspended || complete) return;
+    if (card.rank === state.progress[card.suit] + 1) requestFocus('[data-card-ready="true"]:not(:disabled)');
     setHintId(null);
-    const next = stackSolitaireCard(state, card.id);
-    setState({
-      ...next,
-      message: ready
-        ? `${CHAOS_SUIT_NAMES[card.suit]} is now at ${card.rank} of 4. ${card.rank === 4 ? "That stack is complete." : `Next it needs ${card.rank + 1}.`}`
-        : `${CHAOS_SUIT_NAMES[card.suit]} needs number ${state.progress[card.suit] + 1} first. Choose a card marked Ready to stack.`,
+    setState(current => {
+      if (!current) return current;
+      return stackSolitaireCard(current, card.id);
     });
+  }
+  function saveRound() {
+    if (!state || complete || suspended) return;
+    const snapshot = createStacksSave(state, showReady);
+    if (!snapshot) { setSaveMessage("This puzzle could not be saved."); return; }
+    try {
+      localStorage.setItem(STACKS_SAVE_KEY, JSON.stringify(snapshot));
+      setSaved(snapshot);
+      setSaveMessage("Puzzle saved in this browser. Save again to update the snapshot.");
+    } catch { setSaveMessage("Could not save. Your current puzzle is still here."); }
+  }
+  function loadRound() {
+    if (!saved || suspended) return;
+    try {
+      const current = parseStacksSave(localStorage.getItem(STACKS_SAVE_KEY));
+      if (!current || JSON.stringify(current) !== JSON.stringify(saved)) {
+        setSaved(current); setSaveMessage("The saved puzzle changed. Check it before loading."); return;
+      }
+      setState({ cards: current.cards, progress: current.progress, moves: current.moves, mistakes: current.mistakes,
+        hints: current.hints, message: "Saved puzzle loaded. Choose the next card." });
+      setShowReady(current.showReady);
+      setHintId(null);
+      setSaveMessage("Saved puzzle loaded. The snapshot stays until replaced or cleared.");
+    } catch { setSaveMessage("Could not load the saved puzzle."); }
+  }
+  function clearSave() {
+    if (suspended) return;
+    try { localStorage.removeItem(STACKS_SAVE_KEY); setSaved(null); setSaveMessage("Saved puzzle cleared."); }
+    catch { setSaveMessage("Could not clear the saved puzzle."); }
   }
   return (
     <section className="md-card-game" aria-label="Kitchen Stacks" ref={regionRef}>
@@ -1004,6 +1100,7 @@ export function KitchenStacks() {
           "Each food has its own stack. Start with its number 1, then add 2, 3 and 4 in order.",
           "Ready to stack marks the next cards you can place. Trying a later number counts as a mistake and leaves the card in your hand.",
           "Show a move highlights and focuses a card you can use. Every puzzle can be completed; there is no timer.",
+          "Hide ready markers for more challenge. Save a snapshot to this browser and load it later; loading replaces the current board.",
         ]}
       />
       {!state ? (
@@ -1017,6 +1114,7 @@ export function KitchenStacks() {
               { label: "Cards placed", value: `${16 - state.cards.length} / 16` },
               { label: "Attempts", value: state.moves },
               { label: "Mistakes", value: state.mistakes },
+              { label: "Hints", value: state.hints ?? 0 },
             ]}
           />
           <Progress label="Cards stacked" value={16 - state.cards.length} max={16} />
@@ -1030,6 +1128,12 @@ export function KitchenStacks() {
             success={complete}
             complete={complete}
           />
+          <div className="md-card-game__hand-tools">
+            <button type="button" className="md-card-game__button md-card-game__button--secondary" aria-pressed={showReady} disabled={suspended} onClick={() => { setShowReady(value => !value); setHintId(null); }}>{showReady ? "Hide ready markers" : "Show ready markers"}</button>
+            <button type="button" className="md-card-game__button md-card-game__button--secondary" disabled={complete || suspended} onClick={saveRound}>{saved ? "Update saved puzzle" : "Save puzzle"}</button>
+          </div>
+          {saved && <div className="md-card-game__saved"><div><strong>Saved puzzle</strong><p>{16-saved.cards.length} / 16 cards placed · {saved.moves} attempts</p></div><button type="button" className="md-card-game__button" disabled={suspended} onClick={loadRound}>Load saved puzzle</button><button type="button" className="md-card-game__button md-card-game__button--secondary" disabled={suspended} onClick={clearSave}>Clear save</button><small>Loading replaces the current board. The snapshot stays on this browser until cleared or replaced.</small></div>}
+          {saveMessage && <p className="md-card-game__hint" role="status">{saveMessage}</p>}
           <div className="md-card-game__stacks" aria-label="Food stack progress">
             {CHAOS_SUITS.map((suit) => (
               <div className={state.progress[suit] === 4 ? "is-complete" : ""} key={suit}>
@@ -1063,6 +1167,7 @@ export function KitchenStacks() {
                 <button
                   type="button"
                   className="md-card-game__button md-card-game__button--secondary"
+                  disabled={suspended}
                   onClick={showHint}
                 >
                   <Lightbulb size={16} aria-hidden="true" /> Show a move
@@ -1078,12 +1183,13 @@ export function KitchenStacks() {
                     <li key={card.id}>
                       <FoodCard
                         card={card}
-                        ready={ready}
+                        ready={showReady && ready}
+                        disabled={suspended}
                         hinted={hintId === card.id}
                         status={
                           hintId === card.id
                             ? "Try this card"
-                            : ready
+                            : !showReady ? "Choose card" : ready
                               ? "Ready to stack"
                               : `Needs ${state.progress[card.suit] + 1} first`
                         }
@@ -1097,7 +1203,7 @@ export function KitchenStacks() {
           )}
         </>
       )}
-      <LocalNote />
+      <p className="md-card-game__local-note">Your unfinished board resets on leaving unless you save a snapshot. Saved puzzles are local to this browser.</p>
     </section>
   );
 }
