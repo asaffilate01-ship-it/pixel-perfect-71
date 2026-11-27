@@ -148,7 +148,7 @@ function chefReply(state: ChaosState): ChaosState {
     s = { ...s, chef: [...s.chef, ...drawn], stock, played };
     cardIndex = drawn.length ? s.chef.length - 1 : -1;
     if (cardIndex < 0 || !canPlayChaos(s.chef[cardIndex]!, s))
-      return { ...s, message: "The house chef took a card. Your turn!" };
+      return { ...s, message: drawn.length ? "The house chef took a card. Your turn!" : "The house chef could not draw a card. Your turn!" };
   }
   const [playedCard] = s.chef.splice(cardIndex, 1);
   if (!playedCard) return s;
@@ -197,5 +197,6 @@ export function drawChaos(state: ChaosState): ChaosState {
     ...state, player: [...state.player, ...drawn], stock, played,
     turns: state.turns + 1, message: "",
   };
-  return finishChaosTurn(chefReply(next));
+  const reply = finishChaosTurn(chefReply(next));
+  return { ...reply, message: (drawn.length ? "You drew one card. " : "No card was available to draw. ") + reply.message };
 }
