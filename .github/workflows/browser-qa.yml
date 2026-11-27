@@ -6,6 +6,7 @@ on:
       - 'src/components/site-header.tsx'
       - 'src/components/site-footer.tsx'
       - 'src/components/mobile-tab-bar.tsx'
+      - 'src/components/mealdeck-cookie-choices.tsx'
       - 'src/styles.mealdeck-rebuild.css'
       - 'scripts/audit-mealdeck-browser.mjs'
       - '.github/workflows/browser-qa.yml'
