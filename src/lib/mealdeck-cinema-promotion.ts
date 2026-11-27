@@ -14,6 +14,7 @@ export type CinemaPromoSnapshot = {
   serverNow: string;
   nextTransitionAt: string | null;
   approved: boolean;
+  catalogueState: "not-checked" | "available" | "unavailable" | "unverified";
   terms: string | null;
   eligibleProducts: string[];
 };
