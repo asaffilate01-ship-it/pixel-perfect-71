@@ -60,8 +60,8 @@ export function MunchboxCinemaBanner({ showClosedTerms = false }: { showClosedTe
             <span><Clock3 size={17} aria-hidden="true" /> 7:20pm</span>
           </div>
           <p className="md-cinema-promo__entry">{teaser
-            ? "Register or sign in now. Only qualifying paid website orders placed from 12:00am on 3 December until the end of 6 December enter the draw."
-            : "Register or sign in and purchase a qualifying Munchbox through our website before midnight at the end of Sunday 6 December to enter the draw."}</p>
+            ? "Register or sign in now. Only qualifying website purchases paid from 12:00am on 3 December until the end of 6 December enter the draw."
+            : "Register or sign in and complete payment for a qualifying Munchbox through our website before midnight at the end of Sunday 6 December to enter the draw."}</p>
           <div className="md-cinema-promo__actions">
             <Link to="/account" className={teaser ? "md-cinema-promo__primary" : "md-cinema-promo__secondary"}>{teaser ? "Register before entries open" : "Register or sign in"}</Link>
             {!teaser && <Link to="/menus" className="md-cinema-promo__primary">Click Here to Order <ArrowRight size={18} aria-hidden="true" /></Link>}
