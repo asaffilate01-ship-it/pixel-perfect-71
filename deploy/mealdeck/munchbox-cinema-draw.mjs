@@ -6,7 +6,13 @@ export const ENTRY_END = Date.parse("2026-12-07T00:00:00Z");
 export const SCREENING = Date.parse("2026-12-16T19:20:00Z");
 export const RESPONSE_WINDOW = 24 * 60 * 60 * 1000;
 const uuid = value => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-const validTime = value => typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value) && Number.isFinite(Date.parse(value));
+const validTime = value => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value)) return false;
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return false;
+  const canonical = value.replace(/(?:\.(\d{1,3}))?Z$/, (_, fraction) => "." + (fraction ?? "").padEnd(3, "0") + "Z");
+  return new Date(parsed).toISOString() === canonical;
+};
 const hash = value => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
 /** Accept only the reviewed owner export. This is validation, not database authentication. */
@@ -63,8 +69,11 @@ function eventTime(draw, now) {
 export function recordCinemaContact(draw,now=Date.now()) {
   if(!cinemaCandidate(draw))throw Error("No active candidate");
   const at=eventTime(draw,now);
-  const first=currentEvents(draw).find(event=>event.type==="contact");
+  const previous = currentEvents(draw).filter(event=>event.type==="contact");
+  const first = previous[0];
+  if (!first && now + RESPONSE_WINDOW > SCREENING) throw Error("Insufficient time for the full response window");
   if(first && now>=Date.parse(first.at)+RESPONSE_WINDOW)throw Error("Response window elapsed");
+  if(previous.some(event=>Date.parse(event.at)===now)) throw Error("Duplicate contact timestamp");
   return addEvent(draw,{type:"contact",candidateIndex:draw.candidateIndex,at});
 }
 export function recordCinemaClaim(draw,now=Date.now()) {
@@ -80,4 +89,50 @@ export function advanceCinemaCandidate(draw,reason,now=Date.now()) {
   if(reason==="no-response"&&(!first||now<Date.parse(first.at)+RESPONSE_WINDOW||events.filter(event=>event.type==="contact").length<2))
     throw Error("24 hours and two recorded contact attempts required");
   return {...addEvent(draw,{type:"replacement",candidateIndex:draw.candidateIndex,reason,at}),candidateIndex:draw.candidateIndex+1};
+}
+
+
+/** Rebuild the complete event history from the frozen evidence and original ranking.
+ * This detects corrupt state and inconsistent transitions, not deliberate changes
+ * by a filesystem administrator. Retain an independently witnessed initial digest.
+ */
+export function validateCinemaDraw(snapshotInput, input, now=Date.now()) {
+  if (!Number.isFinite(now) || !input || input.version !== 1 || input.campaign !== CAMPAIGN ||
+      !validTime(input.drawnAt) || Date.parse(input.drawnAt) > now ||
+      Date.parse(input.drawnAt) < ENTRY_END || Date.parse(input.drawnAt) >= SCREENING ||
+      !Array.isArray(input.ranking) || !Array.isArray(input.events) || input.events.length > 100_000)
+    throw Error("Invalid draw record");
+  const drawnAt=Date.parse(input.drawnAt);
+  const snapshot=validateCinemaSnapshot(snapshotInput,drawnAt);
+  const members=new Set(snapshot.entrants.map(entry=>entry.memberId));
+  if (!members.size || input.snapshotHash !== hash(snapshot) || input.entrantCount !== members.size ||
+      input.ranking.length !== members.size) throw Error("Draw evidence mismatch");
+  for (const member of input.ranking) {
+    if (!members.delete(member)) throw Error("Invalid draw ranking");
+  }
+  let draw={version:1,campaign:CAMPAIGN,snapshotHash:hash(snapshot),drawnAt:input.drawnAt,
+    entrantCount:input.entrantCount,ranking:[...input.ranking],candidateIndex:0,events:[]};
+  for (const event of input.events) {
+    if (!event || !validTime(event.at) || Date.parse(event.at)>now || event.candidateIndex!==draw.candidateIndex)
+      throw Error("Invalid draw event");
+    const at=Date.parse(event.at);
+    if (event.type==="contact") draw=recordCinemaContact(draw,at);
+    else if (event.type==="claimed") draw=recordCinemaClaim(draw,at);
+    else if (event.type==="replacement") draw=advanceCinemaCandidate(draw,event.reason,at);
+    else throw Error("Invalid draw event type");
+  }
+  if (draw.candidateIndex !== input.candidateIndex) throw Error("Draw candidate index mismatch");
+  return {snapshot,draw};
+}
+
+export function cinemaDrawSummary(draw) {
+  const candidate=cinemaCandidate(draw);
+  const contact=currentEvents(draw).find(event=>event.type==="contact");
+  return {
+    campaign:CAMPAIGN, snapshotHash:draw.snapshotHash, drawnAt:draw.drawnAt,
+    entrantCount:draw.entrantCount, candidateNumber:candidate ? draw.candidateIndex+1 : null,
+    state:draw.events.some(event=>event.type==="claimed") ? "claimed" : candidate ? "awaiting-claim" : "exhausted",
+    responseDeadline:contact && candidate ? new Date(Date.parse(contact.at)+RESPONSE_WINDOW).toISOString() : null,
+    eventCount:draw.events.length,
+  };
 }
