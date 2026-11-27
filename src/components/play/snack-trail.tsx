@@ -413,6 +413,7 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
               <div
                 ref={board}
                 className="md-snack__board"
+                data-moving={!blocked ? "yes" : "no"}
                 tabIndex={0}
                 role="application"
                 aria-label="Snack Trail, ten by ten game board"
