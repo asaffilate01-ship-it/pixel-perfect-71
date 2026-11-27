@@ -180,9 +180,6 @@ jobs:
           --rule 'prettier/prettier: off'
       - name: Franchise offer and enquiry regressions
         run: bun test tests/franchise-offer.test.ts tests/franchise-api.test.ts tests/franchise-selection.test.ts
-      - name: Munchbox cinema publication schedule regressions
-        run: bun test tests/mealdeck-cinema-promotion.test.ts
-
       - name: MealDeck Play game regressions
         run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts tests/bento-sudoku.test.ts tests/tray-lines.test.ts tests/mealdeck-play-progress.test.ts tests/snack-trail.test.ts tests/skewer-sort.test.ts tests/pantry-sweep.test.ts tests/mealdeck-arcade-sharing.test.ts tests/mealdeck-arcade-share-card.test.ts tests/mealdeck-arcade-pages.test.ts tests/mealdeck-arcade-promotion.test.ts tests/mealdeck-arcade-qr.test.ts tests/hero-food-deck.test.ts
       - name: Homepage motion, native zoom and lifecycle cleanup
@@ -621,7 +618,7 @@ jobs:
           --rule 'prettier/prettier: off'
 
       - name: Confirmed November offers and retired-copy regressions
-        run: bun test tests/mealdeck-offers.test.ts
+        run: bun test tests/mealdeck-offers.test.ts tests/mealdeck-cinema-promotion.test.ts
 
       - name: Offers catalogue and page lint
         run: >-
