@@ -294,3 +294,14 @@
     scroll-behavior: auto;
   }
 }
+
+.md-skewer-game .md-skewer-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.md-skewer-column.is-hint-target {
+  border: 2px solid #315c3c;
+  background: #eaf4e8;
+}
+.md-skewer-column.is-hint-target .md-skewer-state { color: #315c3c; }
+.md-skewer-column { touch-action: manipulation; }
+@media (max-width: 580px) {
+  .md-skewer-game .md-skewer-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
