@@ -18,7 +18,13 @@ describe("MealDeck keyboard navigation", () => {
     expect(root).toContain("<SkipToMainContent />");
   });
   test("mobile navigation labels ordering without restricting delivery and shows the active page", () => {
-    expect(tabs).toContain("Order Now — browse MealDeck menus");
+    expect(tabs).toContain("Click Here to Order — browse MealDeck menus");
+    expect(tabs).toContain("<span>Click</span>");
+    expect(tabs).toContain("<span>Here to</span>");
+    expect(tabs).toMatch(/<span[^>]*>Order<\/span>/);
+    expect(tabs).not.toContain("MealDeckLogo");
+    expect(tabs).not.toContain("rotate-[-6deg]");
+    expect(tabs).toMatch(/to="\/menus"\s+aria-label="Click Here to Order/);
     expect(tabs).toContain('aria-current={dealActive ? "page" : undefined}');
     expect(tabs).toContain("focus-visible:outline");
     expect(tabs).toContain('{ label: "Account", to: "/account", icon: UserRound }');
