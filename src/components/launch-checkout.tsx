@@ -1306,6 +1306,8 @@ function LaunchCheckoutView({
     setReceiptRefreshed(false);
     setReviewConfirmed(false);
     setSpecialRequests(whatsAppDraft?.notes ?? "");
+    setStaffVoucherCode("");
+    setShowStaffVoucher(false);
     setWhatsAppPrivacyAcknowledged(false);
     attempt.current = null;
     setIssue(null);
@@ -1494,16 +1496,17 @@ function LaunchCheckoutView({
 
   async function reviewTotal(voucherCode?: string) {
     if (!fulfilment || busy || !canCheckout || !browserBasketStillValid()) return;
-    if (voucherCode && (checkoutMode !== "member" || status?.staffVoucherEligible !== true || groupCheckout || whatsAppCheckout || paymentChoice !== "host")) {
+    if (voucherCode && (!quote || quote.staffVoucherApplied === true || !statusCurrent || checkoutMode !== "member" || status?.staffVoucherEligible !== true || groupCheckout || whatsAppCheckout || paymentChoice !== "host")) {
       setStaffVoucherCode("");
       setIssue("Staff vouchers are available only for verified staff direct website orders.");
       return;
     }
     if (voucherCode) {
+      // Keep the previously reviewed, undiscounted server quote available if
+      // this request is rejected. Never reuse its acknowledgement for payment.
+      // The new attempt ID is installed only after a valid new quote arrives.
       setStaffVoucherCode("");
       setReviewConfirmed(false);
-      setQuote(null);
-      attempt.current = null;
     }
     if (whatsAppPaymentAttempt) {
       setIssue(
@@ -1573,7 +1576,8 @@ function LaunchCheckoutView({
         undefined,
         !!whatsAppCheckout,
       );
-      if (alive.current && requestId === checkoutRequestId.current && result.quote) {
+      if (alive.current && requestId === checkoutRequestId.current) {
+        if (!result.quote) throw new Error("We couldn’t confirm your total. Please try again.");
         if (!orderNotesMatch(notes, result.quote.notes))
           throw new Error(
             "Your special requests could not be confirmed. Review them and try the final total again.",
@@ -3016,7 +3020,7 @@ function LaunchCheckoutView({
                         {showStaffVoucher && <div className="md-staff-voucher__form">
                           <label>Single-use staff code<input type="password" autoComplete="off" spellCheck={false} autoCapitalize="characters" maxLength={40} value={staffVoucherCode} disabled={busy} onChange={event => setStaffVoucherCode(event.target.value)} placeholder="MD-…" /></label>
                           <button type="button" className="md-checkout-primary" disabled={busy || !staffVoucherCode.trim()} onClick={() => void reviewTotal(staffVoucherCode)}>Apply 50% voucher</button>
-                          <small>Assigned staff account only. Cannot be combined with another offer. One payment attempt per code.</small>
+                          <small>Assigned staff account only. Cannot be combined with another offer. One payment attempt per code. If rejected, your previous total stays unchanged; enter another code or review that total again before paying.</small>
                         </div>}
                       </>}
                     </section>
