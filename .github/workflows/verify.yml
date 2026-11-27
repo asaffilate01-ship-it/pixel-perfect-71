@@ -183,8 +183,6 @@ jobs:
       - name: Private Munchbox cinema draw regressions (synthetic data only)
         run: bun test tests/mealdeck-munchbox-cinema-draw.test.ts
 
-      - name: Private cinema export eligibility in disposable database
-        run: node tests/postgres/munchbox-cinema-export-behavior.mjs
 
       - name: MealDeck Play game regressions
         run: bun test tests/dishbee-play.test.ts tests/mealdeck-premium-games.test.ts tests/arcade-games.test.ts tests/mealdeck-arcade-library.test.ts tests/mealdeck-puzzle-games.test.ts tests/tray-tactics.test.ts tests/bento-sudoku.test.ts tests/tray-lines.test.ts tests/mealdeck-play-progress.test.ts tests/snack-trail.test.ts tests/skewer-sort.test.ts tests/pantry-sweep.test.ts tests/mealdeck-arcade-sharing.test.ts tests/mealdeck-arcade-share-card.test.ts tests/mealdeck-arcade-pages.test.ts tests/mealdeck-arcade-promotion.test.ts tests/mealdeck-arcade-qr.test.ts tests/hero-food-deck.test.ts
@@ -359,6 +357,9 @@ jobs:
 
       - name: Install isolated PostgreSQL integration dependencies
         run: npm ci --prefix tests/postgres
+
+      - name: Private cinema export eligibility in disposable database
+        run: node tests/postgres/munchbox-cinema-export-behavior.mjs
 
       - name: Category and add-on authorization, conflicts and canonical checkout
         run: node tests/postgres/menu-structure-behavior.mjs
