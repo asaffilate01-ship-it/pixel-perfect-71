@@ -40,7 +40,7 @@ export function SiteFooter() {
               How it works
             </Link>
             <Link to="/track">Track order · Coming soon</Link>
-            <Link to="/play">Play &amp; Rewards</Link>
+            <Link to="/play">Play games</Link>
             <Link to="/franchise">Franchises</Link>
             <Link to="/ops">Staff sign-in</Link>
           </div>
