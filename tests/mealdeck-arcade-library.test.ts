@@ -3,6 +3,9 @@ import {
   arcadeGameLink,
   findArcadeGames,
   getArcadeSuggestions,
+  ARCADE_HELP,
+  findArcadeHelp,
+  ARCADE_GAMES,
   parseArcadeFavourites,
   parseArcadeSearch,
   parseArcadeSetupSearch,
@@ -249,5 +252,19 @@ describe("Responsive arcade quick picks", () => {
     expect(related).toHaveLength(3);
     expect(related.every((game) => game.category === "Strategy" && game.id !== "four-to-feast")).toBe(true);
     expect(new Set(getArcadeSuggestions("snack-trail").map((game) => game.id)).size).toBe(3);
+  });
+});
+
+describe("Reviewed arcade help", () => {
+  test("all games have help and every question has a unique ID", () => {
+    expect(ARCADE_HELP).toHaveLength(26);
+    expect(new Set(ARCADE_HELP.map(entry => entry.id)).size).toBe(26);
+    for (const game of ARCADE_GAMES) expect(ARCADE_HELP.some(entry => entry.game === game.id)).toBe(true);
+  });
+  test("search is case-insensitive, matches every term, and promotes the active game", () => {
+    expect(findArcadeHelp("", "recipe")[0]?.game).toBe("recipe");
+    expect(findArcadeHelp("  LOYALTY points ").some(entry => entry.id === "rewards")).toBe(true);
+    expect(findArcadeHelp("unknownzzz")).toEqual([]);
+    expect(findArcadeHelp("save board").length).toBeGreaterThan(0);
   });
 });
