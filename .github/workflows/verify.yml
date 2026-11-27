@@ -152,6 +152,7 @@ jobs:
           src/lib/mealdeck-customer-browser.ts src/lib/mealdeck-customer.functions.ts
           src/lib/mealdeck-customer-notifications.ts src/routes/account.tsx
           src/components/launch-checkout.tsx src/lib/mealdeck-online-checkout.server.ts
+          src/components/ops/staff-voucher-panel.tsx tests/mealdeck-staff-vouchers.test.ts
           src/lib/mealdeck-checkout-selection.ts src/lib/mealdeck-stripe.server.ts
           src/lib/mealdeck-opening-offer.ts src/lib/mealdeck-opening-offer.functions.ts
           src/lib/mealdeck-customer-order-timing.ts
