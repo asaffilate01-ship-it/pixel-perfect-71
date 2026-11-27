@@ -24,6 +24,8 @@ import {
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import {
   chooseFourMove,
+  applyEchoAnswer,
+  type EchoRound,
   fourWinningCells,
   advanceFeastRound,
   createFeastRound,
@@ -42,7 +44,6 @@ import {
   puzzleMoves,
   puzzleSolved,
   seededRandom,
-  sequencePrefix,
   slidePuzzle,
   startMerge,
   startPuzzle,
@@ -775,14 +776,6 @@ export function FourToFeast({ suspended = false }: { suspended?: boolean }) {
   );
 }
 
-type EchoPhase = "ready" | "show" | "input" | "over" | "won";
-type EchoRound = {
-  sequence: number[];
-  entered: number[];
-  phase: EchoPhase;
-  tick: number;
-  cleared: number;
-};
 type EchoPlayback = "steady" | "slow" | "step";
 const emptyEcho = (): EchoRound => ({
   sequence: [],
@@ -797,6 +790,7 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
   const [round, setRound] = useState<EchoRound>(emptyEcho);
   const [playback, setPlayback] = useState<EchoPlayback>("steady");
   const [paused, setPaused] = useState(false);
+  const [replays, setReplays] = useState(0);
   const padRef = useRef<HTMLDivElement>(null),
     epoch = useRef(0);
   const { sequence, entered, phase, tick, cleared } = round;
@@ -816,10 +810,12 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
   function reset() {
     epoch.current++;
     setRound(emptyEcho());
+    setReplays(0);
     setPaused(false);
   }
   function start() {
     epoch.current++;
+    setReplays(0);
     setRound({
       sequence: [Math.floor(Math.random() * 4)],
       entered: [],
@@ -832,6 +828,7 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
   }
   function replay() {
     epoch.current++;
+    setReplays(value => value + 1);
     setRound({ ...round, entered: [], phase: "show", tick: playback === "step" ? 0 : -1 });
     setPaused(false);
     focusBoard(padRef);
@@ -871,26 +868,12 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
       : undefined;
   function answer(index: number) {
     if (phase !== "input" || paused || suspended) return;
-    const next = [...entered, index];
-    if (!sequencePrefix(sequence, next)) {
-      setRound({ ...round, entered: next, phase: "over" });
-      focusBoard(padRef);
-      return;
-    }
-    if (next.length === sequence.length) {
-      if (sequence.length === target)
-        setRound({ ...round, entered: next, cleared: sequence.length, phase: "won" });
-      else
-        setRound({
-          sequence: [...sequence, Math.floor(Math.random() * 4)],
-          entered: [],
-          cleared: sequence.length,
-          tick: playback === "step" ? 0 : -1,
-          phase: "show",
-        });
-      focusBoard(padRef);
-    } else setRound({ ...round, entered: next });
+    const nextFood = Math.floor(Math.random() * 4);
+    setRound(current => applyEchoAnswer(current, index, target, nextFood, playback === "step"));
   }
+  useEffect(() => {
+    if (phase === "won" || phase === "over" || (phase === "show" && cleared > 0)) focusBoard(padRef);
+  }, [phase, cleared]);
   function nextStep() {
     if (phase !== "show" || paused || suspended || playback !== "step") return;
     if (shownStep + 1 >= sequence.length) {
@@ -935,6 +918,7 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
               reset();
             }}
           >
+            <option value={4}>4 dishes · Starter</option>
             <option value={6}>6 dishes · Taster</option>
             <option value={10}>10 dishes · Chef</option>
             <option value={14}>14 dishes · Master</option>
@@ -963,6 +947,7 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
           { label: "Rounds cleared", value: `${cleared} / ${target}` },
           { label: "Device best", value: best },
           { label: "Answers", value: `${entered.length} / ${sequence.length}` },
+          { label: "Replays", value: replays },
         ]}
       />
       {phase === "ready" ? (
@@ -980,6 +965,7 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
           <Status tone={phase === "won" ? "success" : paused ? "paused" : "neutral"}>
             {announcement}
           </Status>
+          <progress className="md-echo-progress" value={cleared} max={target} aria-label="Completed memory rounds" />
           <div className="md-echo-phase">
             <span>
               {paused
@@ -1078,7 +1064,7 @@ export function OrderEcho({ suspended = false }: { suspended?: boolean }) {
                   <li key={index}>
                     <span>{index + 1}.</span>
                     <Food index={food} />
-                    {FOODS[food]!.name}
+                    {FOODS[food]!.name}{index === entered.length - 1 && entered[index] !== food && <strong className="md-echo-error">Missed here · you chose {FOODS[entered[index]!]!.name}</strong>}
                   </li>
                 ))}
               </ol>

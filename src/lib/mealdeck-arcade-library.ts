@@ -194,3 +194,42 @@ export function getArcadeSuggestions(
     .slice(0, 3);
   return ids.map((id) => ARCADE_GAMES.find((item) => item.id === id)!);
 }
+
+export type ArcadeHelpEntry = { id: string; game?: ArcadeGameId; question: string; answer: string };
+/** Reviewed, local help. No generative output or customer/account data is needed. */
+export const ARCADE_HELP: readonly ArcadeHelpEntry[] = [
+  { id: "free", question: "Are the games free? Do I need an account?", answer: "All MealDeck Play games are free entertainment. You can play without signing in or placing an order." },
+  { id: "rewards", question: "Can games earn loyalty points, food or prizes?", answer: "No. Games never award food, money, discounts or loyalty points. Eligible paid orders have a separate loyalty system." },
+  { id: "save", question: "Can I save a game and finish later?", answer: "Snack Trail and Feast 2048 have explicit Save and exit controls. Saves stay in this browser and loading consumes the save slot. Other unfinished boards are not saved unless the game explicitly offers it." },
+  { id: "friends", question: "Can I play with a friend?", answer: "Four to Feast, Tray Tactics and Tray Lines support two players on the same device. Share a game link to invite friends to try it on their own device; this is not online multiplayer." },
+  { id: "daily", question: "Where are the daily puzzles?", answer: "Open Daily challenge or My playbook for supported daily puzzles. The puzzle date is based on UTC and stays fixed during your attempt." },
+  { id: "keyboard", question: "Can I play with a keyboard or without sound?", answer: "Games provide labelled buttons and keyboard controls. Open the individual game guide for shortcuts. Order Echo also has a step-by-step pace and does not require sound." },
+  { id: "privacy", question: "Where are favourites and scores stored?", answer: "Favourites and supported personal statistics are stored locally when browser storage is available. They are not synced to a customer account. My playbook records supported finished rounds." },
+  { id: "pairs", game: "pairs", question: "How do I play Food Pairs?", answer: "Turn over two cards at a time and remember their positions. Match every pair in the fewest moves. Easy, Classic and Challenge use 4, 6 and 8 pairs." },
+  { id: "recipe", game: "recipe", question: "How does Recipe Rush work?", answer: "Read the game clue and select exactly three ingredients. Check the answer, use the hint if needed, and move to the next question. These fictional recipes are not menu specifications or allergen advice." },
+  { id: "snack", game: "snack-trail", question: "How do I control Snack Trail?", answer: "Use swipes, the direction pad or arrow keys. Collect food without hitting walls or your own trail. Choose step mode for untimed play, or save and exit to continue later." },
+  { id: "skewer", game: "skewer-sort", question: "How do I solve Skewer Sort?", answer: "Move the top bite onto a matching bite or an empty skewer. Each skewer holds three. Use Undo or Hint when stuck; the hint searches for a legal solution route." },
+  { id: "pantry", game: "pantry-sweep", question: "What do Pantry Sweep numbers mean?", answer: "A number counts chillies in the touching squares, including diagonals. Flag suspected chillies and reveal safe cells. Hints use visible clues and may report that a guess is needed." },
+  { id: "bento", game: "bento-sudoku", question: "What is the Bento Sudoku goal?", answer: "Place each symbol once in every row, column and marked region. Choose the supported board size and use the in-game guide for its controls." },
+  { id: "lines", game: "tray-lines", question: "How do I win Tray Lines?", answer: "Draw edges between neighbouring dots. Completing a box claims it; the player with more boxes wins. Play against the chef or a friend on the same device." },
+  { id: "sauce", game: "sauce-switch", question: "How does Sauce Switch work?", answer: "Switching a tile changes it and its neighbouring tiles. Clear the tray using the puzzle rules. Plan ahead and try a new or daily puzzle." },
+  { id: "quest", game: "menu-quest", question: "How do I select a word in Menu Quest?", answer: "Find a hidden food word and select its first and last letters. The game checks the line against the word list." },
+  { id: "tactics", game: "tray-tactics", question: "How do I capture food in Tray Tactics?", answer: "Place a piece where it brackets opposing pieces so they flip to your side. Control the tray and use the game guide to understand legal moves." },
+  { id: "2048", game: "feast-2048", question: "How do I reach 2048 in Feast 2048?", answer: "Slide matching numbered tiles together; each tile merges once per move. Keep empty spaces and build larger tiles. Undo up to five recent moves or save the board." },
+  { id: "four", game: "four-to-feast", question: "What is Four to Feast?", answer: "Drop burgers or cakes into a column and connect four horizontally, vertically or diagonally. Choose a computer difficulty or play with a friend." },
+  { id: "echo", game: "order-echo", question: "How do I improve my Order Echo score?", answer: "Watch the sequence and repeat it in order. Choose a slower or step-by-step pace, and replay a sequence when needed. Each completed round adds a dish." },
+  { id: "shuffle", game: "kitchen-shuffle", question: "How do I move a Kitchen Shuffle tile?", answer: "Slide a tile next to the empty space. Arrange all tiles into the target order; only adjacent tiles can move." },
+  { id: "chaos", game: "kitchen-chaos", question: "How do I play Kitchen Chaos?", answer: "Play food cards against the house chef using the matching and special-card rules shown in the game guide. Follow the legal-move controls." },
+  { id: "snap", game: "snap", question: "What is Brand Snap?", answer: "Look for matching official MealDeck brand logos and follow the round prompts. It is a memory and matching challenge, not a reward draw." },
+  { id: "go", game: "go-dish", question: "How do I collect sets in Go Dish?", answer: "Ask the chef for food-card ranks and collect matching sets. The guide explains when to ask or draw." },
+  { id: "full", game: "full-house", question: "What makes a Full House?", answer: "Find five cards containing three of one food suit and two of another. No betting or stakes are involved." },
+  { id: "stacks", game: "solitaire", question: "What is the Kitchen Stacks goal?", answer: "Sort each food suit in order from one to four, using the legal moves described in the guide." },
+];
+
+export function findArcadeHelp(query: string, game?: ArcadeGameId): ArcadeHelpEntry[] {
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const matches = ARCADE_HELP.filter(entry => words.every(word =>
+    (entry.question + " " + entry.answer + " " + (entry.game ?? "")).toLowerCase().includes(word)));
+  if (!game) return matches;
+  return [...matches.filter(entry => entry.game === game), ...matches.filter(entry => entry.game !== game)];
+}

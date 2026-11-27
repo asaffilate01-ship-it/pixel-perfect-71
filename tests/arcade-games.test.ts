@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
-  chooseFourMove, dailySeed, dropFour, fourResult, fourWinningCells, mergeLine, mergeOver, moveMerge,
+  applyEchoAnswer, type EchoRound, chooseFourMove, dailySeed, dropFour, fourResult, fourWinningCells, mergeLine, mergeOver, moveMerge,
   advanceFeastRound, createFeastRound, createFeastSave, parseFeastSave, undoFeastRound, FEAST_UNDO_LIMIT,
   type Direction,
   puzzleMoves, puzzleSolved, seededRandom, sequencePrefix, slideMerge, slidePuzzle, startMerge, startPuzzle,
@@ -161,5 +161,25 @@ describe("Four to Feast expert and winning-line feedback", () => {
     expect(dropFour(board, chosen!, 2)).not.toBeNull();
     expect(chooseFourMove(board, 5)).toBe(chosen);
     expect(JSON.stringify(board)).toBe(before);
+  });
+});
+
+describe("Order Echo atomic input", () => {
+  test("rapid successive answers use the latest sequence and ignore input during playback", () => {
+    const round: EchoRound = { sequence: [1, 2], entered: [], phase: "input", tick: -1, cleared: 1 };
+    const first = applyEchoAnswer(round, 1, 4, 3, false);
+    const second = applyEchoAnswer(first, 2, 4, 3, false);
+    expect(second.phase).toBe("show");
+    expect(second.sequence).toEqual([1,2,3]);
+    expect(second.cleared).toBe(2);
+    expect(applyEchoAnswer(second, 3, 4, 0, false)).toBe(second);
+    expect(round.entered).toEqual([]);
+  });
+  test("wrong answers end the round and the final correct answer wins", () => {
+    const round: EchoRound = { sequence:[0,1], entered:[0], phase:"input", tick:-1, cleared:1 };
+    expect(applyEchoAnswer(round, 3, 2, 0, true).phase).toBe("over");
+    expect(applyEchoAnswer(round, 1, 2, 0, true).phase).toBe("won");
+    expect(applyEchoAnswer(round, 4, 2, 0, true)).toBe(round);
+    expect(applyEchoAnswer(round, 1, 4, 2, true).tick).toBe(0);
   });
 });

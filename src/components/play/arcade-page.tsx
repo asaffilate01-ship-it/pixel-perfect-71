@@ -46,7 +46,10 @@ import { SiteFooter } from "@/components/site-footer";
 import {
   BRAND_THEMES,
   INGREDIENTS,
-  RECIPES,
+  RECIPE_DECK_SIZES,
+  getRecipeDeck,
+  toggleRecipeIngredient,
+  type RecipeDeckSize,
   isBrandTheme,
   makePairs,
   createPairRound,
@@ -66,6 +69,7 @@ import {
   ARCADE_GAMES,
   NEW_ARCADE_GAMES,
   findArcadeGames,
+  findArcadeHelp,
   getArcadeSuggestions,
   parseArcadeFavourites,
   pickArcadeGame,
@@ -271,13 +275,17 @@ function FoodPairs({ brand, suspended = false }: { brand: BrandTheme; suspended?
 }
 
 function RecipeRush() {
+  const [size, setSize] = useState<RecipeDeckSize>(3);
+  const deck = getRecipeDeck(size);
   const [recipe, setRecipe] = useState(0);
+  const [attempts, setAttempts] = useState(0);
+  const [hints, setHints] = useState<number[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [feedback, setFeedback] = useState("");
   const [stage, setStage] = useState<"choosing" | "correct" | "complete">("choosing");
   const targetRef = useRef<HTMLHeadingElement>(null);
   const nextActionRef = useRef<HTMLButtonElement>(null);
-  const current = RECIPES[recipe] ?? RECIPES[0];
+  const current = deck[recipe] ?? deck[0]!;
   const completed = recipe + (stage === "choosing" ? 0 : 1);
 
   useEffect(() => {
@@ -293,19 +301,18 @@ function RecipeRush() {
       return;
     }
     setFeedback("");
-    setSelected((previous) =>
-      previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id],
-    );
+    setSelected((previous) => toggleRecipeIngredient(previous, id));
   }
 
   function check() {
     if (selected.length !== 3 || stage !== "choosing") return;
+    setAttempts(value => value + 1);
     if (!recipeMatches(selected, current.ingredients)) {
       setFeedback("Not quite. Swap an ingredient, or open the recipe hint for a hand.");
       return;
     }
     setFeedback("That's the recipe! All three ingredients are correct.");
-    setStage(recipe === RECIPES.length - 1 ? "complete" : "correct");
+    setStage(recipe === deck.length - 1 ? "complete" : "correct");
   }
 
   function focusRecipe() {
@@ -328,7 +335,10 @@ function RecipeRush() {
     focusRecipe();
   }
 
-  function restart() {
+  function restart(nextSize: RecipeDeckSize = size) {
+    setSize(nextSize);
+    setAttempts(0);
+    setHints([]);
     setRecipe(0);
     setSelected([]);
     setFeedback("");
@@ -344,16 +354,21 @@ function RecipeRush() {
           <h2 id="recipe-title">Recipe Rush</h2>
           <p>Pick three ingredients for each game recipe. Need a hand? Open the hint.</p>
         </div>
-        <button className="md-play-button md-play-button--quiet" type="button" onClick={restart}>
+        <button className="md-play-button md-play-button--quiet" type="button" onClick={() => restart()}>
           <RotateCcw size={17} aria-hidden="true" /> New game
         </button>
       </div>
-      <div className="md-quick-stats md-quick-stats--two">
+      <fieldset className="md-pairs-modes md-recipe-modes">
+        <legend>Choose your challenge</legend>
+        <div>{RECIPE_DECK_SIZES.map(count => <button type="button" key={count} className="md-play-button md-play-button--quiet" aria-pressed={size === count} onClick={() => { if (size !== count) restart(count); }}><strong>{count === 3 ? "Taster" : count === 6 ? "Chef" : "Master"}</strong><small>{count} recipes</small></button>)}</div>
+        <p>Changing the challenge starts a fresh quiz.</p>
+      </fieldset>
+      <div className="md-quick-stats md-recipe-stats">
         <div>
           <span>Recipes completed</span>
           <strong>
             {completed}
-            <small> / {RECIPES.length}</small>
+            <small> / {deck.length}</small>
           </strong>
         </div>
         <div>
@@ -363,10 +378,12 @@ function RecipeRush() {
             <small> / 3</small>
           </strong>
         </div>
+        <div><span>Answer checks</span><strong>{attempts}</strong></div>
+        <div><span>Hints opened</span><strong>{hints.length}</strong></div>
       </div>
       <progress
         className="md-quick-progress"
-        max={RECIPES.length}
+        max={deck.length}
         value={completed}
         aria-label="Recipes completed"
       />
@@ -374,19 +391,21 @@ function RecipeRush() {
         <img src={gameFoodArtwork[current.art]} alt="" />
         <div>
           <span>
-            RECIPE {recipe + 1} OF {RECIPES.length}
+            RECIPE {recipe + 1} OF {deck.length}
           </span>
           <h3 ref={targetRef} tabIndex={-1}>
             {current.label}
           </h3>
           <p>
             {stage === "choosing"
-              ? "Select an ingredient again to remove it."
+              ? current.clue
               : "All the right ingredients. Great work."}
           </p>
         </div>
       </div>
-      <details className="md-recipe-hint" key={recipe}>
+      <details className="md-recipe-hint" key={`${size}-${recipe}`} onToggle={(event) => {
+        if (event.currentTarget.open && stage === "choosing") setHints(previous => previous.includes(recipe) ? previous : [...previous, recipe]);
+      }}>
         <summary>
           <Lightbulb size={17} aria-hidden="true" /> Recipe hint
         </summary>
@@ -455,10 +474,10 @@ function RecipeRush() {
         <div className="md-quick-result">
           <CheckCircle2 size={26} aria-hidden="true" />
           <div>
-            <h3>Three dishes. One happy chef.</h3>
-            <p>You completed every recipe in the deck.</p>
+            <h3>{deck.length} dishes. One happy chef.</h3>
+            <p>You completed every recipe in {attempts} answer checks, with hints opened on {hints.length} questions.</p>
           </div>
-          <button ref={nextActionRef} type="button" className="md-play-button" onClick={restart}>
+          <button ref={nextActionRef} type="button" className="md-play-button" onClick={() => restart()}>
             Play again <RotateCcw size={17} aria-hidden="true" />
           </button>
         </div>
@@ -466,6 +485,36 @@ function RecipeRush() {
       <p className="md-quick-tip">
         These are recipes for a game. See the menus for actual dishes and allergen information.
       </p>
+    </section>
+  );
+}
+
+function ArcadeHelp({ game }: { game?: ArcadeGameId | undefined }) {
+  const [query, setQuery] = useState("");
+  const inputId = useId();
+  const [expanded, setExpanded] = useState(false);
+  const entries = findArcadeHelp(query, game);
+  const visible = query.trim() || expanded ? entries : entries.slice(0, 6);
+  return (
+    <section className="md-play-help" aria-labelledby={inputId + "-title"}>
+      <div className="md-play-recommendations-heading">
+        <div><h2 id={inputId + "-title"}>Game help &amp; questions</h2><p>Find game rules, controls, saved rounds and quick answers.</p></div>
+        <Lightbulb size={23} aria-hidden="true" />
+      </div>
+      <label htmlFor={inputId}>Search questions and answers</label>
+      <div className="md-play-search">
+        <Search size={17} aria-hidden="true" />
+        <input id={inputId} type="search" value={query} onChange={event => { setQuery(event.target.value); setExpanded(false); }} placeholder="Try hints, friends or save" />
+        {query && <button type="button" aria-label="Clear help search" onClick={() => { setQuery(""); setExpanded(false); document.getElementById(inputId)?.focus(); }}><X size={17} aria-hidden="true" /></button>}
+      </div>
+      <p className="md-play-help-count" role="status">{entries.length} {entries.length === 1 ? "answer" : "answers"}</p>
+      {entries.length ? <div className="md-play-help-grid">{visible.map(entry => (
+        <details key={entry.id}>
+          <summary>{entry.question}</summary><p>{entry.answer}</p>
+          {entry.game && <Link to="/play/$gameId" params={{ gameId: entry.game }} search={{}}>Open game <ArrowRight size={15} aria-hidden="true" /></Link>}
+        </details>
+      ))}</div> : <p>No matching answers. Try another search or clear the search.</p>}
+      {!query.trim() && entries.length > 6 && <button type="button" className="md-play-button md-play-button--quiet" aria-expanded={expanded} style={{ marginTop: 12 }} onClick={() => setExpanded(value => !value)}>{expanded ? "Show fewer answers" : `Show all ${entries.length} answers`}</button>}
     </section>
   );
 }
@@ -1175,6 +1224,7 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
           <div className="md-play-playbook md-play-playbook--after-game">
             <ArcadePlaybook onDailyGame={selectDailyGame} onShare={openShare} />
           </div>
+          <ArcadeHelp game={page === "library" ? undefined : game} />
           <section className="md-play-footnote" aria-label="About MealDeck games">
             <Gamepad2 size={24} aria-hidden="true" />
             <div>
