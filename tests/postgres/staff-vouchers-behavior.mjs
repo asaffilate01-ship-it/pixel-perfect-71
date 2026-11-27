@@ -145,7 +145,15 @@ try {
      for(const c of clients){await c.query("begin");await c.query("set local role service_role");}
      const call=(c,q,attempt)=>c.query("select public.mealdeck_prepare_stripe_order($1,$2,$3,'acct_Fixture',false) result",[q.quoteId,f.customer,attempt]);
      const first=await call(clients[0],a,f.next());
+     const [firstPid,secondPid]=await Promise.all(clients.map(async c=>(await c.query("select pg_backend_pid() pid")).rows[0].pid));
      const second=call(clients[1],b,f.next()).then(value=>({ok:true,value}),error=>({ok:false,error}));
+     let blocked=false;const deadline=Date.now()+3000;
+     while(Date.now()<deadline){
+       blocked=await scalar("select $2::integer=any(pg_blocking_pids($1))",[secondPid,firstPid]);
+       if(blocked)break;
+       await new Promise(resolve=>setTimeout(resolve,20));
+     }
+     assert.equal(blocked,true,"The second payment must wait for the first voucher transaction");
      await clients[0].query("commit");
      const other=await second;
      assert.equal(other.ok,false);assert.match(other.error.message,/staff_voucher_unavailable/);
