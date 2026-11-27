@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { Feast2048, FourToFeast, OrderEcho, KitchenShuffle } from "@/components/play/arcade-games";
 import { GamePanelBoundary } from "@/components/play/game-panel-boundary";
-import { ArcadePlaybook, useArcadeProgress } from "@/components/play/arcade-progress";
+import { ArcadePlaybook, useArcadeProgress, useArcadeRoundTracker } from "@/components/play/arcade-progress";
 import { ArcadeShareDialog } from "@/components/play/arcade-share";
 import type { ArcadeShareRequest } from "@/lib/mealdeck-arcade-sharing";
 import {
@@ -119,6 +119,7 @@ function FoodPairs({ brand, suspended = false }: { brand: BrandTheme; suspended?
   const firstCardRef = useRef<HTMLButtonElement>(null);
   const replayRef = useRef<HTMLButtonElement>(null);
   const complete = isPairRoundComplete(round);
+  const { beginRound } = useArcadeRoundTracker(complete ? { game: "pairs", result: "completed", moves: round.moves, variant: `${count}-pairs` } : null, true);
   const bestKey = `mealdeck-play-pairs-best-v1-${brand}-${count}`;
   const best = bests[bestKey] ?? null;
 
@@ -170,6 +171,8 @@ function FoodPairs({ brand, suspended = false }: { brand: BrandTheme; suspended?
   }, [round, suspended]);
 
   function restart(nextCount: PairCount = count) {
+    if (suspended) return;
+    beginRound();
     setCount(nextCount);
     setRound(createPairRound(makePairs(brand, nextCount)));
     setGeneration((value) => value + 1);
@@ -274,7 +277,7 @@ function FoodPairs({ brand, suspended = false }: { brand: BrandTheme; suspended?
   );
 }
 
-function RecipeRush() {
+function RecipeRush({ suspended = false }: { suspended?: boolean }) {
   const [size, setSize] = useState<RecipeDeckSize>(3);
   const deck = getRecipeDeck(size);
   const [recipe, setRecipe] = useState(0);
@@ -283,6 +286,8 @@ function RecipeRush() {
   const [selected, setSelected] = useState<string[]>([]);
   const [feedback, setFeedback] = useState("");
   const [stage, setStage] = useState<"choosing" | "correct" | "complete">("choosing");
+  const { beginRound } = useArcadeRoundTracker(stage === "complete" ? { game: "recipe", result: "completed", checks: attempts, hints: hints.length, variant: `${size}-recipes` } : null, true);
+  const nextLock = useRef<number | null>(null);
   const targetRef = useRef<HTMLHeadingElement>(null);
   const nextActionRef = useRef<HTMLButtonElement>(null);
   const current = deck[recipe] ?? deck[0]!;
@@ -295,7 +300,7 @@ function RecipeRush() {
   }, [stage]);
 
   function selectIngredient(id: string) {
-    if (stage !== "choosing") return;
+    if (suspended || stage !== "choosing") return;
     if (selected.length === 3 && !selected.includes(id)) {
       setFeedback("Three ingredients selected. Deselect one if you want to swap it.");
       return;
@@ -305,7 +310,7 @@ function RecipeRush() {
   }
 
   function check() {
-    if (selected.length !== 3 || stage !== "choosing") return;
+    if (suspended || selected.length !== 3 || stage !== "choosing") return;
     setAttempts(value => value + 1);
     if (!recipeMatches(selected, current.ingredients)) {
       setFeedback("Not quite. Swap an ingredient, or open the recipe hint for a hand.");
@@ -328,6 +333,8 @@ function RecipeRush() {
   }
 
   function nextRecipe() {
+    if (suspended || stage !== "correct" || nextLock.current === recipe) return;
+    nextLock.current = recipe;
     setRecipe((value) => value + 1);
     setSelected([]);
     setFeedback("");
@@ -336,6 +343,9 @@ function RecipeRush() {
   }
 
   function restart(nextSize: RecipeDeckSize = size) {
+    if (suspended) return;
+    beginRound();
+    nextLock.current = null;
     setSize(nextSize);
     setAttempts(0);
     setHints([]);
@@ -404,7 +414,7 @@ function RecipeRush() {
         </div>
       </div>
       <details className="md-recipe-hint" key={`${size}-${recipe}`} onToggle={(event) => {
-        if (event.currentTarget.open && stage === "choosing") setHints(previous => previous.includes(recipe) ? previous : [...previous, recipe]);
+        if (event.currentTarget.open && stage === "choosing" && !suspended) setHints(previous => previous.includes(recipe) ? previous : [...previous, recipe]);
       }}>
         <summary>
           <Lightbulb size={17} aria-hidden="true" /> Recipe hint
@@ -425,7 +435,7 @@ function RecipeRush() {
               key={item.id}
               type="button"
               aria-pressed={isSelected}
-              aria-disabled={stage !== "choosing" || (!isSelected && selected.length === 3)}
+              aria-disabled={suspended || stage !== "choosing" || (!isSelected && selected.length === 3)}
               onClick={() => selectIngredient(item.id)}
               className={"md-recipe-ingredient" + (isSelected ? " is-selected" : "")}
             >
@@ -453,19 +463,19 @@ function RecipeRush() {
       <div className="md-recipe-actions">
         {stage === "choosing" && (
           <>
-            <button type="button" className="md-play-button md-play-button--quiet" disabled={!selected.length} onClick={() => {
+            <button type="button" className="md-play-button md-play-button--quiet" disabled={suspended || !selected.length} onClick={() => {
               setSelected([]);
               setFeedback("Selection cleared. Choose three ingredients.");
             }}>
               <RotateCcw size={17} aria-hidden="true" /> Clear selection
             </button>
-            <button type="button" className="md-play-button" disabled={selected.length !== 3} onClick={check}>
+            <button type="button" className="md-play-button" disabled={suspended || selected.length !== 3} onClick={check}>
               Check my recipe <ArrowRight size={18} aria-hidden="true" />
             </button>
           </>
         )}
         {stage === "correct" && (
-          <button ref={nextActionRef} type="button" className="md-play-button" onClick={nextRecipe}>
+          <button ref={nextActionRef} type="button" className="md-play-button" disabled={suspended} onClick={nextRecipe}>
             Next recipe <ArrowRight size={18} aria-hidden="true" />
           </button>
         )}
@@ -896,15 +906,15 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
     "pantry-sweep": <PantrySweep />,
     "bento-sudoku": <BentoSudoku dailyDate={daily} initialSize={size === 6 ? 6 : 4} />,
     "tray-lines": <TrayLines suspended={gameInterrupted} />,
-    "sauce-switch": <SauceSwitch dailyDate={daily} initialSize={size === 4 ? 4 : 3} />,
-    "menu-quest": <MenuQuest dailyDate={daily} />,
+    "sauce-switch": <SauceSwitch dailyDate={daily} initialSize={size === 4 ? 4 : 3} suspended={gameInterrupted} />,
+    "menu-quest": <MenuQuest dailyDate={daily} suspended={gameInterrupted} />,
     "tray-tactics": <TrayTactics suspended={gameInterrupted} />,
     "feast-2048": <Feast2048 suspended={gameInterrupted} />,
     "four-to-feast": <FourToFeast suspended={gameInterrupted} />,
     "order-echo": <OrderEcho suspended={gameInterrupted} />,
     "kitchen-shuffle": <KitchenShuffle suspended={gameInterrupted} />,
     pairs: <FoodPairs key={brand} brand={brand} suspended={gameInterrupted} />,
-    recipe: <RecipeRush />,
+    recipe: <RecipeRush suspended={gameInterrupted} />,
     "kitchen-chaos": <KitchenChaos suspended={gameInterrupted} />,
     snap: <BrandSnap suspended={gameInterrupted} />,
     "go-dish": <GoDish suspended={gameInterrupted} />,

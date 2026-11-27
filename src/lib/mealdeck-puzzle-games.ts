@@ -1,5 +1,7 @@
 /** Pure, local puzzle rules. These games have no order, account or reward authority. */
 export type SauceSize = 3 | 4;
+export const SAUCE_LEVELS = ["guided", "classic", "expert"] as const;
+export type SauceLevel = (typeof SAUCE_LEVELS)[number];
 
 function isCell(index: number, size: number): boolean {
   return Number.isInteger(index) && index >= 0 && index < size * size;
@@ -79,7 +81,7 @@ export function createSaucePuzzle(size: SauceSize, random: () => number = Math.r
  * At most 16 first-row choices are needed; the shortest valid result is a real hint.
  */
 export function solveSauce(board: readonly boolean[], size: SauceSize): number[] | null {
-  if (board.length !== size * size || board.some((cell) => typeof cell !== "boolean")) return null;
+  if ((size !== 3 && size !== 4) || board.length !== size * size || board.some((cell) => typeof cell !== "boolean")) return null;
   let best: number[] | null = null;
   for (let mask = 0; mask < 2 ** size; mask++) {
     let working = [...board];
@@ -99,7 +101,34 @@ export function solveSauce(board: readonly boolean[], size: SauceSize): number[]
   return best;
 }
 
+/** Preserve classic and daily generation. Fresh modes select a solvable layout by shortest route length. */
+export function createSauceChallenge(size: SauceSize, level: SauceLevel, random: () => number = Math.random): boolean[] {
+  if (level === "classic") return createSaucePuzzle(size, random);
+  const wanted = level === "guided" ? (size === 3 ? 3 : 4) : (size === 3 ? 6 : 8);
+  let best: boolean[] | null = null;
+  let distance = Infinity;
+  for (let attempt = 0; attempt < 24; attempt++) {
+    const board = createSaucePuzzle(size, random);
+    const solution = solveSauce(board, size);
+    if (!solution?.length) continue;
+    const gap = Math.abs(solution.length - wanted);
+    if (gap < distance) { best = board; distance = gap; }
+    if (gap === 0) break;
+  }
+  return best ?? createSaucePuzzle(size, random);
+}
+export function sauceMoveAdvice(board: readonly boolean[], size: SauceSize) {
+  const solution = solveSauce(board, size);
+  if (!solution?.length) return null;
+  const index = solution[0]!;
+  const next = flipSauce(board, index, size);
+  return { index, affected: sauceNeighbours(index, size), remaining: solution.length,
+    litAfter: next.filter(Boolean).length };
+}
+
 export const QUEST_SIZE = 8;
+export const QUEST_COUNTS = [4, 6, 8] as const;
+export type QuestCount = (typeof QUEST_COUNTS)[number];
 export const QUEST_WORDS = [
   "BURGER",
   "CHICKEN",
@@ -165,9 +194,9 @@ function questPlacements(word: QuestWord, letters: readonly string[]): number[][
 }
 
 /** Every chosen word is placed. A row-per-word fallback prevents unlucky placement failures. */
-export function createQuestPuzzle(random: () => number = Math.random): QuestPuzzle {
+export function createQuestPuzzle(random: () => number = Math.random, count: QuestCount = 6): QuestPuzzle {
   const targets = shuffle(QUEST_WORDS, random)
-    .slice(0, 6)
+    .slice(0, QUEST_COUNTS.includes(count) ? count : 6)
     .sort((a, b) => b.length - a.length);
   let letters = Array<string>(QUEST_SIZE * QUEST_SIZE).fill("");
   let words: QuestMatch[] = [];
@@ -218,4 +247,18 @@ export function matchQuestSelection(
   const target = puzzle.words.find(({ word }) => word === selected || word === reverse);
   if (!target || found.includes(target.word)) return null;
   return { word: target.word, cells };
+}
+
+
+/** Reveal a start or a full direction for a selected, still-unfound word. No board mutation. */
+export function questHint(puzzle: QuestPuzzle, found: readonly QuestWord[], preferred?: QuestWord | null, showDirection = false) {
+  const remaining = puzzle.words.filter(match => !found.includes(match.word));
+  const target = remaining.find(match => match.word === preferred) ?? remaining[0];
+  if (!target?.cells.length) return null;
+  const first = target.cells[0]!;
+  const last = target.cells.at(-1)!;
+  const rowDelta = Math.sign(Math.floor(last / puzzle.size) - Math.floor(first / puzzle.size));
+  const columnDelta = Math.sign(last % puzzle.size - first % puzzle.size);
+  const direction = [rowDelta < 0 ? "up" : rowDelta > 0 ? "down" : "", columnDelta < 0 ? "left" : columnDelta > 0 ? "right" : ""].filter(Boolean).join(" and ");
+  return { word: target.word, first, last: showDirection ? last : null, direction: showDirection ? direction : null };
 }

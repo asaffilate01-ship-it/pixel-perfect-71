@@ -18,12 +18,19 @@ import {
   RotateCcw,
   Share2,
   Trash2,
+  Trophy,
 } from "lucide-react";
 import {
   ARCADE_PLAYBOOK_KEY,
   ARCADE_TRACKED_GAMES,
   MAX_ARCADE_ROUNDS,
   arcadeCompletionLabel,
+  arcadeScoreLabel,
+  summarizeArcadeProgress,
+  createArcadeRoundId,
+  isArcadeRoundId,
+  isTrackedArcadeGame,
+  type TrackedArcadeGame,
   arcadeDailyStatus,
   arcadeUtcDate,
   clearArcadeProgress,
@@ -151,6 +158,25 @@ export function useArcadeProgress(): ProgressContextValue {
   return context;
 }
 
+/** One identity per started game; saved rounds may reuse their validated identity. */
+// eslint-disable-next-line react-refresh/only-export-components -- shared local tracking hook.
+export function useArcadeRoundTracker(completion: Omit<ArcadeCompletion, "id"> | null, startOnMount = false) {
+  const { recordCompletion } = useArcadeProgress();
+  const [roundId, setRoundId] = useState<string | null>(null);
+  const beginRound = useCallback((savedId?: string) => {
+    const next = isArcadeRoundId(savedId) ? savedId : createArcadeRoundId();
+    setRoundId(next);
+    return next;
+  }, []);
+  useEffect(() => {
+    if (startOnMount) beginRound();
+  }, [startOnMount, beginRound]);
+  useEffect(() => {
+    if (roundId && completion) recordCompletion({ ...completion, id: roundId });
+  }, [roundId, completion, recordCompletion]);
+  return { roundId, beginRound };
+}
+
 function roundTime(timestamp: number): string {
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
@@ -175,7 +201,11 @@ export function ArcadePlaybook({
   const keepButton = useRef<HTMLButtonElement>(null);
   const id = useId();
   const daily = arcadeDailyStatus(progress, today);
-  const recent = progress.rounds.slice(0, 5);
+  const [filter, setFilter] = useState<TrackedArcadeGame | "all">("all");
+  const [expandedHistory, setExpandedHistory] = useState(false);
+  const statistics = useMemo(() => summarizeArcadeProgress(progress), [progress]);
+  const filtered = progress.rounds.filter(round => filter === "all" || round.game === filter);
+  const recent = expandedHistory ? filtered : filtered.slice(0, 5);
   const completedDaily = daily.filter((game) => game.completed).length;
 
   useEffect(() => {
@@ -208,8 +238,8 @@ export function ArcadePlaybook({
       </summary>
       <div className="md-playbook__body">
         <p className="md-playbook__scope">
-          Tracks finished rounds in {ARCADE_TRACKED_GAMES.map((game) => game.name).join(", ")}. Your
-          playbook keeps the latest {MAX_ARCADE_ROUNDS} finished rounds. Snack Trail, Feast 2048, Kitchen Shuffle and Kitchen Stacks have separate local save slots for unfinished boards.
+          Tracks finished rounds across all {ARCADE_TRACKED_GAMES.length} arcade games. Your
+          playbook keeps the latest {MAX_ARCADE_ROUNDS} finished rounds; statistics describe that retained history, not lifetime totals. Snack Trail, Feast 2048, Kitchen Shuffle and Kitchen Stacks have separate local save slots for unfinished boards.
         </p>
         <p
           className={`md-playbook__storage${storageMode === "session" ? " is-session" : ""}`}
@@ -224,6 +254,34 @@ export function ArcadePlaybook({
                 ? "The saved playbook could not be read. New results stay here for this visit. Clear the playbook to start a new saved history."
                 : "This browser could not save the playbook. Results stay here for this visit only."}
         </p>
+
+        <section className="md-playbook__overview" aria-labelledby={`${id}-overview`}>
+          <div className="md-playbook__section-heading">
+            <h3 id={`${id}-overview`}>Your arcade statistics</h3>
+            <span>On this device</span>
+          </div>
+          <dl className="md-playbook__metrics">
+            <div><dt>Finished rounds</dt><dd>{statistics.finished}</dd></div>
+            <div><dt>Games explored</dt><dd>{statistics.explored} / {ARCADE_TRACKED_GAMES.length}</dd></div>
+            <div><dt>Wins recorded</dt><dd>{statistics.wins}</dd></div>
+            <div><dt>Active UTC days</dt><dd>{statistics.activeDays}</dd></div>
+          </dl>
+          <details className="md-playbook__milestones">
+            <summary><Trophy size={17} aria-hidden="true" /> Personal milestones · {statistics.milestones.filter(item => item.current >= item.target).length} / {statistics.milestones.length}</summary>
+            <p>Just for fun. Milestones are recalculated from retained rounds, and never earn prizes, discounts or loyalty points.</p>
+            <ul>
+              {statistics.milestones.map(item => <li key={item.id}>
+                <div><strong>{item.title}</strong><span>{item.current >= item.target ? "Reached" : `${item.current} / ${item.target}`}</span></div>
+                <progress value={Math.min(item.current,item.target)} max={item.target} aria-label={item.title} />
+                <small>{item.description}</small>
+              </li>)}
+            </ul>
+          </details>
+          <details className="md-playbook__game-stats">
+            <summary>Activity by game</summary>
+            <ul>{statistics.games.map(game => <li key={game.id}><strong>{game.name}</strong><span>{game.finished} finished{game.wins ? ` · ${game.wins} won` : ""}</span></li>)}</ul>
+          </details>
+        </section>
 
         <section className="md-playbook__daily" aria-labelledby={`${id}-daily`}>
           <div className="md-playbook__section-heading">
@@ -279,6 +337,7 @@ export function ArcadePlaybook({
 
         <section className="md-playbook__recent" aria-labelledby={`${id}-recent`}>
           <h3 id={`${id}-recent`}>Recent finished rounds</h3>
+          <label className="md-playbook__filter">Filter by game <select value={filter} onChange={event => { const value = event.target.value; setFilter(isTrackedArcadeGame(value) ? value : "all"); setExpandedHistory(false); }}><option value="all">All games ({statistics.finished})</option>{statistics.games.map(game => <option key={game.id} value={game.id}>{game.name} ({game.finished})</option>)}</select></label>
           {recent.length ? (
             <ol>
               {recent.map((round) => (
@@ -290,11 +349,12 @@ export function ArcadePlaybook({
                     <span>
                       {arcadeCompletionLabel(round)}
                       {round.score !== undefined
-                        ? ` · ${round.score} ${round.score === 1 ? "snack" : "snacks"}`
+                        ? ` · ${arcadeScoreLabel(round.game, round.score)}`
                         : ""}
                       {round.moves !== undefined
                         ? ` · ${round.moves} ${round.moves === 1 ? "move" : "moves"}`
                         : ""}
+                      {round.checks !== undefined ? ` · ${round.checks} ${round.checks === 1 ? "check" : "checks"}` : ""}
                       {round.hints !== undefined
                         ? ` · ${round.hints} ${round.hints === 1 ? "hint" : "hints"}`
                         : ""}
@@ -320,9 +380,10 @@ export function ArcadePlaybook({
             </ol>
           ) : (
             <p className="md-playbook__empty">
-              Finish one of the {ARCADE_TRACKED_GAMES.length} tracked games to start your playbook.
+              {progress.rounds.length ? "No finished rounds match this filter." : `Finish one of the ${ARCADE_TRACKED_GAMES.length} tracked games to start your playbook.`}
             </p>
           )}
+          {filtered.length > 5 && <button type="button" aria-expanded={expandedHistory} onClick={() => setExpandedHistory(value => !value)}>{expandedHistory ? "Show latest five" : `Show all ${filtered.length} matching rounds`}</button>}
         </section>
 
         <div className="md-playbook__clear">
