@@ -274,3 +274,10 @@ test("new card-game guidance is searchable and prioritises the active game", () 
   expect(findArcadeHelp("marathon", "snap")[0]?.id).toBe("snap-length");
   expect(findArcadeHelp("focus view").some(entry => entry.id === "focus")).toBe(true);
 });
+
+test("help accepts punctuated natural questions and ignores common filler words", () => {
+  expect(findArcadeHelp("Can I play with a friend?").some(entry => entry.id === "friends")).toBe(true);
+  expect(findArcadeHelp("Please, how do I save a board?").some(entry => entry.id === "save")).toBe(true);
+  expect(findArcadeHelp("Kitchen-Chaos!", "kitchen-chaos").length).toBeGreaterThan(0);
+  expect(findArcadeHelp("unknownzzz?!")).toEqual([]);
+});
