@@ -49,9 +49,16 @@ import {
   RECIPES,
   isBrandTheme,
   makePairs,
+  createPairRound,
+  isPairRoundComplete,
+  revealPairCard,
+  resolvePairTurn,
+  parsePairBest,
+  choosePairBest,
+  PAIR_COUNTS,
   recipeMatches,
   type BrandTheme,
-  type PairCard,
+  type PairCount,
 } from "@/lib/dishbee-play";
 import {
   ARCADE_CATEGORIES,
@@ -99,69 +106,70 @@ const PantrySweep = lazy(() =>
 );
 const FAVOURITES_KEY = "mealdeck-play-favourites-v1";
 
-function FoodPairs({ brand }: { brand: BrandTheme }) {
-  const [cards, setCards] = useState<PairCard[]>([]);
-  const [flipped, setFlipped] = useState<number[]>([]);
-  const [matched, setMatched] = useState<number[]>([]);
-  const [moves, setMoves] = useState(0);
-  const [round, setRound] = useState(0);
-  const [message, setMessage] = useState("Choose a card, then find its matching food.");
+function FoodPairs({ brand, suspended = false }: { brand: BrandTheme; suspended?: boolean }) {
+  const [count, setCount] = useState<PairCount>(6);
+  const [round, setRound] = useState(() => createPairRound());
+  const [generation, setGeneration] = useState(0);
+  const [bests, setBests] = useState<Record<string, number | null>>({});
+  const boardRef = useRef<HTMLDivElement>(null);
   const firstCardRef = useRef<HTMLButtonElement>(null);
   const replayRef = useRef<HTMLButtonElement>(null);
-  const complete = cards.length > 0 && matched.length === cards.length;
+  const complete = isPairRoundComplete(round);
+  const bestKey = `mealdeck-play-pairs-best-v1-${brand}-${count}`;
+  const best = bests[bestKey] ?? null;
 
   useEffect(() => {
-    if (!complete) return;
-    const frame = requestAnimationFrame(() => replayRef.current?.focus());
-    return () => cancelAnimationFrame(frame);
-  }, [complete]);
-
-  useEffect(() => {
-    setCards(makePairs(brand));
+    setRound(createPairRound(makePairs(brand)));
   }, [brand]);
 
   useEffect(() => {
-    if (flipped.length !== 2) return;
-    const [first, second] = flipped;
-    const a = cards.find((card) => card.id === first);
-    const b = cards.find((card) => card.id === second);
-    if (!a || !b || first === undefined || second === undefined) return;
-    const match = a.food === b.food;
-    const timer = setTimeout(
-      () => {
-        if (match) {
-          setMatched((previous) => [...previous, first, second]);
-          setMessage(a.label + " pair found. Choose your next card.");
-        } else {
-          setMessage("No match this time. Remember those foods and try again.");
+    let saved: number | null = null;
+    try {
+      saved = parsePairBest(localStorage.getItem(bestKey), count);
+    } catch {
+      // Storage is optional; play and this visit's best remain available.
+    }
+    if (complete) {
+      const next = choosePairBest(saved, round.moves, count);
+      if (next !== null) {
+        saved = next;
+        try {
+          localStorage.setItem(bestKey, String(next));
+        } catch {
+          // No persistent storage in this browser.
         }
-        setFlipped([]);
-      },
-      match ? 350 : 1000,
+      }
+    }
+    setBests((previous) => {
+      const old = previous[bestKey] ?? null;
+      const next = saved === null ? old : choosePairBest(old, saved, count);
+      return next === old && bestKey in previous ? previous : { ...previous, [bestKey]: next };
+    });
+  }, [bestKey, count, complete, round.moves]);
+
+  useEffect(() => {
+    if (!complete || suspended || !boardRef.current?.contains(document.activeElement)) return;
+    const frame = requestAnimationFrame(() => replayRef.current?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [complete, suspended]);
+
+  useEffect(() => {
+    if (round.flipped.length !== 2 || suspended) return;
+    const [first, second] = round.flipped;
+    const a = round.cards.find((card) => card.id === first);
+    const b = round.cards.find((card) => card.id === second);
+    const timer = setTimeout(
+      () => setRound((current) => current === round ? resolvePairTurn(current) : current),
+      a?.food === b?.food ? 350 : 1000,
     );
     return () => clearTimeout(timer);
-  }, [cards, flipped]);
+  }, [round, suspended]);
 
-  function restart() {
-    setCards(makePairs(brand));
-    setFlipped([]);
-    setMatched([]);
-    setMoves(0);
-    setRound((value) => value + 1);
-    setMessage("A fresh deck. Choose your first card.");
-    requestAnimationFrame(() => firstCardRef.current?.focus());
-  }
-
-  function flip(card: PairCard) {
-    if (complete || flipped.length === 2 || flipped.includes(card.id) || matched.includes(card.id))
-      return;
-    setFlipped((previous) => [...previous, card.id]);
-    if (flipped.length === 1) {
-      setMoves((previous) => previous + 1);
-      setMessage("Checking your two cards…");
-    } else {
-      setMessage(card.label + " revealed. Find its matching card.");
-    }
+  function restart(nextCount: PairCount = count) {
+    setCount(nextCount);
+    setRound(createPairRound(makePairs(brand, nextCount)));
+    setGeneration((value) => value + 1);
+    requestAnimationFrame(() => firstCardRef.current?.focus({ preventScroll: true }));
   }
 
   return (
@@ -170,85 +178,72 @@ function FoodPairs({ brand }: { brand: BrandTheme }) {
         <div>
           <p className="md-quick-kicker">MATCH & REMEMBER</p>
           <h2 id="pairs-title">Food Pairs</h2>
-          <p>Turn over two cards at a time. Find all six pairs in as few moves as you can.</p>
+          <p>Find all {count} matching pairs in as few moves as you can.</p>
         </div>
-        <button className="md-play-button md-play-button--quiet" type="button" onClick={restart}>
+        <button className="md-play-button md-play-button--quiet" type="button" onClick={() => restart()}>
           <RotateCcw size={17} aria-hidden="true" /> New game
         </button>
       </div>
-      <div className="md-quick-stats">
+      <fieldset className="md-pairs-modes">
+        <legend>Board difficulty</legend>
         <div>
-          <span>Pairs found</span>
-          <strong>
-            {matched.length / 2}
-            <small> / 6</small>
-          </strong>
+          {PAIR_COUNTS.map((size) => (
+            <button
+              key={size}
+              type="button"
+              className="md-play-button md-play-button--quiet"
+              aria-pressed={count === size}
+              onClick={() => { if (size !== count) restart(size); }}
+            >
+              <strong>{size === 4 ? "Easy" : size === 6 ? "Classic" : "Challenge"}</strong>
+              <small>{size} pairs</small>
+            </button>
+          ))}
         </div>
-        <div>
-          <span>Moves</span>
-          <strong>{moves}</strong>
-        </div>
-        <div>
-          <span>Your deck</span>
-          <strong className="md-quick-deck-name">{BRAND_THEMES[brand].label}</strong>
-        </div>
+        <p>Changing difficulty deals a fresh board. Each size has its own personal best.</p>
+      </fieldset>
+      <div className="md-quick-stats md-pairs-stats">
+        <div><span>Pairs found</span><strong>{round.matched.length / 2}<small> / {count}</small></strong></div>
+        <div><span>Moves</span><strong>{round.moves}</strong></div>
+        <div><span>Fewest moves</span><strong>{best ?? "—"}</strong></div>
+        <div><span>Your deck</span><strong className="md-quick-deck-name">{BRAND_THEMES[brand].label}</strong></div>
       </div>
-      <progress
-        className="md-quick-progress"
-        max={6}
-        value={matched.length / 2}
-        aria-label="Pairs found"
-      />
+      <progress className="md-quick-progress" max={count} value={round.matched.length / 2} aria-label="Pairs found" />
       <p className="md-quick-message" role="status" aria-atomic="true">
-        {complete ? "All six pairs found in " + moves + " moves. Nicely played!" : message}
+        {complete ? `All ${count} pairs found in ${round.moves} moves. Nicely played!` : round.message}
       </p>
-      {cards.length === 0 ? (
-        <p className="md-quick-loading" role="status">
-          Shuffling your deck…
-        </p>
+      {round.cards.length === 0 ? (
+        <p className="md-quick-loading" role="status">Shuffling your deck…</p>
       ) : (
         <div
           className="md-pairs-board"
+          data-pair-count={count}
+          ref={boardRef}
           role="group"
-          aria-label="Twelve food cards"
-          aria-busy={flipped.length === 2}
+          aria-label={`${count * 2} food cards`}
+          aria-busy={round.flipped.length === 2}
         >
-          {cards.map((card, index) => {
-            const isMatched = matched.includes(card.id);
-            const shown = isMatched || flipped.includes(card.id);
+          {round.cards.map((card, index) => {
+            const isMatched = round.matched.includes(card.id);
+            const shown = isMatched || round.flipped.includes(card.id);
             return (
               <button
                 type="button"
-                key={round + "-" + card.id}
+                key={generation + "-" + card.id}
                 ref={index === 0 ? firstCardRef : undefined}
-                className={
-                  "md-pair-card" + (shown ? " is-revealed" : "") + (isMatched ? " is-matched" : "")
-                }
-                onClick={() => flip(card)}
-                aria-disabled={shown || flipped.length === 2 || complete}
+                className={"md-pair-card" + (shown ? " is-revealed" : "") + (isMatched ? " is-matched" : "")}
+                onClick={() => { if (!suspended) setRound((current) => revealPairCard(current, card.id)); }}
+                aria-disabled={suspended || shown || round.flipped.length === 2 || complete}
                 tabIndex={isMatched ? -1 : 0}
-                aria-label={
-                  (isMatched
-                    ? "Matched " + card.label
-                    : shown
-                      ? card.label + " revealed"
-                      : "Reveal card " + (index + 1)) + (shown ? ", card " + (index + 1) : "")
-                }
+                aria-label={(isMatched ? "Matched " + card.label : shown ? card.label + " revealed" : "Reveal card " + (index + 1)) + (shown ? ", card " + (index + 1) : "")}
                 aria-pressed={shown}
               >
                 <span className="md-pair-flip" aria-hidden="true">
-                  <span className="md-pair-back">
-                    <img src={cardBack} alt="" />
-                    <small>{index + 1}</small>
-                  </span>
+                  <span className="md-pair-back"><img src={cardBack} alt="" draggable={false} /><small>{index + 1}</small></span>
                   <span className="md-pair-front">
-                    <img src={gameFoodArtwork[card.art]} alt="" />
+                    <img src={gameFoodArtwork[card.art]} alt="" draggable={false} />
                     <strong>{card.label}</strong>
-                    {isMatched && (
-                      <span className="md-pair-check">
-                        <Check size={16} />
-                      </span>
-                    )}
+                    {isMatched && <span className="md-pair-check"><Check size={16} /></span>}
                   </span>
                 </span>
               </button>
@@ -261,15 +256,15 @@ function FoodPairs({ brand }: { brand: BrandTheme }) {
           <CheckCircle2 size={26} aria-hidden="true" />
           <div>
             <h3>Every pair, perfectly plated.</h3>
-            <p>You cleared the deck in {moves} moves. Ready to try for fewer?</p>
+            <p>You cleared the deck in {round.moves} moves. {best === round.moves ? "You matched your personal best!" : "Ready to try for fewer?"}</p>
           </div>
-          <button ref={replayRef} type="button" className="md-play-button" onClick={restart}>
+          <button ref={replayRef} type="button" className="md-play-button" onClick={() => restart()}>
             Play again <RotateCcw size={17} aria-hidden="true" />
           </button>
         </div>
       )}
       <p className="md-quick-tip">
-        Tip: work across the deck in a pattern to remember where each food is hiding.
+        Tip: work across the deck in a pattern to remember where each food is hiding. Personal bests stay in this browser when storage is available.
       </p>
     </section>
   );
@@ -853,7 +848,7 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
     "four-to-feast": <FourToFeast />,
     "order-echo": <OrderEcho suspended={gameInterrupted} />,
     "kitchen-shuffle": <KitchenShuffle />,
-    pairs: <FoodPairs key={brand} brand={brand} />,
+    pairs: <FoodPairs key={brand} brand={brand} suspended={gameInterrupted} />,
     recipe: <RecipeRush />,
     "kitchen-chaos": <KitchenChaos />,
     snap: <BrandSnap />,
