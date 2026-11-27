@@ -43,6 +43,19 @@ function visibleText(html) {
     .replace(/\s+/g, " ").trim();
 }
 
+function hasUpdatedMainNavigation(html) {
+  const main = [...publicMarkup(html).matchAll(/<nav\b([^>]*)>([\s\S]*?)<\/nav\s*>/gi)]
+    .filter(([, attrs]) => /(?:^|\s)aria-label\s*=\s*(["'])Main navigation\1(?=\s|$)/i.test(attrs));
+  if (main.length !== 1) return false;
+  const links = [...main[0][2].matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi)].map(([, attrs, body]) => ({
+    href: attrs.match(/(?:^|\s)href\s*=\s*(["'])([^"']*)\1/i)?.[2],
+    label: visibleText(body),
+  }));
+  return links.filter(link => link.href === "/account" && link.label === "My account").length === 1 &&
+    links.filter(link => link.href === "/play" && link.label === "Play games").length === 1 &&
+    !links.some(link => link.href === "/play" && /rewards/i.test(link.label));
+}
+
 async function boundedText(response) {
   if (!response.body || Number(response.headers.get("content-length") || 0) > LIMIT)
     throw new Error("Invalid body size");
@@ -122,7 +135,7 @@ export async function probeStorefrontRelease(fetcher = fetch) {
       const metadata = (markup.match(/<meta\b[^>]*>/gi) ?? []).join(" ");
       if (!/<main\b/i.test(markup) || EXPIRED.test(text) || EXPIRED.test(metadata) ||
           /href\s*=\s*["'](?:https:\/\/mealdeck\.co\.uk)?\/opening-offer(?:[?#][^"']*)?["']/i.test(markup)) return;
-      checks[path] = path === "/" ? /Five menus\. One basket\./i.test(text) :
+      checks[path] = path === "/" ? /Five menus\. One basket\./i.test(text) && hasUpdatedMainNavigation(markup) :
         path === "/offers" ? /£1 paid = 1 loyalty point/i.test(text) :
         path === "/meta-ad" ? /Opening hours · UK time/i.test(text) && /Choose how you want to receive your order/i.test(text) && /name and WhatsApp number/i.test(text) :
         path === "/privacy" ? /20 minutes after each quantity is added/i.test(text) && /save menu favourites/i.test(text) :

@@ -1,7 +1,7 @@
 /**
  * MealDeck Phase 20 — provider-neutral AI/MCP policy.
  * Planning only: callers MUST construct trustedContext on an authenticated
- * server from actual Dishbee/Omniqora identity, scopes and remaining budget.
+ * server from the independent MealDeck identity, scopes and remaining budget.
  * Never pass a model-generated context or expose the policy as an auth oracle.
  * This file does not execute tools or start an agent.
  */
@@ -37,6 +37,10 @@ const DENIED_TOOLS = new Set([
   "courier.quote", "courier.book", "fulfilment.complete", "inventory.write",
   "finance.read", "recipe.read", "customer.search", "sql.execute",
   "mcp.execute", "web.fetch", "shell.execute",
+  "voucher.issue", "voucher.redeem", "voucher.revoke", "voucher.list",
+  "staff_voucher.issue", "staff_voucher.redeem", "staff_voucher.revoke",
+  "promotion.activate", "promotion.configure", "prize_draw.select", "prize_draw.replace",
+  "prize_draw.export", "prize_draw.contact", "staff.manage", "secrets.read",
 ]);
 const approvedString = (value: unknown) =>
   typeof value === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(value);
@@ -48,13 +52,19 @@ const decision = (reason: AgentDecision["reason"],
 export function authoriseAgentTool(
   request: AgentToolRequest, trustedContext: TrustedAgentContext,
 ): AgentDecision {
-  if (!trustedContext.serverAuthenticated) return decision("server_required");
+  if (trustedContext?.serverAuthenticated !== true) return decision("server_required");
+  if (!["anonymous", "customer", "staff"].includes(trustedContext.role) ||
+    !Array.isArray(trustedContext.allowedLocationIds) || !Array.isArray(trustedContext.verifiedOrderIds) ||
+    !Array.isArray(trustedContext.permissions)) return decision("scope_denied");
   if (!Number.isSafeInteger(trustedContext.remainingCalls) ||
     trustedContext.remainingCalls < 1 || trustedContext.remainingCalls > 50) {
     return decision("budget_exhausted");
   }
-  if (!request || typeof request !== "object" ||
-    Object.keys(request).some(key => !TOOL_KEYS.has(key)) ||
+  if (!request || typeof request !== "object" || Array.isArray(request) ||
+    ![Object.prototype, null].includes(Object.getPrototypeOf(request)) ||
+    Reflect.ownKeys(request).some(key => typeof key !== "string" || !TOOL_KEYS.has(key) ||
+      !Object.prototype.hasOwnProperty.call(Object.getOwnPropertyDescriptor(request, key), "value")) ||
+    !Object.prototype.hasOwnProperty.call(request, "tool") ||
     typeof request.tool !== "string" || request.tool.length > 80 ||
     (request.tenantId !== undefined && !approvedString(request.tenantId)) ||
     (request.locationId !== undefined && !approvedString(request.locationId)) ||

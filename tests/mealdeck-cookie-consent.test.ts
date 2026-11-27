@@ -46,3 +46,15 @@ describe("MealDeck first-visit privacy choices", () => {
     expect(banner).toContain("No optional scripts are loaded here");
   });
 });
+
+
+test("consent controls remain reachable without preferring optional acceptance",()=>{
+ const banner=readFileSync(new URL("../src/components/mealdeck-cookie-choices.tsx",import.meta.url),"utf8");
+ const css=readFileSync(new URL("../src/styles.mealdeck-rebuild.css",import.meta.url),"utf8");
+ expect(banner).toContain("md-cookie-choices__actions");
+ expect(banner).toContain("size-11 shrink-0");
+ expect(banner).toMatch(/className="min-h-11 rounded-lg border border-zinc-500[^"]*"\s*>\s*Reject optional/);
+ expect(banner).toMatch(/className="min-h-11 rounded-lg border border-zinc-500[^"]*"\s*>\s*Accept optional/);
+ expect(css).toContain("max-height: calc(100dvh - 6rem - var(--md-mobile-safe-bottom, 0px))");
+ expect(css).toContain("overscroll-behavior: contain; scroll-padding-block: 12px");
+});

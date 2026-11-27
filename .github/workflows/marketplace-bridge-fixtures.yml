@@ -1,0 +1,52 @@
+name: Verify isolated marketplace bridge fixtures
+on:
+  pull_request:
+    paths:
+      - 'apps/mealdeck-marketplace-bridge/**'
+      - '.github/workflows/marketplace-bridge-fixtures.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mealdeck-marketplace-bridge/**'
+      - '.github/workflows/marketplace-bridge-fixtures.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: apps/mealdeck-marketplace-bridge
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx --no-install playwright install --with-deps chromium
+      - name: Synthetic transport, identity and recovery tests
+        env:
+          MEALDECK_REQUIRE_BROWSER_TESTS: '1'
+        run: npm test
+      - name: Offline fixture demonstration
+        run: npm run demo
+      - name: Disabled configuration checks
+        run: |
+          npm run check -- --config config.uber-eats.example.json
+          npm run check -- --config config.uber-eats-android.example.json
+          npm run check -- --config config.just-eat.example.json
+      - name: Reject live startup before configuration or network access
+        shell: bash
+        run: |
+          set -euo pipefail
+          if node src/cli.mjs run --config config.uber-eats-android.example.json; then
+            echo 'Live startup unexpectedly accepted'
+            exit 1
+          fi
+          if node src/cli.mjs status --config config.just-eat.example.json; then
+            echo 'Live state lookup unexpectedly accepted'
+            exit 1
+          fi

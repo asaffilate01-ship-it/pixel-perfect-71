@@ -14,10 +14,10 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as BedfordRouteImport } from './routes/bedford'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as DeliveryTermsRouteImport } from './routes/delivery-terms'
+import { Route as DriverRouteImport } from './routes/driver'
 import { Route as FranchiseRouteImport } from './routes/franchise'
 import { Route as GroupOrderRouteImport } from './routes/group-order'
 import { Route as GroupPayRouteImport } from './routes/group-pay'
-import { Route as DriverRouteImport } from './routes/driver'
 import { Route as KdsRouteImport } from './routes/kds'
 import { Route as LutonRouteImport } from './routes/luton'
 import { Route as MenuRouteImport } from './routes/menu'
@@ -90,6 +90,11 @@ const DeliveryTermsRoute = DeliveryTermsRouteImport.update({
   path: '/delivery-terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DriverRoute = DriverRouteImport.update({
+  id: '/driver',
+  path: '/driver',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FranchiseRoute = FranchiseRouteImport.update({
   id: '/franchise',
   path: '/franchise',
@@ -103,11 +108,6 @@ const GroupOrderRoute = GroupOrderRouteImport.update({
 const GroupPayRoute = GroupPayRouteImport.update({
   id: '/group-pay',
   path: '/group-pay',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DriverRoute = DriverRouteImport.update({
-  id: '/driver',
-  path: '/driver',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KdsRoute = KdsRouteImport.update({
@@ -347,10 +347,10 @@ export interface FileRoutesByFullPath {
   '/bedford': typeof BedfordRoute
   '/checkout': typeof CheckoutRoute
   '/delivery-terms': typeof DeliveryTermsRoute
+  '/driver': typeof DriverRoute
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
   '/group-pay': typeof GroupPayRoute
-  '/driver': typeof DriverRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -404,10 +404,10 @@ export interface FileRoutesByTo {
   '/bedford': typeof BedfordRoute
   '/checkout': typeof CheckoutRoute
   '/delivery-terms': typeof DeliveryTermsRoute
+  '/driver': typeof DriverRoute
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
   '/group-pay': typeof GroupPayRoute
-  '/driver': typeof DriverRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -462,10 +462,10 @@ export interface FileRoutesById {
   '/bedford': typeof BedfordRoute
   '/checkout': typeof CheckoutRoute
   '/delivery-terms': typeof DeliveryTermsRoute
+  '/driver': typeof DriverRoute
   '/franchise': typeof FranchiseRoute
   '/group-order': typeof GroupOrderRoute
   '/group-pay': typeof GroupPayRoute
-  '/driver': typeof DriverRoute
   '/kds': typeof KdsRoute
   '/luton': typeof LutonRoute
   '/menu': typeof MenuRoute
@@ -521,10 +521,10 @@ export interface FileRouteTypes {
     | '/bedford'
     | '/checkout'
     | '/delivery-terms'
+    | '/driver'
     | '/franchise'
     | '/group-order'
     | '/group-pay'
-    | '/driver'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -578,10 +578,10 @@ export interface FileRouteTypes {
     | '/bedford'
     | '/checkout'
     | '/delivery-terms'
+    | '/driver'
     | '/franchise'
     | '/group-order'
     | '/group-pay'
-    | '/driver'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -635,10 +635,10 @@ export interface FileRouteTypes {
     | '/bedford'
     | '/checkout'
     | '/delivery-terms'
+    | '/driver'
     | '/franchise'
     | '/group-order'
     | '/group-pay'
-    | '/driver'
     | '/kds'
     | '/luton'
     | '/menu'
@@ -693,10 +693,10 @@ export interface RootRouteChildren {
   BedfordRoute: typeof BedfordRoute
   CheckoutRoute: typeof CheckoutRoute
   DeliveryTermsRoute: typeof DeliveryTermsRoute
+  DriverRoute: typeof DriverRoute
   FranchiseRoute: typeof FranchiseRoute
   GroupOrderRoute: typeof GroupOrderRoute
   GroupPayRoute: typeof GroupPayRoute
-  DriverRoute: typeof DriverRoute
   KdsRoute: typeof KdsRoute
   LutonRoute: typeof LutonRoute
   MenuRoute: typeof MenuRoute
@@ -780,6 +780,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeliveryTermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/driver': {
+      id: '/driver'
+      path: '/driver'
+      fullPath: '/driver'
+      preLoaderRoute: typeof DriverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/franchise': {
       id: '/franchise'
       path: '/franchise'
@@ -799,13 +806,6 @@ declare module '@tanstack/react-router' {
       path: '/group-pay'
       fullPath: '/group-pay'
       preLoaderRoute: typeof GroupPayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/driver': {
-      id: '/driver'
-      path: '/driver'
-      fullPath: '/driver'
-      preLoaderRoute: typeof DriverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/kds': {
@@ -1160,10 +1160,10 @@ const rootRouteChildren: RootRouteChildren = {
   BedfordRoute: BedfordRoute,
   CheckoutRoute: CheckoutRoute,
   DeliveryTermsRoute: DeliveryTermsRoute,
+  DriverRoute: DriverRoute,
   FranchiseRoute: FranchiseRoute,
   GroupOrderRoute: GroupOrderRoute,
   GroupPayRoute: GroupPayRoute,
-  DriverRoute: DriverRoute,
   KdsRoute: KdsRoute,
   LutonRoute: LutonRoute,
   MenuRoute: MenuRoute,

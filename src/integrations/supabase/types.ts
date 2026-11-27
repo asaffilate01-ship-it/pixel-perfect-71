@@ -2905,6 +2905,17 @@ export type Database = {
         }
         Returns: Json
       }
+      mealdeck_driver_action: {
+        Args: {
+          p_action: string
+          p_order: string
+          p_request_id: string
+          p_version: number
+        }
+        Returns: Json
+      }
+      mealdeck_driver_portal: { Args: never; Returns: Json }
+      mealdeck_driver_shift: { Args: { p_on_shift: boolean }; Returns: Json }
       mealdeck_end_guest_session: {
         Args: { p_location: string; p_tenant: string; p_token_hash: string }
         Returns: boolean
@@ -3071,6 +3082,19 @@ export type Database = {
           supplier: string
         }[]
       }
+      mealdeck_ops_courier_set_enabled: {
+        Args: {
+          p_enabled: boolean
+          p_location: string
+          p_provider: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_ops_courier_switchboard: {
+        Args: { p_location: string; p_tenant: string }
+        Returns: Json
+      }
       mealdeck_ops_create_invoice: {
         Args: {
           p_date: string
@@ -3146,6 +3170,41 @@ export type Database = {
           status: string
           vat_pence: number
         }[]
+      }
+      mealdeck_ops_driver_dispatch_board: {
+        Args: { p_location: string; p_tenant: string }
+        Returns: Json
+      }
+      mealdeck_ops_driver_enrol: {
+        Args: {
+          p_location: string
+          p_name: string
+          p_tenant: string
+          p_user: string
+        }
+        Returns: Json
+      }
+      mealdeck_ops_driver_find_verified_email: {
+        Args: { p_email: string; p_location: string; p_tenant: string }
+        Returns: Json
+      }
+      mealdeck_ops_driver_offer: {
+        Args: {
+          p_driver: string
+          p_location: string
+          p_order: string
+          p_tenant: string
+        }
+        Returns: Json
+      }
+      mealdeck_ops_driver_set_enabled: {
+        Args: {
+          p_enabled: boolean
+          p_location: string
+          p_tenant: string
+          p_user: string
+        }
+        Returns: Json
       }
       mealdeck_ops_expense_list: {
         Args: {

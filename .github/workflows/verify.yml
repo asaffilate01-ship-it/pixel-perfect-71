@@ -4,6 +4,9 @@ on:
   push:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -622,7 +625,9 @@ jobs:
           --rule 'prettier/prettier: off'
 
       - name: Confirmed November offers and retired-copy regressions
-        run: bun test tests/mealdeck-offers.test.ts tests/mealdeck-cinema-promotion.test.ts
+        run: |
+          bun test tests/mealdeck-offers.test.ts tests/mealdeck-cinema-promotion.test.ts
+          node --test tests/mealdeck-cinema-network.test.cjs
 
       - name: Offers catalogue and page lint
         run: >-

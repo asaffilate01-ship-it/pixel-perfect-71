@@ -68,3 +68,5 @@
 @media (max-width: 760px) {
   .md-cinema-promo__phase { font-size: 11px; }
 }
+
+.md-cinema-promo__availability { border: 1px solid #c49b48; border-radius: 8px; padding: 10px 12px; color: #fff8eb; background: #391d24; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }

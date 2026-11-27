@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "mode": "disabled",
+  "serverUrl": "https://mealdeck.co.uk/",
+  "connectorId": null,
+  "externalStoreId": null,
+  "tokenEnvironment": "MEALDECK_UBER_BRIDGE_TOKEN",
+  "stateDirectory": ".runtime/uber-eats",
+  "profilePath": "profiles/uber-eats.unconfigured.json",
+  "pollIntervalMs": 2000,
+  "browser": { "userDataDirectory": ".runtime/uber-eats-browser" }
+}
