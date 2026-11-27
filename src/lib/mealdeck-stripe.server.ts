@@ -161,6 +161,7 @@ export type PreparedStripeOrder = {
   totalPence: number;
   grossPence: number;
   discountPence: number;
+  staffVoucherApplied?: boolean;
   currency: "gbp";
   email: string | null;
   fulfilment: "pickup" | "curbside" | "delivery";
@@ -215,9 +216,13 @@ export function stripeSessionParameters(order: PreparedStripeOrder) {
         : "",
       order.lines.map((line) => line.quantity + " × " + line.name).join("; "),
       order.discountPence > 0
-        ? includesMilkcakeOffer
-          ? "The milkcake offer and 30% discount on the remaining items are already included in this total."
-          : "Opening weekend: 30% off everything included in this total."
+        ? order.staffVoucherApplied === true
+          ? "Staff voucher: 50% discount included in this total."
+          : includesMilkcakeOffer
+            ? "The milkcake offer and 30% discount on the remaining items are already included in this total."
+            : order.discountPence === Math.round(order.grossPence * 0.3)
+              ? "Opening weekend: 30% off everything included in this total."
+              : "Order discount already included in this total."
         : "",
     ]
       .filter(Boolean)
