@@ -293,11 +293,10 @@ describe("Pantry Sweep visible-clue hints", () => {
   test("direct clues give safe and chilli hints without trusting flags", () => {
     const base = edgePantry();
     const opened = [...base.opened];
-    opened[3] = true;
-    opened[7] = true;
-    opened[8] = true;
-    opened[2] = true;
-    // At index 3, only covered neighbours 4 and 9 remain.
+    opened[18] = true;
+    opened[23] = true;
+    opened[24] = true;
+    // The clue at 24 has only one covered neighbour, 19.
     const state = freeze({ ...base, opened });
     const hint = findPantryHint(state);
     expect(hint.kind).toBe("chilli");
