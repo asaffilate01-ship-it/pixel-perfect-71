@@ -896,7 +896,7 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
     "feast-2048": <Feast2048 suspended={gameInterrupted} />,
     "four-to-feast": <FourToFeast suspended={gameInterrupted} />,
     "order-echo": <OrderEcho suspended={gameInterrupted} />,
-    "kitchen-shuffle": <KitchenShuffle />,
+    "kitchen-shuffle": <KitchenShuffle suspended={gameInterrupted} />,
     pairs: <FoodPairs key={brand} brand={brand} suspended={gameInterrupted} />,
     recipe: <RecipeRush />,
     "kitchen-chaos": <KitchenChaos />,
