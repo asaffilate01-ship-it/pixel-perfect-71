@@ -22,3 +22,6 @@ Only after these gates, set private database setting enabled=true as the verifie
 
 ### Issuance recovery
 Each manager issuance has a unique request UUID scoped to that issuer. Repeating the same request with the same staff member, location and validity returns only the original record ID and expiry, not the secret code. A different payload with the same request is rejected. The UI keeps a failed request available for explicit retry and does not silently create a replacement. The audit list also shows issuer and revoker IDs. A reload loses the transient request ID, so review the audit and revoke a lost unused code before intentionally issuing another.
+
+### Rejected voucher UX
+An unsuccessful voucher application keeps the prior reviewed server quote available; its review acknowledgement is cleared, and the raw code is cleared from the input. The user must explicitly confirm the previous total again or enter another voucher. Only a successfully verified replacement quote creates a new checkout attempt identity. The UI refuses a second voucher application while a discounted quote is displayed; remove it or refresh without a code before applying another.
