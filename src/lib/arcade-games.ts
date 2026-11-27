@@ -82,17 +82,17 @@ export function undoFeastRound(round: FeastRound): FeastRound {
 function parseFeastState(value: unknown): MergeState | null {
   if (!value || typeof value !== "object") return null;
   const item = value as Record<string, unknown>;
-  if (!Array.isArray(item.board) || item.board.length !== 16 ||
-      typeof item.moves !== "number" || !Number.isSafeInteger(item.moves) || item.moves < 0 || item.moves > 1_000_000 ||
-      typeof item.score !== "number" || !Number.isSafeInteger(item.score) || item.score < 0 || item.score % 4 !== 0 ||
-      !item.board.every((tile: unknown) => typeof tile === "number" && Number.isSafeInteger(tile) &&
+  if (!Array.isArray(item["board"]) || item["board"].length !== 16 ||
+      typeof item["moves"] !== "number" || !Number.isSafeInteger(item["moves"]) || item["moves"] < 0 || item["moves"] > 1_000_000 ||
+      typeof item["score"] !== "number" || !Number.isSafeInteger(item["score"]) || item["score"] < 0 || item["score"] % 4 !== 0 ||
+      !item["board"].every((tile: unknown) => typeof tile === "number" && Number.isSafeInteger(tile) &&
         (tile === 0 || (tile >= 2 && Number.isInteger(Math.log2(tile)))))) return null;
-  const board: number[] = [...item.board];
+  const board: number[] = [...item["board"]];
   const total = board.reduce((sum, tile) => sum + tile, 0);
-  if (board.filter(Boolean).length < 2 || total < 2 * (item.moves + 2) ||
-      total > 4 * (item.moves + 2) ||
-      (item.moves === 0 && (item.score !== 0 || board.filter(Boolean).length !== 2 || board.some(tile => tile > 4)))) return null;
-  return { board, score: item.score, moves: item.moves };
+  if (board.filter(Boolean).length < 2 || total < 2 * (item["moves"] + 2) ||
+      total > 4 * (item["moves"] + 2) ||
+      (item["moves"] === 0 && (item["score"] !== 0 || board.filter(Boolean).length !== 2 || board.some(tile => tile > 4)))) return null;
+  return { board, score: item["score"], moves: item["moves"] };
 }
 
 /** A saved undo entry must lead to its successor by a legal slide and one 2/4 spawn. */
@@ -112,12 +112,12 @@ export function parseFeastSave(raw: string | null): FeastSave | null {
   if (!raw || raw.length > 12_000) return null;
   try {
     const input = JSON.parse(raw) as Record<string, unknown> | null;
-    if (!input || input.version !== 1 || !Array.isArray(input.history) ||
-      input.history.length > FEAST_UNDO_LIMIT) return null;
-    const state = parseFeastState(input.state);
+    if (!input || input["version"] !== 1 || !Array.isArray(input["history"]) ||
+      input["history"].length > FEAST_UNDO_LIMIT) return null;
+    const state = parseFeastState(input["state"]);
     if (!state) return null;
     const history: MergeState[] = [];
-    for (const value of input.history) {
+    for (const value of input["history"]) {
       const entry = parseFeastState(value);
       if (!entry) return null;
       history.push(entry);
