@@ -36,6 +36,13 @@ import {
   QUEST_SIZE,
   createQuestPuzzle,
   createSaucePuzzle,
+  createSauceChallenge,
+  sauceMoveAdvice,
+  questHint,
+  SAUCE_LEVELS,
+  QUEST_COUNTS,
+  type SauceLevel,
+  type QuestCount,
   flipSauce,
   matchQuestSelection,
   puzzleFocusMove,
@@ -221,15 +228,18 @@ type SauceRound = {
 export function SauceSwitch({
   dailyDate,
   initialSize = 3,
+  suspended = false,
 }: {
   dailyDate?: string | undefined;
   initialSize?: SauceSize;
+  suspended?: boolean;
 }) {
   const requestedDate = isArcadeDailyDate(dailyDate) ? dailyDate : undefined;
   const lastRequestedDate = useRef(requestedDate);
   const { recordCompletion } = useArcadeProgress();
   const recordedRound = useRef<string | null>(null);
   const [size, setSize] = useState<SauceSize>(initialSize);
+  const [level, setLevel] = useState<SauceLevel>("classic");
   const [daily, setDaily] = useState(Boolean(requestedDate));
   const [selectedDailyDate, setSelectedDailyDate] = useState(requestedDate);
   const [round, setRound] = useState<SauceRound | null>(null);
@@ -238,6 +248,7 @@ export function SauceSwitch({
   const instructionsId = useId();
   const nextPuzzleRef = useRef<HTMLButtonElement>(null);
   const complete = round !== null && sauceCleared(round.board, size);
+  const minimum = round ? solveSauce(round.board, size)?.length : undefined;
   useCompletionFocus(complete, nextPuzzleRef);
 
   useEffect(() => {
@@ -264,12 +275,10 @@ export function SauceSwitch({
   }, [complete, round, size, recordCompletion]);
 
   function start(asDaily = daily) {
+    if (suspended) return;
     const date = asDaily ? (selectedDailyDate ?? arcadeUtcDate()) : null;
     const seed = date ? Number(date.replaceAll("-", "")) : 0;
-    const board = createSaucePuzzle(
-      size,
-      asDaily ? seededRandom(seed + size * 101 + 7301) : Math.random,
-    );
+    const board = asDaily ? createSaucePuzzle(size, seededRandom(seed + size * 101 + 7301)) : createSauceChallenge(size, level);
     setRound({
       id: createArcadeRoundId(),
       initial: [...board],
@@ -285,6 +294,7 @@ export function SauceSwitch({
   }
 
   function restart() {
+    if (suspended) return;
     const id = createArcadeRoundId();
     setRound((current) =>
       current
@@ -303,6 +313,7 @@ export function SauceSwitch({
   }
 
   function flip(index: number) {
+    if (suspended) return;
     grid.setActive(index);
     setRound((current) => {
       if (!current || sauceCleared(current.board, size)) return current;
@@ -319,6 +330,7 @@ export function SauceSwitch({
   }
 
   function undo() {
+    if (suspended || complete) return;
     setRound((current) => {
       const previous = current?.history.at(-1);
       if (!current || !previous) return current;
@@ -334,15 +346,14 @@ export function SauceSwitch({
   }
 
   function showHint() {
-    if (!round || complete) return;
-    const next = solveSauce(round.board, size)?.[0];
-    if (next === undefined) return;
-    setRound({
-      ...round,
-      hint: next,
-      hints: round.hints + (round.hint === next ? 0 : 1),
-      message: `Hint: try tile ${next + 1}, row ${Math.floor(next / size) + 1}, column ${(next % size) + 1}. It is one step in a solution.`,
-    });
+    if (!round || complete || suspended) return;
+    const advice = sauceMoveAdvice(round.board, size);
+    if (!advice) return;
+    const next = advice.index;
+    setRound(current => current?.board === round.board ? {
+      ...current, hint: next, hints: current.hints + (current.hint === next ? 0 : 1),
+      message: `Hint: try tile ${next + 1}, row ${Math.floor(next / size) + 1}, column ${next % size + 1}. It flips ${advice.affected.length} tiles; ${advice.remaining - 1} further moves are enough after this tap. ${advice.litAfter} tiles will be on.`,
+    } : current);
     grid.focus(next);
   }
 
@@ -357,6 +368,7 @@ export function SauceSwitch({
         "Turn every sauce tile off. Tapping a tile flips it and the tiles directly above, below, left and right. Diagonals stay as they are.",
         "A tile can turn back on, so plan a few taps ahead. Every starting puzzle has a solution, and you can undo or ask for a hint.",
         "Restart keeps the same layout. Daily puzzles match for everyone on that UTC date and grid size; New puzzle starts a fresh layout.",
+        "Minimum moves left comes from a shortest solution. Choose Guided, Classic or Expert for fresh boards.",
       ]}
       keyboard="Tab into the tray. Use arrow keys to move between tiles, Home or End to reach either end of a row, and Enter or Space to flip. Tab leaves the tray."
     >
@@ -365,6 +377,7 @@ export function SauceSwitch({
           Grid size
           <select
             value={size}
+            disabled={suspended}
             onChange={(event) => {
               setSize(event.target.value === "4" ? 4 : 3);
               setRound(null);
@@ -379,6 +392,7 @@ export function SauceSwitch({
           Sauce Switch challenge
           <select
             value={daily ? "daily" : "fresh"}
+            disabled={suspended}
             onChange={(event) => {
               setDaily(event.target.value === "daily");
               setSelectedDailyDate(undefined);
@@ -390,6 +404,7 @@ export function SauceSwitch({
             <option value="daily">Daily puzzle · UTC</option>
           </select>
         </label>
+        {!daily && <label>Fresh puzzle level<select value={level} disabled={suspended} onChange={event => { const next=event.target.value as SauceLevel; if (!SAUCE_LEVELS.includes(next)) return; setLevel(next); setRound(null); grid.setActive(0); }}><option value="guided">Guided · shorter routes</option><option value="classic">Classic</option><option value="expert">Expert · longer routes</option></select></label>}
       </div>
       {!round && daily && selectedDailyDate && <DailyLabel date={selectedDailyDate} />}
       {!round ? (
@@ -409,6 +424,7 @@ export function SauceSwitch({
               { label: "Moves", value: round.history.length },
               { label: "Sauce tiles on", value: round.board.filter(Boolean).length },
               { label: "Hints used", value: round.hints },
+              { label: "Minimum moves left", value: minimum ?? "—" },
             ]}
           />
           <DailyLabel date={round.date} />
@@ -444,7 +460,7 @@ export function SauceSwitch({
                 tabIndex={grid.active === index ? 0 : -1}
                 className={`md-sauce-cell${on ? " is-on" : " is-off"}${round.hint === index ? " is-hint" : ""}`}
                 aria-pressed={on}
-                aria-disabled={complete}
+                aria-disabled={complete || suspended}
                 aria-label={`Tile ${index + 1}, row ${Math.floor(index / size) + 1}, column ${(index % size) + 1}, sauce ${on ? "on" : "off"}${round.hint === index ? ", suggested tile" : ""}${complete ? ", puzzle complete" : ""}`}
                 onFocus={() => grid.setActive(index)}
                 onKeyDown={(event) => grid.onKeyDown(event, index)}
@@ -469,16 +485,17 @@ export function SauceSwitch({
             <button
               type="button"
               className="md-game-button"
-              disabled={!round.history.length}
+              disabled={complete || suspended || !round.history.length}
               onClick={undo}
             >
               <Undo2 size={17} aria-hidden="true" /> Undo
             </button>
-            <button type="button" className="md-game-button" disabled={complete} onClick={showHint}>
+            <button type="button" className="md-game-button" disabled={complete || suspended} onClick={showHint}>
               <Lightbulb size={17} aria-hidden="true" /> Hint
             </button>
             <button
               ref={nextPuzzleRef}
+              disabled={suspended}
               type="button"
               className={`md-game-button${complete ? " is-primary" : ""}`}
               onClick={() => {
@@ -505,11 +522,12 @@ type QuestRound = {
   start: number | null;
   date: string | null;
   hint: QuestWord | null;
+  hintEnd: number | null;
   hints: number;
   message: string;
 };
 
-export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
+export function MenuQuest({ dailyDate, suspended = false }: { dailyDate?: string | undefined; suspended?: boolean }) {
   const requestedDate = isArcadeDailyDate(dailyDate) ? dailyDate : undefined;
   const lastRequestedDate = useRef(requestedDate);
   const { recordCompletion } = useArcadeProgress();
@@ -518,6 +536,8 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
   const [selectedDailyDate, setSelectedDailyDate] = useState(requestedDate);
   const [round, setRound] = useState<QuestRound | null>(null);
   const [largeLetters, setLargeLetters] = useState(false);
+  const [wordCount, setWordCount] = useState<QuestCount>(6);
+  const [preferred, setPreferred] = useState<QuestWord | null>(null);
   const grid = usePuzzleFocus(QUEST_SIZE);
   const setActiveCell = grid.setActive;
   const instructionsId = useId();
@@ -551,16 +571,18 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
   }, [complete, round, recordCompletion]);
 
   function start(asDaily = daily) {
+    if (suspended) return;
+    setPreferred(null);
     const date = asDaily ? (selectedDailyDate ?? arcadeUtcDate()) : null;
     const seed = date ? Number(date.replaceAll("-", "")) : 0;
-    const puzzle = createQuestPuzzle(asDaily ? seededRandom(seed + 8101) : Math.random);
+    const puzzle = createQuestPuzzle(asDaily ? seededRandom(seed + 8101) : Math.random, asDaily ? 6 : wordCount);
     setRound({
       id: createArcadeRoundId(),
       puzzle,
       found: [],
       start: null,
       date,
-      hint: null,
+      hint: null, hintEnd: null,
       hints: 0,
       message:
         "Find a listed food word. Tap its first letter, then its last letter. No dragging needed.",
@@ -569,6 +591,8 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
   }
 
   function restart() {
+    if (suspended) return;
+    setPreferred(null);
     const id = createArcadeRoundId();
     setRound((current) =>
       current
@@ -577,7 +601,7 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
             id,
             found: [],
             start: null,
-            hint: null,
+            hint: null, hintEnd: null,
             hints: 0,
             message: "Same letters, fresh search. Choose a word and find its two ends.",
           }
@@ -587,6 +611,7 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
   }
 
   function choose(index: number) {
+    if (suspended) return;
     grid.setActive(index);
     setRound((current) => {
       if (!current || current.found.length === current.puzzle.words.length) return current;
@@ -594,14 +619,14 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
         return {
           ...current,
           start: index,
-          hint: null,
+          hint: null, hintEnd: null,
           message: `${current.puzzle.letters[index]} selected at row ${Math.floor(index / QUEST_SIZE) + 1}, column ${(index % QUEST_SIZE) + 1}. Now choose the last letter in the same straight line.`,
         };
       if (current.start === index)
         return {
           ...current,
           start: null,
-          hint: null,
+          hint: null, hintEnd: null,
           message: "Selection cleared. Choose a new first letter.",
         };
       const line = questLine(current.start, index);
@@ -625,7 +650,7 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
         return {
           ...current,
           start: null,
-          hint: null,
+          hint: null, hintEnd: null,
           message: alreadyFound
             ? "You’ve already found that word. Look for a word without a tick."
             : `That line spells ${selected}. Try another first and last letter for one of the listed words.`,
@@ -634,19 +659,20 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
         ...current,
         found: [...current.found, match],
         start: null,
-        hint: null,
+        hint: null, hintEnd: null,
         message: `${match.word} found! ${current.found.length + 1} of ${current.puzzle.words.length} words complete.`,
       };
     });
   }
 
   function clearSelection() {
+    if (suspended || complete) return;
     setRound((current) =>
       current
         ? {
             ...current,
             start: null,
-            hint: null,
+            hint: null, hintEnd: null,
             message: "Selection cleared. Choose a new first letter.",
           }
         : current,
@@ -654,31 +680,31 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
   }
 
   function showHint() {
-    if (!round || complete) return;
-    const target = round.puzzle.words.find(({ word }) => !foundWords.includes(word));
-    const first = target?.cells[0];
-    if (!target || first === undefined) return;
-    setRound({
-      ...round,
-      start: first,
-      hint: target.word,
-      hints: round.hints + (round.hint === target.word ? 0 : 1),
-      message: `Hint: ${target.word} starts at row ${Math.floor(first / QUEST_SIZE) + 1}, column ${(first % QUEST_SIZE) + 1}. Its first letter is selected; find the last letter in a straight line.`,
-    });
-    grid.focus(first);
+    if (!round || complete || suspended) return;
+    const firstAdvice = questHint(round.puzzle, foundWords, preferred);
+    if (!firstAdvice) return;
+    const advice = questHint(round.puzzle, foundWords, firstAdvice.word, round.hint === firstAdvice.word)!;
+    setRound(current => current?.id === round.id && current.found === round.found ? {
+      ...current, start: advice.first, hint: advice.word, hintEnd: advice.last,
+      hints: current.hints + (current.hint === advice.word && current.hintEnd === advice.last ? 0 : 1),
+      message: advice.last !== null
+        ? `Hint: ${advice.word} runs ${advice.direction}. Its last letter is highlighted. Select it to find the word.`
+        : `Hint: ${advice.word} starts at row ${Math.floor(advice.first / QUEST_SIZE) + 1}, column ${advice.first % QUEST_SIZE + 1}. Its first letter is selected. Ask again to reveal its direction.`,
+    } : current);
+    grid.focus(advice.first);
   }
 
   return (
     <PuzzleFrame
       title="Menu Quest"
       tag="Word search · Fresh or daily"
-      description="Six food words are hiding in the letters. Take a closer look and find every one."
+      description="Food words are hiding in the letters. Choose a fresh challenge or play the six-word daily puzzle."
       started={round !== null}
       onRestart={restart}
       rules={[
-        "Find all six listed words. Words can run across, down or diagonally, forwards or backwards.",
+        "Find all listed words. Fresh challenges have four, six or eight words. Daily puzzles keep six. Words can run across, down or diagonally, forwards or backwards.",
         "Tap a word’s first letter and then its last. You can choose the ends in either order, and words may share letters. Tap the first letter again to cancel.",
-        "Hint selects the beginning of an unfound word. Larger letters gives you bigger tap targets; scroll within the board to see them all.",
+        "Choose an unfound word to target a hint. Hint selects its beginning; ask again to reveal the direction. Larger letters gives bigger tap targets.",
         "Restart keeps these letters. The daily puzzle is the same for everyone on that UTC date; New puzzle creates a fresh search.",
       ]}
       keyboard="Tab into the letters, then use arrow keys, Home or End to move. Enter or Space selects an endpoint. Escape clears an unfinished selection. Tab leaves the board."
@@ -688,6 +714,7 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
           Menu Quest challenge
           <select
             value={daily ? "daily" : "fresh"}
+            disabled={suspended}
             onChange={(event) => {
               setDaily(event.target.value === "daily");
               setSelectedDailyDate(undefined);
@@ -699,6 +726,7 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
             <option value="daily">Daily puzzle · UTC</option>
           </select>
         </label>
+        {!daily && <label>Fresh word challenge<select value={wordCount} disabled={suspended} onChange={event => { const next=Number(event.target.value) as QuestCount; if (!QUEST_COUNTS.includes(next)) return; setWordCount(next); setRound(null); setPreferred(null); grid.setActive(0); }}><option value={4}>Taster · 4 words</option><option value={6}>Classic · 6 words</option><option value={8}>Expert · 8 words</option></select></label>}
       </div>
       {!round && daily && selectedDailyDate && <DailyLabel date={selectedDailyDate} />}
       {!round ? (
@@ -726,11 +754,12 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
           <DailyLabel date={round.date} />
           <PuzzleStatus complete={complete}>
             {complete
-              ? `All six words found${round.hints ? ` with ${round.hints} ${round.hints === 1 ? "hint" : "hints"}` : " without a hint"}! A perfectly finished menu.`
+              ? `All ${round.puzzle.words.length} words found${round.hints ? ` with ${round.hints} ${round.hints === 1 ? "hint" : "hints"}` : " without a hint"}! A perfectly finished menu.`
               : round.message}
           </PuzzleStatus>
           <div className="md-quest-targets">
             <h3>Find these foods</h3>
+            <p className="md-puzzle-note">Choose an unfound word to target your next hint.</p>
             <ul aria-label="Words to find">
               {round.puzzle.words.map(({ word }) => (
                 <li key={word} className={foundWords.includes(word) ? "is-found" : ""}>
@@ -739,10 +768,7 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
                   ) : (
                     <span className="md-quest-word-dot" aria-hidden="true" />
                   )}
-                  <span>{word}</span>
-                  <span className="md-game-sr-only">
-                    {foundWords.includes(word) ? ", found" : ", not found"}
-                  </span>
+                  {foundWords.includes(word) ? <span>{word}<span className="md-game-sr-only">, found</span></span> : <button type="button" className="md-quest-target-word" aria-pressed={preferred === word} disabled={suspended || complete} onClick={() => setPreferred(value => value === word ? null : word)}>{word}</button>}
                 </li>
               ))}
             </ul>
@@ -788,10 +814,10 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
                     grid.cells.current[index] = element;
                   }}
                   tabIndex={grid.active === index ? 0 : -1}
-                  className={`md-quest-cell${foundCells.has(index) ? " is-found" : ""}${round.start === index ? " is-start" : ""}${hintCell === index ? " is-hint" : ""}`}
+                  className={`md-quest-cell${foundCells.has(index) ? " is-found" : ""}${round.start === index ? " is-start" : ""}${hintCell === index ? " is-hint" : ""}${round.hintEnd === index ? " is-hint-end" : ""}`}
                   aria-pressed={round.start === index}
-                  aria-disabled={complete}
-                  aria-label={`${letter}, row ${Math.floor(index / QUEST_SIZE) + 1}, column ${(index % QUEST_SIZE) + 1}${round.start === index ? ", selected first letter" : ""}${foundCells.has(index) ? ", part of a found word" : ""}${complete ? ", puzzle complete" : ""}`}
+                  aria-disabled={complete || suspended}
+                  aria-label={`${letter}, row ${Math.floor(index / QUEST_SIZE) + 1}, column ${(index % QUEST_SIZE) + 1}${round.start === index ? ", selected first letter" : ""}${foundCells.has(index) ? ", part of a found word" : ""}${round.hintEnd === index ? ", suggested last letter" : ""}${complete ? ", puzzle complete" : ""}`}
                   onFocus={() => grid.setActive(index)}
                   onKeyDown={(event) => {
                     if (event.key === "Escape" && round.start !== null) {
@@ -811,16 +837,17 @@ export function MenuQuest({ dailyDate }: { dailyDate?: string | undefined }) {
             <button
               type="button"
               className="md-game-button"
-              disabled={round.start === null || complete}
+              disabled={round.start === null || complete || suspended}
               onClick={clearSelection}
             >
               <X size={17} aria-hidden="true" /> Clear selection
             </button>
-            <button type="button" className="md-game-button" disabled={complete} onClick={showHint}>
-              <Lightbulb size={17} aria-hidden="true" /> Hint
+            <button type="button" className="md-game-button" disabled={complete || suspended} onClick={showHint}>
+              <Lightbulb size={17} aria-hidden="true" /> {round.hint && (!preferred || preferred === round.hint) ? "Reveal direction" : "Hint"}
             </button>
             <button
               ref={nextPuzzleRef}
+              disabled={suspended}
               type="button"
               className={`md-game-button${complete ? " is-primary" : ""}`}
               onClick={() => {

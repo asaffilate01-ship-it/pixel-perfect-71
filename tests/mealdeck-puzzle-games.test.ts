@@ -5,6 +5,11 @@ import {
   QUEST_WORDS,
   createQuestPuzzle,
   createSaucePuzzle,
+  createSauceChallenge,
+  sauceMoveAdvice,
+  questHint,
+  SAUCE_LEVELS,
+  QUEST_COUNTS,
   flipSauce,
   matchQuestSelection,
   puzzleFocusMove,
@@ -251,5 +256,44 @@ describe("Puzzle navigation and daily reproducibility", () => {
         createSaucePuzzle(size, seededRandom(elsewhere + size * 101 + 7301)),
       );
     }
+  });
+});
+
+describe("Sauce Switch challenge generation and route advice", () => {
+  test("fresh difficulties are solvable and the classic generator stays identical", () => {
+    for (const size of [3,4] as const) {
+      expect(createSauceChallenge(size,"classic",seededRandom(55))).toEqual(createSaucePuzzle(size,seededRandom(55)));
+      for (const level of SAUCE_LEVELS) for (let seed=0;seed<20;seed++) {
+        const board=createSauceChallenge(size,level,seededRandom(seed));
+        const advice=sauceMoveAdvice(board,size)!;
+        expect(advice).not.toBeNull();
+        expect(advice.remaining).toBe(solveSauce(board,size)!.length);
+        const next=flipSauce(board,advice.index,size);
+        expect(solveSauce(next,size)?.length).toBe(advice.remaining-1);
+        expect(next.filter(Boolean).length).toBe(advice.litAfter);
+        expect(advice.affected).toEqual(sauceNeighbours(advice.index,size));
+      }
+    }
+    expect(solveSauce([false],1 as never)).toBeNull();
+  });
+});
+describe("Menu Quest fresh challenge sizes and targeted hints", () => {
+  test("all fresh word counts generate valid, solvable boards", () => {
+    for (const count of QUEST_COUNTS) for (let seed=0;seed<30;seed++) {
+      const puzzle=createQuestPuzzle(seededRandom(seed),count);
+      expect(puzzle.words.length).toBe(count);
+      expect(new Set(puzzle.words.map(word=>word.word)).size).toBe(count);
+      for (const word of puzzle.words) {
+        const first=word.cells[0]!,last=word.cells.at(-1)!;
+        expect(matchQuestSelection(puzzle,first,last,[])?.word).toBe(word.word);
+        expect(questHint(puzzle,[],word.word)).toEqual({word:word.word,first,last:null,direction:null});
+        const advice=questHint(puzzle,[],word.word,true)!;
+        expect(advice.last).toBe(last);
+        expect(advice.direction?.length).toBeGreaterThan(0);
+        expect(questHint(puzzle,[word.word],word.word)?.word).not.toBe(word.word);
+      }
+      expect(questHint(puzzle,puzzle.words.map(word=>word.word))).toBeNull();
+    }
+    expect(createQuestPuzzle(seededRandom(701))).toEqual(createQuestPuzzle(seededRandom(701),6));
   });
 });
