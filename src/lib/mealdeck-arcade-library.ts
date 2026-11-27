@@ -177,3 +177,20 @@ export function arcadeGameLink(
   const query = params.toString();
   return `https://mealdeck.co.uk/play/${search.game}${query ? `?${query}` : ""}`;
 }
+
+/** Deterministic, device-local suggestions; never imply an unfinished board was saved. */
+export function getArcadeSuggestions(
+  current: ArcadeGameId | null,
+  completed: readonly string[] = [],
+  favourites: readonly ArcadeGameId[] = [],
+) {
+  const active = ARCADE_GAMES.find((item) => item.id === current);
+  const related = active ? ARCADE_GAMES.filter((item) => item.category === active.category).map((item) => item.id) : [];
+  const preferred = current
+    ? [...related, ...favourites, ...NEW_ARCADE_GAMES]
+    : [...completed, ...favourites, "snack-trail", "bento-sudoku", "four-to-feast"];
+  const ids = [...new Set([...preferred, ...ARCADE_GAMES.map((item) => item.id)])]
+    .filter((id): id is ArcadeGameId => isArcadeGameId(id) && id !== current)
+    .slice(0, 3);
+  return ids.map((id) => ARCADE_GAMES.find((item) => item.id === id)!);
+}
