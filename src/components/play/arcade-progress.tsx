@@ -209,7 +209,7 @@ export function ArcadePlaybook({
       <div className="md-playbook__body">
         <p className="md-playbook__scope">
           Tracks finished rounds in {ARCADE_TRACKED_GAMES.map((game) => game.name).join(", ")}. Your
-          playbook keeps the latest {MAX_ARCADE_ROUNDS} finished rounds. Snack Trail has a separate local save slot for unfinished boards.
+          playbook keeps the latest {MAX_ARCADE_ROUNDS} finished rounds. Snack Trail and Feast 2048 have separate local save slots for unfinished boards.
         </p>
         <p
           className={`md-playbook__storage${storageMode === "session" ? " is-session" : ""}`}

@@ -48,6 +48,92 @@ export function mergeOver(board: readonly number[]): boolean {
   return (["left", "right", "up", "down"] as const).every(direction => !slideMerge(board, direction).changed);
 }
 
+/** Feast 2048: a bounded local undo stack and explicit save slot. */
+export const FEAST_SAVE_KEY = "mealdeck-feast-2048-save-v1";
+export const FEAST_UNDO_LIMIT = 5;
+export type FeastRound = { state: MergeState; history: MergeState[]; message: string };
+export type FeastSave = { version: 1; state: MergeState; history: MergeState[] };
+
+export function createFeastRound(state: MergeState): FeastRound {
+  return { state, history: [], message: "Slide equal numbers together to build your feast." };
+}
+
+export function advanceFeastRound(round: FeastRound, direction: Direction, seed: number): FeastRound {
+  if (mergeOver(round.state.board)) return round;
+  const next = moveMerge(round.state, direction, seededRandom(seed));
+  if (next === round.state) return { ...round, message: `No tiles can slide ${direction}. Try another direction.` };
+  const gained = next.score - round.state.score;
+  return {
+    state: next,
+    history: [...round.history, round.state].slice(-FEAST_UNDO_LIMIT),
+    message: `Moved ${direction}. ${gained ? gained + " points added. " : ""}Score ${next.score}; move ${next.moves}.`,
+  };
+}
+
+export function undoFeastRound(round: FeastRound): FeastRound {
+  const state = round.history.at(-1);
+  return state ? {
+    state,
+    history: round.history.slice(0, -1),
+    message: "Last move undone. Try a different direction.",
+  } : round;
+}
+
+function parseFeastState(value: unknown): MergeState | null {
+  if (!value || typeof value !== "object") return null;
+  const item = value as Record<string, unknown>;
+  if (!Array.isArray(item["board"]) || item["board"].length !== 16 ||
+      typeof item["moves"] !== "number" || !Number.isSafeInteger(item["moves"]) || item["moves"] < 0 || item["moves"] > 1_000_000 ||
+      typeof item["score"] !== "number" || !Number.isSafeInteger(item["score"]) || item["score"] < 0 || item["score"] % 4 !== 0 ||
+      !item["board"].every((tile: unknown) => typeof tile === "number" && Number.isSafeInteger(tile) &&
+        (tile === 0 || (tile >= 2 && Number.isInteger(Math.log2(tile)))))) return null;
+  const board: number[] = [...item["board"]];
+  const total = board.reduce((sum, tile) => sum + tile, 0);
+  if (board.filter(Boolean).length < 2 || total < 2 * (item["moves"] + 2) ||
+      total > 4 * (item["moves"] + 2) ||
+      (item["moves"] === 0 && (item["score"] !== 0 || board.filter(Boolean).length !== 2 || board.some(tile => tile > 4)))) return null;
+  return { board, score: item["score"], moves: item["moves"] };
+}
+
+/** A saved undo entry must lead to its successor by a legal slide and one 2/4 spawn. */
+function validFeastTransition(before: MergeState, after: MergeState): boolean {
+  if (after.moves !== before.moves + 1) return false;
+  return (["left", "right", "up", "down"] as const).some(direction => {
+    const slide = slideMerge(before.board, direction);
+    if (!slide.changed || after.score !== before.score + slide.score) return false;
+    const changed = slide.board.flatMap((value, i) => value !== after.board[i] ? [i] : []);
+    const index = changed[0];
+    return changed.length === 1 && index !== undefined && slide.board[index] === 0 &&
+      (after.board[index] === 2 || after.board[index] === 4);
+  });
+}
+
+export function parseFeastSave(raw: string | null): FeastSave | null {
+  if (!raw || raw.length > 12_000) return null;
+  try {
+    const input = JSON.parse(raw) as Record<string, unknown> | null;
+    if (!input || input["version"] !== 1 || !Array.isArray(input["history"]) ||
+      input["history"].length > FEAST_UNDO_LIMIT) return null;
+    const state = parseFeastState(input["state"]);
+    if (!state) return null;
+    const history: MergeState[] = [];
+    for (const value of input["history"]) {
+      const entry = parseFeastState(value);
+      if (!entry) return null;
+      history.push(entry);
+    }
+    const chain = [...history, state];
+    if (chain.some((entry, i) => i > 0 && !validFeastTransition(chain[i - 1]!, entry))) return null;
+    return { version: 1, state, history };
+  } catch {
+    return null;
+  }
+}
+
+export function createFeastSave(round: FeastRound): FeastSave | null {
+  return parseFeastSave(JSON.stringify({ version: 1, state: round.state, history: round.history }));
+}
+
 export type Counter = 0 | 1 | 2;
 export type FourBoard = Counter[];
 export function dropFour(board: readonly Counter[], column: number, player: 1 | 2): FourBoard | null {
@@ -57,15 +143,21 @@ export function dropFour(board: readonly Counter[], column: number, player: 1 | 
   }
   return null;
 }
-export function fourResult(board: readonly Counter[]): Counter | "draw" | null {
+export function fourWinningCells(board: readonly Counter[]): number[] {
   for (let row = 0; row < 6; row++) for (let column = 0; column < 7; column++) {
     const player = board[row * 7 + column]; if (!player) continue;
     for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
       const lastRow = row + dr! * 3, lastColumn = column + dc! * 3;
       if (lastRow < 0 || lastRow >= 6 || lastColumn < 0 || lastColumn >= 7) continue;
-      if ([1, 2, 3].every(n => board[(row + dr! * n) * 7 + column + dc! * n] === player)) return player;
+      const cells = [0, 1, 2, 3].map(n => (row + dr! * n) * 7 + column + dc! * n);
+      if (cells.every(index => board[index] === player)) return cells;
     }
   }
+  return [];
+}
+export function fourResult(board: readonly Counter[]): Counter | "draw" | null {
+  const first = fourWinningCells(board)[0];
+  if (first !== undefined) return board[first] ?? null;
   return board.every(Boolean) ? "draw" : null;
 }
 const FOUR_ORDER = [3, 2, 4, 1, 5, 0, 6];
@@ -99,7 +191,8 @@ function searchFour(board: FourBoard, depth: number, maximizing: boolean, alpha:
   }
   return best;
 }
-export function chooseFourMove(board: FourBoard, depth: 1 | 3 | 4 = 3): number | null {
+export type FourDifficulty = 1 | 3 | 4 | 5;
+export function chooseFourMove(board: FourBoard, depth: FourDifficulty = 3): number | null {
   if (fourResult(board) !== null) return null;
   let best = -Infinity, choice: number | null = null;
   // Always take a win or block an immediate loss, even at the easiest level.
@@ -109,7 +202,7 @@ export function chooseFourMove(board: FourBoard, depth: 1 | 3 | 4 = 3): number |
   }
   for (const column of FOUR_ORDER) {
     const next = dropFour(board, column, 2); if (!next) continue;
-    const value = searchFour(next, depth - 1, false, -Infinity, Infinity);
+    const value = searchFour(next, depth - 1, false, best, Infinity);
     if (value > best) { best = value; choice = column; }
   }
   return choice;

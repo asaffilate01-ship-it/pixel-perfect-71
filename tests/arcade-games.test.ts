@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
-  chooseFourMove, dailySeed, dropFour, fourResult, mergeLine, mergeOver, moveMerge,
+  chooseFourMove, dailySeed, dropFour, fourResult, fourWinningCells, mergeLine, mergeOver, moveMerge,
+  advanceFeastRound, createFeastRound, createFeastSave, parseFeastSave, undoFeastRound, FEAST_UNDO_LIMIT,
+  type Direction,
   puzzleMoves, puzzleSolved, seededRandom, sequencePrefix, slideMerge, slidePuzzle, startMerge, startPuzzle,
   type FourBoard,
 } from "../src/lib/arcade-games";
@@ -49,7 +51,7 @@ describe("Four to Feast", () => {
     expect(fourResult(Array.from({length: 42}, (_, i) => ((Math.floor(i / 7) + Math.floor(i % 7 / 2)) % 2 + 1) as 1 | 2))).toBe("draw");
   });
   test("chef wins when possible and blocks an immediate loss at every difficulty", () => {
-    for (const depth of [1, 3, 4] as const) {
+    for (const depth of [1, 3, 4, 5] as const) {
       let board = empty(); for (const column of [0, 1, 2]) board = dropFour(board, column, 1)!;
       expect(chooseFourMove(board, depth)).toBe(3);
       board = empty(); for (const column of [2, 3, 4]) board = dropFour(board, column, 2)!;
@@ -100,5 +102,64 @@ describe("Order Echo", () => {
     expect(sequencePrefix([0, 2, 3], [0, 2, 3])).toBe(true);
     expect(sequencePrefix([0, 2, 3], [0, 3])).toBe(false);
     expect(sequencePrefix([0], [0, 1])).toBe(false);
+  });
+});
+
+describe("Feast 2048 undo and validated local saves", () => {
+  test("bounded undo is deterministic and preserves the original board", () => {
+    let round = createFeastRound(startMerge(seededRandom(123)));
+    const original = JSON.stringify(round);
+    const dir = (["left", "right", "up", "down"] as const);
+    const next = advanceFeastRound(round, dir.find(d => slideMerge(round.state.board, d).changed)!, 7);
+    expect(advanceFeastRound(round, dir.find(d => slideMerge(round.state.board, d).changed)!, 7)).toEqual(next);
+    expect(JSON.stringify(round)).toBe(original);
+    for (let i = 0; i < 12; i++) {
+      const direction = dir.find(d => slideMerge(round.state.board, d).changed);
+      if (!direction) throw Error("Expected a legal move");
+      round = advanceFeastRound(round, direction, i + 21);
+    }
+    expect(round.history).toHaveLength(FEAST_UNDO_LIMIT);
+    const saved = createFeastSave(round)!;
+    expect(saved.state).toEqual(round.state);
+    expect(parseFeastSave(JSON.stringify(saved))).toEqual(saved);
+    for (let i = 0; i < FEAST_UNDO_LIMIT; i++) round = undoFeastRound(round);
+    expect(round.state.moves).toBe(7);
+    expect(undoFeastRound(round)).toBe(round);
+    expect(createFeastSave(round)).not.toBeNull();
+  });
+  test("rejects invalid tiles, metrics, oversized or forged undo transitions", () => {
+    const base = createFeastRound(startMerge(seededRandom(42)));
+    const direction = (["left", "right", "up", "down"] as Direction[]).find(d => slideMerge(base.state.board, d).changed)!;
+    const saved = createFeastSave(advanceFeastRound(base, direction, 1))!;
+    for (const raw of [null, "", "bad", "null", "x".repeat(12001)]) expect(parseFeastSave(raw)).toBeNull();
+    for (const patch of [
+      { board: [3, ...saved.state.board.slice(1)] }, { board: Array(16).fill(0) },
+      { board: [2, 4] }, { score: -1 }, { score: 5 }, { moves: -1 }, { moves: 1_000_001 },
+    ]) expect(parseFeastSave(JSON.stringify({ ...saved, state: { ...saved.state, ...patch } }))).toBeNull();
+    expect(parseFeastSave(JSON.stringify({ ...saved, history: [saved.state] }))).toBeNull();
+    expect(parseFeastSave(JSON.stringify({ ...saved, history: Array(6).fill(base.state) }))).toBeNull();
+    expect(parseFeastSave(JSON.stringify({ ...saved, state: { ...saved.state, score: saved.state.score + 4 } }))).toBeNull();
+  });
+});
+describe("Four to Feast expert and winning-line feedback", () => {
+  test("reports each winning orientation without crossing a board edge", () => {
+    for (const line of [[35,36,37,38], [0,7,14,21], [0,8,16,24], [6,12,18,24]]) {
+      const board = Array<0 | 1 | 2>(42).fill(0);
+      for (const index of line) board[index] = 1;
+      expect(fourWinningCells(board)).toEqual(line);
+    }
+    const board = Array<0 | 1 | 2>(42).fill(0);
+    for (const index of [5,6,7,8]) board[index] = 2;
+    expect(fourWinningCells(board)).toEqual([]);
+  });
+  test("expert chooses a legal deterministic move and preserves the board", () => {
+    let board: FourBoard = Array<0>(42).fill(0);
+    for (const [column, player] of [[3,1], [2,2], [4,1], [3,2]] as const) board = dropFour(board,column,player)!;
+    const before = JSON.stringify(board);
+    const chosen = chooseFourMove(board, 5);
+    expect(chosen).not.toBeNull();
+    expect(dropFour(board, chosen!, 2)).not.toBeNull();
+    expect(chooseFourMove(board, 5)).toBe(chosen);
+    expect(JSON.stringify(board)).toBe(before);
   });
 });
