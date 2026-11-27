@@ -67,3 +67,27 @@ describe("Phase 20: provider-neutral AI and MCP fail-closed guardrails", () => {
     }, context()).allowed).toBe(false);
   });
 });
+
+
+describe("Staff voucher and campaign AI boundaries",()=>{
+ test("even an authenticated staff model may not issue or redeem vouchers, draw winners or change campaign state",()=>{
+  const staff=context({role:"staff",tenantId:"meal_313",permissions:["staff.manage","finance.manage","analytics.read"]});
+  for(const tool of ["voucher.issue","voucher.redeem","voucher.revoke","voucher.list","staff_voucher.issue","staff_voucher.redeem","staff_voucher.revoke","promotion.activate","promotion.configure","prize_draw.select","prize_draw.replace","prize_draw.export","prize_draw.contact","staff.manage","secrets.read"]){
+    expect(authoriseAgentTool({tool},staff)).toMatchObject({allowed:false,scope:"none",reason:"tool_denied"});
+  }
+ });
+ test("reject malformed model requests without evaluating accessors or inherited fields",()=>{
+  const inherited=Object.create({tool:"menu.public_catalogue"});
+  const accessor=Object.defineProperty({},"tool",{enumerable:true,get(){throw new Error("getter must never execute");}});
+  const symbol=Object.assign({tool:"menu.public_catalogue"},{[Symbol("secret")]:true});
+  const hidden=Object.defineProperty({tool:"menu.public_catalogue"},"secret",{value:"private"});
+  for(const value of [inherited,accessor,symbol,hidden,[]]){
+    expect(authoriseAgentTool(value as Parameters<typeof authoriseAgentTool>[0],context()).reason).toBe("invalid_request");
+  }
+ });
+ test("trusted server flags and scope must not be coerced from malformed inputs",()=>{
+  const req={tool:"menu.public_catalogue"};
+  expect(authoriseAgentTool(req,context({serverAuthenticated:"true" as unknown as boolean})).reason).toBe("server_required");
+  expect(authoriseAgentTool(req,context({allowedLocationIds:null as unknown as string[]})).reason).toBe("scope_denied");
+ });
+});
