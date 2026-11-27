@@ -21,7 +21,7 @@ try {
  const scope=[f.tenantId,f.locationId];
  const admin=(name,args=[],actor=f.owner)=>asActor(db,actor,()=>scalar(
    "select public."+name+"("+args.map((_,i)=>"$"+(i+1)).join(",")+")",args));
- const issue=(actor=f.owner,staff=f.customer,days=7)=>admin("mealdeck_ops_issue_staff_voucher",[...scope,staff,days],actor);
+ const issue=(actor=f.owner,staff=f.customer,days=7,requestId=f.next())=>admin("mealdeck_ops_issue_staff_voucher",[...scope,staff,days,requestId],actor);
  const list=()=>admin("mealdeck_ops_staff_vouchers",scope);
  const revoke=id=>admin("mealdeck_ops_revoke_staff_voucher",[...scope,id]);
  const status=actor=>f.service(()=>scalar("select public.mealdeck_staff_voucher_status($1,$2,$3)",[...scope,actor]));
@@ -63,6 +63,15 @@ try {
    for(const role of ["anon","authenticated"])
      await assert.rejects(()=>asActor(db,f.customer,()=>scalar("select public.mealdeck_create_staff_voucher_quote($1,$2,$3,'pickup',null,'[]','bad','{}',null,'bad')",[...scope,f.customer]),role),/permission denied/);
    await assert.rejects(()=>admin("mealdeck_ops_staff_vouchers",scope,f.customer),/voucher_forbidden/);
+ });
+ await check("uncertain issuance is idempotent and cannot reveal the code a second time",async()=>{
+   const requestId=f.next();
+   const first=await issue(f.owner,f.customer,7,requestId);
+   const recovered=await issue(f.owner,f.customer,7,requestId);
+   assert.deepEqual(recovered,{id:first.id,alreadyIssued:true,expiresAt:first.expiresAt});
+   assert.equal(await scalar("select count(*)::integer from mealdeck_private.staff_vouchers where issued_by=$1 and issue_request_id=$2",[f.owner,requestId]),1);
+   await assert.rejects(()=>issue(f.owner,f.customer,14,requestId),/voucher_request_conflict/);
+   await revoke(first.id);
  });
  let voucher, q1,q2;
  await check("random one-time reveal, exact account binding, no plaintext or digest in manager history",async()=>{
