@@ -16,6 +16,11 @@ import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import { createArcadeRoundId } from "@/lib/mealdeck-play-progress";
 import {
   SNACK_TRAIL_MAX_STEPS,
+  SNACK_TRAIL_SAVE_KEY,
+  createSnackTrailSave,
+  parseSnackTrailSave,
+  snackSwipeDirection,
+  type SnackTrailSave,
   SNACK_TRAIL_SIZE,
   canSnackTick,
   createSnackTrail,
@@ -53,10 +58,14 @@ function cellLabel(cell: number) {
 
 export function SnackTrail({ suspended = false }: { suspended?: boolean | undefined }) {
   const id = useId();
-  const { recordCompletion } = useArcadeProgress();
+  const { recordCompletion, progress } = useArcadeProgress();
   const [pace, setPace] = useState<SnackPace>("slow");
   const [round, setRound] = useState(createSnackTrail);
   const [roundId, setRoundId] = useState<string | null>(null);
+  const [saved, setSaved] = useState<SnackTrailSave | null>(null);
+  const [saveMessage, setSaveMessage] = useState("");
+  const swipeStart = useRef<{ id: number; x: number; y: number } | null>(null);
+  const best = progress.rounds.reduce((score, item) => item.game === "snack-trail" && item.variant === pace ? Math.max(score, item.score ?? 0) : score, 0);
   const board = useRef<HTMLDivElement>(null);
   const startButton = useRef<HTMLButtonElement>(null);
   const againButton = useRef<HTMLButtonElement>(null);
@@ -71,6 +80,25 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
   const pause = useCallback((reason: SnackPauseReason = "player") => {
     epoch.current++;
     setRound((current) => pauseSnackTrail(current, reason));
+  }, []);
+
+  useEffect(() => {
+    function refreshSaved() {
+      try {
+        const raw = localStorage.getItem(SNACK_TRAIL_SAVE_KEY);
+        const next = parseSnackTrailSave(raw);
+        setSaved(next);
+        if (raw && !next) setSaveMessage("A saved trail could not be read. Start a fresh round to replace it.");
+      } catch {
+        setSaveMessage("This browser cannot save trails. You can still play.");
+      }
+    }
+    refreshSaved();
+    function sync(event: StorageEvent) {
+      if (event.key === SNACK_TRAIL_SAVE_KEY || event.key === null) refreshSaved();
+    }
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
   }, []);
 
   useEffect(() => {
@@ -151,11 +179,51 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
     });
   }, [ended, roundId, round.phase, round.score, round.steps, pace, recordCompletion]);
 
+  function saveAndExit() {
+    if (suspended || !roundId) return;
+    // Invalidate the moving clock before saving. If storage fails, keep the board paused.
+    pause("player");
+    const snapshot = createSnackTrailSave(round, pace, roundId);
+    if (!snapshot) return;
+    try {
+      localStorage.setItem(SNACK_TRAIL_SAVE_KEY, JSON.stringify(snapshot));
+      setSaved(snapshot);
+      setSaveMessage("Trail saved on this browser. Load it whenever you want to continue.");
+      pendingFocus.current = "start";
+      setRound(createSnackTrail());
+      setRoundId(null);
+    } catch {
+      setSaveMessage("Could not save this trail. Your current board is still paused.");
+    }
+  }
+  function loadSaved() {
+    if (suspended || !saved) return;
+    try {
+      const current = parseSnackTrailSave(localStorage.getItem(SNACK_TRAIL_SAVE_KEY));
+      if (!current || current.roundId !== saved.roundId || JSON.stringify(current) !== JSON.stringify(saved)) {
+        setSaved(current);
+        setSaveMessage("The saved trail changed in another tab. Check it before loading.");
+        return;
+      }
+      // Consume this slot before restoring; it must be saved again if you leave.
+      localStorage.removeItem(SNACK_TRAIL_SAVE_KEY);
+      epoch.current++;
+      setPace(current.pace);
+      setRoundId(current.roundId);
+      setRound(current.round);
+      setSaved(null);
+      setSaveMessage("Saved trail loaded and paused. Select Resume trail to continue.");
+      pendingFocus.current = "board";
+    } catch {
+      setSaveMessage("Could not load the saved trail. Start a new round or try again.");
+    }
+  }
   function start() {
     if (suspended || document.hidden) return;
     epoch.current++;
     setRound(createSnackTrail("running"));
     setRoundId(createArcadeRoundId());
+    setSaveMessage("");
     pendingFocus.current = "board";
   }
   function resume() {
@@ -248,8 +316,9 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
             continues straight. In timed modes, Space pauses; P pauses in every mode.
           </li>
           <li>
-            Leaving the game or opening the game picker pauses your round. Choose Resume to
-            continue. Changing pace sets up a fresh round.
+            Opening the game picker or leaving the window pauses your round. Choose Resume to
+            continue. Save and exit to keep an unfinished trail before leaving or reloading.
+            Changing pace sets up a fresh round.
           </li>
         </ol>
       </details>
@@ -292,6 +361,16 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
             >
               <Play size={17} aria-hidden="true" /> Start trail
             </button>
+            {saved && (
+              <div className="md-snack__saved">
+                <strong>Saved trail · {PACE_LABEL[saved.pace]}</strong>
+                <span>{saved.round.score} snacks · {saved.round.steps} steps</span>
+                <button type="button" className="md-game-button" disabled={suspended} onClick={loadSaved}>
+                  <Play size={17} aria-hidden="true" /> Load saved trail
+                </button>
+                <small>Loading uses the saved slot. Save and exit again to keep your position.</small>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -312,6 +391,7 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
               <dt>Pace</dt>
               <dd>{PACE_LABEL[pace]}</dd>
             </div>
+            <div><dt>Best in playbook</dt><dd>{best}</dd></div>
           </dl>
           <div className="md-snack__play-layout">
             <div className="md-snack__board-area">
@@ -338,6 +418,21 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
                 aria-label="Snack Trail, ten by ten game board"
                 aria-describedby={`${id}-keys ${id}-position`}
                 onKeyDown={boardKeys}
+                onPointerDown={(event) => {
+                  if (!blocked && event.isPrimary && (event.pointerType === "touch" || event.pointerType === "pen")) {
+                    swipeStart.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                  }
+                }}
+                onPointerUp={(event) => {
+                  const start = swipeStart.current;
+                  if (!start || start.id !== event.pointerId) return;
+                  swipeStart.current = null;
+                  const direction = snackSwipeDirection(event.clientX - start.x, event.clientY - start.y);
+                  if (direction && !blocked) steer(direction);
+                }}
+                onPointerCancel={() => { swipeStart.current = null; }}
+                onLostPointerCapture={() => { swipeStart.current = null; }}
               >
                 <svg viewBox="0 0 1000 1000" aria-hidden="true" focusable="false">
                   <defs>
@@ -443,6 +538,11 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
                     {round.phase === "paused" ? "Resume trail" : "Pause trail"}
                   </button>
                 )}
+                {!ended && (
+                  <button type="button" className="md-game-button" disabled={suspended || !roundId} onClick={saveAndExit}>
+                    {saved ? "Replace saved trail & exit" : "Save & exit"}
+                  </button>
+                )}
                 <button
                   ref={againButton}
                   className={`md-game-button${ended ? " is-primary" : ""}`}
@@ -487,7 +587,7 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
                 {pace === "step"
                   ? "Arrow keys move one square. Space steps forward. P pauses."
                   : "Arrow keys steer. Space or P pauses."}{" "}
-                Tab leaves the board.
+                Swipe on the board or use the direction pad. Tab leaves the board.
               </p>
               <details className="md-snack__trail-map">
                 <summary>Read the trail positions</summary>
@@ -496,12 +596,13 @@ export function SnackTrail({ suspended = false }: { suspended?: boolean | undefi
               <p className="md-snack__note">
                 {round.steps.toLocaleString()}
                 {round.steps >= SNACK_TRAIL_MAX_STEPS ? "+" : ""} steps · Finished rounds appear in
-                My playbook. Your current trail resets when you leave or reload.
+                My playbook. Use Save &amp; exit to keep an unfinished round on this browser.
               </p>
             </div>
           </div>
         </>
       )}
+      {saveMessage && <p className="md-snack__save-message" role="status">{saveMessage}</p>}
     </section>
   );
 }
