@@ -267,3 +267,114 @@
     scroll-behavior: auto;
   }
 }
+
+/* Responsive arcade discovery and a game-first play surface. */
+.md-arcade-shell .md-play-player {
+  scroll-margin-top: 105px;
+}
+.md-play-recommendations {
+  min-width: 0;
+  margin: 0 0 24px;
+  padding: clamp(14px, 2vw, 24px);
+  border: 1px solid #e3d6c5;
+  border-radius: 20px;
+  background: #fffdf7;
+}
+.md-play-recommendations--related, .md-play-playbook--after-game {
+  margin-top: 24px;
+}
+.md-play-recommendations-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.md-play-recommendations-heading h2 {
+  margin: 0;
+  font: 800 clamp(21px, 2.5vw, 28px)/1.2 Outfit, sans-serif;
+  color: #241d17;
+}
+.md-play-recommendations-heading p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #62594f;
+}
+.md-play-recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.md-play-recommendation {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 18px;
+  align-items: center;
+  text-align: left;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e3d6c5;
+  border-radius: 14px;
+  color: #241d17;
+  background: #fff6e8;
+  cursor: pointer;
+}
+.md-play-recommendation:hover {
+  border-color: #a70e19;
+  background: #fff0da;
+}
+.md-play-recommendation > img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+.md-play-recommendation > span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.md-play-recommendation strong {
+  font: 750 17px/1.2 Outfit, sans-serif;
+  overflow-wrap: anywhere;
+}
+.md-play-recommendation small, .md-play-recommendation > span > span {
+  color: #62594f;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.md-play-recommendation > svg { color: #951018; }
+.md-arcade-shell[data-page="game"] .md-play-intro,
+.md-arcade-shell[data-page="daily"] .md-play-intro {
+  padding-bottom: 20px;
+}
+.md-arcade-shell:not([data-page="library"]) .md-play-intro h1 {
+  font-size: clamp(28px, 3.5vw, 42px);
+}
+.md-arcade-shell:not([data-page="library"]) .md-play-hero-art,
+.md-arcade-shell[data-focus="on"] .md-play-recommendations,
+.md-arcade-shell[data-focus="on"] .md-play-all-games {
+  display: none;
+}
+.md-arcade-shell .md-recipe-actions { gap: 8px; flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .md-play-recommendations-grid { grid-template-columns: minmax(0, 1fr); }
+  .md-arcade-shell .md-play-player { scroll-margin-top: 86px; }
+}
+@media (max-width: 580px) {
+  .md-play-recommendation { grid-template-columns: 48px minmax(0, 1fr) 18px; }
+  .md-play-recommendation > img { width: 48px; height: 48px; }
+  .md-play-recommendations-heading > .md-play-button { width: 100%; }
+  .md-arcade-shell .md-play-toolbar > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .md-arcade-shell .md-play-toolbar .md-play-button {
+    min-height: 44px;
+    white-space: normal;
+    text-align: center;
+  }
+  .md-arcade-shell .md-recipe-actions { flex-direction: column-reverse; }
+}

@@ -59,6 +59,7 @@ import {
   ARCADE_GAMES,
   NEW_ARCADE_GAMES,
   findArcadeGames,
+  getArcadeSuggestions,
   parseArcadeFavourites,
   pickArcadeGame,
   type ArcadeCollection,
@@ -437,14 +438,17 @@ function RecipeRush() {
       </p>
       <div className="md-recipe-actions">
         {stage === "choosing" && (
-          <button
-            type="button"
-            className="md-play-button"
-            disabled={selected.length !== 3}
-            onClick={check}
-          >
-            Check my recipe <ArrowRight size={18} aria-hidden="true" />
-          </button>
+          <>
+            <button type="button" className="md-play-button md-play-button--quiet" disabled={!selected.length} onClick={() => {
+              setSelected([]);
+              setFeedback("Selection cleared. Choose three ingredients.");
+            }}>
+              <RotateCcw size={17} aria-hidden="true" /> Clear selection
+            </button>
+            <button type="button" className="md-play-button" disabled={selected.length !== 3} onClick={check}>
+              Check my recipe <ArrowRight size={18} aria-hidden="true" />
+            </button>
+          </>
         )}
         {stage === "correct" && (
           <button ref={nextActionRef} type="button" className="md-play-button" onClick={nextRecipe}>
@@ -691,6 +695,11 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
   const favourite = favourites.includes(game);
   const latestRound = progress.rounds.find((round) => round.game === game);
   const gameInterrupted = pickerOpen || shareRequest !== null;
+  const suggestions = getArcadeSuggestions(
+    page === "library" ? null : game,
+    progress.rounds.map((round) => round.game),
+    favourites,
+  );
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -761,7 +770,8 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
 
   const focusGame = useCallback(() => {
     gamePanelRef.current?.focus({ preventScroll: true });
-    gamePanelRef.current?.scrollIntoView({
+    const target = gamePanelRef.current?.closest(".md-play-player") ?? gamePanelRef.current;
+    target?.scrollIntoView({
       block: "start",
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "instant"
@@ -867,6 +877,7 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
     <div
       className="md-marketing-shell dp-shell md-arcade-shell"
       data-focus={focusMode ? "on" : "off"}
+      data-page={page}
     >
       <SiteHeader />
       <main className="dp-main md-play-main">
@@ -952,9 +963,33 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
               </div>
             </div>
           </header>
-          <div className="md-play-playbook">
-            <ArcadePlaybook onDailyGame={selectDailyGame} onShare={openShare} />
-          </div>
+          {page === "library" && (
+            <section className="md-play-recommendations md-play-recommendations--library" aria-label="Quick game picks">
+              <div className="md-play-recommendations-heading">
+                <div>
+                  <h2>{progress.rounds.length || favourites.length ? "Your next round" : "Pick your first game"}</h2>
+                  <p>{progress.rounds.length || favourites.length ? "Revisit a favourite or try a fresh challenge." : "Three different ways to play, no account needed."}</p>
+                </div>
+                <button type="button" className="md-play-button md-play-button--quiet" onClick={() => {
+                  setQuery("");
+                  setFilter("All games");
+                  setCollection("all");
+                  showLibrary();
+                }}>
+                  <Grid2X2 size={17} aria-hidden="true" /> All games
+                </button>
+              </div>
+              <div className="md-play-recommendations-grid">
+                {suggestions.map((item) => (
+                  <button key={item.id} type="button" className="md-play-recommendation" onClick={() => selectGame(item.id)}>
+                    <img src={gameFoodArtwork[item.art]} width={64} height={64} alt="" />
+                    <span><strong>{item.name}</strong><small>{item.category} · {item.players}</small><span>{item.description}</span></span>
+                    <ArrowRight size={18} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
           <div
             className="md-play-workspace"
             onKeyDown={(event) => {
@@ -988,6 +1023,11 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
                   </span>
                 </p>
                 <div>
+                  {page !== "library" && (
+                    <Link to="/play" className="md-play-button md-play-button--quiet md-play-all-games">
+                      <Grid2X2 size={17} aria-hidden="true" /> All games
+                    </Link>
+                  )}
                   <button
                     type="button"
                     className="md-play-button md-play-button--quiet md-play-save-button"
@@ -1014,7 +1054,7 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
                     className="md-play-button md-play-button--quiet md-play-picker-button"
                     onClick={showLibrary}
                   >
-                    <Grid2X2 size={17} aria-hidden="true" /> Games
+                    <Grid2X2 size={17} aria-hidden="true" /> Switch game
                   </button>
                   <button
                     type="button"
@@ -1119,6 +1159,26 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
                 </p>
               )}
             </div>
+          </div>
+          {page !== "library" && (
+            <section className="md-play-recommendations md-play-recommendations--related" aria-label="More games like this">
+              <div className="md-play-recommendations-heading">
+                <div><h2>Another round?</h2><p>Try a related game. Switching starts a new board.</p></div>
+                <Link to="/play" className="md-play-button md-play-button--quiet">All games <ArrowRight size={17} aria-hidden="true" /></Link>
+              </div>
+              <div className="md-play-recommendations-grid">
+                {suggestions.map((item) => (
+                  <button key={item.id} type="button" className="md-play-recommendation" onClick={() => selectGame(item.id)}>
+                    <img src={gameFoodArtwork[item.art]} width={64} height={64} loading="lazy" alt="" />
+                    <span><strong>{item.name}</strong><small>{item.category} · {item.players}</small><span>{item.description}</span></span>
+                    <ArrowRight size={18} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+          <div className="md-play-playbook md-play-playbook--after-game">
+            <ArcadePlaybook onDailyGame={selectDailyGame} onShare={openShare} />
           </div>
           <section className="md-play-footnote" aria-label="About MealDeck games">
             <Gamepad2 size={24} aria-hidden="true" />
