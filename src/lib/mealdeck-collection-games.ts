@@ -73,7 +73,37 @@ export function makeFullHousePuzzle(random: () => number = Math.random): FullHou
   return shuffleDeck(cards, random);
 }
 
+/** Select a legal five-card hand that preserves as many current selections as possible. */
+export function suggestFullHouseCard(cards: readonly FullHouseCard[], selected: readonly string[]): { cardId: string; action: "add" | "remove" } | null {
+  if (cards.length > 24 || new Set(cards.map(card => card.id)).size !== cards.length) return null;
+  const chosen = new Set(selected);
+  if (chosen.size !== selected.length || selected.length > 5 || selected.some(id => !cards.some(card => card.id === id))) return null;
+  let target: string[] = [];
+  let overlap = -1;
+  for (const three of CHAOS_SUITS) for (const two of CHAOS_SUITS) {
+    if (three === two) continue;
+    const pick = (suit: FoodSuit, count: number) => cards.filter(card => card.suit === suit)
+      .sort((a,b) => Number(chosen.has(b.id)) - Number(chosen.has(a.id))).slice(0,count);
+    const group = [...pick(three,3), ...pick(two,2)];
+    if (!isFullHouse(group)) continue;
+    const kept = group.filter(card => chosen.has(card.id)).length;
+    if (kept > overlap) { target = group.map(card => card.id); overlap = kept; }
+  }
+  if (overlap < 0) return null;
+  const remove = selected.find(id => !target.includes(id));
+  if (remove) return { cardId: remove, action: "remove" };
+  const add = target.find(id => !chosen.has(id));
+  return add ? { cardId: add, action: "add" } : null;
+}
+export function toggleFullHouseSelection(cards: readonly FullHouseCard[], selected: string[], id: string): string[] {
+  if (!cards.some(card => card.id === id)) return selected;
+  if (selected.includes(id)) return selected.filter(value => value !== id);
+  return selected.length >= 5 ? selected : [...selected, id];
+}
+
 export type GoDishRank = 1 | 2 | 3;
+export const GO_DISH_DIFFICULTIES = ["relaxed", "classic", "expert"] as const;
+export type GoDishDifficulty = (typeof GO_DISH_DIFFICULTIES)[number];
 export type GoDishCard = { id: string; suit: FoodSuit; rank: GoDishRank };
 export type GoDishWinner = "player" | "chef" | "draw" | null;
 export type GoDishState = {
@@ -85,9 +115,11 @@ export type GoDishState = {
   lastMessage: string;
   turns: number;
   winner: GoDishWinner;
+  difficulty?: GoDishDifficulty;
+  lastChefRequest?: GoDishRank | null;
 };
 const RANKS: readonly GoDishRank[] = [1, 2, 3];
-export function startGoDish(random: () => number = Math.random): GoDishState {
+export function startGoDish(random: () => number = Math.random, difficulty: GoDishDifficulty = "classic"): GoDishState {
   const cards = shuffleDeck(CHAOS_SUITS.flatMap(suit => RANKS.map(rank => ({
     id: `${suit}-${rank}`, suit, rank,
   }))), random);
@@ -95,6 +127,7 @@ export function startGoDish(random: () => number = Math.random): GoDishState {
     player: cards.splice(0, 4), chef: cards.splice(0, 4), stock: cards,
     playerSets: [], chefSets: [], lastMessage: "Ask the house chef for a number shown in your hand.",
     turns: 0, winner: null,
+    difficulty: GO_DISH_DIFFICULTIES.includes(difficulty) ? difficulty : "classic", lastChefRequest: null,
   });
 }
 function collectSets(state: GoDishState): GoDishState {
@@ -121,6 +154,19 @@ function takeStock(hand: GoDishCard[], stock: GoDishCard[]): boolean {
   hand.push(card);
   return true;
 }
+/** A rank strategy reads its own hand and a publicly requested rank, never hidden opponent cards. */
+export function chooseGoDishRank(
+  hand: readonly GoDishCard[],
+  difficulty: GoDishDifficulty = "classic",
+  observedRank: GoDishRank | null = null,
+): GoDishRank | null {
+  if (!hand.length) return null;
+  const available = RANKS.filter(rank => hand.some(card => card.rank === rank));
+  if (!available.length) return null;
+  if (difficulty === "relaxed") return hand[0]?.rank ?? null;
+  if (difficulty === "expert" && observedRank !== null && available.includes(observedRank)) return observedRank;
+  return [...available].sort((a,b) => hand.filter(card => card.rank === b).length - hand.filter(card => card.rank === a).length || a-b)[0] ?? null;
+}
 export function askGoDish(state: GoDishState, rank: GoDishRank): GoDishState {
   if (state.winner) return state;
   if (!state.player.some(card => card.rank === rank))
@@ -134,8 +180,9 @@ export function askGoDish(state: GoDishState, rank: GoDishRank): GoDishState {
   const didDraw = received.length === 0 && takeStock(player, stock);
   let s = collectSets({
     ...state, player, chef: other, stock, turns: state.turns + 1,
+    lastChefRequest: null,
     lastMessage: received.length
-      ? `House chef handed over ${received.length} matching card(s).`
+      ? `House chef handed over ${received.length} matching ${received.length === 1 ? "card" : "cards"}.`
       : didDraw ? "Go Dish! You drew a card." : "No match, and the deck is empty.",
   });
   if (s.winner) return s;
@@ -143,17 +190,19 @@ export function askGoDish(state: GoDishState, rank: GoDishRank): GoDishState {
   if (chefHand.length === 0) takeStock(chefHand, stockNow);
   if (playerHand.length === 0) takeStock(playerHand, stockNow);
   if (chefHand.length > 0) {
-    const desired = [...chefHand].sort((a, b) => chefHand.filter(c => c.rank === b.rank).length - chefHand.filter(c => c.rank === a.rank).length)[0]!.rank;
+    const desired = chooseGoDishRank(chefHand, s.difficulty ?? "classic", s.playerSets.includes(rank) ? null : rank)!;
     const chefGain = playerHand.filter(card => card.rank === desired);
     const playerAfter = playerHand.filter(card => card.rank !== desired);
     for (const card of chefGain) chefHand.push(card);
-    if (chefGain.length === 0) takeStock(chefHand, stockNow);
+    const chefDrew = chefGain.length === 0 && takeStock(chefHand, stockNow);
     s = collectSets({
-      ...s, player: playerAfter, chef: chefHand, stock: stockNow,
+      ...s, player: playerAfter, chef: chefHand, stock: stockNow, lastChefRequest: desired,
       lastMessage: s.lastMessage + (chefGain.length
-        ? ` The house chef asked for ${desired} and took ${chefGain.length} card(s).`
-        : ` The house chef asked for ${desired} and drew a card.`),
+        ? ` The house chef asked for ${desired} and took ${chefGain.length} ${chefGain.length === 1 ? "card" : "cards"}.`
+        : chefDrew ? ` The house chef asked for ${desired} and drew a card.` : ` The house chef asked for ${desired}; no match and no cards remained to draw.`),
     });
+  } else {
+    s = collectSets({ ...s, player: playerHand, chef: chefHand, stock: stockNow });
   }
   if (!s.winner && s.player.length === 0 && s.stock.length > 0) {
     const hand: GoDishCard[] = [];
@@ -182,6 +231,7 @@ export type SolitaireState = {
   progress: Record<FoodSuit, number>;
   mistakes: number;
   moves: number;
+  hints?: number;
   message: string;
 };
 export function startSolitaire(random: () => number = Math.random): SolitaireState {
@@ -190,7 +240,7 @@ export function startSolitaire(random: () => number = Math.random): SolitaireSta
   return {
     cards,
     progress: { burger: 0, chicken: 0, "french-taco": 0, cake: 0 },
-    mistakes: 0, moves: 0, message: "Build each suit from 1 to 4. Select a card to place it.",
+    mistakes: 0, moves: 0, hints: 0, message: "Build each suit from 1 to 4. Select a card to place it.",
   };
 }
 export function stackSolitaireCard(state: SolitaireState, cardId: string): SolitaireState {
@@ -208,4 +258,64 @@ export function stackSolitaireCard(state: SolitaireState, cardId: string): Solit
     progress: { ...state.progress, [card.suit]: card.rank },
     message: `Good stack! ${card.suit} is now at ${card.rank}.`,
   };
+}
+
+
+/** Kitchen Stacks saves contain only local puzzle state, never an account or reward. */
+export const STACKS_SAVE_KEY = "mealdeck-kitchen-stacks-save-v1";
+export type StacksSave = {
+  version: 1;
+  showReady: boolean;
+  cards: FullHouseCard[];
+  progress: Record<FoodSuit, number>;
+  moves: number;
+  mistakes: number;
+  hints: number;
+};
+function validStackMetric(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 && value <= 100_000;
+}
+export function parseStacksSave(raw: string | null): StacksSave | null {
+  if (!raw || raw.length > 8_000) return null;
+  try {
+    const input = JSON.parse(raw) as Record<string, unknown> | null;
+    if (!input || input["version"] !== 1 || typeof input["showReady"] !== "boolean" ||
+        !validStackMetric(input["moves"]) || !validStackMetric(input["mistakes"]) || !validStackMetric(input["hints"]) ||
+        !Array.isArray(input["cards"]) || !input["cards"].length || input["cards"].length > 16 ||
+        !input["progress"] || typeof input["progress"] !== "object" || Array.isArray(input["progress"])) return null;
+    const values = input["progress"] as Record<string, unknown>;
+    const progress: Record<FoodSuit, number> = { burger: 0, chicken: 0, "french-taco": 0, cake: 0 };
+    for (const suit of CHAOS_SUITS) {
+      const value = values[suit];
+      if (!validStackMetric(value) || value > 4) return null;
+      progress[suit] = value;
+    }
+    const remaining = new Map<string, FullHouseCard>();
+    for (const suit of CHAOS_SUITS) for (let rank = progress[suit] + 1; rank <= 4; rank++) {
+      const id = `${suit}-${rank}`;
+      remaining.set(id, { id, suit, rank });
+    }
+    const cards: FullHouseCard[] = [];
+    for (const rawCard of input["cards"]) {
+      if (!rawCard || typeof rawCard !== "object") return null;
+      const value = rawCard as Record<string, unknown>;
+      const id = value["id"];
+      if (typeof id !== "string") return null;
+      const card = remaining.get(id);
+      if (!card || card.suit !== value["suit"] || card.rank !== value["rank"]) return null;
+      cards.push(card);
+      remaining.delete(id);
+    }
+    if (remaining.size || input["moves"] !== 16 - cards.length + input["mistakes"]) return null;
+    return { version: 1, showReady: input["showReady"], cards, progress, moves: input["moves"],
+      mistakes: input["mistakes"], hints: input["hints"] };
+  } catch {
+    return null;
+  }
+}
+export function createStacksSave(state: SolitaireState, showReady: boolean): StacksSave | null {
+  return parseStacksSave(JSON.stringify({
+    version: 1, showReady, cards: state.cards, progress: state.progress,
+    moves: state.moves, mistakes: state.mistakes, hints: state.hints ?? 0,
+  }));
 }
