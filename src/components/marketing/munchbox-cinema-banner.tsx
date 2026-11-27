@@ -38,6 +38,7 @@ export function MunchboxCinemaBanner({ showClosedTerms = false }: { showClosedTe
     ) : null;
   }
   const teaser = snapshot.phase === "teaser";
+  const canBrowseEligibleProducts = !teaser && snapshot.catalogueState === "available";
   return (
     <section className="md-cinema-promo" aria-labelledby={titleId} data-promo-phase={snapshot.phase}>
       <div className="md-cinema-promo__inner">
@@ -52,7 +53,7 @@ export function MunchboxCinemaBanner({ showClosedTerms = false }: { showClosedTe
         <div className="md-cinema-promo__copy">
           <p className="md-cinema-promo__dates"><CalendarDays size={18} aria-hidden="true" /> 3–6 December 2026 inclusive</p>
           <p className="md-cinema-promo__phase">{teaser ? "COMING SOON · ENTRIES OPEN AT MIDNIGHT" : "NOW OPEN · ENDS MIDNIGHT SUNDAY"}</p>
-          <h2 id={titleId}>{teaser ? "Your Munchbox cinema giveaway starts at midnight." : "Buy a Munchbox for a chance to win!"}</h2>
+          <h2 id={titleId}>{teaser ? "Your Munchbox cinema giveaway starts at midnight." : canBrowseEligibleProducts ? "Buy a Munchbox for a chance to win!" : "Munchbox cinema prize draw"}</h2>
           <p className="md-cinema-promo__prize">Win one cinema ticket to <strong>Avengers: Doomsday</strong></p>
           <div className="md-cinema-promo__screening">
             <span><MapPin size={17} aria-hidden="true" /> Cineworld Luton</span>
@@ -62,9 +63,12 @@ export function MunchboxCinemaBanner({ showClosedTerms = false }: { showClosedTe
           <p className="md-cinema-promo__entry">{teaser
             ? "Register or sign in now. Only qualifying website purchases paid from 12:00am on 3 December until the end of 6 December enter the draw."
             : "Register or sign in and complete payment for a qualifying Munchbox through our website before midnight at the end of Sunday 6 December to enter the draw."}</p>
+          {!teaser && !canBrowseEligibleProducts && (
+            <p className="md-cinema-promo__availability" role="status">{snapshot.catalogueState === "unavailable" ? "Qualifying Munchboxes are currently unavailable on the menu. Check again later; existing entries and the closing date are unchanged." : "We can’t confirm qualifying menu availability right now. Check again later; existing entries and the closing date are unchanged."}</p>
+          )}
           <div className="md-cinema-promo__actions">
             <Link to="/account" className={teaser ? "md-cinema-promo__primary" : "md-cinema-promo__secondary"}>{teaser ? "Register before entries open" : "Register or sign in"}</Link>
-            {!teaser && <Link to="/menus" className="md-cinema-promo__primary">Click Here to Order <ArrowRight size={18} aria-hidden="true" /></Link>}
+            {canBrowseEligibleProducts && <Link to="/menus" className="md-cinema-promo__primary">Click Here to Order <ArrowRight size={18} aria-hidden="true" /></Link>}
           </div>
           <p className="md-cinema-promo__fine">One winner selected at random and contacted directly. Respond within 24 hours. Independent MealDeck promotion; not sponsored by or affiliated with Marvel, Disney or Cineworld.</p>
           <CinemaTerms snapshot={snapshot} />
