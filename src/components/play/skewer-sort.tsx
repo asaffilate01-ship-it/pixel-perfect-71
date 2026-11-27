@@ -182,7 +182,7 @@ export function SkewerSort() {
         result.kind === "no-solution" ? "No route to a sorted board was found. Undo a move or restart." : "No hint needed for this board.");
       return;
     }
-    if (hint?.from !== result.move.from || hint.to !== result.move.to) {
+    if (!hint || hint.from !== result.move.from || hint.to !== result.move.to) {
       setHintsUsed((value) => value + 1);
     }
     setHint(result.move);
