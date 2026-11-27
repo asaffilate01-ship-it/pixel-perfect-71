@@ -238,6 +238,8 @@ export const ARCADE_HELP: readonly ArcadeHelpEntry[] = [
   {"id":"stacks-markers","game":"solitaire","question":"Can I play Kitchen Stacks without ready markers?","answer":"Yes. Hide ready markers for a greater challenge. Stack the food cards in number order, from 1 to 4. Show a move can still suggest the next legal card."},
   {"id":"tactics-expert","game":"tray-tactics","question":"How does Expert Tray Tactics play?","answer":"Expert uses bounded local search up to five moves ahead, considering stable corners, legal options and piece counts. Suggest a move explains a recommended square without playing it."},
   {"id":"lines-expert","game":"tray-lines","question":"How does Expert Tray Lines choose a move?","answer":"Expert considers box captures and immediate chain giveaways, then solves the final twelve open edges exactly. A hint highlights a legal line and describes the immediate effect."},
+  {"id":"sauce-minimum","game":"sauce-switch","question":"How does Sauce Switch calculate minimum moves left?","answer":"The solver checks all first-row choices and calculates a shortest valid route. A hint describes its next tile and the effect of that tap. Fresh levels aim for shorter or longer solutions; daily layouts stay unchanged."},
+  {"id":"quest-levels","game":"menu-quest","question":"Can I choose how many Menu Quest words to find?","answer":"Fresh puzzles support 4, 6 or 8 words. Daily puzzles keep their six-word layout. Select a word to target a hint, then request the direction for further help."},
 ];
 
 export function findArcadeHelp(query: string, game?: ArcadeGameId): ArcadeHelpEntry[] {
