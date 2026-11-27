@@ -223,3 +223,45 @@ export function pantryFocusMove(index: number, key: string, size: PantrySize): n
       return null;
   }
 }
+
+export type PantryHint = { kind: "safe" | "chilli"; index: number; clue: number; otherClue?: number } |
+  { kind: "first" | "none" | "over" };
+
+/** Derive advice exclusively from visible numbers and covered positions, never hidden mines or flag guesses. */
+export function findPantryHint(state: PantryState): PantryHint {
+  if (pantryIsOver(state)) return { kind: "over" };
+  if (!state.board) return { kind: "first" };
+  const constraints: { clue: number; cells: number[]; count: number }[] = [];
+  for (let clue = 0; clue < state.size * state.size; clue++) {
+    if (!state.opened[clue]) continue;
+    const count = state.board.adjacent[clue];
+    const cells = pantryNeighbours(clue, state.size).filter(index => !state.opened[index]);
+    if (count !== undefined && cells.length && count >= 0 && count <= cells.length)
+      constraints.push({ clue, cells, count });
+  }
+  // A known-safe flagged cell is useful advice too: tell the player to remove that flag.
+  function candidate(cells: number[], count: number, clue: number, otherClue?: number): PantryHint | null {
+    if (!cells.length) return null;
+    const kind = count === 0 ? "safe" : count === cells.length ? "chilli" : null;
+    if (!kind) return null;
+    const index = cells.find(cell => kind === "safe" || !state.flagged[cell]);
+    if (index === undefined) return null;
+    return { kind, index, clue, ...(otherClue === undefined ? {} : { otherClue }) };
+  }
+  for (const a of constraints) {
+    const hint = candidate(a.cells, a.count, a.clue);
+    if (hint) return hint;
+  }
+  // If one clue's covered cells are a subset of another, subtract the counts.
+  for (const a of constraints) {
+    for (const b of constraints) {
+      if (a.cells.length >= b.cells.length || !a.cells.every(cell => b.cells.includes(cell))) continue;
+      const difference = b.cells.filter(cell => !a.cells.includes(cell));
+      const count = b.count - a.count;
+      if (count < 0 || count > difference.length) continue;
+      const hint = candidate(difference, count, b.clue, a.clue);
+      if (hint) return hint;
+    }
+  }
+  return { kind: "none" };
+}
