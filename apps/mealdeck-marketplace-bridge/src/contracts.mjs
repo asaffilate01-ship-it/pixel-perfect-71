@@ -73,13 +73,27 @@ export function evidence(profile) {
 export function hash(value) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
+function identityText(value, limit) {
+  requireThat(
+    typeof value === "string" &&
+      value.trim().length > 0 &&
+      value.trim() === value &&
+      [...value].length <= limit &&
+      !/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u.test(value),
+    "identity_mismatch",
+  );
+  return value;
+}
+
+/** Match the server's exact identity boundary. Reject ambiguity; never normalise a reference. */
 export function identity(value) {
+  requireThat(value && typeof value === "object" && !Array.isArray(value), "identity_mismatch");
   requireThat(PLATFORMS.includes(value.platform), "identity_mismatch");
   return {
     platform: value.platform,
-    externalStoreId: text(value.externalStoreId, 200),
-    externalOrderId: text(value.externalOrderId, 200),
-    displayReference: text(value.displayReference, 80),
+    externalStoreId: identityText(value.externalStoreId, 200),
+    externalOrderId: identityText(value.externalOrderId, 200),
+    displayReference: identityText(value.displayReference, 80),
   };
 }
 export function sameIdentity(a, b) {
@@ -90,7 +104,11 @@ export function sameIdentity(a, b) {
 export function validateCommand(value) {
   requireThat(value && typeof value === "object", "bridge_error");
   const id = identity(value);
-  requireThat(UUID.test(value.commandId) && UUID.test(value.leaseToken), "bridge_error");
+  requireThat(
+    typeof value.commandId === "string" && typeof value.leaseToken === "string" &&
+      UUID.test(value.commandId) && UUID.test(value.leaseToken),
+    "bridge_error",
+  );
   requireThat(
     ACTIONS.includes(value.action) && STATES.includes(value.expectedState),
     "bridge_error",

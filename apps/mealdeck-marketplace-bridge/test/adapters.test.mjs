@@ -29,11 +29,15 @@ for (const [platform, Adapter] of [
   });
 }
 
-test("source reference is neither converted to a number nor implicitly trimmed", async () => {
+test("source reference is exact; padded and hidden-separator references are rejected", async () => {
   const fixture = new FixtureTransport();
-  fixture.reference.text = " 00Ab-19 ";
+  fixture.reference.text = "00Ab-19";
   const adapter = new UberEatsAdapter(fixture, fixtureProfile("uber_eats"), "fixture-store");
-  assert.equal((await adapter.scan())[0].displayReference, " 00Ab-19 ");
+  assert.equal((await adapter.scan())[0].displayReference, "00Ab-19");
+  for (const invalid of [" 00Ab-19 ", "00Ab\u202819", "00Ab\u202919", "00Ab\u200b19"]) {
+    fixture.reference.text = invalid;
+    await assert.rejects(adapter.scan(), /identity_mismatch/);
+  }
 });
 
 test("partial virtualised lists and incomplete line lists cannot be imported", async () => {
