@@ -890,3 +890,32 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Feast games: clearer numbers, safe touch area and compact stats. */
+.md-feast-stats .md-game-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.md-feast-goal { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--game-muted); margin:0 0 6px; }
+.md-feast-progress { display:block; width:100%; max-width:440px; height:7px; margin:0 0 10px; accent-color:var(--game-red); }
+.md-feast-save { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; border:1px solid var(--game-line); border-radius:14px; background:var(--game-cream); padding:16px; margin-top:16px; }
+.md-feast-save p { margin:4px 0 0; font-size:13px; color:var(--game-muted); }
+.md-feast-save small { flex-basis:100%; color:var(--game-muted); font-size:12px; }
+.md-merge-board { touch-action:auto; }
+.md-merge-board[data-interactive="yes"] { touch-action:pinch-zoom; }
+.md-feast-tile-face { display:grid; place-items:center; width:100%; height:100%; position:relative; animation:md-feast-pop 150ms ease-out; }
+.md-merge-tile[data-tier="1"] { background:#fffaf0; }
+.md-merge-tile[data-tier="2"] { background:#f8ebd3; }
+.md-merge-tile[data-tier="3"] { background:#f8d7a1; }
+.md-merge-tile[data-tier="4"], .md-merge-tile[data-tier="5"] { background:#efb768; }
+.md-merge-tile[data-tier="6"], .md-merge-tile[data-tier="7"] { background:#df8555; }
+.md-merge-tile[data-tier="8"], .md-merge-tile[data-tier="9"] { background:#f7d36e; }
+.md-merge-tile[data-tier="10"], .md-merge-tile[data-tier="11"] { background:#951018; border-color:#751019; }
+.md-merge-tile[data-tier="10"] strong, .md-merge-tile[data-tier="11"] strong { color:#fff; }
+.md-merge-tile[data-tier="10"] img, .md-merge-tile[data-tier="11"] img { opacity:.12; }
+@keyframes md-feast-pop { from { transform:scale(.9); } to { transform:scale(1); } }
+.md-four-players > span.is-turn { outline:2px solid #951018; outline-offset:2px; }
+.md-four-cell.is-winning { outline:3px solid #315c3c; outline-offset:-4px; background:#e3f2de; border-color:#315c3c; }
+.md-four-drops .md-game-button { touch-action:manipulation; }
+@media (max-width:580px) {
+  .md-feast-stats .md-game-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .md-feast-save .md-game-button { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) { .md-feast-tile-face { animation:none; } }
