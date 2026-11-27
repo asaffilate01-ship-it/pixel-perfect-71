@@ -3,7 +3,7 @@
  * File permissions and an exclusive lock protect ordinary concurrent use; this
  * cannot prevent a privileged operator from copying or rewriting the evidence.
  */
-import { constants, closeSync, existsSync, fchmodSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, unlinkSync, writeFileSync, linkSync } from "node:fs";
+import { constants, closeSync, existsSync, fchmodSync, fsyncSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, unlinkSync, writeFileSync, linkSync } from "node:fs";
 import { join, resolve, relative, isAbsolute, sep } from "node:path";
 import { randomUUID, createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -40,12 +40,13 @@ function privateDirectory(path, create = false) {
 function privateJson(path) {
   const fd=openSync(path,constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
-    const info=lstatSync(path);
-    if (!info.isFile() || info.isSymbolicLink() || (info.mode & 0o077)!==0 || info.size>MAX_BYTES ||
+    const info=fstatSync(fd);
+    if (!info.isFile() || (info.mode & 0o077)!==0 || info.size>MAX_BYTES ||
         (typeof process.getuid==="function" && info.uid!==process.getuid())) throw Error("Invalid private evidence file");
     const data=readFileSync(fd,"utf8");
     if (Buffer.byteLength(data)>MAX_BYTES) throw Error("Private evidence exceeds size limit");
-    return JSON.parse(data);
+    try { return JSON.parse(data); }
+    catch { throw Error("Invalid private evidence JSON"); }
   } finally {closeSync(fd);}
 }
 
@@ -153,6 +154,8 @@ export function runCinemaLedgerCommand(args) {
   if(!dir)throw Error("Supply a designated private draw directory");
   if(command==="init" && args.length===3) {
     // The source export must itself be a private, owner-readable JSON file.
+    const source=realpathSync(resolve(first));
+    if (inside(REPOSITORY_ROOT,source)) throw Error("Keep private evidence outside the repository");
     return initialiseCinemaLedger(dir,privateJson(resolve(first)));
   }
   if(command==="status" && args.length===3)return inspectCinemaLedger(dir,first);
