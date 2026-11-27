@@ -56,6 +56,9 @@ async function privacy(page, firstPage) {
     assert.equal(await boxes.nth(1).isChecked(),false);
     await reject.click();
     await consent.waitFor({state:"hidden"});
+    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("mealdeck-cookie-consent-v1") ?? "null"));
+    assert.equal(stored?.analytics, false);
+    assert.equal(stored?.marketing, false);
   } else if (await consent.isVisible()) await reject.click();
 }
 async function navigation(page, profile) {
