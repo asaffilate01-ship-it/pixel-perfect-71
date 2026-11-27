@@ -17,6 +17,8 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
   const menuId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const mobileNavRef = useRef<HTMLElement>(null);
   const { pathname, hash } = useRouterState({
     select: (state) => ({
       pathname: state.location.pathname,
@@ -29,6 +31,20 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
   useEffect(() => {
     if (!open) return;
     firstLinkRef.current?.focus();
+    const wideScreen = window.matchMedia("(min-width: 1181px)");
+    const closeOnWideScreen = () => {
+      if (!wideScreen.matches) return;
+      const focused = document.activeElement;
+      const focusWasInMenu = focused === triggerRef.current || mobileNavRef.current?.contains(focused);
+      setOpen(false);
+      if (focusWasInMenu) headerRef.current?.querySelector<HTMLAnchorElement>(".md-header-logo")?.focus();
+    };
+    const onOutsidePointer = (event: PointerEvent) => {
+      if (event.target instanceof Node && !headerRef.current?.contains(event.target)) setOpen(false);
+    };
+    const onFocusOutside = (event: FocusEvent) => {
+      if (event.target instanceof Node && event.target !== triggerRef.current && !mobileNavRef.current?.contains(event.target)) setOpen(false);
+    };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -37,7 +53,16 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
       }
     };
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onOutsidePointer);
+    document.addEventListener("focusin", onFocusOutside);
+    wideScreen.addEventListener("change", closeOnWideScreen);
+    closeOnWideScreen();
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onOutsidePointer);
+      document.removeEventListener("focusin", onFocusOutside);
+      wideScreen.removeEventListener("change", closeOnWideScreen);
+    };
   }, [open]);
   const current = (to: string, targetHash?: string) =>
     isMealDeckNavCurrent(pathname, hash, { to, hash: targetHash });
@@ -45,7 +70,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
     current(to, targetHash) ? "is-current" : undefined;
 
   return (
-    <header className="md-site-header">
+    <header className="md-site-header" ref={headerRef}>
       <div className="md-header-inner">
         <Link to="/" className="md-header-logo" aria-label="MealDeck home">
           <MealDeckLogo />
@@ -81,7 +106,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
               aria-current={current("/play") ? "page" : undefined}
               className={active("/play")}
             >
-              Play &amp; Rewards
+              Play games
             </Link>
             <Link
               to="/franchise"
@@ -98,11 +123,11 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
               Blog
             </Link>
             <Link
-              to="/track"
-              aria-current={current("/track") ? "page" : undefined}
-              className={active("/track")}
+              to="/account"
+              aria-current={current("/account") ? "page" : undefined}
+              className={active("/account")}
             >
-              Track <small className="md-nav-coming-soon">Coming soon</small>
+              My account
             </Link>
           </nav>
         ) : null}
@@ -134,8 +159,8 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
         </div>
       </div>
 
-      {nav && open ? (
-        <nav id={menuId} className="md-mobile-nav" aria-label="Mobile navigation">
+      {nav ? (
+        <nav id={menuId} ref={mobileNavRef} hidden={!open} className="md-mobile-nav" aria-label="Mobile navigation">
           <Link
             to="/"
             ref={firstLinkRef}
@@ -152,6 +177,14 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
             className={active("/menus")}
           >
             Order Now
+          </Link>
+          <Link
+            to="/account"
+            onClick={() => setOpen(false)}
+            aria-current={current("/account") ? "page" : undefined}
+            className={active("/account")}
+          >
+            My account &amp; preferences
           </Link>
           {navItems.map((item) => (
             <Link
@@ -197,7 +230,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
             aria-current={current("/play") ? "page" : undefined}
             className={active("/play")}
           >
-            Play &amp; Rewards
+            Play games
           </Link>
           <Link
             to="/franchise"
@@ -222,14 +255,6 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
             className={active("/track")}
           >
             Track order <small className="md-nav-coming-soon">Coming soon</small>
-          </Link>
-          <Link
-            to="/account"
-            onClick={() => setOpen(false)}
-            aria-current={current("/account") ? "page" : undefined}
-            className={active("/account")}
-          >
-            My account &amp; preferences
           </Link>
           <Link to="/menus" className="md-btn md-btn-yellow" onClick={() => setOpen(false)}>
             Order Now <ArrowRight />
