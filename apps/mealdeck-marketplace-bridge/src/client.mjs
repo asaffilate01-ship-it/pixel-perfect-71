@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import { readBridgeReply } from "./response.mjs";
 import {
   ACTIONS,
   BridgeError,
@@ -50,13 +51,7 @@ export class BridgeClient {
         body: JSON.stringify({ op, connectorId: this.config.connectorId, payload }),
         signal: AbortSignal.timeout(15_000),
       });
-      requireThat(
-        response.ok && response.headers.get("content-type")?.includes("application/json"),
-        "bridge_error",
-      );
-      const raw = await response.text();
-      requireThat(Buffer.byteLength(raw) < 100_000, "bridge_error");
-      return JSON.parse(raw);
+      return await readBridgeReply(response);
     } catch (error) {
       throw error instanceof BridgeError ? error : new BridgeError("bridge_error");
     }
