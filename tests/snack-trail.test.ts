@@ -2,6 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   SNACK_TRAIL_CELLS,
   SNACK_TRAIL_MAX_STEPS,
+  createSnackTrailSave,
+  parseSnackTrailSave,
+  snackSwipeDirection,
   canSnackTick,
   createSnackTrail,
   isSnackDirection,
@@ -360,5 +363,47 @@ describe("Snack Trail interruption and clock lifecycle", () => {
     expect(state.snake[0]).toBe(45);
     newClock();
     expect(clock.cancelled).toEqual([0, 1]);
+  });
+});
+
+describe("Snack Trail explicit save and swipe controls", () => {
+  test("saves the same active round and restores only a paused board", () => {
+    const initial = queueSnackDirection(createSnackTrail("running"), "up");
+    const saved = createSnackTrailSave(initial, "slow", "round-local-123");
+    expect(saved?.round.phase).toBe("paused");
+    expect(saved?.round.queuedDirection).toBeNull();
+    expect(saved?.roundId).toBe("round-local-123");
+    expect(saved?.round.snake).toEqual(initial.snake);
+    expect(parseSnackTrailSave(JSON.stringify(saved))).toEqual(saved);
+    expect(canSnackTick(saved!.round, "slow")).toBe(false);
+    expect(stepSnackTrail(saved!.round)).toBe(saved!.round);
+    expect(resumeSnackTrail(saved!.round).phase).toBe("running");
+    expect(createSnackTrailSave(createSnackTrail(), "slow", "round-local-123")).toBeNull();
+  });
+
+  test("rejects malformed data, invalid geometry, food collisions and fake metrics", () => {
+    const saved = createSnackTrailSave(createSnackTrail("running"), "step", "round-local-456")!;
+    for (const raw of [null, "", "bad json", "null", "{}", "x".repeat(8001)]) {
+      expect(parseSnackTrailSave(raw)).toBeNull();
+    }
+    for (const patch of [
+      { snake: [44, 43, 43] }, { snake: [40, 39, 38] }, { snake: [44, 40, 39] },
+      { snake: [44, 43, 42, 41], score: 0 }, { food: 44 }, { food: 100 }, { direction: "left" },
+      { score: 2 }, { steps: -1 }, { steps: 100001 }, { phase: "running" }, { phase: "lost" },
+    ]) {
+      expect(parseSnackTrailSave(JSON.stringify({ ...saved, round: { ...saved.round, ...patch } }))).toBeNull();
+    }
+    expect(parseSnackTrailSave(JSON.stringify({ ...saved, pace: "unknown" }))).toBeNull();
+    expect(parseSnackTrailSave(JSON.stringify({ ...saved, roundId: "!" }))).toBeNull();
+  });
+
+  test("recognises intentional horizontal and vertical swipes but not taps or ambiguous drags", () => {
+    expect(snackSwipeDirection(40, 5)).toBe("right");
+    expect(snackSwipeDirection(-40, 5)).toBe("left");
+    expect(snackSwipeDirection(5, 40)).toBe("down");
+    expect(snackSwipeDirection(5, -40)).toBe("up");
+    for (const [x, y] of [[0, 0], [10, 15], [30, 30], [NaN, 40], [Infinity, 1]]) {
+      expect(snackSwipeDirection(x!, y!)).toBeNull();
+    }
   });
 });
