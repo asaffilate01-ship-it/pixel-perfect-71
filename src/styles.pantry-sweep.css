@@ -350,3 +350,15 @@
     scroll-behavior: auto;
   }
 }
+
+.md-pantry .md-game-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.md-pantry__mode { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.md-pantry__cell.is-hint {
+  outline: 3px solid #315c3c;
+  outline-offset: -3px;
+}
+.md-pantry__cell { touch-action: manipulation; }
+@media (max-width: 580px) {
+  .md-pantry .md-game-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md-pantry__mode .md-game-button { padding-inline: 5px; font-size: 12px; }
+}

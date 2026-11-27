@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
-import { ChefHat, Eye, Flag, Flame, Play, RotateCcw, Trophy, X } from "lucide-react";
+import { ChefHat, Eye, Flag, Flame, Lightbulb, Play, RotateCcw, Trophy, X } from "lucide-react";
 import { useArcadeProgress } from "@/components/play/arcade-progress";
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import { createArcadeRoundId } from "@/lib/mealdeck-play-progress";
 import {
   PANTRY_LEVELS,
   createPantryState,
+  findPantryHint,
   pantryCellView,
   pantryFlagsLeft,
   pantryFocusMove,
@@ -46,6 +47,8 @@ export function PantrySweep() {
   const [mode, setMode] = useState<PantryMode>("reveal");
   const [active, setActive] = useState(0);
   const [notice, setNotice] = useState("");
+  const [hintIndex, setHintIndex] = useState<number | null>(null);
+  const [hintsUsed, setHintsUsed] = useState(0);
   const cells = useRef<(HTMLButtonElement | null)[]>([]);
   const boardArea = useRef<HTMLDivElement>(null);
   const startButton = useRef<HTMLButtonElement>(null);
@@ -79,9 +82,10 @@ export function PantrySweep() {
       game: "pantry-sweep",
       result: round.state.status === "won" ? "win" : "loss",
       moves: round.state.actions,
+      hints: hintsUsed,
       variant: `${round.state.level}-${round.state.size}x${round.state.size}`,
     });
-  }, [round, recordCompletion]);
+  }, [round, hintsUsed, recordCompletion]);
 
   useEffect(() => {
     if (!over) return;
@@ -95,6 +99,8 @@ export function PantrySweep() {
   function startRound() {
     setRound({ id: createArcadeRoundId(), state: createPantryState(level) });
     setMode("reveal");
+    setHintIndex(null);
+    setHintsUsed(0);
     setActive(0);
     setNotice("Choose any covered square. Your first reveal and its touching neighbours are safe.");
     pendingFocus.current = "board";
@@ -129,6 +135,7 @@ export function PantrySweep() {
             previous.board ? 0 : Math.floor(Math.random() * 0x1_0000_0000),
           );
     if (next === previous) return;
+    setHintIndex(null);
     setRound({ ...round, state: next });
     const position = `Row ${Math.floor(index / next.size) + 1}, column ${(index % next.size) + 1}`;
     if (action === "flag") {
@@ -148,6 +155,25 @@ export function PantrySweep() {
         `${position}: ${nearby} nearby ${nearby === 1 ? "chilli" : "chillies"}. ${opened} safe ${opened === 1 ? "square opened" : "squares opened"}.`,
       );
     }
+  }
+
+  function showHint() {
+    if (!state || over) return;
+    const hint = findPantryHint(state);
+    if (hint.kind !== "safe" && hint.kind !== "chilli") {
+      setHintIndex(null);
+      setNotice(hint.kind === "first" ? "Your first reveal is safe. Choose any unflagged square." : "No certain move was found from the visible clues. Check the numbers; a guess may be needed.");
+      return;
+    }
+    const position = (index: number) => `row ${Math.floor(index / state.size) + 1}, column ${index % state.size + 1}`;
+    if (hintIndex !== hint.index) setHintsUsed(value => value + 1);
+    setHintIndex(hint.index);
+    setActive(hint.index);
+    const explanation = hint.otherClue === undefined ? `The clue at ${position(hint.clue)}` :
+      `Comparing clues at ${position(hint.clue)} and ${position(hint.otherClue)}`;
+    setNotice(`${explanation} proves ${position(hint.index)} ${hint.kind === "safe" ?
+      (state.flagged[hint.index] ? "is safe. Remove its flag before revealing." : "is safe to reveal.") :
+      "contains a chilli. Mark it with a flag."}`);
   }
 
   function navigate(event: KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -261,6 +287,7 @@ export function PantrySweep() {
               <dt>Actions</dt>
               <dd>{state.actions}</dd>
             </div>
+            <div><dt>Hints used</dt><dd>{hintsUsed}</dd></div>
           </dl>
           <div className="md-pantry__layout">
             <div ref={boardArea} className="md-pantry__board-area">
@@ -297,6 +324,9 @@ export function PantrySweep() {
                     }}
                   >
                     <Flag size={17} aria-hidden="true" /> Flag
+                  </button>
+                  <button type="button" className="md-game-button" onClick={showHint}>
+                    <Lightbulb size={17} aria-hidden="true" /> Hint
                   </button>
                 </div>
               )}
@@ -336,8 +366,8 @@ export function PantrySweep() {
                                 cells.current[index] = element;
                               }}
                               tabIndex={active === index ? 0 : -1}
-                              className={`md-pantry__cell is-${view.kind}${view.kind === "chilli" && view.hit ? " is-hit" : ""}${view.kind === "safe" && view.misflagged ? " is-misflagged" : ""}`}
-                              aria-label={squareLabel(index, state.size, view)}
+                              className={`md-pantry__cell is-${view.kind}${view.kind === "chilli" && view.hit ? " is-hit" : ""}${view.kind === "safe" && view.misflagged ? " is-misflagged" : ""}${hintIndex === index ? " is-hint" : ""}`}
+                              aria-label={squareLabel(index, state.size, view) + (hintIndex === index ? ", suggested by hint" : "")}
                               aria-disabled={over || view.kind === "safe"}
                               onFocus={() => setActive(index)}
                               onKeyDown={(event) => navigate(event, index)}
