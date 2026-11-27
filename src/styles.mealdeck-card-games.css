@@ -1059,3 +1059,32 @@
   .md-card-game__hand-tools > button { flex: 1 1 140px; }
   .md-card-game__hand-tools > span { flex-basis: 100%; }
 }
+
+
+/* Card guidance and saved-board actions remain accessible on small screens. */
+.md-card-game .md-card-game__rank-button.is-hinted {
+  border: 2px solid #826317;
+  background: #fff4ba;
+}
+.md-card-game__saved {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  margin: 16px 0;
+  border: 1px solid var(--md-card-border);
+  border-radius: 12px;
+  background: var(--md-card-cream);
+}
+.md-card-game__saved > div { flex: 1 1 180px; min-width: 0; }
+.md-card-game__saved p, .md-card-game__saved small {
+  color: var(--md-card-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.md-card-game__saved small { flex-basis: 100%; }
+@media (max-width: 580px) {
+  .md-card-game__saved > button { flex: 1 1 140px; }
+  .md-card-game__saved > div { flex-basis: 100%; }
+}

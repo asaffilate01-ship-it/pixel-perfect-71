@@ -907,9 +907,9 @@ export function ArcadePage({ search, page = "library" }: ArcadePageProps) {
     recipe: <RecipeRush />,
     "kitchen-chaos": <KitchenChaos suspended={gameInterrupted} />,
     snap: <BrandSnap suspended={gameInterrupted} />,
-    "go-dish": <GoDish />,
-    "full-house": <FullHouse />,
-    solitaire: <KitchenStacks />,
+    "go-dish": <GoDish suspended={gameInterrupted} />,
+    "full-house": <FullHouse suspended={gameInterrupted} />,
+    solitaire: <KitchenStacks suspended={gameInterrupted} />,
   };
   const libraryProps = {
     game,

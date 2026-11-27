@@ -257,8 +257,8 @@ describe("Responsive arcade quick picks", () => {
 
 describe("Reviewed arcade help", () => {
   test("all games have help and every question has a unique ID", () => {
-    expect(ARCADE_HELP).toHaveLength(34);
-    expect(new Set(ARCADE_HELP.map(entry => entry.id)).size).toBe(34);
+    expect(ARCADE_HELP).toHaveLength(38);
+    expect(new Set(ARCADE_HELP.map(entry => entry.id)).size).toBe(38);
     for (const game of ARCADE_GAMES) expect(ARCADE_HELP.some(entry => entry.game === game.id)).toBe(true);
   });
   test("search is case-insensitive, matches every term, and promotes the active game", () => {
@@ -280,4 +280,9 @@ test("help accepts punctuated natural questions and ignores common filler words"
   expect(findArcadeHelp("Please, how do I save a board?").some(entry => entry.id === "save")).toBe(true);
   expect(findArcadeHelp("Kitchen-Chaos!", "kitchen-chaos").length).toBeGreaterThan(0);
   expect(findArcadeHelp("unknownzzz?!")).toEqual([]);
+});
+
+test("card strategy and saved-stack questions can be found", () => {
+  expect(findArcadeHelp("public rank", "go-dish").some(entry=>entry.id==="go-difficulty")).toBe(true);
+  expect(findArcadeHelp("save kitchen stacks", "solitaire").some(entry=>entry.id==="stacks-save")).toBe(true);
 });
