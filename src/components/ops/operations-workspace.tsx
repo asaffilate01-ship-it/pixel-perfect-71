@@ -92,6 +92,7 @@ import { IntegrationStatusPanel } from "@/components/ops/integration-status-pane
 import { NotificationCampaignPanel } from "@/components/ops/notification-campaign-panel";
 import { WhatsAppInboxPanel } from "@/components/ops/whatsapp-inbox-panel";
 import { StaffPasswordPanel } from "@/components/ops/staff-password-panel";
+import { StaffVoucherPanel } from "@/components/ops/staff-voucher-panel";
 import {
   StaffMobileNav,
   StaffMobileSheet,
@@ -1304,6 +1305,9 @@ export function MealDeckOperations({ kitchenMode = false }: { kitchenMode?: bool
                         (a) =>
                           a.tenant_id === tenant && a.location_id === null && a.role === "owner",
                       ) && <StaffPasswordPanel key={tenant + ":" + user.id} />}
+                    {!!location && can("staff.manage") && can("finance.manage") &&
+                      accesses.some(a=>a.tenant_id===tenant && (a.location_id===null||a.location_id===location) && (a.role==="owner"||a.role==="admin")) &&
+                      <StaffVoucherPanel key={tenant+":"+location+":"+user.id} tenantId={tenant} locationId={location} staff={data.staff} />}
                     <OpsTeamPanel
                       {...common}
                       staff={data.staff}
