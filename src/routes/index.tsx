@@ -24,6 +24,7 @@ import { BrandLogoGrid } from "@/components/marketing/brand-logo-grid";
 import { LocalMenuDiscovery } from "@/components/marketing/local-menu-discovery";
 import { RotatingBrandDeck } from "@/components/marketing/rotating-brand-deck";
 import { OfferDiscovery } from "@/components/marketing/offer-discovery";
+import { MunchboxCinemaBanner } from "@/components/marketing/munchbox-cinema-banner";
 import { MealDeckLogo } from "@/components/mealdeck-logo";
 import { useOwnDriverAvailability } from "@/components/own-driver-offer-banner";
 import { useCustomerEntryPolicy } from "@/components/use-customer-entry-policy";
@@ -102,6 +103,7 @@ function LandingPage() {
     <div className="md-marketing-shell">
       <SiteHeader />
       <main>
+        <MunchboxCinemaBanner />
         <section className="md-hero">
           <div className="md-hero-pattern" aria-hidden="true" />
           <div className="md-hero-inner">

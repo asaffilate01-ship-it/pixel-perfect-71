@@ -41,8 +41,8 @@ function LutonPage() {
           a: `${MEALDECK_LUTON_HOURS_PROSE} Order online for Luton collection, kerbside or eligible free direct delivery during kitchen opening hours.`,
         },
         {
-          q: "Which brands are in the first launch?",
-          a: "Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Mix the five launch brands in one basket for eligible delivery, collection or kerbside. The other brands are planned for later decks.",
+          q: "Which brands can I order in Luton?",
+          a: "Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Mix the five brands in one basket for eligible delivery, collection or kerbside. The other brands are planned for later decks.",
         },
         {
           q: "Where can I find burgers in Luton?",
@@ -54,7 +54,7 @@ function LutonPage() {
         },
         {
           q: "Does MealDeck have milk cake and desserts?",
-          a: "Biscoff Milkcake and Oreo Milkcake are listed in the Desserts section of every launch menu. Browse the menu for current prices and availability, then add dessert to your food or mocktail order.",
+          a: "Biscoff Milkcake and Oreo Milkcake are listed in the Desserts section of every current menu. Browse the menu for current prices and availability, then add dessert to your food or mocktail order.",
         },
         {
           q: "What is on the Moktl mocktail lounge menu in Luton?",

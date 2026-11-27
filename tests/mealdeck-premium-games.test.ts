@@ -267,3 +267,11 @@ describe("Kitchen Stacks validated local snapshot", () => {
     expect(parseStacksSave("invalid")).toBeNull();
   });
 });
+
+test("reusable Kitchen Stacks snapshot carries a validated local round identity",()=>{
+  const state=startSolitaire(()=>0.3);
+  const snapshot=createStacksSave(state,true,"round-stacks-test")!;
+  expect(parseStacksSave(JSON.stringify(snapshot))?.roundId).toBe("round-stacks-test");
+  expect(createStacksSave(state,true,"bad")).toBeNull();
+  expect(createStacksSave(state,true)?.roundId).toBeUndefined();
+});

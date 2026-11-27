@@ -5,7 +5,7 @@ import {
   parseArcadeSearch,
   type ArcadeGameId,
 } from "@/lib/mealdeck-arcade-library";
-import { parseArcadeCompletion, type ArcadeCompletion } from "@/lib/mealdeck-play-progress";
+import { parseArcadeCompletion, arcadeScoreLabel, arcadeCompletionLabel, type ArcadeCompletion } from "@/lib/mealdeck-play-progress";
 
 export type ArcadeShareRequest = {
   game: ArcadeGameId;
@@ -38,12 +38,16 @@ const VARIANTS: Readonly<Record<string, ShareVariant>> = {
   "bento-sudoku:6x6": { label: "6 × 6 tray", size: 6 },
   "tray-tactics:solo-casual": { label: "Solo · Casual chef" },
   "tray-tactics:solo-clever": { label: "Solo · Clever chef" },
+  "tray-tactics:solo-expert": { label: "Solo · Expert chef" },
   "tray-tactics:local-casual": { label: "Two players" },
   "tray-tactics:local-clever": { label: "Two players" },
+  "tray-tactics:local-expert": { label: "Two players" },
   "tray-lines:solo-casual": { label: "Solo · Casual chef" },
   "tray-lines:solo-clever": { label: "Solo · Clever chef" },
+  "tray-lines:solo-expert": { label: "Solo · Expert chef" },
   "tray-lines:local-casual": { label: "Two players" },
   "tray-lines:local-clever": { label: "Two players" },
+  "tray-lines:local-expert": { label: "Two players" },
   "snack-trail:slow": { label: "Slow pace" },
   "snack-trail:standard": { label: "Standard pace" },
   "snack-trail:step": { label: "Untimed step play" },
@@ -51,6 +55,33 @@ const VARIANTS: Readonly<Record<string, ShareVariant>> = {
   "skewer-sort:4-foods": { label: "4 foods · Full plate" },
   "pantry-sweep:gentle-5x5": { label: "5 × 5 · Gentle pantry" },
   "pantry-sweep:bigger-6x6": { label: "6 × 6 · Bigger pantry" },
+  "pairs:4-pairs": { label: "Easy · 4 pairs" },
+  "pairs:6-pairs": { label: "Classic · 6 pairs" },
+  "pairs:8-pairs": { label: "Challenge · 8 pairs" },
+  "recipe:3-recipes": { label: "Taster · 3 recipes" },
+  "recipe:6-recipes": { label: "Chef · 6 recipes" },
+  "recipe:12-recipes": { label: "Master · 12 recipes" },
+  "snap:6-pairs": { label: "Quick · 6 pairs" },
+  "snap:12-pairs": { label: "Classic · 12 pairs" },
+  "snap:24-pairs": { label: "Marathon · 24 pairs" },
+  "kitchen-chaos:relaxed": { label: "Relaxed chef" },
+  "kitchen-chaos:classic": { label: "Classic chef" },
+  "kitchen-chaos:expert": { label: "Expert chef" },
+  "go-dish:relaxed": { label: "Relaxed chef" },
+  "go-dish:classic": { label: "Classic chef" },
+  "go-dish:expert": { label: "Expert chef" },
+  "four-to-feast:chef-1": { label: "Solo · Commis" },
+  "four-to-feast:chef-3": { label: "Solo · Sous chef" },
+  "four-to-feast:chef-4": { label: "Solo · Head chef" },
+  "four-to-feast:chef-5": { label: "Solo · Master chef" },
+  "four-to-feast:local-1": { label: "Two players" },
+  "four-to-feast:local-3": { label: "Two players" },
+  "four-to-feast:local-4": { label: "Two players" },
+  "four-to-feast:local-5": { label: "Two players" },
+  "kitchen-shuffle:fresh-3x3": { label: "Fresh · 3 × 3" },
+  "kitchen-shuffle:fresh-4x4": { label: "Fresh · 4 × 4" },
+  "kitchen-shuffle:daily-3x3": { label: "Daily mode · 3 × 3" },
+  "kitchen-shuffle:daily-4x4": { label: "Daily mode · 4 × 4" },
 };
 
 function shareVariant(completion: ArcadeCompletion): ShareVariant | undefined {
@@ -75,10 +106,13 @@ function resultHeadline(completion: ArcadeCompletion): string {
       return completion.result === "win" ? "Tray filled" : "Trail finished";
     case "pantry-sweep":
       return completion.result === "win" ? "Pantry cleared" : "Chilli found";
+    case "four-to-feast":
+    case "kitchen-chaos":
+    case "go-dish":
     case "tray-tactics":
     case "tray-lines":
       // Local play records a completed shared round, not a victory over the chef.
-      if (completion.variant === "local-casual" || completion.variant === "local-clever")
+      if (shareVariant(completion)?.label === "Two players")
         return completion.result === "draw" ? "Even portions" : "Round complete";
       return completion.result === "win"
         ? "Round won"
@@ -87,20 +121,22 @@ function resultHeadline(completion: ArcadeCompletion): string {
           : completion.result === "loss"
             ? "Round finished"
             : "Round complete";
+    default:
+      return arcadeCompletionLabel(completion);
   }
 }
 
 function countLabel(value: number, unit: string): string {
-  // The completion parser bounds every metric to a safe integer from 0 to 100,000.
+  // The completion parser bounds every metric to a safe non-negative integer.
   return `${String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${unit}${value === 1 ? "" : "s"}`;
 }
 
 function resultDetail(completion: ArcadeCompletion): string {
   const parts: string[] = [];
-  if (completion.game === "snack-trail" && completion.score !== undefined)
-    parts.push(countLabel(completion.score, "snack"));
+  if (completion.score !== undefined) parts.push(arcadeScoreLabel(completion.game, completion.score));
   if (completion.moves !== undefined) parts.push(countLabel(completion.moves, "move"));
   if (completion.hints !== undefined) parts.push(countLabel(completion.hints, "hint"));
+  if (completion.checks !== undefined) parts.push(countLabel(completion.checks, "check"));
   return parts.join(" · ") || "Finished round";
 }
 

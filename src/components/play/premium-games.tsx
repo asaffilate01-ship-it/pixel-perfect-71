@@ -12,6 +12,8 @@ import {
   Trophy,
 } from "lucide-react";
 import { suitArtwork } from "@/lib/food-suit-artwork";
+import { useArcadeRoundTracker } from "@/components/play/arcade-progress";
+import { createArcadeRoundId } from "@/lib/mealdeck-play-progress";
 import { marketingBrands, cafe1Brand } from "@/lib/marketing-brands";
 import cardBack from "@/assets/mealdeck-card-back.png";
 import {
@@ -358,11 +360,13 @@ export function KitchenChaos({ suspended = false }: { suspended?: boolean }) {
   const difficultyId = useId();
   const choiceId = useId();
   const { regionRef, requestFocus } = useNextActionFocus(state);
+  const { beginRound } = useArcadeRoundTracker(state?.winner ? { game: "kitchen-chaos", result: state.winner === "player" ? "win" : state.winner === "chef" ? "loss" : "draw", moves: state.turns, variant: state.difficulty ?? "classic" } : null, true);
   useEffect(() => {
     setState(startChaos());
   }, []);
   const restart = () => {
     if (suspended) return;
+    beginRound();
     setState(startChaos(Math.random, difficulty));
     setChoice("burger");
     setPlayableOnly(false);
@@ -396,7 +400,7 @@ export function KitchenChaos({ suspended = false }: { suspended?: boolean }) {
       <div className="md-card-game__settings"><label htmlFor={difficultyId}>House chef difficulty</label><select id={difficultyId} value={difficulty} disabled={suspended} onChange={event => {
         const value = event.target.value as ChaosDifficulty;
         if (!CHAOS_DIFFICULTIES.includes(value)) return;
-        setDifficulty(value); setState(startChaos(Math.random, value)); setChoice("burger"); setAdvice(null); setPlayableOnly(false);
+        beginRound(); setDifficulty(value); setState(startChaos(Math.random, value)); setChoice("burger"); setAdvice(null); setPlayableOnly(false);
       }}><option value="relaxed">Relaxed · first legal match</option><option value="classic">Classic · balanced strategy</option><option value="expert">Expert · tactical chef</option></select><p>Changing difficulty deals a new hand. The chef uses its own cards and public game information.</p></div>
       {!state || !top ? (
         <p className="md-card-game__loading" role="status">
@@ -547,8 +551,10 @@ export function BrandSnap({ suspended = false }: { suspended?: boolean }) {
   const { regionRef, requestFocus } = useNextActionFocus(session);
   const { rounds, index: round, answers } = session;
   const stats = snapStatistics(session);
+  const { beginRound } = useArcadeRoundTracker(rounds.length > 0 && round >= rounds.length ? { game: "snap", result: "completed", score: stats.correct, variant: `${rounds.length}-pairs` } : null, true);
   const restart = (nextLength: SnapLength = length) => {
     if (suspended) return;
+    beginRound();
     setLength(nextLength);
     setSession(createSnapSession(createBrandSnapRounds(brands.map(brand => brand.id), nextLength)));
   };
@@ -647,10 +653,12 @@ export function FullHouse({ suspended = false }: { suspended?: boolean }) {
   const [hint, setHint] = useState<ReturnType<typeof suggestFullHouseCard>>(null);
   const [checks, setChecks] = useState(0);
   const [hints, setHints] = useState(0);
+  const { beginRound } = useArcadeRoundTracker(solved ? { game: "full-house", result: "completed", checks, hints } : null, true);
   const { regionRef, requestFocus } = useNextActionFocus(`${solved}-${selected.length}`);
   useEffect(() => setCards(makeFullHousePuzzle()), []);
   const restart = () => {
     if (suspended) return;
+    beginRound();
     setHint(null); setChecks(0); setHints(0);
     setCards(makeFullHousePuzzle());
     setSelected([]);
@@ -822,11 +830,13 @@ export function GoDish({ suspended = false }: { suspended?: boolean }) {
   const [suggested, setSuggested] = useState<GoDishRank | null>(null);
   const difficultyId = useId();
   const { regionRef, requestFocus } = useNextActionFocus(state);
+  const { beginRound } = useArcadeRoundTracker(state?.winner ? { game: "go-dish", result: state.winner === "player" ? "win" : state.winner === "chef" ? "loss" : "draw", moves: state.turns, variant: state.difficulty ?? "classic" } : null, true);
   useEffect(() => {
     setState(startGoDish());
   }, []);
   const restart = () => {
     if (suspended) return;
+    beginRound();
     setSuggested(null); setState(startGoDish(Math.random, difficulty));
   };
   const rankOptions = state
@@ -851,7 +861,7 @@ export function GoDish({ suspended = false }: { suspended?: boolean }) {
         <select id={difficultyId} value={difficulty} disabled={suspended} onChange={event => {
           const next = event.target.value as GoDishDifficulty;
           if (!GO_DISH_DIFFICULTIES.includes(next)) return;
-          setDifficulty(next); setSuggested(null); setState(startGoDish(Math.random,next));
+          beginRound(); setDifficulty(next); setSuggested(null); setState(startGoDish(Math.random,next));
         }}><option value="relaxed">Relaxed · first rank</option><option value="classic">Classic · biggest group</option><option value="expert">Expert · public request strategy</option></select>
         <p>Changing difficulty starts a new round.</p>
       </div>
@@ -1034,10 +1044,12 @@ export function KitchenStacks({ suspended = false }: { suspended?: boolean }) {
   }, []);
   const restart = () => {
     if (suspended) return;
+    beginRound();
     setState(startSolitaire());
     setHintId(null);
   };
   const complete = !!state && state.cards.length === 0;
+  const { roundId, beginRound } = useArcadeRoundTracker(complete && state ? { game: "solitaire", result: "completed", moves: state.moves, hints: state.hints ?? 0 } : null, true);
   function showHint() {
     if (!state || complete || suspended) return;
     const next = state.cards.find((card) => card.rank === state.progress[card.suit] + 1);
@@ -1061,7 +1073,7 @@ export function KitchenStacks({ suspended = false }: { suspended?: boolean }) {
   }
   function saveRound() {
     if (!state || complete || suspended) return;
-    const snapshot = createStacksSave(state, showReady);
+    const snapshot = createStacksSave(state, showReady, roundId ?? undefined);
     if (!snapshot) { setSaveMessage("This puzzle could not be saved."); return; }
     try {
       localStorage.setItem(STACKS_SAVE_KEY, JSON.stringify(snapshot));
@@ -1076,6 +1088,13 @@ export function KitchenStacks({ suspended = false }: { suspended?: boolean }) {
       if (!current || JSON.stringify(current) !== JSON.stringify(saved)) {
         setSaved(current); setSaveMessage("The saved puzzle changed. Check it before loading."); return;
       }
+      const restoredId = current.roundId ?? createArcadeRoundId();
+      if (!current.roundId) {
+        const updated = { ...current, roundId: restoredId };
+        localStorage.setItem(STACKS_SAVE_KEY, JSON.stringify(updated));
+        setSaved(updated);
+      }
+      beginRound(restoredId);
       setState({ cards: current.cards, progress: current.progress, moves: current.moves, mistakes: current.mistakes,
         hints: current.hints, message: "Saved puzzle loaded. Choose the next card." });
       setShowReady(current.showReady);

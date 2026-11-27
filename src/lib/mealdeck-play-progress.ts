@@ -15,6 +15,17 @@ export const ARCADE_TRACKED_GAMES = [
   { id: "snack-trail", name: "Snack Trail" },
   { id: "skewer-sort", name: "Skewer Sort" },
   { id: "pantry-sweep", name: "Pantry Sweep" },
+  { id: "feast-2048", name: "Feast 2048" },
+  { id: "four-to-feast", name: "Four to Feast" },
+  { id: "order-echo", name: "Order Echo" },
+  { id: "kitchen-shuffle", name: "Kitchen Shuffle" },
+  { id: "pairs", name: "Food Pairs" },
+  { id: "recipe", name: "Recipe Rush" },
+  { id: "kitchen-chaos", name: "Kitchen Chaos" },
+  { id: "snap", name: "Brand Snap" },
+  { id: "go-dish", name: "Go Dish!" },
+  { id: "full-house", name: "Full House" },
+  { id: "solitaire", name: "Kitchen Stacks" },
 ] as const;
 export type TrackedArcadeGame = (typeof ARCADE_TRACKED_GAMES)[number]["id"];
 
@@ -32,8 +43,10 @@ export type ArcadeCompletion = {
   result: ArcadeResult;
   moves?: number;
   hints?: number;
-  /** Food collected in Snack Trail; this is a local game score only. */
+  /** Game-specific local score, never a loyalty balance or prize entry. */
   score?: number;
+  /** Explicit answer/hand checks, not moves. */
+  checks?: number;
   /** The UTC puzzle date frozen when the player starts, not the completion date. */
   dailyDate?: string;
   variant?: string;
@@ -86,6 +99,10 @@ export function millisecondsToNextArcadeDay(now = Date.now()): number {
   return Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate() + 1) - now + 50;
 }
 
+export function isArcadeRoundId(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{8,80}$/.test(value);
+}
+
 export function isTrackedArcadeGame(value: unknown): value is TrackedArcadeGame {
   return ARCADE_TRACKED_GAMES.some((game) => game.id === value);
 }
@@ -98,8 +115,7 @@ function isDailyGame(value: TrackedArcadeGame): value is DailyArcadeGame {
 export function parseArcadeCompletion(value: unknown): ArcadeCompletion | null {
   if (
     !isObject(value) ||
-    typeof value["id"] !== "string" ||
-    !/^[A-Za-z0-9_-]{8,80}$/.test(value["id"])
+    !isArcadeRoundId(value["id"])
   )
     return null;
   if (!isTrackedArcadeGame(value["game"])) return null;
@@ -109,21 +125,26 @@ export function parseArcadeCompletion(value: unknown): ArcadeCompletion | null {
   )
     return null;
   if (isDailyGame(value["game"]) && value["result"] !== "completed") return null;
-  if (value["game"] === "skewer-sort" && value["result"] !== "completed") return null;
   if (
-    (value["game"] === "snack-trail" || value["game"] === "pantry-sweep") &&
+    ["skewer-sort", "feast-2048", "kitchen-shuffle", "pairs", "recipe", "snap", "full-house", "solitaire"].includes(value["game"]) &&
+    value["result"] !== "completed"
+  ) return null;
+  if (["kitchen-chaos", "go-dish"].includes(value["game"]) && value["result"] === "completed") return null;
+  if (
+    (value["game"] === "snack-trail" || value["game"] === "pantry-sweep" || value["game"] === "order-echo") &&
     value["result"] !== "win" &&
     value["result"] !== "loss"
   )
     return null;
-  if (value["score"] !== undefined && value["game"] !== "snack-trail") return null;
-  for (const key of ["moves", "hints", "score"] as const) {
+  if (value["score"] !== undefined && !["snack-trail", "feast-2048", "order-echo", "snap"].includes(value["game"])) return null;
+  if (value["checks"] !== undefined && !["recipe", "full-house"].includes(value["game"])) return null;
+  for (const key of ["moves", "hints", "score", "checks"] as const) {
     if (
       value[key] !== undefined &&
       (typeof value[key] !== "number" ||
         !Number.isSafeInteger(value[key]) ||
         value[key] < 0 ||
-        value[key] > 100_000)
+        value[key] > (key === "score" && value["game"] === "feast-2048" ? 1_000_000_000 : 100_000))
     )
       return null;
   }
@@ -144,6 +165,7 @@ export function parseArcadeCompletion(value: unknown): ArcadeCompletion | null {
     ...(value["moves"] !== undefined ? { moves: value["moves"] as number } : {}),
     ...(value["hints"] !== undefined ? { hints: value["hints"] as number } : {}),
     ...(value["score"] !== undefined ? { score: value["score"] as number } : {}),
+    ...(value["checks"] !== undefined ? { checks: value["checks"] as number } : {}),
     ...(value["dailyDate"] !== undefined ? { dailyDate: value["dailyDate"] as string } : {}),
     ...(value["variant"] !== undefined ? { variant: value["variant"] as string } : {}),
   };
@@ -155,6 +177,14 @@ export function arcadeCompletionLabel(round: Pick<ArcadeCompletion, "game" | "re
   if (round.game === "pantry-sweep")
     return round.result === "win" ? "Pantry cleared" : "Chilli found";
   if (round.game === "skewer-sort") return "Skewers sorted";
+  if (round.game === "order-echo") return round.result === "win" ? "Target reached" : "Sequence finished";
+  if (round.game === "feast-2048") return "Feast finished";
+  if (round.game === "pairs") return "All pairs matched";
+  if (round.game === "recipe") return "Recipes completed";
+  if (round.game === "snap") return "Quiz completed";
+  if (round.game === "solitaire") return "Stacks completed";
+  if (round.game === "full-house") return "Hand completed";
+  if (round.game === "kitchen-shuffle") return "Puzzle solved";
   if (round.result === "win") return "Win";
   if (round.result === "loss") return "Chef won";
   if (round.result === "draw") return "Draw";
@@ -369,4 +399,35 @@ export function clearArcadeProgress(
   return storage
     ? writeSnapshot(storage, progress)
     : { progress, mode: "session", issue: "unavailable" };
+}
+
+
+/** Units are allowlisted per game; a game score is never a reward or customer balance. */
+export function arcadeScoreLabel(game: TrackedArcadeGame, score: number): string {
+  const unit = game === "snack-trail" ? "snack" : game === "order-echo" ? "round" : game === "snap" ? "correct answer" : "game point";
+  return `${score.toLocaleString("en-GB")} ${unit}${score === 1 ? "" : "s"}`;
+}
+
+export type ArcadeMilestone = { id: string; title: string; current: number; target: number; description: string };
+/** All totals refer only to the retained device history, not lifetime or server-verified activity. */
+export function summarizeArcadeProgress(progress: ArcadeProgress) {
+  const rounds = progress.rounds;
+  const games = ARCADE_TRACKED_GAMES.map(game => {
+    const records = rounds.filter(round => round.game === game.id);
+    return { ...game, finished: records.length, wins: records.filter(round => round.result === "win").length,
+      lastPlayedAt: records.length ? Math.max(...records.map(round => round.completedAt)) : null };
+  });
+  const explored = games.filter(game => game.finished > 0).length;
+  const wins = rounds.filter(round => round.result === "win").length;
+  const dailyFinished = new Set(rounds.filter(round => round.dailyDate && round.result === "completed")
+    .map(round => `${round.game}:${round.dailyDate}`)).size;
+  const activeDays = new Set(rounds.map(round => arcadeUtcDate(round.completedAt))).size;
+  const milestones: ArcadeMilestone[] = [
+    { id: "first-round", title: "First serving", current: rounds.length, target: 1, description: "Finish your first recorded round." },
+    { id: "five-games", title: "Taste explorer", current: explored, target: 5, description: "Finish rounds in five different games." },
+    { id: "all-games", title: "Full menu", current: explored, target: ARCADE_TRACKED_GAMES.length, description: "Finish a round in every arcade game." },
+    { id: "twenty-rounds", title: "Arcade regular", current: rounds.length, target: 20, description: "Keep twenty finished rounds in your playbook." },
+    { id: "daily-three", title: "Daily sampler", current: dailyFinished, target: 3, description: "Finish three distinct daily puzzles." },
+  ];
+  return { finished: rounds.length, explored, wins, dailyFinished, activeDays, games, milestones };
 }

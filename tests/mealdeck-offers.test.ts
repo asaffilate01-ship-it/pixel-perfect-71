@@ -12,7 +12,7 @@ import {
 } from "../src/lib/mealdeck-opening-offer";
 
 describe("The three approved November MealDeck offers", () => {
-  test("publishes exactly the three approved campaigns, with the opening offer first", () => {
+  test("preserves the three historical campaign contracts for order records", () => {
     expect(MEALDECK_OFFERS.map((offer) => offer.id)).toEqual([
       "opening-weekend",
       "sunday-milk-cake",
@@ -90,8 +90,9 @@ describe("The three approved November MealDeck offers", () => {
       /Burger Ace|Perfect Pair|Group Hand|Three-Brand Trifecta|Loyalty Flush|10×|£5 off|one deal per order|points from every order/i,
     );
     const explainer = posts.find((post) => post.slug === "house-rules-every-offer-explained")!;
-    for (const offer of MEALDECK_OFFERS) {
-      expect(explainer.body.some((section) => section.p === offer.terms.join(" "))).toBe(true);
-    }
+    expect(publicCopy).not.toMatch(/opening[- ]weekend|30% off|99p|double[- ](?:loyalty )?points|three November offers|6–8 November|Luton launches first|Delivery is unavailable for this launch/i);
+    expect(explainer.body.some((section) => section.h === "Member loyalty")).toBe(true);
+    expect(explainer.body.some((section) => section.p.includes("4 km of LU4 8NU"))).toBe(true);
+    expect(posts.every((post) => post.updatedAt === "2026-11-26")).toBe(true);
   });
 });

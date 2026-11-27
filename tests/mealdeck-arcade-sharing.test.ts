@@ -202,7 +202,7 @@ describe("Public game invites", () => {
 });
 
 describe("Whitelisted finished-round summaries", () => {
-  test("all eight tracked games get appropriate result labels and PNG names", () => {
+  test("original tracked games get appropriate result labels and PNG names", () => {
     for (const fixture of resultFixtures) {
       const content = buildArcadeShareContent({
         game: fixture.game,
@@ -551,4 +551,18 @@ describe("Copy and WhatsApp messages", () => {
     expect(link).toContain("%0Ahttps%3A%2F%2Fmealdeck.co.uk%2Fplay");
     expect(url.hash).toBe("");
   });
+});
+
+test("newly tracked games share only allowlisted results, labels and score units",()=>{
+  for(const game of GAME_CATALOGUE){
+    const result=["snack-trail","pantry-sweep","order-echo","kitchen-chaos","go-dish"].includes(game.id)?"win":"completed";
+    const content=buildArcadeShareContent({game:game.id,completion:finished(game.id,{result})});
+    expect(content.isResult).toBe(true);
+    expect(content.headline.length).toBeGreaterThan(0);
+    expect(content.text).not.toContain("private-round-identifier");
+    expect(content.filename).toBe(`mealdeck-${game.id}-result.png`);
+  }
+  expect(buildArcadeShareContent({game:"snap",completion:finished("snap",{score:8,variant:"12-pairs"})}).detail).toBe("8 correct answers");
+  expect(buildArcadeShareContent({game:"feast-2048",completion:finished("feast-2048",{score:1200})}).detail).toBe("1,200 game points");
+  expect(buildArcadeShareContent({game:"recipe",completion:finished("recipe",{checks:5,hints:2})}).detail).toBe("2 hints · 5 checks");
 });

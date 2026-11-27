@@ -34,6 +34,7 @@ export const Route = createFileRoute("/blog/$slug")({
           description: loaderData.excerpt,
           image: `${SITE_URL}${loaderData.image}`,
           datePublished: loaderData.date,
+          dateModified: loaderData.updatedAt ?? loaderData.date,
           author: { "@type": "Organization", name: "MealDeck" },
           publisher: { "@type": "Organization", name: "MealDeck", logo: { "@type": "ImageObject", url: `${SITE_URL}/favicon.png` } },
           mainEntityOfPage: `${SITE_URL}/blog/${params.slug}`,
@@ -92,7 +93,8 @@ function PostPage() {
         <p className="mt-6 font-display text-sm font-bold uppercase tracking-[0.3em] text-accent">{post.rank}{post.suit} · {post.tag}</p>
         <h1 className="mt-3 font-display text-4xl font-black leading-tight sm:text-5xl">{post.title}</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          {new Date(post.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+          <time dateTime={post.date}>{new Date(post.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}</time>
+          {post.updatedAt && <> · Updated <time dateTime={post.updatedAt}>{new Date(post.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}</time></>}
         </p>
         <div className="mt-8 overflow-hidden rounded-2xl border-4 border-accent/70 shadow-2xl">
           <img src={post.image} alt={post.title} width={1200} height={630} className="w-full object-cover" />
@@ -109,7 +111,7 @@ function PostPage() {
         <div className="mt-12 rounded-2xl border border-accent/50 bg-card p-8 text-center">
           <p className="font-display text-2xl font-black">Your hand is waiting.</p>
           <Button asChild size="lg" className="mt-4"><Link to="/menus">Browse menus</Link></Button>
-          <p className="mt-3 text-sm text-muted-foreground">Order for Luton collection or kerbside during kitchen opening hours.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Order for Luton collection, kerbside or eligible local delivery. Check availability at checkout.</p>
         </div>
         <div className="mt-10"><Share url={url} title={post.title} /></div>
       </main>

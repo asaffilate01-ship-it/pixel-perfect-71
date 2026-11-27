@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
-import { ChefHat, Plus, RotateCcw, Trophy, Undo2, Users } from "lucide-react";
+import { ChefHat, Lightbulb, Plus, RotateCcw, Trophy, Undo2, Users } from "lucide-react";
 
 import { useArcadeProgress } from "@/components/play/arcade-progress";
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
@@ -14,6 +14,7 @@ import {
   playTrayLinesSessionMove,
   trayBoxEdges,
   trayLinesWinner,
+  suggestTrayLine,
   undoTrayLinesSession,
   type TrayLineEdge,
   type TrayLinesDifficulty,
@@ -46,10 +47,13 @@ function positionStyle(x: number, y: number): CSSProperties {
   };
 }
 
-export function TrayLines() {
+export function TrayLines({ suspended = false }: { suspended?: boolean }) {
   const id = useId();
   const { recordCompletion } = useArcadeProgress();
   const [started, setStarted] = useState(false);
+  const [hintIndex, setHintIndex] = useState<number | null>(null);
+  const [hints, setHints] = useState(0);
+  const actionLock = useRef<unknown>(null);
   const [mode, setMode] = useState<TrayLinesMode>("solo");
   const [difficulty, setDifficulty] = useState<TrayLinesDifficulty>("casual");
   const [session, setSession] = useState(createTrayLinesSession);
@@ -103,11 +107,16 @@ export function TrayLines() {
       result:
         mode === "local" ? "completed" : winner === null ? "draw" : winner === 1 ? "win" : "loss",
       moves: game.moveCount,
+      hints,
       variant: `${mode}-${difficulty}`,
     });
-  }, [started, game.over, game.moveCount, roundId, mode, difficulty, winner, recordCompletion]);
+  }, [started, game.over, game.moveCount, roundId, mode, difficulty, winner, hints, recordCompletion]);
 
   function startRound() {
+    if (suspended) return;
+    actionLock.current = null;
+    setHintIndex(null);
+    setHints(0);
     setSession(createTrayLinesSession());
     setRoundId(createArcadeRoundId());
     setNotice("Burger starts. Choose any dotted edge to join two dots.");
@@ -117,9 +126,11 @@ export function TrayLines() {
   }
 
   function makeMove(edgeId: number) {
-    if (!started) return;
+    if (!started || suspended || game.over || actionLock.current === session) return;
     const next = playTrayLinesSessionMove(session, edgeId, mode, difficulty);
     if (next === session) return;
+    actionLock.current = session;
+    setHintIndex(null);
     setFocusEdge(edgeId);
     setSession(next);
     const human = next.lastActions[0];
@@ -138,9 +149,22 @@ export function TrayLines() {
     setNotice(`${scoreMessage}${chefMessage}`);
   }
 
+  function showHint() {
+    if (suspended || game.over) return;
+    const advice = suggestTrayLine(game);
+    if (!advice) return;
+    const edge = TRAY_LINE_EDGES[advice.edge]!;
+    if (hintIndex !== advice.edge) setHints(value => value + 1);
+    setHintIndex(advice.edge);
+    setNotice(`${lineLabel(edge)} suggested. ${advice.captures ? `Closes ${advice.captures} ${advice.captures === 1 ? "box" : "boxes"} now.` : advice.offered ? `The next player could collect ${advice.offered} ${advice.offered === 1 ? "box" : "boxes"} in the immediate chain.` : "No immediate box is offered."} ${advice.exactEndgame ? "Calculated from the remaining endgame." : "Tactical suggestion, not a guaranteed win."}`);
+  }
+
   function undo() {
+    if (suspended || game.over) return;
+    setHintIndex(null);
     const previous = undoTrayLinesSession(session);
     if (previous === session) return;
+    actionLock.current = null;
     setSession(previous);
     setNotice(
       mode === "solo"
@@ -281,10 +305,11 @@ export function TrayLines() {
                 >
                   Clever
                 </button>
+                <button className="md-game-button" type="button" aria-pressed={difficulty === "expert"} onClick={() => setDifficulty("expert")}>Expert</button>
                 <p>
                   {difficulty === "casual"
                     ? "A friendly chef who snaps up open boxes."
-                    : "A careful chef who avoids giveaways and plans the endgame."}
+                    : difficulty === "clever" ? "A careful chef who avoids giveaways and plans the last nine edges." : "A tactical chef solving the final twelve edges exactly."}
                 </p>
               </fieldset>
             )}
@@ -292,6 +317,7 @@ export function TrayLines() {
               ref={startButton}
               className="md-game-button is-primary"
               type="button"
+              disabled={suspended}
               onClick={startRound}
             >
               Set the tray
@@ -426,7 +452,7 @@ export function TrayLines() {
                             ),
                         ).length
                       : 0;
-                  const label = `${lineLabel(edge)}, ${owner === 0 ? `available${closes > 0 ? `, closes ${closes} ${closes === 1 ? "box" : "boxes"}` : ""}` : `drawn by ${playerName(owner)}`}${game.lastEdge === edge.id ? ", last line drawn" : ""}`;
+                  const label = `${lineLabel(edge)}, ${owner === 0 ? `available${closes > 0 ? `, closes ${closes} ${closes === 1 ? "box" : "boxes"}` : ""}` : `drawn by ${playerName(owner)}`}${game.lastEdge === edge.id ? ", last line drawn" : ""}${hintIndex === edge.id ? ", suggested move" : ""}`;
                   return (
                     <button
                       ref={(element) => {
@@ -434,10 +460,10 @@ export function TrayLines() {
                       }}
                       key={edge.id}
                       type="button"
-                      className={`md-lines__edge${owner === 0 ? " is-open" : " is-drawn"}${game.lastEdge === edge.id ? " is-last" : ""}`}
+                      className={`md-lines__edge${owner === 0 ? " is-open" : " is-drawn"}${game.lastEdge === edge.id ? " is-last" : ""}${hintIndex === edge.id ? " is-hinted" : ""}`}
                       style={positionStyle(point.x, point.y)}
                       aria-label={label}
-                      aria-disabled={owner !== 0 || game.over}
+                      aria-disabled={owner !== 0 || game.over || suspended}
                       tabIndex={focusEdge === edge.id ? 0 : -1}
                       onFocus={() => setFocusEdge(edge.id)}
                       onKeyDown={(event) => navigateEdges(event, edge)}
@@ -485,16 +511,18 @@ export function TrayLines() {
                 </div>
               </div>
               <div className="md-lines__actions">
+                <button className="md-game-button" type="button" disabled={suspended || game.over} onClick={showHint}><Lightbulb size={17} aria-hidden="true" /> Suggest a move</button>
                 <button
                   className="md-game-button"
                   type="button"
-                  disabled={session.history.length === 0}
+                  disabled={suspended || game.over || session.history.length === 0}
                   onClick={undo}
                 >
                   <Undo2 size={17} aria-hidden="true" />{" "}
                   {mode === "solo" ? "Undo turn" : "Undo line"}
                 </button>
                 <button
+                  disabled={suspended}
                   ref={playAgainButton}
                   className={`md-game-button${game.over ? " is-primary" : ""}`}
                   type="button"
@@ -506,6 +534,7 @@ export function TrayLines() {
                 <button
                   className="md-game-button"
                   type="button"
+                  disabled={suspended}
                   onClick={() => {
                     pendingFocus.current = "start";
                     setStarted(false);
@@ -515,7 +544,7 @@ export function TrayLines() {
                 </button>
               </div>
               <div className="md-lines__tip">
-                <strong>Chef's tip</strong>
+                <strong>Chef's tip · {hints} {hints === 1 ? "hint" : "hints"}</strong>
                 <p>
                   A third side can be an invitation. Leave yourself choices before handing your
                   rival a chain of boxes.
@@ -523,7 +552,7 @@ export function TrayLines() {
               </div>
               <p className="md-lines__local-note">
                 {mode === "solo"
-                  ? `${difficulty === "clever" ? "Clever" : "Casual"} chef`
+                  ? `${difficulty === "expert" ? "Expert" : difficulty === "clever" ? "Clever" : "Casual"} chef`
                   : "Two players, one screen"}{" "}
                 · Your round resets when you leave or reload. Completed games appear in your local
                 play history.

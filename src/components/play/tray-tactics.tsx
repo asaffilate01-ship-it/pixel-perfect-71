@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { ChefHat, RotateCcw, Trophy, Undo2, Users } from "lucide-react";
+import { ChefHat, Lightbulb, RotateCcw, Trophy, Undo2, Users } from "lucide-react";
 
 import { gameFoodArtwork } from "@/lib/game-food-artwork";
 import { useArcadeProgress } from "@/components/play/arcade-progress";
@@ -13,6 +13,7 @@ import {
   playTraySoloRound,
   trayFlips,
   trayWinner,
+  suggestTrayMove,
   type TrayDifficulty,
   type TrayPlayer,
   type TrayState,
@@ -30,12 +31,15 @@ function pieceName(player: TrayPlayer): string {
   return player === 1 ? "Burger" : "Cake";
 }
 
-export function TrayTactics() {
+export function TrayTactics({ suspended = false }: { suspended?: boolean }) {
   const id = useId();
   const { recordCompletion } = useArcadeProgress();
   const [roundId, setRoundId] = useState<string | null>(null);
   const recordedRound = useRef<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [hintIndex, setHintIndex] = useState<number | null>(null);
+  const [hints, setHints] = useState(0);
+  const actionLock = useRef<unknown>(null);
   const [mode, setMode] = useState<TrayMode>("solo");
   const [difficulty, setDifficulty] = useState<TrayDifficulty>("casual");
   const [game, setGame] = useState<TrayState>(createTrayGame);
@@ -88,11 +92,16 @@ export function TrayTactics() {
       result:
         mode === "local" ? "completed" : winner === null ? "draw" : winner === 1 ? "win" : "loss",
       moves: game.moveCount,
+      hints,
       variant: `${mode}-${difficulty}`,
     });
-  }, [started, game.over, game.moveCount, roundId, mode, difficulty, winner, recordCompletion]);
+  }, [started, game.over, game.moveCount, roundId, mode, difficulty, winner, hints, recordCompletion]);
 
   function startRound() {
+    if (suspended) return;
+    actionLock.current = null;
+    setHintIndex(null);
+    setHints(0);
     const next = createTrayGame();
     setRoundId(createArcadeRoundId());
     setGame(next);
@@ -104,7 +113,9 @@ export function TrayTactics() {
   }
 
   function makeMove(index: number) {
-    if (!started || game.over || !moves.includes(index)) return;
+    if (!started || suspended || game.over || !moves.includes(index) || actionLock.current === game) return;
+    actionLock.current = game;
+    setHintIndex(null);
     const round = mode === "solo" ? playTraySoloRound(game, index, difficulty) : null;
     const next = round?.state ?? playTrayMove(game, index);
     if (next === game) return;
@@ -126,9 +137,21 @@ export function TrayTactics() {
     );
   }
 
+  function showHint() {
+    if (suspended || game.over) return;
+    const advice = suggestTrayMove(game);
+    if (!advice) return;
+    if (hintIndex !== advice.index) setHints(value => value + 1);
+    setHintIndex(advice.index);
+    setNotice(`Suggested square: ${squareName(advice.index)}. Flips ${advice.flips} ${advice.flips === 1 ? "piece" : "pieces"}. ${advice.reason === "corner" ? "A corner cannot be flipped back." : advice.reason === "mobility" ? "This reduces the rival’s immediate legal options." : "The bounded search prefers this capture."} Choose the highlighted square to play it.`);
+  }
+
   function undo() {
+    if (suspended || game.over) return;
+    setHintIndex(null);
     const previous = history.at(-1);
     if (!previous) return;
+    actionLock.current = null;
     setGame(previous);
     setHistory((entries) => entries.slice(0, -1));
     setNotice(
@@ -257,10 +280,11 @@ export function TrayTactics() {
                 >
                   Clever
                 </button>
+                <button className="md-game-button" type="button" aria-pressed={difficulty === "expert"} onClick={() => setDifficulty("expert")}>Expert</button>
                 <p>
                   {difficulty === "casual"
                     ? "A relaxed opponent who considers the next move."
-                    : "A thoughtful opponent who plans three moves ahead."}
+                    : difficulty === "clever" ? "A thoughtful opponent who plans three moves ahead." : "A tactical chef searching up to five moves within a fixed work limit."}
                 </p>
               </fieldset>
             )}
@@ -268,6 +292,7 @@ export function TrayTactics() {
               ref={startButton}
               className="md-game-button is-primary"
               type="button"
+              disabled={suspended}
               onClick={startRound}
             >
               Set the tray
@@ -326,7 +351,7 @@ export function TrayTactics() {
                       const piece = game.board[index] ?? 0;
                       const legal = moves.includes(index);
                       const flipCount = legal ? trayFlips(game.board, index, game.turn).length : 0;
-                      const label = `${squareName(index)}, ${piece === 0 ? "empty" : pieceName(piece)}${legal ? `, legal move, flips ${flipCount} ${flipCount === 1 ? "piece" : "pieces"}` : ""}${game.lastMove === index ? ", last piece placed" : ""}`;
+                      const label = `${squareName(index)}, ${piece === 0 ? "empty" : pieceName(piece)}${legal ? `, legal move, flips ${flipCount} ${flipCount === 1 ? "piece" : "pieces"}` : ""}${game.lastMove === index ? ", last piece placed" : ""}${hintIndex === index ? ", suggested move" : ""}`;
                       return (
                         <div role="gridcell" key={index}>
                           <button
@@ -334,9 +359,9 @@ export function TrayTactics() {
                               cells.current[index] = element;
                             }}
                             type="button"
-                            className={`md-tray__cell${legal ? " is-legal" : ""}${game.lastMove === index ? " is-last" : ""}${piece ? ` is-player-${piece}` : ""}`}
+                            className={`md-tray__cell${legal ? " is-legal" : ""}${game.lastMove === index ? " is-last" : ""}${piece ? ` is-player-${piece}` : ""}${hintIndex === index ? " is-hinted" : ""}`}
                             aria-label={label}
-                            aria-disabled={!legal}
+                            aria-disabled={!legal || suspended}
                             tabIndex={focusIndex === index ? 0 : -1}
                             onFocus={() => setFocusIndex(index)}
                             onKeyDown={(event) => navigateBoard(event, index)}
@@ -394,16 +419,18 @@ export function TrayTactics() {
                 </div>
               </div>
               <div className="md-tray__actions">
+                <button className="md-game-button" type="button" disabled={suspended || game.over} onClick={showHint}><Lightbulb size={17} aria-hidden="true" /> Suggest a move</button>
                 <button
                   className="md-game-button"
                   type="button"
-                  disabled={history.length === 0}
+                  disabled={suspended || game.over || history.length === 0}
                   onClick={undo}
                 >
                   <Undo2 size={17} aria-hidden="true" />{" "}
                   {mode === "solo" ? "Undo round" : "Undo move"}
                 </button>
                 <button
+                  disabled={suspended}
                   ref={playAgainButton}
                   className={`md-game-button${game.over ? " is-primary" : ""}`}
                   type="button"
@@ -415,6 +442,7 @@ export function TrayTactics() {
                 <button
                   className="md-game-button"
                   type="button"
+                  disabled={suspended}
                   onClick={() => {
                     pendingFocus.current = "start";
                     setStarted(false);
@@ -424,7 +452,7 @@ export function TrayTactics() {
                 </button>
               </div>
               <div className="md-tray__tip">
-                <strong>Chef's tip</strong>
+                <strong>Chef's tip · {hints} {hints === 1 ? "hint" : "hints"}</strong>
                 <p>
                   More pieces now does not always mean more pieces at the end. Keep your options
                   open and look for corners.
@@ -432,7 +460,7 @@ export function TrayTactics() {
               </div>
               <p className="md-tray__local-note">
                 {mode === "solo"
-                  ? `${difficulty === "clever" ? "Clever" : "Casual"} chef`
+                  ? `${difficulty === "expert" ? "Expert" : difficulty === "clever" ? "Clever" : "Casual"} chef`
                   : "Two players, one screen"}{" "}
                 · Finished rounds can be kept in My playbook on this browser. The board resets when
                 you leave or reload.

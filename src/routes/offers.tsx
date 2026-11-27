@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Bike, CarFront, Gift, MapPin, ShoppingBag } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { MunchboxCinemaBanner } from "@/components/marketing/munchbox-cinema-banner";
 import { seo } from "@/lib/seo";
 import "@/styles.mealdeck-offers.css";
 
@@ -42,6 +43,7 @@ function OffersPage() {
               </Link>
             </div>
           </header>
+          <MunchboxCinemaBanner showClosedTerms />
           <div className="md-offers-details-grid">
             <section className="md-offers-detail" aria-labelledby="offers-loyalty-title">
               <p className="md-current-offers-kicker"><Gift size={16} aria-hidden="true" /> MealDeck membership</p>

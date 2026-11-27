@@ -1,4 +1,3 @@
-import { MEALDECK_OFFERS } from "./mealdeck-offers";
 import { MEALDECK_LUTON_HOURS_PROSE } from "./mealdeck-launch-schedule";
 
 export type Post = {
@@ -7,6 +6,7 @@ export type Post = {
   excerpt: string;
   image: string;
   date: string;
+  updatedAt?: string;
   rank: string;
   suit: "♥" | "♦" | "♠" | "♣";
   tag: string;
@@ -17,18 +17,19 @@ export type Post = {
 export const posts: Post[] = [
   {
     slug: "cash-in-your-chips-loyalty-points",
-    title: "Double Loyalty Points: Your November MealDeck Offer",
+    title: "MealDeck Loyalty: Earn Points on Eligible Orders",
     excerpt:
-      "Register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive for double loyalty points. Marketing choices stay optional.",
+      "Verified members earn one point per complete £1 paid after discounts on eligible orders. Marketing choices stay optional.",
     image: "/blog/loyalty-points.jpg",
     date: "2026-11-05",
+    updatedAt: "2026-11-26",
     rank: "10",
     suit: "♦",
     tag: "Loyalty",
-    keywords: "MealDeck double loyalty points, Luton offers November 2026, MealDeck member offers",
+    keywords: "MealDeck loyalty points, Luton takeaway membership, MealDeck member offers",
     body: [
       {
-        p: "The November member offer is double loyalty points when you register and spend £15 or more from Monday 9 to Friday 13 November 2026 inclusive.",
+        p: "Verified registered members earn one loyalty point for each complete £1 actually paid after discounts on eligible orders.",
       },
       {
         h: "Use your member account",
@@ -40,7 +41,7 @@ export const posts: Post[] = [
       },
       {
         h: "Your points balance",
-        p: "Your account will show points when the loyalty service is available. The earning and redemption details will be published before points are credited; a promotional announcement is not a points balance.",
+        p: "Your account shows your points balance and qualifying purchases. Refunds, cancellations and disputes can remove points. Points cannot currently be redeemed for cash or purchases.",
       },
       {
         h: "Games are just for fun",
@@ -50,24 +51,33 @@ export const posts: Post[] = [
   },
   {
     slug: "house-rules-every-offer-explained",
-    title: "House Rules: Every MealDeck Offer, Explained",
+    title: "House Rules: MealDeck Offers and Member Benefits",
     excerpt:
-      "30% off the entire menu, Sunday milk cake for 99p, and double loyalty points. The three November offers, with their dates and details.",
+      "Find current member benefits, free local delivery eligibility and the conditions for any limited-time offers.",
     image: "/blog/offers-explained.jpg",
     date: "2026-11-05",
+    updatedAt: "2026-11-26",
     rank: "9",
     suit: "♥",
     tag: "Offers",
     keywords:
-      "MealDeck offers Luton, 30 percent off November 2026, 99p milk cake, double loyalty points",
+      "MealDeck offers Luton, member loyalty, local delivery terms",
     body: [
       {
-        p: "These are the three MealDeck offers for November 2026. Luton launches first, with collection and kerbside pickup.",
+        p: "Order from five MealDeck menus in one basket for collection, kerbside or eligible local delivery in Luton. Check the Offers page for current promotions.",
       },
-      ...MEALDECK_OFFERS.map((offer) => ({
-        h: `${offer.value} · ${offer.title}`,
-        p: offer.terms.join(" "),
-      })),
+      {
+        h: "Member loyalty",
+        p: "Verified members earn one point per complete £1 paid after discounts on eligible orders. Guest orders earn no points. Marketing preferences are optional and separate.",
+      },
+      {
+        h: "Free local delivery",
+        p: "Free direct delivery is offered within 4 km of LU4 8NU on orders of £15 or more after discounts. Your postcode, kitchen and driver availability must be confirmed at checkout.",
+      },
+      {
+        h: "Current offers",
+        p: "Any limited-time promotion will be published with its own dates and eligibility conditions. Checkout confirms the final total before payment.",
+      },
       {
         h: "Opening hours",
         p: `${MEALDECK_LUTON_HOURS_PROSE} Check the Offers page for the full details and checkout for current ordering availability.`,
@@ -78,32 +88,33 @@ export const posts: Post[] = [
     slug: "deal-everyone-in-group-food-order-luton",
     title: "Deal Everyone In: How to Nail a Group Food Order in Luton",
     excerpt:
-      "Everyone chooses from five launch menus, sends their picks back and gets a numbered bag. The organiser reviews one order and the payment options available at checkout.",
+      "Use a private group room when available, choose food together and review the payment options. The kitchen packs the fully paid order by name.",
     image: "/blog/group-order.jpg",
     date: "2026-09-28",
+    updatedAt: "2026-11-26",
     rank: "A",
     suit: "♥",
     tag: "Group ordering",
     keywords: "group food order Luton, collection Luton, group takeaway, MealDeck invitations",
     body: [
       {
-        p: "Different cravings can share one collection. MealDeck’s group planner brings Skorch, Tavo Chicken, Souvano, Load’d and Moktl into one organiser-reviewed order for Luton collection or kerbside pickup. Delivery is unavailable.",
+        p: "Different cravings can share one order. MealDeck group rooms bring Skorch, Tavo Chicken, Souvano, Load’d and Moktl into one organiser-reviewed order. Check group ordering availability before creating a room.",
       },
       {
-        h: "Invite, choose, send back",
-        p: "Start a group on the Group order page and create a separate invitation link for each person. They choose their exact food, flavours, portions and extras, then send a reply link back to you. Open or paste that reply in the browser where you started the group and review it before adding the choices.",
+        h: "Invite, choose and get ready",
+        p: "When group ordering is available, create a private room and share individual invitations. Invitees have three minutes to join. Each participant chooses and saves their food, then marks their choices ready. The organiser reviews the room before locking choices.",
       },
       {
         h: "Review food, then payment",
-        p: "The organiser checks everyone’s food, numbered bags and final total. When ordering is available, checkout shows which payment options are ready: an organiser payment, or enabled shared payments by bag or equal split. Shared payments use a separate private room after review; the kitchen starts only after all required payments are confirmed. The food planner remains a local draft: changed choices need a new reply link, and reviewed replies replace that person’s previous choices.",
+        p: "The organiser checks everyone's food and itemised bills. The room shows the payment methods currently available: each participant pays for their own food, or the organiser pays the whole bill. The master order reaches the kitchen only after all required payments are verified.",
       },
       {
         h: "Check the current offers",
-        p: "The November offers are 30% off the entire menu on 6–8 November, milk cake for 99p with every order on Sunday 8 November, and double loyalty points when you register and spend £15 or more from Monday 9 to Friday 13 November inclusive. See the Offers page for details. Guest orders earn no points.",
+        p: "Current member benefits and any time-limited offers are listed on the Offers page. Verified members earn points on eligible paid orders. Guest orders earn no points.",
       },
       {
         h: "Keep each person’s food together",
-        p: "Review one numbered bag per person before checkout. Names remain in your local draft; the kitchen receives the numbered packing plan. Your personal menu basket stays saved separately. Invitation links let anyone who has them prepare a reply, and reply links reveal food choices, so share them privately and check who sent each reply.",
+        p: "The kitchen receives each participant's chosen name beside their food to help pack the group order correctly. Share each private invitation only with its intended recipient. Your personal menu basket remains separate.",
       },
     ],
   },
@@ -111,9 +122,10 @@ export const posts: Post[] = [
     slug: "french-tacos-luton-ace-of-the-deck",
     title: "French Tacos in Luton: A Future MealDeck Menu",
     excerpt:
-      "Taconelle’s French tacos are planned for a future deck. Explore the five confirmed Luton launch menus, including Load’d loaded fries and mac and cheese.",
+      "Taconelle’s French tacos are planned for a future deck. Explore the five Luton menus, including Load’d loaded fries and mac and cheese.",
     image: "/blog/french-taco-luton.jpg",
     date: "2026-09-21",
+    updatedAt: "2026-11-26",
     rank: "K",
     suit: "♦",
     tag: "Food guide",
@@ -124,16 +136,16 @@ export const posts: Post[] = [
         p: "French tacos are part of MealDeck’s wider brand collection through Taconelle. That menu is planned for a future deck; its launch date and choices will be confirmed separately.",
       },
       {
-        h: "Explore the five Luton launch menus",
-        p: "Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails form the first deck. The menu page shows the exact products, options and current prices.",
+        h: "Explore the five Luton menus",
+        p: "Skorch burgers, Tavo chicken, Souvano Greek and Turkish food, Load’d loaded fries and mac and cheese, and Moktl mocktails are available to browse. The menu page shows the exact products, options and current prices.",
       },
       {
-        h: "One basket for collection",
-        p: "Mix the confirmed launch menus for collection or kerbside when ordering is available. Delivery is unavailable for this launch. Taconelle, Icova and the other future brands cannot be added until their menus open.",
+        h: "One basket, your preferred order method",
+        p: "Mix the current menus for eligible local delivery, collection or kerbside when ordering is available. Taconelle, Icova and other future brands cannot be added until their menus open.",
       },
       {
-        h: "Explore the November offers",
-        p: "See the Offers page for 30% off the entire menu on 6–8 November, Sunday's 99p milk cake, and the registered-member double-points offer from Monday 9 to Friday 13 November 2026 inclusive.",
+        h: "Explore current member benefits",
+        p: "See the Offers page for current member benefits and any limited-time promotions.",
       },
     ],
   },
@@ -141,9 +153,10 @@ export const posts: Post[] = [
     slug: "office-lunch-delivery-st-albans",
     title: "MealDeck St Albans: Future Office Lunch Plans",
     excerpt:
-      "St Albans is a future MealDeck location. Its opening date, delivery area and menu will be confirmed separately. Luton launches first.",
+      "St Albans is a future MealDeck location. Its opening date, delivery area and menu will be confirmed separately. Orders are currently accepted in Luton when the kitchen is available.",
     image: "/blog/st-albans-lunch.jpg",
     date: "2026-09-14",
+    updatedAt: "2026-11-26",
     rank: "Q",
     suit: "♠",
     tag: "St Albans",
@@ -158,12 +171,12 @@ export const posts: Post[] = [
         p: "Café1’s own counter and dine-in services are independent of MealDeck. A planned future MealDeck menu does not change those services or confirm MealDeck availability.",
       },
       {
-        h: "Luton launches first",
-        p: "The confirmed first menus are Skorch, Tavo Chicken, Souvano, Load’d and Moktl for Luton collection or kerbside. The wider brand collection includes future menus; it is not a list of currently available St Albans dishes.",
+        h: "Explore the current Luton menus",
+        p: "The current Luton menus are Skorch, Tavo Chicken, Souvano, Load’d and Moktl. Delivery eligibility, collection and kerbside are confirmed at checkout. Future brands do not represent available St Albans dishes.",
       },
       {
         h: "Feeding the team?",
-        p: "Group planning is open for the Luton collection launch. Colleagues choose food and send their picks back to one organiser, who reviews the food and the payment options currently available at checkout. St Albans ordering remains coming soon.",
+        p: "When Luton group rooms are available, colleagues can join a private room, save their choices and review payment options. St Albans ordering remains coming soon.",
       },
     ],
   },
@@ -171,28 +184,29 @@ export const posts: Post[] = [
     slug: "order-direct-pay-less-than-aggregators",
     title: "Ordering Direct with MealDeck: Food, Offers and One Basket",
     excerpt:
-      "Explore MealDeck's menus and the three November offers, with one basket for Luton collection or kerbside pickup.",
+      "Explore five menus, current member benefits and one basket for Luton collection, kerbside or eligible local delivery.",
     image: "/blog/order-direct.jpg",
     date: "2026-09-07",
+    updatedAt: "2026-11-26",
     rank: "J",
     suit: "♣",
     tag: "Ordering tips",
     keywords: "order food direct Luton, MealDeck collection, takeaway offers Luton, MealDeck menus",
     body: [
       {
-        p: "MealDeck brings the current launch menus, food choices and November offers together on mealdeck.co.uk. Browse the exact products and options before reviewing your basket.",
+        p: "MealDeck brings the current menus, food choices and member benefits together on mealdeck.co.uk. Browse the exact products and options before reviewing your basket.",
       },
       {
-        h: "One collection, five launch menus",
-        p: "Mix Skorch, Tavo Chicken, Souvano, Load’d and Moktl in one basket for Luton collection or kerbside when ordering is available. Delivery is unavailable for this launch.",
+        h: "One order, five menus",
+        p: "Mix Skorch, Tavo Chicken, Souvano, Load’d and Moktl in one basket for collection, kerbside or eligible local delivery. Checkout confirms availability.",
       },
       {
-        h: "Three November offers",
-        p: "30% off the entire menu from 6–8 November; milk cake for 99p with every order on Sunday 8 November; register and spend £15 or more from Monday 9 to Friday 13 November inclusive for double loyalty points. Marketing opt-ins are optional. See the Offers page for details.",
+        h: "Current member benefits and delivery",
+        p: "Verified members earn one point per complete £1 paid after discounts on eligible orders. Free direct delivery is offered within 4 km of LU4 8NU on £15+ after discounts, subject to checkout availability. Marketing opt-ins are optional. See the Offers page for current terms.",
       },
       {
         h: "Review and follow your order",
-        p: "Checkout shows current availability and the final total before payment. Once a paid order is confirmed, its private receipt shows kitchen and collection progress. WhatsApp ordering is coming soon.",
+        p: "Checkout shows current availability and the final total before payment. Once a paid order is confirmed, its private receipt shows confirmed kitchen and handover progress. WhatsApp ordering is coming soon.",
       },
     ],
   },

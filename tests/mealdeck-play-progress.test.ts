@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { GAME_CATALOGUE } from "../src/lib/dishbee-play";
 import {
   ARCADE_PLAYBOOK_KEY,
+  ARCADE_TRACKED_GAMES,
+  summarizeArcadeProgress,
+  arcadeScoreLabel,
   MAX_ARCADE_PLAYBOOK_BYTES,
   MAX_ARCADE_ROUNDS,
   appendArcadeCompletion,
@@ -94,8 +98,8 @@ describe("playbook validation and bounded history", () => {
       ).toBeNull();
     }
     for (const invalid of [
-      { game: "feast-2048" },
-      { game: "pairs" },
+      { game: "pairs", result: "win" },
+      { game: "kitchen-chaos", result: "completed" },
       { game: "unknown" },
       { result: "started" },
       { result: ["completed"] },
@@ -436,5 +440,47 @@ describe("optional device storage and cross-tab changes", () => {
     const hydrated = createArcadeCompletionSession();
     hydrated.remember(["round-from-storage"]);
     expect(hydrated.accept(completion("round-from-storage"))).toBeNull();
+  });
+});
+
+
+describe("All nineteen games in the unified local playbook", () => {
+  test("tracked IDs match the playable catalogue exactly", () => {
+    expect(ARCADE_TRACKED_GAMES.length).toBe(19);
+    expect(new Set(ARCADE_TRACKED_GAMES.map(game=>game.id))).toEqual(new Set(GAME_CATALOGUE.map(game=>game.id)));
+    let progress=emptyArcadeProgress();
+    for (const [index, game] of ARCADE_TRACKED_GAMES.entries()) {
+      const result = ["snack-trail","pantry-sweep","order-echo","kitchen-chaos","go-dish"].includes(game.id) ? "win" : "completed";
+      const record:ArcadeCompletion={id:`round-game-${index}`,game:game.id,result};
+      expect(parseArcadeCompletion(record)).toEqual(record);
+      progress=appendArcadeCompletion(progress,record,NOW+index);
+    }
+    expect(parseArcadeProgress(JSON.stringify(progress),NOW+20)).toEqual(progress);
+    const summary=summarizeArcadeProgress(progress);
+    expect(summary.finished).toBe(19);
+    expect(summary.explored).toBe(19);
+    expect(summary.wins).toBe(5);
+    expect(summary.milestones.find(item=>item.id==="all-games")?.current).toBe(19);
+    expect(summarizeArcadeProgress(emptyArcadeProgress()).explored).toBe(0);
+  });
+  test("scores and checks use only the approved games and units", () => {
+    for(const game of ["snack-trail","order-echo","feast-2048","snap"] as const) {
+      const result=game==="snack-trail"||game==="order-echo"?"win":"completed";
+      expect(parseArcadeCompletion({id:"round-score-1",game,result,score:3})).not.toBeNull();
+    }
+    expect(arcadeScoreLabel("order-echo",1)).toBe("1 round");
+    expect(arcadeScoreLabel("snap",4)).toBe("4 correct answers");
+    expect(arcadeScoreLabel("feast-2048",1200)).toBe("1,200 game points");
+    expect(parseArcadeCompletion(completion("round-recipe",{game:"recipe",checks:8}))).not.toBeNull();
+    expect(parseArcadeCompletion(completion("round-invalid",{checks:8}))).toBeNull();
+    expect(parseArcadeCompletion(completion("round-invalid",{game:"pairs",score:3}))).toBeNull();
+  });
+  test("daily milestones deduplicate repeated completions of the same dated puzzle",()=>{
+    let progress=emptyArcadeProgress();
+    progress=appendArcadeCompletion(progress,completion("round-day-a",{dailyDate:"2026-11-07"}),NOW);
+    progress=appendArcadeCompletion(progress,completion("round-day-b",{dailyDate:"2026-11-07"}),NOW+1);
+    progress=appendArcadeCompletion(progress,completion("round-day-c",{game:"menu-quest",dailyDate:"2026-11-07"}),NOW+2);
+    expect(summarizeArcadeProgress(progress).dailyFinished).toBe(2);
+    expect(summarizeArcadeProgress(progress).activeDays).toBe(1);
   });
 });
