@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   PANTRY_LEVELS,
   createPantryState,
+  findPantryHint,
   generatePantryBoard,
   pantryCellView,
   pantryFlagsLeft,
@@ -279,6 +280,51 @@ describe("Pantry Sweep visible information and keyboard navigation", () => {
         expect(pantryFocusMove(0, key, size)).toBeNull();
       for (const index of [-1, size * size, 0.5, NaN])
         expect(pantryFocusMove(index, "ArrowRight", size)).toBeNull();
+    }
+  });
+});
+
+describe("Pantry Sweep visible-clue hints", () => {
+  test("before the first reveal, hints do not generate a hidden board", () => {
+    const ready = freeze(createPantryState("gentle"));
+    expect(findPantryHint(ready).kind).toBe("first");
+    expect(ready.board).toBeNull();
+  });
+  test("direct clues give safe and chilli hints without trusting flags", () => {
+    const base = edgePantry();
+    const opened = [...base.opened];
+    opened[3] = true;
+    opened[7] = true;
+    opened[8] = true;
+    opened[2] = true;
+    // At index 3, only covered neighbours 4 and 9 remain.
+    const state = freeze({ ...base, opened });
+    const hint = findPantryHint(state);
+    expect(hint.kind).toBe("chilli");
+    if (hint.kind === "chilli") expect(base.board!.chillies[hint.index]).toBe(true);
+    const zero = [...base.opened];
+    zero[0] = true;
+    const wrong = [...base.flagged];
+    wrong[1] = true;
+    const safe = findPantryHint(freeze({ ...base, opened: zero, flagged: wrong }));
+    expect(safe.kind).toBe("safe");
+    if (safe.kind === "safe") expect(base.board!.chillies[safe.index]).toBe(false);
+  });
+  test("suggestions never contradict actual boards across deterministic first reveals", () => {
+    for (const level of ["gentle", "bigger"] as const) {
+      for (let seed = 0; seed < 30; seed++) {
+        let state = revealPantryCell(createPantryState(level), seed % (PANTRY_LEVELS[level].size ** 2), seed);
+        for (let step = 0; step < 40 && !pantryIsOver(state); step++) {
+          const hint = findPantryHint(state);
+          if (hint.kind !== "safe" && hint.kind !== "chilli") break;
+          expect(state.opened[hint.index]).toBe(false);
+          expect(state.board!.chillies[hint.index]).toBe(hint.kind === "chilli");
+          const next = hint.kind === "chilli" ? togglePantryFlag(state, hint.index) :
+            state.flagged[hint.index] ? togglePantryFlag(state, hint.index) : revealPantryCell(state, hint.index);
+          if (next === state) break;
+          state = next;
+        }
+      }
     }
   });
 });
