@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
   CHAOS_SUITS, canPlayChaos, createChaosDeck, drawChaos,
-  playChaos, startChaos, type ChaosCard,
+  playChaos, startChaos, chooseChaosMove, CHAOS_DIFFICULTIES, CHAOS_TURN_LIMIT, type ChaosCard,
 } from "../src/lib/kitchen-chaos";
 import {
   askGoDish, drawGoDishIfEmpty, createBrandSnapRounds, evaluateSnap, isFullHouse,
   makeFullHousePuzzle, stackSolitaireCard, startGoDish, startSolitaire,
+  createSnapSession, answerSnap, advanceSnap, snapStatistics, SNAP_LENGTHS,
 } from "../src/lib/mealdeck-collection-games";
 
 describe("Kitchen Chaos: free original game", () => {
@@ -116,5 +117,75 @@ describe("Go Dish round completion", () => {
       expect(new Set([...state.player, ...state.chef, ...state.stock].map(c => c.id)).size +
         4 * (state.playerSets.length + state.chefSets.length)).toBe(12);
     }
+  });
+});
+
+
+describe("Kitchen Chaos tactical opponent and finite rounds", () => {
+  test("all difficulty policies choose legal cards and do not mutate the hand", () => {
+    for (const difficulty of CHAOS_DIFFICULTIES) {
+      const state = startChaos(() => 0.19, difficulty);
+      const before = JSON.stringify(state.chef);
+      const advice = chooseChaosMove(state.chef, state.played.at(-1), state.activeSuit, difficulty, state.player.length);
+      if (advice) {
+        const card = state.chef.find(item => item.id === advice.cardId)!;
+        expect(canPlayChaos(card, state)).toBe(true);
+        expect(CHAOS_SUITS).toContain(advice.declaredSuit);
+      } else expect(state.chef.some(card => canPlayChaos(card, state))).toBe(false);
+      expect(JSON.stringify(state.chef)).toBe(before);
+    }
+  });
+  test("expert prioritises a rush against an opponent with one card", () => {
+    const hand = createChaosDeck().filter(card => ["burger-1", "burger-rush", "cake-2"].includes(card.id));
+    const top = createChaosDeck().find(card => card.id === "burger-2")!;
+    expect(chooseChaosMove(hand, top, "burger", "expert", 1)?.cardId).toBe("burger-rush");
+    expect(chooseChaosMove(hand, top, "burger", "relaxed", 1)?.cardId).toBe("burger-1");
+  });
+  test("120 seeded rounds conserve every card and respect the turn bound", () => {
+    for (const difficulty of CHAOS_DIFFICULTIES) for (let seed = 1; seed <= 40; seed++) {
+      let value = seed;
+      const random = () => ((value = (value * 1664525 + 1013904223) >>> 0) / 4294967296);
+      let state = startChaos(random, difficulty);
+      for (let i = 0; i < CHAOS_TURN_LIMIT && !state.winner; i++) {
+        const hint = chooseChaosMove(state.player, state.played.at(-1), state.activeSuit, "expert", state.chef.length);
+        const previous = state;
+        state = hint ? playChaos(state, hint.cardId, hint.declaredSuit) : drawChaos(state);
+        expect(state.turns).toBe(previous.turns + 1);
+        const all = [...state.player, ...state.chef, ...state.stock, ...state.played];
+        expect(all.length).toBe(36);
+        expect(new Set(all.map(card => card.id)).size).toBe(36);
+      }
+      expect(state.winner).not.toBeNull();
+      expect(state.turns).toBeLessThanOrEqual(CHAOS_TURN_LIMIT);
+      expect(drawChaos(state)).toBe(state);
+    }
+  });
+});
+
+describe("Brand Snap quiz and answer integrity", () => {
+  test("every supported length is balanced and uses only known brands", () => {
+    for (const length of SNAP_LENGTHS) {
+      const rounds = createBrandSnapRounds(["a", "b", "c"], length, () => 0.4);
+      expect(rounds.length).toBe(length);
+      expect(rounds.filter(round => round.match).length).toBe(length / 2);
+      expect(rounds.every(round => ["a", "b", "c"].includes(round.left) && ["a", "b", "c"].includes(round.right))).toBe(true);
+    }
+    expect(() => createBrandSnapRounds(["a", "b"], Infinity)).toThrow();
+    expect(createBrandSnapRounds(["a", "b"], 6, () => Number.NaN).length).toBe(6);
+  });
+  test("repeated and stale events cannot score twice or skip questions", () => {
+    const rounds = [{ left: "a", right: "a", match: true }, { left: "a", right: "b", match: false }, { left: "b", right: "b", match: true }];
+    let session = createSnapSession(rounds);
+    expect(advanceSnap(session, 0)).toBe(session);
+    session = answerSnap(session, 0, true);
+    expect(answerSnap(session, 0, true)).toBe(session);
+    session = advanceSnap(session, 0);
+    expect(advanceSnap(session, 0)).toBe(session);
+    expect(answerSnap(session, 0, true)).toBe(session);
+    session = advanceSnap(answerSnap(session, 1, false), 1);
+    session = advanceSnap(answerSnap(session, 2, false), 2);
+    expect(session.index).toBe(3);
+    expect(snapStatistics(session)).toEqual({ answered: 3, correct: 2, streak: 0, bestStreak: 2, accuracy: 67 });
+    expect(advanceSnap(session, 3)).toBe(session);
   });
 });
