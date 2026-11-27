@@ -4,6 +4,7 @@ import {
   TRAY_LINES_BOX_COUNT,
   TRAY_LINES_EDGE_COUNT,
   chooseTrayLine,
+  suggestTrayLine,
   countTrayBoxes,
   createTrayLinesGame,
   createTrayLinesSession,
@@ -298,5 +299,33 @@ describe("Tray Lines sessions and full-turn Undo", () => {
       expect(playTrayLinesSessionMove(session, 0, "solo", difficulty)).toBe(session);
       expect(undoTrayLinesSession(session).state.over).toBe(false);
     }
+  });
+});
+
+
+describe("Tray Lines expert and explainable advice", () => {
+  test("the suggested line is legal and reports actual captures", () => {
+    const state=position([0,3,12]);
+    const hint=suggestTrayLine(state)!;
+    const next=playTrayLine(state,hint.edge);
+    expect(legalTrayLinesMoves(state)).toContain(hint.edge);
+    expect(hint.captures).toBe(next.captured.length);
+    expect(hint.exactEndgame).toBe(false);
+    expect(chooseTrayLine(state,"expert")).toBe(hint.edge);
+    expect(suggestTrayLine(position(Array.from({length:24},(_,i)=>i)))).toBeNull();
+  });
+  test("expert solves the remaining six edges as well as an independent minimax oracle", () => {
+    const state=position(Array.from({length:18},(_,i)=>i));
+    const hint=suggestTrayLine(state)!;
+    expect(hint.exactEndgame).toBe(true);
+    expect(bestFinalScore(playTrayLine(state,hint.edge),state.turn)).toBe(bestFinalScore(state,state.turn));
+  });
+  test("expert endgame threshold includes twelve edges", () => {
+    const state=position(Array.from({length:12},(_,i)=>i));
+    const before=JSON.stringify(state);
+    const advice=suggestTrayLine(state)!;
+    expect(advice.exactEndgame).toBe(true);
+    expect(legalTrayLinesMoves(state)).toContain(advice.edge);
+    expect(JSON.stringify(state)).toBe(before);
   });
 });
