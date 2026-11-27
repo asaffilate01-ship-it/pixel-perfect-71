@@ -112,7 +112,7 @@ function resultHeadline(completion: ArcadeCompletion): string {
     case "tray-tactics":
     case "tray-lines":
       // Local play records a completed shared round, not a victory over the chef.
-      if (completion.result === "completed")
+      if (shareVariant(completion)?.label === "Two players")
         return completion.result === "draw" ? "Even portions" : "Round complete";
       return completion.result === "win"
         ? "Round won"
