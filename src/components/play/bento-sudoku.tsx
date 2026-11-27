@@ -6,6 +6,10 @@ import { createArcadeRoundId } from "@/lib/mealdeck-play-progress";
 import {
   applyBentoHint,
   bentoConflicts,
+  bentoCandidates,
+  findBentoLogicHint,
+  BENTO_DIFFICULTIES,
+  type BentoDifficulty,
   bentoFocusMove,
   createBentoPuzzle,
   createBentoState,
@@ -26,6 +30,7 @@ type Round = {
   puzzle: BentoPuzzle;
   state: BentoState;
   dailyDate?: string;
+  difficulty?: BentoDifficulty;
 };
 const foods = [
   { image: gameFoodArtwork.burger, name: "Burger" },
@@ -64,6 +69,10 @@ function BentoSudokuSession({
   const [size, setSize] = useState<BentoSize>(initialSize);
   const [challenge, setChallenge] = useState<Challenge>(dailyDate ? "daily" : "fresh");
   const [round, setRound] = useState<Round | null>(null);
+  const [difficulty, setDifficulty] = useState<BentoDifficulty>("classic");
+  const [showCandidates, setShowCandidates] = useState(false);
+  const [logicNote, setLogicNote] = useState("");
+  const [logicKey, setLogicKey] = useState("");
   const [selected, setSelected] = useState(0);
   const [announcement, setAnnouncement] = useState("");
   const cells = useRef<Array<HTMLButtonElement | null>>([]);
@@ -77,6 +86,8 @@ function BentoSudokuSession({
   const editable = !!round && !complete && round.puzzle.givens[selected] === 0;
   const filled = round?.state.board.filter((value) => value !== 0).length ?? 0;
   const roundId = round?.id;
+  const candidates = round && showCandidates ? round.state.board.map((_, index) => bentoCandidates(round.state.board, boardSize, index)) : [];
+  function clearLogic() { setLogicNote(""); setLogicKey(""); }
   const firstEditable = Math.max(0, round?.puzzle.givens.findIndex((value) => value === 0) ?? 0);
 
   useEffect(() => {
@@ -115,12 +126,12 @@ function BentoSudokuSession({
     const puzzle =
       challenge === "daily"
         ? createDailyBentoPuzzle(size, day)
-        : createBentoPuzzle(size, Math.floor(Math.random() * 0x1_0000_0000));
+        : createBentoPuzzle(size, Math.floor(Math.random() * 0x1_0000_0000), difficulty);
     const next: Round = {
       id: createArcadeRoundId(),
       puzzle,
       state: createBentoState(puzzle),
-      ...(challenge === "daily" ? { dailyDate: day } : {}),
+      ...(challenge === "daily" ? { dailyDate: day } : { difficulty }),
     };
     setSelected(
       Math.max(
@@ -128,6 +139,7 @@ function BentoSudokuSession({
         puzzle.givens.findIndex((value) => value === 0),
       ),
     );
+    clearLogic();
     setAnnouncement("Puzzle started. Select an empty square, then choose a number.");
     setRound(next);
   }
@@ -141,6 +153,7 @@ function BentoSudokuSession({
         round.puzzle.givens.findIndex((value) => value === 0),
       ),
     );
+    clearLogic();
     setAnnouncement("Same puzzle restarted. Your entries have been cleared.");
     setRound(next);
   }
@@ -152,25 +165,46 @@ function BentoSudokuSession({
     cell?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
-  function enterValue(value: number) {
-    if (!round || complete || !editable) return;
-    const state = enterBentoValue(round.puzzle, round.state, selected, value);
+  function enterValue(value: number, index = selected) {
+    if (!round || complete || round.puzzle.givens[index] !== 0) return;
+    const state = enterBentoValue(round.puzzle, round.state, index, value);
     if (state === round.state) return;
+    clearLogic();
     setRound({ ...round, state });
-    const row = Math.floor(selected / boardSize) + 1;
-    const column = (selected % boardSize) + 1;
-    const conflicting = bentoConflicts(state.board, boardSize).has(selected);
-    setAnnouncement(
-      value === 0
-        ? `Row ${row}, column ${column} erased.`
-        : `${value} entered in row ${row}, column ${column}.${conflicting ? " This number repeats in its row, column or box." : ""}`,
-    );
+    const row = Math.floor(index / boardSize) + 1;
+    const column = (index % boardSize) + 1;
+    const conflicting = bentoConflicts(state.board, boardSize).has(index);
+    setAnnouncement(value === 0 ? `Row ${row}, column ${column} erased.` :
+      `${value} entered in row ${row}, column ${column}.${conflicting ? " This number repeats in its row, column or box." : ""}`);
+  }
+
+  function logicHint() {
+    if (!round || complete) return;
+    const result = findBentoLogicHint(round.state.board, boardSize, selected);
+    if (result.kind !== "move") {
+      const note = result.kind === "conflict" ? "Resolve the marked repeated numbers before requesting a logic hint." :
+        result.kind === "contradiction" ? "The current entries cannot be completed. Check or undo recent entries." :
+        "No single-step deduction was found within the logic check. Try candidate marks or Reveal a hint.";
+      setLogicNote(note);
+      setAnnouncement(note);
+      return;
+    }
+    const note = `Row ${Math.floor(result.index / boardSize) + 1}, column ${result.index % boardSize + 1}: ${result.value} is ${result.reason === "single" ? "the only candidate for this square" : "the only place for this number in its " + result.reason}. Based on the current entries.`;
+    const key = round.state.board.join(",") + ":" + result.index + ":" + result.value;
+    if (key !== logicKey) {
+      setRound(current => current?.id === round.id ? { ...current, state: { ...current.state, hints: current.state.hints + 1 } } : current);
+      setLogicKey(key);
+    }
+    focusCell(result.index);
+    setLogicNote(note);
+    setAnnouncement(note);
   }
 
   function hint() {
     if (!round || complete) return;
     const state = applyBentoHint(round.puzzle, round.state, selected);
     if (state === round.state) return;
+    clearLogic();
     const index = state.board.findIndex((value, position) => value !== round.state.board[position]);
     setRound({ ...round, state });
     if (index >= 0) {
@@ -185,6 +219,7 @@ function BentoSudokuSession({
     if (!round || complete) return;
     const state = undoBentoMove(round.state);
     if (state === round.state) return;
+    clearLogic();
     const index = state.board.findIndex((value, position) => value !== round.state.board[position]);
     setRound({ ...round, state });
     if (index >= 0) focusCell(index);
@@ -199,10 +234,10 @@ function BentoSudokuSession({
       focusCell(next);
     } else if (/^[1-6]$/.test(event.key) && Number(event.key) <= boardSize) {
       event.preventDefault();
-      enterValue(Number(event.key));
+      enterValue(Number(event.key), index);
     } else if (["Backspace", "Delete", "0"].includes(event.key)) {
       event.preventDefault();
-      enterValue(0);
+      enterValue(0, index);
     }
   }
 
@@ -246,8 +281,7 @@ function BentoSudokuSession({
             another entry.
           </li>
           <li>
-            A hint reveals the selected unfinished square, or the next unfinished square. Moves and
-            hints stay counted after undo.
+            A logic hint explains a deduction without filling the square. Reveal a hint fills one answer. Candidate marks show possibilities from current entries. Moves and hints stay counted after undo.
           </li>
         </ol>
         <p>
@@ -284,6 +318,7 @@ function BentoSudokuSession({
                 </option>
               </select>
             </label>
+            {challenge === "fresh" && <label>Difficulty<select value={difficulty} onChange={event => setDifficulty(event.target.value as BentoDifficulty)}>{BENTO_DIFFICULTIES.map(level => <option key={level} value={level}>{level === "guided" ? "Guided · more clues" : level === "classic" ? "Classic" : "Expert · fewer clues where possible"}</option>)}</select></label>}
           </div>
           {challenge === "daily" && (
             <p className="md-game-footnote">
@@ -322,7 +357,7 @@ function BentoSudokuSession({
                 Daily · <time dateTime={round.dailyDate}>{round.dailyDate}</time> UTC
               </>
             ) : (
-              "Fresh puzzle"
+              `Fresh puzzle · ${round.difficulty ?? "classic"}`
             )}
           </p>
           <dl className="md-game-stats">
@@ -369,7 +404,8 @@ function BentoSudokuSession({
                           row === Math.floor(selected / boardSize) ||
                           column === selected % boardSize;
                         const food = value > 0 ? foods[value - 1] : undefined;
-                        const label = `Row ${row + 1}, column ${column + 1}: ${value || "empty"}${given ? ", fixed clue" : ""}${conflict ? ", repeated number" : ""}`;
+                        const marks = candidates[index] ?? [];
+                        const label = `Row ${row + 1}, column ${column + 1}: ${value || "empty"}${given ? ", fixed clue" : ""}${conflict ? ", repeated number" : ""}${!value && showCandidates ? ", candidates: " + (marks.join(", ") || "none") : ""}`;
                         return (
                           <div
                             role="gridcell"
@@ -392,9 +428,7 @@ function BentoSudokuSession({
                               onKeyDown={(event) => handleKey(event, index)}
                             >
                               {food && <img src={food.image} alt="" draggable={false} />}
-                              <span className="md-bento-digit" aria-hidden="true">
-                                {value || "·"}
-                              </span>
+                              {!value && showCandidates ? <span className="md-bento-candidates" aria-hidden="true">{marks.length ? marks.map(mark => <span key={mark}>{mark}</span>) : <span>–</span>}</span> : <span className="md-bento-digit" aria-hidden="true">{value || "·"}</span>}
                               {given && (
                                 <LockKeyhole
                                   className="md-bento-lock"
@@ -449,6 +483,8 @@ function BentoSudokuSession({
                     ))}
                   </div>
                   <div className="md-bento-tools">
+                    <button type="button" className="md-game-button md-bento-hint-button" aria-pressed={showCandidates} onClick={() => setShowCandidates(value => !value)}>{showCandidates ? "Hide" : "Show"} candidate marks</button>
+                    <button type="button" className="md-game-button md-bento-hint-button" onClick={logicHint}><Lightbulb size={17} aria-hidden="true" /> Explain a logic hint</button>
                     <button
                       type="button"
                       className="md-game-button"
@@ -473,9 +509,8 @@ function BentoSudokuSession({
                       <Lightbulb size={17} aria-hidden="true" /> Reveal a hint
                     </button>
                   </div>
-                  <p className="md-game-footnote">
-                    Hints reveal one answer and count towards this round.
-                  </p>
+                  {logicNote && <p className="md-bento-logic-note">{logicNote}</p>}
+                  <p className="md-game-footnote">Useful logic hints and revealed answers count towards this round. Candidate marks are optional and do not count as hints.</p>
                 </>
               )}
               {complete && (
