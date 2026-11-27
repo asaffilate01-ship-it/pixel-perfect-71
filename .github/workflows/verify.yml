@@ -618,7 +618,7 @@ jobs:
           --rule 'prettier/prettier: off'
 
       - name: Confirmed November offers and retired-copy regressions
-        run: bun test tests/mealdeck-offers.test.ts
+        run: bun test tests/mealdeck-offers.test.ts tests/mealdeck-cinema-promotion.test.ts
 
       - name: Offers catalogue and page lint
         run: >-
