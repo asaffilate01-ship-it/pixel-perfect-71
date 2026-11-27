@@ -42,10 +42,21 @@ const waitFor = async (condition, label, timeout = 7000) => {
   throw new Error(label);
 };
 
-async function privacy(page) {
-  const consent = page.getByRole("button", { name: "Reject optional", exact: true });
-  // The control only exists after hydration. A fresh context starts with no consent.
-  if (await consent.isVisible()) await consent.click();
+async function privacy(page, firstPage) {
+  const consent = page.getByRole("dialog", { name: "MealDeck cookie preferences" });
+  const reject = consent.getByRole("button", { name: "Reject optional", exact: true });
+  if (firstPage) {
+    // Explicitly wait for hydration in a clean context; no timing assumptions.
+    await consent.waitFor({state:"visible",timeout:15000});
+    await consent.getByRole("button",{name:"Customise",exact:true}).click();
+    assert.ok(await consent.evaluate(el=>el.clientHeight<=innerHeight));
+    const boxes=consent.getByRole("checkbox");
+    assert.equal(await boxes.count(),2);
+    assert.equal(await boxes.nth(0).isChecked(),false);
+    assert.equal(await boxes.nth(1).isChecked(),false);
+    await reject.click();
+    await consent.waitFor({state:"hidden"});
+  } else if (await consent.isVisible()) await reject.click();
 }
 async function navigation(page, profile) {
   if (profile.width <= 1180) {
@@ -88,7 +99,8 @@ async function auditPage(page, route, profile, engine) {
     assert.ok(response && response.status() < 400, "Page response was not successful");
     await page.locator("#mealdeck-main").waitFor({ state: "visible" });
     await page.locator("h1").first().waitFor({ state: "visible", timeout: 15000 });
-    await privacy(page);
+    assert.ok(!/This page didn.t load|Page not found|This page needs a refresh/i.test(await page.locator("h1").first().innerText()), "Route error boundary is not a successful page");
+    await privacy(page, route.name === "home");
     // No reliance on networkidle: the app may legitimately poll local availability.
     await page.evaluate(async () => { await document.fonts.ready; });
     await waitFor(() => page.locator(".md-skip-link").count().then(n => n === 1), "One skip link is required");
@@ -96,11 +108,10 @@ async function auditPage(page, route, profile, engine) {
     if (route.name === "home") await navigation(page, profile);
     if (route.name === "play") {
       const summary = page.locator(".md-playbook > summary");
-      if (await summary.isVisible()) {
-        await summary.click();
-        await page.getByRole("heading", { name: "Your arcade statistics", exact: true }).waitFor({ state: "visible" });
-        await summary.click();
-      }
+      await summary.waitFor({state:"visible"});
+      await summary.click();
+      await page.getByRole("heading", { name: "Your arcade statistics", exact: true }).waitFor({ state: "visible" });
+      await summary.click();
     }
     entry.layout = await page.evaluate(() => ({
       viewportWidth: document.documentElement.clientWidth,
