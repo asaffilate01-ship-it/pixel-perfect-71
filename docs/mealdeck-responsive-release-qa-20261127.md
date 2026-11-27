@@ -25,3 +25,6 @@ No external AI model was invoked against MealDeck, no SDK or MCP server was adde
 
 ## Remaining gates
 Real iOS and Android/PWA accessibility, keyboard/screen reader, staff/KDS/printer and delivery tests are separate. The Munchbox banner requires verified canonical product IDs, approved terms and the independent draw evidence. The staff voucher release requires verified payment/database security and the correct independent project. Browser emulation is not a real device or a production commissioning result.
+
+## Additional safeguards
+The privacy panel has equal visual prominence for accepting/rejecting optional cookies, minimum 44px controls, scrollable short-screen layout and visible focus. Browser acceptance exercises customisation with both optional categories initially off, rejection and persisted consent. The provider-neutral agent policy now expressly denies staff voucher issuance/redemption/revocation, promotion activation, prize selection/export/contact and secret access, and rejects malformed model tool arguments (including inherited properties and accessors). The policy remains non-executing; ordinary authenticated checkout and manager permissions are separate.
