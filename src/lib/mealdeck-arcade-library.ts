@@ -224,6 +224,14 @@ export const ARCADE_HELP: readonly ArcadeHelpEntry[] = [
   { id: "go", game: "go-dish", question: "How do I collect sets in Go Dish?", answer: "Ask the chef for food-card ranks and collect matching sets. The guide explains when to ask or draw." },
   { id: "full", game: "full-house", question: "What makes a Full House?", answer: "Find five cards containing three of one food suit and two of another. No betting or stakes are involved." },
   { id: "stacks", game: "solitaire", question: "What is the Kitchen Stacks goal?", answer: "Sort each food suit in order from one to four, using the legal moves described in the guide." },
+  {"id":"chaos-difficulty","game":"kitchen-chaos","question":"Does the expert chef see my hidden cards?","answer":"No. The local opponent chooses using its own hand, the public top card, active food and the number of cards in your hand. Relaxed, Classic and Expert use different strategies."},
+  {"id":"chaos-draw","game":"kitchen-chaos","question":"What happens when Kitchen Chaos has no matching cards?","answer":"Draw and end your move. You can show only playable cards or request a legal suggestion when a match exists. An unfinished round ends in a draw after 120 player moves."},
+  {"id":"snap-length","game":"snap","question":"Can I choose a shorter or longer Brand Snap quiz?","answer":"Yes. Quick has 6 pairs, Classic 12 and Marathon 24. There is no timer; each challenge contains an equal number of matching and different pairs."},
+  {"id":"snap-review","game":"snap","question":"How can I review my Brand Snap mistakes?","answer":"Finish the quiz and open Review missed pairs. It shows your answer and the correct answer for each missed pair, plus your accuracy and longest streak."},
+  {"id":"hints","question":"Are intelligent puzzle hints guaranteed to find a solution?","answer":"Skewer Sort and Kitchen Shuffle use bounded local search and may reach a limit. Pantry Sweep and Bento Sudoku use visible clues and can explain when no supported deduction is found."},
+  {"id":"switch","question":"What happens if I switch games during a round?","answer":"Opening the game picker does not itself replace your board. Choosing a different game starts a fresh board unless you explicitly saved your previous game using a supported save slot."},
+  {"id":"focus","question":"How do I make the game board larger on a phone?","answer":"Choose Focus view above the game to reduce surrounding content. Exit focus view to return to the full arcade. On desktop, Escape also exits focus view."},
+  {"id":"recipe-master","game":"recipe","question":"How many Recipe Rush questions can I play?","answer":"Taster has 3, Chef has 6 and Master has 12 game recipes. Clues and hints help you choose three ingredients. The game recipes are not real product specifications."},
 ];
 
 export function findArcadeHelp(query: string, game?: ArcadeGameId): ArcadeHelpEntry[] {
