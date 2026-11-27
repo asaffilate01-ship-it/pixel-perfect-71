@@ -51,6 +51,8 @@ describe("Secure staff voucher transport and checkout price",()=>{
    const sql=source("deploy/mealdeck/operations/20261127_staff_vouchers.sql");
    expect(sql).toContain("enabled boolean not null default false");
    expect(sql).toContain("code_hash text not null unique");
+   expect(sql).toContain("unique(issued_by,issue_request_id)");
+   expect(sql).toContain("'alreadyIssued',true");
    expect(sql).toContain("consumed_quote_id uuid unique");
    expect(sql).toContain("where id=link.voucher_id for update");
    expect(sql).toContain("or p_room is not null");
