@@ -833,8 +833,9 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
   background: rgba(255, 213, 31, .1);
   padding-inline: 12px;
 }
-@media (max-width: 1050px) {
-  .md-mobile-nav {
+@media (max-width: 1180px) {
+  .md-mobile-nav:not([hidden]) {
+    max-height: min(70vh, 620px);
     max-height: min(70dvh, 620px);
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -965,4 +966,14 @@ article:hover .md-feature-icon { transform: translateY(-4px) rotate(-3deg); box-
 
 @media (max-width: 560px) {
   .md-own-driver-offer-inner { padding-inline: 16px; }
+}
+
+/* Keep the disclosure controlled, including at tablet/desktop breakpoints. */
+.md-mobile-nav[hidden] { display: none !important; }
+.md-mobile-nav > a { flex-shrink: 0; overflow-wrap: anywhere; }
+.md-mobile-menu-button { flex: 0 0 44px; border-radius: 9px; }
+@media (min-width: 1181px) and (max-width: 1350px) {
+  .md-header-inner { gap: 14px; }
+  .md-desktop-nav { gap: 12px; }
+  .md-desktop-nav a { font-size: 13px; }
 }
