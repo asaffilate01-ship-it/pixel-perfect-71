@@ -1,3 +1,4 @@
+import { isArcadeRoundId } from "./mealdeck-play-progress";
 /** Standalone, free-to-play MealDeck card puzzles. No payments, prizes or redeemable points. */
 import { CHAOS_SUITS, CHAOS_SUIT_NAMES, shuffleDeck, type FoodSuit } from "./kitchen-chaos";
 
@@ -265,6 +266,7 @@ export function stackSolitaireCard(state: SolitaireState, cardId: string): Solit
 export const STACKS_SAVE_KEY = "mealdeck-kitchen-stacks-save-v1";
 export type StacksSave = {
   version: 1;
+  roundId?: string;
   showReady: boolean;
   cards: FullHouseCard[];
   progress: Record<FoodSuit, number>;
@@ -307,15 +309,17 @@ export function parseStacksSave(raw: string | null): StacksSave | null {
       remaining.delete(id);
     }
     if (remaining.size || input["moves"] !== 16 - cards.length + input["mistakes"]) return null;
+    const roundId = input["roundId"];
+    if (roundId !== undefined && !isArcadeRoundId(roundId)) return null;
     return { version: 1, showReady: input["showReady"], cards, progress, moves: input["moves"],
-      mistakes: input["mistakes"], hints: input["hints"] };
+      mistakes: input["mistakes"], hints: input["hints"], ...(roundId ? { roundId } : {}) };
   } catch {
     return null;
   }
 }
-export function createStacksSave(state: SolitaireState, showReady: boolean): StacksSave | null {
+export function createStacksSave(state: SolitaireState, showReady: boolean, roundId?: string): StacksSave | null {
   return parseStacksSave(JSON.stringify({
     version: 1, showReady, cards: state.cards, progress: state.progress,
-    moves: state.moves, mistakes: state.mistakes, hints: state.hints ?? 0,
+    moves: state.moves, mistakes: state.mistakes, hints: state.hints ?? 0, roundId,
   }));
 }
