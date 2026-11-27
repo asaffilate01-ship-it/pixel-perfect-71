@@ -27,11 +27,15 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
   });
   useEffect(() => {
     setOpen(false);
-  }, [pathname, hash]);
+  }, [pathname, hash, nav]);
   useEffect(() => {
-    if (!open) return;
+    if (!open || !nav) return;
+    const wideScreen = window.matchMedia("not all and (max-width: 1180px)");
+    if (wideScreen.matches) {
+      setOpen(false);
+      return;
+    }
     firstLinkRef.current?.focus();
-    const wideScreen = window.matchMedia("(min-width: 1181px)");
     const closeOnWideScreen = () => {
       if (!wideScreen.matches) return;
       const focused = document.activeElement;
@@ -63,7 +67,7 @@ export function SiteHeader({ context, nav = true }: { context?: ReactNode; nav?:
       document.removeEventListener("focusin", onFocusOutside);
       wideScreen.removeEventListener("change", closeOnWideScreen);
     };
-  }, [open]);
+  }, [open, nav]);
   const current = (to: string, targetHash?: string) =>
     isMealDeckNavCurrent(pathname, hash, { to, hash: targetHash });
   const active = (to: string, targetHash?: string) =>

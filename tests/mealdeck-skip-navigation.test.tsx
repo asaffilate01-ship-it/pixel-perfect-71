@@ -52,3 +52,12 @@ test("site navigation keeps customer accounts visible and game copy truthful", (
   expect(css).toContain(".md-mobile-nav[hidden] { display: none !important; }");
   expect(css).toContain("@media (max-width: 1180px) {\n  .md-mobile-nav:not([hidden])");
 });
+
+
+test("mobile menu uses the exact complement of the CSS breakpoint and resets when disabled", () => {
+  const header = readFileSync(new URL("../src/components/site-header.tsx", import.meta.url), "utf8");
+  expect(header).toContain('window.matchMedia("not all and (max-width: 1180px)")');
+  expect(header).toContain("if (!open || !nav) return;");
+  expect(header).toContain("[pathname, hash, nav]");
+  expect(header).toContain("[open, nav]");
+});
