@@ -1,5 +1,5 @@
 /** Standalone, free-to-play MealDeck card puzzles. No payments, prizes or redeemable points. */
-import { CHAOS_SUITS, shuffleDeck, type FoodSuit } from "./kitchen-chaos";
+import { CHAOS_SUITS, CHAOS_SUIT_NAMES, shuffleDeck, type FoodSuit } from "./kitchen-chaos";
 
 export type BrandSnapRound = { left: string; right: string; match: boolean };
 export const SNAP_LENGTHS = [6, 12, 24] as const;
@@ -249,14 +249,14 @@ export function stackSolitaireCard(state: SolitaireState, cardId: string): Solit
   if (card.rank !== state.progress[card.suit] + 1) {
     return {
       ...state, moves: state.moves + 1, mistakes: state.mistakes + 1,
-      message: `Place ${card.suit} number ${state.progress[card.suit] + 1} first.`,
+      message: `Place ${CHAOS_SUIT_NAMES[card.suit]} number ${state.progress[card.suit] + 1} first.`,
     };
   }
   return {
     ...state, moves: state.moves + 1,
     cards: state.cards.filter(c => c.id !== cardId),
     progress: { ...state.progress, [card.suit]: card.rank },
-    message: `Good stack! ${card.suit} is now at ${card.rank}.`,
+    message: `Good stack! ${CHAOS_SUIT_NAMES[card.suit]} is now at ${card.rank}.`,
   };
 }
 
