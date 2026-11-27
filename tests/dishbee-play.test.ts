@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   BRAND_FOODS, BRAND_THEMES, FOOD_SUITS, GAME_CATALOGUE, INGREDIENTS, RECIPES,
   isBrandTheme, makePairs, recipeMatches, createPairRound, revealPairCard, resolvePairTurn,
-  isPairRoundComplete, parsePairBest, choosePairBest, PAIR_COUNTS,
+  isPairRoundComplete, parsePairBest, choosePairBest, PAIR_COUNTS, getRecipeDeck, toggleRecipeIngredient, RECIPE_DECK_SIZES,
 } from "../src/lib/dishbee-play";
 
 describe("Dishbee Play entertainment-only games", () => {
@@ -117,5 +117,26 @@ describe("Food Pairs difficulty and safe turn resolution", () => {
     expect(choosePairBest(12, 10, 8)).toBe(10);
     expect(choosePairBest(10, 12, 8)).toBe(10);
     expect(choosePairBest(10, 3, 8)).toBe(10);
+  });
+});
+
+describe("Recipe Rush expanded question bank", () => {
+  test("all twelve questions have distinct answers and known ingredients", () => {
+    expect(RECIPES).toHaveLength(12);
+    const sets = RECIPES.map(recipe => [...recipe.ingredients].sort().join(","));
+    expect(new Set(sets).size).toBe(12);
+    for (const recipe of RECIPES) {
+      expect(recipe.clue.length).toBeGreaterThan(12);
+      expect(new Set(recipe.ingredients).size).toBe(3);
+      expect(recipe.ingredients.every(id => INGREDIENTS.some(item => item.id === id))).toBe(true);
+      expect(recipeMatches([...recipe.ingredients], recipe.ingredients)).toBe(true);
+    }
+    for (const size of RECIPE_DECK_SIZES) expect(getRecipeDeck(size)).toHaveLength(size);
+  });
+  test("rapid selection is bounded and unknown ingredients are ignored", () => {
+    let selected: string[] = [];
+    for (const id of ["bun", "patty", "lettuce", "cheese", "unknown"]) selected = toggleRecipeIngredient(selected, id);
+    expect(selected).toEqual(["bun", "patty", "lettuce"]);
+    expect(toggleRecipeIngredient(selected, "patty")).toEqual(["bun", "lettuce"]);
   });
 });
