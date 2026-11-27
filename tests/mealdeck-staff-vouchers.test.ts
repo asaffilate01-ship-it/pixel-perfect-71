@@ -61,3 +61,18 @@ describe("Secure staff voucher transport and checkout price",()=>{
    expect(sql).toContain("revoke all on mealdeck_private.staff_voucher_settings");
  });
 });
+
+
+test("a rejected voucher does not erase the previous reviewed quote or confirm payment",()=>{
+ const ui=source("src/components/launch-checkout.tsx");
+ const review=ui.slice(ui.indexOf("  async function reviewTotal("),ui.indexOf("  async function pay("));
+ const reset=review.match(/if \(voucherCode\) \{[\s\S]*?\n    \}/)?.[0];
+ expect(reset).toBeDefined();
+ expect(reset).toContain('setStaffVoucherCode("")');
+ expect(reset).toContain("setReviewConfirmed(false)");
+ expect(reset).not.toContain("setQuote(null)");
+ expect(reset).not.toContain("attempt.current = null");
+ expect(review).toContain("if (!result.quote) throw new Error");
+ expect(review.indexOf('result.quote.staffVoucherApplied !== true')).toBeLessThan(review.indexOf("setQuote(result.quote)"));
+ expect(review.indexOf("setQuote(result.quote)")).toBeLessThan(review.indexOf("attempt.current = { quoteId: result.quote.quoteId"));
+});
