@@ -1,0 +1,72 @@
+name: MealDeck responsive browser QA
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/components/site-header.tsx'
+      - 'src/components/site-footer.tsx'
+      - 'src/components/mobile-tab-bar.tsx'
+      - 'src/styles.mealdeck-rebuild.css'
+      - 'scripts/audit-mealdeck-browser.mjs'
+      - '.github/workflows/browser-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: mealdeck-browser-qa-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      MEALDECK_BROWSER_QA_PACKAGES: ${{ runner.temp }}/mealdeck-browser-tools
+      MEALDECK_ONLINE_CHECKOUT_ENABLED: 'false'
+      MEALDECK_STAFF_VOUCHERS_ENABLED: 'false'
+      MEALDECK_MUNCHBOX_CINEMA_PROMO_APPROVED: 'false'
+      MEALDECK_OWN_DRIVER_DELIVERY_ENABLED: 'false'
+      MEALDECK_WHATSAPP_ASSISTANCE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing application from frozen lockfile
+        run: |
+          npm install --global bun@1.4.4 --no-audit --no-fund
+          bun install --frozen-lockfile
+      - name: Install isolated pinned browser tooling
+        run: |
+          mkdir -p "$MEALDECK_BROWSER_QA_PACKAGES"
+          npm install --prefix "$MEALDECK_BROWSER_QA_PACKAGES" --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.58.2 axe-core@4.11.1
+          "$MEALDECK_BROWSER_QA_PACKAGES/node_modules/.bin/playwright" install --with-deps chromium webkit
+      - name: Run disposable browser QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p browser-qa-results
+          bun run dev --host 127.0.0.1 --port 4173 --strictPort > "$RUNNER_TEMP/mealdeck-browser-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 90); do
+            if curl -fsS --max-time 3 http://127.0.0.1:4173/ -o /dev/null; then ready=1; break; fi
+            sleep 2
+          done
+          test "$ready" = 1
+          node scripts/audit-mealdeck-browser.mjs
+      - name: Publish synthetic browser findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealdeck-responsive-browser-qa
+          path: browser-qa-results/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Add QA summary
+        if: always()
+        run: |
+          if test -f browser-qa-results/summary.md; then
+            cat browser-qa-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
