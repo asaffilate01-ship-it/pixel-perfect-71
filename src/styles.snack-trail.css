@@ -255,7 +255,7 @@
 }
 
 /* A deliberate swipe area, not a page-wide scroll lock. */
-.md-snack__board { touch-action: none; }
+.md-snack__board[data-moving="yes"] { touch-action: pinch-zoom; }
 .md-snack__direction { touch-action: manipulation; }
 .md-snack .md-game-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .md-snack__saved {
