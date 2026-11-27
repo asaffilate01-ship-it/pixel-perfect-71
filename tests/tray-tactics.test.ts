@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   TRAY_CELL_COUNT,
   chooseTrayMove,
+  suggestTrayMove,
   countTrayPieces,
   createTrayGame,
   legalTrayMoves,
@@ -225,5 +226,34 @@ describe("Tray Tactics chef and whole-turn recovery", () => {
     }
     const chefTurn = playTrayMove(createTrayGame(), 8);
     expect(playTraySoloRound(chefTurn, 9).state).toBe(chefTurn);
+  });
+});
+
+
+describe("Tray Tactics bounded expert guidance", () => {
+  test("expert chooses deterministic legal moves, including forced corners", () => {
+    const board = Array<TrayCell>(36).fill(1);
+    board[0] = board[5] = 0;
+    board[1] = board[4] = 2;
+    const state = position(board);
+    const advice = suggestTrayMove(state)!;
+    expect([0,5]).toContain(advice.index);
+    expect(advice.reason).toBe("corner");
+    expect(advice.flips).toBe(trayFlips(state.board, advice.index, state.turn).length);
+    expect(chooseTrayMove(state, "expert")).toBe(advice.index);
+    expect(suggestTrayMove(playTrayMove(playTrayMove(state,0),5))).toBeNull();
+  });
+  test("expert advice preserves the board and completes a legal full game", () => {
+    let game = createTrayGame();
+    for (let step=0; step<32 && !game.over; step++) {
+      const before = JSON.stringify(game);
+      const advice = suggestTrayMove(game)!;
+      expect(legalTrayMoves(game.board,game.turn)).toContain(advice.index);
+      expect(advice.flips).toBeGreaterThan(0);
+      expect(JSON.stringify(game)).toBe(before);
+      game = playTrayMove(game, advice.index);
+    }
+    expect(game.over).toBe(true);
+    expect(game.moveCount).toBeLessThanOrEqual(32);
   });
 });
