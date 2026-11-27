@@ -307,3 +307,8 @@
     padding: 14px;
   }
 }
+
+/* Strategy advice is visible without moving or recolouring existing pieces. */
+.md-tray__cell.is-hinted { outline:3px solid #315c3c; outline-offset:-4px; background:#e3f2de; }
+.md-tray__cell.is-hinted .md-tray__legal-dot { background:#315c3c; }
+.md-tray__cell { touch-action:manipulation; }

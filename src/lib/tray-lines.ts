@@ -6,7 +6,8 @@ export const TRAY_LINES_BOX_COUNT = 9;
 export type TrayLinesPlayer = 1 | 2;
 export type TrayLinesOwner = 0 | TrayLinesPlayer;
 export type TrayLinesMode = "solo" | "local";
-export type TrayLinesDifficulty = "casual" | "clever";
+export type TrayLinesDifficulty = "casual" | "clever" | "expert";
+export const TRAY_LINES_EXPERT_ENDGAME = 12;
 
 export interface TrayLineEdge {
   readonly id: number;
@@ -216,7 +217,7 @@ function offeredChain(mask: number): number {
   return capturedTotal;
 }
 
-/** Deterministic chef: Casual takes boxes; Clever avoids chains and solves the last nine edges. */
+/** Casual takes boxes; Clever avoids chains and solves the last nine edges; Expert solves the last twelve. */
 export function chooseTrayLine(
   state: TrayLinesState,
   difficulty: TrayLinesDifficulty = "clever",
@@ -232,10 +233,10 @@ export function chooseTrayLine(
     if (!edge) continue;
     const captured = capturesFromMask(mask, edge);
     let score = captured * 100;
-    if (difficulty === "clever" && legal.length <= 9) {
+    if (difficulty !== "casual" && legal.length <= (difficulty === "expert" ? TRAY_LINES_EXPERT_ENDGAME : 9)) {
       const future = solveEndgame(mask | (1 << edgeId), memo);
       score = captured > 0 ? captured + future : -future;
-    } else if (difficulty === "clever" && captured === 0) {
+    } else if (difficulty !== "casual" && captured === 0) {
       // Safe edges offer no boxes. With none left, prefer the smallest forced giveaway.
       const next = mask | (1 << edgeId);
       score = -offeredChain(next) * 20;
@@ -251,6 +252,19 @@ export function chooseTrayLine(
     }
   }
   return chosen;
+}
+
+export type TrayLineAdvice = {
+  edge: number; captures: number; offered: number; exactEndgame: boolean;
+};
+export function suggestTrayLine(state: TrayLinesState): TrayLineAdvice | null {
+  const edgeId = chooseTrayLine(state, "expert");
+  if (edgeId === null) return null;
+  const edge = TRAY_LINE_EDGES[edgeId]!;
+  const mask = edgeMask(state);
+  const captures = capturesFromMask(mask, edge);
+  return { edge: edgeId, captures, offered: captures ? 0 : offeredChain(mask | (1 << edgeId)),
+    exactEndgame: legalTrayLinesMoves(state).length <= TRAY_LINES_EXPERT_ENDGAME };
 }
 
 /** Resolve a click and all chef extra turns, retaining one snapshot per full human turn. */

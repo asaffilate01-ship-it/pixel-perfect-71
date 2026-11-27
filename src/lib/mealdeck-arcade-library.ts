@@ -236,6 +236,8 @@ export const ARCADE_HELP: readonly ArcadeHelpEntry[] = [
   {"id":"full-hint","game":"full-house","question":"Can I get help choosing a Full House?","answer":"Suggest a card highlights one card to add or remove towards a valid five-card hand. It keeps as many of your current selections as possible. You still choose and check the hand yourself."},
   {"id":"stacks-save","game":"solitaire","question":"How do I save or load Kitchen Stacks?","answer":"Use Save puzzle to store a snapshot in this browser. Load saved puzzle replaces the active board; the snapshot remains until cleared or replaced. It includes progress, attempts, mistakes, hints and marker settings."},
   {"id":"stacks-markers","game":"solitaire","question":"Can I play Kitchen Stacks without ready markers?","answer":"Yes. Hide ready markers for a greater challenge. Stack the food cards in number order, from 1 to 4. Show a move can still suggest the next legal card."},
+  {"id":"tactics-expert","game":"tray-tactics","question":"How does Expert Tray Tactics play?","answer":"Expert uses bounded local search up to five moves ahead, considering stable corners, legal options and piece counts. Suggest a move explains a recommended square without playing it."},
+  {"id":"lines-expert","game":"tray-lines","question":"How does Expert Tray Lines choose a move?","answer":"Expert considers box captures and immediate chain giveaways, then solves the final twelve open edges exactly. A hint highlights a legal line and describes the immediate effect."},
 ];
 
 export function findArcadeHelp(query: string, game?: ArcadeGameId): ArcadeHelpEntry[] {

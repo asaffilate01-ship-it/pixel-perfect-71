@@ -347,3 +347,6 @@
     padding: 14px;
   }
 }
+
+.md-lines__edge.is-hinted { outline:3px solid #315c3c; outline-offset:1px; background:#e3f2de; color:#315c3c; }
+.md-lines__edge { touch-action:manipulation; }

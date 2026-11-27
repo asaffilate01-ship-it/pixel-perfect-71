@@ -3,7 +3,8 @@ export const TRAY_SIZE = 6;
 export const TRAY_CELL_COUNT = TRAY_SIZE * TRAY_SIZE;
 export type TrayPlayer = 1 | 2;
 export type TrayCell = 0 | TrayPlayer;
-export type TrayDifficulty = "casual" | "clever";
+export type TrayDifficulty = "casual" | "clever" | "expert";
+export const TRAY_EXPERT_NODE_LIMIT = 6_000;
 export type TrayBoard = readonly TrayCell[];
 
 export interface TrayState {
@@ -169,14 +170,17 @@ function traySearch(
   depth: number,
   alpha: number,
   beta: number,
-): number {
+  budget?: { remaining: number },
+): number | null {
+  if (budget && budget.remaining-- <= 0) return null;
   if (depth === 0 || state.over) return evaluateTrayBoard(state, player);
   const moves = legalTrayMoves(state.board, state.turn);
   if (moves.length === 0) return evaluateTrayBoard(state, player);
   const maximizing = state.turn === player;
   let best = maximizing ? -Infinity : Infinity;
   for (const move of moves) {
-    const score = traySearch(playTrayMove(state, move), player, depth - 1, alpha, beta);
+    const score = traySearch(playTrayMove(state, move), player, depth - 1, alpha, beta, budget);
+    if (score === null) return null;
     best = maximizing ? Math.max(best, score) : Math.min(best, score);
     if (maximizing) alpha = Math.max(alpha, best);
     else beta = Math.min(beta, best);
@@ -185,24 +189,50 @@ function traySearch(
   return best;
 }
 
-/** Stable move ordering makes a chef turn reproducible. Clever searches three moves ahead. */
+/** Expert tries deeper complete searches under a fixed node budget, retaining the last completed result. */
 export function chooseTrayMove(
   state: TrayState,
   difficulty: TrayDifficulty = "clever",
 ): number | null {
   if (state.over) return null;
   const moves = legalTrayMoves(state.board, state.turn);
-  const depth = difficulty === "clever" ? 3 : 1;
-  let chosen: number | null = null;
-  let best = -Infinity;
-  for (const move of moves) {
-    const score = traySearch(playTrayMove(state, move), state.turn, depth - 1, -Infinity, Infinity);
-    if (score > best) {
-      best = score;
-      chosen = move;
+  if (!moves.length) return null;
+  let chosen = moves[0]!;
+  const searchAtDepth = (depth: number, budget?: { remaining: number }): number | null => {
+    let candidate = chosen;
+    let best = -Infinity;
+    // Prioritise the last best move for pruning, then corners. Stable ties preserve determinism.
+    const ordered = difficulty === "expert" ? [...moves].sort((a, b) =>
+      Number(b === chosen) - Number(a === chosen) ||
+      Number(CORNERS.some(corner => corner === b)) - Number(CORNERS.some(corner => corner === a))) : moves;
+    for (const move of ordered) {
+      const score = traySearch(playTrayMove(state, move), state.turn, depth - 1,
+        difficulty === "expert" ? best : -Infinity, Infinity, budget);
+      if (score === null) return null;
+      if (score > best) { best = score; candidate = move; }
     }
+    return candidate;
+  };
+  if (difficulty !== "expert") return searchAtDepth(difficulty === "clever" ? 3 : 1);
+  const budget = { remaining: TRAY_EXPERT_NODE_LIMIT };
+  const maximum = Math.min(countTrayPieces(state.board).empty, 5);
+  for (let depth = 1; depth <= maximum; depth++) {
+    const next = searchAtDepth(depth, budget);
+    if (next === null) break;
+    chosen = next;
   }
   return chosen;
+}
+
+export type TrayAdvice = { index: number; flips: number; reason: "corner" | "mobility" | "capture" };
+export function suggestTrayMove(state: TrayState): TrayAdvice | null {
+  const index = chooseTrayMove(state, "expert");
+  if (index === null) return null;
+  const next = playTrayMove(state, index);
+  const flips = next.flipped.length;
+  const opponent = otherTrayPlayer(state.turn);
+  return { index, flips, reason: CORNERS.some(corner => corner === index) ? "corner" :
+    legalTrayMoves(next.board, opponent).length < legalTrayMoves(state.board, opponent).length ? "mobility" : "capture" };
 }
 
 /** Resolve one human move and any consecutive chef turns as one undoable round. */

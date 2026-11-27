@@ -38,12 +38,16 @@ const VARIANTS: Readonly<Record<string, ShareVariant>> = {
   "bento-sudoku:6x6": { label: "6 × 6 tray", size: 6 },
   "tray-tactics:solo-casual": { label: "Solo · Casual chef" },
   "tray-tactics:solo-clever": { label: "Solo · Clever chef" },
+  "tray-tactics:solo-expert": { label: "Solo · Expert chef" },
   "tray-tactics:local-casual": { label: "Two players" },
   "tray-tactics:local-clever": { label: "Two players" },
+  "tray-tactics:local-expert": { label: "Two players" },
   "tray-lines:solo-casual": { label: "Solo · Casual chef" },
   "tray-lines:solo-clever": { label: "Solo · Clever chef" },
+  "tray-lines:solo-expert": { label: "Solo · Expert chef" },
   "tray-lines:local-casual": { label: "Two players" },
   "tray-lines:local-clever": { label: "Two players" },
+  "tray-lines:local-expert": { label: "Two players" },
   "snack-trail:slow": { label: "Slow pace" },
   "snack-trail:standard": { label: "Standard pace" },
   "snack-trail:step": { label: "Untimed step play" },
@@ -78,7 +82,7 @@ function resultHeadline(completion: ArcadeCompletion): string {
     case "tray-tactics":
     case "tray-lines":
       // Local play records a completed shared round, not a victory over the chef.
-      if (completion.variant === "local-casual" || completion.variant === "local-clever")
+      if (completion.variant === "local-casual" || completion.variant === "local-clever" || completion.variant === "local-expert")
         return completion.result === "draw" ? "Even portions" : "Round complete";
       return completion.result === "win"
         ? "Round won"
