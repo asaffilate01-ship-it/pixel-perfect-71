@@ -257,8 +257,8 @@ describe("Responsive arcade quick picks", () => {
 
 describe("Reviewed arcade help", () => {
   test("all games have help and every question has a unique ID", () => {
-    expect(ARCADE_HELP).toHaveLength(26);
-    expect(new Set(ARCADE_HELP.map(entry => entry.id)).size).toBe(26);
+    expect(ARCADE_HELP).toHaveLength(34);
+    expect(new Set(ARCADE_HELP.map(entry => entry.id)).size).toBe(34);
     for (const game of ARCADE_GAMES) expect(ARCADE_HELP.some(entry => entry.game === game.id)).toBe(true);
   });
   test("search is case-insensitive, matches every term, and promotes the active game", () => {
@@ -267,4 +267,10 @@ describe("Reviewed arcade help", () => {
     expect(findArcadeHelp("unknownzzz")).toEqual([]);
     expect(findArcadeHelp("save board").length).toBeGreaterThan(0);
   });
+});
+
+test("new card-game guidance is searchable and prioritises the active game", () => {
+  expect(findArcadeHelp("hidden cards", "kitchen-chaos")[0]?.id).toBe("chaos-difficulty");
+  expect(findArcadeHelp("marathon", "snap")[0]?.id).toBe("snap-length");
+  expect(findArcadeHelp("focus view").some(entry => entry.id === "focus")).toBe(true);
 });
