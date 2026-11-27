@@ -8,3 +8,6 @@ The probe proves only public content at the time of testing, not the exact hosti
 
 ## Expanded readback
 The public probe now covers 22 fixed routes, including the privacy notice, three location pages, five individual menus, the blog listing and all six existing article URLs. It rejects expired campaign text, stale launch labels, old offer links and expired copy in metadata, and checks the current fulfilment guide, favourites and updated article markers. Requests run in bounded groups of four. It does not modify the historical campaign terms or transaction data. A green fixture run is not a successful live run.
+
+## Responsive navigation readback — 27 November
+The homepage probe now also requires exactly one server-rendered Main navigation with the direct /account (My account) and /play (Play games) links. Stale Play & Rewards copy in that navigation, wrong destinations, duplicate main navigation and links present only in inert scripts/comments fail the homepage check. This detects the merged navigation content; it does not prove viewport visibility, keyboard behaviour, browser hydration, or the exact published Git revision. Existing public routes and payment safety boundaries are unchanged.
