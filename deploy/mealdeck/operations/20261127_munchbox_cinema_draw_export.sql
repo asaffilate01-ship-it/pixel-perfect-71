@@ -23,13 +23,21 @@ cfg as (
     :'stripe_account'::text stripe_account, :'eligible_skus'::jsonb eligible_skus
 ),
 requested as (
-  select distinct value sku from cfg cross join lateral jsonb_array_elements_text(cfg.eligible_skus)
+  select distinct entry #>> '{}' sku
+  from cfg cross join lateral jsonb_array_elements(
+    case when jsonb_typeof(cfg.eligible_skus)='array' then cfg.eligible_skus else '[]'::jsonb end
+  ) item(entry)
+  where jsonb_typeof(entry)='string'
+    and char_length(entry #>> '{}') between 1 and 160
+    and btrim(entry #>> '{}')=entry #>> '{}'
+    and btrim(entry #>> '{}')<>''
 ),
 scope as (
   select i.business_id tenant_id,l.id location_id
   from cfg join mealdeck_private.installation i on i.installation_id=cfg.installation_id
     and i.singleton and i.profile='mealdeck-independent-v1'
-  join public.tenant_locations l on l.tenant_id=i.business_id and l.id=cfg.location_id
+  join public.tenants t on t.id=i.business_id and t.currency='GBP'
+  join public.tenant_locations l on l.tenant_id=t.id and l.id=cfg.location_id
     and l.slug='shared-kitchen'
 ),
 eligible as (
@@ -39,10 +47,12 @@ eligible as (
 ready as (
   select exists(select 1 from scope)
     and (select count(*) from requested) between 1 and 100
+    and (select case when jsonb_typeof(eligible_skus)='array' then jsonb_array_length(eligible_skus) else 0 end from cfg)=(select count(*) from requested)
     and (select count(*) from eligible)=(select count(*) from requested)
     and (select count(distinct sku) from eligible)=(select count(*) from requested)
     and (select stripe_account ~ '^acct_[A-Za-z0-9]+$' from cfg)
-    and current_timestamp >= timestamptz '2026-12-07 00:00:00+00' as ok
+    and current_timestamp >= timestamptz '2026-12-07 00:00:00+00'
+    and current_timestamp < timestamptz '2026-12-16 19:20:00+00' as ok
 ),
 qualifying as (
   select distinct o.customer_id, o.id order_id
@@ -63,8 +73,9 @@ qualifying as (
     and o.payment_status='paid' and o.status::text not in ('cancelled','refunded')
     and o.total_pence>0 and p.captured_pence=o.total_pence and p.refunded_pence=0
     and p.void_reason is null and p.payment_intent_id=o.payment_reference
-    and p.payment_intent_id is not null
-    and exists(select 1 from mealdeck_private.stripe_events e where e.order_id=o.id)
+    and p.payment_intent_id is not null and p.session_id is not null
+    and exists(select 1 from mealdeck_private.stripe_events e where e.order_id=o.id
+      and e.event_type in ('checkout.session.completed','checkout.session.async_payment_succeeded'))
     and not exists(select 1 from mealdeck_private.whatsapp_handoffs w where w.quote_id=q.id or w.order_id=o.id)
     and u.email_confirmed_at is not null and u.email_confirmed_at<=o.paid_at
     and c.created_at<=o.paid_at and u.deleted_at is null and not coalesce(u.is_anonymous,false)
