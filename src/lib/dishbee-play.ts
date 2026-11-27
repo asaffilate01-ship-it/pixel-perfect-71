@@ -186,18 +186,18 @@ export const INGREDIENTS = [
 
 /** Entertainment-only ingredient puzzles. These are not menu or allergen specifications. */
 export const RECIPES = [
-  { label: "Skorch Burger", art: "burger", ingredients: ["bun", "patty", "lettuce"], clue: "A bread roll, a burger filling and crisp green leaves." },
-  { label: "Taconelle French Taco", art: "french-taco", ingredients: ["tortilla", "chicken", "salsa"], clue: "A wrap, poultry and a tomato-based salsa." },
-  { label: "Load'd Fries", art: "fries", ingredients: ["fries", "cheese", "sauce"], clue: "Crispy potato sticks, a dairy topping and a sauce." },
-  { label: "Garden Burger (game)", art: "burger", ingredients: ["bun", "lettuce", "cheese"], clue: "A bread roll, green leaves and a cheese slice." },
-  { label: "Chicken Melt (game)", art: "burger", ingredients: ["bun", "chicken", "cheese"], clue: "A bread roll, poultry and a melty dairy topping." },
-  { label: "Classic Cheese Stack (game)", art: "burger", ingredients: ["bun", "patty", "cheese"], clue: "A bread roll, burger filling and a cheese slice." },
-  { label: "Green Wrap (game)", art: "french-taco", ingredients: ["tortilla", "lettuce", "salsa"], clue: "A wrap, leafy greens and tomato salsa." },
-  { label: "Cheesy Chicken Wrap (game)", art: "french-taco", ingredients: ["tortilla", "chicken", "cheese"], clue: "A wrap, poultry and cheese." },
-  { label: "Burger Bowl (game)", art: "burger", ingredients: ["patty", "lettuce", "sauce"], clue: "A burger filling, leafy greens and a sauce, without bread." },
-  { label: "Chicken Fries Bowl (game)", art: "fries", ingredients: ["fries", "chicken", "sauce"], clue: "Potato sticks, poultry and a sauce." },
-  { label: "Salsa Fries (game)", art: "fries", ingredients: ["fries", "cheese", "salsa"], clue: "Potato sticks, a cheese topping and tomato salsa." },
-  { label: "Crispy Chicken Wrap (game)", art: "french-taco", ingredients: ["tortilla", "chicken", "lettuce"], clue: "A wrap, poultry and crisp green leaves." },
+  { label: "Skorch Burger", emoji: "🍔", art: "burger", ingredients: ["bun", "patty", "lettuce"], clue: "A bread roll, a burger filling and crisp green leaves." },
+  { label: "Taconelle French Taco", emoji: "▤", art: "french-taco", ingredients: ["tortilla", "chicken", "salsa"], clue: "A wrap, poultry and a tomato-based salsa." },
+  { label: "Load'd Fries", emoji: "🍟", art: "fries", ingredients: ["fries", "cheese", "sauce"], clue: "Crispy potato sticks, a dairy topping and a sauce." },
+  { label: "Garden Burger (game)", emoji: "🍔", art: "burger", ingredients: ["bun", "lettuce", "cheese"], clue: "A bread roll, green leaves and a cheese slice." },
+  { label: "Chicken Melt (game)", emoji: "🍔", art: "burger", ingredients: ["bun", "chicken", "cheese"], clue: "A bread roll, poultry and a melty dairy topping." },
+  { label: "Classic Cheese Stack (game)", emoji: "🍔", art: "burger", ingredients: ["bun", "patty", "cheese"], clue: "A bread roll, burger filling and a cheese slice." },
+  { label: "Green Wrap (game)", emoji: "▤", art: "french-taco", ingredients: ["tortilla", "lettuce", "salsa"], clue: "A wrap, leafy greens and tomato salsa." },
+  { label: "Cheesy Chicken Wrap (game)", emoji: "▤", art: "french-taco", ingredients: ["tortilla", "chicken", "cheese"], clue: "A wrap, poultry and cheese." },
+  { label: "Burger Bowl (game)", emoji: "🍔", art: "burger", ingredients: ["patty", "lettuce", "sauce"], clue: "A burger filling, leafy greens and a sauce, without bread." },
+  { label: "Chicken Fries Bowl (game)", emoji: "🍟", art: "fries", ingredients: ["fries", "chicken", "sauce"], clue: "Potato sticks, poultry and a sauce." },
+  { label: "Salsa Fries (game)", emoji: "🍟", art: "fries", ingredients: ["fries", "cheese", "salsa"], clue: "Potato sticks, a cheese topping and tomato salsa." },
+  { label: "Crispy Chicken Wrap (game)", emoji: "▤", art: "french-taco", ingredients: ["tortilla", "chicken", "lettuce"], clue: "A wrap, poultry and crisp green leaves." },
 ] as const;
 export const RECIPE_DECK_SIZES = [3, 6, 12] as const;
 export type RecipeDeckSize = (typeof RECIPE_DECK_SIZES)[number];
