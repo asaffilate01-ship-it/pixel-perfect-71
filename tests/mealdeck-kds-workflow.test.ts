@@ -225,3 +225,15 @@ describe("durable Done history", () => {
     expect(() => parseKdsWorkflowBoard(value, scope)).toThrow();
   });
 });
+
+
+test("marketplace handover cannot silently enter direct-order Done history", () => {
+  for (const marketplace of [{ platform: "uber_eats", platform_state: "handed_over" }, { platform: "just_eat" }, {}, false]) {
+    const value = fixture();
+    Object.assign(value.completed_orders[0]!, { marketplace });
+    expect(() => parseKdsWorkflowBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+  }
+  const direct = fixture();
+  Object.assign(direct.completed_orders[0]!, { marketplace: null });
+  expect(parseKdsWorkflowBoard(direct, scope).completed_orders).toHaveLength(1);
+});

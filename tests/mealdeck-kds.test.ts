@@ -555,3 +555,15 @@ test("own-driver KDS requires a validated address and driver state", () => {
   Object.assign(handed.orders[0]!, { driverStatus: "with_driver", driverHandoverAt: null });
   expect(() => parseKdsBoard(handed, scope)).toThrow("mealdeck_kds_invalid_response");
 });
+
+
+test("direct kitchen parser refuses a marketplace marker until dedicated actions exist", () => {
+  for (const marketplace of [{ platform: "uber_eats" }, { platform: "just_eat" }, {}, false, "unknown"]) {
+    const value = board();
+    Object.assign(value.orders[0]!, { marketplace });
+    expect(() => parseKdsBoard(value, scope)).toThrow("mealdeck_kds_invalid_response");
+  }
+  const direct = board();
+  Object.assign(direct.orders[0]!, { marketplace: null });
+  expect(parseKdsBoard(direct, scope).orders).toHaveLength(1);
+});

@@ -199,6 +199,9 @@ jobs:
       - name: Isolated marketplace machine wire contract
         run: bun test tests/mealdeck-marketplace-protocol.test.ts tests/mealdeck-operations-safety.test.ts tests/mealdeck-marketplace-admission.test.ts
 
+      - name: Marketplace presentation and direct KDS isolation
+        run: bun test tests/mealdeck-marketplace-projection.test.ts tests/mealdeck-kds.test.ts tests/mealdeck-kds-workflow.test.ts
+
       - name: Operational evidence freshness and marketplace health
         run: node --experimental-strip-types --test tests/mealdeck-ops-evidence.test.mjs
       - name: Sample-deck arithmetic and accessibility implementation lint

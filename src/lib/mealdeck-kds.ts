@@ -326,6 +326,9 @@ function parsePass(value: unknown): KdsPass {
 
 function parseOrder(value: unknown): KdsOrder {
   const v = record(value);
+  // Until the dedicated marketplace ledger and actions are commissioned, never
+  // silently strip a marketplace marker and treat its order as a direct order.
+  if (v["marketplace"] != null) invalid();
   const fulfilment = choice(v["fulfilment"], [
     "delivery",
     "pickup",

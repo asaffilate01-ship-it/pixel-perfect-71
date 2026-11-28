@@ -33,6 +33,7 @@ const completedItem = z.object({
 const completedOrder = z
   .object({
     order_id: z.string().uuid(),
+    marketplace: z.null().optional(), // Marketplace handover is not direct-order Done history.
     display_code: z.string().min(1).max(40),
     order_number: orderNumberSchema.nullable().optional(),
     order_status: z.literal("fulfilled"),
