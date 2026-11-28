@@ -576,7 +576,7 @@ export function LaunchMenuBrowser({
             />
           </span>
         </div>
-        <GuidedOrderStart flow={flow} onChoice={() => { focusNext.current = true; }} />
+        <GuidedOrderStart flow={flow} showDishes={showDishes} onChoice={() => { focusNext.current = true; }} />
         <div className="lm-order-reveal" hidden={!flow.ready}>
         <div className="lm-group-entry">
           <p>
@@ -603,7 +603,7 @@ export function LaunchMenuBrowser({
                 to="/menus/$brandId"
                 params={{ brandId: id }}
                 search={{}}
-                aria-current={brand?.id === id ? "page" : undefined}
+                aria-current={showDishes && brand?.id === id ? "page" : undefined}
                 onClick={(event) => {
                   if (
                     event.button !== 0 ||
@@ -616,14 +616,14 @@ export function LaunchMenuBrowser({
                   event.preventDefault();
                   browse(id);
                 }}
-                className={brand?.id === id ? "is-active" : ""}
+                className={showDishes && brand?.id === id ? "is-active" : ""}
               >
                 <img src={logoFor(id)} alt="" width="165" height="110" />
                 <span>{entry.name}</span>
                 <small>
                   {!isLaunchBrandPriceApproved(id)
                     ? "Prices coming soon"
-                    : brand?.id === id
+                    : showDishes && brand?.id === id
                       ? "On the menu"
                       : "View menu"}
                 </small>

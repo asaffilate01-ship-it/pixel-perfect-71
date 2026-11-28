@@ -908,7 +908,7 @@ function LaunchCheckoutView({
   const contactReady = canViewReceipt && Boolean(pickupContact);
   const postcodeReady = deliveryArea?.eligible === true && deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode);
   const detailsReady = guidedCheckoutDetailsReady(fulfilment, contactReady, deliveryReady, parseKerbsideVehicle(vehicle) !== null);
-  const packingKey = JSON.stringify([fulfilment, checkoutMode, pickupContact?.name, pickupContact?.phone, picks, fulfilment === "delivery" ? deliveryAddress : null, fulfilment === "curbside" ? vehicle : null, cutleryRequested, separateBags, bagCount, bagQuantities, specialRequests, paymentChoice]);
+  const packingKey = JSON.stringify([fulfilment, checkoutMode, pickupContact?.name, pickupContact?.phone, picks, fulfilment === "delivery" ? deliveryAddress : null, fulfilment === "curbside" ? vehicle : null, cutleryRequested, separateBags, bagCount, bagQuantities, specialRequests]);
   const packingReviewed = packingReviewKey === packingKey;
   const showBasketReview = !guidedDirect || !basketLoaded || picks.length === 0 || (detailsReady && packingReviewed);
   const canCheckout =
@@ -1448,6 +1448,7 @@ function LaunchCheckoutView({
       });
       if (!result.eligible)
         setDeliveryAreaIssue(deliveryAreaRejectionMessage(result.distanceMetres ?? null));
+      else if (!whatsAppDraft) rememberGuidedOrderMethod("delivery", postcode);
     } catch (error) {
       if (generation === deliveryLookupGeneration.current)
         setDeliveryAreaIssue(

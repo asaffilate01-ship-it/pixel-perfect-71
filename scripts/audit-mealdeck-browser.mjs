@@ -109,6 +109,25 @@ async function auditPage(page, route, profile, engine) {
     await waitFor(() => page.locator(".md-skip-link").count().then(n => n === 1), "One skip link is required");
     assert.equal(await page.locator(".md-skip-link").getAttribute("href"), "#mealdeck-main");
     if (route.name === "home") await navigation(page, profile);
+    if (route.name === "menus") {
+      const gate = page.getByRole("region", { name: "Choose how to receive your order" });
+      const brands = page.getByRole("navigation", { name: "Choose a brand menu" });
+      const search = page.getByRole("searchbox", { name: "Search all MealDeck menus" });
+      await gate.getByRole("button", { name: /^Pickup/ }).waitFor({ state: "visible" });
+      assert.equal(await brands.isVisible(), false, "Brand options must not be visible before fulfilment");
+      assert.equal(await search.isVisible(), false, "Dishes must not be visible before fulfilment");
+      await gate.getByRole("button", { name: /^Pickup/ }).click();
+      await brands.waitFor({ state: "visible" });
+      assert.equal(await search.isVisible(), false, "Dishes must not be visible before brand selection");
+      await brands.getByRole("link", { name: /Skorch/i }).click();
+      await page.locator(".lm-order-reveal").last().waitFor({ state: "visible" });
+      assert.equal(await page.getByRole("navigation", { name: "Ordering navigation" }).getByRole("button", { name: /View basket/ }).count(), 0);
+      await gate.getByRole("button", { name: "Change method", exact: true }).click();
+      await brands.waitFor({ state: "hidden" });
+      await gate.getByRole("button", { name: /^Kerbside/ }).click();
+      await brands.waitFor({ state: "visible" });
+      assert.ok(await gate.getByText("Kerbside", { exact: true }).isVisible());
+    }
     if (route.name === "play") {
       const summary = page.locator(".md-playbook > summary");
       await summary.waitFor({state:"visible"});

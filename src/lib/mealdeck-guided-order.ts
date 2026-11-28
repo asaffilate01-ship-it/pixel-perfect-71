@@ -39,7 +39,7 @@ export function rememberGuidedOrderMethod(method: GuidedOrderMethod, verifiedPos
 }
 export function readGuidedDeliveryPostcode(): string {
   if (typeof window === "undefined" || readGuidedOrderMethod() !== "delivery") return "";
-  return area && Date.now() >= area.at && Date.now() - area.at < 90_000 ? area.postcode : "";
+  return area && Date.now() >= area.at && Date.now() - area.at < MAX_AGE ? area.postcode : "";
 }
 export function clearGuidedOrderMethod() {
   if (typeof window === "undefined") return;

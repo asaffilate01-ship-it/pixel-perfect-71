@@ -2004,7 +2004,7 @@ h2.lm-basket-title-brand {
 .lm-order-reveal[hidden] { display: none !important; }
 .lm-order-start { background: #fff; border: 1px solid var(--lm-line); border-radius: 20px; padding: clamp(18px, 3vw, 32px); margin: 0 0 22px; }
 .lm-order-start-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
-.lm-order-start-heading h2 { font-size: clamp(22px, 3vw, 34px); font-weight: 850; line-height: 1.15; margin: 4px 0 8px; }
+.lm-order-start-heading :is(h1, h2) { font-size: clamp(22px, 3vw, 34px); font-weight: 850; line-height: 1.15; margin: 4px 0 8px; }
 .lm-order-start-heading p, .lm-order-confirmed { display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 1.5; }
 .lm-order-methods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .lm-order-methods button { min-height: 92px; display: flex; align-items: center; text-align: left; gap: 12px; padding: 16px; border: 1px solid var(--lm-line); border-radius: 14px; background: var(--lm-paper); color: var(--lm-ink); }

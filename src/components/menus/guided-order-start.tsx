@@ -78,17 +78,17 @@ export function useGuidedMenuStart(deliveryLive: boolean) {
   return { method, postcode, verifiedPostcode, issue, busy, ready, choose, editPostcode, checkPostcode, deliveryLive };
 }
 
-export function GuidedOrderStart({ flow, onChoice }: { flow: ReturnType<typeof useGuidedMenuStart>; onChoice: () => void }) {
+export function GuidedOrderStart({ flow, showDishes, onChoice }: { flow: ReturnType<typeof useGuidedMenuStart>; showDishes: boolean; onChoice: () => void }) {
   const selected = choices.find(choice => choice.method === flow.method);
   return (
     <section className="lm-order-start" aria-label="Choose how to receive your order">
       <div className="lm-order-start-heading">
         <div>
           <span className="lm-eyebrow">Step 1 · How to receive your food</span>
-          <h2>{flow.ready ? selected?.title : "How would you like your order?"}</h2>
+          {showDishes ? <h2>{selected?.title}</h2> : <h1>{flow.ready ? "Choose your food brand" : "How would you like your order?"}</h1>}
           <p><MapPin size={16} aria-hidden="true" /> Luton · 314–318 Selbourne Road, LU4 8NU</p>
         </div>
-        {flow.ready && <button type="button" className="lm-order-change" onClick={() => flow.choose(null)}>Change method</button>}
+        {flow.ready && <button type="button" className="lm-order-change" onClick={() => { flow.choose(null); requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".lm-order-methods button:not(:disabled)")?.focus()); }}>Change method</button>}
       </div>
       {!flow.ready && <div className="lm-order-methods" role="group" aria-label="Order fulfilment method">
         {choices.map(({ method, title, description, Icon }) => (
