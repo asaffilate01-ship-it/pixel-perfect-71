@@ -353,8 +353,8 @@ export function LaunchBasket({
               </p>
             )}
             <p>
-              Choose collection, kerbside or eligible free local delivery at checkout. Your final
-              total is confirmed before payment.
+              Your chosen fulfilment method carries through to checkout. Your final total and
+              availability are confirmed before payment.
             </p>
           </div>
         </>

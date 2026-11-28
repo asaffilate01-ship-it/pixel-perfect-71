@@ -127,7 +127,7 @@ import {
   type WhatsAppPaymentAttempt,
 } from "@/lib/mealdeck-whatsapp-checkout-browser";
 
-const FULFILMENT_KEY = "mealdeck-checkout-fulfilment-v1";
+import { clearGuidedOrderMethod, guidedCheckoutDetailsReady, readGuidedDeliveryPostcode, readGuidedOrderMethod, rememberGuidedOrderMethod } from "@/lib/mealdeck-guided-order";
 const ATTEMPT_KEY = "mealdeck-checkout-attempt-v2";
 type Fulfilment = "pickup" | "curbside" | "delivery";
 type DeliveryAddressDraft = {
@@ -844,6 +844,7 @@ function LaunchCheckoutView({
   const [sharedRefresh, setSharedRefresh] = useState(0);
   const [basketIssue, setBasketIssue] = useState<string | null>(null);
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
+  const [packingReviewKey, setPackingReviewKey] = useState<string | null>(null);
   const [receiptRefreshed, setReceiptRefreshed] = useState(false);
   const attempt = useRef<{ quoteId: string; attemptId: string } | null>(null);
   const roomAttempt = useRef<{ key: string; attemptId: string } | null>(null);
@@ -903,7 +904,15 @@ function LaunchCheckoutView({
       parseOwnDriverAddress(deliveryAddress) !== null &&
       deliveryArea?.eligible === true &&
       deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode));
+  const guidedDirect = !orderId && !whatsAppDraft && !groupExpected && !groupCheckout;
+  const contactReady = canViewReceipt && Boolean(pickupContact);
+  const postcodeReady = deliveryArea?.eligible === true && deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode);
+  const detailsReady = guidedCheckoutDetailsReady(fulfilment, contactReady, deliveryReady, parseKerbsideVehicle(vehicle) !== null);
+  const packingKey = JSON.stringify([fulfilment, checkoutMode, pickupContact?.name, pickupContact?.phone, picks, fulfilment === "delivery" ? deliveryAddress : null, fulfilment === "curbside" ? vehicle : null, cutleryRequested, separateBags, bagCount, bagQuantities, specialRequests, paymentChoice]);
+  const packingReviewed = packingReviewKey === packingKey;
+  const showBasketReview = !guidedDirect || !basketLoaded || picks.length === 0 || (detailsReady && packingReviewed);
   const canCheckout =
+    (!guidedDirect || (detailsReady && packingReviewed)) &&
     !whatsAppCheckout?.paused &&
     deliveryReady &&
     !basketIssue &&
@@ -1046,9 +1055,10 @@ function LaunchCheckoutView({
   useEffect(() => {
     try {
       if (!whatsAppDraft) {
-        const saved = sessionStorage.getItem(FULFILMENT_KEY);
-        if (saved === "pickup" || saved === "curbside" || saved === "delivery")
-          setFulfilment(saved);
+        const saved = readGuidedOrderMethod();
+        if (saved) setFulfilment(saved);
+        const postcode = readGuidedDeliveryPostcode();
+        if (saved === "delivery" && postcode) setDeliveryAddress(current => current.postcode ? current : { ...current, postcode });
       }
       if (
         !receiptMode &&
@@ -1283,7 +1293,7 @@ function LaunchCheckoutView({
         if (sessionStorage.getItem(CHECKOUT_BASKET_HANDOFF_KEY) === saved.basket)
           sessionStorage.removeItem(CHECKOUT_BASKET_HANDOFF_KEY);
         sessionStorage.removeItem(ATTEMPT_KEY);
-        sessionStorage.removeItem(FULFILMENT_KEY);
+        clearGuidedOrderMethod();
         if (clearTransfer) clearLaunchCheckoutTransfer();
       }
     } catch {
@@ -1395,15 +1405,20 @@ function LaunchCheckoutView({
   }
   function chooseFulfilment(next: Fulfilment) {
     if (whatsAppDraft) return;
+    if (next === fulfilment) return;
+    deliveryLookupGeneration.current++;
+    setDeliveryArea(null);
+    setDeliveryAreaIssue(null);
+    setCheckingDeliveryArea(false);
     setFulfilment(next);
     setQuote(null);
     setReviewConfirmed(false);
+    setPackingReviewKey(null);
     setIssue(null);
-    try {
-      sessionStorage.setItem(FULFILMENT_KEY, next);
-    } catch {
-      /* Current-screen selection still works. */
-    }
+    attempt.current = null;
+    roomAttempt.current = null;
+    clearGuidedOrderMethod();
+    rememberGuidedOrderMethod(next);
   }
   async function checkDeliveryArea() {
     const generation = ++deliveryLookupGeneration.current;
@@ -2208,7 +2223,7 @@ function LaunchCheckoutView({
                       or choose collection or kerbside. Final discounted totals are checked before payment.
                     </p>
                   )}
-                  <div className="md-checkout-timing" aria-label="When would you like your order?">
+                  {fulfilment && <div className="md-checkout-timing" aria-label="When would you like your order?">
                     <h3>When would you like your order?</h3>
                     <div className="md-checkout-methods" role="group" aria-label="Order timing">
                       <button type="button" disabled={busy} aria-pressed="true">
@@ -2227,7 +2242,7 @@ function LaunchCheckoutView({
                       they are verified by the payment system and kitchen. You cannot reserve a
                       scheduled time or pay for one yet.
                     </p>
-                  </div>
+                  </div>}
                 </section>
               )}
               {fulfilment && (
@@ -2467,7 +2482,7 @@ function LaunchCheckoutView({
                   </p>
                 </section>
               )}
-              {fulfilment === "delivery" && !whatsAppDraft && (
+              {fulfilment === "delivery" && !whatsAppDraft && (!guidedDirect || contactReady) && (
                 <section className="md-checkout-card" aria-label="Delivery address">
                   <h2>
                     <span className="md-checkout-step">3</span>Delivery address
@@ -2518,6 +2533,7 @@ function LaunchCheckoutView({
                         </button>
                       </p>
                     )}
+                    {(!guidedDirect || postcodeReady) && <>
                     <label>
                       Door / house number
                       <input
@@ -2556,6 +2572,7 @@ function LaunchCheckoutView({
                         }
                       />
                     </label>
+                    </>}
                   </div>
                   <p className="md-checkout-muted">
                     Delivery food minimum: {minimumFoodText} after discounts. Delivery is free
@@ -2563,7 +2580,7 @@ function LaunchCheckoutView({
                   </p>
                 </section>
               )}
-              {fulfilment === "curbside" && !whatsAppDraft && (
+              {fulfilment === "curbside" && !whatsAppDraft && (!guidedDirect || contactReady) && (
                 <section className="md-checkout-card">
                   <h2>
                     <span className="md-checkout-step">3</span>Your car details
@@ -2656,7 +2673,7 @@ function LaunchCheckoutView({
                   </p>
                 </section>
               )}
-              {canViewReceipt && fulfilment && picks.length > 0 && !whatsAppDraft && (
+              {canViewReceipt && fulfilment && picks.length > 0 && !whatsAppDraft && (!guidedDirect || detailsReady) && (
                 <section className="md-checkout-card md-checkout-packing">
                   <h2>
                     <span className="md-checkout-step">
@@ -2825,10 +2842,15 @@ function LaunchCheckoutView({
                     Check every item, quantity, flavour, extra and bag. We'll show the current
                     kitchen total before payment.
                   </p>
+                  {guidedDirect && <button type="button" className="md-checkout-primary" disabled={busy} onClick={() => {
+                    setPackingReviewKey(packingKey);
+                    setReviewConfirmed(false);
+                    requestAnimationFrame(() => document.getElementById("guided-checkout-basket")?.focus());
+                  }}>{packingReviewed ? "Review basket again" : "Continue to basket"}</button>}
                 </section>
               )}
             </div>
-            <aside className="md-checkout-card md-checkout-summary">
+            {showBasketReview && <aside className="md-checkout-card md-checkout-summary" id="guided-checkout-basket" tabIndex={-1}>
               <h2>Your basket</h2>
               {!basketLoaded ? (
                 <p>Loading your basket…</p>
@@ -3133,7 +3155,7 @@ function LaunchCheckoutView({
                   </p>
                 </>
               )}
-            </aside>
+            </aside>}
           </div>
         )}
         <p className="md-checkout-legal">
