@@ -173,8 +173,11 @@ export function LaunchMenuBrowser({
       if (saved === "pickup" || saved === "curbside" || saved === "delivery") setOrderMethod(saved);
     } catch { /* Session storage is optional. */ }
   }, []);
+  const [timingConfirmed, setTimingConfirmed] = useState(false);
   const methodReady = orderMethod !== null && (orderMethod !== "delivery" || (deliveryLive && verifiedPostcode !== null && verifiedPostcode === normaliseUkPostcode(deliveryPostcode)));
+  const menuReady = methodReady && timingConfirmed;
   async function validateDeliveryPostcode() {
+    setTimingConfirmed(false);
     const generation = ++postcodeGeneration.current;
     const postcode = normaliseUkPostcode(deliveryPostcode);
     setVerifiedPostcode(null);
@@ -192,6 +195,7 @@ export function LaunchMenuBrowser({
   function chooseOrderMethod(method: "pickup" | "curbside" | "delivery") {
     postcodeGeneration.current += 1;
     setCheckingPostcode(false);
+    setTimingConfirmed(false);
     setOrderMethod(method);
     try { sessionStorage.setItem("mealdeck-checkout-fulfilment-v1", method); } catch { /* Keep current selection. */ }
   }
@@ -342,7 +346,7 @@ export function LaunchMenuBrowser({
   }
 
   function openItem(entry: LaunchMenuEntry, existing?: LaunchMenuPick) {
-    if (!methodReady || !publicMenu.ready || entry.item.available === false) return;
+    if (!menuReady || !publicMenu.ready || entry.item.available === false) return;
     // Simple dishes with no selectable modifiers can be added in one tap.
     // Products with choices retain their complete customisation and validation.
     if (!existing && canQuickAddLaunchItem(entry.item)) {
@@ -453,7 +457,7 @@ export function LaunchMenuBrowser({
   }
 
   function proceedToCheckout(event: MouseEvent<HTMLAnchorElement>) {
-    if (!methodReady) { event.preventDefault(); return; }
+    if (!menuReady) { event.preventDefault(); return; }
     try { sessionStorage.setItem("mealdeck-checkout-fulfilment-v1", orderMethod!); } catch { /* Checkout asks again. */ }
     const live = expireTimedLaunchBasket(basketRef.current);
     if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null || !live.picks.length
@@ -608,13 +612,21 @@ export function LaunchMenuBrowser({
           <h2 className="text-xl font-bold">2. Where are we delivering?</h2>
           <label className="mt-3 block text-sm font-medium" htmlFor="order-delivery-postcode">Postcode</label>
           <div className="mt-2 flex flex-wrap gap-2">
-            <input id="order-delivery-postcode" autoComplete="postal-code" maxLength={20} value={deliveryPostcode} onChange={event => { postcodeGeneration.current += 1; setCheckingPostcode(false); setVerifiedPostcode(null); setPostcodeIssue(""); setDeliveryPostcode(event.target.value); }} className="min-w-0 flex-1 rounded-xl border border-border bg-background p-3" placeholder="e.g. LU4 8NU" />
+            <input id="order-delivery-postcode" autoComplete="postal-code" maxLength={20} value={deliveryPostcode} onChange={event => { postcodeGeneration.current += 1; setCheckingPostcode(false); setVerifiedPostcode(null); setTimingConfirmed(false); setPostcodeIssue(""); setDeliveryPostcode(event.target.value); }} className="min-w-0 flex-1 rounded-xl border border-border bg-background p-3" placeholder="e.g. LU4 8NU" />
             <button type="button" className="lm-primary" disabled={checkingPostcode || !deliveryLive} onClick={() => void validateDeliveryPostcode()}>{checkingPostcode ? "Checking…" : "Check postcode"}</button>
           </div>
           {postcodeIssue && <p role="alert" className="mt-2 text-sm">{postcodeIssue}</p>}
           {methodReady && <p role="status" className="mt-2 text-sm">Delivery area confirmed. Final eligibility and minimum order are checked at checkout.</p>}
         </section>}
-        <div hidden={!methodReady} inert={!methodReady}>
+        {methodReady && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose order timing">
+          <h2 className="text-xl font-bold">When would you like your order?</h2>
+          <p className="mt-1 text-sm">Luton kitchen · subject to current availability.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <button type="button" aria-pressed={timingConfirmed} className={`min-h-16 rounded-xl border p-3 text-left ${timingConfirmed ? "border-primary bg-primary/10" : "border-border"}`} onClick={() => setTimingConfirmed(true)}><strong className="block">As soon as possible</strong><small>Continue to the menus</small></button>
+            <button type="button" disabled className="min-h-16 rounded-xl border border-border p-3 text-left opacity-50"><strong className="block">Schedule for later</strong><small>Not available to book yet</small></button>
+          </div>
+        </section>}
+        <div hidden={!menuReady} inert={!menuReady}>
         <div className="lm-group-entry">
           <p>
             <strong>Ordering together?</strong>{" "}
@@ -1042,7 +1054,7 @@ export function LaunchMenuBrowser({
         </div>
       </main>
       <SiteFooter />
-      {methodReady && quantity > 0 && <LaunchBasketDock
+      {menuReady && quantity > 0 && <LaunchBasketDock
         count={quantity}
         dialogOpen={!!draft || picksOpen}
         feedbackMessage={
@@ -1052,7 +1064,7 @@ export function LaunchMenuBrowser({
         }
         onOpen={openBasket}
       />}
-      {methodReady && <LaunchMenuAppNav
+      {menuReady && <LaunchMenuAppNav
         brands={brandOrder.flatMap((id) => {
           const entry = getLaunchMenuBrand(id, catalogue);
           return entry ? [{ id: entry.id, name: entry.name, logo: logoFor(id) }] : [];
@@ -1092,7 +1104,7 @@ export function LaunchMenuBrowser({
       />
 
       <Dialog
-        open={methodReady && (!!draft || picksOpen)}
+        open={menuReady && (!!draft || picksOpen)}
         onOpenChange={(open) => {
           if (!open) {
             setDraft(null);
