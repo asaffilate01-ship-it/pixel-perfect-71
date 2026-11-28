@@ -161,6 +161,9 @@ export function LaunchMenuBrowser({
   const menuPage = getMealDeckMenuPage(brand?.id);
   const pendingBrand = marketingBrands.find((entry) => entry.id === requestedBrandId);
   const [search, setSearch] = useState("");
+  const [editingMethod, setEditingMethod] = useState(false);
+  const [editingTiming, setEditingTiming] = useState(false);
+  const [editingPostcode, setEditingPostcode] = useState(false);
   const [deliveryPostcode, setDeliveryPostcode] = useState("");
   const [verifiedPostcode, setVerifiedPostcode] = useState<string | null>(null);
   const [postcodeIssue, setPostcodeIssue] = useState("");
@@ -170,12 +173,21 @@ export function LaunchMenuBrowser({
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem("mealdeck-checkout-fulfilment-v1");
-      if (saved === "pickup" || saved === "curbside" || saved === "delivery") setOrderMethod(saved);
+      if (saved === "pickup" || saved === "curbside" || saved === "delivery") {
+        setOrderMethod(saved);
+        if (saved !== "delivery" && sessionStorage.getItem("mealdeck-order-asap-v1") === saved) setTimingConfirmed(true);
+      }
     } catch { /* Session storage is optional. */ }
   }, []);
   const [timingConfirmed, setTimingConfirmed] = useState(false);
   const methodReady = orderMethod !== null && (orderMethod !== "delivery" || (deliveryLive && verifiedPostcode !== null && verifiedPostcode === normaliseUkPostcode(deliveryPostcode)));
-  const menuReady = methodReady && timingConfirmed;
+  const menuReady = methodReady && timingConfirmed && !editingMethod && !editingTiming && !editingPostcode;
+  function confirmTiming() {
+    if (!methodReady || !orderMethod) return;
+    setTimingConfirmed(true);
+    setEditingTiming(false);
+    try { sessionStorage.setItem("mealdeck-order-asap-v1", orderMethod); } catch { /* Current selection still works. */ }
+  }
   async function validateDeliveryPostcode() {
     setTimingConfirmed(false);
     const generation = ++postcodeGeneration.current;
@@ -187,7 +199,7 @@ export function LaunchMenuBrowser({
     try {
       const result = await requestMealDeckCheckout<{ eligible?: boolean; postcode?: string; distanceMetres?: number }>("guest", { action: "delivery_area", postcode }, async () => null);
       if (generation !== postcodeGeneration.current) return;
-      if (result.eligible === true && result.postcode === postcode && typeof result.distanceMetres === "number") setVerifiedPostcode(postcode);
+      if (result.eligible === true && result.postcode === postcode && typeof result.distanceMetres === "number") { setVerifiedPostcode(postcode); setEditingPostcode(false); }
       else setPostcodeIssue("Delivery is unavailable for this postcode. Choose pickup or kerbside, or check another postcode.");
     } catch { if (generation === postcodeGeneration.current) setPostcodeIssue("Unable to check your postcode. Please try again."); }
     finally { if (generation === postcodeGeneration.current) setCheckingPostcode(false); }
@@ -195,7 +207,14 @@ export function LaunchMenuBrowser({
   function chooseOrderMethod(method: "pickup" | "curbside" | "delivery") {
     postcodeGeneration.current += 1;
     setCheckingPostcode(false);
-    setTimingConfirmed(false);
+    if (method !== orderMethod) {
+      setTimingConfirmed(false);
+      setVerifiedPostcode(null);
+      setEditingPostcode(false);
+      setPostcodeIssue("");
+      try { sessionStorage.removeItem("mealdeck-order-asap-v1"); } catch { /* Optional storage. */ }
+    }
+    setEditingMethod(false);
     setOrderMethod(method);
     try { sessionStorage.setItem("mealdeck-checkout-fulfilment-v1", method); } catch { /* Keep current selection. */ }
   }
@@ -375,6 +394,7 @@ export function LaunchMenuBrowser({
     crossSelections: LaunchCrossSelection[],
   ) {
     if (
+      !menuReady ||
       !draft ||
       !publicMenu.ready ||
       findLaunchMenuItem(draft.brand.id, draft.item.id, catalogue)?.item.available === false
@@ -400,6 +420,7 @@ export function LaunchMenuBrowser({
   }
 
   function openBasket() {
+    if (!menuReady || !basketRef.current.picks.length) return;
     returnFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setDraft(null);
@@ -408,7 +429,7 @@ export function LaunchMenuBrowser({
   }
 
   function addDessert(entry: LaunchDessertRecommendation) {
-    if (!publicMenu.ready) return;
+    if (!menuReady || !publicMenu.ready) return;
     const current = getLaunchDessertRecommendations(picks, catalogue, brand?.id).find(
       (candidate) => candidate.item.id === entry.item.id,
     );
@@ -599,6 +620,7 @@ export function LaunchMenuBrowser({
         </div>
         <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose how to receive your order">
           <h2 className="text-xl font-bold">1. How would you like your order?</h2>
+          {orderMethod && !editingMethod ? <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium">{orderMethod === "delivery" ? "Delivery" : orderMethod === "pickup" ? "Pickup · Luton kitchen" : "Kerbside · Luton kitchen"}</p><button type="button" className="min-h-11 rounded-lg border px-4 text-sm font-semibold" onClick={() => setEditingMethod(true)}>Edit order type</button></div> : <>
           <p className="mt-1 text-sm">Choose your order type to explore the Luton menus.</p>
           <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-label="Order type">
             {([{id: "delivery", label: "Delivery", detail: "Within 4 km · £15 minimum"}, {id: "pickup", label: "Pickup", detail: "Collect at the counter"}, {id: "curbside", label: "Kerbside", detail: "Collect by your car"}] as const).map(method => (
@@ -607,24 +629,28 @@ export function LaunchMenuBrowser({
               </button>
             ))}
           </div>
+          </>}
         </section>
-        {orderMethod === "delivery" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Check delivery postcode">
+        {!editingMethod && orderMethod === "delivery" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Check delivery postcode">
           <h2 className="text-xl font-bold">2. Where are we delivering?</h2>
+          {methodReady && !editingPostcode ? <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium">{verifiedPostcode} · Delivery area confirmed</p><button type="button" className="min-h-11 rounded-lg border px-4 text-sm font-semibold" onClick={() => setEditingPostcode(true)}>Edit postcode</button></div> : <>
           <label className="mt-3 block text-sm font-medium" htmlFor="order-delivery-postcode">Postcode</label>
           <div className="mt-2 flex flex-wrap gap-2">
             <input id="order-delivery-postcode" autoComplete="postal-code" maxLength={20} value={deliveryPostcode} onChange={event => { postcodeGeneration.current += 1; setCheckingPostcode(false); setVerifiedPostcode(null); setTimingConfirmed(false); setPostcodeIssue(""); setDeliveryPostcode(event.target.value); }} className="min-w-0 flex-1 rounded-xl border border-border bg-background p-3" placeholder="e.g. LU4 8NU" />
             <button type="button" className="lm-primary" disabled={checkingPostcode || !deliveryLive} onClick={() => void validateDeliveryPostcode()}>{checkingPostcode ? "Checking…" : "Check postcode"}</button>
           </div>
           {postcodeIssue && <p role="alert" className="mt-2 text-sm">{postcodeIssue}</p>}
-          {methodReady && <p role="status" className="mt-2 text-sm">Delivery area confirmed. Final eligibility and minimum order are checked at checkout.</p>}
+          {methodReady && <button type="button" className="mt-2 min-h-11 rounded-lg border px-4 text-sm font-semibold" onClick={() => setEditingPostcode(false)}>Keep confirmed postcode</button>}
+          </>}
+          {methodReady && <p role="status" className="mt-2 text-sm">Final eligibility and minimum order are checked at checkout.</p>}
         </section>}
-        {methodReady && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose order timing">
+        {!editingMethod && !editingPostcode && methodReady && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose order timing">
           <h2 className="text-xl font-bold">When would you like your order?</h2>
           <p className="mt-1 text-sm">Luton kitchen · subject to current availability.</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <button type="button" aria-pressed={timingConfirmed} className={`min-h-16 rounded-xl border p-3 text-left ${timingConfirmed ? "border-primary bg-primary/10" : "border-border"}`} onClick={() => setTimingConfirmed(true)}><strong className="block">As soon as possible</strong><small>Continue to the menus</small></button>
+          {timingConfirmed && !editingTiming ? <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium">As soon as possible</p><button type="button" className="min-h-11 rounded-lg border px-4 text-sm font-semibold" onClick={() => setEditingTiming(true)}>Edit timing</button></div> : <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <button type="button" aria-pressed={timingConfirmed} className={`min-h-16 rounded-xl border p-3 text-left ${timingConfirmed ? "border-primary bg-primary/10" : "border-border"}`} onClick={confirmTiming}><strong className="block">As soon as possible</strong><small>Continue to the menus</small></button>
             <button type="button" disabled className="min-h-16 rounded-xl border border-border p-3 text-left opacity-50"><strong className="block">Schedule for later</strong><small>Not available to book yet</small></button>
-          </div>
+          </div>}
         </section>}
         <div hidden={!menuReady} inert={!menuReady}>
         <div className="lm-group-entry">
