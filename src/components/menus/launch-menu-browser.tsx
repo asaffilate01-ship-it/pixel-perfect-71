@@ -190,6 +190,7 @@ export function LaunchMenuBrowser({
   }
   async function validateDeliveryPostcode() {
     setTimingConfirmed(false);
+    setCheckingPostcode(false);
     const generation = ++postcodeGeneration.current;
     const postcode = normaliseUkPostcode(deliveryPostcode);
     setVerifiedPostcode(null);
@@ -211,12 +212,31 @@ export function LaunchMenuBrowser({
       setTimingConfirmed(false);
       setVerifiedPostcode(null);
       setEditingPostcode(false);
+      setEditingTiming(false);
       setPostcodeIssue("");
       try { sessionStorage.removeItem("mealdeck-order-asap-v1"); } catch { /* Optional storage. */ }
     }
     setEditingMethod(false);
     setOrderMethod(method);
     try { sessionStorage.setItem("mealdeck-checkout-fulfilment-v1", method); } catch { /* Keep current selection. */ }
+  }
+  function restartOrderPreferences() {
+    postcodeGeneration.current += 1;
+    setCheckingPostcode(false);
+    setOrderMethod(null);
+    setTimingConfirmed(false);
+    setVerifiedPostcode(null);
+    setDeliveryPostcode("");
+    setPostcodeIssue("");
+    setEditingMethod(false);
+    setEditingTiming(false);
+    setEditingPostcode(false);
+    setDraft(null);
+    setPicksOpen(false);
+    try {
+      sessionStorage.removeItem("mealdeck-checkout-fulfilment-v1");
+      sessionStorage.removeItem("mealdeck-order-asap-v1");
+    } catch { /* Current screen still resets. */ }
   }
   const [basket, setBasket] = useState<TimedLaunchBasket>(emptyTimedLaunchBasket);
   const basketRef = useRef<TimedLaunchBasket>(emptyTimedLaunchBasket());
@@ -619,7 +639,10 @@ export function LaunchMenuBrowser({
           </span>
         </div>
         <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose how to receive your order">
-          <h2 className="text-xl font-bold">1. How would you like your order?</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-xl font-bold">1. How would you like your order?</h2>
+            {orderMethod && <button type="button" className="min-h-11 rounded-lg border px-4 text-sm font-semibold" onClick={restartOrderPreferences}>Choose again</button>}
+          </div>
           {orderMethod && !editingMethod ? <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium">{orderMethod === "delivery" ? "Delivery" : orderMethod === "pickup" ? "Pickup · Luton kitchen" : "Kerbside · Luton kitchen"}</p><button type="button" className="min-h-11 rounded-lg border px-4 text-sm font-semibold" onClick={() => setEditingMethod(true)}>Edit order type</button></div> : <>
           <p className="mt-1 text-sm">Choose your order type to explore the Luton menus.</p>
           <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-label="Order type">
