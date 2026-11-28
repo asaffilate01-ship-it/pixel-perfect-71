@@ -143,6 +143,17 @@ export function LaunchItemCustomiser({
   const currentMissing = missing.filter((group) =>
     step === "food" ? !isExtrasGroup(group) : true,
   );
+  // Reveal subsequent option groups only after all earlier required choices
+  // in the current stage are satisfied. Optional groups never block progress.
+  function revealedGroups(stageGroups: typeof groups) {
+    const visible = [] as typeof groups;
+    for (const group of stageGroups) {
+      if (!isLaunchGroupActive(group, selections, item, crossSelections)) continue;
+      visible.push(group);
+      if (missing.some((required) => required.id === group.id)) break;
+    }
+    return visible;
+  }
   const stepIndex = steps.indexOf(step);
   const labels = launchSelectionLabels(brand, item, selections, crossSelections);
   const summaries = launchCrossSelectionSummaries(
@@ -457,17 +468,17 @@ export function LaunchItemCustomiser({
                 {section.description && <p>{section.description}</p>}
               </details>
             )}
-            {foodGroups.map(renderGroup)}
+            {revealedGroups(foodGroups).map(renderGroup)}
           </>
         ) : step === "extras" ? (
           <>
-            {extrasGroups.map(renderGroup)}
+            {revealedGroups(extrasGroups).map(renderGroup)}
             {changeNotice && (
               <p className="lmc-change-notice" role="status">
                 {changeNotice}
               </p>
             )}
-            {offers.length > 0 && (
+            {offers.length > 0 && !missing.some((group) => extrasGroups.some((extra) => extra.id === group.id)) && (
               <div className="lmc-offers">
                 <p className="lmc-offer-intro">
                   Mix it up across the deck <span>Optional</span>
