@@ -50,6 +50,8 @@ import {
   launchMenuOfferBasketDisplayPrice,
 } from "@/lib/launch-menu-display-prices";
 import "@/styles.launch-prices.css";
+import { normaliseUkPostcode } from "@/lib/mealdeck-own-driver-delivery";
+import { requestMealDeckCheckout } from "@/lib/mealdeck-checkout-browser";
 import { prepareLaunchCheckout } from "@/lib/launch-basket-transfer";
 import {
   LAUNCH_BASKET_EXPIRY_NOTICE,
@@ -159,6 +161,44 @@ export function LaunchMenuBrowser({
   const menuPage = getMealDeckMenuPage(brand?.id);
   const pendingBrand = marketingBrands.find((entry) => entry.id === requestedBrandId);
   const [search, setSearch] = useState("");
+  const [deliveryPostcode, setDeliveryPostcode] = useState("");
+  const [verifiedPostcode, setVerifiedPostcode] = useState<string | null>(null);
+  const [postcodeIssue, setPostcodeIssue] = useState("");
+  const [checkingPostcode, setCheckingPostcode] = useState(false);
+  const postcodeGeneration = useRef(0);
+  const [orderMethod, setOrderMethod] = useState<"pickup" | "curbside" | "delivery" | null>(null);
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("mealdeck-checkout-fulfilment-v1");
+      if (saved === "pickup" || saved === "curbside" || saved === "delivery") setOrderMethod(saved);
+    } catch { /* Session storage is optional. */ }
+  }, []);
+  const [timingConfirmed, setTimingConfirmed] = useState(false);
+  const methodReady = orderMethod !== null && (orderMethod !== "delivery" || (deliveryLive && verifiedPostcode !== null && verifiedPostcode === normaliseUkPostcode(deliveryPostcode)));
+  const menuReady = methodReady && timingConfirmed;
+  async function validateDeliveryPostcode() {
+    setTimingConfirmed(false);
+    const generation = ++postcodeGeneration.current;
+    const postcode = normaliseUkPostcode(deliveryPostcode);
+    setVerifiedPostcode(null);
+    setPostcodeIssue("");
+    if (!postcode) { setPostcodeIssue("Enter a valid UK postcode."); return; }
+    setCheckingPostcode(true);
+    try {
+      const result = await requestMealDeckCheckout<{ eligible?: boolean; postcode?: string; distanceMetres?: number }>("guest", { action: "delivery_area", postcode }, async () => null);
+      if (generation !== postcodeGeneration.current) return;
+      if (result.eligible === true && result.postcode === postcode && typeof result.distanceMetres === "number") setVerifiedPostcode(postcode);
+      else setPostcodeIssue("Delivery is unavailable for this postcode. Choose pickup or kerbside, or check another postcode.");
+    } catch { if (generation === postcodeGeneration.current) setPostcodeIssue("Unable to check your postcode. Please try again."); }
+    finally { if (generation === postcodeGeneration.current) setCheckingPostcode(false); }
+  }
+  function chooseOrderMethod(method: "pickup" | "curbside" | "delivery") {
+    postcodeGeneration.current += 1;
+    setCheckingPostcode(false);
+    setTimingConfirmed(false);
+    setOrderMethod(method);
+    try { sessionStorage.setItem("mealdeck-checkout-fulfilment-v1", method); } catch { /* Keep current selection. */ }
+  }
   const [basket, setBasket] = useState<TimedLaunchBasket>(emptyTimedLaunchBasket);
   const basketRef = useRef<TimedLaunchBasket>(emptyTimedLaunchBasket());
   const picks = basket.picks;
@@ -306,7 +346,7 @@ export function LaunchMenuBrowser({
   }
 
   function openItem(entry: LaunchMenuEntry, existing?: LaunchMenuPick) {
-    if (!publicMenu.ready || entry.item.available === false) return;
+    if (!menuReady || !publicMenu.ready || entry.item.available === false) return;
     // Simple dishes with no selectable modifiers can be added in one tap.
     // Products with choices retain their complete customisation and validation.
     if (!existing && canQuickAddLaunchItem(entry.item)) {
@@ -417,6 +457,8 @@ export function LaunchMenuBrowser({
   }
 
   function proceedToCheckout(event: MouseEvent<HTMLAnchorElement>) {
+    if (!menuReady) { event.preventDefault(); return; }
+    try { sessionStorage.setItem("mealdeck-checkout-fulfilment-v1", orderMethod!); } catch { /* Checkout asks again. */ }
     const live = expireTimedLaunchBasket(basketRef.current);
     if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null || !live.picks.length
       || live.picks.length !== picks.length
@@ -555,6 +597,36 @@ export function LaunchMenuBrowser({
             />
           </span>
         </div>
+        <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose how to receive your order">
+          <h2 className="text-xl font-bold">1. How would you like your order?</h2>
+          <p className="mt-1 text-sm">Choose your order type to explore the Luton menus.</p>
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-label="Order type">
+            {([{id: "delivery", label: "Delivery", detail: "Within 4 km · £15 minimum"}, {id: "pickup", label: "Pickup", detail: "Collect at the counter"}, {id: "curbside", label: "Kerbside", detail: "Collect by your car"}] as const).map(method => (
+              <button key={method.id} type="button" disabled={method.id === "delivery" && !deliveryLive} aria-pressed={orderMethod === method.id} onClick={() => chooseOrderMethod(method.id)} className={`min-h-16 rounded-xl border p-3 text-left disabled:opacity-50 ${orderMethod === method.id ? "border-primary bg-primary/10" : "border-border"}`}>
+                <strong className="block">{method.label}</strong><small>{method.id === "delivery" && !deliveryLive ? "Currently unavailable" : method.detail}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+        {orderMethod === "delivery" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Check delivery postcode">
+          <h2 className="text-xl font-bold">2. Where are we delivering?</h2>
+          <label className="mt-3 block text-sm font-medium" htmlFor="order-delivery-postcode">Postcode</label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input id="order-delivery-postcode" autoComplete="postal-code" maxLength={20} value={deliveryPostcode} onChange={event => { postcodeGeneration.current += 1; setCheckingPostcode(false); setVerifiedPostcode(null); setTimingConfirmed(false); setPostcodeIssue(""); setDeliveryPostcode(event.target.value); }} className="min-w-0 flex-1 rounded-xl border border-border bg-background p-3" placeholder="e.g. LU4 8NU" />
+            <button type="button" className="lm-primary" disabled={checkingPostcode || !deliveryLive} onClick={() => void validateDeliveryPostcode()}>{checkingPostcode ? "Checking…" : "Check postcode"}</button>
+          </div>
+          {postcodeIssue && <p role="alert" className="mt-2 text-sm">{postcodeIssue}</p>}
+          {methodReady && <p role="status" className="mt-2 text-sm">Delivery area confirmed. Final eligibility and minimum order are checked at checkout.</p>}
+        </section>}
+        {methodReady && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose order timing">
+          <h2 className="text-xl font-bold">When would you like your order?</h2>
+          <p className="mt-1 text-sm">Luton kitchen · subject to current availability.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <button type="button" aria-pressed={timingConfirmed} className={`min-h-16 rounded-xl border p-3 text-left ${timingConfirmed ? "border-primary bg-primary/10" : "border-border"}`} onClick={() => setTimingConfirmed(true)}><strong className="block">As soon as possible</strong><small>Continue to the menus</small></button>
+            <button type="button" disabled className="min-h-16 rounded-xl border border-border p-3 text-left opacity-50"><strong className="block">Schedule for later</strong><small>Not available to book yet</small></button>
+          </div>
+        </section>}
+        <div hidden={!menuReady} inert={!menuReady}>
         <div className="lm-group-entry">
           <p>
             <strong>Ordering together?</strong>{" "}
@@ -979,9 +1051,10 @@ export function LaunchMenuBrowser({
               : "Collection and kerbside pickup; check local delivery availability at checkout."}
           </p>
         </footer>
+        </div>
       </main>
       <SiteFooter />
-      <LaunchBasketDock
+      {menuReady && quantity > 0 && <LaunchBasketDock
         count={quantity}
         dialogOpen={!!draft || picksOpen}
         feedbackMessage={
@@ -990,8 +1063,8 @@ export function LaunchMenuBrowser({
             : null
         }
         onOpen={openBasket}
-      />
-      <LaunchMenuAppNav
+      />}
+      {menuReady && <LaunchMenuAppNav
         brands={brandOrder.flatMap((id) => {
           const entry = getLaunchMenuBrand(id, catalogue);
           return entry ? [{ id: entry.id, name: entry.name, logo: logoFor(id) }] : [];
@@ -1014,7 +1087,7 @@ export function LaunchMenuBrowser({
         onBrand={(id) => browse(id)}
         onBasket={openBasket}
         onCheckout={proceedToCheckout}
-      />
+      />}
       <LaunchBasketFeedback
         update={notice}
         dialogOpen={!!draft || picksOpen}
@@ -1031,7 +1104,7 @@ export function LaunchMenuBrowser({
       />
 
       <Dialog
-        open={!!draft || picksOpen}
+        open={menuReady && (!!draft || picksOpen)}
         onOpenChange={(open) => {
           if (!open) {
             setDraft(null);

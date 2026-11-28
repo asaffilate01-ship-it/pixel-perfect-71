@@ -903,7 +903,10 @@ function LaunchCheckoutView({
       parseOwnDriverAddress(deliveryAddress) !== null &&
       deliveryArea?.eligible === true &&
       deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode));
+  const methodDetailsReady = Boolean(fulfilment) && deliveryReady &&
+    (fulfilment !== "curbside" || Boolean(parseKerbsideVehicle(vehicle)));
   const canCheckout =
+    methodDetailsReady &&
     !whatsAppCheckout?.paused &&
     deliveryReady &&
     !basketIssue &&
@@ -2208,7 +2211,7 @@ function LaunchCheckoutView({
                       or choose collection or kerbside. Final discounted totals are checked before payment.
                     </p>
                   )}
-                  <div className="md-checkout-timing" aria-label="When would you like your order?">
+                  {fulfilment && <div className="md-checkout-timing" aria-label="When would you like your order?">
                     <h3>When would you like your order?</h3>
                     <div className="md-checkout-methods" role="group" aria-label="Order timing">
                       <button type="button" disabled={busy} aria-pressed="true">
@@ -2227,7 +2230,7 @@ function LaunchCheckoutView({
                       they are verified by the payment system and kitchen. You cannot reserve a
                       scheduled time or pay for one yet.
                     </p>
-                  </div>
+                  </div>}
                 </section>
               )}
               {fulfilment && (
@@ -2467,7 +2470,7 @@ function LaunchCheckoutView({
                   </p>
                 </section>
               )}
-              {fulfilment === "delivery" && !whatsAppDraft && (
+              {fulfilment === "delivery" && canViewReceipt && !whatsAppDraft && (
                 <section className="md-checkout-card" aria-label="Delivery address">
                   <h2>
                     <span className="md-checkout-step">3</span>Delivery address
@@ -2518,6 +2521,7 @@ function LaunchCheckoutView({
                         </button>
                       </p>
                     )}
+                    {deliveryArea?.eligible === true && deliveryArea.postcode === normaliseUkPostcode(deliveryAddress.postcode) && <>
                     <label>
                       Door / house number
                       <input
@@ -2556,6 +2560,7 @@ function LaunchCheckoutView({
                         }
                       />
                     </label>
+                    </>}
                   </div>
                   <p className="md-checkout-muted">
                     Delivery food minimum: {minimumFoodText} after discounts. Delivery is free
@@ -2563,7 +2568,7 @@ function LaunchCheckoutView({
                   </p>
                 </section>
               )}
-              {fulfilment === "curbside" && !whatsAppDraft && (
+              {fulfilment === "curbside" && canViewReceipt && !whatsAppDraft && (
                 <section className="md-checkout-card">
                   <h2>
                     <span className="md-checkout-step">3</span>Your car details
@@ -2656,7 +2661,7 @@ function LaunchCheckoutView({
                   </p>
                 </section>
               )}
-              {canViewReceipt && fulfilment && picks.length > 0 && !whatsAppDraft && (
+              {canViewReceipt && methodDetailsReady && picks.length > 0 && !whatsAppDraft && (
                 <section className="md-checkout-card md-checkout-packing">
                   <h2>
                     <span className="md-checkout-step">
