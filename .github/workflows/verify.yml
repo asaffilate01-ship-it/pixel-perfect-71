@@ -197,7 +197,7 @@ jobs:
         run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts tests/mealdeck-preview-basket.test.ts
 
       - name: Isolated marketplace machine wire contract
-        run: bun test tests/mealdeck-marketplace-protocol.test.ts tests/mealdeck-operations-safety.test.ts
+        run: bun test tests/mealdeck-marketplace-protocol.test.ts tests/mealdeck-operations-safety.test.ts tests/mealdeck-marketplace-admission.test.ts
 
       - name: Operational evidence freshness and marketplace health
         run: node --experimental-strip-types --test tests/mealdeck-ops-evidence.test.mjs
