@@ -163,6 +163,7 @@ export function LaunchMenuBrowser({
   const [search, setSearch] = useState("");
   const [editingMethod, setEditingMethod] = useState(false);
   const [editingTiming, setEditingTiming] = useState(false);
+  const [editingPostcode, setEditingPostcode] = useState(false);
   const [deliveryPostcode, setDeliveryPostcode] = useState("");
   const [verifiedPostcode, setVerifiedPostcode] = useState<string | null>(null);
   const [postcodeIssue, setPostcodeIssue] = useState("");
@@ -180,7 +181,7 @@ export function LaunchMenuBrowser({
   }, []);
   const [timingConfirmed, setTimingConfirmed] = useState(false);
   const methodReady = orderMethod !== null && (orderMethod !== "delivery" || (deliveryLive && verifiedPostcode !== null && verifiedPostcode === normaliseUkPostcode(deliveryPostcode)));
-  const menuReady = methodReady && timingConfirmed && !editingMethod && !editingTiming;
+  const menuReady = methodReady && timingConfirmed && !editingMethod && !editingTiming && !editingPostcode;
   function confirmTiming() {
     if (!methodReady || !orderMethod) return;
     setTimingConfirmed(true);
@@ -198,7 +199,7 @@ export function LaunchMenuBrowser({
     try {
       const result = await requestMealDeckCheckout<{ eligible?: boolean; postcode?: string; distanceMetres?: number }>("guest", { action: "delivery_area", postcode }, async () => null);
       if (generation !== postcodeGeneration.current) return;
-      if (result.eligible === true && result.postcode === postcode && typeof result.distanceMetres === "number") setVerifiedPostcode(postcode);
+      if (result.eligible === true && result.postcode === postcode && typeof result.distanceMetres === "number") { setVerifiedPostcode(postcode); setEditingPostcode(false); }
       else setPostcodeIssue("Delivery is unavailable for this postcode. Choose pickup or kerbside, or check another postcode.");
     } catch { if (generation === postcodeGeneration.current) setPostcodeIssue("Unable to check your postcode. Please try again."); }
     finally { if (generation === postcodeGeneration.current) setCheckingPostcode(false); }
@@ -209,6 +210,7 @@ export function LaunchMenuBrowser({
     if (method !== orderMethod) {
       setTimingConfirmed(false);
       setVerifiedPostcode(null);
+      setEditingPostcode(false);
       setPostcodeIssue("");
       try { sessionStorage.removeItem("mealdeck-order-asap-v1"); } catch { /* Optional storage. */ }
     }
@@ -631,15 +633,18 @@ export function LaunchMenuBrowser({
         </section>
         {!editingMethod && orderMethod === "delivery" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Check delivery postcode">
           <h2 className="text-xl font-bold">2. Where are we delivering?</h2>
+          {methodReady && !editingPostcode ? <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium">{verifiedPostcode} · Delivery area confirmed</p><button type="button" className="min-h-11 rounded-lg border px-4 text-sm font-semibold" onClick={() => setEditingPostcode(true)}>Edit postcode</button></div> : <>
           <label className="mt-3 block text-sm font-medium" htmlFor="order-delivery-postcode">Postcode</label>
           <div className="mt-2 flex flex-wrap gap-2">
             <input id="order-delivery-postcode" autoComplete="postal-code" maxLength={20} value={deliveryPostcode} onChange={event => { postcodeGeneration.current += 1; setCheckingPostcode(false); setVerifiedPostcode(null); setTimingConfirmed(false); setPostcodeIssue(""); setDeliveryPostcode(event.target.value); }} className="min-w-0 flex-1 rounded-xl border border-border bg-background p-3" placeholder="e.g. LU4 8NU" />
             <button type="button" className="lm-primary" disabled={checkingPostcode || !deliveryLive} onClick={() => void validateDeliveryPostcode()}>{checkingPostcode ? "Checking…" : "Check postcode"}</button>
           </div>
           {postcodeIssue && <p role="alert" className="mt-2 text-sm">{postcodeIssue}</p>}
-          {methodReady && <p role="status" className="mt-2 text-sm">Delivery area confirmed. Final eligibility and minimum order are checked at checkout.</p>}
+          {methodReady && <button type="button" className="mt-2 min-h-11 rounded-lg border px-4 text-sm font-semibold" onClick={() => setEditingPostcode(false)}>Keep confirmed postcode</button>}
+          </>}
+          {methodReady && <p role="status" className="mt-2 text-sm">Final eligibility and minimum order are checked at checkout.</p>}
         </section>}
-        {!editingMethod && methodReady && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose order timing">
+        {!editingMethod && !editingPostcode && methodReady && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose order timing">
           <h2 className="text-xl font-bold">When would you like your order?</h2>
           <p className="mt-1 text-sm">Luton kitchen · subject to current availability.</p>
           {timingConfirmed && !editingTiming ? <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium">As soon as possible</p><button type="button" className="min-h-11 rounded-lg border px-4 text-sm font-semibold" onClick={() => setEditingTiming(true)}>Edit timing</button></div> : <div className="mt-3 grid gap-2 sm:grid-cols-2">
