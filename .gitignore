@@ -35,3 +35,8 @@ deploy/mealdeck/generated/
 *.njsproj
 *.sln
 *.sw?
+
+# Private cinema draw evidence must never be committed.
+cinema-draw-ledger.json
+cinema-draw.lock
+.cinema-*.tmp
