@@ -373,6 +373,9 @@ jobs:
       - name: Private cinema export eligibility in disposable database
         run: node tests/postgres/munchbox-cinema-export-behavior.mjs
 
+      - name: Marketplace ledger foundation in disposable database
+        run: node tests/postgres/marketplace-ledger-foundation-behavior.mjs
+
       - name: Category and add-on authorization, conflicts and canonical checkout
         run: node tests/postgres/menu-structure-behavior.mjs
 
@@ -849,6 +852,7 @@ jobs:
             order-notes,
             staff-vouchers,
             munchbox-cinema-export,
+            marketplace-ledger-foundation,
             receipt-archive,
             staff-cash-orders,
             meal-components,
