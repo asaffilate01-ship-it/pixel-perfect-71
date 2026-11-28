@@ -4,6 +4,9 @@ on:
   push:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -93,7 +96,7 @@ jobs:
           bunx eslint src/components/pwa-provider.tsx src/components/pwa-install-card.tsx src/lib/mealdeck-pwa-context.ts tests/mealdeck-pwa.test.ts tests/mealdeck-pwa-provider.test.ts tests/mealdeck-mobile-safe-area.test.ts
       - name: Verified customer checkout, packing, receipt printing and distinct staff alerts
         run: >-
-          bun test tests/mealdeck-order-number.test.ts tests/mealdeck-order-notes.test.ts tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts
+          bun test tests/mealdeck-order-number.test.ts tests/mealdeck-order-notes.test.ts tests/mealdeck-customer.test.ts tests/mealdeck-account-entry.test.ts tests/mealdeck-customer-orders.test.ts tests/mealdeck-online-checkout.test.ts tests/mealdeck-staff-vouchers.test.ts
           tests/mealdeck-launch-schedule.test.ts tests/mealdeck-guest-checkout.test.ts tests/mealdeck-own-driver-delivery.test.ts
           tests/mealdeck-checkout-browser.test.ts
           tests/mealdeck-checkout-feedback.test.ts
@@ -152,6 +155,7 @@ jobs:
           src/lib/mealdeck-customer-browser.ts src/lib/mealdeck-customer.functions.ts
           src/lib/mealdeck-customer-notifications.ts src/routes/account.tsx
           src/components/launch-checkout.tsx src/lib/mealdeck-online-checkout.server.ts
+          src/components/ops/staff-voucher-panel.tsx tests/mealdeck-staff-vouchers.test.ts
           src/lib/mealdeck-checkout-selection.ts src/lib/mealdeck-stripe.server.ts
           src/lib/mealdeck-opening-offer.ts src/lib/mealdeck-opening-offer.functions.ts
           src/lib/mealdeck-customer-order-timing.ts
@@ -371,6 +375,9 @@ jobs:
 
       - name: Special requests stay frozen through checkout, payment, kitchen and receipt
         run: node tests/postgres/order-notes-behavior.mjs
+
+      - name: Staff voucher authorization and atomic single-use redemption
+        run: node tests/postgres/staff-vouchers-behavior.mjs
 
       - name: Additive milkcake publication and canonical dessert pricing
         run: node tests/postgres/milkcake-desserts-behavior.mjs
@@ -831,6 +838,7 @@ jobs:
             paid-order-numbers,
             included-drink-stock,
             order-notes,
+            staff-vouchers,
             munchbox-cinema-export,
             receipt-archive,
             staff-cash-orders,

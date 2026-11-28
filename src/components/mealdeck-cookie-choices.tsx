@@ -50,7 +50,7 @@ export function MealDeckCookieChoices() {
       role="dialog"
       aria-modal="false"
       aria-label="MealDeck cookie preferences"
-      className="fixed bottom-20 left-3 right-3 z-[100] mx-auto max-w-2xl rounded-2xl border border-zinc-600 bg-zinc-950 px-5 py-5 text-white shadow-2xl sm:bottom-5"
+      className="md-cookie-choices fixed bottom-20 left-3 right-3 z-[100] mx-auto max-w-2xl rounded-2xl border border-zinc-600 bg-zinc-950 px-5 py-5 text-white shadow-2xl sm:bottom-5"
     >
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -58,7 +58,7 @@ export function MealDeckCookieChoices() {
           <strong className="text-lg">Your privacy, your choice</strong>
         </div>
         <button type="button" onClick={() => save(false, false)}
-          aria-label="Reject optional cookies and close" className="rounded p-1 text-zinc-300 hover:text-white">
+          aria-label="Reject optional cookies and close" className="grid size-11 shrink-0 place-items-center rounded text-zinc-300 hover:text-white">
           <X size={20} aria-hidden="true" />
         </button>
       </div>
@@ -90,24 +90,24 @@ export function MealDeckCookieChoices() {
           </label>
         </fieldset>
       )}
-      <div className="flex flex-wrap gap-2 text-sm font-semibold">
+      <div className="md-cookie-choices__actions flex flex-wrap gap-2 text-sm font-semibold">
         <button type="button" onClick={() => save(false, false)}
-          className="rounded-lg border border-zinc-500 px-4 py-2.5 hover:border-white">
+          className="min-h-11 rounded-lg border border-zinc-500 px-4 py-2.5 hover:border-white">
           Reject optional
         </button>
         {customising ? (
           <button type="button" onClick={() => save(analytics, marketing)}
-            className="rounded-lg bg-amber-300 px-4 py-2.5 text-zinc-950 hover:bg-amber-200">
+            className="min-h-11 rounded-lg bg-amber-300 px-4 py-2.5 text-zinc-950 hover:bg-amber-200">
             Save my choices
           </button>
         ) : (
           <button type="button" onClick={() => setCustomising(true)}
-            className="rounded-lg border border-zinc-500 px-4 py-2.5 hover:border-white">
+            className="min-h-11 rounded-lg border border-zinc-500 px-4 py-2.5 hover:border-white">
             Customise
           </button>
         )}
         <button type="button" onClick={() => save(true, true)}
-          className="rounded-lg bg-amber-300 px-4 py-2.5 text-zinc-950 hover:bg-amber-200">
+          className="min-h-11 rounded-lg border border-zinc-500 px-4 py-2.5 hover:border-white">
           Accept optional
         </button>
       </div>

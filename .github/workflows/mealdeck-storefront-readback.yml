@@ -5,6 +5,12 @@ on:
       - 'scripts/mealdeck-storefront-readback.mjs'
       - 'tests/mealdeck-storefront-readback.test.mjs'
       - '.github/workflows/mealdeck-storefront-readback.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/mealdeck-storefront-readback.mjs'
+      - 'tests/mealdeck-storefront-readback.test.mjs'
+      - '.github/workflows/mealdeck-storefront-readback.yml'
   workflow_dispatch:
 
 permissions:

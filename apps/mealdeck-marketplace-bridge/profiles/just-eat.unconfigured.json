@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "platform": "just_eat",
+  "environment": "live",
+  "profileId": "mealdeck-just-eat-sunmi-unconfigured",
+  "profileVersion": "0",
+  "transport": "appium",
+  "appPackage": "com.justeat.orderpad",
+  "commissioning": {
+    "status": "unconfigured",
+    "accessAuthorizationReference": null,
+    "deviceOrBrowserVersion": null,
+    "verifiedAt": null,
+    "expiresAt": null
+  },
+  "screen": null,
+  "fields": null,
+  "actions": { "accept": null, "preparing": null, "ready": null, "handover": null }
+}

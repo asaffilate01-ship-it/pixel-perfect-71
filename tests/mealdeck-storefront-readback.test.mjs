@@ -3,8 +3,10 @@ import { describe, it } from "node:test";
 import { ORIGIN, probeStorefrontRelease } from "../scripts/mealdeck-storefront-readback.mjs";
 
 const html = (text) => "<html><main>" + text + "</main></html>";
+const navigation = '<nav class="md-desktop-nav" aria-label="Main navigation"><a href="/account">My account</a><a href="/play">Play games</a></nav>';
+const home = (text = "Five menus. One basket.", nav = navigation) => html(text).replace("<main>", nav + "<main>");
 const pages = {
-  "/": html("Five menus. One basket."),
+  "/": home(),
   "/offers": html("£1 paid = 1 loyalty point."),
   "/meta-ad": html("Opening hours · UK time. Choose how you want to receive your order. Enter your name and WhatsApp number."),
   "/menus": html("Search all MealDeck menus. Your favourites"),
@@ -60,10 +62,10 @@ describe("Production storefront readback", () => {
   });
   it("rejects stale campaign copy, a stale menu or an old footer link", async () => {
     for (const overrides of [
-      { "/": page(html("Five menus. One basket. Opening weekend has finished.")) },
+      { "/": page(home("Five menus. One basket. Opening weekend has finished.")) },
       { "/menus": page(html("Search this menu")) },
       { "/offers": page(html('£1 paid = 1 loyalty point. <a href="/opening-offer">Old offer</a>')) },
-      { "/": page(html("Five menus. One basket."), 503) },
+      { "/": page(home(), 503) },
       { "/blog": page(html("MealDeck Loyalty: Earn Points on Eligible Orders. House Rules: MealDeck Offers and Member Benefits. Double loyalty points")) },
       { "/blog/house-rules-every-offer-explained": page(html("Updated 26 November 2026. 99p milk cake promotion.")) },
       { "/privacy": page(html("Basket expires five minutes after each quantity is added.")) },
@@ -72,8 +74,27 @@ describe("Production storefront readback", () => {
     ]) assert.equal((await probeStorefrontRelease(fixture(overrides).request)).storefrontContentVerified, false);
   });
   it("does not confuse inert hydration strings with visible expired copy", async () => {
-    const markup = html("Five menus. One basket.") + '<script>const historical = "Opening weekend has finished.";</script>';
+    const markup = home() + '<script>const historical = "Opening weekend has finished.";</script>';
     assert.equal((await probeStorefrontRelease(fixture({ "/": page(markup) }).request)).storefrontContentVerified, true);
+  });
+  it("requires the merged desktop navigation markup rather than stale, unrelated or inert links", async () => {
+    for (const [nav, expected] of [
+      [navigation, true],
+      ["<nav aria-label='Main navigation' class='desktop'><a class='current' href='/account'><span>My account</span></a><a href='/play'>Play games</a></nav>", true],
+      [navigation.replace("Play games", "Play &amp; Rewards"), false],
+      [navigation.replace('<a href="/account">My account</a>', '') + '<footer><a href="/account">My account</a></footer>', false],
+      ["<script>" + navigation + "</script>", false],
+      [navigation.replace('href="/account"', 'href="/ops"'), false],
+      [navigation + navigation, false],
+      [navigation.replace("</nav>", '<a href="/play">Play &amp; Rewards</a></nav>'), false],
+      ["<!--" + navigation + "-->", false],
+      [navigation.replace("Main navigation", "Mobile navigation"), false],
+    ]) {
+      const result = await probeStorefrontRelease(fixture({ "/": page(home("Five menus. One basket.", nav)) }).request);
+      assert.equal(result.checks["/"], expected);
+      assert.equal(result.storefrontContentVerified, expected);
+      assert.equal(result.exactDeployedCommitVerified, false);
+    }
   });
   it("requires a permanent same-origin redirect without secret or arbitrary destinations", async () => {
     for (const [status, location] of [[302, "/offers"], [301, "https://elsewhere.example/offers"], [301, "/offers?token=private"], [301, "/menus"]]) {

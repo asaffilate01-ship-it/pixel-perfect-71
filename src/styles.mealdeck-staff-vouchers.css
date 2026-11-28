@@ -1,0 +1,12 @@
+/* Keep the voucher entry separate from the payment button, with large touch targets. */
+.md-staff-voucher { margin: 14px 0; padding: 12px; border: 1px solid #d5c6af; border-radius: 12px; color: #30251e; background: #fffaf1; }
+.md-staff-voucher__toggle { display:flex; align-items:center; gap:8px; width:100%; min-height:44px; color:#8d2028; font-size:14px; font-weight:750; text-align:left; }
+.md-staff-voucher__form { display:grid; gap:10px; margin-top:8px; }
+.md-staff-voucher__form label { display:grid; gap:6px; font-size:13px; font-weight:700; }
+.md-staff-voucher__form input { width:100%; min-width:0; min-height:48px; border:1px solid #b8a58e; border-radius:8px; padding:10px 12px; background:#fff; color:#30251e; font-size:16px; }
+.md-staff-voucher__form small,.md-staff-voucher__applied small { display:block; font-size:12px; line-height:1.5; font-weight:400; color:#62513e; }
+.md-staff-voucher__applied { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.md-staff-voucher__applied > span { flex:1 1 150px; }
+.md-staff-voucher__applied > svg { color:#315c3c; flex-shrink:0; }
+.md-staff-voucher__applied button { min-height:44px; padding:8px; text-decoration:underline; font-size:13px; }
+.md-staff-voucher :is(button,input):focus-visible { outline:2px solid #8d2028; outline-offset:3px; }
