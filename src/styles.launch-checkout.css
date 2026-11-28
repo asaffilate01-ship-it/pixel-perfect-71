@@ -1158,3 +1158,7 @@
   font-size: 14px;
   line-height: 1.6;
 }
+
+/* Progressive checkout avoids an empty summary column before review. */
+.md-checkout-columns:has(> .md-checkout-steps:only-child) { grid-template-columns: minmax(0, 1fr); }
+#guided-checkout-basket { scroll-margin-top: 100px; }

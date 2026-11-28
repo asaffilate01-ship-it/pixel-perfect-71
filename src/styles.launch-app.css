@@ -354,3 +354,5 @@
     background: #f8ead8;
   }
 }
+
+@media (max-width: 800px) { .lm-shell .lma-app-nav[data-has-checkout="false"] { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
