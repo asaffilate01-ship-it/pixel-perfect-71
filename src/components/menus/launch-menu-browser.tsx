@@ -159,6 +159,18 @@ export function LaunchMenuBrowser({
   const menuPage = getMealDeckMenuPage(brand?.id);
   const pendingBrand = marketingBrands.find((entry) => entry.id === requestedBrandId);
   const [search, setSearch] = useState("");
+  const [orderMethod, setOrderMethod] = useState<"pickup" | "curbside" | "delivery" | null>(null);
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("mealdeck-checkout-fulfilment-v1");
+      if (saved === "pickup" || saved === "curbside" || saved === "delivery") setOrderMethod(saved);
+    } catch { /* Session storage is optional. */ }
+  }, []);
+  const methodReady = orderMethod !== null && (orderMethod !== "delivery" || deliveryLive);
+  function chooseOrderMethod(method: "pickup" | "curbside" | "delivery") {
+    setOrderMethod(method);
+    try { sessionStorage.setItem("mealdeck-checkout-fulfilment-v1", method); } catch { /* Keep current selection. */ }
+  }
   const [basket, setBasket] = useState<TimedLaunchBasket>(emptyTimedLaunchBasket);
   const basketRef = useRef<TimedLaunchBasket>(emptyTimedLaunchBasket());
   const picks = basket.picks;
@@ -306,7 +318,7 @@ export function LaunchMenuBrowser({
   }
 
   function openItem(entry: LaunchMenuEntry, existing?: LaunchMenuPick) {
-    if (!publicMenu.ready || entry.item.available === false) return;
+    if (!methodReady || !publicMenu.ready || entry.item.available === false) return;
     // Simple dishes with no selectable modifiers can be added in one tap.
     // Products with choices retain their complete customisation and validation.
     if (!existing && canQuickAddLaunchItem(entry.item)) {
@@ -417,6 +429,8 @@ export function LaunchMenuBrowser({
   }
 
   function proceedToCheckout(event: MouseEvent<HTMLAnchorElement>) {
+    if (!methodReady) { event.preventDefault(); return; }
+    try { sessionStorage.setItem("mealdeck-checkout-fulfilment-v1", orderMethod!); } catch { /* Checkout asks again. */ }
     const live = expireTimedLaunchBasket(basketRef.current);
     if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null || !live.picks.length
       || live.picks.length !== picks.length
@@ -555,6 +569,18 @@ export function LaunchMenuBrowser({
             />
           </span>
         </div>
+        <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Choose how to receive your order">
+          <h2 className="text-xl font-bold">1. How would you like your order?</h2>
+          <p className="mt-1 text-sm">Choose your order type to explore the Luton menus.</p>
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-label="Order type">
+            {([{id: "delivery", label: "Delivery", detail: "Within 4 km · £15 minimum"}, {id: "pickup", label: "Pickup", detail: "Collect at the counter"}, {id: "curbside", label: "Kerbside", detail: "Collect by your car"}] as const).map(method => (
+              <button key={method.id} type="button" disabled={method.id === "delivery" && !deliveryLive} aria-pressed={orderMethod === method.id} onClick={() => chooseOrderMethod(method.id)} className={`min-h-16 rounded-xl border p-3 text-left disabled:opacity-50 ${orderMethod === method.id ? "border-primary bg-primary/10" : "border-border"}`}>
+                <strong className="block">{method.label}</strong><small>{method.id === "delivery" && !deliveryLive ? "Currently unavailable" : method.detail}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+        {methodReady && <>
         <div className="lm-group-entry">
           <p>
             <strong>Ordering together?</strong>{" "}
@@ -979,9 +1005,10 @@ export function LaunchMenuBrowser({
               : "Collection and kerbside pickup; check local delivery availability at checkout."}
           </p>
         </footer>
+        </>}
       </main>
       <SiteFooter />
-      <LaunchBasketDock
+      {methodReady && quantity > 0 && <LaunchBasketDock
         count={quantity}
         dialogOpen={!!draft || picksOpen}
         feedbackMessage={
@@ -990,8 +1017,8 @@ export function LaunchMenuBrowser({
             : null
         }
         onOpen={openBasket}
-      />
-      <LaunchMenuAppNav
+      />}
+      {methodReady && <LaunchMenuAppNav
         brands={brandOrder.flatMap((id) => {
           const entry = getLaunchMenuBrand(id, catalogue);
           return entry ? [{ id: entry.id, name: entry.name, logo: logoFor(id) }] : [];
@@ -1014,7 +1041,7 @@ export function LaunchMenuBrowser({
         onBrand={(id) => browse(id)}
         onBasket={openBasket}
         onCheckout={proceedToCheckout}
-      />
+      />}
       <LaunchBasketFeedback
         update={notice}
         dialogOpen={!!draft || picksOpen}
@@ -1031,7 +1058,7 @@ export function LaunchMenuBrowser({
       />
 
       <Dialog
-        open={!!draft || picksOpen}
+        open={methodReady && (!!draft || picksOpen)}
         onOpenChange={(open) => {
           if (!open) {
             setDraft(null);
