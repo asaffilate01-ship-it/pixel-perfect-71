@@ -195,6 +195,9 @@ jobs:
           bunx eslint src/hooks/use-deck-motion.ts src/components/marketing/rotating-brand-deck.tsx src/components/mobile-tab-bar.tsx tests/deck-motion.test.ts --rule 'prettier/prettier: off'
       - name: Marketplace discovery, saved basket and category regressions
         run: bun test tests/marketplace-discovery.test.ts tests/marketplace-preferences.test.ts tests/mealdeck-preview-basket.test.ts
+
+      - name: Isolated marketplace machine wire contract
+        run: bun test tests/mealdeck-marketplace-protocol.test.ts
       - name: Sample-deck arithmetic and accessibility implementation lint
         run: >-
           bunx eslint src/lib/mealdeck-preview-basket.ts

@@ -9,7 +9,7 @@ The older branch contains 63 changed files and is 881 commits behind the inspect
 | --- | --- | --- |
 | A — transport lab | Exact original local transport fixtures, two independent device sessions, journal recovery, disabled CLI and offline demo on today's main ancestry | Source port; new CI pending |
 | B — database review | Compare old marketplace ledger, scoped RLS, command leases, KDS projection and role checks against the independent MealDeck schema and current verified-payment/receipt guards | Not ported |
-| C — API contract | Review and port scoped machine-only endpoint, no public secrets; reproduce exact identity and readback, reject cross-store references and unsafe actions | Not ported |
+| C — API contract | Review and port scoped machine-only endpoint, no public secrets; reproduce exact identity and readback, reject cross-store references and unsafe actions | Pure wire schemas ported; endpoint and database authorization not ported |
 | D — KDS UX | Adapt badges, exact marketplace reference and confirmed source state to current mobile/tablet/desktop kitchen views; preserve meal components, packing, order notes, driver and printer changes | Not ported |
 | E — real provider/device approval | Confirm permitted integrations, authorised merchant access, actual store mapping, device/app version, supported controls, stable order IDs and complete food/options | Not commissioned |
 | F — controlled operation | Disposable/approved end-to-end integration, observe-only with complete readback before any permitted mutation; manual fallback, privacy and rollback review | Not commissioned |
@@ -18,3 +18,6 @@ Platform acceptance and status changes require their actual confirmed readback; 
 
 ## Review evidence
 The legacy PR documents prior synthetic tests and owner device observations. Actual current runtime, permissions and device evidence must be established separately. Existing main KDS and payment files are not modified by this port. The old PR remains outstanding until the remaining changes are reconciled and tested; a green fixture run alone is not sufficient for production operation.
+
+## 28 November — wire-contract reconciliation
+Ported the standalone request/response schemas from PR #126, retaining strict envelopes, bounded complete order data, exact identities and lease IDs. A cancelled order is not a successful command confirmation. Added synthetic tests and wired them into the main verification job. These schemas are not connected to any live route or database operation and do not establish actual store ownership, timestamp freshness, payment, lease or action authority; those checks remain mandatory in the future reviewed server and database implementation.
