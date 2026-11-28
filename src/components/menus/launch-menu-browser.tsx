@@ -1,4 +1,6 @@
 import { usePublicMenu } from "./use-public-menu";
+import { GuidedOrderStart, useGuidedMenuStart } from "./guided-order-start";
+import { rememberGuidedOrderMethod } from "@/lib/mealdeck-guided-order";
 import { launchMenuItemDescriptor } from "@/lib/launch-menu-item-descriptor";
 import { PublicMenuStatus } from "./public-menu-status";
 import { MenuFavouriteButton, MenuFavourites } from "./menu-favourites";
@@ -152,6 +154,16 @@ export function LaunchMenuBrowser({
 }) {
   const navigate = useNavigate();
   const deliveryLive = useOwnDriverAvailability();
+  const flow = useGuidedMenuStart(deliveryLive);
+  const focusNext = useRef(false);
+  const [brandChosen, setBrandChosen] = useState(false);
+  const showDishes = flow.ready && (Boolean(requestedBrandId) || brandChosen);
+  useEffect(() => {
+    if (flow.ready && focusNext.current) {
+      focusNext.current = false;
+      document.getElementById("launch-brand-selector")?.focus();
+    }
+  }, [flow.ready]);
   const publicMenu = usePublicMenu(initialMenu);
   const favourites = useMenuFavourites();
   const { catalogue } = publicMenu;
@@ -220,6 +232,9 @@ export function LaunchMenuBrowser({
   useEffect(() => {
     if (picksOpen) basketHeadingRef.current?.focus();
   }, [picksOpen]);
+  useEffect(() => {
+    if (!showDishes) { setDraft(null); setPicksOpen(false); }
+  }, [showDishes]);
 
   function persistPicks(next: TimedLaunchBasket) {
     try {
@@ -277,6 +292,8 @@ export function LaunchMenuBrowser({
   }
 
   function browse(brandId: string, sectionId?: string, target: "brand" | "items" = "brand") {
+    if (!flow.ready) return;
+    setBrandChosen(true);
     setSearch("");
     const scrollTarget = getLaunchMenuScrollTarget(sectionId, target);
     const page = getMealDeckMenuPage(brandId);
@@ -306,7 +323,7 @@ export function LaunchMenuBrowser({
   }
 
   function openItem(entry: LaunchMenuEntry, existing?: LaunchMenuPick) {
-    if (!publicMenu.ready || entry.item.available === false) return;
+    if (!showDishes || !publicMenu.ready || entry.item.available === false) return;
     // Simple dishes with no selectable modifiers can be added in one tap.
     // Products with choices retain their complete customisation and validation.
     if (!existing && canQuickAddLaunchItem(entry.item)) {
@@ -335,6 +352,7 @@ export function LaunchMenuBrowser({
     crossSelections: LaunchCrossSelection[],
   ) {
     if (
+      !showDishes ||
       !draft ||
       !publicMenu.ready ||
       findLaunchMenuItem(draft.brand.id, draft.item.id, catalogue)?.item.available === false
@@ -360,6 +378,7 @@ export function LaunchMenuBrowser({
   }
 
   function openBasket() {
+    if (!showDishes || !basketRef.current.picks.length) return;
     returnFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setDraft(null);
@@ -368,7 +387,7 @@ export function LaunchMenuBrowser({
   }
 
   function addDessert(entry: LaunchDessertRecommendation) {
-    if (!publicMenu.ready) return;
+    if (!showDishes || !publicMenu.ready) return;
     const current = getLaunchDessertRecommendations(picks, catalogue, brand?.id).find(
       (candidate) => candidate.item.id === entry.item.id,
     );
@@ -417,6 +436,7 @@ export function LaunchMenuBrowser({
   }
 
   function proceedToCheckout(event: MouseEvent<HTMLAnchorElement>) {
+    if (!showDishes || !flow.method) { event.preventDefault(); return; }
     const live = expireTimedLaunchBasket(basketRef.current);
     if (!publicMenu.ready || basketPrice.itemsSubtotalPence === null || !live.picks.length
       || live.picks.length !== picks.length
@@ -427,6 +447,7 @@ export function LaunchMenuBrowser({
       return;
     }
     try {
+      rememberGuidedOrderMethod(flow.method, flow.method === "delivery" ? flow.verifiedPostcode ?? undefined : undefined);
       prepareLaunchCheckout(live.picks, live);
       setPicksOpen(false);
     } catch {
@@ -555,6 +576,8 @@ export function LaunchMenuBrowser({
             />
           </span>
         </div>
+        <GuidedOrderStart flow={flow} onChoice={() => { focusNext.current = true; }} />
+        <div className="lm-order-reveal" hidden={!flow.ready}>
         <div className="lm-group-entry">
           <p>
             <strong>Ordering together?</strong>{" "}
@@ -570,6 +593,7 @@ export function LaunchMenuBrowser({
           id="launch-brand-selector"
           className="lm-brand-selector"
           aria-label="Choose a brand menu"
+          tabIndex={-1}
         >
           {brandOrder.map((id) => {
             const entry = getLaunchMenuBrand(id, catalogue);
@@ -608,6 +632,8 @@ export function LaunchMenuBrowser({
           })}
         </nav>
 
+        {!showDishes && flow.ready && <p className="lm-order-stage-hint" role="status">Step 2 · Choose a brand to see its dishes. Mix all five brands in one basket.</p>}
+        <div className="lm-order-reveal" hidden={!showDishes}>
         {brand ? (
           <>
             <header className="lm-brand-heading">
@@ -853,7 +879,7 @@ export function LaunchMenuBrowser({
               </div>
 
               <aside className="lm-sidebar" aria-label="Your basket and meal upgrades">
-                <section className="lm-picks-panel">
+                {(quantity > 0 || !!clearedPicks) && <section className="lm-picks-panel">
                   <div className="lm-picks-title">
                     <h2
                       className="lm-basket-title-brand"
@@ -890,7 +916,7 @@ export function LaunchMenuBrowser({
                       </p>
                     </div>
                   )}
-                </section>
+                </section>}
                 <section className="lm-upsells">
                   <span className="lm-eyebrow">{brand.name} extras</span>
                   <h2>{brand.id === "moktl" ? "In the spotlight." : "Take it further."}</h2>
@@ -933,6 +959,8 @@ export function LaunchMenuBrowser({
           </section>
         )}
 
+        </div>
+        </div>
         {menuPage && (
           <section className="lm-local-guide" aria-labelledby="menu-local-guide-title">
             <span className="lm-eyebrow">{menuPage.brandName} at MealDeck Luton</span>
@@ -981,7 +1009,7 @@ export function LaunchMenuBrowser({
         </footer>
       </main>
       <SiteFooter />
-      <LaunchBasketDock
+      {showDishes && quantity > 0 && <LaunchBasketDock
         count={quantity}
         dialogOpen={!!draft || picksOpen}
         feedbackMessage={
@@ -990,8 +1018,8 @@ export function LaunchMenuBrowser({
             : null
         }
         onOpen={openBasket}
-      />
-      <LaunchMenuAppNav
+      />}
+      {showDishes && <LaunchMenuAppNav
         brands={brandOrder.flatMap((id) => {
           const entry = getLaunchMenuBrand(id, catalogue);
           return entry ? [{ id: entry.id, name: entry.name, logo: logoFor(id) }] : [];
@@ -1014,7 +1042,7 @@ export function LaunchMenuBrowser({
         onBrand={(id) => browse(id)}
         onBasket={openBasket}
         onCheckout={proceedToCheckout}
-      />
+      />}
       <LaunchBasketFeedback
         update={notice}
         dialogOpen={!!draft || picksOpen}
@@ -1031,7 +1059,7 @@ export function LaunchMenuBrowser({
       />
 
       <Dialog
-        open={!!draft || picksOpen}
+        open={showDishes && (!!draft || picksOpen)}
         onOpenChange={(open) => {
           if (!open) {
             setDraft(null);

@@ -107,7 +107,7 @@ export function LaunchMenuAppNav({
           </span>
           <span>Brands</span>
         </button>
-        <button
+        {count > 0 && <button
           type="button"
           className="lma-tab lma-tab-basket"
           data-active={active === "basket"}
@@ -125,7 +125,7 @@ export function LaunchMenuAppNav({
             </span>
           </span>
           <span>Basket</span>
-        </button>
+        </button>}
         {count > 0 && (
           <Link
             to="/checkout"
