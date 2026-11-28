@@ -8,6 +8,11 @@ export async function confirmReceiptPaper({
   resolveLocal?: () => Promise<"resolved" | "missing">;
   confirmServer: () => Promise<unknown>;
 }): Promise<void> {
-  if (resolveLocal) await resolveLocal();
+  if (resolveLocal) {
+    const resolution = await resolveLocal();
+    if (resolution !== "resolved" && resolution !== "missing") {
+      throw new Error("Local receipt journal resolution could not be verified");
+    }
+  }
   await confirmServer();
 }

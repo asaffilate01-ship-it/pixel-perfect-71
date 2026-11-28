@@ -41,6 +41,9 @@ const DENIED_TOOLS = new Set([
   "staff_voucher.issue", "staff_voucher.redeem", "staff_voucher.revoke",
   "promotion.activate", "promotion.configure", "prize_draw.select", "prize_draw.replace",
   "prize_draw.export", "prize_draw.contact", "staff.manage", "secrets.read",
+  "marketplace.connect", "marketplace.observe", "marketplace.claim", "marketplace.result",
+  "marketplace.accept", "marketplace.ready", "marketplace.handover",
+  "printer.resolve", "printer.reprint", "loyalty.issue", "loyalty.adjust",
 ]);
 const approvedString = (value: unknown) =>
   typeof value === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(value);
@@ -55,7 +58,10 @@ export function authoriseAgentTool(
   if (trustedContext?.serverAuthenticated !== true) return decision("server_required");
   if (!["anonymous", "customer", "staff"].includes(trustedContext.role) ||
     !Array.isArray(trustedContext.allowedLocationIds) || !Array.isArray(trustedContext.verifiedOrderIds) ||
-    !Array.isArray(trustedContext.permissions)) return decision("scope_denied");
+    !Array.isArray(trustedContext.permissions) ||
+    !trustedContext.allowedLocationIds.every(approvedString) ||
+    !trustedContext.verifiedOrderIds.every(approvedString) ||
+    !trustedContext.permissions.every(permission => typeof permission === "string")) return decision("scope_denied");
   if (!Number.isSafeInteger(trustedContext.remainingCalls) ||
     trustedContext.remainingCalls < 1 || trustedContext.remainingCalls > 50) {
     return decision("budget_exhausted");

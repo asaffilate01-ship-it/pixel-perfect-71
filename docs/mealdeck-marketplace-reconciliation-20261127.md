@@ -21,3 +21,6 @@ The legacy PR documents prior synthetic tests and owner device observations. Act
 
 ## 28 November — wire-contract reconciliation
 Ported the standalone request/response schemas from PR #126, retaining strict envelopes, bounded complete order data, exact identities and lease IDs. A cancelled order is not a successful command confirmation. Added synthetic tests and wired them into the main verification job. These schemas are not connected to any live route or database operation and do not establish actual store ownership, timestamp freshness, payment, lease or action authority; those checks remain mandatory in the future reviewed server and database implementation.
+
+## 28 November — operational status evidence
+Ported the strict marketplace connection report contract without mounting an endpoint. A healthy response label now requires a recent, scoped report and heartbeat; unresolved actions take precedence. The owner/admin payment and email panel expires reports after 60 seconds. Printer recovery rejects unexpected local journal outcomes, and loyalty, financial dates and AI operational scopes receive additional input validation. These are source and presentation checks only; no marketplace command, real voucher, printer action, loyalty mutation or production payment is performed by this release.

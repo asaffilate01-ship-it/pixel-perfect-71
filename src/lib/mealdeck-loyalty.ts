@@ -32,11 +32,11 @@ export function mealdeckOrderEarnsPoints(input: {
   cancelledOrDisputed: boolean;
 }): boolean {
   return (
-    input.registered && input.emailVerified && !input.isGuest &&
-    input.paidAt !== null &&
+    input.registered === true && input.emailVerified === true && input.isGuest === false &&
+    typeof input.paidAt === "string" && /^\d{4}-\d{2}-\d{2}T/.test(input.paidAt) &&
     Number.isFinite(Date.parse(input.paidAt)) &&
     Date.parse(input.paidAt) >= Date.parse(MEALDECK_LOYALTY_START) &&
     ["paid", "partially_refunded"].includes(input.paymentStatus) &&
-    !input.cancelledOrDisputed
+    input.cancelledOrDisputed === false
   );
 }

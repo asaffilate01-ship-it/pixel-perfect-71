@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, CircleHelp, Copy, RefreshCw, Settings2 } from "lucide-react";
 import { getMealDeckOpsClient } from "@/lib/mealdeck-ops-browser";
+import { operationalEvidenceFresh, OPS_EVIDENCE_MAX_AGE_MS } from "@/lib/mealdeck-ops-evidence";
 import {
   INTEGRATION_STATE_LABELS,
   integrationStatusSchema,
@@ -59,7 +60,8 @@ export function IntegrationStatusPanel({
       if (
         !result.success ||
         result.data.tenantId !== tenantId ||
-        result.data.locationId !== locationId
+        result.data.locationId !== locationId ||
+        !operationalEvidenceFresh(result.data.checkedAt, Date.now())
       )
         throw new Error("The connection report could not be verified for this kitchen.");
       if (request === generation.current) setReport(result.data);
@@ -78,6 +80,20 @@ export function IntegrationStatusPanel({
       generation.current += 1;
     };
   }, [refresh]);
+  useEffect(() => {
+    if (!report) return;
+    const expire = () => {
+      if (!operationalEvidenceFresh(report.checkedAt, Date.now())) {
+        setReport(current => current === report ? null : current);
+      }
+    };
+    const timer = window.setTimeout(expire, Math.max(0, Date.parse(report.checkedAt) + OPS_EVIDENCE_MAX_AGE_MS - Date.now()) + 1);
+    document.addEventListener("visibilitychange", expire);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", expire);
+    };
+  }, [report]);
   const currentReport =
     report?.tenantId === tenantId && report.locationId === locationId ? report : null;
   const copySettingName = async (name: string) => {
@@ -123,6 +139,9 @@ export function IntegrationStatusPanel({
         <p className="text-sm md-ops-muted" role="status">
           Checking current permissions and connection settings…
         </p>
+      )}
+      {!currentReport && !busy && !error && (
+        <p className="text-sm md-ops-muted" role="status">No current connection report. Check connections to refresh the evidence.</p>
       )}
       {currentReport && (
         <>
