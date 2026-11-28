@@ -50,6 +50,8 @@ import {
   launchMenuOfferBasketDisplayPrice,
 } from "@/lib/launch-menu-display-prices";
 import "@/styles.launch-prices.css";
+import { normaliseUkPostcode } from "@/lib/mealdeck-own-driver-delivery";
+import { requestMealDeckCheckout } from "@/lib/mealdeck-checkout-browser";
 import { prepareLaunchCheckout } from "@/lib/launch-basket-transfer";
 import {
   LAUNCH_BASKET_EXPIRY_NOTICE,
@@ -159,6 +161,11 @@ export function LaunchMenuBrowser({
   const menuPage = getMealDeckMenuPage(brand?.id);
   const pendingBrand = marketingBrands.find((entry) => entry.id === requestedBrandId);
   const [search, setSearch] = useState("");
+  const [deliveryPostcode, setDeliveryPostcode] = useState("");
+  const [verifiedPostcode, setVerifiedPostcode] = useState<string | null>(null);
+  const [postcodeIssue, setPostcodeIssue] = useState("");
+  const [checkingPostcode, setCheckingPostcode] = useState(false);
+  const postcodeGeneration = useRef(0);
   const [orderMethod, setOrderMethod] = useState<"pickup" | "curbside" | "delivery" | null>(null);
   useEffect(() => {
     try {
@@ -166,8 +173,25 @@ export function LaunchMenuBrowser({
       if (saved === "pickup" || saved === "curbside" || saved === "delivery") setOrderMethod(saved);
     } catch { /* Session storage is optional. */ }
   }, []);
-  const methodReady = orderMethod !== null && (orderMethod !== "delivery" || deliveryLive);
+  const methodReady = orderMethod !== null && (orderMethod !== "delivery" || (deliveryLive && verifiedPostcode !== null && verifiedPostcode === normaliseUkPostcode(deliveryPostcode)));
+  async function validateDeliveryPostcode() {
+    const generation = ++postcodeGeneration.current;
+    const postcode = normaliseUkPostcode(deliveryPostcode);
+    setVerifiedPostcode(null);
+    setPostcodeIssue("");
+    if (!postcode) { setPostcodeIssue("Enter a valid UK postcode."); return; }
+    setCheckingPostcode(true);
+    try {
+      const result = await requestMealDeckCheckout<{ eligible?: boolean; postcode?: string; distanceMetres?: number }>("guest", { action: "delivery_area", postcode }, async () => null);
+      if (generation !== postcodeGeneration.current) return;
+      if (result.eligible === true && result.postcode === postcode && typeof result.distanceMetres === "number") setVerifiedPostcode(postcode);
+      else setPostcodeIssue("Delivery is unavailable for this postcode. Choose pickup or kerbside, or check another postcode.");
+    } catch { if (generation === postcodeGeneration.current) setPostcodeIssue("Unable to check your postcode. Please try again."); }
+    finally { if (generation === postcodeGeneration.current) setCheckingPostcode(false); }
+  }
   function chooseOrderMethod(method: "pickup" | "curbside" | "delivery") {
+    postcodeGeneration.current += 1;
+    setCheckingPostcode(false);
     setOrderMethod(method);
     try { sessionStorage.setItem("mealdeck-checkout-fulfilment-v1", method); } catch { /* Keep current selection. */ }
   }
@@ -580,7 +604,17 @@ export function LaunchMenuBrowser({
             ))}
           </div>
         </section>
-        {methodReady && <>
+        {orderMethod === "delivery" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 my-4" aria-label="Check delivery postcode">
+          <h2 className="text-xl font-bold">2. Where are we delivering?</h2>
+          <label className="mt-3 block text-sm font-medium" htmlFor="order-delivery-postcode">Postcode</label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input id="order-delivery-postcode" autoComplete="postal-code" maxLength={20} value={deliveryPostcode} onChange={event => { postcodeGeneration.current += 1; setCheckingPostcode(false); setVerifiedPostcode(null); setPostcodeIssue(""); setDeliveryPostcode(event.target.value); }} className="min-w-0 flex-1 rounded-xl border border-border bg-background p-3" placeholder="e.g. LU4 8NU" />
+            <button type="button" className="lm-primary" disabled={checkingPostcode || !deliveryLive} onClick={() => void validateDeliveryPostcode()}>{checkingPostcode ? "Checking…" : "Check postcode"}</button>
+          </div>
+          {postcodeIssue && <p role="alert" className="mt-2 text-sm">{postcodeIssue}</p>}
+          {methodReady && <p role="status" className="mt-2 text-sm">Delivery area confirmed. Final eligibility and minimum order are checked at checkout.</p>}
+        </section>}
+        <div hidden={!methodReady} inert={!methodReady}>
         <div className="lm-group-entry">
           <p>
             <strong>Ordering together?</strong>{" "}
@@ -1005,7 +1039,7 @@ export function LaunchMenuBrowser({
               : "Collection and kerbside pickup; check local delivery availability at checkout."}
           </p>
         </footer>
-        </>}
+        </div>
       </main>
       <SiteFooter />
       {methodReady && quantity > 0 && <LaunchBasketDock
